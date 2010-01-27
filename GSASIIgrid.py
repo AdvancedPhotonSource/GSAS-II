@@ -996,7 +996,7 @@ def UpdateImageControls(self,data):
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
-    self.dataFrame.setSizePosLeft(600,310)
+    self.dataFrame.setSizePosLeft(550,310)
     
 def UpdatePhaseData(self,item,data,oldPage):
     import GSASIIElem as G2el

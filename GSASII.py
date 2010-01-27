@@ -246,7 +246,7 @@ class GSASII(wx.Frame):
         self.LimitsTable = []
         self.HKL = []
         self.Lines = []
-        self.linePicked = None
+        self.itemPicked = None
         self.dataFrame = None
         self.Contour = False
         self.plotView = 0
@@ -1235,23 +1235,25 @@ class GSASII(wx.Frame):
 
         def OnImMotion(event):
             if event.xdata:
-                if self.linePicked:
+                item = self.itemPicked
+                if item:
                     xpos = event.xdata
                     if xpos:                                        #avoid out of frame mouse position
                         ypos = event.ydata
                         xcent,ycent = Data['center']
-                        xcent *= scalex
-                        ycent *= scaley
-                        xpos -= xcent
-                        ypos -= ycent
-                        radius = math.sqrt(xpos**2+ypos**2)
-                        xpos /= radius
-                        ypos /= radius
-                        ang = int(atan2d(-ypos,xpos))
-                        if 'line0' or 'line1' in self.linePicked:
-                            self.pdplot.canvas.SetToolTipString('%6d deg'%(ang))
+                        xpos -= xcent*scalex
+                        ypos -= ycent*scaley
+                        if 'Text' in str(item):
+                            self.pdplot.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata/scalex,event.ydata/scaley))
                         else:
-                            self.pdplot.canvas.SetToolTipString('%8.3f'%(radius))
+#                            xpos /= radius
+#                            ypos /= radius
+                            if 'line2' in  str(item) or 'line3' in str(item):
+                                ang = int(atan2d(-ypos,xpos))
+                                self.pdplot.canvas.SetToolTipString('%6d deg'%(ang))
+                            else:
+                                radius = math.sqrt(xpos**2+ypos**2)
+                                self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius/scalex))
                             
                 else:
                     size = len(self.ImageZ)
@@ -1292,17 +1294,12 @@ class GSASII(wx.Frame):
                 self.PlotImage()
                 
         def OnImPick(event):
-            if self.linePicked is not None: return
+            if self.itemPicked is not None: return
             pick = event.artist
-            self.linePicked = pick
-            mouse = event.mouseevent
-            xpos = pick.get_xdata()
-            ypos = pick.get_ydata()
-            ind = event.ind
-            xy = zip(xpos[ind],ypos[ind])
+            self.itemPicked = pick
             
         def OnImRelease(event):
-            if self.linePicked is None: return
+            if self.itemPicked is None: return
             xpos = event.xdata
             if xpos:                                        #avoid out of frame mouse position
                 xcent,ycent = Data['center']
@@ -1315,22 +1312,29 @@ class GSASII(wx.Frame):
                 xpos /= radius
                 ypos /= radius
                 ang = int(atan2d(-ypos,xpos))
-                if 'line2' in str(self.linePicked):
-                    Data['LRazimuth'][0] = ang
-                elif 'line3' in str(self.linePicked):
-                    Data['LRazimuth'][1] = ang
-                elif 'line0' in str(self.linePicked):
-                    Data['IOradii'][0] = radius/scalex
-                elif 'line1' in str(self.linePicked):
-                    Data['IOradii'][1] = radius/scalex
-                if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
-                    Data['LRazimuth'][1] += 360
-                if  Data['IOradii'][0] > Data['IOradii'][1]:
-                    Data['IOradii'] = G2cmp.SwapXY(Data['IOradii'][0],Data['IOradii'][1])
-                self.IOradText.SetValue("%8.3f,%8.3f" % (Data['IOradii'][0],Data['IOradii'][1]))
-                self.LRazim.SetValue("%6d,%6d" % (Data['LRazimuth'][0],Data['LRazimuth'][1]))
+                if 'Line2D' in str(self.itemPicked):
+                    if 'line2' in str(self.itemPicked):
+                        Data['LRazimuth'][0] = ang
+                    elif 'line3' in str(self.itemPicked):
+                        Data['LRazimuth'][1] = ang
+                    elif 'line0' in str(self.itemPicked):
+                        Data['IOradii'][0] = radius/scalex
+                    elif 'line1' in str(self.itemPicked):
+                        Data['IOradii'][1] = radius/scalex
+                    if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
+                        Data['LRazimuth'][1] += 360
+                    if  Data['IOradii'][0] > Data['IOradii'][1]:
+                        Data['IOradii'] = G2cmp.SwapXY(Data['IOradii'][0],Data['IOradii'][1])
+                    self.IOradText.SetValue("%8.3f,%8.3f" % (Data['IOradii'][0],Data['IOradii'][1]))
+                    self.LRazim.SetValue("%6d,%6d" % (Data['LRazimuth'][0],Data['LRazimuth'][1]))
+                elif 'Text' in str(self.itemPicked):
+                    cent = Data['center'] = [event.xdata/scalex,event.ydata/scalex]
+                    try:
+                        self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
+                    except AttributeError:
+                        pass
                 self.PlotImage()
-            self.linePicked = None
+            self.itemPicked = None
             
 
         newPlot = False
@@ -1376,7 +1380,7 @@ class GSASII(wx.Frame):
         self.Img = ax.imshow(self.ImageZ[::self.imScale,::self.imScale], \
             aspect='equal',origin='upper',cmap=acolor, \
             interpolation='nearest',vmin=Imin,vmax=Imax)
-        ax.text(xcent,ycent,'+',ha='center',va='center')
+        ax.text(xcent,ycent,'+',ha='center',va='center',picker=3)
         if Data['showLines']:
             LRAzim = Data['LRazimuth']
             IOradii = Data['IOradii']
@@ -1412,7 +1416,7 @@ class GSASII(wx.Frame):
     def PlotPatterns(self):
         
         def OnPick(event):
-            if self.linePicked is not None: return
+            if self.itemPicked is not None: return
             PatternId = self.PatternId
             PickId = self.PickId
             pick = event.artist
@@ -1435,7 +1439,7 @@ class GSASII(wx.Frame):
                     data.append(XY)
                     G2gd.UpdatePeakGrid(self,data)
                 else:                                                   #picked a peak list line
-                    self.linePicked = pick
+                    self.itemPicked = pick
             elif self.PatternTree.GetItemText(PickId) == 'Limits':
                 if ind.all() != [0]:                                    #picked a data point
                     LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
@@ -1447,7 +1451,7 @@ class GSASII(wx.Frame):
                     self.PatternTree.SetItemPyData(LimitId,data)
                     G2gd.UpdateLimitsGrid(self,data)
                 else:                                                   #picked a limit line
-                    self.linePicked = pick                
+                    self.itemPicked = pick                
             self.PlotPatterns()
             
         def OnPlotKeyPress(event):
@@ -1478,18 +1482,18 @@ class GSASII(wx.Frame):
                 event.Skip()
                             
         def OnMotion(event):
-            if self.linePicked:
+            if self.itemPicked:
                 xpos = event.xdata
                 if xpos:                                        #avoid out of frame mouse position
                     self.pdplot.canvas.SetToolTipString('%9.3f'%(xpos))
                        
         def OnRelease(event):
-            if self.linePicked is None: return
+            if self.itemPicked is None: return
             xpos = event.xdata
             if xpos:                                        #avoid out of frame mouse position
                 lines = []
                 for line in self.Lines: lines.append(line.get_xdata()[0])
-                lineNo = lines.index(self.linePicked.get_xdata()[0])
+                lineNo = lines.index(self.itemPicked.get_xdata()[0])
                 if  lineNo in [0,1]:
                     LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
                     data = self.PatternTree.GetItemPyData(LimitId)
@@ -1504,7 +1508,7 @@ class GSASII(wx.Frame):
                     self.PatternTree.SetItemPyData(PeakId,data)
                     G2gd.UpdatePeakGrid(self,data)
             self.PlotPatterns()
-            self.linePicked = None    
+            self.itemPicked = None    
             
         try:
             if self.NewPlot:

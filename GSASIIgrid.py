@@ -805,7 +805,7 @@ def UpdateImageControls(self,data):
             data['outChannels'] = numChans
         except ValueError:
             pass
-        outChan.SetValue(str(data['outChannels']))        
+        outChan.SetValue(str(data['outChannels']))          #reset in case of error        
         
     def OnWavelength(event):
         try:
@@ -813,7 +813,7 @@ def UpdateImageControls(self,data):
             data['wavelength'] = wave
         except ValueError:
             pass
-        waveSel.SetValue("%6.5f" % (data['wavelength']))        
+        waveSel.SetValue("%6.5f" % (data['wavelength']))          #reset in case of error          
         
     def OnDistance(event):
         try:
@@ -821,7 +821,7 @@ def UpdateImageControls(self,data):
             data['distance'] = dist
         except ValueError:
             pass
-        distSel.SetValue("%8.3f"%(data['distance']))
+        distSel.SetValue("%8.3f"%(data['distance']))          #reset in case of error  
         
     def OnImRefine(event):
         ImageCalibRef[0] = centRef.GetValue()
@@ -829,14 +829,26 @@ def UpdateImageControls(self,data):
         ImageCalibRef[2] = distRef.GetValue()
         ImageCalibRef[3] = tiltRef.GetValue()
         ImageCalibRef[4] = rotRef.GetValue()
+        SetStatusLine()
                 
     def OnShowLines(event):
         if data['showLines']:
             data['showLines'] = False
         else:
             data['showLines'] = True
-        showLines.SetValue(data['showLines'])
         self.PlotImage()
+        
+    def OnFullIntegrate(event):
+        if data['fullIntegrate']:
+            data['fullIntegrate'] = False
+            data['LRazimuth'] = [-45,45]
+            self.LRazim.SetValue("%6d,%6d" % (-45,45))            
+        else:
+            data['fullIntegrate'] = True
+            data['LRazimuth'] = [0,360]
+            self.LRazim.SetValue("%6d,%6d" % (0,360))            
+        self.PlotImage()
+        
         
     def OnSetDefault(event):
         import copy
@@ -846,7 +858,6 @@ def UpdateImageControls(self,data):
         else:
             self.imageDefault = copy.copy(data)
             data['setDefault'] = True
-        setDefault.SetValue(data['setDefault'])
         
     
     def OnCalibrate(event):
@@ -854,6 +865,12 @@ def UpdateImageControls(self,data):
         
     def OnIntegrate(event):
         print 'image integrate'
+        
+    def SetStatusLine():
+        if data['refine'][0]:
+            Status.SetStatusText("On Image: key 'c' to mark center or 'r' on inner ring for calibration")
+        else:
+            Status.SetStatusText("On Image: key 'r' on inner ring for calibration")
                               
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     import ImageCalibrants as calFile
@@ -862,7 +879,7 @@ def UpdateImageControls(self,data):
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.ImageMenu)
     Status = self.dataFrame.CreateStatusBar()
-    Status.SetStatusText("On Image: key 'c' to mark center or 'r' on inner ring for calibration")
+    SetStatusLine()
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=wxID_IMCALIBRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)        
     self.dataDisplay = wx.Panel(self.dataFrame)
@@ -915,7 +932,7 @@ def UpdateImageControls(self,data):
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Beam center X,Y'),0,
         wx.ALIGN_CENTER_VERTICAL)
     cent = data['center']
-    self.centText = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f,%8.3f" % (cent[0],cent[1])))
+    self.centText = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f,%8.3f" % (cent[0],cent[1])),style=wx.TE_READONLY)
     dataSizer.Add(self.centText,0,wx.ALIGN_CENTER_VERTICAL)
     centRef = wx.CheckBox(parent=self.dataDisplay,label='refine?')
     centRef.Bind(wx.EVT_CHECKBOX, OnImRefine)
@@ -975,7 +992,10 @@ def UpdateImageControls(self,data):
     dataSizer.Add(showLines,0)
     showLines.Bind(wx.EVT_CHECKBOX, OnShowLines)
     showLines.SetValue(data['showLines'])
-    dataSizer.Add((5,5),0)
+    fullIntegrate = wx.CheckBox(parent=self.dataDisplay,label='Do full integration?')
+    dataSizer.Add(fullIntegrate,0)
+    fullIntegrate.Bind(wx.EVT_CHECKBOX, OnFullIntegrate)
+    fullIntegrate.SetValue(data['fullIntegrate'])
     
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt rotation'),0,
         wx.ALIGN_CENTER_VERTICAL)

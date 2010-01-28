@@ -410,6 +410,7 @@ class GSASII(wx.Frame):
                     Imin = np.amin(Image)
                     if self.imageDefault:
                         Data = copy.copy(self.imageDefault)
+                        Data['refine'] = [False,False,False,False,False]
                     else:
                         Data['color'] = 'binary'
                         Data['tilt'] = 0.0
@@ -422,6 +423,7 @@ class GSASII(wx.Frame):
                         Data['IOradii'] = [10.,100.]
                         Data['LRazimuth'] = [-45,45]
                         Data['outChannels'] = 2500
+                        Data['fullIntegrate'] = False
                     Data['setDefault'] = False
                     Data['range'] = [(Imin,Imax),[Imin,Imax]]
                     self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
@@ -1236,25 +1238,22 @@ class GSASII(wx.Frame):
         def OnImMotion(event):
             if event.xdata:
                 item = self.itemPicked
-                if item:
+                if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
                     xpos = event.xdata
                     if xpos:                                        #avoid out of frame mouse position
                         ypos = event.ydata
                         xcent,ycent = Data['center']
                         xpos -= xcent*scalex
                         ypos -= ycent*scaley
-                        if 'Text' in str(item):
+                        if 'Text' in str(item) and Data['refine'][0]:
                             self.pdplot.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata/scalex,event.ydata/scaley))
                         else:
-#                            xpos /= radius
-#                            ypos /= radius
-                            if 'line2' in  str(item) or 'line3' in str(item):
+                            if 'line2' in  str(item) or 'line3' in str(item) and not Data['fullIntegrate']:
                                 ang = int(atan2d(-ypos,xpos))
                                 self.pdplot.canvas.SetToolTipString('%6d deg'%(ang))
                             else:
                                 radius = math.sqrt(xpos**2+ypos**2)
-                                self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius/scalex))
-                            
+                                self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius/scalex))                           
                 else:
                     size = len(self.ImageZ)
                     xpos = int(event.xdata)*self.imScale
@@ -1274,7 +1273,7 @@ class GSASII(wx.Frame):
                 else:                   #got point out of frame
                     return
                 Ypos = int(event.ydata)*self.imScale
-                if event.key == 'c':
+                if event.key == 'c' and Data['refine'][0]:
                     cent = Data['center'] = [Xpos*pixelSize[0]/1000.,Ypos*pixelSize[1]/1000.] #convert to mm
                     self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
                 elif event.key == 'r':
@@ -1299,7 +1298,8 @@ class GSASII(wx.Frame):
             self.itemPicked = pick
             
         def OnImRelease(event):
-            if self.itemPicked is None: return
+            if self.itemPicked is None or self.PatternTree.GetItemText(self.PickId) != 'Image Controls': return
+            Data = self.PatternTree.GetItemPyData(self.PickId)
             xpos = event.xdata
             if xpos:                                        #avoid out of frame mouse position
                 xcent,ycent = Data['center']
@@ -1313,9 +1313,9 @@ class GSASII(wx.Frame):
                 ypos /= radius
                 ang = int(atan2d(-ypos,xpos))
                 if 'Line2D' in str(self.itemPicked):
-                    if 'line2' in str(self.itemPicked):
+                    if 'line2' in str(self.itemPicked) and not Data['fullIntegrate']:
                         Data['LRazimuth'][0] = ang
-                    elif 'line3' in str(self.itemPicked):
+                    elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
                         Data['LRazimuth'][1] = ang
                     elif 'line0' in str(self.itemPicked):
                         Data['IOradii'][0] = radius/scalex
@@ -1327,7 +1327,7 @@ class GSASII(wx.Frame):
                         Data['IOradii'] = G2cmp.SwapXY(Data['IOradii'][0],Data['IOradii'][1])
                     self.IOradText.SetValue("%8.3f,%8.3f" % (Data['IOradii'][0],Data['IOradii'][1]))
                     self.LRazim.SetValue("%6d,%6d" % (Data['LRazimuth'][0],Data['LRazimuth'][1]))
-                elif 'Text' in str(self.itemPicked):
+                elif 'Text' in str(self.itemPicked) and Data['refine'][0]:
                     cent = Data['center'] = [event.xdata/scalex,event.ydata/scalex]
                     try:
                         self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
@@ -1338,7 +1338,8 @@ class GSASII(wx.Frame):
             
 
         newPlot = False
-        self.NewPlot = True 
+        self.NewPlot = True
+        self.itemPicked = None 
         try:
             self.pdplot.clear()
             self.pdplot.canvas.toolbar.set_history_buttons()
@@ -1392,14 +1393,15 @@ class GSASII(wx.Frame):
             arcxO = np.sin(arcxO*math.pi/180.)*scalex*Data['IOradii'][1]+xcent
             arcyO = -np.cos(arcyO*math.pi/180.)*scaley*Data['IOradii'][1]+ycent
             ax.plot(arcxO,arcyO,picker=3)
-            xbeg = arcxI[0]
-            ybeg = arcyI[0]
-            ax.plot([xbeg,sind(LRAzim[0])*IOradii[1]*scalex+xcent],
-                [ybeg,-cosd(LRAzim[0])*IOradii[1]*scaley+ycent],picker=3)
-            xbeg = arcxI[-1]
-            ybeg = arcyI[-1]
-            ax.plot([xbeg,sind(LRAzim[1])*IOradii[1]*scalex+xcent],
-                [ybeg,-cosd(LRAzim[1])*IOradii[1]*scaley+ycent],picker=3)
+            if not Data['fullIntegrate']:
+                xbeg = arcxI[0]
+                ybeg = arcyI[0]
+                ax.plot([xbeg,sind(LRAzim[0])*IOradii[1]*scalex+xcent],
+                    [ybeg,-cosd(LRAzim[0])*IOradii[1]*scaley+ycent],picker=3)
+                xbeg = arcxI[-1]
+                ybeg = arcyI[-1]
+                ax.plot([xbeg,sind(LRAzim[1])*IOradii[1]*scalex+xcent],
+                    [ybeg,-cosd(LRAzim[1])*IOradii[1]*scaley+ycent],picker=3)
         for xring,yring in Data['ring']:
             xring *= scalex
             yring *= scaley

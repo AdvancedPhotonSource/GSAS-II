@@ -253,6 +253,8 @@ class GSASII(wx.Frame):
         self.Image = 0
         self.Img = 0
         self.imageDefault = {}
+        self.PDevent = []
+        self.IMevent = []
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -1344,16 +1346,21 @@ class GSASII(wx.Frame):
             self.pdplot.clear()
             self.pdplot.canvas.toolbar.set_history_buttons()
             self.pdplot.canvas.set_window_title('2D Powder Image')
+            if self.PDevent:
+                for i in range(len(self.PDevent)):
+                    self.pdplot.canvas.mpl_disconnect(self.PDevent[i])
+                self.PDevent = []
         except:
             self.pdplot = pylab.figure(facecolor='white')
             self.pdplot.clear()
             self.pdplot.canvas.set_window_title('2D Powder Image')
-            self.pdplot.canvas.mpl_connect('key_press_event', OnImPlotKeyPress)
-            self.pdplot.canvas.mpl_connect('motion_notify_event', OnImMotion)
-            self.pdplot.canvas.mpl_connect('pick_event', OnImPick)
-            self.pdplot.canvas.mpl_connect('button_release_event', OnImRelease)
             self.NewPlot = True                     #to make sure subsequent 1-D plot will be OK
             newPlot = True
+        if not self.IMevent:
+            self.IMevent.append(self.pdplot.canvas.mpl_connect('key_press_event', OnImPlotKeyPress))
+            self.IMevent.append(self.pdplot.canvas.mpl_connect('motion_notify_event', OnImMotion))
+            self.IMevent.append(self.pdplot.canvas.mpl_connect('pick_event', OnImPick))
+            self.IMevent.append(self.pdplot.canvas.mpl_connect('button_release_event', OnImRelease))            
         PickId = self.PickId
         ax = self.pdplot.add_subplot(111)
         size,self.ImageZ = self.PatternTree.GetItemPyData(self.Image)
@@ -1517,15 +1524,20 @@ class GSASII(wx.Frame):
                 self.pdplot.clear()
             self.pdplot.canvas.toolbar.set_history_buttons()
             self.pdplot.canvas.set_window_title('Powder Patterns')
+            if self.IMevent:
+                for i in range(len(self.IMevent)):
+                    self.pdplot.canvas.mpl_disconnect(self.IMevent[i])
+                self.IMevent = []
         except:
             self.pdplot = pylab.figure(facecolor='white')
             self.pdplot.clear()
             self.pdplot.canvas.set_window_title('Powder Patterns')
-            self.pdplot.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
-            self.pdplot.canvas.mpl_connect('pick_event', OnPick)
-            self.pdplot.canvas.mpl_connect('button_release_event', OnRelease)
-            self.pdplot.canvas.mpl_connect('motion_notify_event', OnMotion)
             self.NewPlot = True
+        if not self.PDevent:
+            self.PDevent.append(self.pdplot.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
+            self.PDevent.append(self.pdplot.canvas.mpl_connect('pick_event', OnPick))
+            self.PDevent.append(self.pdplot.canvas.mpl_connect('button_release_event', OnRelease))
+            self.PDevent.append(self.pdplot.canvas.mpl_connect('motion_notify_event', OnMotion))
         PickId = self.PickId
         PatternId = self.PatternId
         colors=['b','g','r','c','m','k']

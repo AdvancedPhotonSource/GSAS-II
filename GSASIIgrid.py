@@ -1443,7 +1443,8 @@ def MovePatternTreeToGrid(self,item):
         self.dataFrame.SetTitle('Image Controls')
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
-        UpdateImageControls(self,data)        
+        UpdateImageControls(self,data)
+        self.PlotImage()        
     elif self.PatternTree.GetItemText(item) == 'Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PeakFit.Enable(True)

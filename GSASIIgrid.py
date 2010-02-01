@@ -72,10 +72,10 @@ class DataFrame(wx.Frame):
         self.AtomGrid = []
         self.selectedRow = 0
         
-    def setSizePosLeft(self,xWidth,yWidth):
+    def setSizePosLeft(self,Width):
         screenSize = wx.DisplaySize()
-        self.SetSize(wx.Size(xWidth,yWidth))
-        self.SetPosition(wx.Point(screenSize[0]-xWidth,250))
+        self.SetSize(Width)
+        self.SetPosition(wx.Point(screenSize[0]-Width[0],250))
         
     def Clear(self):
         self.ClearBackground()
@@ -324,7 +324,6 @@ def UpdatePeakGrid(self, data):
                         data[row][col]=False
         self.PlotPatterns()
             
-    self.dataFrame.setSizePosLeft(650,350)
     self.PickTable = []
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
@@ -351,6 +350,7 @@ def UpdatePeakGrid(self, data):
     self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)                 
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
+    self.dataFrame.setSizePosLeft([650,350])
         
 def UpdateBackgroundGrid(self,data):
     BackId = GetPatternTreeItemId(self,self.PatternId, 'Background')
@@ -378,7 +378,7 @@ def UpdateBackgroundGrid(self,data):
             self.dataDisplay.ProcessTableMessage(msg)                         
         self.PatternTree.SetItemPyData(BackId,data)
                   
-    self.dataFrame.setSizePosLeft(700,150)
+    self.dataFrame.setSizePosLeft([700,150])
     maxTerm = 7
     self.BackTable = []
     N = len(data[0])
@@ -402,7 +402,7 @@ def UpdateBackgroundGrid(self,data):
 def UpdateLimitsGrid(self, data):
     if self.dataDisplay:
         self.dataDisplay.Destroy()
-    self.dataFrame.setSizePosLeft(250,150)
+    self.dataFrame.setSizePosLeft([250,150])
     LimitId = GetPatternTreeItemId(self,self.PatternId, 'Limits')
     def RefreshLimitsGrid(event):
         data = self.LimitsTable.GetData()
@@ -433,7 +433,7 @@ def UpdateInstrumentGrid(self, data):
     if len(data[0]) == 12: 
         Ka2 = True
         Xwid = 800        
-    self.dataFrame.setSizePosLeft(Xwid,150)
+    self.dataFrame.setSizePosLeft([Xwid,150])
     InstId = GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters')
     def RefreshInstrumentGrid(event):
         if event.GetRow() == 1:
@@ -535,7 +535,7 @@ def UpdateIndexPeaksGrid(self, data):
             
     if self.dataDisplay:
         self.dataDisplay.Destroy()
-    self.dataFrame.setSizePosLeft(500,300)
+    self.dataFrame.setSizePosLeft([500,300])
     inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
     self.IndexPeaksTable = []
     if not data:
@@ -681,9 +681,9 @@ def UpdateUnitCellsGrid(self, data):
     self.UnitCellsTable = []
     controls,bravais,cells,dmin = data
     if cells:
-        self.dataFrame.setSizePosLeft(900,320)
+        self.dataFrame.setSizePosLeft([900,320])
     else:
-        self.dataFrame.setSizePosLeft(280,320)
+        self.dataFrame.setSizePosLeft([280,320])
     if len(controls) < 13:
         controls.append(G2cmp.calc_V(G2cmp.cell2A(controls[6:12])))
     self.PatternTree.SetItemPyData(UnitCellsId,data)
@@ -777,6 +777,91 @@ def UpdateUnitCellsGrid(self, data):
         self.RefineCell.Enable(True)
     else:
         self.RefineCell.Enable(False)
+        
+def UpdateHKLControls(self,data):
+    
+    def OnScaleSlider(event):
+        scale = int(scaleSel.GetValue())/1000.
+        scaleSel.SetValue(int(scale*1000.))
+        data['Scale'] = scale*10.
+        self.NewPlot = True
+        self.PlotSngl()
+        
+    def OnLayerSlider(event):
+        layer = layerSel.GetValue()
+        data['Layer'] = layer
+        self.NewPlot = True
+        self.PlotSngl()
+        
+    def OnSelZone(event):
+        data['Zone'] = zoneSel.GetValue()
+        self.NewPlot = True
+        self.PlotSngl()
+        
+    def OnSelType(event):
+        data['Type'] = typeSel.GetValue()
+        self.NewPlot = True
+        self.PlotSngl()
+        
+    def SetStatusLine():
+        Status.SetStatusText("look at me!!!")
+                                      
+    if self.dataDisplay:
+        self.dataDisplay.Destroy()
+    Status = self.dataFrame.CreateStatusBar()
+    SetStatusLine()
+    zones = ['100','010','001']
+    HKLmax = data['HKLmax']
+    HKLmin = data['HKLmin']
+    if data['ifFc']:
+        typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
+    else:
+        typeChoices = ['Fosq','Fo']
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,10),0)
+    
+    scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
+    scaleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Scale'),0,
+        wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+    scaleSel = wx.Slider(parent=self.dataDisplay,maxValue=1000,minValue=100,
+        style=wx.SL_HORIZONTAL,value=int(data['Scale']*100))
+    scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    scaleSel.Bind(wx.EVT_SLIDER, OnScaleSlider)
+    mainSizer.Add(scaleSizer,1,wx.EXPAND|wx.RIGHT)
+    
+    zoneSizer = wx.BoxSizer(wx.HORIZONTAL)
+    zoneSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Zone  '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    zoneSel = wx.ComboBox(parent=self.dataDisplay,value=data['Zone'],choices=['100','010','001'],
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    zoneSel.Bind(wx.EVT_COMBOBOX, OnSelZone)
+    zoneSizer.Add(zoneSel,0,wx.ALIGN_CENTER_VERTICAL)
+    zoneSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Plot type  '),0,
+        wx.ALIGN_CENTER_VERTICAL)        
+    typeSel = wx.ComboBox(parent=self.dataDisplay,value=data['Type'],choices=typeChoices,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    typeSel.Bind(wx.EVT_COMBOBOX, OnSelType)
+    zoneSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
+    zoneSizer.Add((10,0),0)    
+    mainSizer.Add(zoneSizer,1,wx.EXPAND|wx.RIGHT)
+        
+    izone = zones.index(data['Zone'])
+    layerSizer = wx.BoxSizer(wx.HORIZONTAL)
+    layerSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Layer'),0,
+        wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+    layerSel = wx.Slider(parent=self.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
+        style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
+    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    layerSel.Bind(wx.EVT_SLIDER, OnLayerSlider)    
+    layerSizer.Add((10,0),0)    
+    mainSizer.Add(layerSizer,1,wx.EXPAND|wx.RIGHT)
+
+        
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
         
 def UpdateImageControls(self,data):
     
@@ -1008,7 +1093,7 @@ def UpdateImageControls(self,data):
     setDefault = wx.CheckBox(parent=self.dataDisplay,label='Use as default for all images?')
     dataSizer.Add(setDefault,0)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
-    showLines.SetValue(data['setDefault'])
+    setDefault.SetValue(data['setDefault'])
     dataSizer.Add((5,5),0)
         
     mainSizer.Add(dataSizer,0)
@@ -1016,7 +1101,7 @@ def UpdateImageControls(self,data):
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
-    self.dataFrame.setSizePosLeft(550,310)
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
     
 def UpdatePhaseData(self,item,data,oldPage):
     import GSASIIElem as G2el
@@ -1122,7 +1207,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         AtomMass = []
         colType = 1
         colSS = 7
-        self.dataFrame.setSizePosLeft(600,350)
+        self.dataFrame.setSizePosLeft([600,350])
         if generalData[1] =='macromolecular':
             colType = 4
             colSS = 10
@@ -1429,6 +1514,9 @@ def MovePatternTreeToGrid(self,item):
             self.PlotImage()
         elif 'PWDR' in self.PatternTree.GetItemText(item):
             self.PlotPatterns()
+        elif 'SXTL ' in self.PatternTree.GetItemText(item):
+            self.Sngl = item
+            self.PlotSngl()
             
     elif self.PatternTree.GetItemText(parentID) == 'Phases':
         self.PickId = item
@@ -1442,9 +1530,16 @@ def MovePatternTreeToGrid(self,item):
     elif self.PatternTree.GetItemText(item) == 'Image Controls':
         self.dataFrame.SetTitle('Image Controls')
         self.PickId = item
+        self.Image = self.PatternTree.GetItemParent(item)
         data = self.PatternTree.GetItemPyData(item)
         UpdateImageControls(self,data)
-        self.PlotImage()        
+        self.PlotImage()
+    elif self.PatternTree.GetItemText(item) == 'HKL Plot Controls':
+        self.PickId = item
+        self.Sngl = self.PatternTree.GetItemParent(item)
+        data = self.PatternTree.GetItemPyData(item)
+        UpdateHKLControls(self,data)
+        self.PlotSngl()               
     elif self.PatternTree.GetItemText(item) == 'Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PeakFit.Enable(True)

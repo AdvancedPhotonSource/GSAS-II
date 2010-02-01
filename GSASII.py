@@ -255,6 +255,8 @@ class GSASII(wx.Frame):
         self.imageDefault = {}
         self.PDevent = []
         self.IMevent = []
+        self.SCevent = []
+        self.Sngl = 0
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -349,12 +351,13 @@ class GSASII(wx.Frame):
                             self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
                     finally:
                         wx.EndBusyCursor()
+                self.PatternTree.Expand(Id)
+                self.PatternTree.SelectItem(Id)
                 self.NewPlot = True
                 self.PlotPatterns()
     
         finally:
             dlg.Destroy()
-        self.PatternTree.Expand(self.root)
         
     def OnReadPowderPeaks(self,event):
         Cuka = 1.54052
@@ -380,6 +383,7 @@ class GSASII(wx.Frame):
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),peaks)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
                 self.NewPlot = True
+                self.PatternTree.Expand(Id)
         finally:
             dlg.Destroy()
             
@@ -413,6 +417,7 @@ class GSASII(wx.Frame):
                     if self.imageDefault:
                         Data = copy.copy(self.imageDefault)
                         Data['refine'] = [False,False,False,False,False]
+                        Data['showLines'] = True
                     else:
                         Data['color'] = 'binary'
                         Data['tilt'] = 0.0
@@ -433,8 +438,10 @@ class GSASII(wx.Frame):
                     self.PickId = Id
                     self.Image = Id
                     self.PlotImage()
+                    self.PatternTree.SelectItem(Id)
+                    self.PatternTree.Expand(Id)
         finally:
-            dlg.Destroy()       
+            dlg.Destroy()
         
     def OnSnglReadMenu(self,event):
         if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
@@ -450,18 +457,31 @@ class GSASII(wx.Frame):
                 self.dirname = dlg.GetDirectory()
                 wx.BeginBusyCursor()
                 try:
+                    Data = {}
                     names = ['Type','Lam']
-                    HKLref = G2IO.GetHKLData(filename)
-                    Id = self.PatternTree.AppendItem(parentId=self.root,text='SXTL '+ospath.basename(filename))
-                    self.PatternTree.SetItemPyData(Id,[filename,HKLref])
+                    HKLref,HKLmin,HKLmax,FoMax,ifFc = G2IO.GetHKLData(filename)
+                    Id = self.PatternTree.AppendItem(parent=self.root,text='SXTL '+ospath.basename(filename))
+                    self.PatternTree.SetItemPyData(Id,HKLref)
                     Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
                     data = ['SXC',1.5428,]
                     self.PatternTree.SetItemPyData(Sub,[tuple(data),data,names])
+                    Data['Type'] = 'Fosq'
+                    Data['ifFc'] = ifFc
+                    Data['HKLmax'] = HKLmax
+                    Data['HKLmin'] = HKLmin
+                    Data['FoMax'] = FoMax
+                    Data['Zone'] = '001'
+                    Data['Layer'] = 0
+                    Data['Scale'] = 1.0
+                    Data['log-lin'] = 'lin'                    
+                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='HKL Plot Controls'),Data)
+                    self.PatternTree.SelectItem(Id)
+                    self.PatternTree.Expand(Id)
+                    self.Sngl = Id
                 finally:
                     wx.EndBusyCursor()    
         finally:
             dlg.Destroy()
-        self.PatternTree.Expand(self.root)
         
     class SumDialog(wx.Dialog):
         def __init__(self,parent,title,text,type,data):
@@ -618,6 +638,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
+                        self.PatternTree.SelectItem(Id)
                     
                     self.PlotPatterns()
                     self.NewPlot = True
@@ -683,6 +704,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(Id,[imSize,newImage])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
+                        self.PatternTree.SelectItem(Id)
                     self.PickId = Id
                     self.Image = Id
                     self.PlotImage()
@@ -1147,6 +1169,12 @@ class GSASII(wx.Frame):
                 self.PlotPatterns()
         self.RefineCell.Enable(True)
         self.IndexPeaks.Enable(True)
+        
+    def ClearEventList(self,eventList):
+        if eventList:
+            for i in range(len(eventList)):
+                self.pdplot.canvas.mpl_disconnect(eventList[i])
+        return []
 
     def PlotPeakWidths(self):
         newPlot = False 
@@ -1171,6 +1199,9 @@ class GSASII(wx.Frame):
             peaks = []
         try:
             self.pdplot.clear()
+            self.IMevent = self.ClearEventList(self.IMevent)
+            self.PDevent = self.ClearEventList(self.PDevent)
+            self.SCevent = self.ClearEventList(self.SCevent)
             self.pdplot.canvas.set_window_title('Peak Widths')
         except:
             self.pdplot.clear()
@@ -1238,31 +1269,25 @@ class GSASII(wx.Frame):
     def PlotImage(self):
 
         def OnImMotion(event):
+            self.pdplot.canvas.SetToolTipString('')
             if event.xdata:
                 item = self.itemPicked
                 if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
-                    xpos = event.xdata
-                    if xpos:                                        #avoid out of frame mouse position
-                        ypos = event.ydata
+                    if 'Text' in str(item) and Data['refine'][0]:
+                        self.pdplot.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata/scalex,event.ydata/scaley))
+                    else:
                         xcent,ycent = Data['center']
-                        xpos -= xcent*scalex
-                        ypos -= ycent*scaley
-                        if 'Text' in str(item) and Data['refine'][0]:
-                            self.pdplot.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata/scalex,event.ydata/scaley))
-                        else:
-                            if 'line2' in  str(item) or 'line3' in str(item) and not Data['fullIntegrate']:
-                                ang = int(atan2d(-ypos,xpos))
-                                self.pdplot.canvas.SetToolTipString('%6d deg'%(ang))
-                            else:
-                                radius = math.sqrt(xpos**2+ypos**2)
-                                self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius/scalex))                           
+                        xpos = event.xdata-xcent*scalex
+                        ypos = event.ydata-ycent*scaley
+                        if 'line2' in  str(item) or 'line3' in str(item) and not Data['fullIntegrate']:
+                            ang = int(atan2d(-ypos,xpos))
+                            self.pdplot.canvas.SetToolTipString('%6d deg'%(ang))
+                        elif 'line0' in  str(item) or 'line1' in str(item):
+                            radius = math.sqrt(xpos**2+ypos**2)
+                            self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius/scalex))                           
                 else:
-                    size = len(self.ImageZ)
-                    xpos = int(event.xdata)*self.imScale
-                    ypos = int(event.ydata)*self.imScale
-                    if (0 < xpos < size) and (0 < ypos < size):     #avoid out of image position
-                        z = self.ImageZ[ypos][xpos]
-                        self.pdplot.canvas.SetToolTipString('%6d'%(z))
+                    self.pdplot.canvas.SetToolTipString('%6d'%(self.ImageZ[int(event.ydata)*self.imScale] \
+                        [int(event.xdata)*self.imScale]))
 
         def OnImPlotKeyPress(event):
             if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
@@ -1338,7 +1363,6 @@ class GSASII(wx.Frame):
                 self.PlotImage()
             self.itemPicked = None
             
-
         newPlot = False
         self.NewPlot = True
         self.itemPicked = None 
@@ -1346,10 +1370,8 @@ class GSASII(wx.Frame):
             self.pdplot.clear()
             self.pdplot.canvas.toolbar.set_history_buttons()
             self.pdplot.canvas.set_window_title('2D Powder Image')
-            if self.PDevent:
-                for i in range(len(self.PDevent)):
-                    self.pdplot.canvas.mpl_disconnect(self.PDevent[i])
-                self.PDevent = []
+            self.PDevent = self.ClearEventList(self.PDevent)
+            self.SCevent = self.ClearEventList(self.SCevent)
         except:
             self.pdplot = pylab.figure(facecolor='white')
             self.pdplot.clear()
@@ -1419,8 +1441,7 @@ class GSASII(wx.Frame):
         if newPlot:
             pylab.show()
         else:                       #1st plot
-            pylab.draw()
-        
+            pylab.draw()        
                 
     def PlotPatterns(self):
         
@@ -1524,10 +1545,8 @@ class GSASII(wx.Frame):
                 self.pdplot.clear()
             self.pdplot.canvas.toolbar.set_history_buttons()
             self.pdplot.canvas.set_window_title('Powder Patterns')
-            if self.IMevent:
-                for i in range(len(self.IMevent)):
-                    self.pdplot.canvas.mpl_disconnect(self.IMevent[i])
-                self.IMevent = []
+            self.IMevent = self.ClearEventList(self.IMevent)
+            self.SCevent = self.ClearEventList(self.SCevent)
         except:
             self.pdplot = pylab.figure(facecolor='white')
             self.pdplot.clear()
@@ -1645,6 +1664,101 @@ class GSASII(wx.Frame):
         else:                       #1st plot
             pylab.draw()
         
+    def PlotSngl(self):
+        from matplotlib.patches import Circle
+
+        def OnSCMotion(event):
+            xpos = event.xdata
+            if xpos:
+                xpos = round(xpos)                                        #avoid out of frame mouse position
+                ypos = round(event.ydata)
+                zpos = Data['Layer']
+                if '100' in Data['Zone']:
+                    self.pdplot.canvas.SetToolTipString('(%3d,%3d,%3d)'%(zpos,xpos,ypos))
+                elif '010' in Data['Zone']:
+                    self.pdplot.canvas.SetToolTipString('(%3d,%3d,%3d)'%(xpos,zpos,ypos))
+                elif '001' in Data['Zone']:
+                    self.pdplot.canvas.SetToolTipString('(%3d,%3d,%3d)'%(xpos,ypos,zpos))
+                    
+        def OnSCPick(event):
+#            print str(event.artist).split('(')
+            pass
+                    
+        try:
+            if self.NewPlot:
+                self.pdplot.clear()
+            self.pdplot.canvas.toolbar.set_history_buttons()
+            self.pdplot.canvas.set_window_title('Structure Factors')
+            self.IMevent = self.ClearEventList(self.IMevent)
+            self.PDevent = self.ClearEventList(self.PDevent)
+        except:
+            self.pdplot = pylab.figure(facecolor='white')
+            self.pdplot.clear()
+            self.pdplot.canvas.set_window_title('Structure Factors')
+            self.NewPlot = True
+        if not self.SCevent:
+            self.SCevent.append(self.pdplot.canvas.mpl_connect('pick_event', OnSCPick))
+            self.SCevent.append(self.pdplot.canvas.mpl_connect('motion_notify_event', OnSCMotion))
+        PickId = self.PickId
+        ax = self.pdplot.add_subplot(111)
+        ax.set_aspect(aspect='equal')
+        HKLref = self.PatternTree.GetItemPyData(self.Sngl)
+        Data = self.PatternTree.GetItemPyData( \
+            G2gd.GetPatternTreeItemId(self,self.Sngl, 'HKL Plot Controls'))
+
+        Type = Data['Type']            
+        scale = Data['Scale']
+        HKLmax = Data['HKLmax']
+        HKLmin = Data['HKLmin']
+        FosqMax = Data['FoMax']
+        FoMax = math.sqrt(FosqMax)
+        ifFc = Data['ifFc']
+        xlabel = ['k, h=','h, k=','h, l=']
+        ylabel = ['l','l','k']
+        zones = ['100','010','001']
+        pzone = [[1,2],[0,2],[0,1]]
+        izone = zones.index(Data['Zone'])
+        for h,k,l,Fosq,sig,Fcsq,x,x,x in HKLref:
+            H = [h,k,l]
+            if H[izone] == Data['Layer']:
+                B = 0
+                if Type == 'Fosq':
+                    A = scale*Fosq/FosqMax
+                    B = scale*Fcsq/FosqMax
+                    C = abs(A-B)
+                elif Type == 'Fo':
+                    A = scale*math.sqrt(max(0,Fosq))/FoMax
+                    B = scale*math.sqrt(max(0,Fcsq))/FoMax
+                    C = abs(A-B)
+                elif Type == '|DFsq|/sig':
+                    A = abs(Fosq-Fcsq)/(scale*sig)
+                elif Type == '|DFsq|>sig':
+                    A = abs(Fosq-Fcsq)/(scale*sig)
+                    if A < 1.0: A = 0                    
+                elif Type == '|DFsq|>3sig':
+                    A = abs(Fosq-Fcsq)/(scale*sig)
+                    if A < 3.0: A = 0                    
+                xy = (H[pzone[izone][0]],H[pzone[izone][1]])
+                ax.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
+                if B:
+                    ax.add_artist(Circle(xy,radius=B,ec='b',fc='w',picker=3))
+                    radius = C
+                    if radius > 0:
+                        if A > B:
+                            ax.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
+                        else:                    
+                            ax.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
+                    
+        ax.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
+        ax.set_ylabel(ylabel[izone],fontsize=12)
+        ax.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
+        ax.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
+
+        if self.NewPlot:
+            pylab.show()
+            self.NewPlot = False
+        else:                       #1st plot
+            pylab.draw()
         
     def ErrorDialog(self,title,message):
         dlg = wx.MessageDialog(self, message, title,  wx.OK)

@@ -161,13 +161,72 @@ def GetHKLData(filename):
     print 'Reading: '+filename
     File = open(filename,'Ur')
     HKLref = []
+    HKLmin = [1000,1000,1000]
+    HKLmax = [0,0,0]
+    FoMax = 0
+    ifFc = False
     S = File.readline()
-    while S:
-        h,k,l,Fo,sigFo = S.split()
-        HKLref.append([h,k,l,Fo,sigFo,0,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
-        S = File.readline()
+    while '#' in S[0]:        #get past comments if any
+        S = File.readline()        
+    if '_' in S:         #cif style .hkl file
+        while 'loop_' not in S:         #skip preliminaries if any - can't have 'loop_' in them!
+            S = File.readline()        
+        S = File.readline()             #get past 'loop_' line
+        pos = 0
+        hpos = kpos = lpos = Fosqpos = Fcsqpos = sigpos = -1
+        while S:
+            if '_' in S:
+                if 'index_h' in S:
+                    hpos = pos
+                elif 'index_k' in S:
+                    kpos = pos
+                elif 'index_l' in S:
+                    lpos = pos
+                elif 'F_squared_meas' in S:
+                    Fosqpos = pos
+                elif 'F_squared_calc' in S:
+                    Fcsqpos = pos
+                elif 'F_squared_sigma' in S:
+                    sigpos = pos
+                pos += 1
+            else:
+                data = S.split()
+                if data:                    #avoid blank lines
+                    h = int(data[hpos])
+                    k = int(data[kpos])
+                    l = int(data[lpos])
+                    Fosq = float(data[Fosqpos])
+                    if sigpos != -1:
+                        sigFosq = float(data[sigpos])
+                    else:
+                        sigFosq = 1.
+                    if Fcsqpos != -1:
+                        Fcsq = float(data[Fcsqpos])
+                        if Fcsq:
+                            ifFc = True
+                    else:
+                        Fcsq = 0.
+                        
+                    HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
+                    HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
+                    FoMax = max(FoMax,Fosq)
+                    HKLref.append([h,k,l,Fosq,sigFosq,Fcsq,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
+            S = File.readline()
+    else:                   #dumb h,k,l,Fo,sigFo .hkl file
+        while S:
+            h,k,l,Fo,sigFo = S.split()
+            h = int(h)
+            k = int(k)
+            l = int(l)
+            Fo = float(Fo)
+            sigFo = float(sigFo)
+            HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
+            HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
+            FoMax = max(FoMax,Fo)
+            HKLref.append([h,k,l,Fo**2,2.*Fo*sigFo,0,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
+            S = File.readline()
     File.close()
-    return HKLref
+    return HKLref,HKLmin,HKLmax,FoMax,ifFc
 
 def GetPowderData(filename,Pos,Bank,DataType):
     '''Reads one BANK of data from GSAS raw powder data file

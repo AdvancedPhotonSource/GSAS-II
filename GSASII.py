@@ -14,7 +14,17 @@ if int(main) > 0 or int(sub) > 91:
     import wxmpl131 as wxmpl
 else:
     import wxmpl as wxmpl
+
+# determine a binary path pased on the host OS and the python version
+if sys.platform == "win32":
+    bindir = 'binwin%d.%d' % sys.version_info[0:2]
+elif sys.platform == "darwin":
+    bindir = 'binmac%d.%d' % sys.version_info[0:2]
+else:
+    bindir = 'bin'
+if ospath.exists(ospath.abspath(bindir)): sys.path.insert(0,ospath.abspath(bindir))
 import pylab
+
 import GSASIIIO as G2IO
 import GSASIIcomp as G2cmp
 import GSASIIgrid as G2gd

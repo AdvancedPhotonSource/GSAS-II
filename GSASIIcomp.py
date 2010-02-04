@@ -6,7 +6,18 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import GSASIIgrid as G2gd
-import pypowder as pyp
+try: 
+    import pypowder as pyp
+except:
+    # create an app to display the error, since we are still loading routines at this point 
+    app = wx.App()
+    app.MainLoop()
+    msg = wx.MessageDialog(None, message="Unable to load the GSAS powder computation module, pypowder",
+                     caption="Import Error",
+                     style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
+    msg.ShowModal()
+    # this error is non-recoverable, so just quit
+    exit()
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)

@@ -14,17 +14,18 @@ if int(main) > 0 or int(sub) > 91:
     import wxmpl131 as wxmpl
 else:
     import wxmpl as wxmpl
+import pylab
 
-# determine a binary path pased on the host OS and the python version
+# determine a binary path pased on the host OS and the python version, path is relative to 
+# location of this file
 if sys.platform == "win32":
     bindir = 'binwin%d.%d' % sys.version_info[0:2]
 elif sys.platform == "darwin":
     bindir = 'binmac%d.%d' % sys.version_info[0:2]
 else:
     bindir = 'bin'
-if ospath.exists(ospath.abspath(bindir)): sys.path.insert(0,ospath.abspath(bindir))
-import pylab
-
+if ospath.exists(ospath.join(sys.path[0],bindir)): sys.path.insert(0,ospath.join(sys.path[0],bindir))
+# load the GSAS routines
 import GSASIIIO as G2IO
 import GSASIIcomp as G2cmp
 import GSASIIgrid as G2gd

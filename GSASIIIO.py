@@ -442,7 +442,15 @@ def GetImgData(filename):
 def GetMAR345Data(filename):
     import array as ar
     import struct as st
-    import pack_f as pf
+    try:
+        import pack_f as pf
+    except:
+        msg = wx.MessageDialog(None, message="Unable to load the GSAS MAR image decompression, pack_f",
+                               caption="Import Error",
+                               style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
+        msg.ShowModal()
+        return None,None,None,None
+
     print 'Read Mar345 file: ',filename
     File = open(filename,'rb')
     head = File.read(4095)

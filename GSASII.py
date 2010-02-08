@@ -295,11 +295,7 @@ class GSASII(wx.Frame):
         event.Skip()
         
     def OnPwdrReadMenu(self, event):
-        if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
-            self.PatternTree.SetItemPyData(sub,[''])
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
-            self.PatternTree.SetItemPyData(sub,[0])
+        self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose files', '.', '', 
             'GSAS fxye files (*.fxye)|*.fxye|GSAS fxy files (*.fxy)|*.fxy|All files (*.*)|*.*', 
             wx.OPEN | wx.MULTIPLE)
@@ -372,9 +368,7 @@ class GSASII(wx.Frame):
         
     def OnReadPowderPeaks(self,event):
         Cuka = 1.54052
-        if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
-            self.PatternTree.SetItemPyData(sub,[''])
+        self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose file with peak list', '.', '', 
             'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.OPEN)
         if self.dirname:
@@ -400,11 +394,10 @@ class GSASII(wx.Frame):
             
     def OnImageRead(self,event):
         import copy
-        if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
-            self.PatternTree.SetItemPyData(sub,[''])
+        self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose image file', '.', '', \
-            'MAR345 (*.mar3450)|*.mar3450|ADSC Image (*.img)|*.img|Perkin-Elmer TIF (*.tif)|*.tif|All files (*.*)|*.*',wx.OPEN)
+            'MAR345 (*.mar3450)|*.mar3450|ADSC Image (*.img)|*.img \
+            |Perkin-Elmer TIF (*.tif)|*.tif|GE Image sum (*.sum)|*.sum|All files (*.*)|*.*',wx.OPEN)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
@@ -420,6 +413,8 @@ class GSASII(wx.Frame):
                     Image[0][0] = 0
                 elif ext == '.mar3450':
                     Comments,Data,Size,Image = G2IO.GetMAR345Data(self.imagefile)
+                elif ext == '.sum':
+                    Comments,Data,Size,Image = G2IO.GetGEsumData(self.imagefile)
                 if Comments:
                     Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(self.imagefile))
                     self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
@@ -436,6 +431,7 @@ class GSASII(wx.Frame):
                         Data['refine'] = [True,False,True,True,True]
                         Data['showLines'] = False
                         Data['ring'] = []
+                        Data['ellipses'] = []
                         Data['masks'] = []
                         Data['calibrant'] = ''
                         Data['IOradii'] = [10.,100.]
@@ -455,9 +451,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         
     def OnSnglReadMenu(self,event):
-        if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
-            self.PatternTree.AppendItem(parent=self.root,text='')
-            self.PatternTree.AppendItem(parent=self.root,text='Controls')
+        self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose file', '.', '', 
             'hkl files (*.hkl)|*.hkl|All files (*.*)|*.*', 
             wx.OPEN)
@@ -493,6 +487,14 @@ class GSASII(wx.Frame):
                     wx.EndBusyCursor()    
         finally:
             dlg.Destroy()
+            
+    def CheckNotebook(self):
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
+            self.PatternTree.SetItemPyData(sub,[''])
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
+            self.PatternTree.SetItemPyData(sub,[0])
+        
         
     class SumDialog(wx.Dialog):
         def __init__(self,parent,title,text,type,data):
@@ -1278,10 +1280,11 @@ class GSASII(wx.Frame):
             pylab.draw()
             
     def PlotImage(self):
+        from matplotlib.patches import Ellipse
 
         def OnImMotion(event):
             self.pdplot.canvas.SetToolTipString('')
-            if event.xdata:
+            if (xlim[0] < event.xdata < xlim[1]) & (ylim[0] > event.ydata > ylim[1]):
                 item = self.itemPicked
                 if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
                     if 'Text' in str(item) and Data['refine'][0]:
@@ -1297,8 +1300,9 @@ class GSASII(wx.Frame):
                             radius = math.sqrt(xpos**2+ypos**2)
                             self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius/scalex))                           
                 else:
-                    self.pdplot.canvas.SetToolTipString('%6d'%(self.ImageZ[int(event.ydata)*self.imScale] \
-                        [int(event.xdata)*self.imScale]))
+                    xpos = int(event.xdata)*self.imScale
+                    ypos = int(event.ydata)*self.imScale
+                    self.pdplot.canvas.SetToolTipString('%6d'%(self.ImageZ[ypos][xpos]))
 
         def OnImPlotKeyPress(event):
             if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
@@ -1315,15 +1319,18 @@ class GSASII(wx.Frame):
                     cent = Data['center'] = [Xpos*pixelSize[0]/1000.,Ypos*pixelSize[1]/1000.] #convert to mm
                     self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
                 elif event.key == 'r':
-                    w = 20
-                    w2 = w*2
-                    Z = self.ImageZ[Ypos-w:Ypos+w,Xpos-w:Xpos+w]
-                    Zmax = np.argmax(Z)
-                    Xpos += Zmax%w2-w
-                    Ypos += Zmax/w2-w
-                    xpos = Xpos*pixelSize[0]/1000.
-                    ypos = Ypos*pixelSize[1]/1000.
-                    Data['ring'].append([xpos,ypos])
+                    Xpos,Ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpos,Ypos)
+                    if I and J:
+                        xpos = Xpos*pixelSize[0]/1000.
+                        ypos = Ypos*pixelSize[1]/1000.
+                        Data['ring'].append([xpos,ypos])
+                elif event.key == 'd':
+                    scale = self.imScale*pixelSize[0]/1000.
+                    xypos = [event.xdata*scale,event.ydata*scale]
+                    rings = Data['ring']
+                    for ring in rings:
+                        if np.allclose(ring,xypos,.01,0):
+                            rings.remove(ring)                                               
                 elif event.key == 'm':
                     xpos = Xpos*pixelSize[0]/1000.
                     ypos = Ypos*pixelSize[1]/1000.
@@ -1396,6 +1403,8 @@ class GSASII(wx.Frame):
             self.IMevent.append(self.pdplot.canvas.mpl_connect('button_release_event', OnImRelease))            
         PickId = self.PickId
         ax = self.pdplot.add_subplot(111)
+        self.PlotAX = ax
+        ax.set_title(self.PatternTree.GetItemText(self.Image)[4:])
         size,self.ImageZ = self.PatternTree.GetItemPyData(self.Image)
         Data = self.PatternTree.GetItemPyData( \
             G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
@@ -1409,8 +1418,8 @@ class GSASII(wx.Frame):
             xlim = self.Img.axes.get_xlim()
             ylim = self.Img.axes.get_ylim()
         pixelSize = Data['pixelSize']
-        scalex = 1000./(pixelSize[0]*self.imScale)
-        scaley = 1000./(pixelSize[1]*self.imScale)
+        Data['scalex'] = scalex = 1000./(pixelSize[0]*self.imScale)
+        Data['scaley'] = scaley = 1000./(pixelSize[1]*self.imScale)
         Imin,Imax = Data['range'][1]
         acolor = mpl.cm.get_cmap(Data['color'])
         xcent,ycent = Data['center']
@@ -1445,7 +1454,10 @@ class GSASII(wx.Frame):
         for xring,yring in Data['ring']:
             xring *= scalex
             yring *= scaley
-            ax.text(xring,yring,'+',ha='center',va='center')
+            ax.text(xring,yring,'+',ha='center',va='center',picker=3)
+        for ellipse in Data['ellipses']:
+            cent,phi,[width,height] = ellipse
+            ax.add_artist(Ellipse([cent[0]*scalex,cent[1]*scaley],2*width*scalex,2*height*scalex,phi,fc=None))
         self.Img.axes.set_xlim(xlim)
         self.Img.axes.set_ylim(ylim)
         self.pdplot.colorbar(self.Img)
@@ -1692,8 +1704,17 @@ class GSASII(wx.Frame):
                     self.pdplot.canvas.SetToolTipString('(%3d,%3d,%3d)'%(xpos,ypos,zpos))
                     
         def OnSCPick(event):
-#            print str(event.artist).split('(')
-            pass
+            zpos = Data['Layer']
+            pos = event.artist.center
+            if '100' in Data['Zone']:
+                self.pdplot.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(zpos,pos[0],pos[1]))
+            elif '010' in Data['Zone']:
+                self.pdplot.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],zpos,pos[1]))
+            elif '001' in Data['Zone']:
+                self.pdplot.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],pos[1],zpos))                 
+            
+        def OnSCKeyPress(event):
+            print event.key
                     
         try:
             if self.NewPlot:
@@ -1708,6 +1729,7 @@ class GSASII(wx.Frame):
             self.pdplot.canvas.set_window_title('Structure Factors')
             self.NewPlot = True
         if not self.SCevent:
+            self.SCevent.append(self.pdplot.canvas.mpl_connect('key_press_event', OnSCKeyPress))
             self.SCevent.append(self.pdplot.canvas.mpl_connect('pick_event', OnSCPick))
             self.SCevent.append(self.pdplot.canvas.mpl_connect('motion_notify_event', OnSCMotion))
         PickId = self.PickId
@@ -1729,6 +1751,7 @@ class GSASII(wx.Frame):
         zones = ['100','010','001']
         pzone = [[1,2],[0,2],[0,1]]
         izone = zones.index(Data['Zone'])
+        ax.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
         for h,k,l,Fosq,sig,Fcsq,x,x,x in HKLref:
             H = [h,k,l]
             if H[izone] == Data['Layer']:
@@ -1750,9 +1773,10 @@ class GSASII(wx.Frame):
                     A = abs(Fosq-Fcsq)/(scale*sig)
                     if A < 3.0: A = 0                    
                 xy = (H[pzone[izone][0]],H[pzone[izone][1]])
-                ax.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
+                if A > 0.0:
+                    ax.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
                 if B:
-                    ax.add_artist(Circle(xy,radius=B,ec='b',fc='w',picker=3))
+                    ax.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
                     radius = C
                     if radius > 0:
                         if A > B:

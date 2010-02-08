@@ -395,6 +395,25 @@ def GetSTDdata(filename,Pos,Bank,DataType):
         S = File.readline()
     File.close()
     return [x,y,w,yc,yb,yd]
+    
+def GetGEsumData(filename):
+    import array as ar
+    print 'Read GE sum file: ',filename
+    File = open(filename,'rb')
+    size = 2048
+    image = np.zeros(shape=(size,size),dtype=np.int32)
+    head = ['GE detector sum data',]
+    row = 0
+    pos = 0
+    while row < size:
+        File.seek(pos)
+        line = ar.array('f',File.read(4*size))
+        image[row] = np.asarray(line)
+        row += 1
+        pos += 4*size
+    data = {'pixelSize':(200,200),'wavelength':0.10,'distance':250.0,'center':[204.8,204.8]}  
+    return head,data,size,image
+    File.close()    
         
 def GetImgData(filename):
     import struct as st

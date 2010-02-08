@@ -18,11 +18,13 @@ except:
     msg.ShowModal()
     # this error is non-recoverable, so just quit
     exit()
+import fitellipse as fte
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
 tand = lambda x: math.tan(x*math.pi/180.)
+atand = lambda x: 180.*math.atan(x)/math.pi
 cosd = lambda x: math.cos(x*math.pi/180.)
 acosd = lambda x: 180.*math.acos(x)/math.pi
 rdsq2d = lambda x,p: round(1.0/math.sqrt(x),p)
@@ -1182,22 +1184,119 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
         return True,dmin,cells
     else:
         return False,0,0
-
-def ImageCalibrate(data,image,PlotImage):
+        
+def FitEllipse(ring):
+    N = len(ring)
+    A = np.zeros(shape=(N,5),order='F',dtype=np.float32)
+    B = np.zeros(shape=N,dtype=np.float32)
+    X = np.zeros(shape=N,dtype=np.float32)
+    Y = np.zeros(shape=N,dtype=np.float32)
+    for i,(x,y) in enumerate(ring):
+        X[i] = x
+        Y[i] = y
+    B,Krank,Rnorm = fte.fitqdr(N,A,B,X,Y)
+    
+    ell = [1.+B[0],B[1],1.-B[0],B[2],B[3],B[4]]
+    # ell is [A,B,C,D,E,F] for Ax^2+Bxy+Cy^2+Dx+Ey+F = 0
+    det = 4.*ell[0]*ell[2]-ell[1]**2
+    if det < 0.:
+        print 'hyperbola!'
+        return 0
+    elif det == 0.:
+        print 'parabola!'
+        return 0
+    cent = [(ell[1]*ell[4]-2.0*ell[2]*ell[3])/det, \
+        (ell[1]*ell[3]-2.0*ell[0]*ell[4])/det]
+    phi = 0.5*atand(ell[1]/(ell[0]-ell[2]))
+    
+    a3 = 0.5*(ell[0]+ell[2]+(ell[0]-ell[2])/cosd(2.0*phi))
+    b3 = ell[0]+ell[2]-a3
+    f3 = ell[0]*cent[0]**2+ell[2]*cent[1]**2+ell[1]*cent[0]*cent[1]-ell[5]
+    if f3/a3 < 0 or f3/b3 < 0:
+        return 0
+    sr1 = math.sqrt(f3/a3)
+    sr2 = math.sqrt(f3/b3)
+    return ell,cent,phi,[sr1,sr2]
+        
+def FitCircle(ring):
+    N = len(ring)
+    A = np.zeros(shape=(N,3),order='F',dtype=np.float32)
+    B = np.zeros(shape=N,dtype=np.float32)
+    X = np.zeros(shape=N,dtype=np.float32)
+    Y = np.zeros(shape=N,dtype=np.float32)
+    for i,(x,y) in enumerate(ring):
+        X[i] = x
+        Y[i] = y
+    B,Krank,Rnorm = fte.fitcrc(N,A,B,X,Y)
+    cent = (-0.5*B[0],-0.5*B[1])
+    R2 = cent[0]**2+cent[1]**2-B[2]
+    if R2 > 0.0:
+        radius = math.sqrt(R2)
+    else:
+        return 0
+    return cent,radius
+    
+def ImageLocalMax(image,w,Xpos,Ypos):
+    w2 = w*2
+    Z = image[Ypos-w:Ypos+w,Xpos-w:Xpos+w]
+    Zmax = np.argmax(Z)
+    Zmin = np.argmin(Z)
+    Xpos += Zmax%w2-w
+    Ypos += Zmax/w2-w
+    return Xpos,Ypos,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
+    
+def makeRing(cent,phi,semiradii,scalex,scaley,imScale,image):
+    cphi = cosd(phi)
+    sphi = sind(phi)
+    ring = []
+    for a in range(0,360,4):
+        x = semiradii[0]*cosd(a)
+        y = semiradii[1]*sind(a)
+        X = (cphi*x-sphi*y+cent[0])*scalex*imScale
+        Y = (sphi*x+cphi*y+cent[1])*scaley*imScale
+        if (0 < X < len(image)) and (0 < Y < len(image)):        
+            X,Y,I,J = ImageLocalMax(image,20,X,Y)
+            if I and J:
+                X /= scalex*imScale
+                Y /= scaley*imScale
+                ring.append([X,Y])    
+    return ring
+        
+def ImageCalibrate(self,data):
+    import ImageCalibrants as calFile
     print 'image calibrate'
+    if not data['calibrant']:
+        print 'no calibration material selected'
+        return
+    Bravais,cell = calFile.Calibrants[data['calibrant']]
     ring = data['ring']
+    data['ellipses'] = ellipses = []
+    scalex = data['scalex']             # = 1000./(pixelSize[0]*self.imScale)
+    scaley = data['scaley']
     if len(ring) < 5:
         print 'not enough inner ring points for ellipse'
         return
-    A = np.zeros(shape=(5,len(ring)))
-    B = np.zeros(shape=len(ring))
-    for i,(x,y) in enumerate(ring):
-        A[0,i] = x**2-y**2
-        A[1,i] = x*y
-        A[2,i] = x
-        A[3,i] = y
-        A[4,i] = 1.
-        B[i] = -(x**2+y**2)
+    outB = FitEllipse(ring)
+    if outB:
+        ell,cent,phi,semiradii = outB
+        print 'start ellipse coeff.',ell
+        print 'start:',cent,phi,semiradii
+        data['ellipses'].append([cent,phi,semiradii])
+        self.PlotImage()
+    else:
+        return False
+    ring = makeRing(cent,phi,semiradii,scalex,scaley,self.imScale,self.ImageZ)
+    ell,cent,phi,semiradii = FitEllipse(ring)
+    print '1st ring ellipse coeff.',ell
+    print '1st ring:',cent,phi,semiradii
+    data['ellipses'].append([cent,phi,semiradii])
+    data['center'] = cent           #not right!! (but useful for now)
+    self.PlotImage()
         
-    for a in A: print a
-    print B
+    
+    
+        
+        
+    return True
+        
+        

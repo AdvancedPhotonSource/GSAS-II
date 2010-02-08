@@ -827,6 +827,8 @@ def UpdateHKLControls(self,data):
     scaleSel = wx.Slider(parent=self.dataDisplay,maxValue=1000,minValue=100,
         style=wx.SL_HORIZONTAL,value=int(data['Scale']*100))
     scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    scaleSel.SetLineSize(100)
+    scaleSel.SetPageSize(900)
     scaleSel.Bind(wx.EVT_SLIDER, OnScaleSlider)
     mainSizer.Add(scaleSizer,1,wx.EXPAND|wx.RIGHT)
     
@@ -852,8 +854,10 @@ def UpdateHKLControls(self,data):
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     layerSel = wx.Slider(parent=self.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
         style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
-    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    layerSel.SetLineSize(1)
+    layerSel.SetLineSize(5)
     layerSel.Bind(wx.EVT_SLIDER, OnLayerSlider)    
+    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
     layerSizer.Add((10,0),0)    
     mainSizer.Add(layerSizer,1,wx.EXPAND|wx.RIGHT)
 
@@ -864,6 +868,7 @@ def UpdateHKLControls(self,data):
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
         
 def UpdateImageControls(self,data):
+    import ImageCalibrants as calFile
     
     def OnNewColorBar(event):
         data['color'] = colSel.GetValue()
@@ -943,22 +948,31 @@ def UpdateImageControls(self,data):
         else:
             self.imageDefault = copy.copy(data)
             data['setDefault'] = True
-        
-    
+            
+    def OnClearCalib(event):
+        data['ring'] = []
+        data['ellipses'] = []
+        self.PlotImage()
+        clearCalib.SetValue(False)
+            
     def OnCalibrate(event):
-        G2cmp.ImageCalibrate(data,self.ImageZ,self.PlotImage())
-        
+        if G2cmp.ImageCalibrate(self,data):
+            Status.SetStatusText('Calibration successful')
+            cent = data['center']
+            self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
+        else:
+            Status.SetStatusText('Calibration failed')
+                    
     def OnIntegrate(event):
         print 'image integrate'
         
     def SetStatusLine():
         if data['refine'][0]:
-            Status.SetStatusText("On Image: key 'c' to mark center or 'r' on inner ring for calibration")
+            Status.SetStatusText("On Image: key 'c' to mark center, 'r' on inner ring for calibration or 'd' to delete")
         else:
-            Status.SetStatusText("On Image: key 'r' on inner ring for calibration")
+            Status.SetStatusText("On Image: key 'r' on inner ring for calibration or 'd' to delete")
                               
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
-    import ImageCalibrants as calFile
     calList = [m for m in calFile.Calibrants.keys()]
     if self.dataDisplay:
         self.dataDisplay.Destroy()
@@ -1094,7 +1108,9 @@ def UpdateImageControls(self,data):
     dataSizer.Add(setDefault,0)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
     setDefault.SetValue(data['setDefault'])
-    dataSizer.Add((5,5),0)
+    clearCalib = wx.CheckBox(parent=self.dataDisplay,label='Clear calibration rings?')
+    dataSizer.Add(clearCalib,0)
+    clearCalib.Bind(wx.EVT_CHECKBOX, OnClearCalib)
         
     mainSizer.Add(dataSizer,0)
     

@@ -398,20 +398,28 @@ def GetSTDdata(filename,Pos,Bank,DataType):
     
 def GetGEsumData(filename):
     import array as ar
-    print 'Read GE sum file: ',filename
+    print 'Read GE sum file: ',filename    
     File = open(filename,'rb')
     size = 2048
+    if '.sum' in filename:
+        head = ['GE detector sum data from APS 1-ID',]
+    if '.avg' in filename:
+#        image = np.zeros(shape=(size,size),dtype=np.int16)
+        head = ['GE detector avg data from APS 1-ID',]
     image = np.zeros(shape=(size,size),dtype=np.int32)
-    head = ['GE detector sum data',]
     row = 0
     pos = 0
     while row < size:
         File.seek(pos)
-        line = ar.array('f',File.read(4*size))
+        if '.sum' in filename:
+            line = ar.array('f',File.read(4*size))
+            pos += 4*size
+        elif '.avg' in filename:
+            line = ar.array('H',File.read(2*size))
+            pos += 2*size
         image[row] = np.asarray(line)
         row += 1
-        pos += 4*size
-    data = {'pixelSize':(200,200),'wavelength':0.10,'distance':250.0,'center':[204.8,204.8]}  
+    data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8]}  
     return head,data,size,image
     File.close()    
         

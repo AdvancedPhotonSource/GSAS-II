@@ -1214,9 +1214,14 @@ def FitEllipse(ring):
     f3 = ell[0]*cent[0]**2+ell[2]*cent[1]**2+ell[1]*cent[0]*cent[1]-ell[5]
     if f3/a3 < 0 or f3/b3 < 0:
         return 0
-    sr1 = math.sqrt(f3/a3)
-    sr2 = math.sqrt(f3/b3)
-    return ell,cent,phi,[sr1,sr2]
+    if phi > 0.:        
+        sr1 = math.sqrt(f3/a3)
+        sr2 = math.sqrt(f3/b3)
+    else:
+        sr1 = math.sqrt(f3/a3)
+        sr2 = math.sqrt(f3/b3)
+        phi *= -1.        
+    return cent,phi,[sr1,sr2]
         
 def FitCircle(ring):
     N = len(ring)
@@ -1238,60 +1243,103 @@ def FitCircle(ring):
     
 def ImageLocalMax(image,w,Xpos,Ypos):
     w2 = w*2
-    Z = image[Ypos-w:Ypos+w,Xpos-w:Xpos+w]
-    Zmax = np.argmax(Z)
-    Zmin = np.argmin(Z)
-    Xpos += Zmax%w2-w
-    Ypos += Zmax/w2-w
-    return Xpos,Ypos,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
+    size = len(image)
+    if (w < Xpos < size-w) and (w < Ypos < size-w):
+        Z = image[Ypos-w:Ypos+w,Xpos-w:Xpos+w]
+        Zmax = np.argmax(Z)
+        Zmin = np.argmin(Z)
+        Xpos += Zmax%w2-w
+        Ypos += Zmax/w2-w
+        return Xpos,Ypos,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
+    else:
+        return 0,0,0,0
     
-def makeRing(cent,phi,semiradii,scalex,scaley,imScale,image):
+def makeRing(ellipse,scalex,scaley,imScale,image):
+    cent,phi,semiradii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
     ring = []
-    for a in range(0,360,4):
+    for a in range(0,360):
         x = semiradii[0]*cosd(a)
         y = semiradii[1]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex*imScale
         Y = (sphi*x+cphi*y+cent[1])*scaley*imScale
-        if (0 < X < len(image)) and (0 < Y < len(image)):        
-            X,Y,I,J = ImageLocalMax(image,20,X,Y)
-            if I and J:
-                X /= scalex*imScale
-                Y /= scaley*imScale
-                ring.append([X,Y])    
+        X,Y,I,J = ImageLocalMax(image,20,X,Y)      
+        if I and J:
+            X /= scalex*imScale
+            Y /= scaley*imScale
+            ring.append([X,Y])
+    if len(ring) < 75:             #want more than 1/3 of a circle
+        return []
     return ring
         
 def ImageCalibrate(self,data):
+    import copy
     import ImageCalibrants as calFile
     print 'image calibrate'
-    if not data['calibrant']:
-        print 'no calibration material selected'
-        return
-    Bravais,cell = calFile.Calibrants[data['calibrant']]
     ring = data['ring']
-    data['ellipses'] = ellipses = []
     scalex = data['scalex']             # = 1000./(pixelSize[0]*self.imScale)
     scaley = data['scaley']
     if len(ring) < 5:
         print 'not enough inner ring points for ellipse'
-        return
+        return False
+        
+    #fit start points on inner ring
+    data['ellipses'] = []
     outB = FitEllipse(ring)
     if outB:
-        ell,cent,phi,semiradii = outB
-        print 'start ellipse coeff.',ell
-        print 'start:',cent,phi,semiradii
-        data['ellipses'].append([cent,phi,semiradii])
-        self.PlotImage()
+        ellipse = outB
+        print 'start:',ellipse
     else:
         return False
-    ring = makeRing(cent,phi,semiradii,scalex,scaley,self.imScale,self.ImageZ)
-    ell,cent,phi,semiradii = FitEllipse(ring)
-    print '1st ring ellipse coeff.',ell
-    print '1st ring:',cent,phi,semiradii
-    data['ellipses'].append([cent,phi,semiradii])
-    data['center'] = cent           #not right!! (but useful for now)
+        
+    #setup 360 points on that ring for "good" fit
+    Ring = makeRing(ellipse,scalex,scaley,self.imScale,self.ImageZ)
+    if Ring:
+        ellipse = FitEllipse(Ring)
+    else:
+        print '1st ring not sufficiently complete to proceed'
+        return False
+    print 'inner ring:',ellipse
+    data['center'] = ellipse[0]           #not right!! (but useful for now)
+#    data['ellipses'].append(ellipse[:])
     self.PlotImage()
+    
+    #setup for calibration
+    data['rings'] = []
+    if not data['calibrant']:
+        print 'no calibration material selected'
+        return True
+    Bravais,cell = calFile.Calibrants[data['calibrant']]
+    A = cell2A(cell)
+    wave = data['wavelength']
+    dist = data['distance']
+    refine = data['refine']             #flags for center, wavelength,distance, tilt angle, tilt rotation
+    HKL = GenHBravais(0.5,Bravais,A)
+    dList = []
+    for i,H in enumerate(HKL):
+        cent,phi,semiradii = ellipse
+        meanRadius = semiradii[0]**2/semiradii[1]
+        dsp = 1.0/math.sqrt(calc_rDsq(H,A))
+        tth = 2.0*asind(wave/(2.*dsp))
+        radius = dist*tand(tth)
+        dList.append([dsp,radius])
+        semiradii[0] *= radius/meanRadius
+        semiradii[1] *= radius/meanRadius        
+        Ring = makeRing(ellipse,scalex,scaley,self.imScale,self.ImageZ)
+        if Ring:
+            data['rings'].append(Ring)
+            ellipse = FitEllipse(Ring)
+            cosb = (1.-ellipse[2][0]**2/ellipse[2][1]**2)*cosd(tth)**2
+            print 'for ring #',i,cosb,(ellipse[2][0]**2/ellipse[2][1])/tand(tth)
+            data['ellipses'].append(copy.deepcopy(ellipse))
+            self.PlotImage()
+        else:
+            break
+    self.PlotImage()
+    
+            
+    
         
     
     

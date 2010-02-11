@@ -397,7 +397,9 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose image file', '.', '', \
             'MAR345 (*.mar3450)|*.mar3450|ADSC Image (*.img)|*.img \
-            |Perkin-Elmer TIF (*.tif)|*.tif|GE Image sum (*.sum)|*.sum|All files (*.*)|*.*',wx.OPEN)
+            |Perkin-Elmer TIF (*.tif)|*.tif \
+            |GE Image sum (*.sum)|*.sum|GE Image avg (*.avg) \
+            |*.avg|All files (*.*)|*.*',wx.OPEN)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
@@ -413,7 +415,7 @@ class GSASII(wx.Frame):
                     Image[0][0] = 0
                 elif ext == '.mar3450':
                     Comments,Data,Size,Image = G2IO.GetMAR345Data(self.imagefile)
-                elif ext == '.sum':
+                elif ext in ['.sum','.avg']:
                     Comments,Data,Size,Image = G2IO.GetGEsumData(self.imagefile)
                 if Comments:
                     Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(self.imagefile))
@@ -431,6 +433,7 @@ class GSASII(wx.Frame):
                         Data['refine'] = [True,False,True,True,True]
                         Data['showLines'] = False
                         Data['ring'] = []
+                        Data['rings'] = []
                         Data['ellipses'] = []
                         Data['masks'] = []
                         Data['calibrant'] = ''
@@ -1302,7 +1305,8 @@ class GSASII(wx.Frame):
                 else:
                     xpos = int(event.xdata)*self.imScale
                     ypos = int(event.ydata)*self.imScale
-                    self.pdplot.canvas.SetToolTipString('%6d'%(self.ImageZ[ypos][xpos]))
+                    if (0 <= xpos <= size) and (0 <= ypos <= size):
+                        self.pdplot.canvas.SetToolTipString('%6d'%(self.ImageZ[ypos][xpos]))
 
         def OnImPlotKeyPress(event):
             if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
@@ -1455,6 +1459,11 @@ class GSASII(wx.Frame):
             xring *= scalex
             yring *= scaley
             ax.text(xring,yring,'+',ha='center',va='center',picker=3)
+#        for ring in Data['rings']:
+#            for xring,yring in ring:
+#                xring *= scalex
+#                yring *= scaley
+#                ax.text(xring,yring,'+',ha='center',va='center')            
         for ellipse in Data['ellipses']:
             cent,phi,[width,height] = ellipse
             ax.add_artist(Ellipse([cent[0]*scalex,cent[1]*scaley],2*width*scalex,2*height*scalex,phi,fc=None))

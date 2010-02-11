@@ -951,6 +951,7 @@ def UpdateImageControls(self,data):
             
     def OnClearCalib(event):
         data['ring'] = []
+        data['rings'] = []
         data['ellipses'] = []
         self.PlotImage()
         clearCalib.SetValue(False)

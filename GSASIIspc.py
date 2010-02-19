@@ -1,21 +1,37 @@
-#GSASII - Space group intrepretion routines
-#
-#   input string - space group symbol with spaces between axial fields
-#   returns [SGError,SGData]
-#       SGError = 0 for no errors; >0 for errors, see SGErrors below for details
-#       SGData dictionary entries are:
-#       'SpGrp': space group symbol slightly cleaned up
-#       'Laue':  one of '-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m'
-#       'SGInv': boolean; True if centrosymmetric, False if not
-#       'SGLatt': one of 'P','A','B','C','I','F','R'
-#       'SGUniq': one of 'a','b','c' if monoclinic, '' otherwise
-#       'SGCen': cell centering vectors [0,0,0] at least
-#       'SGOps': symmetry operations as [M,T] so that M*x+T = x'
-#
+"GSASII - Space group interpretion routines"
+
+
 import numpy as np
+import sys
+import os.path
+# determine a binary path pased on the host OS and the python version, path is relative to 
+# location of this file
+if sys.platform == "win32":
+    bindir = '../binwin%d.%d' % sys.version_info[0:2]
+elif sys.platform == "darwin":
+    bindir = '../binmac%d.%d' % sys.version_info[0:2]
+else:
+    bindir = '../bin'
+if os.path.exists(os.path.join(sys.path[0],bindir)): sys.path.insert(0,os.path.join(sys.path[0],bindir))
+
+import pypowder as pyd
 
 def SpcGroup(SGSymbol):
-    import pypowder as pyd
+    '''
+   input: space group symbol (string) with spaces between axial fields
+   returns [SGError,SGData]
+       SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
+       returns dictionary SGData with entries:
+         'SpGrp': space group symbol slightly cleaned up
+         'Laue':  one of '-1','2/m','mmm','4/m','4/mmm','3R','3mR','3',
+                  '3m1','31m','6/m','6/mmm','m3','m3m'
+         'SGInv': boolean; True if centrosymmetric, False if not
+         'SGLatt': one of 'P','A','B','C','I','F','R'
+         'SGUniq': one of 'a','b','c' if monoclinic, '' otherwise
+         'SGCen': cell centering vectors [0,0,0] at least
+         'SGOps': symmetry operations as [M,T] so that M*x+T = x'
+         'SGSys': one of 'triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic'
+       '''
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
     LattSym = ('P','A','B','C','I','F','R')
     UniqSym = ('','','a','b','c','',)
@@ -65,6 +81,11 @@ def SpcGroup(SGSymbol):
     return SGInfo[8],SGData
 
 def SGErrors(IErr):
+    '''Interprets the error message code from SpcGroup. Used in SpaceGroup.
+    input:  SGError, from SpcGroup
+    returns a string with the error message or "Unknown error"
+    '''
+
     ErrString = [' ',
         'Less than 2 operator fields were found',
         'Illegal Lattice type, not P, A, B, C, I, F or R',
@@ -92,9 +113,17 @@ def SGErrors(IErr):
         ' ','unknown error in sgroup',' ',' ',' ',
         'Illegal character in the space group symbol',
         ]
-    return ErrString[IErr]
+    try:
+        return ErrString[IErr]
+    except:
+        return "Unknown error"
     
 def SGPrint(SGData):
+    '''
+    Print the output of SpcGroup in a nicely formatted way. Used in SpaceGroup
+    input:  SGData, from SpcGroup
+    returns a list of strings with the space group details
+    '''
     XYZ = ('-Z ','-Y ','-X ','X-Y','ERR','Y-X',' X ',' Y ',' Z ','+X ','+Y ','+Z ')
     TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
     POL = (' ','x','y','x y','z','x z','y z','xyz','111')
@@ -158,21 +187,46 @@ def SGPrint(SGData):
     return SGText
     
 def SpaceGroup(SgSym):
+    '''
+    Print the output of SpcGroup in a nicely formatted way. 
+      input: space group symbol (string) with spaces between axial fields
+      returns nothing
+    '''
     E,A = SpcGroup(SgSym)
     if E > 0:
         print SGErrors(E)
         return
-    L = SGPrint(A)
-    for l in L:
+    for l in SGPrint(A):
         print l
 
 def MoveToUnitCell(XYZ):
+    '''
+    Translates a set of coordinates so that all values are >=0 and < 1 
+      input: a list or numpy array of any length. Note that the object is modified  in place.
+      output: none
+    '''
     for i,x in enumerate(XYZ):
         x = ((x % 1.0)+1.0) % 1.0
         if x > 0.9999: x = 0.0
         XYZ[i] = x
         
 def GenAtom(XYZ,SGData,ifAll=False):
+    '''
+    Generates the equivalent positions for a specified coordinate and space group
+    input:  
+       XYZ an array, tuple or list containing 3 elements: x, y & z
+       SGData, from SpcGroup
+       ifAll=True causes the return to provide the unique set of 
+                  equivalent positions
+            =False causes the input position to be repeated. This is the default,
+                   but why someone would want this, I am not sure.
+    Returns a list of two element tuples: 
+       The first element is the coordinate as a three-element array and 
+       the second describes the symmetry used to generate the site, of form [-][C]SS
+          C indicates a centering operation was used (omitted if the 1st, [0,0,0])
+          SS is the symmetry operator number (1-24)
+          - indicates the center of symmetry was used (omitted otherwise)      
+    '''
     XYZEquiv = []
     Idup = []
     X = np.array(XYZ)
@@ -397,6 +451,15 @@ def GetCSuinel(siteSym):
     return CSuinel[indx[1]]
         
 def SytSym(XYZ,SGData):
+    '''
+    Generates the number of equivalent positions and a site symmetry code for a specified coordinate and space group
+    input:  
+       XYZ: an array, tuple or list containing 3 elements: x, y & z
+       SGData: from SpcGroup
+    Returns a two element tuple:
+       The 1st element is a code for the site symmetry (see GetOprPtrName)
+       The 2nd element is the site multiplicity
+    '''
     def PackRot(SGOps):
         IRT = []
         for ops in SGOps:

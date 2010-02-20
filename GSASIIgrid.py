@@ -4,6 +4,7 @@ import wx.grid as wg
 import matplotlib as mpl
 import math
 import time
+import cPickle
 import GSASIIcomp as G2cmp
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
@@ -17,8 +18,14 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, 
 ] = [wx.NewId() for _init_coll_Atom_Items in range(2)]
 
-[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, 
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(2)]
+[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB,
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(3)]
+
+[ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
+] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
+
+[  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL,
+] = [wx.NewId() for _init_coll_INDEX_Items in range(3)]
 
 class DataFrame(wx.Frame):
     def _init_coll_BlankMenu(self,parent):
@@ -30,29 +37,64 @@ class DataFrame(wx.Frame):
     def _init_coll_ImageMenu(self,parent):
         parent.Append(menu=self.ImageEdit, title='Image Operations')
         
+    def _init_coll_PeakMenu(self,parent):
+        parent.Append(menu=self.PeakEdit, title='Peak Fitting')
+
+    def _init_coll_IndexMenu(self,parent):
+        parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
+        
     def _init_coll_Atom_Items(self,parent):
-        self.Add = parent.Append(help='',id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append empty atom')
-        self.Add = parent.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert empty atom',
+        parent.Append(help='',id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append empty atom')
+        parent.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert empty atom',
             help='Double left click on atom row to Insert before')
             
     def _init_coll_Image_Items(self,parent):
-        self.Add = parent.Append(help='',id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
-        self.Add = parent.Append(id=wxID_IMINTEGRATE, kind=wx.ITEM_NORMAL,text='Integrate',
-            help='')
+        parent.Append(help='',id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
+        parent.Append(help='',id=wxID_IMCLEARCALIB, kind=wx.ITEM_NORMAL,text='Clear calibration')
+        parent.Append(help='',id=wxID_IMINTEGRATE, kind=wx.ITEM_NORMAL,text='Integrate')
             
-        
+    def _init_coll_Peak_Items(self,parent):
+        self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
+            text='UnDo')
+        self.PeakFit = parent.Append(help='', id=wxID_PEAKFIT, kind=wx.ITEM_NORMAL,
+            text='PeakFit')
+        self.AutoPeakFit = parent.Append(help='', id=wxID_AUTOPEAKFIT, kind=wx.ITEM_NORMAL,
+            text='AutoPeakFit')
+            
+    def _init_coll_Index_Items(self,parent):
+        self.IndexPeaks = parent.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
+            text='Index Cell')
+        self.CopyCell = parent.Append(help='', id=wxID_COPYCELL, kind=wx.ITEM_NORMAL,
+            text='Copy Cell')
+        self.RefineCell = parent.Append(help='', id=wxID_REFINECELL, kind=wx.ITEM_NORMAL,
+            text='Refine Cell')
+
     def _init_utils(self):
         self.BlankMenu = wx.MenuBar()
         
         self.AtomsMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
+        self.PeakMenu = wx.MenuBar()
+        self.IndexMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
+        self.PeakEdit = wx.Menu(title='')
+        self.IndexEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
         self._init_coll_ImageMenu(self.ImageMenu)
         self._init_coll_Image_Items(self.ImageEdit)
-        
+        self._init_coll_PeakMenu(self.PeakMenu)
+        self._init_coll_Peak_Items(self.PeakEdit)
+        self._init_coll_IndexMenu(self.IndexMenu)
+        self._init_coll_Index_Items(self.IndexEdit)
+        self.UnDo.Enable(False)
+        self.PeakFit.Enable(False)
+        self.AutoPeakFit.Enable(False)
+        self.IndexPeaks.Enable(False)
+        self.CopyCell.Enable(False)
+        self.RefineCell.Enable(False)
+               
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,
             size=size,pos=pos,title='GSAS-II data display')
@@ -255,6 +297,98 @@ def UpdatePeakGrid(self, data):
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     
+    def OnUnDo(event):
+        DoUnDo()
+        self.dataFrame.UnDo.Enable(False)
+        
+    def DoUnDo():
+        print 'Undo last refinement'
+        file = open('GSASII.save','rb')
+        PatternId = self.PatternId
+        for item in ['Background','Instrument Parameters','Peak List']:
+            self.PatternTree.SetItemPyData(GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
+            if self.dataDisplay.GetName() == item:
+                if item == 'Background':
+                    UpdateBackgroundGrid(self,self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, item)))
+                elif item == 'Instrument Parameters':
+                    UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, item)))
+                elif item == 'Peak List':
+                    UpdatePeakGrid(self,self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, item)))
+            print item,' recovered'
+        file.close()
+        
+    def OnPeakFit(event):
+        self.SaveState()
+        print 'Peak Fitting - Do one cycle of peak fitting'
+        PatternId = self.PatternId
+        PickId = self.PickId
+        peaks = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Peak List'))
+        if not peaks:
+            self.ErrorDialog('No peaks!','Nothing to fit!')
+            return
+        background = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Background'))[0]
+        limits = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
+        inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
+        data = self.PatternTree.GetItemPyData(PatternId)[1]
+        OK,smin,Rwp,runtime,GoOn = G2cmp.DoPeakFit(peaks,background,limits,inst,data)
+        UpdatePeakGrid(self,peaks)
+        self.PlotPatterns()
+        if not OK:
+            print 'Refinement failed'
+            dlg = wx.MessageDialog(self, 'Do you want to reload now?', 'Refinement failed',  wx.YES_NO)
+            try:
+                if dlg.ShowModal() == wx.ID_YES:
+                    DoUnDo()
+                    self.dataFrame.UnDo.Enable(False)
+            finally:
+                dlg.Destroy()
+        else:
+            self.dataFrame.UnDo.Enable(True)
+            print "%s%7.2f%s%12.6g" % ('Rwp = ',Rwp,'%, Smin = ',smin)
+            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s')
+            print 'finished'
+        return
+        
+    def OnAutoPeakFit(event):
+        self.SaveState()
+        print 'AutoPeak Fitting - run until minimized'
+        PatternId = self.PatternId
+        PickId = self.PickId
+        peaks = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Peak List'))
+        if not peaks:
+            self.ErrorDialog('No peaks!','Nothing to fit!')
+            return
+        background = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Background'))[0]
+        limits = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
+        inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
+        data = self.PatternTree.GetItemPyData(PatternId)[1]
+        smin = 1.0e10
+        GoOn = True
+        while GoOn:
+            osmin = smin
+            OK,smin,Rwp,runtime,GoOn = G2cmp.DoPeakFit(peaks,background,limits,inst,data)
+            UpdatePeakGrid(self,peaks)
+            if not OK:
+                break
+            self.PlotPatterns()
+            print "%s%7.2f%s%12.6g" % ('Rwp = ',Rwp,'%, Smin = ',smin)
+            rat = (osmin-smin)/smin
+            if rat < 1.0e-4: GoOn = False
+        if not OK:
+            print 'Refinement failed'
+            dlg = wx.MessageDialog(self, 'Do you want to reload now?', 'Refinement failed',  wx.YES_NO)
+            try:
+                if dlg.ShowModal() == wx.ID_YES:
+                    DoUnDo()
+                    self.dataFrame.UnDo.Enable(False)
+            finally:
+                dlg.Destroy()
+        else:
+            self.dataFrame.UnDo.Enable(True)
+            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s per cycle')
+            print 'finished'
+        return        
+
     def RefreshPeakGrid(event):
         event.StopPropagation()
         data = self.PeakTable.GetData()
@@ -324,6 +458,13 @@ def UpdatePeakGrid(self, data):
                         data[row][col]=False
         self.PlotPatterns()
             
+    self.dataFrame.SetMenuBar(self.dataFrame.PeakMenu)
+    self.Bind(wx.EVT_MENU, OnUnDo, id=wxID_UNDO)
+    self.Bind(wx.EVT_MENU, OnPeakFit, id=wxID_PEAKFIT)
+    self.Bind(wx.EVT_MENU, OnAutoPeakFit, id=wxID_AUTOPEAKFIT)
+    if data:
+        self.dataFrame.PeakFit.Enable(True)
+        self.dataFrame.AutoPeakFit.Enable(True)
     self.PickTable = []
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
@@ -334,7 +475,8 @@ def UpdatePeakGrid(self, data):
         wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
         wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
     T = []
-    for peak in data:T.append(peak[0])
+    for peak in data:
+        T.append(peak[0])
     D = dict(zip(T,data))
     T.sort()
     X = []
@@ -393,6 +535,7 @@ def UpdateBackgroundGrid(self,data):
         Types.append(wg.GRID_VALUE_FLOAT+':10,3')
     self.BackTable = Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Background')
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataDisplay = GSGrid(parent=self.dataFrame)
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshBackgroundGrid)                
     self.dataDisplay.SetTable(self.BackTable, True)
@@ -419,6 +562,7 @@ def UpdateLimitsGrid(self, data):
     Types = [wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3']
     self.LimitsTable = Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Limits')
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataDisplay = GSGrid(parent=self.dataFrame)                
     self.dataDisplay.SetTable(self.LimitsTable, True)
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
@@ -434,6 +578,7 @@ def UpdateInstrumentGrid(self, data):
         Ka2 = True
         Xwid = 800        
     self.dataFrame.setSizePosLeft([Xwid,150])
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     InstId = GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters')
     def RefreshInstrumentGrid(event):
         if event.GetRow() == 1:
@@ -536,6 +681,7 @@ def UpdateIndexPeaksGrid(self, data):
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.setSizePosLeft([500,300])
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
     self.IndexPeaksTable = []
     if not data:
@@ -577,20 +723,102 @@ def UpdateUnitCellsGrid(self, data):
     UnitCellsId = GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List')
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
+        
+    def OnRefineCell(event):
+        def cellPrint(ibrav,A):
+            cell = G2cmp.A2cell(A)
+            Vol = G2cmp.calc_V(A)
+            if ibrav in [0,1,2]:
+                print "%s%10.6f" % ('a =',cell[0])
+            elif ibrav in [3,4,5,6]:
+                print "%s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol)
+            elif ibrav in [7,8,9,10]:
+                print "%s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol)
+            elif ibrav in [11,12]:
+                print "%s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol)
+            else:
+                print "%s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2])
+                print "%s%8.3f %s%8.3f %s%8.3f %s%12.3f" % ('alpha =',cell[3],'beta =',cell[4],'gamma =',cell[5],' volume =',Vol)
+             
+        bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
+            'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
+        PatternId = self.PatternId
+        PickId = self.PickId    
+        peaks = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
+        if not peaks:
+            self.ErrorDialog('No peaks!', 'Nothing to refine!')
+            return        
+        print 'Refine cell'
+        inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
+        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
+        cell = controls[6:12]
+        A = G2cmp.cell2A(cell)
+        print controls[5]
+        ibrav = bravaisSymb.index(controls[5])
+        dmin = G2cmp.getDmin(peaks)-0.05
+        Lhkl,M20,X20 = G2cmp.refinePeaks(peaks,ibrav,A)
+        controls[6:12] = G2cmp.A2cell(A)
+        controls[12] = G2cmp.calc_V(A)
+        data = [controls,bravais,cells,dmin]
+        self.PatternTree.SetItemPyData(GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
+        self.HKL = G2cmp.GenHBravais(dmin,ibrav,A)
+        UpdateUnitCellsGrid(self,data)
+        print "%s%10.3f" % ('refinement M20 = ',M20)
+        print 'unindexed lines = ',X20
+        cellPrint(ibrav,A)
+        for hkl in self.HKL:
+            hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
+        self.PlotPatterns()
+        
+    def OnIndexPeaks(event):
+        PatternId = self.PatternId    
+        peaks = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
+        if not peaks:
+            self.ErrorDialog('No peaks!', 'Nothing to index!')
+            return
+        inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
+        print 'Peak Indexing'
+        try:
+            controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
+            cells = []
+        except ValueError:
+            self.ErrorDialog('Error','Need to set controls in Unit Cell List first')
+            return
+        if True not in bravais:
+            self.ErrorDialog('Error','No Bravais lattices selected')
+            return
+        self.dataFrame.IndexPeaks.Enable(False)
+        self.dataFrame.CopyCell.Enable(False)
+        OK,dmin,cells = G2cmp.DoIndexPeaks(peaks,inst,controls,bravais)
+        if OK:
+            data = [controls,bravais,cells,dmin]
+            self.PatternTree.SetItemPyData(GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
+            UpdateUnitCellsGrid(self,data)
+            bestCell = cells[0]
+            if bestCell[0] > 10.:
+                self.HKL = G2cmp.GenHBravais(dmin,bestCell[2],G2cmp.cell2A(bestCell[3:9]))
+                for hkl in self.HKL:
+                    hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
+                self.PlotPatterns()
+        self.dataFrame.CopyCell.Enable(True)
+        self.dataFrame.IndexPeaks.Enable(True)
+                
     def CopyUnitCell(event):
-        if event.GetCol() == 6:
-            row = event.GetRow()
-            controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
-            cell = cells[row][2:9]
-            controls[4] = 1
-            controls[5] = bravaisSymb[cell[0]]
-            controls[6:12] = cell[1:8]
-            controls[12] = G2cmp.calc_V(G2cmp.cell2A(controls[6:12]))
-            for i in range(4,13):
-                self.UnitCellsTable.SetValue(i,1,controls[i])
-            self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
-            self.dataDisplay.ForceRefresh()
-            self.RefineCell.Enable(True)
+        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
+        for Cell in cells:
+            if Cell[-1]:
+                break
+        cell = Cell[2:9]
+        controls[4] = 1
+        controls[5] = bravaisSymb[cell[0]]
+        controls[6:12] = cell[1:8]
+        controls[12] = G2cmp.calc_V(G2cmp.cell2A(controls[6:12]))
+        for i in range(4,13):
+            self.UnitCellsTable.SetValue(i,1,controls[i])
+        self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
+        self.dataDisplay.ForceRefresh()
+        self.dataFrame.RefineCell.Enable(True)
+            
     def RefreshUnitCellsGrid(event):
         cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)[2:]
         r,c =  event.GetRow(),event.GetCol()
@@ -670,14 +898,18 @@ def UpdateUnitCellsGrid(self, data):
                 self.UnitCellsTable.SetValue(i,1,controls[i])
         self.dataDisplay.ForceRefresh()
         if controls[4] and not False in controls[6:12]:
-            self.RefineCell.Enable(True)
+            self.dataFrame.RefineCell.Enable(True)
         else:
-            self.RefineCell.Enable(False)
+            self.dataFrame.RefineCell.Enable(False)
         data = [controls,bravais,cells,dmin]                    
         self.PatternTree.SetItemPyData(UnitCellsId,data)
         
     if self.dataDisplay:
         self.dataDisplay.Destroy()
+    self.dataFrame.SetMenuBar(self.dataFrame.IndexMenu)
+    self.Bind(wx.EVT_MENU, OnIndexPeaks, id=wxID_INDEXPEAKS)
+    self.Bind(wx.EVT_MENU, CopyUnitCell, id=wxID_COPYCELL)
+    self.Bind(wx.EVT_MENU, OnRefineCell, id=wxID_REFINECELL)
     self.UnitCellsTable = []
     controls,bravais,cells,dmin = data
     if cells:
@@ -734,9 +966,6 @@ def UpdateUnitCellsGrid(self, data):
     self.dataDisplay = GSGrid(parent=self.dataFrame)                
     self.dataDisplay.SetTable(self.UnitCellsTable, True)
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshUnitCellsGrid)
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_RIGHT_DCLICK, CopyUnitCell)
-    if cells:
-        self.dataDisplay.GetGridWindow().SetToolTipString('Right d-click "use" box to copy cell to controls')
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.SetRowLabelSize(0)
     self.dataDisplay.SetCellRenderer(0,1,wg.GridCellBoolRenderer())
@@ -761,6 +990,7 @@ def UpdateUnitCellsGrid(self, data):
         self.dataDisplay.SetReadOnly(i,0,isReadOnly=True)
         self.dataDisplay.SetReadOnly(i,3,isReadOnly=True)
     if cells:
+        self.dataFrame.CopyCell.Enable(True)
         for r in range(max(len(cells),14)):
             if r > 12:
                 self.dataDisplay.SetCellRenderer(r,0,wg.GridCellStringRenderer())                    
@@ -774,9 +1004,9 @@ def UpdateUnitCellsGrid(self, data):
                     self.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
     self.dataDisplay.AutoSizeColumns(False)
     if controls[4] and not False in controls[6:12]:
-        self.RefineCell.Enable(True)
+        self.dataFrame.RefineCell.Enable(True)
     else:
-        self.RefineCell.Enable(False)
+        self.dataFrame.RefineCell.Enable(False)
         
 def UpdateHKLControls(self,data):
     
@@ -818,6 +1048,7 @@ def UpdateHKLControls(self,data):
     else:
         typeChoices = ['Fosq','Fo']
     self.dataDisplay = wx.Panel(self.dataFrame)
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
     
@@ -939,7 +1170,6 @@ def UpdateImageControls(self,data):
             self.LRazim.SetValue("%6d,%6d" % (0,360))            
         self.PlotImage()
         
-        
     def OnSetDefault(event):
         import copy
         if data['setDefault']:
@@ -954,9 +1184,18 @@ def UpdateImageControls(self,data):
         data['rings'] = []
         data['ellipses'] = []
         self.PlotImage()
-        clearCalib.SetValue(False)
             
-    def OnCalibrate(event):
+    def OnCalibrate(event):        
+        msg = \
+        '''Select > 5 points on inner ring of image pattern. 
+        Click right mouse button to select point.
+          Use left mouse button to delete point. 
+                 Press OK when done'''
+        dlg = wx.MessageDialog(self,msg,'Pick inner ring',wx.OK)
+        self.ifGetRing = True
+        dlg.ShowModal()
+        self.ifGetRing = False
+        
         if G2cmp.ImageCalibrate(self,data):
             Status.SetStatusText('Calibration successful')
             cent = data['center']
@@ -969,9 +1208,9 @@ def UpdateImageControls(self,data):
         
     def SetStatusLine():
         if data['refine'][0]:
-            Status.SetStatusText("On Image: key 'c' to mark center, 'r' on inner ring for calibration or 'd' to delete")
+            Status.SetStatusText("On Image: key 'c' to mark center")
         else:
-            Status.SetStatusText("On Image: key 'r' on inner ring for calibration or 'd' to delete")
+            Status.SetStatusText("")
                               
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
@@ -981,6 +1220,7 @@ def UpdateImageControls(self,data):
     Status = self.dataFrame.CreateStatusBar()
     SetStatusLine()
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=wxID_IMCALIBRATE)
+    self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=wxID_IMCLEARCALIB)    
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)        
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1109,9 +1349,7 @@ def UpdateImageControls(self,data):
     dataSizer.Add(setDefault,0)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
     setDefault.SetValue(data['setDefault'])
-    clearCalib = wx.CheckBox(parent=self.dataDisplay,label='Clear calibration rings?')
-    dataSizer.Add(clearCalib,0)
-    clearCalib.Bind(wx.EVT_CHECKBOX, OnClearCalib)
+    dataSizer.Add((10,5),0)
         
     mainSizer.Add(dataSizer,0)
     
@@ -1425,7 +1663,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         event.StopPropagation()
         FillAtomsGrid()
         
-
     def UpdateDrawing():
         print 'Drawing'
         
@@ -1448,6 +1685,7 @@ def UpdatePhaseData(self,item,data,oldPage):
     if self.dataDisplay:
         self.dataDisplay.Destroy()                    
     PhaseName = self.PatternTree.GetItemText(item)
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataFrame.SetLabel('Phase Data for '+PhaseName)
     self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
     
@@ -1484,6 +1722,7 @@ def MovePatternTreeToGrid(self,item):
     
     oldPage = 0
     if self.dataFrame:
+        self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
         if self.dataFrame.GetLabel() == 'Comments':
             data = [self.dataDisplay.GetValue()]
             self.dataDisplay.Clear() 
@@ -1504,10 +1743,6 @@ def MovePatternTreeToGrid(self,item):
             
     self.PickId = 0
     self.PatternId = 0
-    self.PeakFit.Enable(False)
-    self.AutoPeakFit.Enable(False)
-    self.IndexPeaks.Enable(False)
-    self.RefineCell.Enable(False)
     parentID = self.root
     if item != self.root:
         parentID = self.PatternTree.GetItemParent(item)
@@ -1559,9 +1794,7 @@ def MovePatternTreeToGrid(self,item):
         self.PlotSngl()               
     elif self.PatternTree.GetItemText(item) == 'Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PeakFit.Enable(True)
         self.ExportPeakList.Enable(True)
-        self.AutoPeakFit.Enable(True)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         UpdatePeakGrid(self,data)
@@ -1594,7 +1827,6 @@ def MovePatternTreeToGrid(self,item):
         self.PlotPatterns()
     elif self.PatternTree.GetItemText(item) == 'Unit Cells List':
         self.PatternId = self.PatternTree.GetItemParent(item)
-        self.IndexPeaks.Enable(True)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         if not data:
@@ -1604,5 +1836,7 @@ def MovePatternTreeToGrid(self,item):
             data.append([])                                 #empty dmin
             self.PatternTree.SetItemPyData(item,data)                             
         UpdateUnitCellsGrid(self,data)
+        self.dataFrame.RefineCell.Enable(True)
+        self.dataFrame.IndexPeaks.Enable(True)
         self.NewPlot = True
         self.PlotPatterns()

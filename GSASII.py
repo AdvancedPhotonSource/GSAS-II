@@ -55,9 +55,8 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(4)]
 
 [wxID_GSASIIFILECLOSE, wxID_GSASIIFILEEXIT, wxID_GSASIIFILEOPEN, 
- wxID_GSASIIFILESAVE, wxID_GSASIIFILESAVEAS, wxID_GSASIIPEAKFIT, 
- wxID_GSASIIINDEX, wxID_GSASIIAUTOPEAKFIT, wxID_GSASIIUNDO, wxID_GSASIIREFINECELL,
-] = [wx.NewId() for _init_coll_File_Items in range(10)]
+ wxID_GSASIIFILESAVE, wxID_GSASIIFILESAVEAS, wxID_GSASIIUNDO, 
+] = [wx.NewId() for _init_coll_File_Items in range(6)]
 
 [wxID_GSASIIPWDRREAD,wxID_GSASIISNGLREAD,wxID_GSASIIADDPHASE,wxID_GSASIIDELETEPHASE,
  wxID_GSASIIDATADELETE,wxID_GSASIIREADPEAKS,wxID_GSASIIPWDSUM,wxID_GSASIIIMGREAD,
@@ -134,24 +133,8 @@ class GSASII(wx.Frame):
     def _init_coll_Calculate_Items(self,parent):
         self.UnDo = parent.Append(help='', id=wxID_GSASIIUNDO, kind=wx.ITEM_NORMAL,
             text='UnDo')
-        self.PeakFit = parent.Append(help='', id=wxID_GSASIIPEAKFIT, kind=wx.ITEM_NORMAL,
-            text='PeakFit')
-        self.AutoPeakFit = parent.Append(help='', id=wxID_GSASIIAUTOPEAKFIT, kind=wx.ITEM_NORMAL,
-            text='AutoPeakFit')
-        self.RefineCell = parent.Append(help='', id=wxID_GSASIIREFINECELL, kind=wx.ITEM_NORMAL,
-            text='RefineCell')
-        self.IndexPeaks = parent.Append(help='', id=wxID_GSASIIINDEX, kind=wx.ITEM_NORMAL,
-            text='IndexPeaks')
         self.UnDo.Enable(False)
-        self.PeakFit.Enable(False)
-        self.AutoPeakFit.Enable(False)
-        self.IndexPeaks.Enable(False)
-        self.RefineCell.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnUnDo, id=wxID_GSASIIUNDO)
-        self.Bind(wx.EVT_MENU, self.OnPeakFit, id=wxID_GSASIIPEAKFIT)
-        self.Bind(wx.EVT_MENU, self.OnAutoPeakFit, id=wxID_GSASIIAUTOPEAKFIT)
-        self.Bind(wx.EVT_MENU, self.OnRefineCell, id=wxID_GSASIIREFINECELL)
-        self.Bind(wx.EVT_MENU, self.OnIndexPeaks, id=wxID_GSASIIINDEX)
         
     def _init_coll_Import_Items(self,parent):
         self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
@@ -268,6 +251,7 @@ class GSASII(wx.Frame):
         self.IMevent = []
         self.SCevent = []
         self.Sngl = 0
+        self.ifGetRing = False
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -1028,123 +1012,6 @@ class GSASII(wx.Frame):
             print item,' recovered'
         file.close()
         
-    def OnPeakFit(self,event):
-        self.SaveState()
-        print 'Peak Fitting - Do one cycle of peak fitting'
-        PatternId = self.PatternId
-        PickId = self.PickId
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
-        if not peaks:
-            self.ErrorDialog('No peaks!','Nothing to fit!')
-            return
-        background = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Background'))[0]
-        limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-        data = self.PatternTree.GetItemPyData(PatternId)[1]
-        OK,smin,Rwp,runtime,GoOn = G2cmp.DoPeakFit(peaks,background,limits,inst,data)
-        G2gd.UpdatePeakGrid(self,peaks)
-        self.PlotPatterns()
-        if not OK:
-            print 'Refinement failed'
-            dlg = wx.MessageDialog(self, 'Do you want to reload now?', 'Refinement failed',  wx.YES_NO)
-            try:
-                if dlg.ShowModal() == wx.ID_YES:
-                    self.DoUnDo()
-                    self.UnDo.Enable(False)
-            finally:
-                dlg.Destroy()
-        else:
-            print "%s%7.2f%s%12.6g" % ('Rwp = ',Rwp,'%, Smin = ',smin)
-            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s')
-            print 'finished'
-        return
-        
-    def OnAutoPeakFit(self,event):
-        self.SaveState()
-        print 'AutoPeak Fitting - run until minimized'
-        PatternId = self.PatternId
-        PickId = self.PickId
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
-        if not peaks:
-            self.ErrorDialog('No peaks!','Nothing to fit!')
-            return
-        background = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Background'))[0]
-        limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-        data = self.PatternTree.GetItemPyData(PatternId)[1]
-        smin = 1.0e10
-        GoOn = True
-        while GoOn:
-            osmin = smin
-            OK,smin,Rwp,runtime,GoOn = G2cmp.DoPeakFit(peaks,background,limits,inst,data)
-            print GoOn
-            G2gd.UpdatePeakGrid(self,peaks)
-            if not OK:
-                break
-            self.PlotPatterns()
-            print "%s%7.2f%s%12.6g" % ('Rwp = ',Rwp,'%, Smin = ',smin)
-            rat = (osmin-smin)/smin
-            if rat < 1.0e-4: GoOn = False
-        if not OK:
-            print 'Refinement failed'
-            dlg = wx.MessageDialog(self, 'Do you want to reload now?', 'Refinement failed',  wx.YES_NO)
-            try:
-                if dlg.ShowModal() == wx.ID_YES:
-                    self.DoUnDo()
-                    self.UnDo.Enable(False)
-            finally:
-                dlg.Destroy()
-        else:
-            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s per cycle')
-            print 'finished'
-        return
-        
-    def OnRefineCell(self,event):
-        def cellPrint(ibrav,A):
-            cell = G2cmp.A2cell(A)
-            Vol = G2cmp.calc_V(A)
-            if ibrav in [0,1,2]:
-                print "%s%10.6f" % ('a =',cell[0])
-            elif ibrav in [3,4,5,6]:
-                print "%s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol)
-            elif ibrav in [7,8,9,10]:
-                print "%s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol)
-            elif ibrav in [11,12]:
-                print "%s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol)
-            else:
-                print "%s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2])
-                print "%s%8.3f %s%8.3f %s%8.3f %s%12.3f" % ('alpha =',cell[3],'beta =',cell[4],'gamma =',cell[5],' volume =',Vol)
-             
-        bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
-            'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
-        PatternId = self.PatternId
-        PickId = self.PickId    
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
-        if not peaks:
-            self.ErrorDialog('No peaks!', 'Nothing to refine!')
-            return        
-        print 'Refine cell'
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
-        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
-        cell = controls[6:12]
-        A = G2cmp.cell2A(cell)
-        print controls[5]
-        ibrav = bravaisSymb.index(controls[5])
-        dmin = G2cmp.getDmin(peaks)-0.05
-        Lhkl,M20,X20 = G2cmp.refinePeaks(peaks,ibrav,A)
-        controls[6:12] = G2cmp.A2cell(A)
-        controls[12] = G2cmp.calc_V(A)
-        data = [controls,bravais,cells,dmin]
-        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
-        self.HKL = G2cmp.GenHBravais(dmin,ibrav,A)
-        G2gd.UpdateUnitCellsGrid(self,data)
-        print "%s%10.3f" % ('refinement M20 = ',M20)
-        print 'unindexed lines = ',X20
-        cellPrint(ibrav,A)
-        for hkl in self.HKL:
-            hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
-        self.PlotPatterns()
-        
     def SaveState(self):
         file = open('GSASII.save','wb')
         PatternId = self.PatternId
@@ -1153,39 +1020,6 @@ class GSASII(wx.Frame):
         file.close()
         self.UnDo.Enable(True)
          
-    def OnIndexPeaks(self,event):
-        PatternId = self.PatternId    
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
-        if not peaks:
-            self.ErrorDialog('No peaks!', 'Nothing to index!')
-            return
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
-        print 'Peak Indexing'
-        try:
-            controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
-            cells = []
-        except ValueError:
-            self.ErrorDialog('Error','Need to set controls in Unit Cell List first')
-            return
-        if True not in bravais:
-            self.ErrorDialog('Error','No Bravais lattices selected')
-            return
-        self.IndexPeaks.Enable(False)
-        self.RefineCell.Enable(False)
-        OK,dmin,cells = G2cmp.DoIndexPeaks(peaks,inst,controls,bravais)
-        if OK:
-            data = [controls,bravais,cells,dmin]
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
-            G2gd.UpdateUnitCellsGrid(self,data)
-            bestCell = cells[0]
-            if bestCell[0] > 10.:
-                self.HKL = G2cmp.GenHBravais(dmin,bestCell[2],G2cmp.cell2A(bestCell[3:9]))
-                for hkl in self.HKL:
-                    hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
-                self.PlotPatterns()
-        self.RefineCell.Enable(True)
-        self.IndexPeaks.Enable(True)
-        
     def ClearEventList(self,eventList):
         if eventList:
             for i in range(len(eventList)):
@@ -1287,6 +1121,7 @@ class GSASII(wx.Frame):
 
         def OnImMotion(event):
             self.pdplot.canvas.SetToolTipString('')
+            size = len(self.ImageZ)
             if (xlim[0] < event.xdata < xlim[1]) & (ylim[0] > event.ydata > ylim[1]):
                 item = self.itemPicked
                 if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
@@ -1322,19 +1157,6 @@ class GSASII(wx.Frame):
                 if event.key == 'c' and Data['refine'][0]:
                     cent = Data['center'] = [Xpos*pixelSize[0]/1000.,Ypos*pixelSize[1]/1000.] #convert to mm
                     self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
-                elif event.key == 'r':
-                    Xpos,Ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpos,Ypos)
-                    if I and J:
-                        xpos = Xpos*pixelSize[0]/1000.
-                        ypos = Ypos*pixelSize[1]/1000.
-                        Data['ring'].append([xpos,ypos])
-                elif event.key == 'd':
-                    scale = self.imScale*pixelSize[0]/1000.
-                    xypos = [event.xdata*scale,event.ydata*scale]
-                    rings = Data['ring']
-                    for ring in rings:
-                        if np.allclose(ring,xypos,.01,0):
-                            rings.remove(ring)                                               
                 elif event.key == 'm':
                     xpos = Xpos*pixelSize[0]/1000.
                     ypos = Ypos*pixelSize[1]/1000.
@@ -1342,48 +1164,80 @@ class GSASII(wx.Frame):
                 self.PlotImage()
                 
         def OnImPick(event):
+            if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+                return
             if self.itemPicked is not None: return
             pick = event.artist
             self.itemPicked = pick
             
         def OnImRelease(event):
-            if self.itemPicked is None or self.PatternTree.GetItemText(self.PickId) != 'Image Controls': return
+            if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+                return
             Data = self.PatternTree.GetItemPyData(self.PickId)
-            xpos = event.xdata
-            if xpos:                                        #avoid out of frame mouse position
-                xcent,ycent = Data['center']
-                xcent *= scalex
-                ycent *= scaley
-                ypos = event.ydata
-                xpos -= xcent
-                ypos -= ycent
-                radius = math.sqrt(xpos**2+ypos**2)
-                xpos /= radius
-                ypos /= radius
-                ang = int(atan2d(-ypos,xpos))
-                if 'Line2D' in str(self.itemPicked):
-                    if 'line2' in str(self.itemPicked) and not Data['fullIntegrate']:
-                        Data['LRazimuth'][0] = ang
-                    elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
-                        Data['LRazimuth'][1] = ang
-                    elif 'line0' in str(self.itemPicked):
-                        Data['IOradii'][0] = radius/scalex
-                    elif 'line1' in str(self.itemPicked):
-                        Data['IOradii'][1] = radius/scalex
-                    if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
-                        Data['LRazimuth'][1] += 360
-                    if  Data['IOradii'][0] > Data['IOradii'][1]:
-                        Data['IOradii'] = G2cmp.SwapXY(Data['IOradii'][0],Data['IOradii'][1])
-                    self.IOradText.SetValue("%8.3f,%8.3f" % (Data['IOradii'][0],Data['IOradii'][1]))
-                    self.LRazim.SetValue("%6d,%6d" % (Data['LRazimuth'][0],Data['LRazimuth'][1]))
-                elif 'Text' in str(self.itemPicked) and Data['refine'][0]:
-                    cent = Data['center'] = [event.xdata/scalex,event.ydata/scalex]
-                    try:
-                        self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
-                    except AttributeError:
-                        pass
-                self.PlotImage()
-            self.itemPicked = None
+            pixelSize = Data['pixelSize']
+            if self.itemPicked is None:
+                size = len(self.ImageZ)
+                Xpos = event.xdata
+                if Xpos and self.ifGetRing:
+                    Xpos = int(Xpos)*self.imScale
+                else:                   #got point out of frame
+                    return
+                Ypos = int(event.ydata)*self.imScale
+                if Ypos and not self.pdplot.canvas.toolbar._active:         #make sure zoom/pan not selected
+                    if event.button == 1:
+                        Xpos,Ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpos,Ypos)
+                        if I and J:
+                            xpos = Xpos*pixelSize[0]/1000.
+                            ypos = Ypos*pixelSize[1]/1000.
+                            Data['ring'].append([xpos,ypos])
+                    self.PlotImage()
+                return
+            else:
+                xpos = event.xdata
+                if xpos:                                        #avoid out of frame mouse position
+                    ypos = event.ydata
+                    if self.ifGetRing:
+                        scale = self.imScale*pixelSize[0]/1000.
+                        xypos = [xpos*scale,ypos*scale]
+                        rings = Data['ring']
+                        for ring in rings:
+                            if np.allclose(ring,xypos,.01,0):
+                                rings.remove(ring)                                                                       
+                    else:
+                        xcent,ycent = Data['center']
+                        xcent *= scalex
+                        ycent *= scaley
+                        xpos -= xcent
+                        ypos -= ycent
+                        radius = math.sqrt(xpos**2+ypos**2)
+                        xpos /= radius
+                        ypos /= radius
+                        ang = int(atan2d(-ypos,xpos))
+                        if 'Line2D' in str(self.itemPicked):
+                            if 'line2' in str(self.itemPicked) and not Data['fullIntegrate']:
+                                Data['LRazimuth'][0] = ang
+                            elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
+                                Data['LRazimuth'][1] = ang
+                            elif 'line0' in str(self.itemPicked):
+                                Data['IOradii'][0] = radius/scalex
+                            elif 'line1' in str(self.itemPicked):
+                                Data['IOradii'][1] = radius/scalex
+                            if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
+                                Data['LRazimuth'][1] += 360
+                            if  Data['IOradii'][0] > Data['IOradii'][1]:
+                                Data['IOradii'] = G2cmp.SwapXY(Data['IOradii'][0],Data['IOradii'][1])
+                            self.IOradText.SetValue("%8.3f,%8.3f" % (Data['IOradii'][0],Data['IOradii'][1]))
+                            self.LRazim.SetValue("%6d,%6d" % (Data['LRazimuth'][0],Data['LRazimuth'][1]))
+#                        elif 'Text' in str(self.itemPicked) and Data['refine'][0]:
+#                            cent = Data['center'] = [event.xdata/scalex,event.ydata/scalex]
+#                            try:
+#                                self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
+#                            except AttributeError:
+#                                pass
+                        else:
+                            print event.xdata,event.ydata,event.button
+                    self.PlotImage()
+                self.itemPicked = None
             
         newPlot = False
         self.NewPlot = True
@@ -1433,7 +1287,7 @@ class GSASII(wx.Frame):
         ax.set_ylabel('Image y-axis/'+str(self.imScale),fontsize=12)
         self.Img = ax.imshow(self.ImageZ[::self.imScale,::self.imScale], \
             aspect='equal',origin='upper',cmap=acolor, \
-            interpolation='nearest',vmin=Imin,vmax=Imax)
+            interpolation='nearest',vmin=Imin,vmax=Imax,picker=1)
         ax.text(xcent,ycent,'+',ha='center',va='center',picker=3)
         if Data['showLines']:
             LRAzim = Data['LRazimuth']
@@ -1458,7 +1312,7 @@ class GSASII(wx.Frame):
         for xring,yring in Data['ring']:
             xring *= scalex
             yring *= scaley
-            ax.text(xring,yring,'+',ha='center',va='center',picker=3)
+            ax.text(xring,yring,'+',color='r',ha='center',va='center',picker=3)
 #        for ring in Data['rings']:
 #            for xring,yring in ring:
 #                xring *= scalex

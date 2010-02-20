@@ -503,9 +503,14 @@ def GetMAR345Data(filename):
         if 'FORMAT' in line[0:6]:
             items = line.split()
             size = int(items[1])
-    line = File.readline()
-    line = File.readline()
-    File.seek(4133)
+    pos = 4096
+    File.seek(pos)
+    line = File.read(8)
+    while 'CCP4' not in line:       #get past overflow list for now
+        line = File.read(8)
+        pos += 8
+    pos += 37
+    File.seek(pos)
     raw = File.read()
     File.close()
     image = np.zeros(shape=(size,size),dtype=np.int32)

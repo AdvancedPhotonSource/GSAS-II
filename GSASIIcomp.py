@@ -1302,11 +1302,12 @@ def ImageCalibrate(self,data):
         return False
     print 'inner ring:',ellipse
     data['center'] = ellipse[0]           #not right!! (but useful for now)
-#    data['ellipses'].append(ellipse[:])
+    data['ellipses'].append(ellipse[:])
     self.PlotImage()
     
     #setup for calibration
     data['rings'] = []
+    data['ellipses'] = []
     if not data['calibrant']:
         print 'no calibration material selected'
         return True
@@ -1331,7 +1332,7 @@ def ImageCalibrate(self,data):
             data['rings'].append(Ring)
             ellipse = FitEllipse(Ring)
             cosb = (1.-ellipse[2][0]**2/ellipse[2][1]**2)*cosd(tth)**2
-            print 'for ring #',i,cosb,(ellipse[2][0]**2/ellipse[2][1])/tand(tth)
+            print 'for ring #',i,ellipse[1],cosb,(ellipse[2][0]**2/ellipse[2][1])/tand(tth)
             data['ellipses'].append(copy.deepcopy(ellipse))
             self.PlotImage()
         else:

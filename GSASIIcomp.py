@@ -1207,20 +1207,20 @@ def FitEllipse(ring):
         return 0
     cent = [(ell[1]*ell[4]-2.0*ell[2]*ell[3])/det, \
         (ell[1]*ell[3]-2.0*ell[0]*ell[4])/det]
-    phi = 0.5*atand(ell[1]/(ell[0]-ell[2]))
+    phi = 0.5*atand(ell[1]/(ell[0]-ell[2]+1e-32))
     
     a3 = 0.5*(ell[0]+ell[2]+(ell[0]-ell[2])/cosd(2.0*phi))
     b3 = ell[0]+ell[2]-a3
     f3 = ell[0]*cent[0]**2+ell[2]*cent[1]**2+ell[1]*cent[0]*cent[1]-ell[5]
     if f3/a3 < 0 or f3/b3 < 0:
         return 0
-    if phi > 0.:        
-        sr1 = math.sqrt(f3/a3)
-        sr2 = math.sqrt(f3/b3)
-    else:
-        sr1 = math.sqrt(f3/a3)
-        sr2 = math.sqrt(f3/b3)
-        phi *= -1.        
+    sr1 = math.sqrt(f3/a3)
+    sr2 = math.sqrt(f3/b3)
+    if sr1 > sr2:
+        sr1,sr2 = SwapXY(sr1,sr2)
+        phi -= 90.
+        if phi < -90.:
+            phi += 180.
     return cent,phi,[sr1,sr2]
         
 def FitCircle(ring):
@@ -1244,7 +1244,7 @@ def FitCircle(ring):
 def ImageLocalMax(image,w,Xpos,Ypos):
     w2 = w*2
     size = len(image)
-    if (w < Xpos < size-w) and (w < Ypos < size-w):
+    if (w < Xpos < size-w) and (w < Ypos < size-w) and image[Ypos,Xpos]:
         Z = image[Ypos-w:Ypos+w,Xpos-w:Xpos+w]
         Zmax = np.argmax(Z)
         Zmin = np.argmin(Z)
@@ -1254,24 +1254,37 @@ def ImageLocalMax(image,w,Xpos,Ypos):
     else:
         return 0,0,0,0
     
-def makeRing(ellipse,scalex,scaley,imScale,image):
-    cent,phi,semiradii = ellipse
+def makeRing(ellipse,pix,reject,scalex,scaley,imScale,image):
+    cent,phi,radii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
     ring = []
-    for a in range(0,360):
-        x = semiradii[0]*cosd(a)
-        y = semiradii[1]*sind(a)
+    for a in range(0,360,2):
+        x = radii[0]*cosd(a)
+        y = radii[1]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex*imScale
         Y = (sphi*x+cphi*y+cent[1])*scaley*imScale
-        X,Y,I,J = ImageLocalMax(image,20,X,Y)      
-        if I and J:
+        X,Y,I,J = ImageLocalMax(image,pix,X,Y)      
+        if I and J and I/J > reject:
             X /= scalex*imScale
             Y /= scaley*imScale
             ring.append([X,Y])
-    if len(ring) < 75:             #want more than 1/3 of a circle
+    if len(ring) < 45:             #want more than 1/4 of a circle
         return []
     return ring
+    
+def calcDist(radii,tth):
+    stth = sind(tth)
+    ctth = cosd(tth)
+    ttth = tand(tth)
+    return math.sqrt(radii[0]**4/(ttth**2*((radii[0]*ctth)**2+(radii[1]*stth)**2)))
+    
+def calcZdisCosB(radius,tth,radii):
+    sinb = cosB = min(1.0,radii[0]**2/(radius*radii[1]))
+    cosb = math.sqrt(1.-sinb**2)
+    ttth = tand(tth)
+    zdis = radii[1]*ttth*cosb/sinb
+    return zdis,cosB
         
 def ImageCalibrate(self,data):
     import copy
@@ -1280,6 +1293,7 @@ def ImageCalibrate(self,data):
     ring = data['ring']
     scalex = data['scalex']             # = 1000./(pixelSize[0]*self.imScale)
     scaley = data['scaley']
+    cutoff = data['cutoff']
     if len(ring) < 5:
         print 'not enough inner ring points for ellipse'
         return False
@@ -1293,15 +1307,15 @@ def ImageCalibrate(self,data):
     else:
         return False
         
-    #setup 360 points on that ring for "good" fit
-    Ring = makeRing(ellipse,scalex,scaley,self.imScale,self.ImageZ)
+    #setup 180 points on that ring for "good" fit
+    Ring = makeRing(ellipse,20,cutoff,scalex,scaley,self.imScale,self.ImageZ)
     if Ring:
         ellipse = FitEllipse(Ring)
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
     print 'inner ring:',ellipse
-    data['center'] = ellipse[0]           #not right!! (but useful for now)
+    data['center'] = copy.copy(ellipse[0])           #not right!! (but useful for now)
     data['ellipses'].append(ellipse[:])
     self.PlotImage()
     
@@ -1314,37 +1328,105 @@ def ImageCalibrate(self,data):
     Bravais,cell = calFile.Calibrants[data['calibrant']]
     A = cell2A(cell)
     wave = data['wavelength']
-    dist = data['distance']
-    refine = data['refine']             #flags for center, wavelength,distance, tilt angle, tilt rotation
+    cent = data['center']
+    pixLimit = data['pixLimit']
+    elcent,phi,radii = ellipse
     HKL = GenHBravais(0.5,Bravais,A)
-    dList = []
+    dsp = HKL[0][3]
+    tth = 2.0*asind(wave/(2.*dsp))
+    ttth = tand(tth)
+    data['distance'] = dist = calcDist(radii,tth)
+    radius = dist*tand(tth)
+    zdis,cosB = calcZdisCosB(radius,tth,radii)
+    sinp = sind(ellipse[1])
+    cosp = cosd(ellipse[1])
+    cent1 = []
+    cent2 = []
+    Zsign = 1.
+    xSum = 0
+    ySum = 0
+    phiSum = 0
+    tiltSum = 0
+    distSum = 0
+    Zsum = 0
     for i,H in enumerate(HKL):
-        cent,phi,semiradii = ellipse
-        meanRadius = semiradii[0]**2/semiradii[1]
-        dsp = 1.0/math.sqrt(calc_rDsq(H,A))
-        tth = 2.0*asind(wave/(2.*dsp))
-        radius = dist*tand(tth)
-        dList.append([dsp,radius])
-        semiradii[0] *= radius/meanRadius
-        semiradii[1] *= radius/meanRadius        
-        Ring = makeRing(ellipse,scalex,scaley,self.imScale,self.ImageZ)
+        dsp = H[3]
+        tth = 2.0*asind(0.5*wave/dsp)
+        stth = sind(tth)
+        ctth = cosd(tth)
+        ttth = tand(tth)
+        radius = dist*ttth
+        elcent,phi,radii = ellipse
+        radii[1] = dist*stth*ctth*cosB/(cosB**2-stth**2)
+        radii[0] = math.sqrt(radii[1]*radius*cosB)
+        zdis,cosB = calcZdisCosB(radius,tth,radii)
+        zdis *= Zsign
+        sinp = sind(phi)
+        cosp = cosd(phi)
+        cent = data['center']
+        elcent = [cent[0]+zdis*sinp,cent[1]-zdis*cosp]
+        ratio = radii[1]/radii[0]
+        Ring = makeRing(ellipse,pixLimit,cutoff,scalex,scaley,self.imScale,self.ImageZ)
         if Ring:
+            numZ = len(ring)
             data['rings'].append(Ring)
-            ellipse = FitEllipse(Ring)
-            cosb = (1.-ellipse[2][0]**2/ellipse[2][1]**2)*cosd(tth)**2
-            print 'for ring #',i,ellipse[1],cosb,(ellipse[2][0]**2/ellipse[2][1])/tand(tth)
+            elcent,phi,radii = ellipse = FitEllipse(Ring)
+            if abs(phi) > 45. and phi < 0.:
+                phi += 180.
+            dist = calcDist(radii,tth)
+            distR = 1.-dist/data['distance']
+            if distR > 0.001:
+                print 'Wavelength too large?'
+            elif distR < -0.001:
+                print 'Wavelength too small?'
+            else:
+                if abs((radii[1]/radii[0]-ratio)/ratio) > 0.01:
+                    print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i)
+                    return False
+            zdis,cosB = calcZdisCosB(radius,tth,radii)
+            Tilt = acosd(cosB)
+            sinp = sind(ellipse[1])
+            cosp = cosd(ellipse[1])
+            cent1.append(np.array([elcent[0]+zdis*sinp,elcent[1]-zdis*cosp]))
+            cent2.append(np.array([elcent[0]-zdis*sinp,elcent[1]+zdis*cosp]))
+            dist1 = dist2 = 0
+            if i:
+                d1 = cent1[-1]-cent1[-2]
+                dist1 = np.dot(d1,d1)
+                d2 = cent2[-1]-cent2[-2]
+                dist2 = np.dot(d2,d2)
+                if dist2 > dist1:
+                    data['center'] = cent1[-1]
+                    Zsign *= -1.                
+                else:
+                    data['center'] = cent2[-1]
+                    Zsign = 1.
+                Zsum += numZ
+                phiSum += numZ*phi
+                distSum += numZ*dist
+                xSum += numZ*data['center'][0]
+                ySum += numZ*data['center'][1]
+                tiltSum += numZ*Tilt
+            cent = data['center']
+            print 'for ring # %i dist %.3f rotate %.2f tilt %.2f Xcent %.3f Ycent %.3f' \
+                %(i,dist,phi,Tilt,cent[0],cent[1])
             data['ellipses'].append(copy.deepcopy(ellipse))
             self.PlotImage()
         else:
             break
+    fullSize = len(self.ImageZ)/(self.imScale*scalex)
+    if 2*radii[1] < .9*fullSize:
+        print 'Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib'
+    if Zsum:
+        data['center'] = [xSum/Zsum,ySum/Zsum]
+        data['tilt'] = tiltSum/Zsum
+        data['distance'] = distSum/Zsum
+        data['rotation'] = phiSum/Zsum
+        print data['center'],data['tilt'],data['distance'],data['rotation']
+    else:
+        print 'Only one ring fitted. Check your wavelength.'
+        return False
     self.PlotImage()
-    
-            
-    
-        
-    
-    
-        
         
     return True
         

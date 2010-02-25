@@ -1108,6 +1108,9 @@ def UpdateImageControls(self,data):
     def OnNewCalibrant(event):
         data['calibrant'] = calSel.GetValue()
         
+    def OnPixLimit(event):
+        data['pixLimit'] = int(pixLimit.GetValue())
+        
     def OnMaxSlider(event):
         imax = max(data['range'][1][0],int(maxSel.GetValue()))
         maxSel.SetValue(imax)
@@ -1144,14 +1147,14 @@ def UpdateImageControls(self,data):
             pass
         distSel.SetValue("%8.3f"%(data['distance']))          #reset in case of error  
         
-    def OnImRefine(event):
-        ImageCalibRef[0] = centRef.GetValue()
-        ImageCalibRef[1] = waveRef.GetValue()
-        ImageCalibRef[2] = distRef.GetValue()
-        ImageCalibRef[3] = tiltRef.GetValue()
-        ImageCalibRef[4] = rotRef.GetValue()
-        SetStatusLine()
-                
+    def OnCutOff(event):
+        try:
+            cutoff = float(cutOff.GetValue())
+            data['cutoff'] = cutoff
+        except ValueError:
+            pass
+        cutOff.SetValue("%.1f"%(data['cutoff']))          #reset in case of error  
+        
     def OnShowLines(event):
         if data['showLines']:
             data['showLines'] = False
@@ -1179,6 +1182,14 @@ def UpdateImageControls(self,data):
             self.imageDefault = copy.copy(data)
             data['setDefault'] = True
             
+    def OnSetRings(event):
+        if data['setRings']:
+            data['setRings'] = False
+        else:
+            data['setRings'] = True
+        setRings.SetValue(data['setRings'])
+        self.PlotImage()
+            
     def OnClearCalib(event):
         data['ring'] = []
         data['rings'] = []
@@ -1186,8 +1197,10 @@ def UpdateImageControls(self,data):
         self.PlotImage()
             
     def OnCalibrate(event):        
+        data['setRings'] = False
+        setRings.SetValue(data['setRings'])
         msg = \
-        '''Select > 5 points on inner ring of image pattern. 
+        '''Select > 4 points on inner ring of image pattern. 
         Click right mouse button to select point.
           Use left mouse button to delete point. 
                  Press OK when done'''
@@ -1199,7 +1212,10 @@ def UpdateImageControls(self,data):
         if G2cmp.ImageCalibrate(self,data):
             Status.SetStatusText('Calibration successful')
             cent = data['center']
-            self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
+            centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
+            distSel.SetValue("%8.3f"%(data['distance']))
+            tiltSel.SetValue("%9.3f"%(data['tilt']))            
+            rotSel.SetValue("%9.3f"%(data['rotation']))
         else:
             Status.SetStatusText('Calibration failed')
                     
@@ -1207,10 +1223,7 @@ def UpdateImageControls(self,data):
         print 'image integrate'
         
     def SetStatusLine():
-        if data['refine'][0]:
-            Status.SetStatusText("On Image: key 'c' to mark center")
-        else:
-            Status.SetStatusText("")
+        Status.SetStatusText("On Image: key 'c' to mark center")
                               
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
@@ -1242,7 +1255,7 @@ def UpdateImageControls(self,data):
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
     mainSizer.Add(maxSizer,1,wx.EXPAND|wx.RIGHT)
     
-    comboSizer = wx.FlexGridSizer(2,4,5,5)
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
     comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Color bar '),0,
         wx.ALIGN_CENTER_VERTICAL)
     colSel = wx.ComboBox(parent=self.dataDisplay,value=data['color'],choices=colorList,
@@ -1256,11 +1269,23 @@ def UpdateImageControls(self,data):
         style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
     calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)
     comboSizer.Add(calSel,0,wx.ALIGN_CENTER_VERTICAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Pixel search range '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    pixLimit = wx.ComboBox(parent=self.dataDisplay,value=str(data['pixLimit']),choices=['5','10','15','20'],
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
+    comboSizer.Add(pixLimit,0,wx.ALIGN_CENTER_VERTICAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min ring I/Ib '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    cutOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['cutoff'])),
+        style=wx.TE_PROCESS_ENTER)
+    cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
+    comboSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+
     mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
     mainSizer.Add((5,5),0)
          
-    dataSizer = wx.FlexGridSizer(6,5,5,5)
-    dataSizer.Add((5,0),0)
+    dataSizer = wx.FlexGridSizer(6,4,5,5)
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calibration coefficients'),0,
         wx.ALIGN_CENTER_VERTICAL)    
     dataSizer.Add((5,0),0)
@@ -1268,16 +1293,11 @@ def UpdateImageControls(self,data):
         wx.ALIGN_CENTER_VERTICAL)    
     dataSizer.Add((5,0),0)
     
-    ImageCalibRef = data['refine']
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Beam center X,Y'),0,
         wx.ALIGN_CENTER_VERTICAL)
     cent = data['center']
-    self.centText = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f,%8.3f" % (cent[0],cent[1])),style=wx.TE_READONLY)
-    dataSizer.Add(self.centText,0,wx.ALIGN_CENTER_VERTICAL)
-    centRef = wx.CheckBox(parent=self.dataDisplay,label='refine?')
-    centRef.Bind(wx.EVT_CHECKBOX, OnImRefine)
-    centRef.SetValue(ImageCalibRef[0])
-    dataSizer.Add(centRef,0,wx.ALIGN_CENTER_VERTICAL)
+    centText = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f,%8.3f" % (cent[0],cent[1])),style=wx.TE_READONLY)
+    dataSizer.Add(centText,0,wx.ALIGN_CENTER_VERTICAL)
     
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Inner/Outer radii'),0,
         wx.ALIGN_CENTER_VERTICAL)
@@ -1292,10 +1312,6 @@ def UpdateImageControls(self,data):
         style=wx.TE_PROCESS_ENTER)
     waveSel.Bind(wx.EVT_TEXT_ENTER,OnWavelength)
     dataSizer.Add(waveSel,0,wx.ALIGN_CENTER_VERTICAL)
-    waveRef = wx.CheckBox(parent=self.dataDisplay,label='refine?')
-    waveRef.Bind(wx.EVT_CHECKBOX, OnImRefine)
-    waveRef.SetValue(ImageCalibRef[1])
-    dataSizer.Add(waveRef,0,wx.ALIGN_CENTER_VERTICAL)
          
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start/End azimuth'),0,
         wx.ALIGN_CENTER_VERTICAL)
@@ -1309,10 +1325,6 @@ def UpdateImageControls(self,data):
     distSel = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f"%(data['distance'])),style=wx.TE_PROCESS_ENTER)
     distSel.Bind(wx.EVT_TEXT_ENTER,OnDistance)
     dataSizer.Add(distSel,0,wx.ALIGN_CENTER_VERTICAL)
-    distRef = wx.CheckBox(parent=self.dataDisplay,label='refine?')
-    distRef.Bind(wx.EVT_CHECKBOX, OnImRefine)
-    distRef.SetValue(ImageCalibRef[2])
-    dataSizer.Add(distRef,0,wx.ALIGN_CENTER_VERTICAL)
 
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' No. bins'),0,
         wx.ALIGN_CENTER_VERTICAL)
@@ -1322,12 +1334,8 @@ def UpdateImageControls(self,data):
 
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt angle'),0,
         wx.ALIGN_CENTER_VERTICAL)
-    self.tiltSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['tilt'])),style=wx.TE_READONLY)
-    dataSizer.Add(self.tiltSel,0,wx.ALIGN_CENTER_VERTICAL)
-    tiltRef = wx.CheckBox(parent=self.dataDisplay,label='refine?')
-    tiltRef.Bind(wx.EVT_CHECKBOX, OnImRefine)
-    tiltRef.SetValue(ImageCalibRef[3])
-    dataSizer.Add(tiltRef,0,wx.ALIGN_CENTER_VERTICAL)
+    tiltSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['tilt'])),style=wx.TE_READONLY)
+    dataSizer.Add(tiltSel,0,wx.ALIGN_CENTER_VERTICAL)
     showLines = wx.CheckBox(parent=self.dataDisplay,label='Show integration limits?')
     dataSizer.Add(showLines,0)
     showLines.Bind(wx.EVT_CHECKBOX, OnShowLines)
@@ -1339,17 +1347,16 @@ def UpdateImageControls(self,data):
     
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt rotation'),0,
         wx.ALIGN_CENTER_VERTICAL)
-    self.rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
-    dataSizer.Add(self.rotSel,0,wx.ALIGN_CENTER_VERTICAL)
-    rotRef = wx.CheckBox(parent=self.dataDisplay,label='refine?')
-    rotRef.Bind(wx.EVT_CHECKBOX, OnImRefine)
-    rotRef.SetValue(ImageCalibRef[4])
-    dataSizer.Add(rotRef,0,)
+    rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
+    dataSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault = wx.CheckBox(parent=self.dataDisplay,label='Use as default for all images?')
     dataSizer.Add(setDefault,0)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
     setDefault.SetValue(data['setDefault'])
-    dataSizer.Add((10,5),0)
+    setRings = wx.CheckBox(parent=self.dataDisplay,label='Show ring picks?')
+    dataSizer.Add(setRings,0)
+    setRings.Bind(wx.EVT_CHECKBOX, OnSetRings)
+    setRings.SetValue(data['setRings'])
         
     mainSizer.Add(dataSizer,0)
     
@@ -1740,7 +1747,8 @@ def MovePatternTreeToGrid(self,item):
         self.dataFrame.SetLabel('')
     else:
        self.dataFrame = DataFrame(parent=self.mainPanel)
-            
+
+    self.dataFrame.Raise()            
     self.PickId = 0
     self.PatternId = 0
     parentID = self.root

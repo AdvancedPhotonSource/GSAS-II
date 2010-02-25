@@ -414,10 +414,11 @@ class GSASII(wx.Frame):
                         Data['color'] = 'binary'
                         Data['tilt'] = 0.0
                         Data['rotation'] = 0.0
-                        Data['refine'] = [True,False,True,True,True]
                         Data['showLines'] = False
                         Data['ring'] = []
                         Data['rings'] = []
+                        Data['cutoff'] = 10
+                        Data['pixLimit'] = 20
                         Data['ellipses'] = []
                         Data['masks'] = []
                         Data['calibrant'] = ''
@@ -425,6 +426,7 @@ class GSASII(wx.Frame):
                         Data['LRazimuth'] = [-45,45]
                         Data['outChannels'] = 2500
                         Data['fullIntegrate'] = False
+                        Data['setRings'] = False
                     Data['setDefault'] = False
                     Data['range'] = [(Imin,Imax),[Imin,Imax]]
                     self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
@@ -1154,9 +1156,8 @@ class GSASII(wx.Frame):
                 else:                   #got point out of frame
                     return
                 Ypos = int(event.ydata)*self.imScale
-                if event.key == 'c' and Data['refine'][0]:
+                if event.key == 'c':
                     cent = Data['center'] = [Xpos*pixelSize[0]/1000.,Ypos*pixelSize[1]/1000.] #convert to mm
-                    self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
                 elif event.key == 'm':
                     xpos = Xpos*pixelSize[0]/1000.
                     ypos = Ypos*pixelSize[1]/1000.
@@ -1313,14 +1314,15 @@ class GSASII(wx.Frame):
             xring *= scalex
             yring *= scaley
             ax.text(xring,yring,'+',color='r',ha='center',va='center',picker=3)
-#        for ring in Data['rings']:
-#            for xring,yring in ring:
-#                xring *= scalex
-#                yring *= scaley
-#                ax.text(xring,yring,'+',ha='center',va='center')            
+        if Data['setRings']:
+            for ring in Data['rings']:
+                for xring,yring in ring:
+                    xring *= scalex
+                    yring *= scaley
+                    ax.text(xring,yring,'+',ha='center',va='center')            
         for ellipse in Data['ellipses']:
             cent,phi,[width,height] = ellipse
-            ax.add_artist(Ellipse([cent[0]*scalex,cent[1]*scaley],2*width*scalex,2*height*scalex,phi,fc=None))
+            ax.add_artist(Ellipse([cent[0]*scalex,cent[1]*scaley],2*width*scalex,2*height*scalex,phi,ec='r',fc=None))
         self.Img.axes.set_xlim(xlim)
         self.Img.axes.set_ylim(ylim)
         self.pdplot.colorbar(self.Img)

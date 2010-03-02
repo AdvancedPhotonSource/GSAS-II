@@ -5,7 +5,21 @@ import wx
 import time
 import numpy as np
 import numpy.linalg as nl
+import os.path as ospath
 import GSASIIgrid as G2gd
+# determine a binary path pased on the host OS and the python version, path is relative to 
+# location of this file
+if sys.platform == "win32":
+    bindir = 'binwin%d.%d' % sys.version_info[0:2]
+elif sys.platform == "darwin":
+    bindir = 'binmac%d.%d' % sys.version_info[0:2]
+else:
+    bindir = 'bin'
+print len(sys.path)
+print bindir
+if ospath.exists(ospath.join(sys.path[0],bindir)) and ospath.join(sys.path[0],bindir) not in sys.path: 
+    sys.path.insert(0,ospath.join(sys.path[0],bindir))
+print len(sys.path)
 try: 
     import pypowder as pyp
 except:

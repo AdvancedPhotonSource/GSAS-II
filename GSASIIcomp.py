@@ -6,7 +6,6 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import os.path as ospath
-import GSASIIgrid as G2gd
 # determine a binary path pased on the host OS and the python version, path is relative to 
 # location of this file
 if sys.platform == "win32":
@@ -1299,6 +1298,23 @@ def calcZdisCosB(radius,tth,radii):
     ttth = tand(tth)
     zdis = radii[1]*ttth*cosb/sinb
     return zdis,cosB
+    
+def GetEllipse(dsp,wave,dist,cent,tilt,phi):
+    radii = [0,0]
+    tth = 2.0*asind(wave/(2.*dsp))
+    ttth = tand(tth)
+    stth = sind(tth)
+    ctth = cosd(tth)
+    cosb = sind(tilt)
+    sinb = math.sqrt(1.-cosb**2)
+    sinp = sind(phi)
+    cosp = cosd(phi)
+    radius = dist*tand(tth)
+    radii[1] = dist*stth*ctth*sinb/(sinb**2-stth**2)
+    radii[0] = math.sqrt(radii[1]*radius*sinb)
+    zdis = radii[1]*ttth*cosb/sinb
+    elcent = [cent[0]-zdis*sinp,cent[1]+zdis*cosp]
+    return elcent,phi,radii
         
 def ImageCalibrate(self,data):
     import copy
@@ -1339,6 +1355,7 @@ def ImageCalibrate(self,data):
     if not data['calibrant']:
         print 'no calibration material selected'
         return True
+        
     Bravais,cell = calFile.Calibrants[data['calibrant']]
     A = cell2A(cell)
     wave = data['wavelength']
@@ -1382,7 +1399,7 @@ def ImageCalibrate(self,data):
         ratio = radii[1]/radii[0]
         Ring = makeRing(ellipse,pixLimit,cutoff,scalex,scaley,self.imScale,self.ImageZ)
         if Ring:
-            numZ = len(ring)
+            numZ = len(Ring)
             data['rings'].append(Ring)
             elcent,phi,radii = ellipse = FitEllipse(Ring)
             if abs(phi) > 45. and phi < 0.:
@@ -1411,7 +1428,8 @@ def ImageCalibrate(self,data):
                 dist2 = np.dot(d2,d2)
                 if dist2 > dist1:
                     data['center'] = cent1[-1]
-                    Zsign *= -1.                
+                    Zsign *= -1.
+#                    Tilt *= Zsign                
                 else:
                     data['center'] = cent2[-1]
                     Zsign = 1.
@@ -1422,8 +1440,8 @@ def ImageCalibrate(self,data):
                 ySum += numZ*data['center'][1]
                 tiltSum += numZ*Tilt
             cent = data['center']
-            print 'for ring # %i dist %.3f rotate %.2f tilt %.2f Xcent %.3f Ycent %.3f' \
-                %(i,dist,phi,Tilt,cent[0],cent[1])
+            print 'for ring # %2i dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' \
+                %(i,dist,phi,Tilt,cent[0],cent[1],numZ)
             data['ellipses'].append(copy.deepcopy(ellipse))
             self.PlotImage()
         else:
@@ -1437,11 +1455,32 @@ def ImageCalibrate(self,data):
         data['distance'] = distSum/Zsum
         data['rotation'] = phiSum/Zsum
         print data['center'],data['tilt'],data['distance'],data['rotation']
+        cent = data['center']
+        tilt = data['tilt']
+        dist = data['distance']
+        wave = data['wavelength']
+        phi = data['rotation']
+        N = len(data['ellipses'])
+        for H in HKL[:N]:
+            ellipse = GetEllipse(H[3],wave,dist,cent,tilt,phi)
+            data['ellipses'].append(copy.deepcopy(ellipse))
     else:
         print 'Only one ring fitted. Check your wavelength.'
         return False
     self.PlotImage()
         
     return True
-        
+    
+    
+def test():
+    cell = [5,5,5,90,90,90]
+    A = cell2A(cell)
+    assert ( calc_V(A) == 125. )
+    
+    print 'test passed'
+
+print __name__
+if __name__ == '__main__':
+    test()
+    
         

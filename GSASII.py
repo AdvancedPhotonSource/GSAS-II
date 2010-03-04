@@ -370,11 +370,10 @@ class GSASII(wx.Frame):
     def OnImageRead(self,event):
         import copy
         self.CheckNotebook()
-        dlg = wx.FileDialog(self, 'Choose image file', '.', '', \
-            'MAR345 (*.mar3450)|*.mar3450|ADSC Image (*.img)|*.img \
-            |Perkin-Elmer TIF (*.tif)|*.tif \
-            |GE Image sum (*.sum)|*.sum|GE Image avg (*.avg) \
-            |*.avg|All files (*.*)|*.*',wx.OPEN)
+        dlg = wx.FileDialog(self, 'Choose image file', '.', '',\
+        'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
+        |*.img|Perkin-Elmer TIF (*.tif)|*.tif|GE Image sum (*.sum)\
+        |*.sum|GE Image avg (*.avg)|*.avg|All files (*.*)|*.*',wx.OPEN)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
@@ -388,7 +387,7 @@ class GSASII(wx.Frame):
                 elif ext == '.img':
                     Comments,Data,Size,Image = G2IO.GetImgData(self.imagefile)
                     Image[0][0] = 0
-                elif ext == '.mar3450':
+                elif ext == '.mar3450' or ext == '.mar2300':
                     Comments,Data,Size,Image = G2IO.GetMAR345Data(self.imagefile)
                 elif ext in ['.sum','.avg']:
                     Comments,Data,Size,Image = G2IO.GetGEsumData(self.imagefile)
@@ -1118,23 +1117,23 @@ class GSASII(wx.Frame):
             if (xlim[0] < event.xdata < xlim[1]) & (ylim[0] > event.ydata > ylim[1]):
                 item = self.itemPicked
                 if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
-                    if 'Text' in str(item) and Data['refine'][0]:
-                        self.pdplot.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata/scalex,event.ydata/scaley))
+                    if 'Text' in str(item):
+                        self.pdplot.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata,event.ydata))
                     else:
                         xcent,ycent = Data['center']
-                        xpos = event.xdata-xcent*scalex
-                        ypos = event.ydata-ycent*scaley
+                        xpos = event.xdata-xcent
+                        ypos = event.ydata-ycent
                         if 'line2' in  str(item) or 'line3' in str(item) and not Data['fullIntegrate']:
                             ang = int(atan2d(-ypos,xpos))
                             self.pdplot.canvas.SetToolTipString('%6d deg'%(ang))
                         elif 'line0' in  str(item) or 'line1' in str(item):
                             radius = math.sqrt(xpos**2+ypos**2)
-                            self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius/scalex))                           
+                            self.pdplot.canvas.SetToolTipString('%8.3fmm'%(radius))                           
                 else:
-                    xpos = int(event.xdata)*self.imScale
-                    ypos = int(event.ydata)*self.imScale
-                    if (0 <= xpos <= size) and (0 <= ypos <= size):
-                        self.pdplot.canvas.SetToolTipString('%6d'%(self.ImageZ[ypos][xpos]))
+                    xpix = event.xdata*scalex
+                    ypix = event.ydata*scaley
+                    if (0 <= xpix <= size) and (0 <= ypix <= size):
+                        self.pdplot.canvas.SetToolTipString('%6d'%(self.ImageZ[ypix][xpix]))
 
         def OnImPlotKeyPress(event):
             if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
@@ -1142,17 +1141,11 @@ class GSASII(wx.Frame):
                 pixelSize = Data['pixelSize']
                 size = len(self.ImageZ)
                 Xpos = event.xdata
-                if Xpos:
-                    Xpos = int(Xpos)*self.imScale
-                else:                   #got point out of frame
+                if not Xpos:            #got point out of frame
                     return
-                Ypos = int(event.ydata)*self.imScale
-                if event.key == 'c':
-                    cent = Data['center'] = [Xpos*pixelSize[0]/1000.,Ypos*pixelSize[1]/1000.] #convert to mm
-                elif event.key == 'm':
-                    xpos = Xpos*pixelSize[0]/1000.
-                    ypos = Ypos*pixelSize[1]/1000.
-                    print 'mask = ',xpos,ypos
+                Ypos = event.ydata
+                if event.key == 'm':
+                    print 'mask = ',Xpos,Ypos
                 self.PlotImage()
                 
         def OnImPick(event):
@@ -1167,20 +1160,22 @@ class GSASII(wx.Frame):
                 return
             Data = self.PatternTree.GetItemPyData(self.PickId)
             pixelSize = Data['pixelSize']
+            scalex = 1000./pixelSize[0]
+            scaley = 1000./pixelSize[1]
             if self.itemPicked is None:
                 size = len(self.ImageZ)
                 Xpos = event.xdata
-                if Xpos and self.ifGetRing:
-                    Xpos = int(Xpos)*self.imScale
-                else:                   #got point out of frame
+                if not (Xpos and self.ifGetRing):                   #got point out of frame
                     return
-                Ypos = int(event.ydata)*self.imScale
+                Ypos = event.ydata
                 if Ypos and not self.pdplot.canvas.toolbar._active:         #make sure zoom/pan not selected
                     if event.button == 1:
-                        Xpos,Ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpos,Ypos)
+                        Xpix = Xpos*scalex
+                        Ypix = Ypos*scaley
+                        xpos,ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpix,Ypix)
                         if I and J:
-                            xpos = Xpos*pixelSize[0]/1000.
-                            ypos = Ypos*pixelSize[1]/1000.
+                            xpos /= scalex
+                            ypos /= scaley
                             Data['ring'].append([xpos,ypos])
                     self.PlotImage()
                 return
@@ -1189,16 +1184,13 @@ class GSASII(wx.Frame):
                 if xpos:                                        #avoid out of frame mouse position
                     ypos = event.ydata
                     if self.ifGetRing:
-                        scale = self.imScale*pixelSize[0]/1000.
-                        xypos = [xpos*scale,ypos*scale]
+                        xypos = [xpos,ypos]
                         rings = Data['ring']
                         for ring in rings:
                             if np.allclose(ring,xypos,.01,0):
                                 rings.remove(ring)                                                                       
                     else:
                         xcent,ycent = Data['center']
-                        xcent *= scalex
-                        ycent *= scaley
                         xpos -= xcent
                         ypos -= ycent
                         radius = math.sqrt(xpos**2+ypos**2)
@@ -1211,21 +1203,15 @@ class GSASII(wx.Frame):
                             elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
                                 Data['LRazimuth'][1] = ang
                             elif 'line0' in str(self.itemPicked):
-                                Data['IOradii'][0] = radius/scalex
+                                Data['IOradii'][0] = radius
                             elif 'line1' in str(self.itemPicked):
-                                Data['IOradii'][1] = radius/scalex
+                                Data['IOradii'][1] = radius
                             if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
                                 Data['LRazimuth'][1] += 360
                             if  Data['IOradii'][0] > Data['IOradii'][1]:
                                 Data['IOradii'] = G2cmp.SwapXY(Data['IOradii'][0],Data['IOradii'][1])
                             self.IOradText.SetValue("%8.3f,%8.3f" % (Data['IOradii'][0],Data['IOradii'][1]))
                             self.LRazim.SetValue("%6d,%6d" % (Data['LRazimuth'][0],Data['LRazimuth'][1]))
-#                        elif 'Text' in str(self.itemPicked) and Data['refine'][0]:
-#                            cent = Data['center'] = [event.xdata/scalex,event.ydata/scalex]
-#                            try:
-#                                self.centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
-#                            except AttributeError:
-#                                pass
                         else:
                             print event.xdata,event.ydata,event.button
                     self.PlotImage()
@@ -1258,62 +1244,59 @@ class GSASII(wx.Frame):
         size,self.ImageZ = self.PatternTree.GetItemPyData(self.Image)
         Data = self.PatternTree.GetItemPyData( \
             G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-        self.imScale = 1
+        imScale = 1
         if len(self.ImageZ) > 1024:
-            self.imScale = len(self.ImageZ)/1024
-        xmax = len(self.ImageZ)/self.imScale
-        xlim = (-0.5,xmax-.5)
-        ylim = (xmax-.5,-0.5,)
+            imScale = len(self.ImageZ)/1024
+        pixelSize = Data['pixelSize']
+        scalex = 1000./pixelSize[0]
+        scaley = 1000./pixelSize[1]
+        xmax = len(self.ImageZ)
+        Xmax = len(self.ImageZ)*pixelSize[0]/1000.
+        xlim = (-0.5,Xmax-.5)
+        ylim = (Xmax-.5,-0.5,)
         if self.Img:
             xlim = self.Img.axes.get_xlim()
             ylim = self.Img.axes.get_ylim()
-        pixelSize = Data['pixelSize']
-        Data['scalex'] = scalex = 1000./(pixelSize[0]*self.imScale)
-        Data['scaley'] = scaley = 1000./(pixelSize[1]*self.imScale)
         Imin,Imax = Data['range'][1]
         acolor = mpl.cm.get_cmap(Data['color'])
         xcent,ycent = Data['center']
-        xcent *= scalex
-        ycent *= scaley
-        ax.set_xlabel('Image x-axis/'+str(self.imScale),fontsize=12)
-        ax.set_ylabel('Image y-axis/'+str(self.imScale),fontsize=12)
-        self.Img = ax.imshow(self.ImageZ[::self.imScale,::self.imScale], \
-            aspect='equal',origin='upper',cmap=acolor, \
-            interpolation='nearest',vmin=Imin,vmax=Imax,picker=1)
+        ax.set_xlabel('Image x-axis, mm',fontsize=12)
+        ax.set_ylabel('Image y-axis, mm',fontsize=12)
+        self.Img = ax.imshow(self.ImageZ[::imScale,::imScale], \
+            aspect='equal',cmap=acolor, \
+            interpolation='nearest',vmin=Imin,vmax=Imax,picker=1, \
+            extent=[0,Xmax,Xmax,0])
         ax.text(xcent,ycent,'+',ha='center',va='center',picker=3)
         if Data['showLines']:
             LRAzim = Data['LRazimuth']
             IOradii = Data['IOradii']
             arcxI = arcyI = np.array(range(LRAzim[0],LRAzim[1]+1))
-            arcxI = np.sin(arcxI*math.pi/180.)*scalex*Data['IOradii'][0]+xcent
-            arcyI = -np.cos(arcyI*math.pi/180.)*scaley*Data['IOradii'][0]+ycent
+            arcxI = np.sin(arcxI*math.pi/180.)*Data['IOradii'][0]+xcent
+            arcyI = -np.cos(arcyI*math.pi/180.)*Data['IOradii'][0]+ycent
             ax.plot(arcxI,arcyI,picker=3)
             arcxO = arcyO = np.array(range(LRAzim[0],LRAzim[1]+1))
-            arcxO = np.sin(arcxO*math.pi/180.)*scalex*Data['IOradii'][1]+xcent
-            arcyO = -np.cos(arcyO*math.pi/180.)*scaley*Data['IOradii'][1]+ycent
+            arcxO = np.sin(arcxO*math.pi/180.)*Data['IOradii'][1]+xcent
+            arcyO = -np.cos(arcyO*math.pi/180.)*Data['IOradii'][1]+ycent
             ax.plot(arcxO,arcyO,picker=3)
             if not Data['fullIntegrate']:
                 xbeg = arcxI[0]
                 ybeg = arcyI[0]
-                ax.plot([xbeg,sind(LRAzim[0])*IOradii[1]*scalex+xcent],
-                    [ybeg,-cosd(LRAzim[0])*IOradii[1]*scaley+ycent],picker=3)
+                ax.plot([xbeg,sind(LRAzim[0])*IOradii[1]+xcent],
+                    [ybeg,-cosd(LRAzim[0])*IOradii[1]+ycent],picker=3)
                 xbeg = arcxI[-1]
                 ybeg = arcyI[-1]
-                ax.plot([xbeg,sind(LRAzim[1])*IOradii[1]*scalex+xcent],
-                    [ybeg,-cosd(LRAzim[1])*IOradii[1]*scaley+ycent],picker=3)
+                ax.plot([xbeg,sind(LRAzim[1])*IOradii[1]+xcent],
+                    [ybeg,-cosd(LRAzim[1])*IOradii[1]+ycent],picker=3)
         for xring,yring in Data['ring']:
-            xring *= scalex
-            yring *= scaley
-            ax.text(xring,yring,'+',color='r',ha='center',va='center',picker=3)
+            ax.text(xring,yring,'+',color='b',ha='center',va='center',picker=3)
         if Data['setRings']:
             for ring in Data['rings']:
                 for xring,yring in ring:
-                    xring *= scalex
-                    yring *= scaley
                     ax.text(xring,yring,'+',ha='center',va='center')            
         for ellipse in Data['ellipses']:
             cent,phi,[width,height] = ellipse
-            ax.add_artist(Ellipse([cent[0]*scalex,cent[1]*scaley],2*width*scalex,2*height*scalex,phi,ec='r',fc=None))
+            ax.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec='r',fc=None))
+            ax.text(cent[0],cent[1],'+',color='b',ha='center',va='center',picker=3)
         self.Img.axes.set_xlim(xlim)
         self.Img.axes.set_ylim(ylim)
         self.pdplot.colorbar(self.Img)

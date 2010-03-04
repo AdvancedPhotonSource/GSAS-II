@@ -1139,14 +1139,14 @@ def UpdateImageControls(self,data):
             pass
         waveSel.SetValue("%6.5f" % (data['wavelength']))          #reset in case of error          
         
-    def OnDistance(event):
-        try:
-            dist = float(distSel.GetValue())
-            data['distance'] = dist
-        except ValueError:
-            pass
-        distSel.SetValue("%8.3f"%(data['distance']))          #reset in case of error  
-        
+#    def OnDistance(event):
+#        try:
+#            dist = float(distSel.GetValue())
+#            data['distance'] = dist
+#        except ValueError:
+#            pass
+#        distSel.SetValue("%8.3f"%(data['distance']))          #reset in case of error  
+#        
     def OnCutOff(event):
         try:
             cutoff = float(cutOff.GetValue())
@@ -1222,16 +1222,12 @@ def UpdateImageControls(self,data):
     def OnIntegrate(event):
         print 'image integrate'
         
-    def SetStatusLine():
-        Status.SetStatusText("On Image: key 'c' to mark center")
-                              
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.ImageMenu)
     Status = self.dataFrame.CreateStatusBar()
-    SetStatusLine()
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=wxID_IMCALIBRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=wxID_IMCLEARCALIB)    
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)        
@@ -1322,8 +1318,8 @@ def UpdateImageControls(self,data):
        
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Distance'),0,
         wx.ALIGN_CENTER_VERTICAL)
-    distSel = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f"%(data['distance'])),style=wx.TE_PROCESS_ENTER)
-    distSel.Bind(wx.EVT_TEXT_ENTER,OnDistance)
+    distSel = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f"%(data['distance'])),style=wx.TE_READONLY)
+#    distSel.Bind(wx.EVT_TEXT_ENTER,OnDistance)
     dataSizer.Add(distSel,0,wx.ALIGN_CENTER_VERTICAL)
 
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' No. bins'),0,

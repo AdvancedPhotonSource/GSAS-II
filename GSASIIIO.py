@@ -416,7 +416,6 @@ def GetGEsumData(filename):
     if '.sum' in filename:
         head = ['GE detector sum data from APS 1-ID',]
     if '.avg' in filename:
-#        image = np.zeros(shape=(size,size),dtype=np.int16)
         head = ['GE detector avg data from APS 1-ID',]
     image = np.zeros(shape=(size,size),dtype=np.int32)
     row = 0

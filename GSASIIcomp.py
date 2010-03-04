@@ -1254,20 +1254,20 @@ def FitCircle(ring):
         return 0
     return cent,radius
     
-def ImageLocalMax(image,w,Xpos,Ypos):
+def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
     size = len(image)
-    if (w < Xpos < size-w) and (w < Ypos < size-w) and image[Ypos,Xpos]:
-        Z = image[Ypos-w:Ypos+w,Xpos-w:Xpos+w]
+    if (w < Xpix < size-w) and (w < Ypix < size-w) and image[Ypix,Xpix]:
+        Z = image[Ypix-w:Ypix+w,Xpix-w:Xpix+w]
         Zmax = np.argmax(Z)
         Zmin = np.argmin(Z)
-        Xpos += Zmax%w2-w
-        Ypos += Zmax/w2-w
-        return Xpos,Ypos,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
+        Xpix += Zmax%w2-w
+        Ypix += Zmax/w2-w
+        return Xpix,Ypix,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
     else:
         return 0,0,0,0
     
-def makeRing(ellipse,pix,reject,scalex,scaley,imScale,image):
+def makeRing(ellipse,pix,reject,scalex,scaley,image):
     cent,phi,radii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
@@ -1275,12 +1275,12 @@ def makeRing(ellipse,pix,reject,scalex,scaley,imScale,image):
     for a in range(0,360,2):
         x = radii[0]*cosd(a)
         y = radii[1]*sind(a)
-        X = (cphi*x-sphi*y+cent[0])*scalex*imScale
-        Y = (sphi*x+cphi*y+cent[1])*scaley*imScale
+        X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
+        Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)      
         if I and J and I/J > reject:
-            X /= scalex*imScale
-            Y /= scaley*imScale
+            X /= scalex                         #convert to mm
+            Y /= scaley
             ring.append([X,Y])
     if len(ring) < 45:             #want more than 1/4 of a circle
         return []
@@ -1321,8 +1321,9 @@ def ImageCalibrate(self,data):
     import ImageCalibrants as calFile
     print 'image calibrate'
     ring = data['ring']
-    scalex = data['scalex']             # = 1000./(pixelSize[0]*self.imScale)
-    scaley = data['scaley']
+    pixelSize = data['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
     cutoff = data['cutoff']
     if len(ring) < 5:
         print 'not enough inner ring points for ellipse'
@@ -1338,7 +1339,7 @@ def ImageCalibrate(self,data):
         return False
         
     #setup 180 points on that ring for "good" fit
-    Ring = makeRing(ellipse,20,cutoff,scalex,scaley,self.imScale,self.ImageZ)
+    Ring = makeRing(ellipse,20,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
         ellipse = FitEllipse(Ring)
     else:
@@ -1397,7 +1398,7 @@ def ImageCalibrate(self,data):
         cent = data['center']
         elcent = [cent[0]+zdis*sinp,cent[1]-zdis*cosp]
         ratio = radii[1]/radii[0]
-        Ring = makeRing(ellipse,pixLimit,cutoff,scalex,scaley,self.imScale,self.ImageZ)
+        Ring = makeRing(ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
             numZ = len(Ring)
             data['rings'].append(Ring)
@@ -1446,7 +1447,7 @@ def ImageCalibrate(self,data):
             self.PlotImage()
         else:
             break
-    fullSize = len(self.ImageZ)/(self.imScale*scalex)
+    fullSize = len(self.ImageZ)/scalex
     if 2*radii[1] < .9*fullSize:
         print 'Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib'
     if Zsum:

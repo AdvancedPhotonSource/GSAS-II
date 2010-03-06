@@ -6,6 +6,7 @@ import wx
 import math
 import numpy as np
 import cPickle
+import sys
 import GSASIIgrid as G2gd
 # needed for MAR345
 import os.path as ospath

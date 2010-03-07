@@ -472,7 +472,6 @@ def GetImgData(filename):
         File.seek(pos)
         line = ar.array('H',File.read(2*size))
         image[row] = np.asarray(line)
-        if row == 3390: print len(line)
         row += 1
         pos += 2*size
     File.close()

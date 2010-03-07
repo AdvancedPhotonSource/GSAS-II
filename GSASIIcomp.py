@@ -1315,6 +1315,12 @@ def GetEllipse(dsp,wave,dist,cent,tilt,phi):
     zdis = radii[1]*ttth*cosb/sinb
     elcent = [cent[0]-zdis*sinp,cent[1]+zdis*cosp]
     return elcent,phi,radii
+    
+def ImageCompress(image,scale):
+    if scale == 1:
+        return image
+    else:
+        return image[::scale,::scale]
         
 def ImageCalibrate(self,data):
     import copy

@@ -252,8 +252,7 @@ class GSASII(wx.Frame):
     def OnPatternTreeSelChanged(self, event):
         if self.PickId:
             if self.PatternTree.GetItemText(self.PickId) in ['Peak List','Limits','Peak Index List','Unit Cell List','Background']:
-                ax = self.pdplot.gca()
-                self.plotView = [ax.get_xlim(),ax.get_ylim()]
+                self.plotView = self.getPlotLimits()
         item = event.GetItem()
         G2gd.MovePatternTreeToGrid(self,item)
         
@@ -1011,6 +1010,11 @@ class GSASII(wx.Frame):
             cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)
         file.close()
         self.UnDo.Enable(True)
+        
+    def getPlotLimits(self):
+        ax = self.pdplot.gca()
+        return [ax.get_xlim(),ax.get_ylim()]
+
          
     def ClearEventList(self,eventList):
         if eventList:
@@ -1262,9 +1266,10 @@ class GSASII(wx.Frame):
         xcent,ycent = Data['center']
         ax.set_xlabel('Image x-axis, mm',fontsize=12)
         ax.set_ylabel('Image y-axis, mm',fontsize=12)
+        A = G2cmp.ImageCompress(self.ImageZ,imScale)
         self.Img = ax.imshow(self.ImageZ[::imScale,::imScale], \
             aspect='equal',cmap=acolor, \
-            interpolation='nearest',vmin=Imin,vmax=Imax,picker=1, \
+            interpolation='nearest',vmin=Imin,vmax=Imax, \
             extent=[0,Xmax,Xmax,0])
         ax.text(xcent,ycent,'+',ha='center',va='center',picker=3)
         if Data['showLines']:
@@ -1295,8 +1300,8 @@ class GSASII(wx.Frame):
                     ax.text(xring,yring,'+',ha='center',va='center')            
         for ellipse in Data['ellipses']:
             cent,phi,[width,height] = ellipse
-            ax.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec='r',fc=None))
-            ax.text(cent[0],cent[1],'+',color='b',ha='center',va='center',picker=3)
+            ax.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec='r',fc='none'))
+            ax.text(cent[0],cent[1],'+',color='b',ha='center',va='center')
         self.Img.axes.set_xlim(xlim)
         self.Img.axes.set_ylim(ylim)
         self.pdplot.colorbar(self.Img)
@@ -1453,7 +1458,7 @@ class GSASII(wx.Frame):
             ifpicked = False
             LimitId = 0
             if PickId:
-                ifpicked = Pattern[2] in self.PatternTree.GetItemText(PatternId)
+                ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
                 LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
             xye = Pattern[1]
             N = PlotList.index(Pattern)

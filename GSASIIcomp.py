@@ -14,11 +14,8 @@ elif sys.platform == "darwin":
     bindir = 'binmac%d.%d' % sys.version_info[0:2]
 else:
     bindir = 'bin'
-print len(sys.path)
-print bindir
 if ospath.exists(ospath.join(sys.path[0],bindir)) and ospath.join(sys.path[0],bindir) not in sys.path: 
     sys.path.insert(0,ospath.join(sys.path[0],bindir))
-print len(sys.path)
 try: 
     import pypowder as pyp
 except:

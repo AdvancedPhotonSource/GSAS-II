@@ -15,7 +15,7 @@ else:
 if ospath.exists(ospath.join(sys.path[0],bindir)) and ospath.join(sys.path[0],bindir) not in sys.path: 
     sys.path.insert(0,ospath.join(sys.path[0],bindir))
 
-import pypowder as pyd
+import pyspg as pyd
 
 def SpcGroup(SGSymbol):
     '''

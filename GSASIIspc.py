@@ -46,23 +46,23 @@ def SpcGroup(SGSymbol):
     SGData['SGLatt'] = LattSym[SGInfo[2]-1]
     SGData['SGUniq'] = UniqSym[SGInfo[3]+1]
     if SGData['SGLatt'] == 'P':
-        SGData['SGCen'] = [[0,0,0],]
+        SGData['SGCen'] = np.array(([0,0,0],))
     elif SGData['SGLatt'] == 'A':
-        SGData['SGCen'] = [[0,0,0],[0,.5,.5],]
+        SGData['SGCen'] = np.array(([0,0,0],[0,.5,.5]))
     elif SGData['SGLatt'] == 'B':
-        SGData['SGCen'] = [[0,0,0],[.5,0,.5],]
+        SGData['SGCen'] = np.array(([0,0,0],[.5,0,.5]))
     elif SGData['SGLatt'] == 'C':
-        SGData['SGCen'] = [[0,0,0],[.5,.5,0,],]
+        SGData['SGCen'] = np.array(([0,0,0],[.5,.5,0,]))
     elif SGData['SGLatt'] == 'I':
-        SGData['SGCen'] = [[0,0,0],[.5,.5,.5],]
+        SGData['SGCen'] = np.array(([0,0,0],[.5,.5,.5]))
     elif SGData['SGLatt'] == 'F':
-        SGData['SGCen'] = [[0,0,0],[0,.5,.5],[.5,0,.5],[.5,.5,0,],]
+        SGData['SGCen'] = np.array(([0,0,0],[0,.5,.5],[.5,0,.5],[.5,.5,0,]))
     elif SGData['SGLatt'] == 'R':
-        SGData['SGCen'] = [[0,0,0],[1./3.,2./3.,2./3.],[2./3.,1./3.,1./3.],]
+        SGData['SGCen'] = np.array(([0,0,0],[1./3.,2./3.,2./3.],[2./3.,1./3.,1./3.]))
     SGData['SGOps'] = []
     for i in range(SGInfo[5]):
-        Mat = SGInfo[6][i]
-        Trns = SGInfo[7][i]
+        Mat = np.array(SGInfo[6][i])
+        Trns = np.array(SGInfo[7][i])
         SGData['SGOps'].append([Mat,Trns])
     if SGData['SGLaue'] in '-1':
         SGData['SGSys'] = SysSym[0]

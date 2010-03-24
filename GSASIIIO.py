@@ -10,7 +10,7 @@ import sys
 import GSASIIgrid as G2gd
 # needed for MAR345
 import os.path as ospath
-# determine a binary path pased on the host OS and the python version, path is relative to 
+# determine a binary path passed on the host OS and the python version, path is relative to 
 # location of this file
 if sys.platform == "win32":
     bindir = 'binwin%d.%d' % sys.version_info[0:2]
@@ -205,9 +205,8 @@ def GetHKLData(filename):
             else:
                 data = S.split()
                 if data:                    #avoid blank lines
-                    h = int(data[hpos])
-                    k = int(data[kpos])
-                    l = int(data[lpos])
+                    HKL = np.array([int(data[hpos]),int(data[kpos]),int(data[lpos])])
+                    h,k,l = HKL
                     Fosq = float(data[Fosqpos])
                     if sigpos != -1:
                         sigFosq = float(data[sigpos])
@@ -223,20 +222,19 @@ def GetHKLData(filename):
                     HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
                     HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
                     FoMax = max(FoMax,Fosq)
-                    HKLref.append([h,k,l,Fosq,sigFosq,Fcsq,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
+                    HKLref.append([HKL,Fosq,sigFosq,Fcsq,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
             S = File.readline()
     else:                   #dumb h,k,l,Fo,sigFo .hkl file
         while S:
             h,k,l,Fo,sigFo = S.split()
-            h = int(h)
-            k = int(k)
-            l = int(l)
+            HKL = np.array([int(h),int(k),int(l)])
+            h,k,l = HKL
             Fo = float(Fo)
             sigFo = float(sigFo)
             HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
             HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
             FoMax = max(FoMax,Fo)
-            HKLref.append([h,k,l,Fo**2,2.*Fo*sigFo,0,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
+            HKLref.append([HKL,Fo**2,2.*Fo*sigFo,0,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
             S = File.readline()
     File.close()
     return HKLref,HKLmin,HKLmax,FoMax,ifFc
@@ -249,12 +247,12 @@ def GetPowderData(filename,Pos,Bank,DataType):
     Bank: the BANK record
     DataType: powder data type, e.g. "PXC" for Powder X-ray CW data
     returns: list [x,y,e,yc,yb]
-    x: array of x-axis values
-    y: array of powder pattern intensities
-    w: array of w=sig(intensity)^2 values
-    yc: array of calc. intensities (zero)
-    yb: array of calc. background (zero)
-    yd: array of obs-calc profiles
+    x: np.array of x-axis values
+    y: np.array of powder pattern intensities
+    w: np.array of w=sig(intensity)^2 values
+    yc: np.array of calc. intensities (zero)
+    yb: np.array of calc. background (zero)
+    yd: np.array of obs-calc profiles
     '''
     print 'Reading: '+filename
     print 'Bank:    '+Bank[:-1]
@@ -276,9 +274,6 @@ def GetFXYEdata(filename,Pos,Bank,DataType):
     x = []
     y = []
     w = []
-    yc = []
-    yb = []
-    yd = []
     S = File.readline()
     while S and S[:4] != 'BANK':
         vals = S.split()
@@ -293,12 +288,10 @@ def GetFXYEdata(filename,Pos,Bank,DataType):
         else:
             y.append(float(vals[1]))
             w.append(1.0/float(vals[2])**2)
-        yc.append(0.0)
-        yb.append(0.0)
-        yd.append(0.0)
         S = File.readline()
     File.close()
-    return [x,y,w,yc,yb,yd]
+    N = len(x)
+    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
 def GetFXYdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
@@ -306,9 +299,6 @@ def GetFXYdata(filename,Pos,Bank,DataType):
     x = []
     y = []
     w = []
-    yc = []
-    yb = []
-    yd = []
     S = File.readline()
     while S and S[:4] != 'BANK':
         vals = S.split()
@@ -324,11 +314,9 @@ def GetFXYdata(filename,Pos,Bank,DataType):
             y.append(0.0)
             w.append(1.0)
         S = File.readline()
-        yc.append(0.0)
-        yb.append(0.0)
-        yd.append(0.0)
     File.close()
-    return [x,y,w,yc,yb,yd]
+    N = len(x)
+    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
 def GetESDdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
@@ -343,9 +331,6 @@ def GetESDdata(filename,Pos,Bank,DataType):
     x = []
     y = []
     w = []
-    yc = []
-    yb = []
-    yd = []
     S = File.readline()
     j = 0
     while S and S[:4] != 'BANK':
@@ -360,13 +345,11 @@ def GetESDdata(filename,Pos,Bank,DataType):
             else:              
                 y.append(0.0)
                 w.append(1.0)
-            yc.append(0.0)
-            yb.append(0.0)
-            yd.append(0.0)
             j += 1
         S = File.readline()
     File.close()
-    return [x,y,w,yc,yb,yd]
+    N = len(x)
+    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
 
 def GetSTDdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
@@ -382,9 +365,6 @@ def GetSTDdata(filename,Pos,Bank,DataType):
     x = []
     y = []
     w = []
-    yc = []
-    yb = []
-    yd = []
     S = File.readline()
     j = 0
     while S and S[:4] != 'BANK':
@@ -402,12 +382,10 @@ def GetSTDdata(filename,Pos,Bank,DataType):
                 x.append(xi)
                 y.append(yi)
                 w.append(1.0/ei**2)
-                yc.append(0.0)
-                yb.append(0.0)
-                yd.append(0.0)
         S = File.readline()
     File.close()
-    return [x,y,w,yc,yb,yd]
+    N = len(x)
+    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
 def GetGEsumData(filename):
     import array as ar
@@ -558,8 +536,9 @@ def GetTifData(filename):
         image[row] = np.asarray(line)
         row += 1
         pos += 4*size
-    data = {'pixelSize':(200,200),'wavelength':0.10,'distance':100.0,'center':[204.8,204.8]}  
+    data = {'pixelSize':(200,200),'wavelength':0.10,'distance':100.0,'center':[204.8,204.8]}
     return head,data,size,image
+    
     File.close()    
 
 def ProjFileOpen(self):
@@ -574,6 +553,11 @@ def ProjFileOpen(self):
                 break
             datum = data[0]
             print 'load: ',datum[0]
+            if 'PWDR' in datum[0] and 'list' in str(type(datum[1][1][0])):      #fix to convert old style list arrays to numpy arrays
+                X = datum[1][1]
+                X = [np.array(X[0]),np.array(X[1]),np.array(X[2]),np.array(X[3]),np.array(X[4]),np.array(X[5])]
+                datum[1] = [datum[1][0],X]
+                print 'powder data converted to numpy arrays'
             if 'PKS' not in datum[0]:
                 if datum[0] not in ['Notebook','Controls','Phases'] and 'PWDR' not in datum[0]:            #temporary fix
                     datum[0] = 'PWDR '+datum[0]

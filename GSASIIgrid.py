@@ -8,6 +8,7 @@ import cPickle
 import GSASIIcomp as G2cmp
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
+import GSASIIplot as G2plt
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -332,7 +333,7 @@ def UpdatePeakGrid(self, data):
         data = self.PatternTree.GetItemPyData(PatternId)[1]
         OK,smin,Rwp,runtime,GoOn = G2cmp.DoPeakFit(peaks,background,limits,inst,data)
         UpdatePeakGrid(self,peaks)
-        self.PlotPatterns()
+        G2plt.PlotPatterns(self)
         if not OK:
             print 'Refinement failed'
             dlg = wx.MessageDialog(self, 'Do you want to reload now?', 'Refinement failed',  wx.YES_NO)
@@ -370,7 +371,7 @@ def UpdatePeakGrid(self, data):
             UpdatePeakGrid(self,peaks)
             if not OK:
                 break
-            self.PlotPatterns()
+            G2plt.PlotPatterns(self)
             print "%s%7.2f%s%12.6g" % ('Rwp = ',Rwp,'%, Smin = ',smin)
             rat = (osmin-smin)/smin
             if rat < 1.0e-4: GoOn = False
@@ -399,7 +400,7 @@ def UpdatePeakGrid(self, data):
         X = []
         for key in T: X.append(D[key])
         data = X        
-        self.PlotPatterns()
+        G2plt.PlotPatterns(self)
         
     def setBackgroundColors():
        for r in range(self.dataDisplay.GetNumberRows()):
@@ -456,7 +457,7 @@ def UpdatePeakGrid(self, data):
                         data[row][col]=True
                     elif key == 78:  #'N'
                         data[row][col]=False
-        self.PlotPatterns()
+        G2plt.PlotPatterns(self)
             
     self.dataFrame.SetMenuBar(self.dataFrame.PeakMenu)
     self.Bind(wx.EVT_MENU, OnUnDo, id=wxID_UNDO)
@@ -554,7 +555,7 @@ def UpdateLimitsGrid(self, data):
         new[0] = max(old[0],new[0])
         new[1] = max(new[0],min(old[1],new[1]))
         data = [old,new]
-        self.PlotPatterns()
+        G2plt.PlotPatterns(self)
         
     self.LimitsTable = []
     colLabels = ['Tmin','Tmax']
@@ -768,7 +769,10 @@ def UpdateUnitCellsGrid(self, data):
         cellPrint(ibrav,A)
         for hkl in self.HKL:
             hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
-        self.PlotPatterns()
+        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
+            G2plt.PlotPowderLines(self)
+        else:
+            G2plt.PlotPatterns(self)
         
     def OnIndexPeaks(event):
         PatternId = self.PatternId    
@@ -799,7 +803,10 @@ def UpdateUnitCellsGrid(self, data):
                 self.HKL = G2cmp.GenHBravais(dmin,bestCell[2],G2cmp.cell2A(bestCell[3:9]))
                 for hkl in self.HKL:
                     hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
-                self.PlotPatterns()
+                if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
+                    G2plt.PlotPowderLines(self)
+                else:
+                    G2plt.PlotPatterns(self)
         self.dataFrame.CopyCell.Enable(True)
         self.dataFrame.IndexPeaks.Enable(True)
                 
@@ -834,7 +841,10 @@ def UpdateUnitCellsGrid(self, data):
                 self.HKL = G2cmp.GenHBravais(dmin,ibrav,A)
                 for hkl in self.HKL:
                     hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))
-                self.PlotPatterns()             
+                if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
+                    G2plt.PlotPowderLines(self)
+                else:
+                    G2plt.PlotPatterns(self)
         controls = []
         bravais = [0,0,0,0,0,0,0, 0,0,0,0,0,0,0]
         table = self.UnitCellsTable.GetData()
@@ -1014,24 +1024,20 @@ def UpdateHKLControls(self,data):
         scale = int(scaleSel.GetValue())/1000.
         scaleSel.SetValue(int(scale*1000.))
         data['Scale'] = scale*10.
-        self.NewPlot = True
-        self.PlotSngl()
+        G2plt.PlotSngl(self)
         
     def OnLayerSlider(event):
         layer = layerSel.GetValue()
         data['Layer'] = layer
-        self.NewPlot = True
-        self.PlotSngl()
+        G2plt.PlotSngl(self)
         
     def OnSelZone(event):
         data['Zone'] = zoneSel.GetValue()
-        self.NewPlot = True
-        self.PlotSngl()
+        G2plt.PlotSngl(self)
         
     def OnSelType(event):
         data['Type'] = typeSel.GetValue()
-        self.NewPlot = True
-        self.PlotSngl()
+        G2plt.PlotSngl(self)
         
     def SetStatusLine():
         Status.SetStatusText("look at me!!!")
@@ -1103,7 +1109,7 @@ def UpdateImageControls(self,data):
     
     def OnNewColorBar(event):
         data['color'] = colSel.GetValue()
-        self.PlotImage()
+        G2plt.PlotImage(self)
         
     def OnNewCalibrant(event):
         data['calibrant'] = calSel.GetValue()
@@ -1112,16 +1118,16 @@ def UpdateImageControls(self,data):
         data['pixLimit'] = int(pixLimit.GetValue())
         
     def OnMaxSlider(event):
-        imax = max(data['range'][1][0],int(maxSel.GetValue()))
-        maxSel.SetValue(imax)
-        data['range'][1][1] = imax
-        self.PlotImage()
+        imax = int(maxSel.GetValue())
+        delt = data['range'][0][1]-data['range'][0][0]
+        data['range'][1][1] = int((imax/100.)*delt)+data['range'][0][0]
+        G2plt.PlotImage(self)
         
     def OnMinSlider(event):
-        imin = min(data['range'][1][1],int(minSel.GetValue()))
-        minSel.SetValue(imin)
-        data['range'][1][0] = imin
-        self.PlotImage()
+        imin = int(minSel.GetValue())
+        delt = data['range'][1][1]-data['range'][0][0]
+        data['range'][1][0] = int((imin/100.)*delt)+data['range'][0][0]
+        G2plt.PlotImage(self)
         
     def OnNumOutChans(event):
         try:
@@ -1139,14 +1145,6 @@ def UpdateImageControls(self,data):
             pass
         waveSel.SetValue("%6.5f" % (data['wavelength']))          #reset in case of error          
         
-#    def OnDistance(event):
-#        try:
-#            dist = float(distSel.GetValue())
-#            data['distance'] = dist
-#        except ValueError:
-#            pass
-#        distSel.SetValue("%8.3f"%(data['distance']))          #reset in case of error  
-#        
     def OnCutOff(event):
         try:
             cutoff = float(cutOff.GetValue())
@@ -1160,18 +1158,20 @@ def UpdateImageControls(self,data):
             data['showLines'] = False
         else:
             data['showLines'] = True
-        self.PlotImage()
+        G2plt.PlotImage(self)
         
     def OnFullIntegrate(event):
         if data['fullIntegrate']:
             data['fullIntegrate'] = False
             data['LRazimuth'] = [-45,45]
-            self.LRazim.SetValue("%6d,%6d" % (-45,45))            
+            self.Lazim.SetValue("%6d" % (-45))            
+            self.Razim.SetValue("%6d" % (45))            
         else:
             data['fullIntegrate'] = True
             data['LRazimuth'] = [0,360]
-            self.LRazim.SetValue("%6d,%6d" % (0,360))            
-        self.PlotImage()
+            self.Lazim.SetValue("%6d" % (0))            
+            self.Razim.SetValue("%6d" % (360))            
+        G2plt.PlotImage(self)
         
     def OnSetDefault(event):
         import copy
@@ -1182,19 +1182,37 @@ def UpdateImageControls(self,data):
             self.imageDefault = copy.copy(data)
             data['setDefault'] = True
             
+    def OnIOtth(event):
+        Ltth = float(self.InnerTth.GetValue())
+        Utth = float(self.OuterTth.GetValue())
+        if Ltth > Utth:
+            G2cmp.SwapXY(Ltth,Utth)
+        data['IOtth'] = [Ltth,Utth]
+        self.InnerTth.SetValue("%8.2f" % (Ltth))
+        self.OuterTth.SetValue("%8.2f" % (Utth))
+        G2plt.PlotImage(self)
+        
+    def OnLRazim(event):
+        Lazm = int(self.Lazim.GetValue())
+        Razm = int(self.Razim.GetValue())
+#        if Lazm > Razm:
+#            G2cmp.SwapXY(Lazm,Razm)
+        data['LRazimuth'] = [Lazm,Razm]
+        G2plt.PlotImage(self)
+            
     def OnSetRings(event):
         if data['setRings']:
             data['setRings'] = False
         else:
             data['setRings'] = True
         setRings.SetValue(data['setRings'])
-        self.PlotImage()
+        G2plt.PlotImage(self)
             
     def OnClearCalib(event):
         data['ring'] = []
         data['rings'] = []
         data['ellipses'] = []
-        self.PlotImage()
+        G2plt.PlotImage(self)
             
     def OnCalibrate(event):        
         data['setRings'] = False
@@ -1239,14 +1257,14 @@ def UpdateImageControls(self,data):
     maxSizer.AddGrowableCol(1,1)
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-    maxSel = wx.Slider(parent=self.dataDisplay,maxValue=data['range'][0][1],minValue=data['range'][0][0],
-        style=wx.SL_HORIZONTAL,value=data['range'][1][1])
+    maxSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
+        value=int(100*data['range'][1][1]/(data['range'][0][1]-data['range'][0][0])))
     maxSizer.Add(maxSel,1,wx.EXPAND|wx.RIGHT)
     maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)    
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-    minSel = wx.Slider(parent=self.dataDisplay,maxValue=data['range'][0][1],minValue=data['range'][0][0],
-        style=wx.SL_HORIZONTAL,value=data['range'][1][0])
+    minSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
+        value=int(100*data['range'][1][0]/(data['range'][1][1]-data['range'][0][0])))
     maxSizer.Add(minSel,1,wx.EXPAND|wx.RIGHT)
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
     mainSizer.Add(maxSizer,1,wx.EXPAND|wx.RIGHT)
@@ -1295,12 +1313,22 @@ def UpdateImageControls(self,data):
     centText = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f,%8.3f" % (cent[0],cent[1])),style=wx.TE_READONLY)
     dataSizer.Add(centText,0,wx.ALIGN_CENTER_VERTICAL)
     
-    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Inner/Outer radii'),0,
+    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Inner/Outer 2-theta'),0,
         wx.ALIGN_CENTER_VERTICAL)
-    IOradii = data['IOradii']
-    self.IOradText = wx.TextCtrl(parent=self.dataDisplay,
-        value=("%8.3f,%8.3f" % (IOradii[0],IOradii[1])),style=wx.TE_READONLY)
-    dataSizer.Add(self.IOradText,0,wx.ALIGN_CENTER_VERTICAL)
+    if 'IOtth' not in data:                 #temporary fix
+        del data['IOradii']
+        data['IOtth'] = [2.0,5.0]
+    IOtth = data['IOtth']
+    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+    self.InnerTth = wx.TextCtrl(parent=self.dataDisplay,
+        value=("%8.2f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
+    self.InnerTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
+    littleSizer.Add(self.InnerTth,0,wx.ALIGN_CENTER_VERTICAL)
+    self.OuterTth = wx.TextCtrl(parent=self.dataDisplay,
+        value=("%8.2f" % (IOtth[1])),style=wx.TE_PROCESS_ENTER)
+    self.OuterTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
+    littleSizer.Add(self.OuterTth,0,wx.ALIGN_CENTER_VERTICAL)
+    dataSizer.Add(littleSizer,0,)
        
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Wavelength'),0,
         wx.ALIGN_CENTER_VERTICAL)
@@ -1312,14 +1340,20 @@ def UpdateImageControls(self,data):
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start/End azimuth'),0,
         wx.ALIGN_CENTER_VERTICAL)
     LRazim = data['LRazimuth']
-    self.LRazim = wx.TextCtrl(parent=self.dataDisplay,
-        value=("%6d,%6d" % (LRazim[0],LRazim[1])),style=wx.TE_READONLY)
-    dataSizer.Add(self.LRazim,0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+    self.Lazim = wx.TextCtrl(parent=self.dataDisplay,
+        value=("%6d" % (LRazim[0])),style=wx.TE_PROCESS_ENTER)
+    self.Lazim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
+    littleSizer.Add(self.Lazim,0,wx.ALIGN_CENTER_VERTICAL)
+    self.Razim = wx.TextCtrl(parent=self.dataDisplay,
+        value=("%6d" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
+    self.Razim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
+    littleSizer.Add(self.Razim,0,wx.ALIGN_CENTER_VERTICAL)
+    dataSizer.Add(littleSizer,0,)
        
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Distance'),0,
         wx.ALIGN_CENTER_VERTICAL)
     distSel = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f"%(data['distance'])),style=wx.TE_READONLY)
-#    distSel.Bind(wx.EVT_TEXT_ENTER,OnDistance)
     dataSizer.Add(distSel,0,wx.ALIGN_CENTER_VERTICAL)
 
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' No. bins'),0,
@@ -1451,7 +1485,6 @@ def UpdatePhaseData(self,item,data,oldPage):
             generalData[3][7] = G2cmp.calc_V(G2cmp.cell2A(generalData[3][1:7]))
             SetLatticeParametersStyle(SGData,table)
             generalData[4][1] = float(General.GetCellValue(5,1))
-            print 'did general refresh'
             General.ForceRefresh()
                         
         rowLabels = ['Phase name','Phase type','Space group',
@@ -1767,12 +1800,14 @@ def MovePatternTreeToGrid(self,item):
         elif 'IMG' in self.PatternTree.GetItemText(item):
             self.Image = item
             self.Img = 0
-            self.PlotImage()
+            G2plt.PlotImage(self)
+        elif 'PKS' in self.PatternTree.GetItemText(item):
+            G2plt.PlotPowderLines(self)
         elif 'PWDR' in self.PatternTree.GetItemText(item):
-            self.PlotPatterns()
-        elif 'SXTL ' in self.PatternTree.GetItemText(item):
+            G2plt.PlotPatterns(self)
+        elif 'SXTL' in self.PatternTree.GetItemText(item):
             self.Sngl = item
-            self.PlotSngl()
+            G2plt.PlotSngl(self)
             
     elif self.PatternTree.GetItemText(parentID) == 'Phases':
         self.PickId = item
@@ -1789,46 +1824,48 @@ def MovePatternTreeToGrid(self,item):
         self.Image = self.PatternTree.GetItemParent(item)
         data = self.PatternTree.GetItemPyData(item)
         UpdateImageControls(self,data)
-        self.PlotImage()
+        G2plt.PlotImage(self)
     elif self.PatternTree.GetItemText(item) == 'HKL Plot Controls':
         self.PickId = item
         self.Sngl = self.PatternTree.GetItemParent(item)
         data = self.PatternTree.GetItemPyData(item)
         UpdateHKLControls(self,data)
-        self.PlotSngl()               
+        G2plt.PlotSngl(self)               
     elif self.PatternTree.GetItemText(item) == 'Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.ExportPeakList.Enable(True)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         UpdatePeakGrid(self,data)
-        self.PlotPatterns()
+        G2plt.PlotPatterns(self)
     elif self.PatternTree.GetItemText(item) == 'Background':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         UpdateBackgroundGrid(self,data)
-        self.PlotPatterns()
+        G2plt.PlotPatterns(self)
     elif self.PatternTree.GetItemText(item) == 'Limits':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         UpdateLimitsGrid(self,data)
-        self.PlotPatterns()
+        G2plt.PlotPatterns(self)
     elif self.PatternTree.GetItemText(item) == 'Instrument Parameters':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         UpdateInstrumentGrid(self,data)
-        self.PlotPeakWidths()
+        G2plt.PlotPeakWidths(self)
     elif self.PatternTree.GetItemText(item) == 'Index Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.ExportPeakList.Enable(True)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         UpdateIndexPeaksGrid(self,data)
-        self.NewPlot = True
-        self.PlotPatterns()
+        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
+            G2plt.PlotPowderLines(self)
+        else:
+            G2plt.PlotPatterns(self)
     elif self.PatternTree.GetItemText(item) == 'Unit Cells List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PickId = item
@@ -1842,5 +1879,7 @@ def MovePatternTreeToGrid(self,item):
         UpdateUnitCellsGrid(self,data)
         self.dataFrame.RefineCell.Enable(True)
         self.dataFrame.IndexPeaks.Enable(True)
-        self.NewPlot = True
-        self.PlotPatterns()
+        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
+            G2plt.PlotPowderLines(self)
+        else:
+            G2plt.PlotPatterns(self)

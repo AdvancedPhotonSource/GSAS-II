@@ -14,8 +14,10 @@ elif sys.platform == "darwin":
     bindir = 'binmac%d.%d' % sys.version_info[0:2]
 else:
     bindir = 'bin'
+
 if ospath.exists(ospath.join(sys.path[0],bindir)) and ospath.join(sys.path[0],bindir) not in sys.path: 
     sys.path.insert(0,ospath.join(sys.path[0],bindir))
+
 try: 
     import pypowder as pyp
 except:
@@ -29,12 +31,14 @@ except:
     # this error is non-recoverable, so just quit
     exit()
 import fitellipse as fte
+import GSASIIplot as G2plt
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
 tand = lambda x: math.tan(x*math.pi/180.)
 atand = lambda x: 180.*math.atan(x)/math.pi
+atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
 cosd = lambda x: math.cos(x*math.pi/180.)
 acosd = lambda x: 180.*math.acos(x)/math.pi
 rdsq2d = lambda x,p: round(1.0/math.sqrt(x),p)
@@ -113,7 +117,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
     Bv = 0
     if background[1]:
         Bv = B
-    x,y,w,yc,yb,yd = data
+    x,y,w,yc,yb,yd = data               #these are numpy arrays!
     V = []
     A = []
     swobs = 0.0
@@ -495,7 +499,14 @@ def cell2AB(cell):
     B = np.dot(A,B)
     A = nl.inv(B)
     return A,B
-                
+    
+def makeMat(Angle,Axis):
+    #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
+    cs = cosd(Angle)
+    ss = sind(Angle)
+    M = np.array(([1,0,0],[0,cs,-ss],[0,ss,cs]))
+    return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
+                    
 def MaxIndex(dmin,A):
     #finds maximum allowed hkl for given A within dmin
     Hmax = [0,0,0]
@@ -1290,15 +1301,22 @@ def calcDist(radii,tth):
     return math.sqrt(radii[0]**4/(ttth**2*((radii[0]*ctth)**2+(radii[1]*stth)**2)))
     
 def calcZdisCosB(radius,tth,radii):
-    sinb = cosB = min(1.0,radii[0]**2/(radius*radii[1]))
-    cosb = math.sqrt(1.-sinb**2)
-    ttth = tand(tth)
-    zdis = radii[1]*ttth*cosb/sinb
-    return zdis,cosB
+    cosB = sinb = radii[0]**2/(radius*radii[1])
+    if cosB > 1.:
+        return 0.,1.
+    else:
+        cosb = math.sqrt(1.-sinb**2)
+        ttth = tand(tth)
+        zdis = radii[1]*ttth*cosb/sinb
+        return zdis,cosB
     
-def GetEllipse(dsp,wave,dist,cent,tilt,phi):
+def GetEllipse(dsp,data):
+    dist = data['distance']
+    cent = data['center']
+    tilt = data['tilt']
+    phi = data['rotation']
     radii = [0,0]
-    tth = 2.0*asind(wave/(2.*dsp))
+    tth = 2.0*asind(data['wavelength']/(2.*dsp))
     ttth = tand(tth)
     stth = sind(tth)
     ctth = cosd(tth)
@@ -1306,13 +1324,41 @@ def GetEllipse(dsp,wave,dist,cent,tilt,phi):
     sinb = math.sqrt(1.-cosb**2)
     sinp = sind(phi)
     cosp = cosd(phi)
-    radius = dist*tand(tth)
+    radius = dist*ttth
     radii[1] = dist*stth*ctth*sinb/(sinb**2-stth**2)
-    radii[0] = math.sqrt(radii[1]*radius*sinb)
-    zdis = radii[1]*ttth*cosb/sinb
-    elcent = [cent[0]-zdis*sinp,cent[1]+zdis*cosp]
-    return elcent,phi,radii
+    if radii[1] > 0:
+        radii[0] = math.sqrt(radii[1]*radius*sinb)
+        zdis = radii[1]*ttth*cosb/sinb
+        elcent = [cent[0]-zdis*sinp,cent[1]+zdis*cosp]
+        return elcent,phi,radii
+    else:
+        return False
     
+def GetTthDspAzm(x,y,data):
+    wave = data['wavelength']
+    dist = data['distance']
+    cent = data['center']
+    tilt = data['tilt']
+    phi = data['rotation']
+    dx = x-cent[0]
+    dy = y-cent[1]
+    X = np.array(([dx,dy,0]))
+    X = np.sum(X*makeMat(-phi,2),axis=1)
+    X = np.sum(X*makeMat(-tilt,0),axis=1)
+    tth = atand(math.sqrt(dx**2+dy**2-X[2]**2)/(dist-X[2]))
+    dsp = wave/(2.*sind(tth/2.))
+    azm = atan2d(dy,dx)    
+    return tth,dsp,azm
+    
+def GetTth(x,y,data):
+    return GetTthDspAzm(x,y,data)[0]
+    
+def GetDsp(x,y,data):
+    return GetTthDspAzm(x,y,data)[1]
+       
+def GetDetector(data):
+    return 
+
 def ImageCompress(image,scale):
     if scale == 1:
         return image
@@ -1345,13 +1391,15 @@ def ImageCalibrate(self,data):
     Ring = makeRing(ellipse,20,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
         ellipse = FitEllipse(Ring)
+        Ring = makeRing(ellipse,20,cutoff,scalex,scaley,self.ImageZ)    #do again
+        ellipse = FitEllipse(Ring)
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
     print 'inner ring:',ellipse
     data['center'] = copy.copy(ellipse[0])           #not right!! (but useful for now)
-    data['ellipses'].append(ellipse[:])
-    self.PlotImage()
+    data['ellipses'].append(ellipse[:]+('r',))
+    G2plt.PlotImage(self)
     
     #setup for calibration
     data['rings'] = []
@@ -1377,9 +1425,10 @@ def ImageCalibrate(self,data):
     cosp = cosd(ellipse[1])
     cent1 = []
     cent2 = []
-    Zsign = 1.
     xSum = 0
     ySum = 0
+    zxSum = 0
+    zySum = 0
     phiSum = 0
     tiltSum = 0
     distSum = 0
@@ -1395,16 +1444,15 @@ def ImageCalibrate(self,data):
         radii[1] = dist*stth*ctth*cosB/(cosB**2-stth**2)
         radii[0] = math.sqrt(radii[1]*radius*cosB)
         zdis,cosB = calcZdisCosB(radius,tth,radii)
-        zdis *= Zsign
-        sinp = sind(phi)
-        cosp = cosd(phi)
+        zsinp = zdis*sind(phi)
+        zcosp = zdis*cosd(phi)
         cent = data['center']
-        elcent = [cent[0]+zdis*sinp,cent[1]-zdis*cosp]
+        elcent = [cent[0]+zsinp,cent[1]-zcosp]
         ratio = radii[1]/radii[0]
         Ring = makeRing(ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
             numZ = len(Ring)
-            data['rings'].append(Ring)
+            data['rings'].append(np.array(Ring))
             elcent,phi,radii = ellipse = FitEllipse(Ring)
             if abs(phi) > 45. and phi < 0.:
                 phi += 180.
@@ -1419,59 +1467,65 @@ def ImageCalibrate(self,data):
                     print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i)
                     return False
             zdis,cosB = calcZdisCosB(radius,tth,radii)
-            Tilt = acosd(cosB)
-            sinp = sind(ellipse[1])
-            cosp = cosd(ellipse[1])
-            cent1.append(np.array([elcent[0]+zdis*sinp,elcent[1]-zdis*cosp]))
-            cent2.append(np.array([elcent[0]-zdis*sinp,elcent[1]+zdis*cosp]))
-            dist1 = dist2 = 0
+            Tilt = acosd(cosB)          # 0 <= tilt <= 90
+            zsinp = zdis*sind(ellipse[1])
+            zcosp = zdis*cosd(ellipse[1])
+            cent1.append(np.array([elcent[0]+zsinp,elcent[1]-zcosp]))
+            cent2.append(np.array([elcent[0]-zsinp,elcent[1]+zcosp]))
             if i:
-                d1 = cent1[-1]-cent1[-2]
-                dist1 = np.dot(d1,d1)
+                d1 = cent1[-1]-cent1[-2]        #get shift of 2 possible center solutions
                 d2 = cent2[-1]-cent2[-2]
-                dist2 = np.dot(d2,d2)
-                if dist2 > dist1:
+                if np.dot(d2,d2) > np.dot(d1,d1):  #right solution is the larger shift
                     data['center'] = cent1[-1]
-                    Zsign *= -1.
-#                    Tilt *= Zsign                
                 else:
                     data['center'] = cent2[-1]
-                    Zsign = 1.
                 Zsum += numZ
                 phiSum += numZ*phi
                 distSum += numZ*dist
                 xSum += numZ*data['center'][0]
                 ySum += numZ*data['center'][1]
-                tiltSum += numZ*Tilt
+                tiltSum += numZ*abs(Tilt)
             cent = data['center']
             print 'for ring # %2i dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' \
                 %(i,dist,phi,Tilt,cent[0],cent[1],numZ)
-            data['ellipses'].append(copy.deepcopy(ellipse))
-            self.PlotImage()
+            data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
+            G2plt.PlotImage(self)
         else:
             break
     fullSize = len(self.ImageZ)/scalex
     if 2*radii[1] < .9*fullSize:
         print 'Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib'
-    if Zsum:
-        data['center'] = [xSum/Zsum,ySum/Zsum]
-        data['tilt'] = tiltSum/Zsum
-        data['distance'] = distSum/Zsum
-        data['rotation'] = phiSum/Zsum
-        print data['center'],data['tilt'],data['distance'],data['rotation']
-        cent = data['center']
-        tilt = data['tilt']
-        dist = data['distance']
-        wave = data['wavelength']
-        phi = data['rotation']
-        N = len(data['ellipses'])
-        for H in HKL[:N]:
-            ellipse = GetEllipse(H[3],wave,dist,cent,tilt,phi)
-            data['ellipses'].append(copy.deepcopy(ellipse))
-    else:
+    if not Zsum:
         print 'Only one ring fitted. Check your wavelength.'
         return False
-    self.PlotImage()
+    cent = data['center'] = [xSum/Zsum,ySum/Zsum]
+    wave = data['wavelength']
+    dist = data['distance'] = distSum/Zsum
+    
+    #possible error if no. of rings < 3! Might need trap here
+    d1 = cent1[-1]-cent1[1]             #compare last ring to 2nd ring
+    d2 = cent2[-1]-cent2[1]
+    Zsign = 1
+    len1 = math.sqrt(np.dot(d1,d1))
+    len2 = math.sqrt(np.dot(d2,d2))
+    t1 = d1/len1
+    t2 = d2/len2
+    if len2 > len1:
+        print 'len2 > len1'
+        if -135. < atan2d(t2[1],t2[0]) < 45.:
+            Zsign = -1
+    else:
+        print 'len2 < len1'
+        if -135. < atan2d(t1[1],t1[0]) < 45.:
+            Zsign = -1
+    
+    tilt = data['tilt'] = Zsign*tiltSum/Zsum
+    phi = data['rotation'] = phiSum/Zsum
+    N = len(data['ellipses'])
+    for H in HKL[:N]:
+        ellipse = GetEllipse(H[3],data)
+        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
+    G2plt.PlotImage(self)
         
     return True
     

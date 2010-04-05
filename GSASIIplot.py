@@ -362,9 +362,9 @@ def PlotImage(self):
     for xring,yring in Data['ring']:
         imgPlot.text(xring,yring,'+',color='b',ha='center',va='center',picker=3)
     if Data['setRings']:
-        for ring in Data['rings']:
-            for xring,yring in ring:
-                imgPlot.text(xring,yring,'+',ha='center',va='center')            
+        rings = Data['rings']
+        for xring,yring,tth in rings:
+            imgPlot.text(xring,yring,'+',ha='center',va='center')            
     for ellipse in Data['ellipses']:
         cent,phi,[width,height],col = ellipse
         imgPlot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))

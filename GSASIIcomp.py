@@ -30,7 +30,6 @@ except:
     msg.ShowModal()
     # this error is non-recoverable, so just quit
     exit()
-import fitellipse as fte
 import GSASIIplot as G2plt
 
 # trig functions in degrees
@@ -1207,15 +1206,15 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
         return False,0,0
         
 def FitEllipse(ring):
-    N = len(ring)
-    A = np.zeros(shape=(N,5),order='F',dtype=np.float32)
-    B = np.zeros(shape=N,dtype=np.float32)
-    X = np.zeros(shape=N,dtype=np.float32)
-    Y = np.zeros(shape=N,dtype=np.float32)
-    for i,(x,y) in enumerate(ring):
-        X[i] = x
-        Y[i] = y
-    B,Krank,Rnorm = fte.fitqdr(N,A,B,X,Y)
+    from scipy.optimize import leastsq
+    def ellipseCalc(A,xy):
+        x = xy[0]
+        y = xy[1]
+        return (1.+A[0])*x**2+(1.-A[0])*y**2+A[1]*x*y+A[2]*x+A[3]*y+A[4]
+    ring = np.array(ring)
+    p0 = np.zeros(shape=5)
+    result = leastsq(ellipseCalc,p0,args=(ring.T,))
+    B = result[0]
     
     ell = [1.+B[0],B[1],1.-B[0],B[2],B[3],B[4]]
     # ell is [A,B,C,D,E,F] for Ax^2+Bxy+Cy^2+Dx+Ey+F = 0
@@ -1243,25 +1242,7 @@ def FitEllipse(ring):
         if phi < -90.:
             phi += 180.
     return cent,phi,[sr1,sr2]
-        
-def FitCircle(ring):
-    N = len(ring)
-    A = np.zeros(shape=(N,3),order='F',dtype=np.float32)
-    B = np.zeros(shape=N,dtype=np.float32)
-    X = np.zeros(shape=N,dtype=np.float32)
-    Y = np.zeros(shape=N,dtype=np.float32)
-    for i,(x,y) in enumerate(ring):
-        X[i] = x
-        Y[i] = y
-    B,Krank,Rnorm = fte.fitcrc(N,A,B,X,Y)
-    cent = (-0.5*B[0],-0.5*B[1])
-    R2 = cent[0]**2+cent[1]**2-B[2]
-    if R2 > 0.0:
-        radius = math.sqrt(R2)
-    else:
-        return 0
-    return cent,radius
-    
+            
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
     size = len(image)
@@ -1356,9 +1337,6 @@ def GetTth(x,y,data):
 def GetDsp(x,y,data):
     return GetTthDspAzm(x,y,data)[1]
        
-def GetDetector(data):
-    return 
-
 def ImageCompress(image,scale):
     if scale == 1:
         return image
@@ -1452,7 +1430,7 @@ def ImageCalibrate(self,data):
         Ring = makeRing(ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
             numZ = len(Ring)
-            data['rings'].append(np.array(Ring))
+            data['rings'].append(np.column_stack((np.array(Ring),dsp*np.ones(numZ))))
             elcent,phi,radii = ellipse = FitEllipse(Ring)
             if abs(phi) > 45. and phi < 0.:
                 phi += 180.
@@ -1511,16 +1489,18 @@ def ImageCalibrate(self,data):
     t1 = d1/len1
     t2 = d2/len2
     if len2 > len1:
-        print 'len2 > len1'
         if -135. < atan2d(t2[1],t2[0]) < 45.:
             Zsign = -1
     else:
-        print 'len2 < len1'
         if -135. < atan2d(t1[1],t1[0]) < 45.:
             Zsign = -1
     
     tilt = data['tilt'] = Zsign*tiltSum/Zsum
     phi = data['rotation'] = phiSum/Zsum
+    rings = np.concatenate((data['rings']),axis=0)
+    print wave,dist,cent,phi,tilt
+    
+    
     N = len(data['ellipses'])
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)

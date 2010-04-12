@@ -185,9 +185,9 @@ def PlotImage(self):
                     xpos = event.xdata-xcent
                     ypos = event.ydata-ycent
                     if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
-                        ang = int(atan2d(-ypos,xpos))
+                        ang = int(atan2d(xpos,ypos))
                         imgPage.canvas.SetToolTipString('%6d deg'%(ang))
-                    elif 'inner' in  str(item.get_gid()) or 'outer' in str(item.get_gid()):
+                    elif 'line1' in  str(item) or 'line2' in str(item):
                         tth = G2cmp.GetTth(event.xdata,event.ydata,Data)
                         imgPage.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
             else:
@@ -334,36 +334,36 @@ def PlotImage(self):
         LRAzim = Data['LRazimuth']                  #NB: integers
         IOtth = Data['IOtth']
         wave = Data['wavelength']
-        dsp = wave/(2.0*sind(IOtth[0]/2.0))
-        ell0 = G2cmp.GetEllipse(dsp,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
-        dsp = wave/(2.0*sind(IOtth[1]/2.0))
-        ell1 = G2cmp.GetEllipse(dsp,Data)           #Ditto & more likely for outer ellipse
+        dspI = wave/(2.0*sind(IOtth[0]/2.0))
+        ellI = G2cmp.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+        dspO = wave/(2.0*sind(IOtth[1]/2.0))
+        ellO = G2cmp.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
         if Data['fullIntegrate']:
-            arcxI = arcyI = np.array(range(0,361))
-            arcxO = arcyO = np.array(range(0,361))
+            Azm = np.array(range(0,361))
         else:
-            arcxI = arcyI = np.array(range(LRAzim[0],LRAzim[1]+1))
-            arcxO = arcyO = np.array(range(LRAzim[0],LRAzim[1]+1))
-        if ell0:
-            cent0,phi0,radii0 = ell0
-            radii0 = np.sum(G2cmp.makeMat(phi0,2).T*np.array(radii0+[0.,]),axis=1)
-            arcxI = np.cos(arcxI*math.pi/180.)*radii0[0]+cent0[0]
-            arcyI = np.sin(arcyI*math.pi/180.)*radii0[1]+cent0[1]
+            Azm = np.array(range(LRAzim[0],LRAzim[1]+1))
+        if ellI:
+            xyI = []
+            for azm in Azm:
+                xyI.append(G2cmp.GetDetectorXY(dspI,azm,Data))
+            xyI = np.array(xyI)
+            arcxI,arcyI = xyI.T
             imgPlot.plot(arcxI,arcyI,picker=3)
-        if ell1:
-            cent1,phi1,radii1 = ell1
-            radii1 = np.sum(G2cmp.makeMat(phi1,2).T*np.array(radii1+[0.,]),axis=1)
-            arcxO = np.cos(arcxO*math.pi/180.)*radii1[0]+cent1[0]
-            arcyO = np.sin(arcyO*math.pi/180.)*radii1[1]+cent1[1]
-            imgPlot.plot(arcxO,arcyO,picker=3)       
-        if ell0 and ell1 and not Data['fullIntegrate']:
+        if ellO:
+            xyO = []
+            for azm in Azm:
+                xyO.append(G2cmp.GetDetectorXY(dspO,azm,Data))
+            xyO = np.array(xyO)
+            arcxO,arcyO = xyO.T
+            imgPlot.plot(arcxO,arcyO,picker=3)
+        if ellO and ellI and not Data['fullIntegrate']:
             imgPlot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
             imgPlot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
     for xring,yring in Data['ring']:
         imgPlot.text(xring,yring,'+',color='b',ha='center',va='center',picker=3)
     if Data['setRings']:
-        rings = Data['rings']
-        for xring,yring,tth in rings:
+        rings = np.concatenate((Data['rings']),axis=0)
+        for xring,yring,dsp in rings:
             imgPlot.text(xring,yring,'+',ha='center',va='center')            
     for ellipse in Data['ellipses']:
         cent,phi,[width,height],col = ellipse

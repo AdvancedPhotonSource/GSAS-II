@@ -408,7 +408,7 @@ class GSASII(wx.Frame):
                         Data['masks'] = []
                         Data['calibrant'] = ''
                         Data['IOtth'] = [2.0,5.0]
-                        Data['LRazimuth'] = [-45,45]
+                        Data['LRazimuth'] = [-135,-45]
                         Data['outChannels'] = 2500
                         Data['fullIntegrate'] = False
                         Data['setRings'] = False

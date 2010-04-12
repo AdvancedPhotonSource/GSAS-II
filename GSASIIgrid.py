@@ -1163,14 +1163,12 @@ def UpdateImageControls(self,data):
     def OnFullIntegrate(event):
         if data['fullIntegrate']:
             data['fullIntegrate'] = False
-            data['LRazimuth'] = [-45,45]
-            self.Lazim.SetValue("%6d" % (-45))            
-            self.Razim.SetValue("%6d" % (45))            
+            self.Lazim.SetEditable(True)            
+            self.Razim.SetEditable(True)            
         else:
             data['fullIntegrate'] = True
-            data['LRazimuth'] = [0,360]
-            self.Lazim.SetValue("%6d" % (0))            
-            self.Razim.SetValue("%6d" % (360))            
+            self.Lazim.SetEditable(False)            
+            self.Razim.SetEditable(False)            
         G2plt.PlotImage(self)
         
     def OnSetDefault(event):

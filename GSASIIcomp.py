@@ -1205,43 +1205,98 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
     else:
         return False,0,0
         
-def FitEllipse(ring):
-    from scipy.optimize import leastsq
-    def ellipseCalc(A,xy):
-        x = xy[0]
-        y = xy[1]
-        return (1.+A[0])*x**2+(1.-A[0])*y**2+A[1]*x*y+A[2]*x+A[3]*y+A[4]
+def FitRing(ring):
+    Err,parms = FitCircle(ring)
+    Err /= len(ring)
+    print 'circle error:','%8f'%(Err)
+    if Err > 20000.:
+        eparms = FitEllipse(ring)
+        if eparms:
+            parms = eparms
+    return parms
+        
+def FitCircle(ring):
+    import numpy.linalg as nl
+    
+    def makeParmsCircle(B):
+        cent = [-B[0]/2,-B[1]/2]
+        phi = 0.
+        sr1 = sr2 = math.sqrt(cent[0]**2+cent[1]**2-B[2])
+        return cent,phi,[sr1,sr2]
+        
     ring = np.array(ring)
-    p0 = np.zeros(shape=5)
-    result = leastsq(ellipseCalc,p0,args=(ring.T,))
-    B = result[0]
+    x = np.asarray(ring.T[0])
+    y = np.asarray(ring.T[1])
     
-    ell = [1.+B[0],B[1],1.-B[0],B[2],B[3],B[4]]
-    # ell is [A,B,C,D,E,F] for Ax^2+Bxy+Cy^2+Dx+Ey+F = 0
-    det = 4.*ell[0]*ell[2]-ell[1]**2
-    if det < 0.:
-        print 'hyperbola!'
-        return 0
-    elif det == 0.:
-        print 'parabola!'
-        return 0
-    cent = [(ell[1]*ell[4]-2.0*ell[2]*ell[3])/det, \
-        (ell[1]*ell[3]-2.0*ell[0]*ell[4])/det]
-    phi = 0.5*atand(ell[1]/(ell[0]-ell[2]+1e-32))
+    M = np.array((x,y,np.ones_like(x)))
+    B = np.array(-(x**2+y**2))
+    result = nl.lstsq(M.T,B)
+    return result[1],makeParmsCircle(result[0])
+        
+def FitEllipse(ring):
+    import numpy.linalg as nl
+            
+    def makeParmsEllipse(B):
+        det = 4.*(1.-B[0]**2)-B[1]**2
+        if det < 0.:
+            print 'hyperbola!'
+            return 0
+        elif det == 0.:
+            print 'parabola!'
+            return 0
+        cent = [(B[1]*B[3]-2.*(1.-B[0])*B[2])/det, \
+            (B[1]*B[2]-2.*(1.+B[0])*B[3])/det]
+        phi = 0.5*atand(0.5*B[1]/B[0])
+        
+        a = (1.+B[0])/cosd(2*phi)
+        b = 2.-a
+        f = (1.+B[0])*cent[0]**2+(1.-B[0])*cent[1]**2+B[1]*cent[0]*cent[1]-B[4]
+        if f/a < 0 or f/b < 0:
+            return 0
+        sr1 = math.sqrt(f/a)
+        sr2 = math.sqrt(f/b)
+        if sr1 > sr2:
+            sr1,sr2 = SwapXY(sr1,sr2)
+            phi -= 90.
+            if phi < -90.:
+                phi += 180.
+        return cent,phi,[sr1,sr2]
+                
+    ring = np.array(ring)
+    x = np.asarray(ring.T[0])
+    y = np.asarray(ring.T[1])
+    M = np.array((x**2-y**2,x*y,x,y,np.ones_like(x)))
+    B = np.array(-(x**2+y**2))
+    result = nl.lstsq(M.T,B)
+    return makeParmsEllipse(result[0])
     
-    a3 = 0.5*(ell[0]+ell[2]+(ell[0]-ell[2])/cosd(2.0*phi))
-    b3 = ell[0]+ell[2]-a3
-    f3 = ell[0]*cent[0]**2+ell[2]*cent[1]**2+ell[1]*cent[0]*cent[1]-ell[5]
-    if f3/a3 < 0 or f3/b3 < 0:
-        return 0
-    sr1 = math.sqrt(f3/a3)
-    sr2 = math.sqrt(f3/b3)
-    if sr1 > sr2:
-        sr1,sr2 = SwapXY(sr1,sr2)
-        phi -= 90.
-        if phi < -90.:
-            phi += 180.
-    return cent,phi,[sr1,sr2]
+def FitDetector(rings,p0,wave):
+    from scipy.optimize import leastsq
+    def ellipseCalc(B,xyd,wave):
+        sind = lambda x: np.sin(x*math.pi/180.)
+        asind = lambda x: 180.*np.arcsin(x)/math.pi
+        cosd = lambda x: np.cos(x*math.pi/180.)
+        tand = lambda x: np.tan(x*math.pi/180.)
+        x = xyd[0]
+        y = xyd[1]
+        dsp = xyd[2]
+        dist,x0,y0,phi,tilt = B
+        tth = 2.0*asind(wave/(2.*dsp))
+        ttth = tand(tth)
+        radius = dist*ttth
+        stth = sind(tth)
+        cosb = cosd(tilt)
+        R1 = dist*stth*cosd(tth)*cosb/(cosb**2-stth**2)
+        R0 = np.sqrt(R1*radius*cosb)
+        zdis = R1*ttth*tand(tilt)
+        X = x-x0+zdis*sind(phi)
+        Y = y-y0-zdis*cosd(phi)
+        XR = X*cosd(phi)-Y*sind(phi)
+        YR = X*sind(phi)+Y*cosd(phi)
+        return (XR/R0)**2+(YR/R1)**2-1
+    result = leastsq(ellipseCalc,p0,args=(rings.T,wave))
+    return result[0]
+
             
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
@@ -1256,7 +1311,7 @@ def ImageLocalMax(image,w,Xpix,Ypix):
     else:
         return 0,0,0,0
     
-def makeRing(ellipse,pix,reject,scalex,scaley,image):
+def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     cent,phi,radii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
@@ -1270,7 +1325,7 @@ def makeRing(ellipse,pix,reject,scalex,scaley,image):
         if I and J and I/J > reject:
             X /= scalex                         #convert to mm
             Y /= scaley
-            ring.append([X,Y])
+            ring.append([X,Y,dsp])
     if len(ring) < 45:             #want more than 1/4 of a circle
         return []
     return ring
@@ -1301,21 +1356,53 @@ def GetEllipse(dsp,data):
     ttth = tand(tth)
     stth = sind(tth)
     ctth = cosd(tth)
-    cosb = sind(tilt)
-    sinb = math.sqrt(1.-cosb**2)
-    sinp = sind(phi)
-    cosp = cosd(phi)
+    cosb = cosd(tilt)
     radius = dist*ttth
-    radii[1] = dist*stth*ctth*sinb/(sinb**2-stth**2)
+    radii[1] = dist*stth*ctth*cosb/(cosb**2-stth**2)
     if radii[1] > 0:
-        radii[0] = math.sqrt(radii[1]*radius*sinb)
-        zdis = radii[1]*ttth*cosb/sinb
-        elcent = [cent[0]-zdis*sinp,cent[1]+zdis*cosp]
+        radii[0] = math.sqrt(radii[1]*radius*cosb)
+        zdis = radii[1]*ttth*tand(tilt)
+        elcent = [cent[0]-zdis*sind(phi),cent[1]+zdis*cosd(phi)]
         return elcent,phi,radii
     else:
         return False
-    
+        
+def GetDetectorXY(dsp,azm,data):
+    from scipy.optimize import fsolve
+    def func(xy,*args):
+       azm,phi,R0,R1,A,B = args
+       cp = cosd(phi)
+       sp = sind(phi)
+       x,y = xy
+       out = []
+       out.append(y-x*tand(azm))
+       out.append(R0**2*((x+A)*sp-(y+B)*cp)**2+R1**2*((x+A)*cp+(y+B)*sp)**2-(R0*R1)**2)
+       return out
+    elcent,phi,radii = GetEllipse(dsp,data)
+    cent = data['center']
+    tilt = data['tilt']
+    phi = data['rotation']
+    wave = data['wavelength']
+    dist = data['distance']
+    tth = 2.0*asind(wave/(2.*dsp))
+    ttth = tand(tth)
+    radius = dist*ttth
+    stth = sind(tth)
+    cosb = cosd(tilt)
+    R1 = dist*stth*cosd(tth)*cosb/(cosb**2-stth**2)
+    R0 = math.sqrt(R1*radius*cosb)
+    zdis = R1*ttth*tand(tilt)
+    A = zdis*sind(phi)
+    B = -zdis*cosd(phi)
+    xy0 = [radius*cosd(azm),radius*sind(azm)]
+    xy = fsolve(func,xy0,args=(azm,phi,R0,R1,A,B))+cent
+    return xy
+                    
 def GetTthDspAzm(x,y,data):
+    #make numpy array compliant
+    atand = lambda x: 180.*np.arctan(x)/np.pi
+    sind = lambda x: np.sin(x*np.pi/180.)
+    atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     wave = data['wavelength']
     dist = data['distance']
     cent = data['center']
@@ -1326,7 +1413,7 @@ def GetTthDspAzm(x,y,data):
     X = np.array(([dx,dy,0]))
     X = np.sum(X*makeMat(-phi,2),axis=1)
     X = np.sum(X*makeMat(-tilt,0),axis=1)
-    tth = atand(math.sqrt(dx**2+dy**2-X[2]**2)/(dist-X[2]))
+    tth = atand(np.sqrt(dx**2+dy**2-X[2]**2)/(dist-X[2]))
     dsp = wave/(2.*sind(tth/2.))
     azm = atan2d(dy,dx)    
     return tth,dsp,azm
@@ -1358,19 +1445,19 @@ def ImageCalibrate(self,data):
         
     #fit start points on inner ring
     data['ellipses'] = []
-    outB = FitEllipse(ring)
-    if outB:
-        ellipse = outB
-        print 'start:',ellipse
+    outE = FitRing(ring)
+    if outE:
+        print 'start ellipse:',outE
+        ellipse = outE
     else:
         return False
         
     #setup 180 points on that ring for "good" fit
-    Ring = makeRing(ellipse,20,cutoff,scalex,scaley,self.ImageZ)
+    Ring = makeRing(1.0,ellipse,20,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
-        ellipse = FitEllipse(Ring)
-        Ring = makeRing(ellipse,20,cutoff,scalex,scaley,self.ImageZ)    #do again
-        ellipse = FitEllipse(Ring)
+        ellipse = FitRing(Ring)
+        Ring = makeRing(1.0,ellipse,20,cutoff,scalex,scaley,self.ImageZ)    #do again
+        ellipse = FitRing(Ring)
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
@@ -1399,8 +1486,6 @@ def ImageCalibrate(self,data):
     data['distance'] = dist = calcDist(radii,tth)
     radius = dist*tand(tth)
     zdis,cosB = calcZdisCosB(radius,tth,radii)
-    sinp = sind(ellipse[1])
-    cosp = cosd(ellipse[1])
     cent1 = []
     cent2 = []
     xSum = 0
@@ -1427,11 +1512,12 @@ def ImageCalibrate(self,data):
         cent = data['center']
         elcent = [cent[0]+zsinp,cent[1]-zcosp]
         ratio = radii[1]/radii[0]
-        Ring = makeRing(ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
             numZ = len(Ring)
-            data['rings'].append(np.column_stack((np.array(Ring),dsp*np.ones(numZ))))
-            elcent,phi,radii = ellipse = FitEllipse(Ring)
+            data['rings'].append(np.array(Ring))
+            ellipse = FitRing(Ring)
+            elcent,phi,radii = ellipse                
             if abs(phi) > 45. and phi < 0.:
                 phi += 180.
             dist = calcDist(radii,tth)
@@ -1498,18 +1584,21 @@ def ImageCalibrate(self,data):
     tilt = data['tilt'] = Zsign*tiltSum/Zsum
     phi = data['rotation'] = phiSum/Zsum
     rings = np.concatenate((data['rings']),axis=0)
-    print wave,dist,cent,phi,tilt
-    
-    
+    p0 = [dist,cent[0],cent[1],phi,tilt]
+    result = FitDetector(rings,p0,wave)
+    data['distance'] = result[0]
+    data['center'] = result[1:3]
+    data['rotation'] = np.mod(result[3],360.0)
+    data['tilt'] = result[4]
     N = len(data['ellipses'])
+    data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
     G2plt.PlotImage(self)
         
     return True
-    
-    
+        
 def test():
     cell = [5,5,5,90,90,90]
     A = cell2A(cell)

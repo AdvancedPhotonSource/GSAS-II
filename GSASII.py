@@ -235,6 +235,7 @@ class GSASII(wx.Frame):
         self.plotView = 0
         self.Image = 0
         self.Img = 0
+        self.TA = 0
         self.Pwdr = False
         self.imageDefault = {}
         self.Sngl = 0
@@ -250,8 +251,9 @@ class GSASII(wx.Frame):
         if pltNum >= 0:                         #to avoid the startup with no plot!
             pltPage = self.G2plotNB.nb.GetPage(pltNum)
             pltPlot = pltPage.figure.gca()
-            pltPage.xylim = [pltPlot.get_xlim(),pltPlot.get_ylim()]
-            pltPage.views = copy.deepcopy(pltPage.toolbar._views)
+#            pltPage.xylim = [pltPlot.get_xlim(),pltPlot.get_ylim()]
+#            print pltPage.xylim
+#            pltPage.views = copy.deepcopy(pltPage.toolbar._views)
         item = event.GetItem()
         G2gd.MovePatternTreeToGrid(self,item)
         
@@ -410,6 +412,7 @@ class GSASII(wx.Frame):
                         Data['IOtth'] = [2.0,5.0]
                         Data['LRazimuth'] = [-135,-45]
                         Data['outChannels'] = 2500
+                        Data['outAzimuths'] = 1
                         Data['fullIntegrate'] = False
                         Data['setRings'] = False
                     Data['setDefault'] = False
@@ -772,6 +775,7 @@ class GSASII(wx.Frame):
 
     def OnFileOpenMenu(self, event):
         result = ''
+        Id = 0
         if self.PatternTree.GetChildrenCount(self.root,False):
             if self.dataFrame:
                 self.dataFrame.Clear() 
@@ -795,6 +799,14 @@ class GSASII(wx.Frame):
                     G2IO.ProjFileOpen(self)
                     self.PatternTree.Expand(self.root)
                     self.HKL = []
+                    item, cookie = self.PatternTree.GetFirstChild(self.root)
+                    while item and not Id:
+                        name = self.PatternTree.GetItemText(item)
+                        if 'PWDR' in name or 'SXTL' in name or 'IMG' in name:
+                            Id = item
+                        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+                    if Id:
+                        self.PatternTree.SelectItem(Id)
             finally:
                 dlg.Destroy()
 

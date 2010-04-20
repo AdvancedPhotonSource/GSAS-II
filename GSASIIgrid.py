@@ -19,8 +19,8 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, 
 ] = [wx.NewId() for _init_coll_Atom_Items in range(2)]
 
-[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB,
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(3)]
+[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_IMREFRESHTA,
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(4)]
 
 [ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
 ] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
@@ -53,6 +53,8 @@ class DataFrame(wx.Frame):
         parent.Append(help='',id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
         parent.Append(help='',id=wxID_IMCLEARCALIB, kind=wx.ITEM_NORMAL,text='Clear calibration')
         parent.Append(help='',id=wxID_IMINTEGRATE, kind=wx.ITEM_NORMAL,text='Integrate')
+        parent.Append(help='',id=wxID_IMREFRESHTA, kind=wx.ITEM_NORMAL,text='Refresh transformed image')
+        
             
     def _init_coll_Peak_Items(self,parent):
         self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
@@ -1132,14 +1134,28 @@ def UpdateImageControls(self,data):
     def OnNumOutChans(event):
         try:
             numChans = int(outChan.GetValue())
+            if numChans < 1:
+                raise ValueError
             data['outChannels'] = numChans
         except ValueError:
             pass
         outChan.SetValue(str(data['outChannels']))          #reset in case of error        
         
+    def OnNumOutAzms(event):
+        try:
+            numAzms = int(outAzim.GetValue())
+            if numAzms < 1:
+                raise ValueError
+            data['outAzimuths'] = numAzms            
+        except ValueError:
+            pass
+        outAzim.SetValue(str(data['outAzimuths']))          #reset in case of error        
+        
     def OnWavelength(event):
         try:
             wave = float(waveSel.GetValue())
+            if wave < .01:
+                raise ValueError
             data['wavelength'] = wave
         except ValueError:
             pass
@@ -1193,8 +1209,6 @@ def UpdateImageControls(self,data):
     def OnLRazim(event):
         Lazm = int(self.Lazim.GetValue())
         Razm = int(self.Razim.GetValue())
-#        if Lazm > Razm:
-#            G2cmp.SwapXY(Lazm,Razm)
         data['LRazimuth'] = [Lazm,Razm]
         G2plt.PlotImage(self)
             
@@ -1236,7 +1250,10 @@ def UpdateImageControls(self,data):
             Status.SetStatusText('Calibration failed')
                     
     def OnIntegrate(event):
-        print 'image integrate'
+        G2cmp.ImageIntegrate(self,data)
+        
+    def OnRefreshTA(event):
+        G2plt.PlotTRImage(self)        
         
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
@@ -1247,6 +1264,7 @@ def UpdateImageControls(self,data):
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=wxID_IMCALIBRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=wxID_IMCLEARCALIB)    
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)        
+    self.dataFrame.Bind(wx.EVT_MENU, OnRefreshTA, id=wxID_IMREFRESHTA)        
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
@@ -1283,7 +1301,7 @@ def UpdateImageControls(self,data):
     comboSizer.Add(calSel,0,wx.ALIGN_CENTER_VERTICAL)
     comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Pixel search range '),0,
         wx.ALIGN_CENTER_VERTICAL)
-    pixLimit = wx.ComboBox(parent=self.dataDisplay,value=str(data['pixLimit']),choices=['5','10','15','20'],
+    pixLimit = wx.ComboBox(parent=self.dataDisplay,value=str(data['pixLimit']),choices=['1','2','5','10','15','20'],
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
     comboSizer.Add(pixLimit,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1313,9 +1331,14 @@ def UpdateImageControls(self,data):
     
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Inner/Outer 2-theta'),0,
         wx.ALIGN_CENTER_VERTICAL)
-    if 'IOtth' not in data:                 #temporary fix
+        
+    #temporary fixes    
+    if 'IOtth' not in data:                 
         del data['IOradii']
         data['IOtth'] = [2.0,5.0]
+    if 'outAzimuths' not in data:
+        data['outAzimuths'] = 1        
+        
     IOtth = data['IOtth']
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     self.InnerTth = wx.TextCtrl(parent=self.dataDisplay,
@@ -1354,11 +1377,16 @@ def UpdateImageControls(self,data):
     distSel = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f"%(data['distance'])),style=wx.TE_READONLY)
     dataSizer.Add(distSel,0,wx.ALIGN_CENTER_VERTICAL)
 
-    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' No. bins'),0,
+    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' No. 2-theta/azimuth bins'),0,
         wx.ALIGN_CENTER_VERTICAL)
+    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     outChan = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outChannels']),style=wx.TE_PROCESS_ENTER)
     outChan.Bind(wx.EVT_TEXT_ENTER,OnNumOutChans)
-    dataSizer.Add(outChan,0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(outChan,0,wx.ALIGN_CENTER_VERTICAL)
+    outAzim = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
+    outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
+    littleSizer.Add(outAzim,0,wx.ALIGN_CENTER_VERTICAL)
+    dataSizer.Add(littleSizer,0,)
 
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt angle'),0,
         wx.ALIGN_CENTER_VERTICAL)
@@ -1801,8 +1829,8 @@ def MovePatternTreeToGrid(self,item):
             G2plt.PlotImage(self)
         elif 'PKS' in self.PatternTree.GetItemText(item):
             G2plt.PlotPowderLines(self)
-        elif 'PWDR' in self.PatternTree.GetItemText(item):
-            G2plt.PlotPatterns(self)
+        elif 'PWDR' in self.PatternTree.GetItemText(item):            
+            G2plt.PlotPatterns(self,True)
         elif 'SXTL' in self.PatternTree.GetItemText(item):
             self.Sngl = item
             G2plt.PlotSngl(self)

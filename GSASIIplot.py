@@ -37,7 +37,9 @@ class G2Plot(wx.Panel):
 class G2PlotNoteBook(wx.Panel):
     def __init__(self,parent,id=-1):
         wx.Panel.__init__(self,parent,id=id)
-        self.nb = wx.aui.AuiNotebook(self) #style=wx.AUI_NB_DEFAULT_STYLE ^ wx.AUI_NB_CLOSE_ON_ACTIVE_TAB)
+        #so one can't delete a plot page!!
+        self.nb = wx.aui.AuiNotebook(self, \
+            style=wx.aui.AUI_NB_DEFAULT_STYLE ^ wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
         sizer = wx.BoxSizer()
         sizer.Add(self.nb,1,wx.EXPAND)
         self.SetSizer(sizer)
@@ -197,7 +199,7 @@ def PlotImage(self):
                 ypix = ypos*scaley
                 if (0 <= xpix <= size) and (0 <= ypix <= size):
                     imgPage.canvas.SetToolTipString('%6d'%(self.ImageZ[ypix][xpix]))
-                tth,dsp,azm = G2cmp.GetTthDspAzm(xpos,ypos,Data)
+                tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 self.G2plotNB.status.SetFields(\
                     ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),])
@@ -256,7 +258,7 @@ def PlotImage(self):
                         if np.allclose(ring,xypos,.01,0):
                             rings.remove(ring)                                                                       
                 else:
-                    tth,dsp,azm = G2cmp.GetTthDspAzm(xpos,ypos,Data)
+                    tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
                     if 'Line2D' in str(self.itemPicked):
                         if 'line1' in str(self.itemPicked):
                             Data['IOtth'][0] = tth
@@ -325,10 +327,8 @@ def PlotImage(self):
     imgPlot.set_xlabel('Image x-axis, mm',fontsize=12)
     imgPlot.set_ylabel('Image y-axis, mm',fontsize=12)
     A = G2cmp.ImageCompress(self.ImageZ,imScale)
-    self.Img = imgPlot.imshow(self.ImageZ[::imScale,::imScale], \
-        aspect='equal',cmap=acolor, \
-        interpolation='nearest',vmin=Imin,vmax=Imax, \
-        extent=[0,Xmax,Xmax,0])
+    self.Img = imgPlot.imshow(A,aspect='equal',cmap=acolor, \
+        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
     imgPlot.plot(xcent,ycent,'x')
     if Data['showLines']:
         LRAzim = Data['LRazimuth']                  #NB: integers
@@ -460,7 +460,7 @@ def PlotPeakWidths(self):
     pkwPlot.legend(loc='best')
     pkwPage.canvas.draw()
 
-def PlotPatterns(self):
+def PlotPatterns(self,newPlot=False):
     
     def OnPick(event):
         if self.itemPicked is not None: return
@@ -470,11 +470,11 @@ def PlotPatterns(self):
         mouse = event.mouseevent
         xpos = pick.get_xdata()
         ypos = pick.get_ydata()
+        ind = event.ind
         view = pdrPage.toolbar._views.forward()
-        ind0 = np.searchsorted(xye[0],view[0][0])
-        ind = event.ind+ind0
+        if view and 'line2' in str(pick):           #apply offset only for picked powder pattern points
+            ind += np.searchsorted(xye[0],view[0][0])
         xy = zip(xpos[ind],ypos[ind])[0]
-        xm = mouse.xdata
         if self.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
@@ -488,6 +488,7 @@ def PlotPatterns(self):
                 XY = [xy[0],0, xy[1],1, sig,0, gam,0, ins[5],0]       #default refine intensity 1st   
                 data.append(XY)
                 G2gd.UpdatePeakGrid(self,data)
+                PlotPatterns(self)
             else:                                                   #picked a peak list line
                 self.itemPicked = pick
         elif self.PatternTree.GetItemText(PickId) == 'Limits':
@@ -500,9 +501,9 @@ def PlotPatterns(self):
                     data[1][1] = max(xy[0],data[1][0])
                 self.PatternTree.SetItemPyData(LimitId,data)
                 G2gd.UpdateLimitsGrid(self,data)
+                PlotPatterns(self)
             else:                                                   #picked a limit line
                 self.itemPicked = pick                
-        PlotPatterns(self)
         
     def OnPlotKeyPress(event):
         if event.key == 'w':
@@ -510,31 +511,31 @@ def PlotPatterns(self):
                 self.Weight = False
             else:
                 self.Weight = True
-            self.PlotPatterns()
             print 'plot weighting:',self.Weight
-        if self.PatternTree.GetChildrenCount(self.root,False) > 1:
-            if event.key == 'u' and self.Offset < 100.:
-                self.Offset += 1.
-                self.PlotPatterns()
-            elif event.key == 'd' and self.Offset > 0.:
-                self.Offset -= 1.
-                self.PlotPatterns()
-            elif event.key == 'c':
-                print 'contouring'
-                if self.Contour:
-                    self.Contour = False
-                else:
-                    self.Contour = True
-            PlotPatterns(self)
+        elif event.key == 'u' and self.Offset < 100.:
+            self.Offset += 1.
+        elif event.key == 'd' and self.Offset > 0.:
+            self.Offset -= 1.
+        elif event.key == 'c':
+            print 'contouring'
+            if self.Contour:
+                self.Contour = False
+            else:
+                self.Contour = True
         else:
-            event.Skip()
+            event.Skip(True)
+        PlotPatterns(self)
                         
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
+            wave = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[0][1]
+            dsp = 0.0
+            if abs(xpos) > 0.:
+                dsp = wave/(2.*sind(abs(xpos)/2.0))
             pdrPage.canvas.SetCursor(wx.CROSS_CURSOR)
-            self.G2plotNB.status.SetFields(['2-theta =%9.3f Intensity =%9.1f'%(xpos,ypos),])
+            self.G2plotNB.status.SetFields(['2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),])
             if self.itemPicked:
                 pdrPage.canvas.SetToolTipString('%9.3f'%(xpos))
                    
@@ -548,6 +549,7 @@ def PlotPatterns(self):
             if  lineNo in [0,1]:
                 LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
                 data = self.PatternTree.GetItemPyData(LimitId)
+                print 'limits',xpos
                 data[1][lineNo] = xpos
                 self.PatternTree.SetItemPyData(LimitId,data)
                 if self.PatternTree.GetItemText(self.PickId) == 'Limits':
@@ -555,19 +557,24 @@ def PlotPatterns(self):
             else:
                 PeakId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List')
                 data = self.PatternTree.GetItemPyData(PeakId)
+                print 'peaks',xpos
                 data[lineNo-2][0] = xpos
                 self.PatternTree.SetItemPyData(PeakId,data)
                 G2gd.UpdatePeakGrid(self,data)
         PlotPatterns(self)
         self.itemPicked = None    
 
+    xylim = []
     try:
         plotNum = self.G2plotNB.plotList.index('Powder Patterns')
         pdrPage = self.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            pdrPlot = pdrPage.figure.gca()          #get previous powder plot & get limits
+            xylim = pdrPlot.get_xlim(),pdrPlot.get_ylim()
         pdrPage.figure.clf()
-        pdrPlot = pdrPage.figure.gca()
-        pdrPage.toolbar._views = copy.deepcopy(pdrPage.views)
+        pdrPlot = pdrPage.figure.gca()          #get a fresh plot after clf()
     except ValueError,error:
+        newPlot = True
         pdrPlot = self.G2plotNB.add('Powder Patterns').gca()
         plotNum = self.G2plotNB.plotList.index('Powder Patterns')
         pdrPage = self.G2plotNB.nb.GetPage(plotNum)
@@ -575,14 +582,12 @@ def PlotPatterns(self):
         pdrPage.canvas.mpl_connect('motion_notify_event', OnMotion)
         pdrPage.canvas.mpl_connect('pick_event', OnPick)
         pdrPage.canvas.mpl_connect('button_release_event', OnRelease)
-        pdrPage.xylim = 0
         
     pdrPage.SetFocus()
 
     PickId = self.PickId
     PatternId = self.PatternId
     colors=['b','g','r','c','m','k']
-    Ymax = 1.0
     PlotList = []
     Lines = []
     item, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -592,17 +597,9 @@ def PlotPatterns(self):
             Pattern.append(self.PatternTree.GetItemText(item))
             PlotList.append(Pattern)
         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
-    xlim = [0.,180.]
-    xmin = 0.
-    xmax = 180.
-    ylim = [0.,1.0e12]
+    Ymax = 1.0
     for Pattern in PlotList:
         xye = Pattern[1]
-        if pdrPage.xylim:
-            xlim,ylim = pdrPage.xylim
-        else:        
-            xlim = [xye[0][np.argmin(xye[0])],xye[0][np.argmax(xye[0])]]
-            ylim = [xye[1][np.argmin(xye[1])],xye[1][np.argmax(xye[1])]]
         Ymax = max(Ymax,max(xye[1]))
     offset = self.Offset*Ymax/100.0
     pdrPlot.set_title('Powder Patterns')
@@ -620,12 +617,12 @@ def PlotPatterns(self):
             ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
         N = PlotList.index(Pattern)
-        X,Y = xye[0:2]
-        Y += offset*N
+        X = xye[0]
+        Y = xye[1]+offset*N
         if LimitId:
             limits = self.PatternTree.GetItemPyData(LimitId)
-            Lines.append(pdrPlot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3))    
-            Lines.append(pdrPlot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3))                    
+            Lines.append(pdrPlot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
+            Lines.append(pdrPlot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
         if self.Contour:
             ContourY.append(N)
             ContourZ.append(Y)
@@ -640,7 +637,7 @@ def PlotPatterns(self):
                 if self.Weight:
                     W2 = np.sqrt(xye[2])
                     D *= W2
-                pdrPlot.plot(X,Y,colors[N%6]+'+',picker=3)
+                pdrPlot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                 pdrPlot.plot(X,Z,colors[(N+1)%6],picker=False)
                 pdrPlot.plot(X,W,colors[(N+2)%6],picker=False)
                 pdrPlot.plot(X,D,colors[(N+3)%6],picker=False)
@@ -651,13 +648,13 @@ def PlotPatterns(self):
                     pdrPage.canvas.SetToolTipString(tip)
                     data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
                     for item in data:
-                        Lines.append(pdrPlot.axvline(item[0],color=colors[N%6],picker=2))
+                        Lines.append(pdrPlot.axvline(item[0],color=colors[N%6],picker=2.))
                 if self.PatternTree.GetItemText(PickId) == 'Limits':
                     tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                     pdrPage.canvas.SetToolTipString(tip)
                     data = self.LimitsTable.GetData()
             else:
-                pdrPlot.plot(xye[0],Y,colors[N%6],picker=False)
+                pdrPlot.plot(X,Y,colors[N%6],picker=False)
     if PickId and self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
         for peak in peaks:
@@ -665,15 +662,23 @@ def PlotPatterns(self):
         for hkl in self.HKL:
             pdrPlot.axvline(hkl[5],color='r',dashes=(5,5))
     if self.Contour:
-        pdrPlot.contourf(ContourX,ContourY,ContourZ)
-        pdrPlot.set_ylim(0,Nseq-1)
-    self.Lines = Lines
-    view = pdrPage.toolbar._views.forward()
-    if view:
-        pdrPlot.set_xlim(view[0][:2])
-        pdrPlot.set_ylim(view[0][2:])
+        acolor = mpl.cm.get_cmap('Paired')
+        pdrPlot.contourf(ContourX,ContourY,ContourZ,cmap=acolor)
+#        pdrPlot.set_ylim(0,Nseq-1)
+    else:
+        self.Lines = Lines
+    if not newPlot:
+        pdrPage.toolbar.push_current()
+        pdrPlot.set_xlim(xylim[0])
+        pdrPlot.set_ylim(xylim[1])
+        xylim = []
+        pdrPage.toolbar.push_current()
+        pdrPage.toolbar.draw()
+    else:
+        pdrPage.canvas.draw()
+
+    
     self.Pwdr = True
-    pdrPage.canvas.draw()
 
 def PlotPowderLines(self):
 
@@ -711,4 +716,95 @@ def PlotPowderLines(self):
     xlim = [max(0,xmin-delt/20.),min(180.,xmax+delt/20.)]
     pksPlot.set_xlim(xlim)
     pksPage.canvas.draw()
-    
+
+
+def PlotTRImage(self):
+            
+    def OnMotion(event):
+        trimgPage.canvas.SetToolTipString('')
+        trimgPage.canvas.SetCursor(wx.CROSS_CURSOR)
+        azm = event.xdata
+        tth = event.ydata
+        if azm and tth:
+            self.G2plotNB.status.SetFields(\
+                ['Detector 2-th =%9.2fdeg, azm = %7.2fdeg'%(tth,azm),])
+                    
+    def OnPick(event):
+        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+            return
+        if self.itemPicked is not None: return
+        pick = event.artist
+        self.itemPicked = pick
+        
+    def OnRelease(event):
+        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+            return
+        Data = self.PatternTree.GetItemPyData(self.PickId)
+        if self.itemPicked:
+            xpos = event.xdata
+            if xpos:                                        #avoid out of frame mouse position
+                ypos = event.ydata
+                if 'Line2D' in str(self.itemPicked):
+                    if 'line0' in str(self.itemPicked):
+                        Data['IOtth'][0] = ypos
+                    elif 'line1' in str(self.itemPicked):
+                        Data['IOtth'][1] = ypos
+                    elif 'line2' in str(self.itemPicked) and not Data['fullIntegrate']:
+                        Data['LRazimuth'][0] = int(xpos)
+                    elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
+                        Data['LRazimuth'][1] = int(xpos)
+                        
+                    if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
+                        Data['LRazimuth'][1] += 360
+                    if  Data['IOtth'][0] > Data['IOtth'][1]:
+                        Data['IOtth'] = G2cmp.SwapXY(Data['IOtth'][0],Data['IOtth'][1])
+                        
+                    self.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
+                    self.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
+                    self.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
+                    self.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
+                else:
+                    print event.xdata,event.ydata,event.button
+                PlotTRImage(self)
+            self.itemPicked = None
+            
+    try:
+        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
+        trimgPage = self.G2plotNB.nb.GetPage(plotNum)
+        trimgPage.figure.clf()
+        trimgPlot = trimgPage.figure.gca()
+        if trimgPage.views:
+            trimgPage.toolbar._views = copy.deepcopy(trimgPage.views)
+        view = trimgPage.toolbar._views.forward()
+        
+    except ValueError,error:
+        trimgPlot = self.G2plotNB.add('2D Transformed Powder Image').gca()
+        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
+        trimgPage = self.G2plotNB.nb.GetPage(plotNum)
+        trimgPage.canvas.mpl_connect('motion_notify_event', OnMotion)
+        trimgPage.canvas.mpl_connect('pick_event', OnPick)
+        trimgPage.canvas.mpl_connect('button_release_event', OnRelease)
+        trimgPage.views = False
+        view = False
+    trimgPage.SetFocus()
+        
+    data = self.PatternTree.GetItemPyData(self.PickId)
+    image = self.ImageZ
+    Iz = len(image)
+    Imin,Imax = data['range'][1]
+    step = (Imax-Imin)/5.
+    V = np.arange(Imin,Imax,step)
+    acolor = mpl.cm.get_cmap('Paired')
+    trimgPlot.set_xlabel('azimuth',fontsize=12)
+    trimgPlot.set_ylabel('2-theta',fontsize=12)
+    trimgPlot.contour(self.TA[1],self.TA[0],image,V,cmap=acolor)
+    if data['showLines']:
+        IOtth = data['IOtth']
+        LRAzim = data['LRazimuth']                  #NB: integers
+        trimgPlot.plot([LRAzim[0],LRAzim[1]],[IOtth[0],IOtth[0]],picker=True)
+        trimgPlot.plot([LRAzim[0],LRAzim[1]],[IOtth[1],IOtth[1]],picker=True)
+        trimgPlot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
+        trimgPlot.plot([LRAzim[1],LRAzim[1]],[IOtth[0],IOtth[1]],picker=True)
+    trimgPage.canvas.draw()
+            
+  

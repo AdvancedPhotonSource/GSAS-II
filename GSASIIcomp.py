@@ -41,6 +41,13 @@ atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
 cosd = lambda x: math.cos(x*math.pi/180.)
 acosd = lambda x: 180.*math.acos(x)/math.pi
 rdsq2d = lambda x,p: round(1.0/math.sqrt(x),p)
+#numpy versions
+npsind = lambda x: np.sin(x*np.pi/180.)
+npasind = lambda x: 180.*np.arcsin(x)/math.pi
+npcosd = lambda x: np.cos(x*math.pi/180.)
+nptand = lambda x: np.tan(x*math.pi/180.)
+npatand = lambda x: 180.*np.arctan(x)/np.pi
+npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 def sec2HMS(sec):
     H = int(sec/3600)
@@ -503,7 +510,7 @@ def makeMat(Angle,Axis):
     #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
     cs = cosd(Angle)
     ss = sind(Angle)
-    M = np.array(([1,0,0],[0,cs,-ss],[0,ss,cs]))
+    M = np.array(([1.,0.,0.],[0.,cs,-ss],[0.,ss,cs]),dtype=np.float32)
     return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
                     
 def MaxIndex(dmin,A):
@@ -1208,7 +1215,7 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
 def FitRing(ring):
     Err,parms = FitCircle(ring)
     Err /= len(ring)
-    print 'circle error:','%8f'%(Err)
+#    print 'circle error:','%8f'%(Err)
     if Err > 20000.:
         eparms = FitEllipse(ring)
         if eparms:
@@ -1273,30 +1280,25 @@ def FitEllipse(ring):
 def FitDetector(rings,p0,wave):
     from scipy.optimize import leastsq
     def ellipseCalc(B,xyd,wave):
-        sind = lambda x: np.sin(x*math.pi/180.)
-        asind = lambda x: 180.*np.arcsin(x)/math.pi
-        cosd = lambda x: np.cos(x*math.pi/180.)
-        tand = lambda x: np.tan(x*math.pi/180.)
         x = xyd[0]
         y = xyd[1]
         dsp = xyd[2]
         dist,x0,y0,phi,tilt = B
-        tth = 2.0*asind(wave/(2.*dsp))
-        ttth = tand(tth)
+        tth = 2.0*npasind(wave/(2.*dsp))
+        ttth = nptand(tth)
         radius = dist*ttth
-        stth = sind(tth)
-        cosb = cosd(tilt)
-        R1 = dist*stth*cosd(tth)*cosb/(cosb**2-stth**2)
+        stth = npsind(tth)
+        cosb = npcosd(tilt)
+        R1 = dist*stth*npcosd(tth)*cosb/(cosb**2-stth**2)
         R0 = np.sqrt(R1*radius*cosb)
-        zdis = R1*ttth*tand(tilt)
-        X = x-x0+zdis*sind(phi)
-        Y = y-y0-zdis*cosd(phi)
-        XR = X*cosd(phi)-Y*sind(phi)
-        YR = X*sind(phi)+Y*cosd(phi)
+        zdis = R1*ttth*nptand(tilt)
+        X = x-x0+zdis*npsind(phi)
+        Y = y-y0-zdis*npcosd(phi)
+        XR = X*npcosd(phi)-Y*npsind(phi)
+        YR = X*npsind(phi)+Y*npcosd(phi)
         return (XR/R0)**2+(YR/R1)**2-1
     result = leastsq(ellipseCalc,p0,args=(rings.T,wave))
     return result[0]
-
             
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
@@ -1399,30 +1401,29 @@ def GetDetectorXY(dsp,azm,data):
     return xy
                     
 def GetTthDspAzm(x,y,data):
-    #make numpy array compliant
-    atand = lambda x: 180.*np.arctan(x)/np.pi
-    sind = lambda x: np.sin(x*np.pi/180.)
-    atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     wave = data['wavelength']
     dist = data['distance']
     cent = data['center']
     tilt = data['tilt']
     phi = data['rotation']
-    dx = x-cent[0]
-    dy = y-cent[1]
-    X = np.array(([dx,dy,0]))
-    X = np.sum(X*makeMat(-phi,2),axis=1)
-    X = np.sum(X*makeMat(-tilt,0),axis=1)
-    tth = atand(np.sqrt(dx**2+dy**2-X[2]**2)/(dist-X[2]))
-    dsp = wave/(2.*sind(tth/2.))
-    azm = atan2d(dy,dx)    
-    return tth,dsp,azm
+    dx = np.array(x-cent[0],dtype=np.float32)
+    dy = np.array(y-cent[1],dtype=np.float32)
+    X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
+    X = np.dot(X,makeMat(phi,2))
+    Z = np.dot(X,makeMat(tilt,0)).T[2]
+    tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
+    dsp = wave/(2.*npsind(tth/2.))
+    azm = npatan2d(dy,dx)
+    return tth,azm,dsp
     
 def GetTth(x,y,data):
     return GetTthDspAzm(x,y,data)[0]
     
+def GetTthAzm(x,y,data):
+    return GetTthDspAzm(x,y,data)[0:2]
+    
 def GetDsp(x,y,data):
-    return GetTthDspAzm(x,y,data)[1]
+    return GetTthDspAzm(x,y,data)[2]
        
 def ImageCompress(image,scale):
     if scale == 1:
@@ -1595,9 +1596,51 @@ def ImageCalibrate(self,data):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
-    G2plt.PlotImage(self)
-        
+    G2plt.PlotImage(self)        
     return True
+    
+def ImageIntegrate(self,data):
+    print 'image integrate'
+    pixelSize = data['pixelSize']
+    scalex = pixelSize[0]/1000.
+    scaley = pixelSize[1]/1000.
+    LUtth = data['IOtth']
+    if data['fullIntegrate']:
+        LRazm = [0,360]
+    else:
+        LRazm = data['LRazimuth']
+    numAzms = data['outAzimuths']
+    numChans = data['outChannels']
+    outGrid = np.zeros(shape=(numAzms,numChans))
+    outNum = np.zeros(shape=(numAzms,numChans))           
+    imageN = len(self.ImageZ)
+    t0 = time.time()
+    print 'Create ',imageN,' X ',imageN,' 2-theta,azimuth map'
+    tax,tay = np.mgrid[0:imageN,0:imageN]
+    tax = np.asfarray(tax)
+    tay = np.asfarray(tay)
+    tax *= scalex
+    tay *= scaley
+    t1 = time.time()
+    print "Elapsed time:","%8.3f"%(t1-t0), "s"
+    print 'Fill map with 2-theta/azimuth values'
+    self.TA = np.reshape(GetTthAzm(tay,tax,data),(2,imageN,imageN))
+    t2 = time.time()
+    print "Elapsed time:","%8.3f"%(t2-t1), "s"
+    G2plt.PlotTRImage(self)
+    print 'Form 1-D histograms for ',numAzms,' azimuthal angles'
+    print 'Integration limits:',LUtth,LRazm
+    NST = np.histogram2d(self.TA[1].flatten(),self.TA[0].flatten(), \
+        bins=(numChans,numAzms),range=[LUtth,LRazm])
+    HST = np.histogram2d(self.TA[1].flatten(),self.TA[0].flatten(),normed=True, \
+        bins=(numChans,numAzms),weights=self.ImageZ.flatten(),range=[LUtth,LRazm])
+    t3 = time.time()
+    print "Elapsed time:","%8.3f"%(t3-t2), "s"
+    print NST[0]
+    print HST[0]
+    print HST[1]
+    print HST[2]
+    
         
 def test():
     cell = [5,5,5,90,90,90]

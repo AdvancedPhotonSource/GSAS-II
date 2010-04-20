@@ -512,17 +512,22 @@ def GetTifData(filename):
     import array as ar
     print 'Read APS PE-detector tiff file: ',filename
     File = open(filename,'Ur')
-    Meta = open(filename+'.metadata','Ur')
+    dataType = 5
+    try:
+        Meta = open(filename+'.metadata','Ur')
+        head = Meta.readlines()
+        for line in head:
+            line = line.strip()
+            if 'dataType' in line:
+                dataType = int(line.split('=')[1])
+        Meta.close()
+    except IOError:
+        print 'no metadata file found - will try to read file anyway'
+        head = 'no metadata file found'
     tag = File.read(3)
     if tag != 'II*':
         lines = ['not a APS PE-detector tiff file',]
         return lines,0,0
-    head = Meta.readlines()
-    dataType = 0
-    for line in head:
-        line = line.strip()
-        if 'dataType' in line:
-            dataType = int(line.split('=')[1])
     size = st.unpack('<i',File.read(4))[0]
     image = np.zeros(shape=(size,size),dtype=np.int32)
     row = 0

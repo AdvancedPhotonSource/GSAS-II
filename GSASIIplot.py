@@ -55,7 +55,7 @@ class G2PlotNoteBook(wx.Panel):
         
         return page.figure
         
-def PlotSngl(self):
+def PlotSngl(self,newPlot=False):
     from matplotlib.patches import Circle
 
     def OnSCMotion(event):
@@ -98,8 +98,11 @@ def PlotSngl(self):
     try:
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
         snglPage = self.G2plotNB.nb.GetPage(plotNum)
-        snglPlot = snglPage.figure.gca()
-        snglPlot.cla()
+        if not newPlot:
+            snglPlot = snglPage.figure.gca()          #get previous powder plot & get limits
+            xylim = snglPlot.get_xlim(),snglPlot.get_ylim()
+        snglPage.figure.clf()
+        snglPlot = snglPage.figure.gca()          #get a fresh plot after clf()
     except ValueError,error:
         snglPlot = self.G2plotNB.add('Structure Factors').gca()
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
@@ -163,15 +166,23 @@ def PlotSngl(self):
     snglPlot.set_ylabel(ylabel[izone],fontsize=12)
     snglPlot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
     snglPlot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
-    snglPage.canvas.draw()
+    if not newPlot:
+        snglPage.toolbar.push_current()
+        snglPlot.set_xlim(xylim[0])
+        snglPlot.set_ylim(xylim[1])
+        xylim = []
+        snglPage.toolbar.push_current()
+        snglPage.toolbar.draw()
+    else:
+        snglPage.canvas.draw()
        
-def PlotImage(self):
+def PlotImage(self,newPlot=False):
     from matplotlib.patches import Ellipse,Arc
 
     def OnImMotion(event):
         imgPage.canvas.SetToolTipString('')
         size = len(self.ImageZ)
-        if (xlim[0] < event.xdata < xlim[1]) & (ylim[0] > event.ydata > ylim[1]):
+        if event.xdata and event.ydata:                 #avoid out of frame errors
             Data = self.PatternTree.GetItemPyData( \
                 G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
             imgPage.canvas.SetCursor(wx.CROSS_CURSOR)
@@ -286,11 +297,11 @@ def PlotImage(self):
     try:
         plotNum = self.G2plotNB.plotList.index('2D Powder Image')
         imgPage = self.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            imgPlot = imgPage.figure.gca()          #get previous powder plot & get limits
+            xylim = imgPlot.get_xlim(),imgPlot.get_ylim()
         imgPage.figure.clf()
-        imgPlot = imgPage.figure.gca()
-        if imgPage.views:
-            imgPage.toolbar._views = copy.deepcopy(imgPage.views)
-        view = imgPage.toolbar._views.forward()
+        imgPlot = imgPage.figure.gca()          #get a fresh plot after clf()
         
     except ValueError,error:
         imgPlot = self.G2plotNB.add('2D Powder Image').gca()
@@ -300,8 +311,6 @@ def PlotImage(self):
         imgPage.canvas.mpl_connect('motion_notify_event', OnImMotion)
         imgPage.canvas.mpl_connect('pick_event', OnImPick)
         imgPage.canvas.mpl_connect('button_release_event', OnImRelease)
-        imgPage.views = False
-        view = False
     imgPage.SetFocus()
         
     imgPlot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
@@ -318,9 +327,6 @@ def PlotImage(self):
     Xmax = len(self.ImageZ)*pixelSize[0]/1000.
     xlim = (-0.5,Xmax-.5)
     ylim = (Xmax-.5,-0.5,)
-    if self.Img:
-        xlim = self.Img.axes.get_xlim()
-        ylim = self.Img.axes.get_ylim()
     Imin,Imax = Data['range'][1]
     acolor = mpl.cm.get_cmap(Data['color'])
     xcent,ycent = Data['center']
@@ -329,6 +335,7 @@ def PlotImage(self):
     A = G2cmp.ImageCompress(self.ImageZ,imScale)
     self.Img = imgPlot.imshow(A,aspect='equal',cmap=acolor, \
         interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
+
     imgPlot.plot(xcent,ycent,'x')
     if Data['showLines']:
         LRAzim = Data['LRazimuth']                  #NB: integers
@@ -370,13 +377,17 @@ def PlotImage(self):
         imgPlot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
         imgPlot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
     colorBar = imgPage.figure.colorbar(self.Img)
-    if view:
-        self.Img.axes.set_xlim(view[0][:2])
-        self.Img.axes.set_ylim(view[0][2:])
+    imgPlot.set_xlim(xlim)
+    imgPlot.set_ylim(ylim)
+    if not newPlot:
+        imgPage.toolbar.push_current()
+        imgPlot.set_xlim(xylim[0])
+        imgPlot.set_ylim(xylim[1])
+        xylim = []
+        imgPage.toolbar.push_current()
+        imgPage.toolbar.draw()
     else:
-        self.Img.axes.set_xlim(xlim)
-        self.Img.axes.set_ylim(ylim)
-    imgPage.canvas.draw()
+        imgPage.canvas.draw()
             
 def PlotPeakWidths(self):
     PatternId = self.PatternId
@@ -530,7 +541,8 @@ def PlotPatterns(self,newPlot=False):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            wave = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[0][1]
+            wave = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
+            PatternId, 'Instrument Parameters'))[0][1]
             dsp = 0.0
             if abs(xpos) > 0.:
                 dsp = wave/(2.*sind(abs(xpos)/2.0))
@@ -718,11 +730,11 @@ def PlotPowderLines(self):
     pksPage.canvas.draw()
 
 
-def PlotTRImage(self):
+def PlotTRImage(self,newPlot=False):
             
     def OnMotion(event):
-        trimgPage.canvas.SetToolTipString('')
-        trimgPage.canvas.SetCursor(wx.CROSS_CURSOR)
+        Page.canvas.SetToolTipString('')
+        Page.canvas.SetCursor(wx.CROSS_CURSOR)
         azm = event.xdata
         tth = event.ydata
         if azm and tth:
@@ -770,23 +782,23 @@ def PlotTRImage(self):
             
     try:
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
-        trimgPage = self.G2plotNB.nb.GetPage(plotNum)
-        trimgPage.figure.clf()
-        trimgPlot = trimgPage.figure.gca()
-        if trimgPage.views:
-            trimgPage.toolbar._views = copy.deepcopy(trimgPage.views)
-        view = trimgPage.toolbar._views.forward()
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            Plot = Page.figure.gca()          #get previous plot & get limits
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError,error:
-        trimgPlot = self.G2plotNB.add('2D Transformed Powder Image').gca()
+        Plot = self.G2plotNB.add('2D Transformed Powder Image').gca()
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
-        trimgPage = self.G2plotNB.nb.GetPage(plotNum)
-        trimgPage.canvas.mpl_connect('motion_notify_event', OnMotion)
-        trimgPage.canvas.mpl_connect('pick_event', OnPick)
-        trimgPage.canvas.mpl_connect('button_release_event', OnRelease)
-        trimgPage.views = False
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('pick_event', OnPick)
+        Page.canvas.mpl_connect('button_release_event', OnRelease)
+        Page.views = False
         view = False
-    trimgPage.SetFocus()
+    Page.SetFocus()
         
     data = self.PatternTree.GetItemPyData(self.PickId)
     image = self.ImageZ
@@ -795,16 +807,24 @@ def PlotTRImage(self):
     step = (Imax-Imin)/5.
     V = np.arange(Imin,Imax,step)
     acolor = mpl.cm.get_cmap('Paired')
-    trimgPlot.set_xlabel('azimuth',fontsize=12)
-    trimgPlot.set_ylabel('2-theta',fontsize=12)
-    trimgPlot.contour(self.TA[1],self.TA[0],image,V,cmap=acolor)
+    Plot.set_xlabel('azimuth',fontsize=12)
+    Plot.set_ylabel('2-theta',fontsize=12)
+    Plot.contour(self.TA[1],self.TA[0],image,V,cmap=acolor)
     if data['showLines']:
         IOtth = data['IOtth']
         LRAzim = data['LRazimuth']                  #NB: integers
-        trimgPlot.plot([LRAzim[0],LRAzim[1]],[IOtth[0],IOtth[0]],picker=True)
-        trimgPlot.plot([LRAzim[0],LRAzim[1]],[IOtth[1],IOtth[1]],picker=True)
-        trimgPlot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
-        trimgPlot.plot([LRAzim[1],LRAzim[1]],[IOtth[0],IOtth[1]],picker=True)
-    trimgPage.canvas.draw()
+        Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[0],IOtth[0]],picker=True)
+        Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[1],IOtth[1]],picker=True)
+        Plot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
+        Plot.plot([LRAzim[1],LRAzim[1]],[IOtth[0],IOtth[1]],picker=True)
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Page.canvas.draw()
             
   

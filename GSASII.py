@@ -769,7 +769,7 @@ class GSASII(wx.Frame):
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
                     for item in DelItemList:
                         self.PatternTree.Delete(item)
-                    G2plt.PlotPatterns(self)                        #so plot gets updated
+                    G2plt.PlotPatterns(self,True)                        #so plot gets updated
             finally:
                 dlg.Destroy()
 

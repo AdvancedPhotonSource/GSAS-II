@@ -1035,7 +1035,7 @@ def UpdateHKLControls(self,data):
         
     def OnSelZone(event):
         data['Zone'] = zoneSel.GetValue()
-        G2plt.PlotSngl(self)
+        G2plt.PlotSngl(self,newPlot=True)
         
     def OnSelType(event):
         data['Type'] = typeSel.GetValue()
@@ -1826,14 +1826,14 @@ def MovePatternTreeToGrid(self,item):
         elif 'IMG' in self.PatternTree.GetItemText(item):
             self.Image = item
             self.Img = 0
-            G2plt.PlotImage(self)
+            G2plt.PlotImage(self,newPlot=True)
         elif 'PKS' in self.PatternTree.GetItemText(item):
             G2plt.PlotPowderLines(self)
         elif 'PWDR' in self.PatternTree.GetItemText(item):            
-            G2plt.PlotPatterns(self,True)
+            G2plt.PlotPatterns(self,newPlot=True)
         elif 'SXTL' in self.PatternTree.GetItemText(item):
             self.Sngl = item
-            G2plt.PlotSngl(self)
+            G2plt.PlotSngl(self,newPlot=True)
             
     elif self.PatternTree.GetItemText(parentID) == 'Phases':
         self.PickId = item

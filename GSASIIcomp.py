@@ -1627,7 +1627,7 @@ def ImageIntegrate(self,data):
     self.TA = np.reshape(GetTthAzm(tay,tax,data),(2,imageN,imageN))
     t2 = time.time()
     print "Elapsed time:","%8.3f"%(t2-t1), "s"
-    G2plt.PlotTRImage(self)
+    G2plt.PlotTRImage(self,newPlot=True)
     print 'Form 1-D histograms for ',numAzms,' azimuthal angles'
     print 'Integration limits:',LUtth,LRazm
     NST = np.histogram2d(self.TA[1].flatten(),self.TA[0].flatten(), \

@@ -19,8 +19,8 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, 
 ] = [wx.NewId() for _init_coll_Atom_Items in range(2)]
 
-[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_IMREFRESHTA,
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(4)]
+[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, 
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(3)]
 
 [ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
 ] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
@@ -53,7 +53,6 @@ class DataFrame(wx.Frame):
         parent.Append(help='',id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
         parent.Append(help='',id=wxID_IMCLEARCALIB, kind=wx.ITEM_NORMAL,text='Clear calibration')
         parent.Append(help='',id=wxID_IMINTEGRATE, kind=wx.ITEM_NORMAL,text='Integrate')
-        parent.Append(help='',id=wxID_IMREFRESHTA, kind=wx.ITEM_NORMAL,text='Refresh transformed image')
         
             
     def _init_coll_Peak_Items(self,parent):
@@ -1111,7 +1110,7 @@ def UpdateImageControls(self,data):
     
     def OnNewColorBar(event):
         data['color'] = colSel.GetValue()
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
         
     def OnNewCalibrant(event):
         data['calibrant'] = calSel.GetValue()
@@ -1123,13 +1122,13 @@ def UpdateImageControls(self,data):
         imax = int(maxSel.GetValue())
         delt = data['range'][0][1]-data['range'][0][0]
         data['range'][1][1] = int((imax/100.)*delt)+data['range'][0][0]
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
         
     def OnMinSlider(event):
         imin = int(minSel.GetValue())
         delt = data['range'][1][1]-data['range'][0][0]
         data['range'][1][0] = int((imin/100.)*delt)+data['range'][0][0]
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
         
     def OnNumOutChans(event):
         try:
@@ -1174,7 +1173,7 @@ def UpdateImageControls(self,data):
             data['showLines'] = False
         else:
             data['showLines'] = True
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
         
     def OnFullIntegrate(event):
         if data['fullIntegrate']:
@@ -1185,7 +1184,7 @@ def UpdateImageControls(self,data):
             data['fullIntegrate'] = True
             self.Lazim.SetEditable(False)            
             self.Razim.SetEditable(False)            
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
         
     def OnSetDefault(event):
         import copy
@@ -1204,13 +1203,13 @@ def UpdateImageControls(self,data):
         data['IOtth'] = [Ltth,Utth]
         self.InnerTth.SetValue("%8.2f" % (Ltth))
         self.OuterTth.SetValue("%8.2f" % (Utth))
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
         
     def OnLRazim(event):
         Lazm = int(self.Lazim.GetValue())
         Razm = int(self.Razim.GetValue())
         data['LRazimuth'] = [Lazm,Razm]
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
             
     def OnSetRings(event):
         if data['setRings']:
@@ -1252,9 +1251,6 @@ def UpdateImageControls(self,data):
     def OnIntegrate(event):
         G2cmp.ImageIntegrate(self,data)
         
-    def OnRefreshTA(event):
-        G2plt.PlotTRImage(self)        
-        
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
     if self.dataDisplay:
@@ -1264,7 +1260,6 @@ def UpdateImageControls(self,data):
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=wxID_IMCALIBRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=wxID_IMCLEARCALIB)    
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)        
-    self.dataFrame.Bind(wx.EVT_MENU, OnRefreshTA, id=wxID_IMREFRESHTA)        
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)

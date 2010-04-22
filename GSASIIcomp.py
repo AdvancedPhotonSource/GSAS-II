@@ -55,12 +55,31 @@ def sec2HMS(sec):
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
 
-#def valueEsd(value,esd,precision):
-#    nDecimals = lambda esd: max(0.,1.545-math.log10(abs(esd)))
-#    if esd:
-#    else:
-#        
-#        
+def ValEsd(value,esd=0,nTZ=False):
+    # returns value(esd) string; nTZ=True for no trailing zeros
+    # use esd < 0 for level of precision shown e.g. esd=-0.01 gives 2 places beyond decimal
+    #get the 2 significant digits in the esd 
+    edig = lambda esd: int(round(10**(math.log10(esd) % 1+1)))
+    #get the number of digits to represent them 
+    epl = lambda esd: 2+int(1.545-math.log10(10*edig(esd)))
+    
+    mdec = lambda esd: -int(math.log10(abs(esd)))
+    ndec = lambda esd: int(1.545-math.log10(abs(esd)))
+    if esd > 0:
+        fmt = '"%.'+str(ndec(esd))+'f(%d)"'
+        print fmt,ndec(esd),esd*10**(mdec(esd)+1)
+        return fmt%(value,int(esd*10**(mdec(esd)+1)))
+    elif esd < 0:
+         return str(round(value,mdec(esd)))
+    else:
+        text = "%F"%(value)
+        if nTZ:
+            return text.rstrip('0')
+        else:
+            return text
+
+        
+        
 
 def DoPeakFit(peaks,background,limits,inst,data):
     
@@ -1606,7 +1625,7 @@ def ImageIntegrate(self,data):
     scaley = pixelSize[1]/1000.
     LUtth = data['IOtth']
     if data['fullIntegrate']:
-        LRazm = [0,360]
+        LRazm = [-180,180]
     else:
         LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
@@ -1624,22 +1643,23 @@ def ImageIntegrate(self,data):
     t1 = time.time()
     print "Elapsed time:","%8.3f"%(t1-t0), "s"
     print 'Fill map with 2-theta/azimuth values'
-    self.TA = np.reshape(GetTthAzm(tay,tax,data),(2,imageN,imageN))
+    self.TA = GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
+    self.TA = np.reshape(self.TA,(2,imageN,imageN))
+    self.TA = np.dstack((self.TA[1],self.TA[0],self.ImageZ))    #azimuth, 2-theta, intensity order
     t2 = time.time()
     print "Elapsed time:","%8.3f"%(t2-t1), "s"
     G2plt.PlotTRImage(self,newPlot=True)
     print 'Form 1-D histograms for ',numAzms,' azimuthal angles'
     print 'Integration limits:',LUtth,LRazm
-    NST = np.histogram2d(self.TA[1].flatten(),self.TA[0].flatten(), \
-        bins=(numChans,numAzms),range=[LUtth,LRazm])
-    HST = np.histogram2d(self.TA[1].flatten(),self.TA[0].flatten(),normed=True, \
-        bins=(numChans,numAzms),weights=self.ImageZ.flatten(),range=[LUtth,LRazm])
+    tax,tay,taz = np.dsplit(self.TA,3)    #azimuth, 2-theta, intensity
+    NST = np.histogram2d(tax.flatten(),tay.flatten(),normed=False, \
+        bins=(numAzms,numChans),range=[LRazm,LUtth])
+    HST = np.histogram2d(tax.flatten(),tay.flatten(),normed=False, \
+        bins=(numAzms,numChans),weights=taz.flatten(),range=[LRazm,LUtth])
     t3 = time.time()
     print "Elapsed time:","%8.3f"%(t3-t2), "s"
-    print NST[0]
-    print HST[0]
-    print HST[1]
-    print HST[2]
+    self.Integrate = [HST[0]/NST[0],HST[1],HST[2]]
+    G2plt.PlotIntegration(self,newPlot=True)
     
         
 def test():

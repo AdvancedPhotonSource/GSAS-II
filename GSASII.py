@@ -236,6 +236,7 @@ class GSASII(wx.Frame):
         self.Image = 0
         self.Img = 0
         self.TA = 0
+        self.Integrate = 0
         self.Pwdr = False
         self.imageDefault = {}
         self.Sngl = 0

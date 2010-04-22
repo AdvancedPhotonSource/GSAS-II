@@ -70,20 +70,20 @@ def PlotSngl(self,newPlot=False):
                 HKLtxt = '(%3d,%3d,%3d)'%(xpos,zpos,ypos)
             elif '001' in Data['Zone']:
                 HKLtxt = '(%3d,%3d,%3d)'%(xpos,ypos,zpos)
-            snglPage.canvas.SetToolTipString(HKLtxt)
+            Page.canvas.SetToolTipString(HKLtxt)
             self.G2plotNB.status.SetFields(['HKL = '+HKLtxt,])
                 
     def OnSCPick(event):
         zpos = Data['Layer']
         pos = event.artist.center
         if '100' in Data['Zone']:
-            snglPage.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(zpos,pos[0],pos[1]))
+            Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(zpos,pos[0],pos[1]))
             hkl = [zpos,pos[0],pos[1]]
         elif '010' in Data['Zone']:
-            snglPage.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],zpos,pos[1]))
+            Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],zpos,pos[1]))
             hkl = [pos[0],zpos,pos[1]]
         elif '001' in Data['Zone']:
-            snglPage.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],pos[1],zpos))
+            Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],pos[1],zpos))
             hkl = [pos[0],pos[1],zpos]
         h,k,l = hkl
         i = HKL.all(hkl)
@@ -97,22 +97,22 @@ def PlotSngl(self,newPlot=False):
 
     try:
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
-        snglPage = self.G2plotNB.nb.GetPage(plotNum)
+        Page = self.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
-            snglPlot = snglPage.figure.gca()          #get previous powder plot & get limits
-            xylim = snglPlot.get_xlim(),snglPlot.get_ylim()
-        snglPage.figure.clf()
-        snglPlot = snglPage.figure.gca()          #get a fresh plot after clf()
+            Plot = Page.figure.gca()          #get previous powder plot & get limits
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError,error:
-        snglPlot = self.G2plotNB.add('Structure Factors').gca()
+        Plot = self.G2plotNB.add('Structure Factors').gca()
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
-        snglPage = self.G2plotNB.nb.GetPage(plotNum)
-        snglPage.canvas.mpl_connect('key_press_event', OnSCKeyPress)
-        snglPage.canvas.mpl_connect('pick_event', OnSCPick)
-        snglPage.canvas.mpl_connect('motion_notify_event', OnSCMotion)
-    snglPage.SetFocus()
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
+        Page.canvas.mpl_connect('pick_event', OnSCPick)
+        Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
+    Page.SetFocus()
     
-    snglPlot.set_aspect(aspect='equal')
+    Plot.set_aspect(aspect='equal')
     HKLref = self.PatternTree.GetItemPyData(self.Sngl)
     Data = self.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(self,self.Sngl, 'HKL Plot Controls'))
@@ -128,7 +128,7 @@ def PlotSngl(self,newPlot=False):
     zones = ['100','010','001']
     pzone = [[1,2],[0,2],[0,1]]
     izone = zones.index(Data['Zone'])
-    snglPlot.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
+    Plot.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
     HKL = []
     for H,Fosq,sig,Fcsq,x,x,x in HKLref:
         HKL.append(H)
@@ -152,325 +152,30 @@ def PlotSngl(self,newPlot=False):
                 if A < 3.0: A = 0                    
             xy = (H[pzone[izone][0]],H[pzone[izone][1]])
             if A > 0.0:
-                snglPlot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
+                Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
             if B:
-                snglPlot.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
+                Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
                 radius = C
                 if radius > 0:
                     if A > B:
-                        snglPlot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
+                        Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
                     else:                    
-                        snglPlot.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
+                        Plot.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
     HKL = np.array(HKL)
-    snglPlot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
-    snglPlot.set_ylabel(ylabel[izone],fontsize=12)
-    snglPlot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
-    snglPlot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
+    Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
+    Plot.set_ylabel(ylabel[izone],fontsize=12)
+    Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
+    Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
     if not newPlot:
-        snglPage.toolbar.push_current()
-        snglPlot.set_xlim(xylim[0])
-        snglPlot.set_ylim(xylim[1])
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
         xylim = []
-        snglPage.toolbar.push_current()
-        snglPage.toolbar.draw()
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
     else:
-        snglPage.canvas.draw()
+        Page.canvas.draw()
        
-def PlotImage(self,newPlot=False):
-    from matplotlib.patches import Ellipse,Arc
-
-    def OnImMotion(event):
-        imgPage.canvas.SetToolTipString('')
-        size = len(self.ImageZ)
-        if event.xdata and event.ydata:                 #avoid out of frame errors
-            Data = self.PatternTree.GetItemPyData( \
-                G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-            imgPage.canvas.SetCursor(wx.CROSS_CURSOR)
-            item = self.itemPicked
-            pixelSize = Data['pixelSize']
-            scalex = 1000./pixelSize[0]
-            scaley = 1000./pixelSize[1]                    
-            if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
-                if 'Text' in str(item):
-                    imgPage.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata,event.ydata))
-                else:
-                    xcent,ycent = Data['center']
-                    xpos = event.xdata-xcent
-                    ypos = event.ydata-ycent
-                    if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
-                        ang = int(atan2d(xpos,ypos))
-                        imgPage.canvas.SetToolTipString('%6d deg'%(ang))
-                    elif 'line1' in  str(item) or 'line2' in str(item):
-                        tth = G2cmp.GetTth(event.xdata,event.ydata,Data)
-                        imgPage.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
-            else:
-                xpos = event.xdata
-                ypos = event.ydata
-                xpix = xpos*scalex
-                ypix = ypos*scaley
-                if (0 <= xpix <= size) and (0 <= ypix <= size):
-                    imgPage.canvas.SetToolTipString('%6d'%(self.ImageZ[ypix][xpix]))
-                tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
-                Q = 2.*math.pi/dsp
-                self.G2plotNB.status.SetFields(\
-                    ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),])
-
-    def OnImPlotKeyPress(event):
-        if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
-            Data = self.PatternTree.GetItemPyData(self.PickId)
-            pixelSize = Data['pixelSize']
-            size = len(self.ImageZ)
-            Xpos = event.xdata
-            if not Xpos:            #got point out of frame
-                return
-            Ypos = event.ydata
-            if event.key == 'm':
-                print 'mask = ',Xpos,Ypos
-            
-    def OnImPick(event):
-        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
-            return
-        if self.itemPicked is not None: return
-        pick = event.artist
-        self.itemPicked = pick
-        
-    def OnImRelease(event):
-        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
-            return
-        Data = self.PatternTree.GetItemPyData(self.PickId)
-        pixelSize = Data['pixelSize']
-        scalex = 1000./pixelSize[0]
-        scaley = 1000./pixelSize[1]
-        if self.itemPicked is None:
-            size = len(self.ImageZ)
-            Xpos = event.xdata
-            if not (Xpos and self.ifGetRing):                   #got point out of frame
-                return
-            Ypos = event.ydata
-            if Ypos and not imgPage.toolbar._active:         #make sure zoom/pan not selected
-                if event.button == 1:
-                    Xpix = Xpos*scalex
-                    Ypix = Ypos*scaley
-                    xpos,ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpix,Ypix)
-                    if I and J:
-                        xpos /= scalex
-                        ypos /= scaley
-                        Data['ring'].append([xpos,ypos])
-                PlotImage(self)
-            return
-        else:
-            xpos = event.xdata
-            if xpos:                                        #avoid out of frame mouse position
-                ypos = event.ydata
-                if self.ifGetRing:
-                    xypos = [xpos,ypos]
-                    rings = Data['ring']
-                    for ring in rings:
-                        if np.allclose(ring,xypos,.01,0):
-                            rings.remove(ring)                                                                       
-                else:
-                    tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
-                    if 'Line2D' in str(self.itemPicked):
-                        if 'line1' in str(self.itemPicked):
-                            Data['IOtth'][0] = tth
-                        elif 'line2' in str(self.itemPicked):
-                            Data['IOtth'][1] = tth
-                        elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
-                            Data['LRazimuth'][0] = int(azm)
-                        elif 'line4' in str(self.itemPicked) and not Data['fullIntegrate']:
-                            Data['LRazimuth'][1] = int(azm)
-                            
-                        if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
-                            Data['LRazimuth'][1] += 360
-                        if  Data['IOtth'][0] > Data['IOtth'][1]:
-                            Data['IOtth'] = G2cmp.SwapXY(Data['IOtth'][0],Data['IOtth'][1])
-                            
-                        self.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
-                        self.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
-                        self.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
-                        self.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
-                    else:
-                        print event.xdata,event.ydata,event.button
-                PlotImage(self)
-            self.itemPicked = None
-            
-    try:
-        plotNum = self.G2plotNB.plotList.index('2D Powder Image')
-        imgPage = self.G2plotNB.nb.GetPage(plotNum)
-        if not newPlot:
-            imgPlot = imgPage.figure.gca()          #get previous powder plot & get limits
-            xylim = imgPlot.get_xlim(),imgPlot.get_ylim()
-        imgPage.figure.clf()
-        imgPlot = imgPage.figure.gca()          #get a fresh plot after clf()
-        
-    except ValueError,error:
-        imgPlot = self.G2plotNB.add('2D Powder Image').gca()
-        plotNum = self.G2plotNB.plotList.index('2D Powder Image')
-        imgPage = self.G2plotNB.nb.GetPage(plotNum)
-        imgPage.canvas.mpl_connect('key_press_event', OnImPlotKeyPress)
-        imgPage.canvas.mpl_connect('motion_notify_event', OnImMotion)
-        imgPage.canvas.mpl_connect('pick_event', OnImPick)
-        imgPage.canvas.mpl_connect('button_release_event', OnImRelease)
-    imgPage.SetFocus()
-        
-    imgPlot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
-    size,self.ImageZ = self.PatternTree.GetItemPyData(self.Image)
-    Data = self.PatternTree.GetItemPyData( \
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-    imScale = 1
-    if len(self.ImageZ) > 1024:
-        imScale = len(self.ImageZ)/1024
-    pixelSize = Data['pixelSize']
-    scalex = 1000./pixelSize[0]
-    scaley = 1000./pixelSize[1]
-    xmax = len(self.ImageZ)
-    Xmax = len(self.ImageZ)*pixelSize[0]/1000.
-    xlim = (-0.5,Xmax-.5)
-    ylim = (Xmax-.5,-0.5,)
-    Imin,Imax = Data['range'][1]
-    acolor = mpl.cm.get_cmap(Data['color'])
-    xcent,ycent = Data['center']
-    imgPlot.set_xlabel('Image x-axis, mm',fontsize=12)
-    imgPlot.set_ylabel('Image y-axis, mm',fontsize=12)
-    A = G2cmp.ImageCompress(self.ImageZ,imScale)
-    self.Img = imgPlot.imshow(A,aspect='equal',cmap=acolor, \
-        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
-
-    imgPlot.plot(xcent,ycent,'x')
-    if Data['showLines']:
-        LRAzim = Data['LRazimuth']                  #NB: integers
-        IOtth = Data['IOtth']
-        wave = Data['wavelength']
-        dspI = wave/(2.0*sind(IOtth[0]/2.0))
-        ellI = G2cmp.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
-        dspO = wave/(2.0*sind(IOtth[1]/2.0))
-        ellO = G2cmp.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
-        if Data['fullIntegrate']:
-            Azm = np.array(range(0,361))
-        else:
-            Azm = np.array(range(LRAzim[0],LRAzim[1]+1))
-        if ellI:
-            xyI = []
-            for azm in Azm:
-                xyI.append(G2cmp.GetDetectorXY(dspI,azm,Data))
-            xyI = np.array(xyI)
-            arcxI,arcyI = xyI.T
-            imgPlot.plot(arcxI,arcyI,picker=3)
-        if ellO:
-            xyO = []
-            for azm in Azm:
-                xyO.append(G2cmp.GetDetectorXY(dspO,azm,Data))
-            xyO = np.array(xyO)
-            arcxO,arcyO = xyO.T
-            imgPlot.plot(arcxO,arcyO,picker=3)
-        if ellO and ellI and not Data['fullIntegrate']:
-            imgPlot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
-            imgPlot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
-    for xring,yring in Data['ring']:
-        imgPlot.text(xring,yring,'+',color='b',ha='center',va='center',picker=3)
-    if Data['setRings']:
-        rings = np.concatenate((Data['rings']),axis=0)
-        for xring,yring,dsp in rings:
-            imgPlot.text(xring,yring,'+',ha='center',va='center')            
-    for ellipse in Data['ellipses']:
-        cent,phi,[width,height],col = ellipse
-        imgPlot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
-        imgPlot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
-    colorBar = imgPage.figure.colorbar(self.Img)
-    imgPlot.set_xlim(xlim)
-    imgPlot.set_ylim(ylim)
-    if not newPlot:
-        imgPage.toolbar.push_current()
-        imgPlot.set_xlim(xylim[0])
-        imgPlot.set_ylim(xylim[1])
-        xylim = []
-        imgPage.toolbar.push_current()
-        imgPage.toolbar.draw()
-    else:
-        imgPage.canvas.draw()
-            
-def PlotPeakWidths(self):
-    PatternId = self.PatternId
-    limitID = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
-    if limitID:
-        limits = self.PatternTree.GetItemPyData(limitID)
-    else:
-        return
-    instParms = self.PatternTree.GetItemPyData( \
-        G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-    if instParms[0][0] == 'PXC':
-        lam = instParms[1][1]
-        if len(instParms[1]) == 12:
-            GU,GV,GW,LX,LY = instParms[0][6:11]
-        else:
-            GU,GV,GW,LX,LY = instParms[0][4:9]
-    peakID = G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List')
-    if peakID:
-        peaks = self.PatternTree.GetItemPyData(peakID)
-    else:
-        peaks = []
-    
-    try:
-        plotNum = self.G2plotNB.plotList.index('Peak Widths')
-        pkwPage = self.G2plotNB.nb.GetPage(plotNum)
-        pkwPage.figure.clf()
-        pkwPlot = pkwPage.figure.gca()
-    except ValueError,error:
-        pkwPlot = self.G2plotNB.add('Peak Widths').gca()
-        plotNum = self.G2plotNB.plotList.index('Peak Widths')
-        pkwPage = self.G2plotNB.nb.GetPage(plotNum)
-    pkwPage.SetFocus()
-    
-    pkwPage.canvas.SetToolTipString('')
-    colors=['b','g','r','c','m','k']
-    Xmin,Xmax = limits[1]
-    Xmin = min(0.5,max(Xmin,1))
-    Xmin /= 2
-    Xmax /= 2
-    nPts = 100
-    delt = (Xmax-Xmin)/nPts
-    thetas = []
-    for i in range(nPts):
-        thetas.append(Xmin+i*delt)
-    X = []
-    Y = []
-    Z = []
-    W = []
-    sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
-    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
-    gamFW = lambda s,g: math.exp(math.log(g**5+2.69269*g**4*s+2.42843*g**3*s**2+4.47163*g**2*s**3+0.07842*g*s**4+s**5)/5.)
-    for theta in thetas:
-        X.append(4.0*math.pi*sind(theta)/lam)              #q
-        s = sig(theta,GU,GV,GW)
-        g = gam(theta,LX,LY)
-        G = gamFW(g,s)
-        Y.append(s/tand(theta))
-        Z.append(g/tand(theta))
-        W.append(G/tand(theta))
-    pkwPlot.set_title('Instrument and sample peak widths')
-    pkwPlot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
-    pkwPlot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
-    pkwPlot.plot(X,Y,color='r',label='Gaussian')
-    pkwPlot.plot(X,Z,color='g',label='Lorentzian')
-    pkwPlot.plot(X,W,color='b',label='G+L')
-    X = []
-    Y = []
-    Z = []
-    W = []
-    for peak in peaks:
-        X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
-        s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
-        g = peak[6]*math.pi/18000.
-        G = gamFW(g,s)
-        Y.append(s/tand(peak[0]/2.))
-        Z.append(g/tand(peak[0]/2.))
-        W.append(G/tand(peak[0]/2.))
-    pkwPlot.plot(X,Y,'+',color='r',label='G peak')
-    pkwPlot.plot(X,Z,'+',color='g',label='L peak')
-    pkwPlot.plot(X,W,'+',color='b',label='G+L peak')
-    pkwPlot.legend(loc='best')
-    pkwPage.canvas.draw()
-
 def PlotPatterns(self,newPlot=False):
     
     def OnPick(event):
@@ -482,7 +187,7 @@ def PlotPatterns(self,newPlot=False):
         xpos = pick.get_xdata()
         ypos = pick.get_ydata()
         ind = event.ind
-        view = pdrPage.toolbar._views.forward()
+        view = Page.toolbar._views.forward()
         if view and 'line2' in str(pick):           #apply offset only for picked powder pattern points
             ind += np.searchsorted(xye[0],view[0][0])
         xy = zip(xpos[ind],ypos[ind])[0]
@@ -546,10 +251,10 @@ def PlotPatterns(self,newPlot=False):
             dsp = 0.0
             if abs(xpos) > 0.:
                 dsp = wave/(2.*sind(abs(xpos)/2.0))
-            pdrPage.canvas.SetCursor(wx.CROSS_CURSOR)
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
             self.G2plotNB.status.SetFields(['2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),])
             if self.itemPicked:
-                pdrPage.canvas.SetToolTipString('%9.3f'%(xpos))
+                Page.canvas.SetToolTipString('%9.3f'%(xpos))
                    
     def OnRelease(event):
         if self.itemPicked is None: return
@@ -579,23 +284,23 @@ def PlotPatterns(self,newPlot=False):
     xylim = []
     try:
         plotNum = self.G2plotNB.plotList.index('Powder Patterns')
-        pdrPage = self.G2plotNB.nb.GetPage(plotNum)
+        Page = self.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
-            pdrPlot = pdrPage.figure.gca()          #get previous powder plot & get limits
-            xylim = pdrPlot.get_xlim(),pdrPlot.get_ylim()
-        pdrPage.figure.clf()
-        pdrPlot = pdrPage.figure.gca()          #get a fresh plot after clf()
+            Plot = Page.figure.gca()          #get previous powder plot & get limits
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError,error:
         newPlot = True
-        pdrPlot = self.G2plotNB.add('Powder Patterns').gca()
+        Plot = self.G2plotNB.add('Powder Patterns').gca()
         plotNum = self.G2plotNB.plotList.index('Powder Patterns')
-        pdrPage = self.G2plotNB.nb.GetPage(plotNum)
-        pdrPage.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
-        pdrPage.canvas.mpl_connect('motion_notify_event', OnMotion)
-        pdrPage.canvas.mpl_connect('pick_event', OnPick)
-        pdrPage.canvas.mpl_connect('button_release_event', OnRelease)
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('pick_event', OnPick)
+        Page.canvas.mpl_connect('button_release_event', OnRelease)
         
-    pdrPage.SetFocus()
+    Page.SetFocus()
 
     PickId = self.PickId
     PatternId = self.PatternId
@@ -614,9 +319,9 @@ def PlotPatterns(self,newPlot=False):
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
     offset = self.Offset*Ymax/100.0
-    pdrPlot.set_title('Powder Patterns')
-    pdrPlot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
-    pdrPlot.set_ylabel('Intensity',fontsize=12)
+    Plot.set_title('Powder Patterns')
+    Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    Plot.set_ylabel('Intensity',fontsize=12)
     if self.Contour:
         ContourZ = []
         ContourY = []
@@ -633,14 +338,14 @@ def PlotPatterns(self,newPlot=False):
         Y = xye[1]+offset*N
         if LimitId:
             limits = self.PatternTree.GetItemPyData(LimitId)
-            Lines.append(pdrPlot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
-            Lines.append(pdrPlot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
+            Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
+            Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
         if self.Contour:
             ContourY.append(N)
             ContourZ.append(Y)
             ContourX = X
             Nseq += 1
-            pdrPlot.set_ylabel('Data sequence',fontsize=12)
+            Plot.set_ylabel('Data sequence',fontsize=12)
         else:
             if ifpicked:
                 Z = xye[3]+offset*N
@@ -649,45 +354,45 @@ def PlotPatterns(self,newPlot=False):
                 if self.Weight:
                     W2 = np.sqrt(xye[2])
                     D *= W2
-                pdrPlot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
-                pdrPlot.plot(X,Z,colors[(N+1)%6],picker=False)
-                pdrPlot.plot(X,W,colors[(N+2)%6],picker=False)
-                pdrPlot.plot(X,D,colors[(N+3)%6],picker=False)
-                pdrPlot.axhline(0.,color=wx.BLACK)
-                pdrPage.canvas.SetToolTipString('')
+                Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                Plot.plot(X,Z,colors[(N+1)%6],picker=False)
+                Plot.plot(X,W,colors[(N+2)%6],picker=False)
+                Plot.plot(X,D,colors[(N+3)%6],picker=False)
+                Plot.axhline(0.,color=wx.BLACK)
+                Page.canvas.SetToolTipString('')
                 if self.PatternTree.GetItemText(PickId) == 'Peak List':
                     tip = 'On data point: Pick peak - L or R MB.On line: MB down to move'
-                    pdrPage.canvas.SetToolTipString(tip)
+                    Page.canvas.SetToolTipString(tip)
                     data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
                     for item in data:
-                        Lines.append(pdrPlot.axvline(item[0],color=colors[N%6],picker=2.))
+                        Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
                 if self.PatternTree.GetItemText(PickId) == 'Limits':
                     tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
-                    pdrPage.canvas.SetToolTipString(tip)
+                    Page.canvas.SetToolTipString(tip)
                     data = self.LimitsTable.GetData()
             else:
-                pdrPlot.plot(X,Y,colors[N%6],picker=False)
+                Plot.plot(X,Y,colors[N%6],picker=False)
     if PickId and self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
         for peak in peaks:
-            pdrPlot.axvline(peak[0],color='b')
+            Plot.axvline(peak[0],color='b')
         for hkl in self.HKL:
-            pdrPlot.axvline(hkl[5],color='r',dashes=(5,5))
+            Plot.axvline(hkl[5],color='r',dashes=(5,5))
     if self.Contour:
         acolor = mpl.cm.get_cmap('Paired')
-        pdrPlot.contourf(ContourX,ContourY,ContourZ,cmap=acolor)
-#        pdrPlot.set_ylim(0,Nseq-1)
+        Plot.contourf(ContourX,ContourY,ContourZ,cmap=acolor)
+#        Plot.set_ylim(0,Nseq-1)
     else:
         self.Lines = Lines
     if not newPlot:
-        pdrPage.toolbar.push_current()
-        pdrPlot.set_xlim(xylim[0])
-        pdrPlot.set_ylim(xylim[1])
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
         xylim = []
-        pdrPage.toolbar.push_current()
-        pdrPage.toolbar.draw()
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
     else:
-        pdrPage.canvas.draw()
+        Page.canvas.draw()
 
     
     self.Pwdr = True
@@ -697,39 +402,332 @@ def PlotPowderLines(self):
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
-            pksPage.canvas.SetCursor(wx.CROSS_CURSOR)
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
             self.G2plotNB.status.SetFields(['2-theta =%9.3f '%(xpos,),])
 
     try:
         plotNum = self.G2plotNB.plotList.index('Powder Lines')
-        pksPage = self.G2plotNB.nb.GetPage(plotNum)
-        pksPage.figure.clf()
-        pksPlot = pksPage.figure.gca()
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
     except ValueError,error:
-        newPlot = True
-        pksPlot = self.G2plotNB.add('Powder Lines').gca()
+        Plot = self.G2plotNB.add('Powder Lines').gca()
         plotNum = self.G2plotNB.plotList.index('Powder Lines')
-        pksPage = self.G2plotNB.nb.GetPage(plotNum)
-        pksPage.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         
-    pksPage.SetFocus()
-    pksPlot.set_title('Powder Pattern Lines')
-    pksPlot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    Page.SetFocus()
+    Plot.set_title('Powder Pattern Lines')
+    Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
     PickId = self.PickId
     PatternId = self.PatternId
     peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
     for peak in peaks:
-        pksPlot.axvline(peak[0],color='b')
+        Plot.axvline(peak[0],color='b')
     for hkl in self.HKL:
-        pksPlot.axvline(hkl[5],color='r',dashes=(5,5))
+        Plot.axvline(hkl[5],color='r',dashes=(5,5))
     xmin = peaks[0][0]
     xmax = peaks[-1][0]
     delt = xmax-xmin
     xlim = [max(0,xmin-delt/20.),min(180.,xmax+delt/20.)]
-    pksPlot.set_xlim(xlim)
-    pksPage.canvas.draw()
+    Plot.set_xlim(xlim)
+    Page.canvas.draw()
 
+def PlotPeakWidths(self):
+    PatternId = self.PatternId
+    limitID = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
+    if limitID:
+        limits = self.PatternTree.GetItemPyData(limitID)
+    else:
+        return
+    instParms = self.PatternTree.GetItemPyData( \
+        G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
+    if instParms[0][0] == 'PXC':
+        lam = instParms[1][1]
+        if len(instParms[1]) == 12:
+            GU,GV,GW,LX,LY = instParms[0][6:11]
+        else:
+            GU,GV,GW,LX,LY = instParms[0][4:9]
+    peakID = G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List')
+    if peakID:
+        peaks = self.PatternTree.GetItemPyData(peakID)
+    else:
+        peaks = []
+    
+    try:
+        plotNum = self.G2plotNB.plotList.index('Peak Widths')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+    except ValueError,error:
+        Plot = self.G2plotNB.add('Peak Widths').gca()
+        plotNum = self.G2plotNB.plotList.index('Peak Widths')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+    Page.SetFocus()
+    
+    Page.canvas.SetToolTipString('')
+    colors=['b','g','r','c','m','k']
+    Xmin,Xmax = limits[1]
+    Xmin = min(0.5,max(Xmin,1))
+    Xmin /= 2
+    Xmax /= 2
+    nPts = 100
+    delt = (Xmax-Xmin)/nPts
+    thetas = []
+    for i in range(nPts):
+        thetas.append(Xmin+i*delt)
+    X = []
+    Y = []
+    Z = []
+    W = []
+    sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
+    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
+    gamFW = lambda s,g: math.exp(math.log(g**5+2.69269*g**4*s+2.42843*g**3*s**2+4.47163*g**2*s**3+0.07842*g*s**4+s**5)/5.)
+    for theta in thetas:
+        X.append(4.0*math.pi*sind(theta)/lam)              #q
+        s = sig(theta,GU,GV,GW)
+        g = gam(theta,LX,LY)
+        G = gamFW(g,s)
+        Y.append(s/tand(theta))
+        Z.append(g/tand(theta))
+        W.append(G/tand(theta))
+    Plot.set_title('Instrument and sample peak widths')
+    Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
+    Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
+    Plot.plot(X,Y,color='r',label='Gaussian')
+    Plot.plot(X,Z,color='g',label='Lorentzian')
+    Plot.plot(X,W,color='b',label='G+L')
+    X = []
+    Y = []
+    Z = []
+    W = []
+    for peak in peaks:
+        X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
+        s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
+        g = peak[6]*math.pi/18000.
+        G = gamFW(g,s)
+        Y.append(s/tand(peak[0]/2.))
+        Z.append(g/tand(peak[0]/2.))
+        W.append(G/tand(peak[0]/2.))
+    Plot.plot(X,Y,'+',color='r',label='G peak')
+    Plot.plot(X,Z,'+',color='g',label='L peak')
+    Plot.plot(X,W,'+',color='b',label='G+L peak')
+    Plot.legend(loc='best')
+    Page.canvas.draw()
 
+def PlotImage(self,newPlot=False):
+    from matplotlib.patches import Ellipse,Arc
+
+    def OnImMotion(event):
+        Page.canvas.SetToolTipString('')
+        size = len(self.ImageZ)
+        if event.xdata and event.ydata:                 #avoid out of frame errors
+            Data = self.PatternTree.GetItemPyData( \
+                G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            item = self.itemPicked
+            pixelSize = Data['pixelSize']
+            scalex = 1000./pixelSize[0]
+            scaley = 1000./pixelSize[1]                    
+            if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
+                if 'Text' in str(item):
+                    Page.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata,event.ydata))
+                else:
+                    xcent,ycent = Data['center']
+                    xpos = event.xdata-xcent
+                    ypos = event.ydata-ycent
+                    if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
+                        ang = int(atan2d(xpos,ypos))
+                        Page.canvas.SetToolTipString('%6d deg'%(ang))
+                    elif 'line1' in  str(item) or 'line2' in str(item):
+                        tth = G2cmp.GetTth(event.xdata,event.ydata,Data)
+                        Page.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
+            else:
+                xpos = event.xdata
+                ypos = event.ydata
+                xpix = xpos*scalex
+                ypix = ypos*scaley
+                if (0 <= xpix <= size) and (0 <= ypix <= size):
+                    Page.canvas.SetToolTipString('%6d'%(self.ImageZ[ypix][xpix]))
+                tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
+                Q = 2.*math.pi/dsp
+                self.G2plotNB.status.SetFields(\
+                    ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),])
+
+    def OnImPlotKeyPress(event):
+        if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
+            Data = self.PatternTree.GetItemPyData(self.PickId)
+            pixelSize = Data['pixelSize']
+            size = len(self.ImageZ)
+            Xpos = event.xdata
+            if not Xpos:            #got point out of frame
+                return
+            Ypos = event.ydata
+            if event.key == 'm':
+                print 'mask = ',Xpos,Ypos
+            
+    def OnImPick(event):
+        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+            return
+        if self.itemPicked is not None: return
+        pick = event.artist
+        self.itemPicked = pick
+        
+    def OnImRelease(event):
+        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+            return
+        Data = self.PatternTree.GetItemPyData(self.PickId)
+        pixelSize = Data['pixelSize']
+        scalex = 1000./pixelSize[0]
+        scaley = 1000./pixelSize[1]
+        if self.itemPicked is None:
+            size = len(self.ImageZ)
+            Xpos = event.xdata
+            if not (Xpos and self.ifGetRing):                   #got point out of frame
+                return
+            Ypos = event.ydata
+            if Ypos and not Page.toolbar._active:         #make sure zoom/pan not selected
+                if event.button == 1:
+                    Xpix = Xpos*scalex
+                    Ypix = Ypos*scaley
+                    xpos,ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpix,Ypix)
+                    if I and J:
+                        xpos /= scalex
+                        ypos /= scaley
+                        Data['ring'].append([xpos,ypos])
+                PlotImage(self)
+            return
+        else:
+            xpos = event.xdata
+            if xpos:                                        #avoid out of frame mouse position
+                ypos = event.ydata
+                if self.ifGetRing:
+                    xypos = [xpos,ypos]
+                    rings = Data['ring']
+                    for ring in rings:
+                        if np.allclose(ring,xypos,.01,0):
+                            rings.remove(ring)                                                                       
+                else:
+                    tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
+                    if 'Line2D' in str(self.itemPicked):
+                        if 'line1' in str(self.itemPicked):
+                            Data['IOtth'][0] = tth
+                        elif 'line2' in str(self.itemPicked):
+                            Data['IOtth'][1] = tth
+                        elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
+                            Data['LRazimuth'][0] = int(azm)
+                        elif 'line4' in str(self.itemPicked) and not Data['fullIntegrate']:
+                            Data['LRazimuth'][1] = int(azm)
+                            
+                        if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
+                            Data['LRazimuth'][1] += 360
+                        if  Data['IOtth'][0] > Data['IOtth'][1]:
+                            Data['IOtth'] = G2cmp.SwapXY(Data['IOtth'][0],Data['IOtth'][1])
+                            
+                        self.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
+                        self.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
+                        self.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
+                        self.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
+                    else:
+                        print event.xdata,event.ydata,event.button
+                PlotImage(self)
+            self.itemPicked = None
+            
+    try:
+        plotNum = self.G2plotNB.plotList.index('2D Powder Image')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            Plot = Page.figure.gca()          #get previous powder plot & get limits
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
+        
+    except ValueError,error:
+        Plot = self.G2plotNB.add('2D Powder Image').gca()
+        plotNum = self.G2plotNB.plotList.index('2D Powder Image')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('key_press_event', OnImPlotKeyPress)
+        Page.canvas.mpl_connect('motion_notify_event', OnImMotion)
+        Page.canvas.mpl_connect('pick_event', OnImPick)
+        Page.canvas.mpl_connect('button_release_event', OnImRelease)
+    Page.SetFocus()
+        
+    Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
+    size,self.ImageZ = self.PatternTree.GetItemPyData(self.Image)
+    Data = self.PatternTree.GetItemPyData( \
+        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+    imScale = 1
+    if len(self.ImageZ) > 1024:
+        imScale = len(self.ImageZ)/1024
+    pixelSize = Data['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
+    xmax = len(self.ImageZ)
+    Xmax = len(self.ImageZ)*pixelSize[0]/1000.
+    xlim = (-0.5,Xmax-.5)
+    ylim = (Xmax-.5,-0.5,)
+    Imin,Imax = Data['range'][1]
+    acolor = mpl.cm.get_cmap(Data['color'])
+    xcent,ycent = Data['center']
+    Plot.set_xlabel('Image x-axis, mm',fontsize=12)
+    Plot.set_ylabel('Image y-axis, mm',fontsize=12)
+    A = G2cmp.ImageCompress(self.ImageZ,imScale)
+    self.Img = Plot.imshow(A,aspect='equal',cmap=acolor, \
+        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
+
+    Plot.plot(xcent,ycent,'x')
+    if Data['showLines']:
+        LRAzim = Data['LRazimuth']                  #NB: integers
+        IOtth = Data['IOtth']
+        wave = Data['wavelength']
+        dspI = wave/(2.0*sind(IOtth[0]/2.0))
+        ellI = G2cmp.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+        dspO = wave/(2.0*sind(IOtth[1]/2.0))
+        ellO = G2cmp.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
+        if Data['fullIntegrate']:
+            Azm = np.array(range(0,361))
+        else:
+            Azm = np.array(range(LRAzim[0],LRAzim[1]+1))
+        if ellI:
+            xyI = []
+            for azm in Azm:
+                xyI.append(G2cmp.GetDetectorXY(dspI,azm,Data))
+            xyI = np.array(xyI)
+            arcxI,arcyI = xyI.T
+            Plot.plot(arcxI,arcyI,picker=3)
+        if ellO:
+            xyO = []
+            for azm in Azm:
+                xyO.append(G2cmp.GetDetectorXY(dspO,azm,Data))
+            xyO = np.array(xyO)
+            arcxO,arcyO = xyO.T
+            Plot.plot(arcxO,arcyO,picker=3)
+        if ellO and ellI and not Data['fullIntegrate']:
+            Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
+            Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
+    for xring,yring in Data['ring']:
+        Plot.text(xring,yring,'+',color='b',ha='center',va='center',picker=3)
+    if Data['setRings']:
+        rings = np.concatenate((Data['rings']),axis=0)
+        for xring,yring,dsp in rings:
+            Plot.text(xring,yring,'+',ha='center',va='center')            
+    for ellipse in Data['ellipses']:
+        cent,phi,[width,height],col = ellipse
+        Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
+        Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+    colorBar = Page.figure.colorbar(self.Img)
+    Plot.set_xlim(xlim)
+    Plot.set_ylim(ylim)
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Page.canvas.draw()
+            
 def PlotTRImage(self,newPlot=False):
             
     def OnMotion(event):
@@ -800,19 +798,20 @@ def PlotTRImage(self,newPlot=False):
         view = False
     Page.SetFocus()
         
-    data = self.PatternTree.GetItemPyData(self.PickId)
+    Data = self.PatternTree.GetItemPyData( \
+        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
     image = self.ImageZ
     Iz = len(image)
-    Imin,Imax = data['range'][1]
+    Imin,Imax = Data['range'][1]
     step = (Imax-Imin)/5.
     V = np.arange(Imin,Imax,step)
-    acolor = mpl.cm.get_cmap('Paired')
+    acolor = mpl.cm.get_cmap(Data['color'])
     Plot.set_xlabel('azimuth',fontsize=12)
     Plot.set_ylabel('2-theta',fontsize=12)
-    Plot.contour(self.TA[1],self.TA[0],image,V,cmap=acolor)
-    if data['showLines']:
-        IOtth = data['IOtth']
-        LRAzim = data['LRazimuth']                  #NB: integers
+    Plot.contour(self.TA[:,:,0],self.TA[:,:,1],self.TA[:,:,2],V,cmap=acolor)
+    if Data['showLines']:
+        IOtth = Data['IOtth']
+        LRAzim = Data['LRazimuth']                  #NB: integers
         Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[0],IOtth[0]],picker=True)
         Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[1],IOtth[1]],picker=True)
         Plot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
@@ -826,5 +825,63 @@ def PlotTRImage(self,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
+        
+def PlotExposedImage(self,newPlot=False):
+    plotNo = self.G2plotNB.nb.GetSelection()
+    if self.G2plotNB.nb.GetPageText(plotNo) == '2D Transformed Powder Image':
+        PlotTRImage(self,newPlot)
+    elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
+        PlotImage(self,newPlot)
+    elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
+        PlotIntegration(self,newPlot)
+        
+def PlotIntegration(self,newPlot=False):
             
-  
+    def OnMotion(event):
+        Page.canvas.SetToolTipString('')
+        Page.canvas.SetCursor(wx.CROSS_CURSOR)
+        azm = event.xdata
+        tth = event.ydata
+        if azm and tth:
+            self.G2plotNB.status.SetFields(\
+                ['Detector 2-th =%9.2fdeg, azm = %7.2fdeg'%(tth,azm),])
+                                
+    try:
+        plotNum = self.G2plotNB.plotList.index('2D Integration')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            Plot = Page.figure.gca()          #get previous plot & get limits
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
+        
+    except ValueError,error:
+        Plot = self.G2plotNB.add('2D Integration').gca()
+        plotNum = self.G2plotNB.plotList.index('2D Integration')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.views = False
+        view = False
+    Page.SetFocus()
+        
+    Data = self.PatternTree.GetItemPyData( \
+        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+    image = self.Integrate[0]
+    xsc = self.Integrate[1]
+    ysc = self.Integrate[2]
+    Imin,Imax = Data['range'][1]
+    acolor = mpl.cm.get_cmap(Data['color'])
+    Plot.set_ylabel('azimuth',fontsize=12)
+    Plot.set_xlabel('2-theta',fontsize=12)
+    Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
+        extent=[ysc[0],ysc[-1],xsc[0],xsc[-1]],aspect='auto')
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Page.canvas.draw()
+        

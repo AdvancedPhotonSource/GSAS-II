@@ -19,8 +19,8 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, 
 ] = [wx.NewId() for _init_coll_Atom_Items in range(2)]
 
-[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, 
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(3)]
+[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(4)]
 
 [ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
 ] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
@@ -50,26 +50,29 @@ class DataFrame(wx.Frame):
             help='Double left click on atom row to Insert before')
             
     def _init_coll_Image_Items(self,parent):
-        parent.Append(help='',id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
-        parent.Append(help='',id=wxID_IMCLEARCALIB, kind=wx.ITEM_NORMAL,text='Clear calibration')
+        parent.Append(help='Calibrate detector by fitting to calibrant lines', \
+            id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
+        parent.Append(help='Clear calibration data points and rings',id=wxID_IMCLEARCALIB, \
+            kind=wx.ITEM_NORMAL,text='Clear calibration')
         parent.Append(help='',id=wxID_IMINTEGRATE, kind=wx.ITEM_NORMAL,text='Integrate')
-        
-            
+        parent.Append(help='Save integration results as a series of 1-D powder patterns', \
+            id=wxID_SAVEINTG, kind=wx.ITEM_NORMAL,text='Save Integration')
+                    
     def _init_coll_Peak_Items(self,parent):
-        self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
-            text='UnDo')
-        self.PeakFit = parent.Append(help='', id=wxID_PEAKFIT, kind=wx.ITEM_NORMAL,
-            text='PeakFit')
-        self.AutoPeakFit = parent.Append(help='', id=wxID_AUTOPEAKFIT, kind=wx.ITEM_NORMAL,
-            text='AutoPeakFit')
+        self.UnDo = parent.Append(help='Undo last least squares refinement', \
+            id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
+        self.PeakFit = parent.Append(id=wxID_PEAKFIT, kind=wx.ITEM_NORMAL,text='PeakFit', \
+            help='Do single cycle of peak fitting least-squares refinement' )
+        self.AutoPeakFit = parent.Append(id=wxID_AUTOPEAKFIT, kind=wx.ITEM_NORMAL, \
+            text='AutoPeakFit',help='Do peak fitting least-squares to convergence' )
             
     def _init_coll_Index_Items(self,parent):
         self.IndexPeaks = parent.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
             text='Index Cell')
-        self.CopyCell = parent.Append(help='', id=wxID_COPYCELL, kind=wx.ITEM_NORMAL,
-            text='Copy Cell')
-        self.RefineCell = parent.Append(help='', id=wxID_REFINECELL, kind=wx.ITEM_NORMAL,
-            text='Refine Cell')
+        self.CopyCell = parent.Append( id=wxID_COPYCELL, kind=wx.ITEM_NORMAL,text='Copy Cell', \
+            help='Copy selected unit cell from indexing to cell refinement fields')
+        self.RefineCell = parent.Append( id=wxID_REFINECELL, kind=wx.ITEM_NORMAL, \
+            text='Refine Cell',help='Refine unit cell parameters from indexed peaks')
 
     def _init_utils(self):
         self.BlankMenu = wx.MenuBar()
@@ -439,7 +442,11 @@ def UpdatePeakGrid(self, data):
                 data = self.PeakTable.GetData()
                 self.PatternTree.SetItemPyData(self.PickId,data[:-nDel])
                 self.dataDisplay.ForceRefresh()
-                setBackgroundColors()                         
+                setBackgroundColors()
+                if not len(self.PatternTree.GetItemPyData(self.PickId)): 
+                    self.dataFrame.PeakFit.Enable(False)
+                    self.dataFrame.AutoPeakFit.Enable(False)
+                        
         elif colList:
             self.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
@@ -461,9 +468,12 @@ def UpdatePeakGrid(self, data):
         G2plt.PlotPatterns(self)
             
     self.dataFrame.SetMenuBar(self.dataFrame.PeakMenu)
+    Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnUnDo, id=wxID_UNDO)
     self.Bind(wx.EVT_MENU, OnPeakFit, id=wxID_PEAKFIT)
     self.Bind(wx.EVT_MENU, OnAutoPeakFit, id=wxID_AUTOPEAKFIT)
+    self.dataFrame.PeakFit.Enable(False)
+    self.dataFrame.AutoPeakFit.Enable(False)
     if data:
         self.dataFrame.PeakFit.Enable(True)
         self.dataFrame.AutoPeakFit.Enable(True)
@@ -918,6 +928,7 @@ def UpdateUnitCellsGrid(self, data):
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.IndexMenu)
+    Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnIndexPeaks, id=wxID_INDEXPEAKS)
     self.Bind(wx.EVT_MENU, CopyUnitCell, id=wxID_COPYCELL)
     self.Bind(wx.EVT_MENU, OnRefineCell, id=wxID_REFINECELL)
@@ -1138,6 +1149,7 @@ def UpdateImageControls(self,data):
             data['outChannels'] = numChans
         except ValueError:
             pass
+        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=False)    
         outChan.SetValue(str(data['outChannels']))          #reset in case of error        
         
     def OnNumOutAzms(event):
@@ -1148,6 +1160,7 @@ def UpdateImageControls(self,data):
             data['outAzimuths'] = numAzms            
         except ValueError:
             pass
+        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=False)    
         outAzim.SetValue(str(data['outAzimuths']))          #reset in case of error        
         
     def OnWavelength(event):
@@ -1184,6 +1197,7 @@ def UpdateImageControls(self,data):
             data['fullIntegrate'] = True
             self.Lazim.SetEditable(False)            
             self.Razim.SetEditable(False)            
+        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=False)    
         G2plt.PlotExposedImage(self)
         
     def OnSetDefault(event):
@@ -1203,12 +1217,14 @@ def UpdateImageControls(self,data):
         data['IOtth'] = [Ltth,Utth]
         self.InnerTth.SetValue("%8.2f" % (Ltth))
         self.OuterTth.SetValue("%8.2f" % (Utth))
+        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=False)    
         G2plt.PlotExposedImage(self)
         
     def OnLRazim(event):
         Lazm = int(self.Lazim.GetValue())
         Razm = int(self.Razim.GetValue())
         data['LRazimuth'] = [Lazm,Razm]
+        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=False)    
         G2plt.PlotExposedImage(self)
             
     def OnSetRings(event):
@@ -1223,6 +1239,7 @@ def UpdateImageControls(self,data):
         data['ring'] = []
         data['rings'] = []
         data['ellipses'] = []
+        self.dataFrame.ImageEdit.Enable(id=wxID_IMCLEARCALIB,enable=False)    
         G2plt.PlotImage(self)
             
     def OnCalibrate(event):        
@@ -1245,11 +1262,16 @@ def UpdateImageControls(self,data):
             distSel.SetValue("%8.3f"%(data['distance']))
             tiltSel.SetValue("%9.3f"%(data['tilt']))            
             rotSel.SetValue("%9.3f"%(data['rotation']))
+            self.dataFrame.ImageEdit.Enable(id=wxID_IMCLEARCALIB,enable=True)    
         else:
             Status.SetStatusText('Calibration failed')
                     
     def OnIntegrate(event):
         G2cmp.ImageIntegrate(self,data)
+        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=True)    
+        
+    def OnSaveIntegrate(event):
+        print 'save integration'
         
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
@@ -1258,8 +1280,12 @@ def UpdateImageControls(self,data):
     self.dataFrame.SetMenuBar(self.dataFrame.ImageMenu)
     Status = self.dataFrame.CreateStatusBar()
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=wxID_IMCALIBRATE)
-    self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=wxID_IMCLEARCALIB)    
-    self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)        
+    self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=wxID_IMCLEARCALIB)
+    if not data['rings']:
+        self.dataFrame.ImageEdit.Enable(id=wxID_IMCLEARCALIB,enable=False)    
+    self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)
+    self.dataFrame.Bind(wx.EVT_MENU, OnSaveIntegrate, id=wxID_SAVEINTG)
+    self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=False)    
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)

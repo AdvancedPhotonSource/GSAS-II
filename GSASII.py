@@ -70,15 +70,15 @@ class GSASII(wx.Frame):
         parent.Append(menu=self.Help, title='Help')
 
     def _init_coll_File_Items(self, parent):
-        parent.Append(help='', id=wxID_GSASIIFILEOPEN, kind=wx.ITEM_NORMAL,
-            text='Open project')
-        parent.Append(help='', id=wxID_GSASIIFILESAVE, kind=wx.ITEM_NORMAL,
-            text='Save project')
-        parent.Append(help='', id=wxID_GSASIIFILESAVEAS, kind=wx.ITEM_NORMAL,
-            text='SaveAs')
-        parent.Append(help='', id=wxID_GSASIIFILECLOSE, kind=wx.ITEM_NORMAL,
-            text='Close project')
-        parent.Append(help='', id=wxID_GSASIIFILEEXIT, kind=wx.ITEM_NORMAL,
+        parent.Append(help='Open a gsasii project file (*.gpx)', id=wxID_GSASIIFILEOPEN,
+             kind=wx.ITEM_NORMAL,text='Open project')
+        parent.Append(help='SAve project to old file', id=wxID_GSASIIFILESAVE, 
+            kind=wx.ITEM_NORMAL,text='Save project')
+        parent.Append(help='Save project to new file', id=wxID_GSASIIFILESAVEAS, 
+            kind=wx.ITEM_NORMAL,text='SaveAs')
+        parent.Append(help='Close project, saving is optional', id=wxID_GSASIIFILECLOSE, 
+            kind=wx.ITEM_NORMAL,text='Close project')
+        parent.Append(help='Exit from gsasii', id=wxID_GSASIIFILEEXIT, kind=wx.ITEM_NORMAL,
             text='Exit')
         self.Bind(wx.EVT_MENU, self.OnFileOpenMenu, id=wxID_GSASIIFILEOPEN)
         self.Bind(wx.EVT_MENU, self.OnFileSaveMenu, id=wxID_GSASIIFILESAVE)
@@ -195,6 +195,7 @@ class GSASII(wx.Frame):
         self._init_utils()
         self.SetMenuBar(self.GSASIIMenu)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.CreateStatusBar()
         self.mainPanel = wx.Panel(self,-1)
         
         self.PatternTree = wx.TreeCtrl(id=wxID_GSASIIPATTERNTREE,

@@ -194,7 +194,7 @@ def PlotPatterns(self,newPlot=False):
         if self.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-                if len(inst[1]) == 10:
+                if len(inst[1]) == 11:
                     ins = inst[1][4:10]
                 else:
                     ins = inst[1][6:12]    
@@ -326,14 +326,13 @@ def PlotPatterns(self,newPlot=False):
         ContourZ = []
         ContourY = []
         Nseq = 0
-    for Pattern in PlotList:
+    for N,Pattern in enumerate(PlotList):
         ifpicked = False
         LimitId = 0
         xye = Pattern[1]
         if PickId:
             ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
-        N = PlotList.index(Pattern)
         X = xye[0]
         Y = xye[1]+offset*N
         if LimitId:
@@ -706,11 +705,11 @@ def PlotImage(self,newPlot=False):
             Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
             Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
     for xring,yring in Data['ring']:
-        Plot.text(xring,yring,'+',color='b',ha='center',va='center',picker=3)
+        Plot.plot(xring,yring,'r+',picker=3)
     if Data['setRings']:
         rings = np.concatenate((Data['rings']),axis=0)
         for xring,yring,dsp in rings:
-            Plot.text(xring,yring,'+',ha='center',va='center')            
+            Plot.plot(xring,yring,'r+')            
     for ellipse in Data['ellipses']:
         cent,phi,[width,height],col = ellipse
         Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
@@ -811,11 +810,20 @@ def PlotTRImage(self,newPlot=False):
     Plot.contour(self.TA[:,:,0],self.TA[:,:,1],self.TA[:,:,2],V,cmap=acolor)
     if Data['showLines']:
         IOtth = Data['IOtth']
-        LRAzim = Data['LRazimuth']                  #NB: integers
+        if Data['fullIntegrate']:
+            LRAzim = [-180,180]
+        else:
+            LRAzim = Data['LRazimuth']                  #NB: integers
         Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[0],IOtth[0]],picker=True)
         Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[1],IOtth[1]],picker=True)
-        Plot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
-        Plot.plot([LRAzim[1],LRAzim[1]],[IOtth[0],IOtth[1]],picker=True)
+        if not Data['fullIntegrate']:
+            Plot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
+            Plot.plot([LRAzim[1],LRAzim[1]],[IOtth[0],IOtth[1]],picker=True)
+    if Data['setRings']:
+        rings = np.concatenate((Data['rings']),axis=0)
+        for xring,yring,dsp in rings:
+            x,y = G2cmp.GetTthAzm(xring,yring,Data)
+            Plot.plot(y,x,'r+')            
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -840,8 +848,8 @@ def PlotIntegration(self,newPlot=False):
     def OnMotion(event):
         Page.canvas.SetToolTipString('')
         Page.canvas.SetCursor(wx.CROSS_CURSOR)
-        azm = event.xdata
-        tth = event.ydata
+        azm = event.ydata
+        tth = event.xdata
         if azm and tth:
             self.G2plotNB.status.SetFields(\
                 ['Detector 2-th =%9.2fdeg, azm = %7.2fdeg'%(tth,azm),])
@@ -875,6 +883,11 @@ def PlotIntegration(self,newPlot=False):
     Plot.set_xlabel('2-theta',fontsize=12)
     Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[0],xsc[-1]],aspect='auto')
+    if Data['setRings']:
+        rings = np.concatenate((Data['rings']),axis=0)
+        for xring,yring,dsp in rings:
+            x,y = G2cmp.GetTthAzm(xring,yring,Data)
+            Plot.plot(x,y,'r+')            
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

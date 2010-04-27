@@ -563,13 +563,19 @@ def ProjFileOpen(self):
                 X = [np.array(X[0]),np.array(X[1]),np.array(X[2]),np.array(X[3]),np.array(X[4]),np.array(X[5])]
                 datum[1] = [datum[1][0],X]
                 print 'powder data converted to numpy arrays'
-            if 'PKS' not in datum[0]:
+            if 'PKS' not in datum[0] and 'IMG' not in datum[0] and 'SNGL' not in datum[0]:
                 if datum[0] not in ['Notebook','Controls','Phases'] and 'PWDR' not in datum[0]:            #temporary fix
                     datum[0] = 'PWDR '+datum[0]
             Id = self.PatternTree.AppendItem(parent=self.root,text=datum[0])
             self.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
                 print '    load: ',datus[0]
+                if 'PWDR' in datum[0] and 'Instrument Parameters' in datus[0]:
+                    if len(datus[1][0]) == 10 or len(datus[1][0]) == 12:
+                        datus[1][0] += (0.0,)                   #add missing azimuthal angle
+                        datus[1][1].append(0.0)
+                        datus[1][2].append(0.0)
+                        datus[1][3].append('Azimuth')
                 sub = self.PatternTree.AppendItem(Id,datus[0])
                 self.PatternTree.SetItemPyData(sub,datus[1])
             if 'PWDR' in datum[0] and not G2gd.GetPatternTreeItemId(self,Id, 'Comments'):

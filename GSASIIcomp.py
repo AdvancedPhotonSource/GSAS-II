@@ -121,15 +121,15 @@ def DoPeakFit(peaks,background,limits,inst,data):
     Np = len(peaks[0])
     DataType = inst[1][0]
     instVal = inst[1][1:]
-    insref = inst[2][1:]
+    Insref = inst[2][1:]
     insLabels = inst[3][1:]
     Ka2 = False
     Ioff = 3
-    if len(instVal) == 11:
+    if len(instVal) == 12:
         lamratio = instVal[1]/instVal[0]
         Ka2 = True
         Ioff = 5
-    insref = insref[len(insref)-6:]
+    insref = Insref[len(Insref)-7:-1]               #just U,V,W,X,Y,SH/L
     for peak in peaks:
         dip = []
         dip.append(tand(peak[0]/2.0)**2)
@@ -269,9 +269,10 @@ def DoPeakFit(peaks,background,limits,inst,data):
     backgroundPrint(background,sigback)
     k = 0
     delt = []
-    siginst = []
-    for i in range(len(instVal)-6):
-        siginst.append(0.0)
+    if Ka2:
+        siginst = [0,0,0,0,0]
+    else:
+        siginst = [0,0,0]
     for j in range(6):
         if insref[j]:
             instVal[j+Ioff] += b[Bv+k]*0.5
@@ -281,6 +282,8 @@ def DoPeakFit(peaks,background,limits,inst,data):
         else:
             delt.append(0.0)
             siginst.append(0.0)
+    delt.append(0.0)                    #dummies for azm
+    siginst.append(0.0)
     instPrint(instVal,siginst,insLabels)
     inst[1] = [DataType,]
     for val in instVal:

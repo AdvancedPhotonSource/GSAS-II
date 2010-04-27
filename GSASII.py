@@ -312,11 +312,11 @@ class GSASII(wx.Frame):
                                 s = Iparm['INS  1 ICONS']
                                 v = (G2IO.sfloat(s[:10]),G2IO.sfloat(s[10:20]),G2IO.sfloat(s[20:30]),G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
                                 if not v[1]:
-                                    names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L'] 
+                                    names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
                                     v = (v[0],v[2],v[4])
                                     codes = [0,0,0,0]
                                 else:
-                                    names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L']
+                                    names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
                                     codes = [0,0,0,0,0,0]
                                 data.extend(v)
                                 v1 = Iparm['INS  1PRCF1 '].split()                                                  
@@ -324,10 +324,10 @@ class GSASII(wx.Frame):
                                 data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
                                 v = Iparm['INS  1PRCF12'].split()
                                 if v1[0] == 3:
-                                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3])])  #get LX, LY & S+H/L
+                                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],0.0)])  #get LX, LY, S+H/L & azimuth
                                 else:
-                                    data.extend([0.0,0.0,0.002])                                      #OK defaults if fxn #3 not 1st in iprm file
-                                codes.extend([0,0,0,0,0,0])
+                                    data.extend([0.0,0.0,0.002,0.0])                                      #OK defaults if fxn #3 not 1st in iprm file
+                                codes.extend([0,0,0,0,0,0,0])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(data),data,codes,names])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
@@ -602,9 +602,7 @@ class GSASII(wx.Frame):
                                          Ysum[j] += scale*yi
                             else:
                                 Xminmax = [x[0],x[-1]]
-                                YCsum = [0.0 for i in range(lenX)]
-                                YBsum = [0.0 for i in range(lenX)]
-                                YDsum = [0.0 for i in range(lenX)]
+                                YCsum = YBsum = YDsum = [0.0 for i in range(lenX)]
                                 for j,yi in enumerate(y):
                                     Xsum.append(x[j])
                                     Ysum.append(scale*yi)

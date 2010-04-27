@@ -367,7 +367,7 @@ def UpdatePeakGrid(self, data):
         limits = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
         inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
         data = self.PatternTree.GetItemPyData(PatternId)[1]
-        smin = 1.0e10
+        smin = 1.0e15
         GoOn = True
         while GoOn:
             osmin = smin
@@ -468,7 +468,8 @@ def UpdatePeakGrid(self, data):
         G2plt.PlotPatterns(self)
             
     self.dataFrame.SetMenuBar(self.dataFrame.PeakMenu)
-    Status = self.dataFrame.CreateStatusBar()
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnUnDo, id=wxID_UNDO)
     self.Bind(wx.EVT_MENU, OnPeakFit, id=wxID_PEAKFIT)
     self.Bind(wx.EVT_MENU, OnAutoPeakFit, id=wxID_AUTOPEAKFIT)
@@ -586,7 +587,7 @@ def UpdateInstrumentGrid(self, data):
         self.dataDisplay.Destroy()
     Ka2 = False
     Xwid = 720
-    if len(data[0]) == 12: 
+    if len(data[0]) == 13: 
         Ka2 = True
         Xwid = 800        
     self.dataFrame.setSizePosLeft([Xwid,150])
@@ -608,17 +609,17 @@ def UpdateInstrumentGrid(self, data):
                         peak[8] = ins[9]
         
     self.InstrumentTable = []
-    if 'P' in data[1][0]:
+    if 'P' in data[1][0]:                   #powder data
         if Ka2:
             Types = [wg.GRID_VALUE_CHOICE+":PXC,PNC,PNT",wg.GRID_VALUE_FLOAT+':10,6',wg.GRID_VALUE_FLOAT+':10,6',               #type, lam-1 & lam-2
                 wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #zero, ratio, pola
                 wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #u,v,w
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,5']
+                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,2']
         else:
             Types = [wg.GRID_VALUE_CHOICE+":PXC,PNC,PNT",wg.GRID_VALUE_FLOAT+':10,6',               #type & lam-1 
                 wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #zero, pola
                 wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #u,v,w
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,5']
+                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,2']
         colLabels = data[3]
         rowLabels = ['original','changed','refine']
         self.InstrumentTable = Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
@@ -631,14 +632,14 @@ def UpdateInstrumentGrid(self, data):
         beg = 4
         if Ka2: beg = 6
         for i in range(len(data[2])):
-            if i < beg:
+            if i < beg or i == beg+6:
                 self.dataDisplay.SetCellRenderer(2,i,wg.GridCellStringRenderer())
                 self.dataDisplay.SetCellValue(2,i,'')
                 self.dataDisplay.SetReadOnly(2,i,isReadOnly=True)
             else:
                 self.dataDisplay.SetCellRenderer(2,i,wg.GridCellBoolRenderer())
                 self.dataDisplay.SetCellEditor(2,i,wg.GridCellBoolEditor())
-    else:
+    else:                       #single crystal data
         Types = [wg.GRID_VALUE_CHOICE+":SXC,SNC,SNT",wg.GRID_VALUE_FLOAT+':10,6']
         colLabels = data[2]
         rowLabels = ['original','changed']
@@ -928,7 +929,8 @@ def UpdateUnitCellsGrid(self, data):
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.IndexMenu)
-    Status = self.dataFrame.CreateStatusBar()
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnIndexPeaks, id=wxID_INDEXPEAKS)
     self.Bind(wx.EVT_MENU, CopyUnitCell, id=wxID_COPYCELL)
     self.Bind(wx.EVT_MENU, OnRefineCell, id=wxID_REFINECELL)
@@ -1056,7 +1058,8 @@ def UpdateHKLControls(self,data):
                                       
     if self.dataDisplay:
         self.dataDisplay.Destroy()
-    Status = self.dataFrame.CreateStatusBar()
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
     SetStatusLine()
     zones = ['100','010','001']
     HKLmax = data['HKLmax']
@@ -1233,7 +1236,7 @@ def UpdateImageControls(self,data):
         else:
             data['setRings'] = True
         setRings.SetValue(data['setRings'])
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
             
     def OnClearCalib(event):
         data['ring'] = []
@@ -1271,14 +1274,45 @@ def UpdateImageControls(self,data):
         self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=True)    
         
     def OnSaveIntegrate(event):
+        import numpy as np
         print 'save integration'
-        
+        azms = self.Integrate[1]
+        X = self.Integrate[2].flatten()[:-1]
+        Xminmax = [X[0],X[-1]]
+        N = len(X)
+        Id = self.PatternTree.GetItemParent(self.PickId)
+        name = self.PatternTree.GetItemText(Id)
+        Comments = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,Id, 'Comments'))
+        name = name.replace('IMG ','PWDR ')
+        names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
+        codes = [0 for i in range(11)]
+        parms = ['PXC',data['wavelength'],0.0,0.0,1.0,-1.0,0.3,0.0,1.0,0.0,0.0]
+        Azms = [(azms[i+1]+azms[i])/2. for i in range(len(azms)-1)]
+        for i,azm in enumerate(Azms):
+            Id = self.PatternTree.AppendItem(parent=self.root,text=name+"Azm= %.2f"%(azm))
+            parms[10] = azm
+            Y = self.Integrate[0][i].flatten()
+            W = np.sqrt(Y)
+            self.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms,codes,names])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
+        self.PatternTree.SelectItem(Id)
+        self.PatternTree.Expand(Id)
+        self.PatternId = Id
+            
+                                
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.ImageMenu)
-    Status = self.dataFrame.CreateStatusBar()
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=wxID_IMCALIBRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=wxID_IMCLEARCALIB)
     if not data['rings']:

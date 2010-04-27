@@ -247,7 +247,7 @@ def PlotPatterns(self,newPlot=False):
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
             wave = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
-            PatternId, 'Instrument Parameters'))[0][1]
+                self.PatternId, 'Instrument Parameters'))[0][1]
             dsp = 0.0
             if abs(xpos) > 0.:
                 dsp = wave/(2.*sind(abs(xpos)/2.0))
@@ -380,7 +380,8 @@ def PlotPatterns(self,newPlot=False):
     if self.Contour:
         acolor = mpl.cm.get_cmap('Paired')
         Plot.contourf(ContourX,ContourY,ContourZ,cmap=acolor)
-#        Plot.set_ylim(0,Nseq-1)
+        Plot.set_ylim(0,Nseq-1)
+        newPlot = True
     else:
         self.Lines = Lines
     if not newPlot:
@@ -824,6 +825,11 @@ def PlotTRImage(self,newPlot=False):
         for xring,yring,dsp in rings:
             x,y = G2cmp.GetTthAzm(xring,yring,Data)
             Plot.plot(y,x,'r+')            
+    for ellipse in Data['ellipses']:
+        ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
+        x,y = np.hsplit(ring,2)
+        tth,azm = G2cmp.GetTthAzm(x,y,Data)
+        Plot.plot(azm,tth,'b')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -888,6 +894,11 @@ def PlotIntegration(self,newPlot=False):
         for xring,yring,dsp in rings:
             x,y = G2cmp.GetTthAzm(xring,yring,Data)
             Plot.plot(x,y,'r+')            
+    for ellipse in Data['ellipses']:
+        ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
+        x,y = np.hsplit(ring,2)
+        tth,azm = G2cmp.GetTthAzm(x,y,Data)
+        Plot.plot(tth,azm,'b')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

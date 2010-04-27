@@ -1354,6 +1354,19 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         return []
     return ring
     
+def makeIdealRing(ellipse):
+    cent,phi,radii = ellipse
+    cphi = cosd(phi)
+    sphi = sind(phi)
+    ring = []
+    for a in range(0,360,2):
+        x = radii[0]*cosd(a)
+        y = radii[1]*sind(a)
+        X = (cphi*x-sphi*y+cent[0])
+        Y = (sphi*x+cphi*y+cent[1])
+        ring.append([X,Y])
+    return ring
+    
 def calcDist(radii,tth):
     stth = sind(tth)
     ctth = cosd(tth)

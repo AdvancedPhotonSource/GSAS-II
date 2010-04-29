@@ -7,6 +7,7 @@ import wx.aui
 import matplotlib as mpl
 import GSASIIgrid as G2gd
 import GSASIIcomp as G2cmp
+import GSASIIIO as G2IO
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
@@ -653,7 +654,8 @@ def PlotImage(self,newPlot=False):
     Page.SetFocus()
         
     Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
-    size,self.ImageZ = self.PatternTree.GetItemPyData(self.Image)
+    size,imagefile = self.PatternTree.GetItemPyData(self.Image)
+    self.ImageZ = G2IO.GetImageData(imagefile,True)
     Data = self.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
     imScale = 1
@@ -800,6 +802,8 @@ def PlotTRImage(self,newPlot=False):
         
     Data = self.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+    size,imagefile = self.PatternTree.GetItemPyData(self.Image)
+    self.ImageZ = G2IO.GetImageData(imagefile,True)
     image = self.ImageZ
     Iz = len(image)
     Imin,Imax = Data['range'][1]

@@ -387,7 +387,25 @@ def GetSTDdata(filename,Pos,Bank,DataType):
     N = len(x)
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
-def GetGEsumData(filename):
+def GetImageData(imagefile,imageOnly=False):
+    ext = ospath.splitext(imagefile)[1]
+    Comments = []
+    if ext == '.tif':
+        Comments,Data,Size,Image = GetTifData(imagefile)
+    elif ext == '.img':
+        Comments,Data,Size,Image = GetImgData(imagefile)
+        Image[0][0] = 0
+    elif ext == '.mar3450' or ext == '.mar2300':
+        Comments,Data,Size,Image = GetMAR345Data(imagefile)
+    elif ext in ['.sum','.avg']:
+        Comments,Data,Size,Image = GetGEsumData(imagefile)
+    if imageOnly:
+        return Image
+    else:
+        return Comments,Data,Size,Image
+
+    
+def GetGEsumData(filename,imageOnly=False):
     import array as ar
     print 'Read GE sum file: ',filename    
     File = open(filename,'rb')
@@ -410,10 +428,13 @@ def GetGEsumData(filename):
         image[row] = np.asarray(line)
         row += 1
     data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8]}  
-    return head,data,size,image
     File.close()    
+    if imageOnly:
+        return image
+    else:
+        return head,data,size,image
         
-def GetImgData(filename):
+def GetImgData(filename,imageOnly=False):
     import struct as st
     import array as ar
     print 'Read ADSC img file: ',filename
@@ -453,9 +474,12 @@ def GetImgData(filename):
         row += 1
         pos += 2*size
     File.close()
-    return lines[1:-2],data,size,image
+    if imageOnly:
+        return image
+    else:
+        return lines[1:-2],data,size,image
        
-def GetMAR345Data(filename):
+def GetMAR345Data(filename,imageOnly=False):
     import array as ar
     import struct as st
     try:
@@ -504,9 +528,12 @@ def GetMAR345Data(filename):
     File.close()
     image = np.zeros(shape=(size,size),dtype=np.int32)
     image = pf.pack_f(len(raw),raw,size,image)
-    return head,data,size,image.T
+    if imageOnly:
+        return image.T
+    else:
+        return head,data,size,image.T
     
-def GetTifData(filename):
+def GetTifData(filename,imageOnly=False):
     # only works for APS Perkin-Elmer detector data files in "TIFF" format that are readable by Fit2D
     import struct as st
     import array as ar
@@ -542,9 +569,12 @@ def GetTifData(filename):
         row += 1
         pos += 4*size
     data = {'pixelSize':(200,200),'wavelength':0.10,'distance':100.0,'center':[204.8,204.8]}
-    return head,data,size,image
-    
     File.close()    
+    if imageOnly:
+        return image
+    else:
+        return head,data,size,image
+    
 
 def ProjFileOpen(self):
     file = open(self.GSASprojectfile,'rb')

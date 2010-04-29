@@ -377,21 +377,11 @@ class GSASII(wx.Frame):
             dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                self.imagefile = dlg.GetPath()
+                imagefile = dlg.GetPath()
                 self.dirname = dlg.GetDirectory()
-                ext = ospath.splitext(self.imagefile)[1]
-                Comments = []
-                if ext == '.tif':
-                    Comments,Data,Size,Image = G2IO.GetTifData(self.imagefile)
-                elif ext == '.img':
-                    Comments,Data,Size,Image = G2IO.GetImgData(self.imagefile)
-                    Image[0][0] = 0
-                elif ext == '.mar3450' or ext == '.mar2300':
-                    Comments,Data,Size,Image = G2IO.GetMAR345Data(self.imagefile)
-                elif ext in ['.sum','.avg']:
-                    Comments,Data,Size,Image = G2IO.GetGEsumData(self.imagefile)
+                Comments,Data,Size,Image = G2IO.GetImageData(imagefile)
                 if Comments:
-                    Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(self.imagefile))
+                    Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(imagefile))
                     self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
                     Imax = np.amax(Image)
                     Imin = np.amin(Image)
@@ -420,7 +410,7 @@ class GSASII(wx.Frame):
                     Data['setDefault'] = False
                     Data['range'] = [(Imin,Imax),[Imin,Imax]]
                     self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
-                    self.PatternTree.SetItemPyData(Id,[Size,Image])
+                    self.PatternTree.SetItemPyData(Id,[Size,imagefile])
                     self.PickId = Id
                     self.Image = Id
                     self.PatternTree.SelectItem(Id)

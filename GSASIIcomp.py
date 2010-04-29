@@ -1340,7 +1340,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     cphi = cosd(phi)
     sphi = sind(phi)
     ring = []
-    for a in range(0,360,2):
+    for a in range(-180,180,2):
         x = radii[0]*cosd(a)
         y = radii[1]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
@@ -1435,7 +1435,7 @@ def GetDetectorXY(dsp,azm,data):
     xy = fsolve(func,xy0,args=(azm,phi,R0,R1,A,B))+cent
     return xy
                     
-def GetTthDspAzm(x,y,data):
+def GetTthAzmDsp(x,y,data):
     wave = data['wavelength']
     dist = data['distance']
     cent = data['center']
@@ -1452,13 +1452,13 @@ def GetTthDspAzm(x,y,data):
     return tth,azm,dsp
     
 def GetTth(x,y,data):
-    return GetTthDspAzm(x,y,data)[0]
+    return GetTthAzmDsp(x,y,data)[0]
     
 def GetTthAzm(x,y,data):
-    return GetTthDspAzm(x,y,data)[0:2]
+    return GetTthAzmDsp(x,y,data)[0:2]
     
 def GetDsp(x,y,data):
-    return GetTthDspAzm(x,y,data)[2]
+    return GetTthAzmDsp(x,y,data)[2]
        
 def ImageCompress(image,scale):
     if scale == 1:
@@ -1661,17 +1661,17 @@ def ImageIntegrate(self,data):
     print 'Fill map with 2-theta/azimuth values'
     self.TA = GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
     self.TA = np.reshape(self.TA,(2,imageN,imageN))
-    self.TA = np.dstack((self.TA[1],self.TA[0],self.ImageZ))    #azimuth, 2-theta, intensity order
+    self.TA = np.dstack((self.TA[1],self.TA[0]))    #azimuth, 2-theta
     t2 = time.time()
     print "Elapsed time:","%8.3f"%(t2-t1), "s"
     G2plt.PlotTRImage(self,newPlot=True)
     print 'Form 1-D histograms for ',numAzms,' azimuthal angles'
     print 'Integration limits:',LUtth,LRazm
-    tax,tay,taz = np.dsplit(self.TA,3)    #azimuth, 2-theta, intensity
+    tax,tay = np.dsplit(self.TA,2)    #azimuth, 2-theta, intensity
     NST = np.histogram2d(tax.flatten(),tay.flatten(),normed=False, \
         bins=(numAzms,numChans),range=[LRazm,LUtth])
     HST = np.histogram2d(tax.flatten(),tay.flatten(),normed=False, \
-        bins=(numAzms,numChans),weights=taz.flatten(),range=[LRazm,LUtth])
+        bins=(numAzms,numChans),weights=self.ImageZ.flatten(),range=[LRazm,LUtth])
     t3 = time.time()
     print "Elapsed time:","%8.3f"%(t3-t2), "s"
     self.Integrate = [HST[0]/NST[0],HST[1],HST[2]]

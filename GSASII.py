@@ -935,13 +935,17 @@ class GSASII(wx.Frame):
         
     def OnExportPattern(self,event):
         dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
-            'xye file (*.xye)|*.xye',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            'GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye',
+            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                self.powderfile = dlg.GetPath()
-                G2IO.PowderxyeSave(self)
+                powderfile = dlg.GetPath()
+                if 'fxye' in powderfile:
+                    G2IO.powderFxyeSave(self,powderfile)
+                else:       #just xye
+                    G2IO.powderXyeSave(self,powderfile)
                 self.dirname = dlg.GetDirectory()
         finally:
             dlg.Destroy()

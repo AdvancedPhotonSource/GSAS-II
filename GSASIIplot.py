@@ -549,7 +549,7 @@ def PlotImage(self,newPlot=False):
                 ypix = ypos*scaley
                 if (0 <= xpix <= size) and (0 <= ypix <= size):
                     Page.canvas.SetToolTipString('%6d'%(self.ImageZ[ypix][xpix]))
-                tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
+                tth,azm,dsp = G2cmp.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 self.G2plotNB.status.SetFields(\
                     ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),])
@@ -608,7 +608,7 @@ def PlotImage(self,newPlot=False):
                         if np.allclose(ring,xypos,.01,0):
                             rings.remove(ring)                                                                       
                 else:
-                    tth,azm,dsp = G2cmp.GetTthDspAzm(xpos,ypos,Data)
+                    tth,azm,dsp = G2cmp.GetTthAzmDsp(xpos,ypos,Data)
                     if 'Line2D' in str(self.itemPicked):
                         if 'line1' in str(self.itemPicked):
                             Data['IOtth'][0] = tth
@@ -737,7 +737,7 @@ def PlotTRImage(self,newPlot=False):
         tth = event.ydata
         if azm and tth:
             self.G2plotNB.status.SetFields(\
-                ['Detector 2-th =%9.2fdeg, azm = %7.2fdeg'%(tth,azm),])
+                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),])
                     
     def OnPick(event):
         if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
@@ -808,7 +808,7 @@ def PlotTRImage(self,newPlot=False):
     acolor = mpl.cm.get_cmap(Data['color'])
     Plot.set_xlabel('azimuth',fontsize=12)
     Plot.set_ylabel('2-theta',fontsize=12)
-    Plot.contour(self.TA[:,:,0],self.TA[:,:,1],self.TA[:,:,2],V,cmap=acolor)
+    Plot.contour(self.TA[:,:,0],self.TA[:,:,1],image,V,cmap=acolor)
     if Data['showLines']:
         IOtth = Data['IOtth']
         if Data['fullIntegrate']:
@@ -825,11 +825,11 @@ def PlotTRImage(self,newPlot=False):
         for xring,yring,dsp in rings:
             x,y = G2cmp.GetTthAzm(xring,yring,Data)
             Plot.plot(y,x,'r+')            
-    for ellipse in Data['ellipses']:
-        ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
-        x,y = np.hsplit(ring,2)
-        tth,azm = G2cmp.GetTthAzm(x,y,Data)
-        Plot.plot(azm,tth,'b')
+        for ellipse in Data['ellipses']:
+            ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
+            x,y = np.hsplit(ring,2)
+            tth,azm = G2cmp.GetTthAzm(x,y,Data)
+            Plot.plot(azm,tth,'b,')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -858,7 +858,7 @@ def PlotIntegration(self,newPlot=False):
         tth = event.xdata
         if azm and tth:
             self.G2plotNB.status.SetFields(\
-                ['Detector 2-th =%9.2fdeg, azm = %7.2fdeg'%(tth,azm),])
+                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),])
                                 
     try:
         plotNum = self.G2plotNB.plotList.index('2D Integration')
@@ -888,17 +888,17 @@ def PlotIntegration(self,newPlot=False):
     Plot.set_ylabel('azimuth',fontsize=12)
     Plot.set_xlabel('2-theta',fontsize=12)
     Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
-        extent=[ysc[0],ysc[-1],xsc[0],xsc[-1]],aspect='auto')
+        extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
     if Data['setRings']:
         rings = np.concatenate((Data['rings']),axis=0)
         for xring,yring,dsp in rings:
             x,y = G2cmp.GetTthAzm(xring,yring,Data)
             Plot.plot(x,y,'r+')            
-    for ellipse in Data['ellipses']:
-        ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
-        x,y = np.hsplit(ring,2)
-        tth,azm = G2cmp.GetTthAzm(x,y,Data)
-        Plot.plot(tth,azm,'b')
+        for ellipse in Data['ellipses']:
+            ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
+            x,y = np.hsplit(ring,2)
+            tth,azm = G2cmp.GetTthAzm(x,y,Data)
+            Plot.plot(tth,azm,'b,')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

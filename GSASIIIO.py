@@ -619,15 +619,31 @@ def ProjFileSave(self):
         finally:
             wx.EndBusyCursor()
         print 'project save successful'
-        
-def PowderxyeSave(self):
-    file = open(self.powderfile,'wa')
-    print 'save powder pattern to file: ',self.powderfile
+
+def powderFxyeSave(self,powderfile):
+    file = open(powderfile,'w')
+    print 'save powder pattern to file: ',powderfile
     wx.BeginBusyCursor()
     try:
         x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(self.PickId)[1]
-        for i,X in enumerate(x):
-            file.write("%15.6g %15.6g %15.6g\n" % (X,y[i],1.0/math.sqrt(w[i])))
+        x = x*100.
+        XYW = zip(x,y,w)
+        for X,Y,W in XYW:
+            file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
+        file.close()
+    finally:
+        wx.EndBusyCursor()
+    print 'powder pattern file written'
+        
+def powderXyeSave(self,powderfile):
+    file = open(powderfile,'w')
+    print 'save powder pattern to file: ',powderfile
+    wx.BeginBusyCursor()
+    try:
+        x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(self.PickId)[1]
+        XYW = zip(x,y,w)
+        for X,Y,W in XYW:
+            file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
         file.close()
     finally:
         wx.EndBusyCursor()

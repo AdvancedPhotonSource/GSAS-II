@@ -1135,13 +1135,13 @@ def UpdateImageControls(self,data):
     def OnMaxSlider(event):
         imax = int(maxSel.GetValue())
         delt = data['range'][0][1]-data['range'][0][0]
-        data['range'][1][1] = int((imax/100.)*delt)+data['range'][0][0]
+        data['range'][1][1] = max(data['range'][1][0]+1,int((imax/100.)*delt)+data['range'][0][0])
         G2plt.PlotExposedImage(self)
         
     def OnMinSlider(event):
         imin = int(minSel.GetValue())
         delt = data['range'][1][1]-data['range'][0][0]
-        data['range'][1][0] = int((imin/100.)*delt)+data['range'][0][0]
+        data['range'][1][0] = min(data['range'][1][1]-1,int((imin/100.)*delt)+data['range'][0][0])
         G2plt.PlotExposedImage(self)
         
     def OnNumOutChans(event):

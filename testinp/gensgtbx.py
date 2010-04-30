@@ -1,22 +1,30 @@
 #!/Users/toby/build/cctbx_build/bin/python
 '''
 Generate symmetry operations in cctbx.sgtbx for use in testing the 
-GSASII space group generation code. I think one of the 230 spacegroups 
-is missing from the list below; but there are two settings included for the 
-rhombohedral groups.
+GSASII space group generation code. All 230 spacegroups are tested plus 
+rhombohedral settings of R space groups.
 
-Redirect output to sgtbxdat.py to create the input file for testing.
+ The output from this is placed in sgtbxtestinp.py which contains a dictionary
+ sgtbx that can be used for testing.
+
 '''
 
 from cctbx import sgtbx
+import sys
+import datetime
 
 def GenSGdat(spc):
-    print "'%s': [" % spc
+    fp.write("'%s': [\n" % spc)
     s=sgtbx.space_group_info(spc)
     for s1 in s.group():
-        print s1.as_double_array(),","
-    print "],\n"
-print "sgtbx = {"
+#        print s1.as_double_array()
+        fp.write("%s ,\n" % (s1.as_double_array(),))
+    fp.write("],\n\n")
+
+fp = open('sgtbxtestinp.py','w')
+fp.write("# output from sgtbx computed on platform %s on %s\n" %
+         (sys.platform, datetime.date.today()) )
+fp.write("sgtbx = {\n")
 #cubic
 GenSGdat('p 2 3')
 GenSGdat('f 2 3')
@@ -120,13 +128,11 @@ GenSGdat('p 41')
 GenSGdat('p 42')
 GenSGdat('p 43')
 GenSGdat('i 4')
-#GenSGdat('i 41 1 1') # not accepted by cctbx
 GenSGdat('i 41')
 GenSGdat('p -4')
 GenSGdat('i -4')
 GenSGdat('p 4/m')
 GenSGdat('p 42/m')
-#GenSGdat('p 4/n 1 ') # does not work
 GenSGdat('p 4/n')
 GenSGdat('p 42/n')
 GenSGdat('i 4/m')
@@ -137,13 +143,13 @@ GenSGdat('p 41 2 2')
 GenSGdat('p 41 21 2')
 GenSGdat('p 42 2 2')
 GenSGdat('p 42 21 2')
-GenSGdat('p 43 2 2 ')
+GenSGdat('p 43 2 2')
 GenSGdat('p 43 21 2')
 GenSGdat('i 4 2 2')
 GenSGdat('i 41 2 2')
 GenSGdat('p 4 m m')
 GenSGdat('p 4 b m')
-GenSGdat('p 2 c m')
+GenSGdat('p 42 c m')
 GenSGdat('p 42 n m')
 GenSGdat('p 4 c c')
 GenSGdat('p 4 n c')
@@ -182,7 +188,7 @@ GenSGdat('p 42/m n m')
 GenSGdat('p 42/n m c')
 GenSGdat('p 42/n c m')
 GenSGdat('i 4/m m m')
-GenSGdat('i 4/m c m ')
+GenSGdat('i 4/m c m')
 GenSGdat('i 41/a m d')
 GenSGdat('i 41/a c d')
 # triclinic
@@ -191,20 +197,20 @@ GenSGdat('p -1')
 # monoclinic
 GenSGdat('p 2')
 GenSGdat('p 21')
-GenSGdat('c 2 1 1')
+GenSGdat('c 2')
 GenSGdat('p m')
 GenSGdat('p c')
 GenSGdat('c m')
 GenSGdat('c c')
-GenSGdat('p 1 2/m 1')
+GenSGdat('p 2/m')
 GenSGdat('p 21/m')
 GenSGdat('c 2/m')
 GenSGdat('p 2/c')
 GenSGdat('p 21/c')
-GenSGdat('c 1 2/c 1')
+GenSGdat('c 2/c')
 # trigonal
+GenSGdat('p 3')
 GenSGdat('p 31')
-#GenSGdat('p 32 1 1')  # not accepted by cctbx
 GenSGdat('p 32')
 GenSGdat('r 3')
 GenSGdat('r 3 r')
@@ -238,13 +244,11 @@ GenSGdat('r -3 c r')
 # hexagonal
 GenSGdat('p 6')
 GenSGdat('p 61')
-#GenSGdat('p 65 1 1')  # not accepted by cctbx
 GenSGdat('p 65')
 GenSGdat('p 62')
 GenSGdat('p 64')
 GenSGdat('p 63')
 GenSGdat('p -6')
-#GenSGdat('p 6/m 1 1')  # not accepted by cctbx
 GenSGdat('p 6/m')
 GenSGdat('p 63/m')
 GenSGdat('p 6 2 2')
@@ -265,5 +269,9 @@ GenSGdat('p 6/m m m')
 GenSGdat('p 6/m c c')
 GenSGdat('p 63/m c m')
 GenSGdat('p 63/m m c')
-
-print "}"
+# non-standard
+GenSGdat('p 21 1 1')
+GenSGdat('p 1 21 1')
+GenSGdat('p 1 1 21')
+fp.write("}\n")
+fp.close()

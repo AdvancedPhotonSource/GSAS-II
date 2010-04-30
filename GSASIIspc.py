@@ -4,16 +4,29 @@
 import numpy as np
 import sys
 import os.path as ospath
-# determine a binary path pased on the host OS and the python version, path is relative to 
-# location of this file
+
+# determine a binary path based on the host OS and the python version, path 
+# is relative to the location of this file
 if sys.platform == "win32":
     bindir = 'binwin%d.%d' % sys.version_info[0:2]
 elif sys.platform == "darwin":
     bindir = 'binmac%d.%d' % sys.version_info[0:2]
+    if sys.byteorder == 'big':
+        bindir += 'PPC'
+elif sys.platform == "linux2":
+    bindir = 'binlinux%d.%d' % sys.version_info[0:2]
 else:
     bindir = 'bin'
-if ospath.exists(ospath.join(sys.path[0],bindir)) and ospath.join(sys.path[0],bindir) not in sys.path: 
-    sys.path.insert(0,ospath.join(sys.path[0],bindir))
+mypath = ospath.split(ospath.abspath( __file__ ))[0]
+bindir = ospath.join(mypath,bindir)
+if ospath.exists(bindir):
+    if bindir not in sys.path: sys.path.insert(0,bindir)
+else:
+    print 'Expected binary directory (%s) for pyspg not found' % bindir
+# use local bin directory preferentially
+bindir = ospath.join(mypath,'bin')
+if ospath.exists(bindir):
+    if bindir not in sys.path: sys.path.insert(0,bindir)
 
 import pyspg as pyd
 
@@ -498,3 +511,157 @@ def SytSym(XYZ,SGData):
           
     return GetKNsym(str(Isym)),Mult
     
+# self-test materials follow. Requires files in directory testinp
+def test0():
+    '''test #0: exercise MoveToUnitCell'''
+    msg = "MoveToUnitCell failed"
+    v = [0,1,2,-1,-2]; MoveToUnitCell(v); assert v==[0,0,0,0,0], msg
+    v = np.array([-.1]); MoveToUnitCell(v); assert abs(v-0.9) < 1e-6, msg
+    v = np.array([.1]); MoveToUnitCell(v); assert abs(v-0.1) < 1e-6, msg
+
+def test1():
+    ''' test #1: SpcGroup and SGPrint against previous results'''
+    testdir = ospath.join(mypath,'testinp')
+    if ospath.exists(testdir):
+        if testdir not in sys.path: sys.path.insert(0,testdir)
+    import spctestinp
+    def CompareSpcGroup(spc, referr, refdict, reflist): 
+        'Compare output from GSASIIspc.SpcGroup with results from a previous run'
+        # if an error is reported, the dictionary can be ignored
+        msg = "failed on space group %s" % spc
+        result = SpcGroup(spc)
+        if result[0] == referr and referr > 0: return True
+        keys = result[1].keys()
+        #print result[1]['SpGrp']
+        assert len(keys) == len(refdict.keys()), msg
+        for key in keys:
+        #print key, type(refdict[key])
+            if key == 'SGOps' or  key == 'SGCen':
+                assert len(refdict[key]) == len(result[1][key]), msg
+                for i in range(len(refdict[key])):
+                    assert np.allclose(result[1][key][i][0],refdict[key][i][0]), msg
+                    assert np.allclose(result[1][key][i][1],refdict[key][i][1]), msg
+            else:
+                assert result[1][key] == refdict[key], msg
+        assert reflist == SGPrint(result[1]), 'SGPrint ' +msg
+    for spc in spctestinp.SGdat:
+        CompareSpcGroup(spc, 0, spctestinp.SGdat[spc], spctestinp.SGlist[spc] )
+
+def test2():
+    ''' test #2: SpcGroup against cctbx (sgtbx) computations'''
+    testdir = ospath.join(mypath,'testinp')
+    if ospath.exists(testdir):
+        if testdir not in sys.path: sys.path.insert(0,testdir)
+    import sgtbxtestinp
+    def CompareWcctbx(spcname, cctbx_in, debug=0):
+        'Compare output from GSASIIspc.SpcGroup with results from cctbx.sgtbx'
+        cctbx = cctbx_in[:] # make copy so we don't delete from the original
+        spc = (SpcGroup(spcname))[1]
+        if debug: print spc['SpGrp']
+        if debug: print spc['SGCen']
+        latticetype = spcname.strip().upper()[0]
+        # lattice type of R implies Hexagonal centering", fix the rhombohedral settings
+        if latticetype == "R" and len(spc['SGCen']) == 1: latticetype = 'P'
+        assert latticetype == spc['SGLatt'], "Failed: %s does not match Lattice: %s" % (spcname, spc['SGLatt'])
+        onebar = [1]
+        if spc['SGInv']: onebar.append(-1)
+        for (op,off) in spc['SGOps']:
+            for inv in onebar:
+                for cen in spc['SGCen']:
+                    noff = off + cen
+                    MoveToUnitCell(noff)
+                    mult = tuple((op*inv).ravel().tolist())
+                    if debug: print "\n%s: %s + %s" % (spcname,mult,noff)
+                    for refop in cctbx:
+                        if debug: print refop
+                        # check the transform
+                        if refop[:9] != mult: continue
+                        if debug: print "mult match"
+                        # check the translation
+                        reftrans = list(refop[-3:])
+                        MoveToUnitCell(reftrans)
+                        if all(abs(noff - reftrans) < 1.e-5):
+                            cctbx.remove(refop)
+                            break
+                    else:
+                        assert False, "failed on %s:\n\t %s + %s" % (spcname,mult,noff)
+    for key in sgtbxtestinp.sgtbx:
+        CompareWcctbx(key, sgtbxtestinp.sgtbx[key])
+
+def test3(): 
+    ''' test #3: exercise SytSym (includes GetOprPtrName, GenAtom, GetKNsym)
+     for selected space groups against info in IT Volume A '''
+    def ExerciseSiteSym (spc, crdlist):
+        'compare site symmetries and multiplicities for a specified space group'
+        msg = "failed on site sym test for %s" % spc
+        (E,S) = SpcGroup(spc)
+        assert not E, msg
+        for t in crdlist:
+            symb, m = SytSym(t[0],S)
+            if symb.strip() != t[2].strip() or m != t[1]:
+                print spc,t[0],m,symb
+            assert m == t[1]
+            #assert symb.strip() == t[2].strip()
+
+    ExerciseSiteSym('p 1',[
+            ((0.13,0.22,0.31),1,'1'),
+            ((0,0,0),1,'1'),
+            ])
+    ExerciseSiteSym('p -1',[
+            ((0.13,0.22,0.31),2,'1'),
+            ((0,0.5,0),1,'-1'),
+            ])
+    ExerciseSiteSym('C 2/c',[
+            ((0.13,0.22,0.31),8,'1'),
+            ((0.0,.31,0.25),4,'2(010)'),
+            ((0.25,.25,0.5),4,'-1'),
+            ((0,0.5,0),4,'-1'),
+            ])
+    ExerciseSiteSym('p 2 2 2',[
+            ((0.13,0.22,0.31),4,'1'),
+            ((0,0.5,.31),2,'2(001)'),
+            ((0.5,.31,0.5),2,'2(010)'),
+            ((.11,0,0),2,'2(100)'),
+            ((0,0.5,0),1,'222'),
+            ])
+    ExerciseSiteSym('p 4/n',[
+            ((0.13,0.22,0.31),8,'1'),
+            ((0.25,0.75,.31),4,'2(001)'),
+            ((0.5,0.5,0.5),4,'-1'),
+            ((0,0.5,0),4,'-1'),
+            ((0.25,0.25,.31),2,'4(001)'),
+            ((0.25,.75,0.5),2,'-4(001)'),
+            ((0.25,.75,0.0),2,'-4(001)'),
+            ])
+    ExerciseSiteSym('p 31 2 1',[
+            ((0.13,0.22,0.31),6,'1'),
+            ((0.13,0.0,0.833333333),3,'2(100)'),
+            ((0.13,0.13,0.),3,'2(110)'),
+            ])
+    ExerciseSiteSym('R 3 c',[
+            ((0.13,0.22,0.31),18,'1'),
+            ((0.0,0.0,0.31),6,'3'),
+            ])
+    ExerciseSiteSym('R 3 c R',[
+            ((0.13,0.22,0.31),6,'1'),
+            ((0.31,0.31,0.31),2,'3(111)'),
+            ])
+    ExerciseSiteSym('P 63 m c',[
+            ((0.13,0.22,0.31),12,'1'),
+            ((0.11,0.22,0.31),6,'m(100)'),
+            ((0.333333,0.6666667,0.31),2,'3m(100)'),
+            ((0,0,0.31),2,'3m(100)'),
+            ])
+    ExerciseSiteSym('I a -3',[
+            ((0.13,0.22,0.31),48,'1'),
+            ((0.11,0,0.25),24,'2(100)'),
+            ((0.11,0.11,0.11),16,'3(111)'),
+            ((0,0,0),8,'-3(111)'),
+            ])
+
+if __name__ == '__main__':
+    test0()
+    test1()
+    test2()
+    test3()
+    print "OK"

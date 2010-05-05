@@ -1364,7 +1364,7 @@ def UpdateImageControls(self,data):
         wx.ALIGN_CENTER_VERTICAL)
     cutOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['cutoff'])),
         style=wx.TE_PROCESS_ENTER)
-    cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
+    cutOff.Bind(wx.EVT_TEXT,OnCutOff)
     comboSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
 
     mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
@@ -1410,7 +1410,7 @@ def UpdateImageControls(self,data):
         wx.ALIGN_CENTER_VERTICAL)
     waveSel = wx.TextCtrl(parent=self.dataDisplay,value=("%6.5f" % (data['wavelength'])),
         style=wx.TE_PROCESS_ENTER)
-    waveSel.Bind(wx.EVT_TEXT_ENTER,OnWavelength)
+    waveSel.Bind(wx.EVT_TEXT,OnWavelength)
     dataSizer.Add(waveSel,0,wx.ALIGN_CENTER_VERTICAL)
          
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start/End azimuth'),0,
@@ -1436,10 +1436,10 @@ def UpdateImageControls(self,data):
         wx.ALIGN_CENTER_VERTICAL)
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     outChan = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outChannels']),style=wx.TE_PROCESS_ENTER)
-    outChan.Bind(wx.EVT_TEXT_ENTER,OnNumOutChans)
+    outChan.Bind(wx.EVT_TEXT,OnNumOutChans)
     littleSizer.Add(outChan,0,wx.ALIGN_CENTER_VERTICAL)
     outAzim = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
-    outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
+    outAzim.Bind(wx.EVT_TEXT,OnNumOutAzms)
     littleSizer.Add(outAzim,0,wx.ALIGN_CENTER_VERTICAL)
     dataSizer.Add(littleSizer,0,)
 
@@ -1860,13 +1860,12 @@ def MovePatternTreeToGrid(self,item):
 
     self.dataFrame.Raise()            
     self.PickId = 0
-    self.PatternId = 0
     parentID = self.root
+    self.ExportPattern.Enable(False)
     if item != self.root:
         parentID = self.PatternTree.GetItemParent(item)
     if self.PatternTree.GetItemParent(item) == self.root:
         self.PatternId = item
-        self.ExportPattern.Enable(True)
         self.PickId = item
         if self.PatternTree.GetItemText(item) == 'Notebook':
             self.PatternId = 0
@@ -1885,6 +1884,7 @@ def MovePatternTreeToGrid(self,item):
         elif 'PKS' in self.PatternTree.GetItemText(item):
             G2plt.PlotPowderLines(self)
         elif 'PWDR' in self.PatternTree.GetItemText(item):            
+            self.ExportPattern.Enable(True)
             G2plt.PlotPatterns(self,newPlot=True)
         elif 'SXTL' in self.PatternTree.GetItemText(item):
             self.Sngl = item

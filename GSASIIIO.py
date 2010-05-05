@@ -399,15 +399,29 @@ def GetImageData(imagefile,imageOnly=False):
         Comments,Data,Size,Image = GetMAR345Data(imagefile)
     elif ext in ['.sum','.avg']:
         Comments,Data,Size,Image = GetGEsumData(imagefile)
+    elif ext == '.G2img':
+        return GetG2Image(imagefile)
     if imageOnly:
         return Image
     else:
         return Comments,Data,Size,Image
-
+        
+def PutG2Image(filename,image):
+    File = open(filename,'wb')
+    cPickle.dump(image,File,1)
+    File.close()
+    return
+    
+def GetG2Image(filename):
+    File = open(filename,'rb')
+    image = cPickle.load(File)
+    File.close()
+    return image
     
 def GetGEsumData(filename,imageOnly=False):
     import array as ar
-    print 'Read GE sum file: ',filename    
+    if not imageOnly:
+        print 'Read GE sum file: ',filename    
     File = open(filename,'rb')
     size = 2048
     if '.sum' in filename:
@@ -437,7 +451,8 @@ def GetGEsumData(filename,imageOnly=False):
 def GetImgData(filename,imageOnly=False):
     import struct as st
     import array as ar
-    print 'Read ADSC img file: ',filename
+    if not imageOnly:
+        print 'Read ADSC img file: ',filename
     File = open(filename,'rb')
     head = File.read(511)
     lines = head.split('\n')
@@ -491,7 +506,8 @@ def GetMAR345Data(filename,imageOnly=False):
         msg.ShowModal()
         return None,None,None,None
 
-    print 'Read Mar345 file: ',filename
+    if not imageOnly:
+        print 'Read Mar345 file: ',filename
     File = open(filename,'rb')
     head = File.read(4095)
     numbers = st.unpack('<iiiiiiiiii',head[:40])
@@ -529,7 +545,7 @@ def GetMAR345Data(filename,imageOnly=False):
     image = np.zeros(shape=(size,size),dtype=np.int32)
     image = pf.pack_f(len(raw),raw,size,image)
     if imageOnly:
-        return image.T
+        return image.T              #transpose to get it right way around
     else:
         return head,data,size,image.T
     
@@ -537,7 +553,8 @@ def GetTifData(filename,imageOnly=False):
     # only works for APS Perkin-Elmer detector data files in "TIFF" format that are readable by Fit2D
     import struct as st
     import array as ar
-    print 'Read APS PE-detector tiff file: ',filename
+    if not imageOnly:
+        print 'Read APS PE-detector tiff file: ',filename
     File = open(filename,'Ur')
     dataType = 5
     try:
@@ -575,7 +592,6 @@ def GetTifData(filename,imageOnly=False):
     else:
         return head,data,size,image
     
-
 def ProjFileOpen(self):
     file = open(self.GSASprojectfile,'rb')
     print 'load from file: ',self.GSASprojectfile
@@ -588,37 +604,60 @@ def ProjFileOpen(self):
                 break
             datum = data[0]
             print 'load: ',datum[0]
-            if 'PWDR' in datum[0] and 'list' in str(type(datum[1][1][0])):      #fix to convert old style list arrays to numpy arrays
+            
+            #temporary fixes to old project files
+            #fix to convert old style list arrays to numpy arrays
+            if 'PWDR' in datum[0] and 'list' in str(type(datum[1][1][0])):      
                 X = datum[1][1]
                 X = [np.array(X[0]),np.array(X[1]),np.array(X[2]),np.array(X[3]),np.array(X[4]),np.array(X[5])]
                 datum[1] = [datum[1][0],X]
                 print 'powder data converted to numpy arrays'
+            #temporary fix to insert 'PWDR' in front of powder names
             if 'PKS' not in datum[0] and 'IMG' not in datum[0] and 'SNGL' not in datum[0]:
-                if datum[0] not in ['Notebook','Controls','Phases'] and 'PWDR' not in datum[0]:            #temporary fix
+                if datum[0] not in ['Notebook','Controls','Phases'] and 'PWDR' not in datum[0]:
                     datum[0] = 'PWDR '+datum[0]
+                    print 'add PWDR to powder names'
+            #end of temporary fixes
+            
             Id = self.PatternTree.AppendItem(parent=self.root,text=datum[0])
             self.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
                 print '    load: ',datus[0]
+                
+                #temporary fix to add azimuthal angle to instrument parameters
                 if 'PWDR' in datum[0] and 'Instrument Parameters' in datus[0]:
                     if len(datus[1][0]) == 10 or len(datus[1][0]) == 12:
                         datus[1][0] += (0.0,)                   #add missing azimuthal angle
                         datus[1][1].append(0.0)
                         datus[1][2].append(0.0)
                         datus[1][3].append('Azimuth')
+                        print 'add azimuth to instrument parameters'
+                #end of temporary fix        
+                
                 sub = self.PatternTree.AppendItem(Id,datus[0])
                 self.PatternTree.SetItemPyData(sub,datus[1])
+                
+            #temporary fix to add Comments to powder data sets
             if 'PWDR' in datum[0] and not G2gd.GetPatternTreeItemId(self,Id, 'Comments'):
                 print 'no comments - add comments'
                 sub = self.PatternTree.AppendItem(Id,'Comments')
                 self.PatternTree.SetItemPyData(sub,['no comments'])
+            #end of temporary fix
+                                
+            if 'IMG' in datum[0]:                   #retreive image default flag & data if set
+                Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))
+                if Data['setDefault']:
+                    self.imageDefault = Data
                 
         file.close()
+        
+        #temporary fix to add Notebook & Controls to project
         if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
             self.PatternTree.SetItemPyData(sub,[''])
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
             self.PatternTree.SetItemPyData(sub,[0])
+            print 'add Notebook and Controls to project'
             
     finally:
         wx.EndBusyCursor()
@@ -652,14 +691,42 @@ def ProjFileSave(self):
 
 def powderFxyeSave(self,powderfile):
     file = open(powderfile,'w')
+    prm = open(powderfile.strip('fxye')+'prm','w')      #old style GSAS parm file
     print 'save powder pattern to file: ',powderfile
     wx.BeginBusyCursor()
+    Inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
+                    self.PickId, 'Instrument Parameters'))[1]
+    if len(Inst) == 11:             #single wavelength
+        lam1 = Inst[1]
+        lam2 = 0.0
+        GU,GV,GW = Inst[4:7]
+        LX,LY = Inst[7:9]
+        SL = HL = Inst[9]/2.0   
+    else:                           #Ka1 & Ka2
+        lam1 = Inst[1]
+        lam2 = Inst[2]
+        GU,GV,GW = Inst[6:9]
+        LX,LY = Inst[9:11]
+        SL = HL = Inst[11]/2.0   
+    prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
+    prm.write( 'INS   BANK      1                                                               '+'\n')
+    prm.write( 'INS   HTYPE   PXCR                                                              '+'\n')
+    prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(lam1,lam2))
+    prm.write( 'INS  1 IRAD     0                                                               '+'\n')
+    prm.write( 'INS  1I HEAD                                                                    '+'\n')
+    prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
+    prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
+    prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(GU,GV,GW,0.0))
+    prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(LX,LY,SL,HL))
+    prm.close()
     try:
         x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(self.PickId)[1]
-        x = x*100.
+        file.write(powderfile+'\n')
+        file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
+            100.*x[0],100.*(x[1]-x[0])))        
         XYW = zip(x,y,w)
         for X,Y,W in XYW:
-            file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
+            file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,W))
         file.close()
     finally:
         wx.EndBusyCursor()

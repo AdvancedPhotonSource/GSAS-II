@@ -1165,7 +1165,7 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
             topM20 = 0
             cycle = 0
             while cycle < 5:
-                dlg = wx.ProgressDialog("Generated reflections",tries[cycle]+" cell search for "+bravaisNames[ibrav],ncMax, \
+                dlg = wx.ProgressDialog("Generated reflections",tries[cycle]+" cell search for "+bravaisNames[ibrav],ncMax, 
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
                 screenSize = wx.DisplaySize()
                 Size = dlg.GetSize()
@@ -1586,8 +1586,8 @@ def ImageCalibrate(self,data):
                 ySum += numZ*data['center'][1]
                 tiltSum += numZ*abs(Tilt)
             cent = data['center']
-            print 'for ring # %2i dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' \
-                %(i,dist,phi,Tilt,cent[0],cent[1],numZ)
+            print ('for ring # %2i dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' 
+                %(i,dist,phi,Tilt,cent[0],cent[1],numZ))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
             G2plt.PlotImage(self)
         else:
@@ -1635,6 +1635,8 @@ def ImageCalibrate(self,data):
     return True
     
 def ImageIntegrate(self,data):
+    import matplotlib as mpl
+    import numpy.ma as ma
     print 'image integrate'
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
@@ -1646,35 +1648,38 @@ def ImageIntegrate(self,data):
         LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
-    outGrid = np.zeros(shape=(numAzms,numChans))
-    outNum = np.zeros(shape=(numAzms,numChans))           
     imageN = len(self.ImageZ)
     t0 = time.time()
     print 'Create ',imageN,' X ',imageN,' 2-theta,azimuth map'
     tax,tay = np.mgrid[0:imageN,0:imageN]
-    tax = np.asfarray(tax)
-    tay = np.asfarray(tay)
-    tax *= scalex
-    tay *= scaley
+    tax = np.asfarray(tax*scalex,dtype=np.float32)
+    tay = np.asfarray(tay*scaley,dtype=np.float32)
     t1 = time.time()
     print "Elapsed time:","%8.3f"%(t1-t0), "s"
     print 'Fill map with 2-theta/azimuth values'
-    self.TA = GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
-    self.TA = np.reshape(self.TA,(2,imageN,imageN))
-    self.TA = np.dstack((self.TA[1],self.TA[0]))    #azimuth, 2-theta
+    TA = GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
+    del tax,tay
+    TA = np.reshape(TA,(2,imageN,imageN))
+    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
     t2 = time.time()
+    tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
+    tax = ma.masked_outside(tax.flatten(),LRazm[0],LRazm[1])
+    tay = ma.masked_outside(tay.flatten(),LUtth[0],LUtth[1])
+    tam = ma.getmask(tax)+ma.getmask(tay)
+    taz = ma.masked_where(tam,self.ImageZ.flatten())
+    G2plt.PlotTRImage(self,np.reshape(tax,(imageN,imageN)),
+        np.reshape(tay,(imageN,imageN)),np.reshape(taz,(imageN,imageN)),newPlot=True)
+    del TA
     print "Elapsed time:","%8.3f"%(t2-t1), "s"
-#    G2plt.PlotTRImage(self,newPlot=True)
     print 'Form 1-D histograms for ',numAzms,' azimuthal angles'
     print 'Integration limits:',LUtth,LRazm
-    tax,tay = np.dsplit(self.TA,2)    #azimuth, 2-theta, intensity
-    NST = np.histogram2d(tax.flatten(),tay.flatten(),normed=False, \
-        bins=(numAzms,numChans),range=[LRazm,LUtth])
-    HST = np.histogram2d(tax.flatten(),tay.flatten(),normed=False, \
-        bins=(numAzms,numChans),weights=self.ImageZ.flatten(),range=[LRazm,LUtth])
+    NST = np.histogram2d(tax,tay,normed=False,bins=(numAzms,numChans),range=[LRazm,LUtth])
+    HST = np.histogram2d(tax,tay,normed=False,bins=(numAzms,numChans),range=[LRazm,LUtth],weights=taz)
+    del tax,tay,taz
     t3 = time.time()
     print "Elapsed time:","%8.3f"%(t3-t2), "s"
     self.Integrate = [HST[0]/NST[0],HST[1],HST[2]]
+    del NST,HST
     G2plt.PlotIntegration(self,newPlot=True)
     
         

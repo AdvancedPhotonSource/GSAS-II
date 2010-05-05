@@ -45,6 +45,7 @@ class G2PlotNoteBook(wx.Panel):
         sizer.Add(self.nb,1,wx.EXPAND)
         self.SetSizer(sizer)
         self.status = parent.CreateStatusBar()
+#        self.Bind(wx.aui.EVT_AUI_PAGE_CHANGED, self.OnPageChanged)
         
         self.plotList = []
             
@@ -55,6 +56,9 @@ class G2PlotNoteBook(wx.Panel):
         self.plotList.append(name)
         
         return page.figure
+        
+    def OnPageChanged(self,event):
+        print 'page changed'
         
 def PlotSngl(self,newPlot=False):
     from matplotlib.patches import Circle
@@ -247,15 +251,19 @@ def PlotPatterns(self,newPlot=False):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            wave = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
-                self.PatternId, 'Instrument Parameters'))[0][1]
-            dsp = 0.0
-            if abs(xpos) > 0.:
-                dsp = wave/(2.*sind(abs(xpos)/2.0))
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
-            self.G2plotNB.status.SetFields(['2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),])
-            if self.itemPicked:
-                Page.canvas.SetToolTipString('%9.3f'%(xpos))
+            try:
+                wave = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
+                    self.PatternId, 'Instrument Parameters'))[0][1]
+                dsp = 0.0
+                if abs(xpos) > 0.:                  #avoid possible singularity at beam center
+                    dsp = wave/(2.*sind(abs(xpos)/2.0))
+                self.G2plotNB.status.SetFields(['2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),])
+                if self.itemPicked:
+                    Page.canvas.SetToolTipString('%9.3f'%(xpos))
+            except TypeError:
+                self.G2plotNB.status.SetFields(['Select PWDR powder pattern first',])
+                
                    
     def OnRelease(event):
         if self.itemPicked is None: return
@@ -655,7 +663,9 @@ def PlotImage(self,newPlot=False):
         
     Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
     size,imagefile = self.PatternTree.GetItemPyData(self.Image)
-    self.ImageZ = G2IO.GetImageData(imagefile,True)
+    if imagefile != self.oldImagefile:
+        self.ImageZ = G2IO.GetImageData(imagefile,imageOnly=True)
+        self.oldImagefile = imagefile
     Data = self.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
     imScale = 1
@@ -730,7 +740,7 @@ def PlotImage(self,newPlot=False):
     else:
         Page.canvas.draw()
             
-def PlotTRImage(self,newPlot=False):
+def PlotTRImage(self,tax,tay,taz,newPlot=False):
             
     def OnMotion(event):
         Page.canvas.SetToolTipString('')
@@ -740,46 +750,7 @@ def PlotTRImage(self,newPlot=False):
         if azm and tth:
             self.G2plotNB.status.SetFields(\
                 ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),])
-                    
-    def OnPick(event):
-        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
-            return
-        if self.itemPicked is not None: return
-        pick = event.artist
-        self.itemPicked = pick
-        
-    def OnRelease(event):
-        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
-            return
-        Data = self.PatternTree.GetItemPyData(self.PickId)
-        if self.itemPicked:
-            xpos = event.xdata
-            if xpos:                                        #avoid out of frame mouse position
-                ypos = event.ydata
-                if 'Line2D' in str(self.itemPicked):
-                    if 'line0' in str(self.itemPicked):
-                        Data['IOtth'][0] = ypos
-                    elif 'line1' in str(self.itemPicked):
-                        Data['IOtth'][1] = ypos
-                    elif 'line2' in str(self.itemPicked) and not Data['fullIntegrate']:
-                        Data['LRazimuth'][0] = int(xpos)
-                    elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
-                        Data['LRazimuth'][1] = int(xpos)
-                        
-                    if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
-                        Data['LRazimuth'][1] += 360
-                    if  Data['IOtth'][0] > Data['IOtth'][1]:
-                        Data['IOtth'] = G2cmp.SwapXY(Data['IOtth'][0],Data['IOtth'][1])
-                        
-                    self.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
-                    self.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
-                    self.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
-                    self.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
-                else:
-                    print event.xdata,event.ydata,event.button
-                PlotTRImage(self)
-            self.itemPicked = None
-            
+                                
     try:
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -794,25 +765,19 @@ def PlotTRImage(self,newPlot=False):
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        Page.canvas.mpl_connect('pick_event', OnPick)
-        Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.views = False
         view = False
     Page.SetFocus()
         
     Data = self.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-    size,imagefile = self.PatternTree.GetItemPyData(self.Image)
-    self.ImageZ = G2IO.GetImageData(imagefile,True)
-    image = self.ImageZ
-    Iz = len(image)
     Imin,Imax = Data['range'][1]
     step = (Imax-Imin)/5.
     V = np.arange(Imin,Imax,step)
     acolor = mpl.cm.get_cmap(Data['color'])
     Plot.set_xlabel('azimuth',fontsize=12)
     Plot.set_ylabel('2-theta',fontsize=12)
-    Plot.contour(self.TA[:,:,0],self.TA[:,:,1],image,V,cmap=acolor)
+    Plot.contour(tax,tay,taz,V,cmap=acolor)
     if Data['showLines']:
         IOtth = Data['IOtth']
         if Data['fullIntegrate']:
@@ -846,9 +811,7 @@ def PlotTRImage(self,newPlot=False):
         
 def PlotExposedImage(self,newPlot=False):
     plotNo = self.G2plotNB.nb.GetSelection()
-    if self.G2plotNB.nb.GetPageText(plotNo) == '2D Transformed Powder Image':
-        PlotTRImage(self,newPlot)
-    elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
+    if self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
         PlotImage(self,newPlot)
     elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
         PlotIntegration(self,newPlot)

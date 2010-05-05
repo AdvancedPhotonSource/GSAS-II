@@ -139,7 +139,7 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_GSASIIIMPORTCIF)
 
     def _init_coll_Export_Items(self,parent):
-        self.ExportPattern = parent.Append(help='',id=wxID_GSASIIEXPORTPATTERN, kind=wx.ITEM_NORMAL,
+        self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_GSASIIEXPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Export Powder Pattern')
         self.ExportPeakList = parent.Append(help='',id=wxID_GSASIIEXPORTPEAKLIST, kind=wx.ITEM_NORMAL,
             text='Export All Peak Lists')
@@ -235,8 +235,8 @@ class GSASII(wx.Frame):
         self.Contour = False
         self.plotView = 0
         self.Image = 0
+        self.oldImagefile = ''
         self.Img = 0
-        self.TA = 0
         self.Integrate = 0
         self.Pwdr = False
         self.imageDefault = {}
@@ -253,9 +253,6 @@ class GSASII(wx.Frame):
         if pltNum >= 0:                         #to avoid the startup with no plot!
             pltPage = self.G2plotNB.nb.GetPage(pltNum)
             pltPlot = pltPage.figure.gca()
-#            pltPage.xylim = [pltPlot.get_xlim(),pltPlot.get_ylim()]
-#            print pltPage.xylim
-#            pltPage.views = copy.deepcopy(pltPage.toolbar._views)
         item = event.GetItem()
         G2gd.MovePatternTreeToGrid(self,item)
         
@@ -369,52 +366,60 @@ class GSASII(wx.Frame):
             
     def OnImageRead(self,event):
         self.CheckNotebook()
-        dlg = wx.FileDialog(self, 'Choose image file', '.', '',\
+        dlg = wx.FileDialog(self, 'Choose image files', '.', '',\
         'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
         |*.img|Perkin-Elmer TIF (*.tif)|*.tif|GE Image sum (*.sum)\
-        |*.sum|GE Image avg (*.avg)|*.avg|All files (*.*)|*.*',wx.OPEN)
+        |*.sum|GE Image avg (*.avg)|*.avg|All files (*.*)|*.*',wx.OPEN | wx.MULTIPLE)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                imagefile = dlg.GetPath()
                 self.dirname = dlg.GetDirectory()
-                Comments,Data,Size,Image = G2IO.GetImageData(imagefile)
-                if Comments:
-                    Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(imagefile))
-                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
-                    Imax = np.amax(Image)
-                    Imin = np.amin(Image)
-                    if self.imageDefault:
-                        Data = copy.copy(self.imageDefault)
-                        Data['refine'] = [False,False,False,False,False]
-                        Data['showLines'] = True
-                    else:
-                        Data['color'] = 'binary'
-                        Data['tilt'] = 0.0
-                        Data['rotation'] = 0.0
-                        Data['showLines'] = False
-                        Data['ring'] = []
-                        Data['rings'] = []
-                        Data['cutoff'] = 10
-                        Data['pixLimit'] = 20
-                        Data['ellipses'] = []
-                        Data['masks'] = []
-                        Data['calibrant'] = ''
-                        Data['IOtth'] = [2.0,5.0]
-                        Data['LRazimuth'] = [-135,-45]
-                        Data['outChannels'] = 2500
-                        Data['outAzimuths'] = 1
-                        Data['fullIntegrate'] = False
-                        Data['setRings'] = False
-                    Data['setDefault'] = False
-                    Data['range'] = [(Imin,Imax),[Imin,Imax]]
-                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
-                    self.PatternTree.SetItemPyData(Id,[Size,imagefile])
-                    self.PickId = Id
-                    self.Image = Id
-                    self.PatternTree.SelectItem(Id)
-                    self.PatternTree.Expand(Id)
+                imagefiles = dlg.GetPaths()
+                imagefiles.sort()
+                for imagefile in imagefiles:
+                    Comments,Data,Size,Image = G2IO.GetImageData(imagefile)
+                    if Comments:
+                        Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(imagefile))
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
+                        Imax = np.amax(Image)
+                        Imin = np.amin(Image)
+                        if self.imageDefault:
+                            Data = copy.copy(self.imageDefault)
+                            Data['showLines'] = True
+                            Data['ring'] = []
+                            Data['rings'] = []
+                            Data['cutoff'] = 10
+                            Data['pixLimit'] = 20
+                            Data['ellipses'] = []
+                            Data['masks'] = []
+                            Data['calibrant'] = ''
+                        else:
+                            Data['color'] = 'binary'
+                            Data['tilt'] = 0.0
+                            Data['rotation'] = 0.0
+                            Data['showLines'] = False
+                            Data['ring'] = []
+                            Data['rings'] = []
+                            Data['cutoff'] = 10
+                            Data['pixLimit'] = 20
+                            Data['ellipses'] = []
+                            Data['masks'] = []
+                            Data['calibrant'] = ''
+                            Data['IOtth'] = [2.0,5.0]
+                            Data['LRazimuth'] = [-135,-45]
+                            Data['outChannels'] = 2500
+                            Data['outAzimuths'] = 1
+                            Data['fullIntegrate'] = False
+                            Data['setRings'] = False
+                        Data['setDefault'] = False
+                        Data['range'] = [(Imin,Imax),[Imin,Imax]]
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
+                        self.PatternTree.SetItemPyData(Id,[Size,imagefile])
+                        self.PickId = Id
+                        self.Image = Id
+                self.PatternTree.SelectItem(Id)             #show last one
+                self.PatternTree.Expand(Id)
         finally:
             dlg.Destroy()
         
@@ -462,8 +467,7 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(sub,[''])
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
             self.PatternTree.SetItemPyData(sub,[0])
-        
-        
+                
     class SumDialog(wx.Dialog):
         def __init__(self,parent,title,text,type,data):
             wx.Dialog.__init__(self,parent,-1,title, 
@@ -513,6 +517,7 @@ class GSASII(wx.Frame):
             value = self.FindWindowById(id).GetValue()
             try:
                 self.data[id][0] = float(value)
+                self.FindWindowById(id).SetValue('%.3f'%(self.data[id][0]))
             except ValueError:
                 if value and '-' not in value[0]:
                     print 'bad input - numbers only'
@@ -649,24 +654,30 @@ class GSASII(wx.Frame):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     imSize = 0
-                    newImage = []
                     result = dlg.GetData()
+                    First = True
                     for i,item in enumerate(result[:-1]):
                         scale,name = item
                         data = DataList[i]
-                        if scale:
+                        if scale:                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
-                            size,image = data
+                            size,imagefile = data
+                            image = G2IO.GetImageData(imagefile,imageOnly=True)
+                            if First:
+                                newImage = np.zeros_like(image)
+                                First = False
                             if imSize:
                                 if imSize != size:
                                     self.ErrorDialog('Image size error','Images to be summed must be same size'+ \
                                         '\nExpected:'+str(imSize)+ \
                                         '\nFound:   '+str(size)+'\nfor '+name)
                                     return
-                                newImage += scale*image
+                                newImage = newImage+scale*image
                             else:
                                 imSize = size
-                                newImage = scale*image
+                                newImage = newImage+scale*image
+                    newImage = np.asfarray(newImage,dtype=np.float32)                        
+                    print 'result dtype',newImage.dtype                                
                     outname = 'IMG '+result[-1]
                     Id = 0
                     if outname in Names:
@@ -679,13 +690,32 @@ class GSASII(wx.Frame):
                     else:
                         Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
-                        self.PatternTree.SetItemPyData(Id,[imSize,newImage])
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
-                        self.PatternTree.SelectItem(Id)
-                        self.PatternTree.Expand(Id)
-                    self.PickId = Id
-                    self.Image = Id
+                        dlg = wx.FileDialog(self, 'Choose sum image filename', '.', '', 
+                            'G2img files (*.G2img)|*.G2img', 
+                            wx.SAVE|wx.FD_OVERWRITE_PROMPT)
+                        if self.dirname: dlg.SetDirectory(self.dirname)
+                        if dlg.ShowModal() == wx.ID_OK:
+                            self.dirname = dlg.GetDirectory()
+                            newimagefile = dlg.GetPath()
+                            G2IO.PutG2Image(newimagefile,newImage)
+                            newImage = []
+                            self.PatternTree.SetItemPyData(Id,[imSize,newimagefile])
+                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
+                        if self.imageDefault:
+                            Data = copy.copy(self.imageDefault)
+                            Data['showLines'] = True
+                            Data['ring'] = []
+                            Data['rings'] = []
+                            Data['cutoff'] = 10
+                            Data['pixLimit'] = 20
+                            Data['ellipses'] = []
+                            Data['masks'] = []
+                            Data['calibrant'] = ''
+                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
+                            self.PatternTree.SelectItem(Id)
+                            self.PatternTree.Expand(Id)
+                        self.PickId = Id
+                        self.Image = Id
             finally:
                 dlg.Destroy()
                       

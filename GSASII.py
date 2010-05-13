@@ -17,7 +17,7 @@ import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
 
 # print versions
-print "Available python module versions for pyGSASII:"
+print "Available python module versions for GSASII:"
 print "python:     ",sys.version[:5]
 print "wxpython:   ",wx.__version__
 print "matplotlib: ",mpl.__version__
@@ -71,11 +71,11 @@ class GSASII(wx.Frame):
 
     def _init_coll_File_Items(self, parent):
         parent.Append(help='Open a gsasii project file (*.gpx)', id=wxID_GSASIIFILEOPEN,
-             kind=wx.ITEM_NORMAL,text='Open project')
+             kind=wx.ITEM_NORMAL,text='Open project...')
         parent.Append(help='SAve project to old file', id=wxID_GSASIIFILESAVE, 
             kind=wx.ITEM_NORMAL,text='Save project')
         parent.Append(help='Save project to new file', id=wxID_GSASIIFILESAVEAS, 
-            kind=wx.ITEM_NORMAL,text='SaveAs')
+            kind=wx.ITEM_NORMAL,text='Save As...')
         parent.Append(help='Close project, saving is optional', id=wxID_GSASIIFILECLOSE, 
             kind=wx.ITEM_NORMAL,text='Close project')
         parent.Append(help='Exit from gsasii', id=wxID_GSASIIFILEEXIT, kind=wx.ITEM_NORMAL,
@@ -88,13 +88,13 @@ class GSASII(wx.Frame):
         
     def _init_coll_Data_Items(self,parent):
         parent.Append(help='', id=wxID_GSASIIPWDRREAD, kind=wx.ITEM_NORMAL,
-            text='Read powder data')
+            text='Read powder data...')
         parent.Append(help='',id=wxID_GSASIIIMGREAD, kind=wx.ITEM_NORMAL,
-            text='Read image data')
+            text='Read image data...')
         parent.Append(help='',id=wxID_GSASIIREADPEAKS, kind=wx.ITEM_NORMAL,
-            text='Read Powder Pattern Peaks')
+            text='Read Powder Pattern Peaks...')
         parent.Append(help='', id=wxID_GSASIISNGLREAD, kind=wx.ITEM_NORMAL,
-            text='Read single crystal data')
+            text='Read single crystal data...')
         parent.Append(help='', id=wxID_GSASIIPWDSUM, kind=wx.ITEM_NORMAL,
             text='Sum powder data')
         parent.Append(help='',id=wxID_GSASIIIMSUM, kind=wx.ITEM_NORMAL,
@@ -123,15 +123,15 @@ class GSASII(wx.Frame):
         
     def _init_coll_Import_Items(self,parent):
         self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
-            id=wxID_GSASIIIMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase')
+            id=wxID_GSASIIIMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase...')
         self.ImportPDB = parent.Append(help='Import phase data from PDB file',
-            id=wxID_GSASIIIMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase')
+            id=wxID_GSASIIIMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase...')
         self.ImportPattern = parent.Append(help='',id=wxID_GSASIIIMPORTPATTERN, kind=wx.ITEM_NORMAL,
-            text='Import Powder Pattern')
+            text='Import Powder Pattern...')
         self.ImportHKL = parent.Append(help='',id=wxID_GSASIIIMPORTHKL, kind=wx.ITEM_NORMAL,
-            text='Import HKLs')
+            text='Import HKLs...')
         self.ImportCIF = parent.Append(help='',id=wxID_GSASIIIMPORTCIF, kind=wx.ITEM_NORMAL,
-            text='Import CIF')
+            text='Import CIF...')
         self.Bind(wx.EVT_MENU, self.OnImportPhase, id=wxID_GSASIIIMPORTPHASE)
         self.Bind(wx.EVT_MENU, self.OnImportPDB, id=wxID_GSASIIIMPORTPDB)
         self.Bind(wx.EVT_MENU, self.OnImportPattern, id=wxID_GSASIIIMPORTPATTERN)
@@ -140,15 +140,15 @@ class GSASII(wx.Frame):
 
     def _init_coll_Export_Items(self,parent):
         self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_GSASIIEXPORTPATTERN, kind=wx.ITEM_NORMAL,
-            text='Export Powder Pattern')
+            text='Export Powder Pattern...')
         self.ExportPeakList = parent.Append(help='',id=wxID_GSASIIEXPORTPEAKLIST, kind=wx.ITEM_NORMAL,
-            text='Export All Peak Lists')
+            text='Export All Peak Lists...')
         self.ExportHKL = parent.Append(help='',id=wxID_GSASIIEXPORTHKL, kind=wx.ITEM_NORMAL,
-            text='Export HKLs')
+            text='Export HKLs...')
         self.ExportPhase = parent.Append(help='',id=wxID_GSASIIEXPORTPHASE, kind=wx.ITEM_NORMAL,
-            text='Export Phase')
+            text='Export Phase...')
         self.ExportCIF = parent.Append(help='',id=wxID_GSASIIEXPORTCIF, kind=wx.ITEM_NORMAL,
-            text='Export CIF')
+            text='Export CIF...')
         self.ExportPattern.Enable(False)
         self.ExportPeakList.Enable(True)
         self.ExportHKL.Enable(False)
@@ -236,7 +236,6 @@ class GSASII(wx.Frame):
         self.plotView = 0
         self.Image = 0
         self.oldImagefile = ''
-        self.Img = 0
         self.Integrate = 0
         self.Pwdr = False
         self.imageDefault = {}
@@ -392,7 +391,6 @@ class GSASII(wx.Frame):
                             Data['cutoff'] = 10
                             Data['pixLimit'] = 20
                             Data['ellipses'] = []
-                            Data['masks'] = []
                             Data['calibrant'] = ''
                         else:
                             Data['color'] = 'binary'
@@ -404,7 +402,6 @@ class GSASII(wx.Frame):
                             Data['cutoff'] = 10
                             Data['pixLimit'] = 20
                             Data['ellipses'] = []
-                            Data['masks'] = []
                             Data['calibrant'] = ''
                             Data['IOtth'] = [2.0,5.0]
                             Data['LRazimuth'] = [-135,-45]
@@ -415,6 +412,8 @@ class GSASII(wx.Frame):
                         Data['setDefault'] = False
                         Data['range'] = [(Imin,Imax),[Imin,Imax]]
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
+                        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
                         self.PatternTree.SetItemPyData(Id,[Size,imagefile])
                         self.PickId = Id
                         self.Image = Id
@@ -468,6 +467,60 @@ class GSASII(wx.Frame):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
             self.PatternTree.SetItemPyData(sub,[0])
                 
+    class CopyDialog(wx.Dialog):
+        def __init__(self,parent,title,text,data):
+            wx.Dialog.__init__(self,parent,-1,title, 
+                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            self.data = data
+            panel = wx.Panel(self)
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            topLabl = wx.StaticText(panel,-1,text)
+            mainSizer.Add((10,10),1)
+            mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
+            mainSizer.Add((10,10),1)
+            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=1,hgap=2,vgap=2)
+            for id,item in enumerate(self.data[:-1]):
+                ckbox = wx.CheckBox(panel,id,item[1])
+                ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)                    
+                dataGridSizer.Add(ckbox,0,wx.LEFT,10)
+            mainSizer.Add(dataGridSizer,0,wx.EXPAND)
+            OkBtn = wx.Button(panel,-1,"Ok")
+            OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+            cancelBtn = wx.Button(panel,-1,"Cancel")
+            cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(OkBtn)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(cancelBtn)
+            btnSizer.Add((20,20),1)
+            
+            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+            panel.SetSizer(mainSizer)
+            panel.Fit()
+            self.Fit()
+        
+        def OnCopyChange(self,event):
+            id = event.GetId()
+            self.data[id][0] = self.FindWindowById(id).GetValue()        
+            
+        def OnOk(self,event):
+            parent = self.GetParent()
+            parent.Raise()
+            self.SetReturnCode(wx.ID_OK)
+            self.MakeModal(False)              
+            self.Destroy()
+            
+        def OnCancel(self,event):
+            parent = self.GetParent()
+            parent.Raise()
+            self.SetReturnCode(wx.ID_CANCEL)
+            self.MakeModal(False)              
+            self.Destroy()
+            
+        def GetData(self):
+                return self.data
+        
     class SumDialog(wx.Dialog):
         def __init__(self,parent,title,text,type,data):
             wx.Dialog.__init__(self,parent,-1,title, 
@@ -709,7 +762,6 @@ class GSASII(wx.Frame):
                             Data['cutoff'] = 10
                             Data['pixLimit'] = 20
                             Data['ellipses'] = []
-                            Data['masks'] = []
                             Data['calibrant'] = ''
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
                             self.PatternTree.SelectItem(Id)

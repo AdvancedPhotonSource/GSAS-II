@@ -648,6 +648,12 @@ def ProjFileOpen(self):
                 Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))
                 if Data['setDefault']:
                     self.imageDefault = Data
+                #temporary fix to add masks
+                if not G2gd.GetPatternTreeItemId(self,Id, 'Masks'):
+                    Imin,Imax = Data['range'][0]
+                    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
+                #end of temporary fix
                 
         file.close()
         
@@ -688,7 +694,54 @@ def ProjFileSave(self):
         finally:
             wx.EndBusyCursor()
         print 'project save successful'
-
+        
+def SaveIntegration(self,PickId,data):
+    azms = self.Integrate[1]
+    X = self.Integrate[2].flatten()[:-1]
+    Xminmax = [X[0],X[-1]]
+    N = len(X)
+    Id = self.PatternTree.GetItemParent(PickId)
+    name = self.PatternTree.GetItemText(Id)
+    name = name.replace('IMG ','PWDR ')
+    Comments = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'))
+    names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
+    codes = [0 for i in range(11)]
+    parms = ['PXC',data['wavelength'],0.0,0.0,1.0,-1.0,0.3,0.0,1.0,0.0,0.0]
+    Azms = [(azms[i+1]+azms[i])/2. for i in range(len(azms)-1)]
+    for i,azm in enumerate(Azms):
+        name += " Azm= %.2f"%(azm)
+        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        Id = 0
+        while item:
+            Name = self.PatternTree.GetItemText(item)
+            if name in Name:
+                Id = item
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        parms[10] = azm
+        Y = self.Integrate[0][i].flatten()
+        W = np.sqrt(Y)
+        if Id:
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'),[tuple(parms),parms,codes,names])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Peak List'),[])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
+        else:
+            Id = self.PatternTree.AppendItem(parent=self.root,text=name)
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms,codes,names])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
+        self.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
+    self.PatternTree.SelectItem(Id)
+    self.PatternTree.Expand(Id)
+    self.PatternId = Id
+            
 def powderFxyeSave(self,powderfile):
     file = open(powderfile,'w')
     prm = open(powderfile.strip('fxye')+'prm','w')      #old style GSAS parm file

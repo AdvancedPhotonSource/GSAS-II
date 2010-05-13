@@ -9,6 +9,7 @@ import GSASIIcomp as G2cmp
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIplot as G2plt
+import GSASIIIO as G2IO
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -19,8 +20,12 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, 
 ] = [wx.NewId() for _init_coll_Atom_Items in range(2)]
 
-[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(4)]
+[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG, 
+    wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL,
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(6)]
+
+[ wxID_MASKCOPY,
+] = [wx.NewId() for _init_coll_MASK_Items in range(1)]
 
 [ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
 ] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
@@ -38,6 +43,9 @@ class DataFrame(wx.Frame):
     def _init_coll_ImageMenu(self,parent):
         parent.Append(menu=self.ImageEdit, title='Image Operations')
         
+    def _init_coll_MaskMenu(self,parent):
+        parent.Append(menu=self.MaskEdit, title='Mask Operations')
+        
     def _init_coll_PeakMenu(self,parent):
         parent.Append(menu=self.PeakEdit, title='Peak Fitting')
 
@@ -50,28 +58,37 @@ class DataFrame(wx.Frame):
             help='Double left click on atom row to Insert before')
             
     def _init_coll_Image_Items(self,parent):
-        parent.Append(help='Calibrate detector by fitting to calibrant lines', \
+        parent.Append(help='Calibrate detector by fitting to calibrant lines', 
             id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
-        parent.Append(help='Clear calibration data points and rings',id=wxID_IMCLEARCALIB, \
+        parent.Append(help='Clear calibration data points and rings',id=wxID_IMCLEARCALIB, 
             kind=wx.ITEM_NORMAL,text='Clear calibration')
-        parent.Append(help='',id=wxID_IMINTEGRATE, kind=wx.ITEM_NORMAL,text='Integrate')
-        parent.Append(help='Save integration results as a series of 1-D powder patterns', \
+        parent.Append(help='Integrate selected image',id=wxID_IMINTEGRATE, 
+            kind=wx.ITEM_NORMAL,text='Integrate')
+        parent.Append(help='Integrate all images selected from list',id=wxID_INTEGRATEALL,
+            kind=wx.ITEM_NORMAL,text='Integrate all')
+        parent.Append(help='Save integration results as a series of 1-D powder patterns', 
             id=wxID_SAVEINTG, kind=wx.ITEM_NORMAL,text='Save Integration')
+        parent.Append(help='Copy image controls to other images', 
+            id=wxID_IMCOPYCONTROLS, kind=wx.ITEM_NORMAL,text='Copy Controls')
                     
+    def _init_coll_Mask_Items(self,parent):
+        parent.Append(help='Copy mask to other images', 
+            id=wxID_MASKCOPY, kind=wx.ITEM_NORMAL,text='Copy mask')
+
     def _init_coll_Peak_Items(self,parent):
-        self.UnDo = parent.Append(help='Undo last least squares refinement', \
+        self.UnDo = parent.Append(help='Undo last least squares refinement', 
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
-        self.PeakFit = parent.Append(id=wxID_PEAKFIT, kind=wx.ITEM_NORMAL,text='PeakFit', \
+        self.PeakFit = parent.Append(id=wxID_PEAKFIT, kind=wx.ITEM_NORMAL,text='PeakFit', 
             help='Do single cycle of peak fitting least-squares refinement' )
-        self.AutoPeakFit = parent.Append(id=wxID_AUTOPEAKFIT, kind=wx.ITEM_NORMAL, \
+        self.AutoPeakFit = parent.Append(id=wxID_AUTOPEAKFIT, kind=wx.ITEM_NORMAL, 
             text='AutoPeakFit',help='Do peak fitting least-squares to convergence' )
             
     def _init_coll_Index_Items(self,parent):
         self.IndexPeaks = parent.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
             text='Index Cell')
-        self.CopyCell = parent.Append( id=wxID_COPYCELL, kind=wx.ITEM_NORMAL,text='Copy Cell', \
+        self.CopyCell = parent.Append( id=wxID_COPYCELL, kind=wx.ITEM_NORMAL,text='Copy Cell', 
             help='Copy selected unit cell from indexing to cell refinement fields')
-        self.RefineCell = parent.Append( id=wxID_REFINECELL, kind=wx.ITEM_NORMAL, \
+        self.RefineCell = parent.Append( id=wxID_REFINECELL, kind=wx.ITEM_NORMAL, 
             text='Refine Cell',help='Refine unit cell parameters from indexed peaks')
 
     def _init_utils(self):
@@ -79,16 +96,20 @@ class DataFrame(wx.Frame):
         
         self.AtomsMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
+        self.MaskMenu = wx.MenuBar()
         self.PeakMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
+        self.MaskEdit = wx.Menu(title='')
         self.PeakEdit = wx.Menu(title='')
         self.IndexEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
         self._init_coll_ImageMenu(self.ImageMenu)
         self._init_coll_Image_Items(self.ImageEdit)
+        self._init_coll_MaskMenu(self.MaskMenu)
+        self._init_coll_Mask_Items(self.MaskEdit)
         self._init_coll_PeakMenu(self.PeakMenu)
         self._init_coll_Peak_Items(self.PeakEdit)
         self._init_coll_IndexMenu(self.IndexMenu)
@@ -274,7 +295,6 @@ class Table(wg.PyGridTableBase):
                 print self.data
                 self.data[row][col] = value
         innerSetValue(row, col, value)
-        
         
 def UpdateNotebook(self,data):        
     if data:
@@ -1133,15 +1153,16 @@ def UpdateImageControls(self,data):
         data['pixLimit'] = int(pixLimit.GetValue())
         
     def OnMaxSlider(event):
-        imax = int(maxSel.GetValue())
-        delt = data['range'][0][1]-data['range'][0][0]
-        data['range'][1][1] = max(data['range'][1][0]+1,int((imax/100.)*delt)+data['range'][0][0])
+        logDeltZero = math.log(data['range'][0][1]-data['range'][0][0])
+        imax = int(maxSel.GetValue())*logDeltZero/100.
+        data['range'][1][1] = math.exp(imax)+data['range'][0][0]
+        data['range'][1][0] = min(data['range'][1][1]-1,data['range'][1][0])
         G2plt.PlotExposedImage(self)
         
     def OnMinSlider(event):
-        imin = int(minSel.GetValue())
-        delt = data['range'][1][1]-data['range'][0][0]
-        data['range'][1][0] = min(data['range'][1][1]-1,int((imin/100.)*delt)+data['range'][0][0])
+        DeltOne = data['range'][1][1]-data['range'][0][0]
+        imin = int(minSel.GetValue())*DeltOne/100.
+        data['range'][1][0] = min(data['range'][1][1]-1,imin+data['range'][0][0])
         G2plt.PlotExposedImage(self)
         
     def OnNumOutChans(event):
@@ -1243,7 +1264,7 @@ def UpdateImageControls(self,data):
         data['rings'] = []
         data['ellipses'] = []
         self.dataFrame.ImageEdit.Enable(id=wxID_IMCLEARCALIB,enable=False)    
-        G2plt.PlotImage(self)
+        G2plt.PlotExposedImage(self)
             
     def OnCalibrate(event):        
         data['setRings'] = False
@@ -1271,41 +1292,55 @@ def UpdateImageControls(self,data):
                     
     def OnIntegrate(event):
         G2cmp.ImageIntegrate(self,data)
-        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=True)    
+        G2plt.PlotIntegration(self,newPlot=True)
+        self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=True)
+        
+    def OnIntegrateAll(event):
+        print 'integrate all'
         
     def OnSaveIntegrate(event):
-        import numpy as np
         print 'save integration'
-        azms = self.Integrate[1]
-        X = self.Integrate[2].flatten()[:-1]
-        Xminmax = [X[0],X[-1]]
-        N = len(X)
-        Id = self.PatternTree.GetItemParent(self.PickId)
-        name = self.PatternTree.GetItemText(Id)
-        Comments = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,Id, 'Comments'))
-        name = name.replace('IMG ','PWDR ')
-        names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
-        codes = [0 for i in range(11)]
-        parms = ['PXC',data['wavelength'],0.0,0.0,1.0,-1.0,0.3,0.0,1.0,0.0,0.0]
-        Azms = [(azms[i+1]+azms[i])/2. for i in range(len(azms)-1)]
-        for i,azm in enumerate(Azms):
-            Id = self.PatternTree.AppendItem(parent=self.root,text=name+"Azm= %.2f"%(azm))
-            parms[10] = azm
-            Y = self.Integrate[0][i].flatten()
-            W = np.sqrt(Y)
-            self.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms,codes,names])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
-        self.PatternTree.SelectItem(Id)
-        self.PatternTree.Expand(Id)
-        self.PatternId = Id
+        G2IO.SaveIntegration(self,self.PickId,data)
             
-                                
+    def OnCopyControls(event):
+        TextList = []
+        Names = []
+        if self.PatternTree.GetCount():
+            id, cookie = self.PatternTree.GetFirstChild(self.root)
+            while id:
+                name = self.PatternTree.GetItemText(id)
+                Names.append(name)
+                if 'IMG' in name:
+                    if id == self.Image:
+                        Source = name
+                        Data = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,id, 'Image Controls'))
+                        Data['showLines'] = True
+                        Data['ring'] = []
+                        Data['rings'] = []
+                        Data['cutoff'] = 10
+                        Data['pixLimit'] = 20
+                        Data['ellipses'] = []
+                        Data['calibrant'] = ''
+                        Data['setDefault'] = False
+                    else:
+                        TextList.append([False,name,id])
+                id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            if not len(TextList):
+                self.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
+                return
+            dlg = self.CopyDialog(self,'Copy image controls','Copy controls from '+Source+' to:',TextList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetData()
+                    for i,item in enumerate(result[:-1]):
+                        ifcopy,name,id = item
+                        if ifcopy:
+                            oldData = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,id, 'Image Controls'))
+                            Data['range'] = oldData['range']                                
+                            self.PatternTree.SetItemPyData(GetPatternTreeItemId(self,id, 'Image Controls'),Data)
+            finally:
+                dlg.Destroy()
+                                        
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
     if self.dataDisplay:
@@ -1318,7 +1353,9 @@ def UpdateImageControls(self,data):
     if not data['rings']:
         self.dataFrame.ImageEdit.Enable(id=wxID_IMCLEARCALIB,enable=False)    
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=wxID_IMINTEGRATE)
+    self.dataFrame.Bind(wx.EVT_MENU, OnIntegrateAll, id=wxID_INTEGRATEALL)
     self.dataFrame.Bind(wx.EVT_MENU, OnSaveIntegrate, id=wxID_SAVEINTG)
+    self.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=wxID_IMCOPYCONTROLS)
     self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=False)    
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1326,16 +1363,19 @@ def UpdateImageControls(self,data):
     
     maxSizer = wx.FlexGridSizer(2,2,0,5)
     maxSizer.AddGrowableCol(1,1)
+    logDeltZero = math.log(data['range'][0][1]-data['range'][0][0])
+    DeltOne = data['range'][1][1]-data['range'][0][0]
+    logDeltOne = math.log(DeltOne)
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     maxSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
-        value=int(100*data['range'][1][1]/(data['range'][0][1]-data['range'][0][0])))
+        value=int(100*logDeltOne/logDeltZero))
     maxSizer.Add(maxSel,1,wx.EXPAND|wx.RIGHT)
     maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)    
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     minSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
-        value=int(100*data['range'][1][0]/(data['range'][1][1]-data['range'][0][0])))
+        value=int(100*data['range'][1][0]/DeltOne))
     maxSizer.Add(minSel,1,wx.EXPAND|wx.RIGHT)
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
     mainSizer.Add(maxSizer,1,wx.EXPAND|wx.RIGHT)
@@ -1387,13 +1427,6 @@ def UpdateImageControls(self,data):
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Inner/Outer 2-theta'),0,
         wx.ALIGN_CENTER_VERTICAL)
         
-    #temporary fixes    
-    if 'IOtth' not in data:                 
-        del data['IOradii']
-        data['IOtth'] = [2.0,5.0]
-    if 'outAzimuths' not in data:
-        data['outAzimuths'] = 1        
-        
     IOtth = data['IOtth']
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     self.InnerTth = wx.TextCtrl(parent=self.dataDisplay,
@@ -1410,7 +1443,7 @@ def UpdateImageControls(self,data):
         wx.ALIGN_CENTER_VERTICAL)
     waveSel = wx.TextCtrl(parent=self.dataDisplay,value=("%6.5f" % (data['wavelength'])),
         style=wx.TE_PROCESS_ENTER)
-    waveSel.Bind(wx.EVT_TEXT,OnWavelength)
+    waveSel.Bind(wx.EVT_TEXT_ENTER,OnWavelength)
     dataSizer.Add(waveSel,0,wx.ALIGN_CENTER_VERTICAL)
          
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start/End azimuth'),0,
@@ -1436,10 +1469,10 @@ def UpdateImageControls(self,data):
         wx.ALIGN_CENTER_VERTICAL)
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     outChan = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outChannels']),style=wx.TE_PROCESS_ENTER)
-    outChan.Bind(wx.EVT_TEXT,OnNumOutChans)
+    outChan.Bind(wx.EVT_TEXT_ENTER,OnNumOutChans)
     littleSizer.Add(outChan,0,wx.ALIGN_CENTER_VERTICAL)
     outAzim = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
-    outAzim.Bind(wx.EVT_TEXT,OnNumOutAzms)
+    outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
     littleSizer.Add(outAzim,0,wx.ALIGN_CENTER_VERTICAL)
     dataSizer.Add(littleSizer,0,)
 
@@ -1475,6 +1508,83 @@ def UpdateImageControls(self,data):
     self.dataDisplay.SetSizer(mainSizer)
     self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    
+def UpdateMasks(self,data):
+    
+    def OnThreshold(event):
+        lower = max(int(self.lowerThreshold.GetValue()),thresh[0][0])
+        upper = min(int(self.upperThreshold.GetValue()),thresh[0][1])
+        data['Thresholds'][1] = [lower,upper]
+        self.lowerThreshold.SetValue("%8d" % (lower))
+        self.upperThreshold.SetValue("%8d" % (upper))
+        G2plt.PlotExposedImage(self)
+        
+    def OnCopyMask(event):
+        TextList = []
+        Names = []
+        if self.PatternTree.GetCount():
+            id, cookie = self.PatternTree.GetFirstChild(self.root)
+            while id:
+                name = self.PatternTree.GetItemText(id)
+                Names.append(name)
+                if 'IMG' in name:
+                    if id == self.Image:
+                        Source = name
+                        mask = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,id, 'Masks'))
+                    else:
+                        TextList.append([False,name,id])
+                id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            if not len(TextList):
+                self.ErrorDialog('Nothing to copy mask to','There must be more than one "IMG" pattern')
+                return
+            dlg = self.CopyDialog(self,'Copy mask information','Copy mask from '+Source+' to:',TextList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetData()
+                    for i,item in enumerate(result[:-1]):
+                        ifcopy,name,id = item
+                        if ifcopy:                                
+                            self.PatternTree.SetItemPyData(GetPatternTreeItemId(self,id, 'Masks'),mask)
+            finally:
+                dlg.Destroy()
+        
+    if self.dataDisplay:
+        self.dataDisplay.Destroy()
+    self.dataFrame.SetMenuBar(self.dataFrame.MaskMenu)
+    self.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=wxID_MASKCOPY)
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,10),0)
+
+    thresh = data['Thresholds']
+    littleSizer = wx.FlexGridSizer(2,3,0,5)
+    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Lower/Upper limits '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(wx.TextCtrl(parent=self.dataDisplay,
+        value=("%8d" % (thresh[0][0])),style=wx.TE_READONLY),0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(wx.TextCtrl(parent=self.dataDisplay,
+        value=("%8d" % (thresh[0][1])),style=wx.wx.TE_READONLY),0,wx.ALIGN_CENTER_VERTICAL)
+    
+    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Lower/Upper thresholds '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    self.lowerThreshold = wx.TextCtrl(parent=self.dataDisplay,
+        value=("%8d" % (thresh[1][0])),style=wx.TE_PROCESS_ENTER)
+    self.lowerThreshold.Bind(wx.EVT_TEXT_ENTER,OnThreshold)
+    littleSizer.Add(self.lowerThreshold,0,wx.ALIGN_CENTER_VERTICAL)
+    self.upperThreshold = wx.TextCtrl(parent=self.dataDisplay,
+        value=("%8d" % (thresh[1][1])),style=wx.TE_PROCESS_ENTER)
+    self.upperThreshold.Bind(wx.EVT_TEXT_ENTER,OnThreshold)
+    littleSizer.Add(self.upperThreshold,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(littleSizer,0,)
+       
+
+
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))    
     
 def UpdatePhaseData(self,item,data,oldPage):
     import GSASIIElem as G2el
@@ -1879,7 +1989,6 @@ def MovePatternTreeToGrid(self,item):
             UpdateControls(self,data)
         elif 'IMG' in self.PatternTree.GetItemText(item):
             self.Image = item
-            self.Img = 0
             G2plt.PlotImage(self,newPlot=True)
         elif 'PKS' in self.PatternTree.GetItemText(item):
             G2plt.PlotPowderLines(self)
@@ -1905,6 +2014,13 @@ def MovePatternTreeToGrid(self,item):
         self.Image = self.PatternTree.GetItemParent(item)
         data = self.PatternTree.GetItemPyData(item)
         UpdateImageControls(self,data)
+        G2plt.PlotImage(self)
+    elif self.PatternTree.GetItemText(item) == 'Masks':
+        self.dataFrame.SetTitle('Masks')
+        self.PickId = item
+        self.Image = self.PatternTree.GetItemParent(item)
+        data = self.PatternTree.GetItemPyData(item)
+        UpdateMasks(self,data)
         G2plt.PlotImage(self)
     elif self.PatternTree.GetItemText(item) == 'HKL Plot Controls':
         self.PickId = item

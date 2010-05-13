@@ -243,8 +243,6 @@ def PlotPatterns(self,newPlot=False):
                 self.Contour = False
             else:
                 self.Contour = True
-        else:
-            event.Skip(True)
         PlotPatterns(self)
                         
     def OnMotion(event):
@@ -388,8 +386,8 @@ def PlotPatterns(self,newPlot=False):
             Plot.axvline(hkl[5],color='r',dashes=(5,5))
     if self.Contour:
         acolor = mpl.cm.get_cmap('Paired')
-        Plot.contourf(ContourX,ContourY,ContourZ,cmap=acolor)
-        Plot.set_ylim(0,Nseq-1)
+        Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax,interpolation='nearest', 
+            extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto')
         newPlot = True
     else:
         self.Lines = Lines
@@ -402,8 +400,6 @@ def PlotPatterns(self,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-
-    
     self.Pwdr = True
 
 def PlotPowderLines(self):
@@ -523,6 +519,13 @@ def PlotPeakWidths(self):
     Plot.plot(X,W,'+',color='b',label='G+L peak')
     Plot.legend(loc='best')
     Page.canvas.draw()
+            
+def PlotExposedImage(self,newPlot=False):
+    plotNo = self.G2plotNB.nb.GetSelection()
+    if self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
+        PlotImage(self,newPlot)
+    elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
+        PlotIntegration(self,newPlot)
 
 def PlotImage(self,newPlot=False):
     from matplotlib.patches import Ellipse,Arc
@@ -601,7 +604,9 @@ def PlotImage(self,newPlot=False):
                     Ypix = Ypos*scaley
                     xpos,ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpix,Ypix)
                     if I and J:
-                        xpos /= scalex
+                        xpos += .5                              #shift to pixel center
+                        ypos += .5
+                        xpos /= scalex                          #convert to mm
                         ypos /= scaley
                         Data['ring'].append([xpos,ypos])
                 PlotImage(self)
@@ -666,8 +671,13 @@ def PlotImage(self,newPlot=False):
     if imagefile != self.oldImagefile:
         self.ImageZ = G2IO.GetImageData(imagefile,imageOnly=True)
         self.oldImagefile = imagefile
-    Data = self.PatternTree.GetItemPyData( \
+    Data = self.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+    try:
+        Masks = self.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
+    except TypeError:       #missing Masks
+        Masks = {}
     imScale = 1
     if len(self.ImageZ) > 1024:
         imScale = len(self.ImageZ)/1024
@@ -683,8 +693,9 @@ def PlotImage(self,newPlot=False):
     xcent,ycent = Data['center']
     Plot.set_xlabel('Image x-axis, mm',fontsize=12)
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
+    #need "applyMask" routine here
     A = G2cmp.ImageCompress(self.ImageZ,imScale)
-    self.Img = Plot.imshow(A,aspect='equal',cmap=acolor, \
+    Img = Plot.imshow(A,aspect='equal',cmap=acolor,
         interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
 
     Plot.plot(xcent,ycent,'x')
@@ -727,7 +738,7 @@ def PlotImage(self,newPlot=False):
         cent,phi,[width,height],col = ellipse
         Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
         Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
-    colorBar = Page.figure.colorbar(self.Img)
+    colorBar = Page.figure.colorbar(Img)
     Plot.set_xlim(xlim)
     Plot.set_ylim(ylim)
     if not newPlot:
@@ -739,82 +750,6 @@ def PlotImage(self,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-            
-def PlotTRImage(self,tax,tay,taz,newPlot=False):
-            
-    def OnMotion(event):
-        Page.canvas.SetToolTipString('')
-        Page.canvas.SetCursor(wx.CROSS_CURSOR)
-        azm = event.xdata
-        tth = event.ydata
-        if azm and tth:
-            self.G2plotNB.status.SetFields(\
-                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),])
-                                
-    try:
-        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
-        if not newPlot:
-            Plot = Page.figure.gca()          #get previous plot & get limits
-            xylim = Plot.get_xlim(),Plot.get_ylim()
-        Page.figure.clf()
-        Plot = Page.figure.gca()          #get a fresh plot after clf()
-        
-    except ValueError,error:
-        Plot = self.G2plotNB.add('2D Transformed Powder Image').gca()
-        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
-        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        Page.views = False
-        view = False
-    Page.SetFocus()
-        
-    Data = self.PatternTree.GetItemPyData( \
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-    Imin,Imax = Data['range'][1]
-    step = (Imax-Imin)/5.
-    V = np.arange(Imin,Imax,step)
-    acolor = mpl.cm.get_cmap(Data['color'])
-    Plot.set_xlabel('azimuth',fontsize=12)
-    Plot.set_ylabel('2-theta',fontsize=12)
-    Plot.contour(tax,tay,taz,V,cmap=acolor)
-    if Data['showLines']:
-        IOtth = Data['IOtth']
-        if Data['fullIntegrate']:
-            LRAzim = [-180,180]
-        else:
-            LRAzim = Data['LRazimuth']                  #NB: integers
-        Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[0],IOtth[0]],picker=True)
-        Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[1],IOtth[1]],picker=True)
-        if not Data['fullIntegrate']:
-            Plot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
-            Plot.plot([LRAzim[1],LRAzim[1]],[IOtth[0],IOtth[1]],picker=True)
-    if Data['setRings']:
-        rings = np.concatenate((Data['rings']),axis=0)
-        for xring,yring,dsp in rings:
-            x,y = G2cmp.GetTthAzm(xring,yring,Data)
-            Plot.plot(y,x,'r+')            
-        for ellipse in Data['ellipses']:
-            ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
-            x,y = np.hsplit(ring,2)
-            tth,azm = G2cmp.GetTthAzm(x,y,Data)
-            Plot.plot(azm,tth,'b,')
-    if not newPlot:
-        Page.toolbar.push_current()
-        Plot.set_xlim(xylim[0])
-        Plot.set_ylim(xylim[1])
-        xylim = []
-        Page.toolbar.push_current()
-        Page.toolbar.draw()
-    else:
-        Page.canvas.draw()
-        
-def PlotExposedImage(self,newPlot=False):
-    plotNo = self.G2plotNB.nb.GetSelection()
-    if self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
-        PlotImage(self,newPlot)
-    elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
-        PlotIntegration(self,newPlot)
         
 def PlotIntegration(self,newPlot=False):
             
@@ -845,22 +780,25 @@ def PlotIntegration(self,newPlot=False):
         view = False
     Page.SetFocus()
         
-    Data = self.PatternTree.GetItemPyData( \
+    Data = self.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
     image = self.Integrate[0]
     xsc = self.Integrate[1]
     ysc = self.Integrate[2]
     Imin,Imax = Data['range'][1]
     acolor = mpl.cm.get_cmap(Data['color'])
+    Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
     Plot.set_ylabel('azimuth',fontsize=12)
     Plot.set_xlabel('2-theta',fontsize=12)
-    Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
+    Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
+    colorBar = Page.figure.colorbar(Img)
     if Data['setRings']:
         rings = np.concatenate((Data['rings']),axis=0)
         for xring,yring,dsp in rings:
             x,y = G2cmp.GetTthAzm(xring,yring,Data)
-            Plot.plot(x,y,'r+')            
+            Plot.plot(x,y,'r+')
+    if Data['ellipses']:            
         for ellipse in Data['ellipses']:
             ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
             x,y = np.hsplit(ring,2)
@@ -875,4 +813,78 @@ def PlotIntegration(self,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
+        
+        
+def PlotTRImage(self,tax,tay,taz,newPlot=False):
+    #a test plot routine - not normally used 
+            
+    def OnMotion(event):
+        Page.canvas.SetToolTipString('')
+        Page.canvas.SetCursor(wx.CROSS_CURSOR)
+        azm = event.xdata
+        tth = event.ydata
+        if azm and tth:
+            self.G2plotNB.status.SetFields(\
+                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),])
+                                
+    try:
+        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            Plot = Page.figure.gca()          #get previous plot & get limits
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
+        
+    except ValueError,error:
+        Plot = self.G2plotNB.add('2D Transformed Powder Image').gca()
+        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.views = False
+        view = False
+    Page.SetFocus()
+        
+    Data = self.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+    Imin,Imax = Data['range'][1]
+    step = (Imax-Imin)/5.
+    V = np.arange(Imin,Imax,step)
+    acolor = mpl.cm.get_cmap(Data['color'])
+    Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
+    Plot.set_xlabel('azimuth',fontsize=12)
+    Plot.set_ylabel('2-theta',fontsize=12)
+    Plot.contour(tax,tay,taz,V,cmap=acolor)
+    if Data['showLines']:
+        IOtth = Data['IOtth']
+        if Data['fullIntegrate']:
+            LRAzim = [-180,180]
+        else:
+            LRAzim = Data['LRazimuth']                  #NB: integers
+        Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[0],IOtth[0]],picker=True)
+        Plot.plot([LRAzim[0],LRAzim[1]],[IOtth[1],IOtth[1]],picker=True)
+        if not Data['fullIntegrate']:
+            Plot.plot([LRAzim[0],LRAzim[0]],[IOtth[0],IOtth[1]],picker=True)
+            Plot.plot([LRAzim[1],LRAzim[1]],[IOtth[0],IOtth[1]],picker=True)
+    if Data['setRings']:
+        rings = np.concatenate((Data['rings']),axis=0)
+        for xring,yring,dsp in rings:
+            x,y = G2cmp.GetTthAzm(xring,yring,Data)
+            Plot.plot(y,x,'r+')            
+    if Data['ellipses']:            
+        for ellipse in Data['ellipses']:
+            ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
+            x,y = np.hsplit(ring,2)
+            tth,azm = G2cmp.GetTthAzm(x,y,Data)
+            Plot.plot(azm,tth,'b,')
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Page.canvas.draw()
+        
         

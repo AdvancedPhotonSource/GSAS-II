@@ -1325,13 +1325,15 @@ def FitDetector(rings,p0,wave):
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
     size = len(image)
-    if (w < Xpix < size-w) and (w < Ypix < size-w) and image[Ypix,Xpix]:
-        Z = image[Ypix-w:Ypix+w,Xpix-w:Xpix+w]
+    xpix = int(Xpix)            #get reference corner of pixel chosen
+    ypix = int(Ypix)
+    if (w < xpix < size-w) and (w < ypix < size-w) and image[ypix,xpix]:
+        Z = image[ypix-w:ypix+w,xpix-w:xpix+w]
         Zmax = np.argmax(Z)
         Zmin = np.argmin(Z)
-        Xpix += Zmax%w2-w
-        Ypix += Zmax/w2-w
-        return Xpix,Ypix,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
+        xpix += Zmax%w2-w
+        ypix += Zmax/w2-w
+        return xpix,ypix,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
     else:
         return 0,0,0,0
     
@@ -1347,6 +1349,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)      
         if I and J and I/J > reject:
+            X += .5                             #set to center of pixel
+            Y += .5
             X /= scalex                         #convert to mm
             Y /= scaley
             ring.append([X,Y,dsp])
@@ -1634,13 +1638,35 @@ def ImageCalibrate(self,data):
     G2plt.PlotImage(self)        
     return True
     
-def ImageIntegrate(self,data):
-    import matplotlib as mpl
-    import numpy.ma as ma
-    print 'image integrate'
+def Make2ThetaAzimuthMap(data,imageN):
+    #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
+    tax,tay = np.mgrid[0.5:imageN+.5,0.5:imageN+.5]         #bin centers not corners
+    tax = np.asfarray(tax*scalex,dtype=np.float32)
+    tay = np.asfarray(tay*scaley,dtype=np.float32)
+    return GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
+
+def Fill2ThetaAzimuthMap(data,TA,image):
+    import numpy.ma as ma
+    LUtth = data['IOtth']
+    if data['fullIntegrate']:
+        LRazm = [-180,180]
+    else:
+        LRazm = data['LRazimuth']
+    imageN = len(image)
+    TA = np.reshape(TA,(2,imageN,imageN))
+    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
+    tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
+    tax = ma.masked_outside(tax.flatten(),LRazm[0],LRazm[1])
+    tay = ma.masked_outside(tay.flatten(),LUtth[0],LUtth[1])
+    tam = ma.getmask(tax)+ma.getmask(tay)
+    taz = ma.masked_where(tam,image.flatten())
+    return tax,tay,taz,tam
+    
+def Bin2ThetaAzimuthMap(data,tax,tay,taz):
+    import numpy.ma as ma
     LUtth = data['IOtth']
     if data['fullIntegrate']:
         LRazm = [-180,180]
@@ -1648,41 +1674,39 @@ def ImageIntegrate(self,data):
         LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
-    imageN = len(self.ImageZ)
-    t0 = time.time()
-    print 'Create ',imageN,' X ',imageN,' 2-theta,azimuth map'
-    tax,tay = np.mgrid[0:imageN,0:imageN]
-    tax = np.asfarray(tax*scalex,dtype=np.float32)
-    tay = np.asfarray(tay*scaley,dtype=np.float32)
-    t1 = time.time()
-    print "Elapsed time:","%8.3f"%(t1-t0), "s"
-    print 'Fill map with 2-theta/azimuth values'
-    TA = GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
-    del tax,tay
-    TA = np.reshape(TA,(2,imageN,imageN))
-    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
-    t2 = time.time()
-    tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
-    tax = ma.masked_outside(tax.flatten(),LRazm[0],LRazm[1])
-    tay = ma.masked_outside(tay.flatten(),LUtth[0],LUtth[1])
-    tam = ma.getmask(tax)+ma.getmask(tay)
-    taz = ma.masked_where(tam,self.ImageZ.flatten())
-    G2plt.PlotTRImage(self,np.reshape(tax,(imageN,imageN)),
-        np.reshape(tay,(imageN,imageN)),np.reshape(taz,(imageN,imageN)),newPlot=True)
-    del TA
-    print "Elapsed time:","%8.3f"%(t2-t1), "s"
-    print 'Form 1-D histograms for ',numAzms,' azimuthal angles'
-    print 'Integration limits:',LUtth,LRazm
     NST = np.histogram2d(tax,tay,normed=False,bins=(numAzms,numChans),range=[LRazm,LUtth])
     HST = np.histogram2d(tax,tay,normed=False,bins=(numAzms,numChans),range=[LRazm,LUtth],weights=taz)
-    del tax,tay,taz
-    t3 = time.time()
-    print "Elapsed time:","%8.3f"%(t3-t2), "s"
-    self.Integrate = [HST[0]/NST[0],HST[1],HST[2]]
-    del NST,HST
-    G2plt.PlotIntegration(self,newPlot=True)
-    
-        
+    return NST,HST
+
+def ImageIntegrate(self,data):
+    dlg = wx.ProgressDialog("Elapsed time","2D image integration",5,
+        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+    try:
+        print 'Begin image integration'
+        print 'Create 2-theta,azimuth map'
+        t0 = time.time()
+        dlg.Update(0)
+        imageN = len(self.ImageZ)
+        TA = Make2ThetaAzimuthMap(data,imageN)           #2-theta & azimuth arrays
+        dlg.Update(1)
+        print 'Fill map with 2-theta/azimuth values'
+        tax,tay,taz,tam = Fill2ThetaAzimuthMap(data,TA,self.ImageZ)
+        del TA
+        dlg.Update(2)
+        print 'Bin image by 2-theta/azimuth intervals'
+        NST,HST = Bin2ThetaAzimuthMap(data,tax,tay,taz)
+        del tax,tay,taz
+        dlg.Update(3)
+        print 'Form normalized 1D pattern(s)'
+        self.Integrate = [HST[0]/NST[0],HST[1],HST[2]]
+        del NST,HST
+        dlg.Update(4)
+        t1 = time.time()
+        print 'Integration complete'
+        print "Elapsed time:","%8.3f"%(t1-t0), "s"
+    finally:
+        dlg.Destroy()
+       
 def test():
     cell = [5,5,5,90,90,90]
     A = cell2A(cell)

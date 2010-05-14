@@ -6,29 +6,8 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import os.path as ospath
-# determine a binary path pased on the host OS and the python version, path is relative to 
-# location of this file
-if sys.platform == "win32":
-    bindir = 'binwin%d.%d' % sys.version_info[0:2]
-elif sys.platform == "darwin":
-    bindir = 'binmac%d.%d' % sys.version_info[0:2]
-else:
-    bindir = 'bin'
-
-if ospath.exists(ospath.join(sys.path[0],bindir)) and ospath.join(sys.path[0],bindir) not in sys.path: 
-    sys.path.insert(0,ospath.join(sys.path[0],bindir))
-
-try: 
-    import pypowder as pyp
-except:
-    # create an app to display the error, since we are still loading routines at this point 
-    app = wx.App()
-    app.MainLoop()
-    msg = wx.MessageDialog(None, message="Unable to load the GSAS powder computation module, pypowder",
-        caption="Import Error",style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
-    msg.ShowModal()
-    # this error is non-recoverable, so just quit
-    exit()
+import GSASIIpath
+import pypowder as pyp              #assumes path has been amended to include correctr bin directory
 import GSASIIplot as G2plt
 
 # trig functions in degrees

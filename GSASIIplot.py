@@ -5,6 +5,7 @@ import numpy as np
 import wx
 import wx.aui
 import matplotlib as mpl
+import GSASIIpath
 import GSASIIgrid as G2gd
 import GSASIIcomp as G2cmp
 import GSASIIIO as G2IO

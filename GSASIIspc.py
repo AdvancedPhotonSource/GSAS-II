@@ -1,34 +1,11 @@
 "GSASII - Space group interpretion routines"
 
-
 import numpy as np
 import sys
 import os.path as ospath
 
-# determine a binary path based on the host OS and the python version, path 
-# is relative to the location of this file
-if sys.platform == "win32":
-    bindir = 'binwin%d.%d' % sys.version_info[0:2]
-elif sys.platform == "darwin":
-    bindir = 'binmac%d.%d' % sys.version_info[0:2]
-    if sys.byteorder == 'big':
-        bindir += 'PPC'
-elif sys.platform == "linux2":
-    bindir = 'binlinux%d.%d' % sys.version_info[0:2]
-else:
-    bindir = 'bin'
-mypath = ospath.split(ospath.abspath( __file__ ))[0]
-bindir = ospath.join(mypath,bindir)
-if ospath.exists(bindir):
-    if bindir not in sys.path: sys.path.insert(0,bindir)
-else:
-    print 'Expected binary directory (%s) for pyspg not found' % bindir
-# use local bin directory preferentially
-bindir = ospath.join(mypath,'bin')
-if ospath.exists(bindir):
-    if bindir not in sys.path: sys.path.insert(0,bindir)
-
-import pyspg as pyd
+import GSASIIpath
+import pyspg
 
 def SpcGroup(SGSymbol):
     '''
@@ -53,7 +30,7 @@ def SpcGroup(SGSymbol):
     SysSym = ('triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic')
     SGData = {}
     SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
-    SGInfo = pyd.sgforpy(SGSymbol)
+    SGInfo = pyspg.sgforpy(SGSymbol)
     SGData['SGLaue'] = LaueSym[SGInfo[0]-1]
     SGData['SGInv'] = bool(SGInfo[1])
     SGData['SGLatt'] = LattSym[SGInfo[2]-1]

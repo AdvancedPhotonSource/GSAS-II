@@ -5,6 +5,7 @@ import matplotlib as mpl
 import math
 import time
 import cPickle
+import GSASIIpath
 import GSASIIcomp as G2cmp
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

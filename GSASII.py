@@ -10,7 +10,31 @@ import numpy as np
 import wx
 import matplotlib as mpl
 
+## determine a binary path for the pyd files based on the host OS and the python version,  
+## path is relative to location of this file
+#if sys.platform == "win32":
+#    bindir = 'binwin%d.%d' % sys.version_info[0:2]
+#elif sys.platform == "darwin":
+#    bindir = 'binmac%d.%d' % sys.version_info[0:2]
+#else:
+#    bindir = 'bin'
+#if ospath.exists(ospath.join(sys.path[0],bindir)) and ospath.join(sys.path[0],bindir) not in sys.path: 
+#    sys.path.insert(0,ospath.join(sys.path[0],bindir))
+
+#try: 
+#    import pypowder as pyp
+#except:
+#    # create an app to display the error, since we are still loading routines at this point 
+#    app = wx.App()
+#    app.MainLoop()
+#    msg = wx.MessageDialog(None, message="Unable to load the GSAS powder computation module, pypowder",
+#        caption="Import Error",style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
+#    msg.ShowModal()
+#    # this error is non-recoverable, so just quit
+#    exit()
+    
 # load the GSAS routines
+import GSASIIpath
 import GSASIIIO as G2IO
 import GSASIIcomp as G2cmp
 import GSASIIgrid as G2gd

@@ -25,8 +25,7 @@ except:
     app = wx.App()
     app.MainLoop()
     msg = wx.MessageDialog(None, message="Unable to load the GSAS powder computation module, pypowder",
-                     caption="Import Error",
-                     style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
+        caption="Import Error",style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
     msg.ShowModal()
     # this error is non-recoverable, so just quit
     exit()
@@ -177,7 +176,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
                         Iv += 1
                 for peak in peaks:
                     dip = peak[-1]
-                    f = pyp.pypsvfcj(peak[2],xi-peak[0],peak[0],peak[4],peak[6],peak[8],0.0)
+                    f = pyp.pypsvfcj(peak[2],xi-peak[0],peak[0],peak[4],peak[6],instVal[-2],0.0)
                     yc[i] += f[0]*peak[2]
                     if f[0] > 0.0:
                         j = 0
@@ -200,7 +199,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
                             dp[Bv+j] += f[5]
                     if Ka2:
                        pos2 = 2.0*asind(lamratio*sind(peak[0]/2.0))
-                       f2 = pyp.pypsvfcj(peak[2],xi-pos2,peak[0],peak[4],peak[6],peak[8],0.0)
+                       f2 = pyp.pypsvfcj(peak[2],xi-pos2,peak[0],peak[4],peak[6],instVal[-2],0.0)
                        yc[i] += f2[0]*peak[2]*instVal[3]
                        if f[0] > 0.0:
                            j = 0
@@ -221,7 +220,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
                                j += 1
                            if insref[5]:              #SH/L
                                dp[Bv+j] += f2[5]*instVal[3]                       
-                    for j in range(0,Np,2):          #14s
+                    for j in range(0,Np,2):
                         if peak[j+1]: dp.append(f[j/2+1])
                 yd[i] = y[i]-yc[i]
                 swobs += w[i]*y[i]**2
@@ -243,7 +242,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
     for i,elm in enumerate(norm):
         if elm <= 0.0:
             print norm
-            return False,0,0,0
+            return False,0,0,0,False
     for i in xrange(len(V)):
         norm[i] = 1.0/math.sqrt(norm[i])
         V[i] *= norm[i]
@@ -293,7 +292,6 @@ def DoPeakFit(peaks,background,limits,inst,data):
         del peak[-1]                        # remove dip from end
         delsig = delt[0]*tand(peak[0]/2.0)**2+delt[1]*tand(peak[0]/2.0)+delt[2]
         delgam = delt[3]/cosd(peak[0]/2.0)+delt[4]*tand(peak[0]/2.0)
-        delshl = delt[5]    
         for j in range(0,len(peak[:-1]),2):
             if peak[j+1]: 
                 peak[j] += b[B]*0.5
@@ -306,10 +304,6 @@ def DoPeakFit(peaks,background,limits,inst,data):
         if peak[6] < 0.0:
             print 'ERROR - negative gamma'
             return False,0,0,0,False
-        peak[8] += delshl            
-        if peak[8] < 0.0:
-            print 'ERROR - negative SH/L'
-            return False,0,0,0,False            
     runtime = time.time()-begin    
     data = [x,y,w,yc,yb,yd]
     return True,smin,Rwp,runtime,GoOn
@@ -1132,7 +1126,7 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
                 if dsq > 0:
                     peak[8] = 1./math.sqrt(dsq)
         return
-    delt = 0.05                                     #lowest d-spacing cushion - can be fixed?
+    delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
     amin = 2.5
     amax = 5.0*getDmax(peaks)
     dmin = getDmin(peaks)-delt

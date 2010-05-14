@@ -206,7 +206,7 @@ def PlotPatterns(self,newPlot=False):
                 sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
                 gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
                 data = self.PatternTree.GetItemPyData(self.PickId)
-                XY = [xy[0],0, xy[1],1, sig,0, gam,0, ins[5],0]       #default refine intensity 1st   
+                XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st   
                 data.append(XY)
                 G2gd.UpdatePeakGrid(self,data)
                 PlotPatterns(self)
@@ -356,10 +356,10 @@ def PlotPatterns(self,newPlot=False):
             if ifpicked:
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
-                D = xye[5]+offset*N
+                D = xye[5]+offset*N-Ymax*.02
                 if self.Weight:
                     W2 = np.sqrt(xye[2])
-                    D *= W2
+                    D *= W2-Ymax*.02
                 Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                 Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                 Plot.plot(X,W,colors[(N+2)%6],picker=False)
@@ -449,7 +449,7 @@ def PlotPeakWidths(self):
         G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
     if instParms[0][0] == 'PXC':
         lam = instParms[1][1]
-        if len(instParms[1]) == 12:
+        if len(instParms[1]) == 13:
             GU,GV,GW,LX,LY = instParms[0][6:11]
         else:
             GU,GV,GW,LX,LY = instParms[0][4:9]

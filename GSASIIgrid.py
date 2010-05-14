@@ -24,6 +24,9 @@ asind = lambda x: 180.*math.asin(x)/math.pi
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL,
 ] = [wx.NewId() for _init_coll_IMAGE_Items in range(6)]
 
+[ wxID_INSTPRMRESET,
+] = [wx.NewId() for _init_coll_INST_Items in range(1)]
+
 [ wxID_MASKCOPY,
 ] = [wx.NewId() for _init_coll_MASK_Items in range(1)]
 
@@ -42,6 +45,9 @@ class DataFrame(wx.Frame):
                    
     def _init_coll_ImageMenu(self,parent):
         parent.Append(menu=self.ImageEdit, title='Image Operations')
+        
+    def _init_coll_InstMenu(self,parent):
+        parent.Append(menu=self.InstEdit, title='Inst. Parm. Operations')
         
     def _init_coll_MaskMenu(self,parent):
         parent.Append(menu=self.MaskEdit, title='Mask Operations')
@@ -75,6 +81,10 @@ class DataFrame(wx.Frame):
         parent.Append(help='Copy mask to other images', 
             id=wxID_MASKCOPY, kind=wx.ITEM_NORMAL,text='Copy mask')
 
+    def _init_coll_Inst_Items(self,parent):
+        parent.Append(help='Reset instrument profile parameters to default', 
+            id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')
+
     def _init_coll_Peak_Items(self,parent):
         self.UnDo = parent.Append(help='Undo last least squares refinement', 
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
@@ -97,11 +107,13 @@ class DataFrame(wx.Frame):
         self.AtomsMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
+        self.InstMenu = wx.MenuBar()
         self.PeakMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
+        self.InstEdit = wx.Menu(title='')
         self.PeakEdit = wx.Menu(title='')
         self.IndexEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
@@ -110,6 +122,8 @@ class DataFrame(wx.Frame):
         self._init_coll_Image_Items(self.ImageEdit)
         self._init_coll_MaskMenu(self.MaskMenu)
         self._init_coll_Mask_Items(self.MaskEdit)
+        self._init_coll_InstMenu(self.InstMenu)
+        self._init_coll_Inst_Items(self.InstEdit)
         self._init_coll_PeakMenu(self.PeakMenu)
         self._init_coll_Peak_Items(self.PeakEdit)
         self._init_coll_IndexMenu(self.IndexMenu)
@@ -429,7 +443,7 @@ def UpdatePeakGrid(self, data):
     def setBackgroundColors():
        for r in range(self.dataDisplay.GetNumberRows()):
            for c in range(self.dataDisplay.GetNumberCols()):
-               if self.dataDisplay.GetColLabelValue(c) in ['position','intensity','sigma','gamma','SH/L']:
+               if self.dataDisplay.GetColLabelValue(c) in ['position','intensity','sigma','gamma']:
                    if float(self.dataDisplay.GetCellValue(r,c)) < 0.:
                        self.dataDisplay.SetCellBackgroundColour(r,c,wx.RED)
                    else:
@@ -501,10 +515,9 @@ def UpdatePeakGrid(self, data):
     self.PickTable = []
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
-    colLabels = ['position','refine','intensity','refine','sigma','refine','gamma','refine','SH/L','refine']
+    colLabels = ['position','refine','intensity','refine','sigma','refine','gamma','refine']
     Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
         wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
-        wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
         wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
         wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
     T = []
@@ -525,7 +538,7 @@ def UpdatePeakGrid(self, data):
     self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)                 
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([650,350])
+    self.dataFrame.setSizePosLeft([550,350])
         
 def UpdateBackgroundGrid(self,data):
     BackId = GetPatternTreeItemId(self,self.PatternId, 'Background')
@@ -606,15 +619,16 @@ def UpdateInstrumentGrid(self, data):
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     Ka2 = False
-    Xwid = 720
+    Xwid = 700
     if len(data[0]) == 13: 
         Ka2 = True
-        Xwid = 800        
-    self.dataFrame.setSizePosLeft([Xwid,150])
+        Xwid = 840        
+    self.dataFrame.setSizePosLeft([Xwid,170])
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     InstId = GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters')
-    def RefreshInstrumentGrid(event):
-        if event.GetRow() == 1:
+    
+    def RefreshInstrumentGrid(event,doAnyway=False):
+        if doAnyway or event.GetRow() == 1:
             peaks = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
             ins = data[1]
             if 'P' in ins[0]:                                       #update powder peak parameters
@@ -622,14 +636,24 @@ def UpdateInstrumentGrid(self, data):
                     if Ka2:
                         peak[4] = ins[6]*tand(peak[0]/2.0)**2+ins[7]*tand(peak[0]/2.0)+ins[8]
                         peak[6] = ins[9]/cosd(peak[0]/2.0)+ins[10]*tand(peak[0]/2.0)
-                        peak[8] = ins[11]
                     else:
                         peak[4] = ins[4]*tand(peak[0]/2.0)**2+ins[5]*tand(peak[0]/2.0)+ins[6]
                         peak[6] = ins[7]/cosd(peak[0]/2.0)+ins[8]*tand(peak[0]/2.0)
-                        peak[8] = ins[9]
+                        
+    def OnReset(event):
+        if Ka2:
+            data[1][6:12] = data[0][6:12]
+        else:
+            data[1][4:10] = data[0][4:10]
+        RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
+        UpdateInstrumentGrid(self, data)
         
     self.InstrumentTable = []
     if 'P' in data[1][0]:                   #powder data
+        self.dataFrame.SetMenuBar(self.dataFrame.InstMenu)
+        if not self.dataFrame.GetStatusBar():
+            Status = self.dataFrame.CreateStatusBar()
+        self.Bind(wx.EVT_MENU, OnReset, id=wxID_INSTPRMRESET)
         if Ka2:
             Types = [wg.GRID_VALUE_CHOICE+":PXC,PNC,PNT",wg.GRID_VALUE_FLOAT+':10,6',wg.GRID_VALUE_FLOAT+':10,6',               #type, lam-1 & lam-2
                 wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #zero, ratio, pola
@@ -641,7 +665,7 @@ def UpdateInstrumentGrid(self, data):
                 wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #u,v,w
                 wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,2']
         colLabels = data[3]
-        rowLabels = ['original','changed','refine']
+        rowLabels = ['default','changed','refine']
         self.InstrumentTable = Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
         self.dataFrame.SetLabel('Instrument Parameters')
         self.dataDisplay = GSGrid(parent=self.dataFrame)                
@@ -788,7 +812,7 @@ def UpdateUnitCellsGrid(self, data):
         A = G2cmp.cell2A(cell)
         print controls[5]
         ibrav = bravaisSymb.index(controls[5])
-        dmin = G2cmp.getDmin(peaks)-0.05
+        dmin = G2cmp.getDmin(peaks)-0.005
         Lhkl,M20,X20 = G2cmp.refinePeaks(peaks,ibrav,A)
         controls[6:12] = G2cmp.A2cell(A)
         controls[12] = G2cmp.calc_V(A)

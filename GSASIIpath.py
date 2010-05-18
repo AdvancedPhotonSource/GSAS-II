@@ -1,5 +1,6 @@
 # determine a binary path for the pyd files based on the host OS and the python version,  
 # path is relative to location of this file
+#this must be imported before anything that imports any pyd file for GSASII
 import os.path as ospath
 import sys
 if sys.platform == "win32":

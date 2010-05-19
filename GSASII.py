@@ -234,6 +234,7 @@ class GSASII(wx.Frame):
         self.itemPicked = None
         self.dataFrame = None
         self.Contour = False
+        self.SinglePlot = False
         self.plotView = 0
         self.Image = 0
         self.oldImagefile = ''

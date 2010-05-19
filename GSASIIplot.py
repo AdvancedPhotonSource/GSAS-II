@@ -46,7 +46,9 @@ class G2PlotNoteBook(wx.Panel):
         sizer.Add(self.nb,1,wx.EXPAND)
         self.SetSizer(sizer)
         self.status = parent.CreateStatusBar()
-#        self.Bind(wx.aui.EVT_AUI_PAGE_CHANGED, self.OnPageChanged)
+        self.status.SetFieldsCount(2)
+        self.status.SetStatusWidths([-1,120])
+        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         
         self.plotList = []
             
@@ -59,7 +61,7 @@ class G2PlotNoteBook(wx.Panel):
         return page.figure
         
     def OnPageChanged(self,event):
-        print 'page changed'
+        self.status.DestroyChildren()                           #get rid of special stuff on status bar
         
 def PlotSngl(self,newPlot=False):
     from matplotlib.patches import Circle
@@ -77,7 +79,7 @@ def PlotSngl(self,newPlot=False):
             elif '001' in Data['Zone']:
                 HKLtxt = '(%3d,%3d,%3d)'%(xpos,ypos,zpos)
             Page.canvas.SetToolTipString(HKLtxt)
-            self.G2plotNB.status.SetFields(['HKL = '+HKLtxt,])
+            self.G2plotNB.status.SetFields(['HKL = '+HKLtxt,''])
                 
     def OnSCPick(event):
         zpos = Data['Layer']
@@ -95,7 +97,7 @@ def PlotSngl(self,newPlot=False):
         i = HKL.all(hkl)
         print i
         HKLtxt = '(%3d,%3d,%3d %10.2f %6.3f %10.2f)'%(h,k,l,Fosq,sig,Fcsq)
-        self.G2plotNB.status.SetFields(['HKL, Fosq, sig, Fcsq = '+HKLtxt,])
+        self.G2plotNB.status.SetFields(['HKL, Fosq, sig, Fcsq = '+HKLtxt,''])
                          
         
     def OnSCKeyPress(event):
@@ -244,7 +246,19 @@ def PlotPatterns(self,newPlot=False):
                 self.Contour = False
             else:
                 self.Contour = True
+        elif event.key == 's':
+            if self.SinglePlot:
+                self.SinglePlot = False
+            else:
+                self.SinglePlot = True
+            
         PlotPatterns(self)
+        
+    def OnKeyBox(event):
+        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('Powder Patterns'):
+            event.key = cb.GetValue()[0]
+            cb.SetValue(' key press')
+            OnPlotKeyPress(event)
                         
     def OnMotion(event):
         xpos = event.xdata
@@ -257,13 +271,12 @@ def PlotPatterns(self,newPlot=False):
                 dsp = 0.0
                 if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                     dsp = wave/(2.*sind(abs(xpos)/2.0))
-                self.G2plotNB.status.SetFields(['2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),])
+                self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),0)
                 if self.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
             except TypeError:
-                self.G2plotNB.status.SetFields(['Select PWDR powder pattern first',])
-                
-                   
+                self.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',0)
+                                   
     def OnRelease(event):
         if self.itemPicked is None: return
         xpos = event.xdata
@@ -307,21 +320,31 @@ def PlotPatterns(self,newPlot=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
-        
     Page.SetFocus()
-
+    cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
+        choices=(' key press','d: offset down','u: offset up','c: toggle contour','s: toggle single plot'))
+    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
+    rect = self.G2plotNB.status.GetFieldRect(1)
+    cb.SetPosition((rect.x,rect.y))
+    cb.SetValue(' key press')
+    
     PickId = self.PickId
     PatternId = self.PatternId
     colors=['b','g','r','c','m','k']
-    PlotList = []
     Lines = []
-    item, cookie = self.PatternTree.GetFirstChild(self.root)
-    while item:
-        if 'PWDR' in self.PatternTree.GetItemText(item):
-            Pattern = self.PatternTree.GetItemPyData(item)
-            Pattern.append(self.PatternTree.GetItemText(item))
-            PlotList.append(Pattern)
-        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+    if self.SinglePlot:
+        Pattern = self.PatternTree.GetItemPyData(self.PatternId)
+        Pattern.append(self.PatternTree.GetItemText(self.PatternId))
+        PlotList = [Pattern,]
+    else:        
+        PlotList = []
+        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        while item:
+            if 'PWDR' in self.PatternTree.GetItemText(item):
+                Pattern = self.PatternTree.GetItemPyData(item)
+                Pattern.append(self.PatternTree.GetItemText(item))
+                PlotList.append(Pattern)
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
     Ymax = 1.0
     for Pattern in PlotList:
         xye = Pattern[1]
@@ -409,7 +432,7 @@ def PlotPowderLines(self):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
-            self.G2plotNB.status.SetFields(['2-theta =%9.3f '%(xpos,),])
+            self.G2plotNB.status.SetFields(['2-theta =%9.3f '%(xpos,),''])
 
     try:
         plotNum = self.G2plotNB.plotList.index('Powder Lines')
@@ -565,7 +588,7 @@ def PlotImage(self,newPlot=False):
                 tth,azm,dsp = G2cmp.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 self.G2plotNB.status.SetFields(\
-                    ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),])
+                    ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),''])
 
     def OnImPlotKeyPress(event):
         if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
@@ -666,7 +689,6 @@ def PlotImage(self,newPlot=False):
         Page.canvas.mpl_connect('pick_event', OnImPick)
         Page.canvas.mpl_connect('button_release_event', OnImRelease)
     Page.SetFocus()
-        
     Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
     size,imagefile = self.PatternTree.GetItemPyData(self.Image)
     if imagefile != self.oldImagefile:
@@ -761,7 +783,7 @@ def PlotIntegration(self,newPlot=False):
         tth = event.xdata
         if azm and tth:
             self.G2plotNB.status.SetFields(\
-                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),])
+                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),''])
                                 
     try:
         plotNum = self.G2plotNB.plotList.index('2D Integration')
@@ -826,7 +848,7 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         tth = event.ydata
         if azm and tth:
             self.G2plotNB.status.SetFields(\
-                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),])
+                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),''])
                                 
     try:
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')

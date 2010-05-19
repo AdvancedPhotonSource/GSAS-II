@@ -699,12 +699,11 @@ def SaveIntegration(self,PickId,data):
     parms = ['PXC',data['wavelength'],0.0,0.0,1.0,-1.0,0.3,0.0,1.0,0.0,0.0]
     Azms = [(azms[i+1]+azms[i])/2. for i in range(len(azms)-1)]
     for i,azm in enumerate(Azms):
-        name += " Azm= %.2f"%(azm)
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         Id = 0
         while item:
             Name = self.PatternTree.GetItemText(item)
-            if name in Name:
+            if name == Name:
                 Id = item
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         parms[10] = azm
@@ -719,7 +718,7 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
         else:
-            Id = self.PatternTree.AppendItem(parent=self.root,text=name)
+            Id = self.PatternTree.AppendItem(parent=self.root,text=name+" Azm= %.2f"%(azm))
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])

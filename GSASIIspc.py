@@ -498,7 +498,7 @@ def test0():
 
 def test1():
     ''' test #1: SpcGroup and SGPrint against previous results'''
-    testdir = ospath.join(mypath,'testinp')
+    testdir = ospath.join(ospath.split(ospath.abspath( __file__ ))[0],'testinp')
     if ospath.exists(testdir):
         if testdir not in sys.path: sys.path.insert(0,testdir)
     import spctestinp
@@ -526,7 +526,7 @@ def test1():
 
 def test2():
     ''' test #2: SpcGroup against cctbx (sgtbx) computations'''
-    testdir = ospath.join(mypath,'testinp')
+    testdir = ospath.join(ospath.split(ospath.abspath( __file__ ))[0],'testinp')
     if ospath.exists(testdir):
         if testdir not in sys.path: sys.path.insert(0,testdir)
     import sgtbxtestinp

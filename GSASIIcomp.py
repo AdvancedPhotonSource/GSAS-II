@@ -9,6 +9,7 @@ import os.path as ospath
 import GSASIIpath
 import pypowder as pyp              #assumes path has been amended to include correctr bin directory
 import GSASIIplot as G2plt
+from GSASIIlattice import * # these routines should eventually be reference in G2lattice
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -299,18 +300,6 @@ def calc_rDsqZ(H,A,Z,tth,lam):
     rpd = math.pi/180.
     rdsq = calc_rDsq(H,A)+Z*math.sin(tth*rpd)*2.0*rpd/(lam*lam)
     return rdsq
-    
-def calc_rVsq(A):
-    rVsq = A[0]*A[1]*A[2]+0.25*(A[3]*A[4]*A[5]-A[0]*A[5]**2-A[1]*A[4]**2-A[2]*A[3]**2)
-    if rVsq < 0:
-        return 1
-    return rVsq
-    
-def calc_rV(A):
-    return math.sqrt(calc_rVsq(A))
-    
-def calc_V(A):
-    return 1./calc_rV(A)
    
 def scaleAbyV(A,V):
     v = calc_V(A)
@@ -428,79 +417,6 @@ def rancell(Bravais,dmin,dmax):
         gam = ranaxis(acosd(r),acosd(-r))  
     return [a,b,c,alp,bet,gam]
     
-def A2Gmat(A):
-    G = np.zeros(shape=(3,3))
-    G = [[A[0],A[3]/2.,A[4]/2.], [A[3]/2.,A[1],A[5]/2.], [A[4]/2.,A[5]/2.,A[2]]]
-    g = nl.inv(G)
-    return G,g
-    
-def fillgmat(cell):
-    a,b,c,alp,bet,gam = cell
-    g = np.array([[a*a,a*b*cosd(gam),a*c*cosd(bet)],[a*b*cosd(gam),b*b,b*c*cosd(alp)],
-        [a*c*cosd(bet),b*c*cosd(alp),c*c]])
-    return g
-           
-def cell2Gmat(cell):
-    #returns reciprocal (G) & real (g) metric tensors
-    g = fillgmat(cell)
-    G = nl.inv(g)        
-    return G,g
-    
-def invcell2Gmat(invcell):
-    G = fillgmat(invcell)
-    g = nl.inv(G)
-    return G,g
-    
-def Gmat2cell(g):
-    #returns lattice parameters from real metric tensor (g)
-    a = math.sqrt(max(0,g[0][0]))
-    b = math.sqrt(max(0,g[1][1]))
-    c = math.sqrt(max(0,g[2][2]))
-    alp = acosd(g[2][1]/(b*c))
-    bet = acosd(g[2][0]/(a*c))
-    gam = acosd(g[0][1]/(a*b))
-    return a,b,c,alp,bet,gam
-    
-def Gmat2A(G):
-    return [G[0][0],G[1][1],G[2][2],2.*G[0][1],2.*G[0][2],2.*G[1][2]]
-    
-def cell2A(cell):
-    G,g = cell2Gmat(cell)
-    return Gmat2A(G)
-    
-def A2cell(A):
-    G,g = A2Gmat(A)
-    return Gmat2cell(g)
-    
-def A2invcell(A):
-    ainv = math.sqrt(max(0.,A[0]))
-    binv = math.sqrt(max(0.,A[1]))
-    cinv = math.sqrt(max(0.,A[2]))
-    gaminv = acosd(max(-0.5,min(0.5,0.5*A[3]/(ainv*binv))))
-    betinv = acosd(max(-0.5,min(0.5,0.5*A[4]/(ainv*cinv))))
-    alpinv = acosd(max(-0.5,min(0.5,0.5*A[5]/(binv*cinv))))
-    return ainv,binv,cinv,alpinv,betinv,gaminv
-    
-def cell2AB(cell):
-    #from real lattice parameters - cell
-    # returns A for Cartesian to crystal transformations A*X = x 
-    # and inverse B for crystal to Cartesian transformation B*x = X
-    G,g = cell2Gmat(cell)       #reciprocal & real metric tensors
-    cosAlpStar = G[2][1]/math.sqrt(G[1][1]*G[2][2])
-    sinAlpStar = math.sqrt(1.0-cosAlpStar**2)
-    B = np.eye(3)
-    B *= cell[:3]
-    A = np.zeros(shape=(3,3))
-    A[0][0] = 1.0
-    A[0][1] = cosd(cell[5])
-    A[1][1] = sinAlpStar*sind(cell[5])
-    A[1][2] = -cosAlpStar*sind(cell[5])
-    A[0][2] = cosd(cell[4])
-    A[2][2] = sind(cell[4])
-    B = np.dot(A,B)
-    A = nl.inv(B)
-    return A,B
-    
 def makeMat(Angle,Axis):
     #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
     cs = cosd(Angle)
@@ -555,6 +471,8 @@ def sortM20(cells):
                 
  
 def GenHBravais(dmin,Bravais,A):
+    '''Generate the positionally unique powder diffraction reflections 
+    for a lattice and Bravais type'''
 # dmin - minimum d-spacing
 # Bravais in range(14) to indicate Bravais lattice; 0-2 cubic, 3,4 - hexagonal/trigonal,
 # 5,6 - tetragonal, 7-10 - orthorhombic, 11,12 - monoclinic, 13 - triclinic
@@ -676,6 +594,9 @@ def CentCheck(Cent,H):
         return True
                                     
 def GenHLaue(dmin,Laue,Cent,Axis,A):
+    '''Generate the crystallographically unique powder diffraction reflections
+    for a lattice and Bravais type
+    '''
 # dmin - minimum d-spacing
 # Laue - Laue group symbol = '-1','2/m','mmmm','4/m','6/m','4/mmm','6/mmm',
 #                            '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'

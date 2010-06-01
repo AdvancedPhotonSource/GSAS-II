@@ -472,12 +472,12 @@ def sortM20(cells):
  
 def GenHBravais(dmin,Bravais,A):
     '''Generate the positionally unique powder diffraction reflections 
-    for a lattice and Bravais type'''
-# dmin - minimum d-spacing
-# Bravais in range(14) to indicate Bravais lattice; 0-2 cubic, 3,4 - hexagonal/trigonal,
-# 5,6 - tetragonal, 7-10 - orthorhombic, 11,12 - monoclinic, 13 - triclinic
-# A - as defined in calc_rDsq
-# returns HKL = [h,k,l,d,0] sorted so d largest first 
+    for a lattice and Bravais type
+    dmin - minimum d-spacing
+    Bravais in range(14) to indicate Bravais lattice; 0-2 cubic, 3,4 - hexagonal/trigonal,
+    5,6 - tetragonal, 7-10 - orthorhombic, 11,12 - monoclinic, 13 - triclinic
+    A - as defined in calc_rDsq
+    returns HKL = [h,k,l,d,0] sorted so d largest first''' 
     import math
     if Bravais in [9,11]:
         Cent = 'C'
@@ -596,15 +596,15 @@ def CentCheck(Cent,H):
 def GenHLaue(dmin,Laue,Cent,Axis,A):
     '''Generate the crystallographically unique powder diffraction reflections
     for a lattice and Bravais type
+    dmin - minimum d-spacing
+    Laue - Laue group symbol = '-1','2/m','mmmm','4/m','6/m','4/mmm','6/mmm',
+                             '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
+    Cent - lattice centering = 'P','A','B','C','I','F'
+    Axis - code for unique monoclinic axis = 'a','b','c'
+    A - 6 terms as defined in calc_rDsq
+    returns - HKL = list of [h,k,l,d] sorted with largest d first and is unique 
+    part of reciprocal space ignoring anomalous dispersion
     '''
-# dmin - minimum d-spacing
-# Laue - Laue group symbol = '-1','2/m','mmmm','4/m','6/m','4/mmm','6/mmm',
-#                            '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
-# Cent - lattice centering = 'P','A','B','C','I','F'
-# Axis - code for unique monoclinic axis = 'a','b','c'
-# A - 6 terms as defined in calc_rDsq
-# returns - HKL = list of [h,k,l,d] sorted with largest d first and is unique 
-# part of reciprocal space ignoring anomalous dispersion
     import math
     Hmax = MaxIndex(dmin,A)
     dminsq = 1./(dmin**2)

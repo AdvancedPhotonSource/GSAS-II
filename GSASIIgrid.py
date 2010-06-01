@@ -1322,6 +1322,37 @@ def UpdateImageControls(self,data):
         
     def OnIntegrateAll(event):
         print 'integrate all'
+        TextList = []
+        Names = []
+        if self.PatternTree.GetCount():
+            id, cookie = self.PatternTree.GetFirstChild(self.root)
+            while id:
+                name = self.PatternTree.GetItemText(id)
+                Names.append(name)
+                if 'IMG' in name:
+                    TextList.append([False,name,id])
+                id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            if not len(TextList):
+                self.ErrorDialog('Nothing to integrate','There must some "IMG" patterns')
+                return
+            dlg = self.CopyDialog(self,'Image integration controls','Select images to integrate:',TextList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetData()
+                    for item in result:
+                        ifintegrate,name,id = item
+                        if ifintegrate:
+                            id = GetPatternTreeItemId(self, self.root, name)
+                            size,imagefile = self.PatternTree.GetItemPyData(id)
+                            self.ImageZ = G2IO.GetImageData(imagefile,imageOnly=True)
+                            Id = GetPatternTreeItemId(self,id, 'Image Controls')
+                            Data = self.PatternTree.GetItemPyData(Id)
+                            G2cmp.ImageIntegrate(self,Data)
+                            G2plt.PlotIntegration(self,newPlot=True)
+                            self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=True)
+                            G2IO.SaveIntegration(self,Id,Data)
+            finally:
+                dlg.Destroy()
         
     def OnSaveIntegrate(event):
         print 'save integration'

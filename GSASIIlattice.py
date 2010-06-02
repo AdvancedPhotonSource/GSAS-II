@@ -94,15 +94,15 @@ def calc_rVsq(A):
     return rVsq
     
 def calc_rV(A):
-    'Compute the reciprocal lattice volume (V*) from A tensor'
+    'Compute the reciprocal lattice volume (V*) from A'
     return np.sqrt(calc_rVsq(A))
     
 def calc_V(A):
-    'Compute the real lattice volume (V) from A tensor'
+    'Compute the real lattice volume (V) from A'
     return 1./calc_rV(A)
 
 def A2invcell(A):
-    '''Compute reciprocal unit cell constants from A tensor
+    '''Compute reciprocal unit cell constants from A
     returns tuple with a*,b*,c*,alpha*, beta*, gamma* (degrees)
     '''
     G,g = A2Gmat(A)

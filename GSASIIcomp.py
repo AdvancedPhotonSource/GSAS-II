@@ -34,7 +34,7 @@ def sec2HMS(sec):
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
 
-def ValEsd(value,esd=0,nTZ=False):
+def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
     # returns value(esd) string; nTZ=True for no trailing zeros
     # use esd < 0 for level of precision shown e.g. esd=-0.01 gives 2 places beyond decimal
     #get the 2 significant digits in the esd 
@@ -58,7 +58,7 @@ def ValEsd(value,esd=0,nTZ=False):
             return text
 
         
-        
+#GSASII peak fitting routine: Thompson, Cox & Hastings; Finger, Cox & Jephcoat model        
 
 def DoPeakFit(peaks,background,limits,inst,data):
     
@@ -301,6 +301,262 @@ def calc_rDsqZ(H,A,Z,tth,lam):
     rdsq = calc_rDsq(H,A)+Z*math.sin(tth*rpd)*2.0*rpd/(lam*lam)
     return rdsq
    
+def MaxIndex(dmin,A):
+    #finds maximum allowed hkl for given A within dmin
+    Hmax = [0,0,0]
+    try:
+        cell = A2cell(A)
+    except:
+        cell = [1,1,1,90,90,90]
+    for i in range(3):
+        Hmax[i] = int(round(cell[i]/dmin))
+    return Hmax
+    
+def sortHKLd(HKLd,ifreverse,ifdup):
+    #HKLd is a list of [h,k,l,d,...]; ifreverse=True for largest d first
+    #ifdup = True if duplicate d-spacings allowed 
+    T = []
+    for i,H in enumerate(HKLd):
+        if ifdup:
+            T.append((H[3],i))
+        else:
+            T.append(H[3])            
+    D = dict(zip(T,HKLd))
+    T.sort()
+    if ifreverse:
+        T.reverse()
+    X = []
+    okey = ''
+    for key in T: 
+        if key != okey: X.append(D[key])    #remove duplicate d-spacings
+        okey = key
+    return X
+    
+ 
+def GenHBravais(dmin,Bravais,A):
+    '''Generate the positionally unique powder diffraction reflections 
+    for a lattice and Bravais type'''
+# dmin - minimum d-spacing
+# Bravais in range(14) to indicate Bravais lattice; 0-2 cubic, 3,4 - hexagonal/trigonal,
+# 5,6 - tetragonal, 7-10 - orthorhombic, 11,12 - monoclinic, 13 - triclinic
+# A - as defined in calc_rDsq
+# returns HKL = [h,k,l,d,0] sorted so d largest first 
+    import math
+    if Bravais in [9,11]:
+        Cent = 'C'
+    elif Bravais in [1,5,8]:
+        Cent = 'I'
+    elif Bravais in [0,7]:
+        Cent = 'F'
+    elif Bravais in [3]:
+        Cent = 'R'
+    else:
+        Cent = 'P'
+    Hmax = MaxIndex(dmin,A)
+    dminsq = 1./(dmin**2)
+    HKL = []
+    if Bravais == 13:                       #triclinic
+        for l in range(-Hmax[2],Hmax[2]+1):
+            for k in range(-Hmax[1],Hmax[1]+1):
+                hmin = 0
+                if (k < 0): hmin = 1
+                if (k ==0 and l < 0): hmin = 1
+                for h in range(hmin,Hmax[0]+1):
+                    H=[h,k,l]
+                    rdsq = calc_rDsq(H,A)
+                    if 0 < rdsq <= dminsq:
+                        HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+    elif Bravais in [11,12]:                #monoclinic - b unique
+        Hmax = SwapIndx(2,Hmax)
+        for h in range(Hmax[0]+1):
+            for k in range(-Hmax[1],Hmax[1]+1):
+                lmin = 0
+                if k < 0:lmin = 1
+                for l in range(lmin,Hmax[2]+1):
+                    [h,k,l] = SwapIndx(-2,[h,k,l])
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+                    [h,k,l] = SwapIndx(2,[h,k,l])
+    elif Bravais in [7,8,9,10]:            #orthorhombic
+        for h in range(Hmax[0]+1):
+            for k in range(Hmax[1]+1):
+                for l in range(Hmax[2]+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+    elif Bravais in [5,6]:                  #tetragonal
+        for l in range(Hmax[2]+1):
+            for k in range(Hmax[1]+1):
+                for h in range(k,Hmax[0]+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+    elif Bravais in [3,4]:
+        lmin = 0
+        if Bravais == 3: lmin = -Hmax[2]                  #hexagonal/trigonal
+        for l in range(lmin,Hmax[2]+1):
+            for k in range(Hmax[1]+1):
+                hmin = k
+                if l < 0: hmin += 1
+                for h in range(hmin,Hmax[0]+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+
+    else:                                   #cubic
+        for l in range(Hmax[2]+1):
+            for k in range(l,Hmax[1]+1):
+                for h in range(k,Hmax[0]+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+    return sortHKLd(HKL,True,False)
+    
+def SwapIndx(Axis,H):
+    if Axis in [1,-1]:
+        return H
+    elif Axis in [2,-3]:
+        return [H[1],H[2],H[0]]
+    else:
+        return [H[2],H[0],H[1]]
+        
+def CentCheck(Cent,H):
+    h,k,l = H
+    if Cent == 'A' and (k+l)%2:
+        return False
+    elif Cent == 'B' and (h+l)%2:
+        return False
+    elif Cent == 'C' and (h+k)%2:
+        return False
+    elif Cent == 'I' and (h+k+l)%2:
+        return False
+    elif Cent == 'F' and ((h+k)%2 or (h+l)%2 or (k+l)%2):
+        return False
+    elif Cent == 'R' and (-h+k+l)%3:
+        return False
+    else:
+        return True
+                                    
+def GenHLaue(dmin,Laue,Cent,Axis,A):
+    '''Generate the crystallographically unique powder diffraction reflections
+    for a lattice and Bravais type
+    '''
+# dmin - minimum d-spacing
+# Laue - Laue group symbol = '-1','2/m','mmmm','4/m','6/m','4/mmm','6/mmm',
+#                            '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
+# Cent - lattice centering = 'P','A','B','C','I','F'
+# Axis - code for unique monoclinic axis = 'a','b','c'
+# A - 6 terms as defined in calc_rDsq
+# returns - HKL = list of [h,k,l,d] sorted with largest d first and is unique 
+# part of reciprocal space ignoring anomalous dispersion
+    import math
+    Hmax = MaxIndex(dmin,A)
+    dminsq = 1./(dmin**2)
+    HKL = []
+    if Laue == '-1':                       #triclinic
+        for l in range(-Hmax[2],Hmax[2]+1):
+            for k in range(-Hmax[1],Hmax[1]+1):
+                hmin = 0
+                if (k < 0) or (k ==0 and l < 0): hmin = 1
+                for h in range(hmin,Hmax[0]+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    rdsq = calc_rDsq(H,A)
+                    if 0 < rdsq <= dminsq:
+                        HKL.append([h,k,l,1/math.sqrt(rdsq)])
+    elif Laue == '2/m':                #monoclinic
+        Hmax = SwapIndx(Axis,Hmax)
+        for h in range(Hmax[0]+1):
+            for k in range(-Hmax[1],Hmax[1]+1):
+                lmin = 0
+                if k < 0:lmin = 1
+                for l in range(lmin,Hmax[2]+1):
+                    [h,k,l] = SwapIndx(-Axis,[h,k,l])
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                    [h,k,l] = SwapIndx(Axis,[h,k,l])
+    elif Laue in ['mmm','4/m','6/m']:            #orthorhombic
+        for l in range(Hmax[2]+1):
+            for h in range(Hmax[0]+1):
+                kmin = 1
+                if Laue == 'mmm' or h ==0: kmin = 0
+                for k in range(kmin,Hmax[2]+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+    elif Laue in ['4/mmm','6/mmm']:                  #tetragonal & hexagonal
+        for l in range(Hmax[2]+1):
+            for h in range(Hmax[0]+1):
+                for k in range(h+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+    elif Laue in ['3m1','31m','3','3R','3mR']:                  #trigonals
+        for l in range(-Hmax[2],Hmax[2]+1):
+            hmin = 0
+            if l < 0: hmin = 1
+            for h in range(hmin,Hmax[0]+1):
+                if Laue in ['3R','3']:
+                    kmax = h
+                    kmin = -int((h-1)/2.)
+                else:
+                    kmin = 0
+                    kmax = h
+                    if Laue in ['3m1','3mR'] and l < 0: kmax = h-1
+                    if Laue == '31m' and l < 0: kmin = 1
+                for k in range(kmin,kmax+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+    else:                                   #cubic
+        for h in range(Hmax[0]+1):
+            for k in range(h+1):
+                lmin = 0
+                lmax = k
+                if Laue =='m3':
+                    lmax = h-1
+                    if h == k: lmax += 1
+                for l in range(lmin,lmax+1):
+                    H = []
+                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+    return sortHKLd(HKL,True,True)
+    
+#GSASII cell indexing program: variation on that of A. Coehlo
+#   includes cell refinement from peal positions (not zero as yet)
+    
 def scaleAbyV(A,V):
     v = calc_V(A)
     scale = math.exp(math.log(v/V)/3.)**2
@@ -417,283 +673,6 @@ def rancell(Bravais,dmin,dmax):
         gam = ranaxis(acosd(r),acosd(-r))  
     return [a,b,c,alp,bet,gam]
     
-def makeMat(Angle,Axis):
-    #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
-    cs = cosd(Angle)
-    ss = sind(Angle)
-    M = np.array(([1.,0.,0.],[0.,cs,-ss],[0.,ss,cs]),dtype=np.float32)
-    return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
-                    
-def MaxIndex(dmin,A):
-    #finds maximum allowed hkl for given A within dmin
-    Hmax = [0,0,0]
-    try:
-        cell = A2cell(A)
-    except:
-        cell = [1,1,1,90,90,90]
-    for i in range(3):
-        Hmax[i] = int(round(cell[i]/dmin))
-    return Hmax
-    
-def sortHKLd(HKLd,ifreverse,ifdup):
-    #HKLd is a list of [h,k,l,d,...]; ifreverse=True for largest d first
-    #ifdup = True if duplicate d-spacings allowed 
-    T = []
-    for i,H in enumerate(HKLd):
-        if ifdup:
-            T.append((H[3],i))
-        else:
-            T.append(H[3])            
-    D = dict(zip(T,HKLd))
-    T.sort()
-    if ifreverse:
-        T.reverse()
-    X = []
-    okey = ''
-    for key in T: 
-        if key != okey: X.append(D[key])    #remove duplicate d-spacings
-        okey = key
-    return X
-    
-def sortM20(cells):
-    #cells is M20,X20,Bravais,a,b,c,alp,bet,gam
-    #sort highest M20 1st
-    T = []
-    for i,M in enumerate(cells):
-        T.append((M[0],i))
-    D = dict(zip(T,cells))
-    T.sort()
-    T.reverse()
-    X = []
-    for key in T:
-        X.append(D[key])
-    return X
-                
- 
-def GenHBravais(dmin,Bravais,A):
-    '''Generate the positionally unique powder diffraction reflections 
-    for a lattice and Bravais type
-    dmin - minimum d-spacing
-    Bravais in range(14) to indicate Bravais lattice; 0-2 cubic, 3,4 - hexagonal/trigonal,
-    5,6 - tetragonal, 7-10 - orthorhombic, 11,12 - monoclinic, 13 - triclinic
-    A - as defined in calc_rDsq
-    returns HKL = [h,k,l,d,0] sorted so d largest first''' 
-    import math
-    if Bravais in [9,11]:
-        Cent = 'C'
-    elif Bravais in [1,5,8]:
-        Cent = 'I'
-    elif Bravais in [0,7]:
-        Cent = 'F'
-    elif Bravais in [3]:
-        Cent = 'R'
-    else:
-        Cent = 'P'
-    Hmax = MaxIndex(dmin,A)
-    dminsq = 1./(dmin**2)
-    HKL = []
-    if Bravais == 13:                       #triclinic
-        for l in range(-Hmax[2],Hmax[2]+1):
-            for k in range(-Hmax[1],Hmax[1]+1):
-                hmin = 0
-                if (k < 0): hmin = 1
-                if (k ==0 and l < 0): hmin = 1
-                for h in range(hmin,Hmax[0]+1):
-                    H=[h,k,l]
-                    rdsq = calc_rDsq(H,A)
-                    if 0 < rdsq <= dminsq:
-                        HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [11,12]:                #monoclinic - b unique
-        Hmax = SwapIndx(2,Hmax)
-        for h in range(Hmax[0]+1):
-            for k in range(-Hmax[1],Hmax[1]+1):
-                lmin = 0
-                if k < 0:lmin = 1
-                for l in range(lmin,Hmax[2]+1):
-                    [h,k,l] = SwapIndx(-2,[h,k,l])
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-                    [h,k,l] = SwapIndx(2,[h,k,l])
-    elif Bravais in [7,8,9,10]:            #orthorhombic
-        for h in range(Hmax[0]+1):
-            for k in range(Hmax[1]+1):
-                for l in range(Hmax[2]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [5,6]:                  #tetragonal
-        for l in range(Hmax[2]+1):
-            for k in range(Hmax[1]+1):
-                for h in range(k,Hmax[0]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [3,4]:
-        lmin = 0
-        if Bravais == 3: lmin = -Hmax[2]                  #hexagonal/trigonal
-        for l in range(lmin,Hmax[2]+1):
-            for k in range(Hmax[1]+1):
-                hmin = k
-                if l < 0: hmin += 1
-                for h in range(hmin,Hmax[0]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-
-    else:                                   #cubic
-        for l in range(Hmax[2]+1):
-            for k in range(l,Hmax[1]+1):
-                for h in range(k,Hmax[0]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    return sortHKLd(HKL,True,False)
-    
-def SwapXY(x,y):
-    return [y,x]
-    
-def SwapIndx(Axis,H):
-    if Axis in [1,-1]:
-        return H
-    elif Axis in [2,-3]:
-        return [H[1],H[2],H[0]]
-    else:
-        return [H[2],H[0],H[1]]
-        
-def CentCheck(Cent,H):
-    h,k,l = H
-    if Cent == 'A' and (k+l)%2:
-        return False
-    elif Cent == 'B' and (h+l)%2:
-        return False
-    elif Cent == 'C' and (h+k)%2:
-        return False
-    elif Cent == 'I' and (h+k+l)%2:
-        return False
-    elif Cent == 'F' and ((h+k)%2 or (h+l)%2 or (k+l)%2):
-        return False
-    elif Cent == 'R' and (-h+k+l)%3:
-        return False
-    else:
-        return True
-                                    
-def GenHLaue(dmin,Laue,Cent,Axis,A):
-    '''Generate the crystallographically unique powder diffraction reflections
-    for a lattice and Bravais type
-    dmin - minimum d-spacing
-    Laue - Laue group symbol = '-1','2/m','mmmm','4/m','6/m','4/mmm','6/mmm',
-                             '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
-    Cent - lattice centering = 'P','A','B','C','I','F'
-    Axis - code for unique monoclinic axis = 'a','b','c'
-    A - 6 terms as defined in calc_rDsq
-    returns - HKL = list of [h,k,l,d] sorted with largest d first and is unique 
-    part of reciprocal space ignoring anomalous dispersion
-    '''
-    import math
-    Hmax = MaxIndex(dmin,A)
-    dminsq = 1./(dmin**2)
-    HKL = []
-    if Laue == '-1':                       #triclinic
-        for l in range(-Hmax[2],Hmax[2]+1):
-            for k in range(-Hmax[1],Hmax[1]+1):
-                hmin = 0
-                if (k < 0) or (k ==0 and l < 0): hmin = 1
-                for h in range(hmin,Hmax[0]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    rdsq = calc_rDsq(H,A)
-                    if 0 < rdsq <= dminsq:
-                        HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    elif Laue == '2/m':                #monoclinic
-        Hmax = SwapIndx(Axis,Hmax)
-        for h in range(Hmax[0]+1):
-            for k in range(-Hmax[1],Hmax[1]+1):
-                lmin = 0
-                if k < 0:lmin = 1
-                for l in range(lmin,Hmax[2]+1):
-                    [h,k,l] = SwapIndx(-Axis,[h,k,l])
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
-                    [h,k,l] = SwapIndx(Axis,[h,k,l])
-    elif Laue in ['mmm','4/m','6/m']:            #orthorhombic
-        for l in range(Hmax[2]+1):
-            for h in range(Hmax[0]+1):
-                kmin = 1
-                if Laue == 'mmm' or h ==0: kmin = 0
-                for k in range(kmin,Hmax[2]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    elif Laue in ['4/mmm','6/mmm']:                  #tetragonal & hexagonal
-        for l in range(Hmax[2]+1):
-            for h in range(Hmax[0]+1):
-                for k in range(h+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    elif Laue in ['3m1','31m','3','3R','3mR']:                  #trigonals
-        for l in range(-Hmax[2],Hmax[2]+1):
-            hmin = 0
-            if l < 0: hmin = 1
-            for h in range(hmin,Hmax[0]+1):
-                if Laue in ['3R','3']:
-                    kmax = h
-                    kmin = -int((h-1)/2.)
-                else:
-                    kmin = 0
-                    kmax = h
-                    if Laue in ['3m1','3mR'] and l < 0: kmax = h-1
-                    if Laue == '31m' and l < 0: kmin = 1
-                for k in range(kmin,kmax+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    else:                                   #cubic
-        for h in range(Hmax[0]+1):
-            for k in range(h+1):
-                lmin = 0
-                lmax = k
-                if Laue =='m3':
-                    lmax = h-1
-                    if h == k: lmax += 1
-                for l in range(lmin,lmax+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    return sortHKLd(HKL,True,True)
-    
 def calc_M20(peaks,HKL):
     diff = 0
     X20 = 0
@@ -722,6 +701,20 @@ def calc_M20(peaks,HKL):
     M20 /= (1.+X20)
     return M20,X20
     
+def sortM20(cells):
+    #cells is M20,X20,Bravais,a,b,c,alp,bet,gam
+    #sort highest M20 1st
+    T = []
+    for i,M in enumerate(cells):
+        T.append((M[0],i))
+    D = dict(zip(T,cells))
+    T.sort()
+    T.reverse()
+    X = []
+    for key in T:
+        X.append(D[key])
+    return X
+                
 def IndexPeaks(peaks,HKL):
     import bisect
     hklds = [1000.0]                                    #make bounded list of available d-spacings
@@ -1128,6 +1121,18 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
     else:
         return False,0,0
         
+#GSASII image calculations: ellipse fitting & image integration        
+        
+def makeMat(Angle,Axis):
+    #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
+    cs = cosd(Angle)
+    ss = sind(Angle)
+    M = np.array(([1.,0.,0.],[0.,cs,-ss],[0.,ss,cs]),dtype=np.float32)
+    return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
+                    
+def SwapXY(x,y):
+    return [y,x]
+    
 def FitRing(ring):
     Err,parms = FitCircle(ring)
     Err /= len(ring)
@@ -1600,16 +1605,5 @@ def ImageIntegrate(self,data):
         print "Elapsed time:","%8.3f"%(t1-t0), "s"
     finally:
         dlg.Destroy()
-       
-def test():
-    cell = [5,5,5,90,90,90]
-    A = cell2A(cell)
-    assert ( calc_V(A) == 125. )
-    
-    print 'test passed'
-
-print __name__
-if __name__ == '__main__':
-    test()
-    
+           
         

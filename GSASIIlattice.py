@@ -19,8 +19,10 @@ def fillgmat(cell):
     returns 3x3 numpy array
     '''
     a,b,c,alp,bet,gam = cell
-    g = np.array([[a*a,a*b*cosd(gam),a*c*cosd(bet)],[a*b*cosd(gam),b*b,b*c*cosd(alp)],
-        [a*c*cosd(bet),b*c*cosd(alp),c*c]])
+    g = np.array([
+        [a*a,  a*b*cosd(gam),  a*c*cosd(bet)],
+        [a*b*cosd(gam),  b*b,  b*c*cosd(alp)],
+        [a*c*cosd(bet) ,b*c*cosd(alp),   c*c]])
     return g
            
 def cell2Gmat(cell):
@@ -33,16 +35,19 @@ def cell2Gmat(cell):
     return G,g
 
 def A2Gmat(A):
-    '''Compute reciprocal metric tensor (G) from A tensor
+    '''Fill reciprocal metric tensor (G) from A
     returns reciprocal (G) & real (g) metric tensors (list of two 3x3 arrays)
     '''
     G = np.zeros(shape=(3,3))
-    G = [[A[0],A[3]/2.,A[4]/2.], [A[3]/2.,A[1],A[5]/2.], [A[4]/2.,A[5]/2.,A[2]]]
+    G = [
+        [A[0],  A[3]/2.,  A[4]/2.], 
+        [A[3]/2.,A[1],    A[5]/2.], 
+        [A[4]/2.,A[5]/2.,    A[2]]]
     g = nl.inv(G)
     return G,g
 
 def Gmat2A(G):
-    'Compute A tensor from reciprocal metric tensor (G)'
+    'Extract A from reciprocal metric tensor (G)'
     return [G[0][0],G[1][1],G[2][2],2.*G[0][1],2.*G[0][2],2.*G[1][2]]
     
 def cell2A(cell):
@@ -59,6 +64,8 @@ def A2cell(A):
 def Gmat2cell(g):
     '''Compute lattice parameters from real metric tensor (g)
     returns tuple with a,b,c,alpha, beta, gamma (degrees)
+    Alternatively,compute reciprocal lattice parameters from inverse metric tensor (G)
+    returns tuple with a*,b*,c*,alpha*, beta*, gamma* (degrees)
     '''
     a = np.sqrt(max(0,g[0][0]))
     b = np.sqrt(max(0,g[1][1]))
@@ -79,8 +86,9 @@ def invcell2Gmat(invcell):
     return G,g
         
 def calc_rVsq(A):
-    'Compute the square of the reciprocal lattice volume (V* **2) from A tensor'
-    rVsq = A[0]*A[1]*A[2]+0.25*(A[3]*A[4]*A[5]-A[0]*A[5]**2-A[1]*A[4]**2-A[2]*A[3]**2)
+    'Compute the square of the reciprocal lattice volume (V* **2) from A'
+    G,g = A2Gmat(A)
+    rVsq = nl.det(G)
     if rVsq < 0:
         return 1
     return rVsq
@@ -99,14 +107,6 @@ def A2invcell(A):
     '''
     G,g = A2Gmat(A)
     return Gmat2cell(G)
-    # Code below is broken
-    ainv = np.sqrt(max(0.,A[0]))
-    binv = np.sqrt(max(0.,A[1]))
-    cinv = np.sqrt(max(0.,A[2]))
-    gaminv = acosd(max(-0.5,min(0.5,0.5*A[3]/(ainv*binv))))
-    betinv = acosd(max(-0.5,min(0.5,0.5*A[4]/(ainv*cinv))))
-    alpinv = acosd(max(-0.5,min(0.5,0.5*A[5]/(binv*cinv))))
-    return ainv,binv,cinv,alpinv,betinv,gaminv
 
 def cell2AB(cell):
     '''Computes orthogonalization matrix from unit cell constants
@@ -126,22 +126,6 @@ def cell2AB(cell):
     A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
     A[2][2] = 1/cellstar[2]         # 1/c*
     B = nl.inv(A)
-    return A,B
-    # bob's code:
-    G,g = cell2Gmat(cell)       #reciprocal & real metric tensors
-    cosAlpStar = G[2][1]/np.sqrt(G[1][1]*G[2][2])
-    sinAlpStar = np.sqrt(1.0-cosAlpStar**2)
-    B = np.eye(3)
-    B *= cell[:3]
-    A = np.zeros(shape=(3,3))
-    A[0][0] = 1.0
-    A[0][1] = cosd(cell[5])
-    A[1][1] = sinAlpStar*sind(cell[5])
-    A[1][2] = -cosAlpStar*sind(cell[5])
-    A[0][2] = cosd(cell[4])
-    A[2][2] = sind(cell[4])
-    B = np.dot(A,B)
-    A = nl.inv(B)
     return A,B
 
 

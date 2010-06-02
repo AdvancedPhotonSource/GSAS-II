@@ -7,6 +7,7 @@ import time
 import cPickle
 import GSASIIpath
 import GSASIIcomp as G2cmp
+import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIplot as G2plt
@@ -756,7 +757,7 @@ def UpdateIndexPeaksGrid(self, data):
             for i,cell in enumerate(cellist):
                 if cell[-1]:
                     ibrav = cell[2]
-                    A = G2cmp.cell2A(cell[3:9])
+                    A = G2lat.cell2A(cell[3:9])
                     self.HKL = G2cmp.GenHBravais(dmin,ibrav,A)
                     G2cmp.IndexPeaks(data,self.HKL)
                     for hkl in self.HKL:
@@ -784,8 +785,8 @@ def UpdateUnitCellsGrid(self, data):
         
     def OnRefineCell(event):
         def cellPrint(ibrav,A):
-            cell = G2cmp.A2cell(A)
-            Vol = G2cmp.calc_V(A)
+            cell = G2lat.A2cell(A)
+            Vol = G2lat.calc_V(A)
             if ibrav in [0,1,2]:
                 print "%s%10.6f" % ('a =',cell[0])
             elif ibrav in [3,4,5,6]:
@@ -810,13 +811,13 @@ def UpdateUnitCellsGrid(self, data):
         inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
         controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
-        A = G2cmp.cell2A(cell)
+        A = G2lat.cell2A(cell)
         print controls[5]
         ibrav = bravaisSymb.index(controls[5])
         dmin = G2cmp.getDmin(peaks)-0.005
         Lhkl,M20,X20 = G2cmp.refinePeaks(peaks,ibrav,A)
-        controls[6:12] = G2cmp.A2cell(A)
-        controls[12] = G2cmp.calc_V(A)
+        controls[6:12] = G2lat.A2cell(A)
+        controls[12] = G2lat.calc_V(A)
         data = [controls,bravais,cells,dmin]
         self.PatternTree.SetItemPyData(GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
         self.HKL = G2cmp.GenHBravais(dmin,ibrav,A)
@@ -857,7 +858,7 @@ def UpdateUnitCellsGrid(self, data):
             UpdateUnitCellsGrid(self,data)
             bestCell = cells[0]
             if bestCell[0] > 10.:
-                self.HKL = G2cmp.GenHBravais(dmin,bestCell[2],G2cmp.cell2A(bestCell[3:9]))
+                self.HKL = G2cmp.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
                 for hkl in self.HKL:
                     hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
                 if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
@@ -876,7 +877,7 @@ def UpdateUnitCellsGrid(self, data):
         controls[4] = 1
         controls[5] = bravaisSymb[cell[0]]
         controls[6:12] = cell[1:8]
-        controls[12] = G2cmp.calc_V(G2cmp.cell2A(controls[6:12]))
+        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         for i in range(4,13):
             self.UnitCellsTable.SetValue(i,1,controls[i])
         self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
@@ -894,7 +895,7 @@ def UpdateUnitCellsGrid(self, data):
                 self.UnitCellsTable.SetValue(r,c,1)
                 cells[r][-1] = True
                 ibrav = cells[r][2]
-                A = G2cmp.cell2A(cells[r][3:9])
+                A = G2lat.cell2A(cells[r][3:9])
                 self.HKL = G2cmp.GenHBravais(dmin,ibrav,A)
                 for hkl in self.HKL:
                     hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))
@@ -954,7 +955,7 @@ def UpdateUnitCellsGrid(self, data):
                                 controls.append(float(row[1]))
                 else:                                           #triclinic
                     controls.append(float(row[1]))
-        controls.append(G2cmp.calc_V(G2cmp.cell2A(controls[6:12])))        #volume        
+        controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))        #volume        
         for i,row in enumerate(table):
             if i < 14:
                 bravais[i] = int(row[2])
@@ -986,7 +987,7 @@ def UpdateUnitCellsGrid(self, data):
     else:
         self.dataFrame.setSizePosLeft([280,320])
     if len(controls) < 13:
-        controls.append(G2cmp.calc_V(G2cmp.cell2A(controls[6:12])))
+        controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     self.PatternTree.SetItemPyData(UnitCellsId,data)
     inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
     if cells:
@@ -1023,7 +1024,7 @@ def UpdateUnitCellsGrid(self, data):
                 cell = cells[i]
                 row += cell[0:2]+[cell[-1]]+[bravaisSymb[cell[2]]]+cell[3:10]
                 if cell[-1]:
-                    A = G2cmp.cell2A(cell[3:9])
+                    A = G2lat.cell2A(cell[3:9])
                     self.HKL = G2cmp.GenHBravais(dmin,cell[2],A)
                     for hkl in self.HKL:
                         hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))
@@ -1729,7 +1730,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             for c in range(1,7):
                 General.SetCellStyle(4,c,"white",False)
                 generalData[3][c] = float(General.GetCellValue(4,c))
-            generalData[3][7] = G2cmp.calc_V(G2cmp.cell2A(generalData[3][1:7]))
+            generalData[3][7] = G2lat.calc_V(G2lat.cell2A(generalData[3][1:7]))
             SetLatticeParametersStyle(SGData,table)
             generalData[4][1] = float(General.GetCellValue(5,1))
             General.ForceRefresh()

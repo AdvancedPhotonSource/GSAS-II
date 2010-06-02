@@ -9,7 +9,7 @@ import os.path as ospath
 import GSASIIpath
 import pypowder as pyp              #assumes path has been amended to include correctr bin directory
 import GSASIIplot as G2plt
-from GSASIIlattice import * # these routines should eventually be reference in G2lattice
+import GSASIIlattice as G2lat
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -305,7 +305,7 @@ def MaxIndex(dmin,A):
     #finds maximum allowed hkl for given A within dmin
     Hmax = [0,0,0]
     try:
-        cell = A2cell(A)
+        cell = G2lat.A2cell(A)
     except:
         cell = [1,1,1,90,90,90]
     for i in range(3):
@@ -558,7 +558,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
 #   includes cell refinement from peal positions (not zero as yet)
     
 def scaleAbyV(A,V):
-    v = calc_V(A)
+    v = G2lat.calc_V(A)
     scale = math.exp(math.log(v/V)/3.)**2
     for i in range(6):
         A[i] *= scale
@@ -593,7 +593,7 @@ def ranAbyV(Bravais,dmin,dmax,V):
         A = Gmat2A(G)
         if calc_rVsq(A) < 1:
             scaleAbyV(A,V)
-            cell = A2cell(A)
+            cell = G2lat.A2cell(A)
             for i in range(3):
                 bad |= cell[i] < dmin
     return A
@@ -774,7 +774,7 @@ def FitHKL(ibrav,peaks,A,wtP):
             try:
                 peak[8] = 1./math.sqrt(Qc)
             except:
-                print A2invcell(A)
+                print G2lat.A2invcell(A)
             delt = Qo-Qc
             smin += delt**2
             dp = []
@@ -837,14 +837,14 @@ def FitHKL(ibrav,peaks,A,wtP):
             A[4] += ShiftTest(A[4],b[3])
             A[4] = min(1.4*math.sqrt(A[0]*A[2]),A[4])   #min beta star = 45
         else:                           #1
-            oldV = math.sqrt(1./calc_rVsq(A))
+            oldV = math.sqrt(1./G2lat.calc_rVsq(A))
             oldA = A[:]
             for i in range(6):
                 A[i] += b[i]*0.2
             A[3] = min(1.1*math.sqrt(max(0,A[1]*A[2])),A[3])
             A[4] = min(1.1*math.sqrt(max(0,A[0]*A[2])),A[4])
             A[5] = min(1.1*math.sqrt(max(0,A[0]*A[1])),A[5])
-            ratio = math.sqrt(1./calc_rVsq(A))/oldV
+            ratio = math.sqrt(1./G2lat.calc_rVsq(A))/oldV
             if 0.9 > ratio or ratio > 1.1:
                 A = oldA
 #    else:
@@ -990,8 +990,8 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         return GoOn,0,0,0,0
         
 def monoCellReduce(ibrav,A):
-    a,b,c,alp,bet,gam = A2cell(A)
-    G,g = A2Gmat(A)
+    a,b,c,alp,bet,gam = G2lat.A2cell(A)
+    G,g = G2lat.A2Gmat(A)
     if ibrav in [11]:
         u = [0,0,-1]
         v = [1,0,2]
@@ -999,7 +999,7 @@ def monoCellReduce(ibrav,A):
         if anew < a:
             cang = np.dot(np.dot(u,g),v)/(anew*c)
             beta = acosd(-abs(cang))
-            A = cell2A([anew,b,c,90,beta,90])
+            A = G2lat.cell2A([anew,b,c,90,beta,90])
     else:
         u = [-1,0,0]
         v = [1,0,1]
@@ -1007,7 +1007,7 @@ def monoCellReduce(ibrav,A):
         if cnew < c:
             cang = np.dot(np.dot(u,g),v)/(a*cnew)
             beta = acosd(-abs(cang))
-            A = cell2A([a,b,cnew,90,beta,90])
+            A = G2lat.cell2A([a,b,cnew,90,beta,90])
     return A
 
 def DoIndexPeaks(peaks,inst,controls,bravais):
@@ -1085,8 +1085,8 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
                                         A = monoCellReduce(ibrav,A[:])
                                     HKL = GenHBravais(dmin,ibrav,A)
                                     IndexPeaks(peaks,HKL)
-                                    a,b,c,alp,bet,gam = A2cell(A)
-                                    V = calc_V(A)
+                                    a,b,c,alp,bet,gam = G2lat.A2cell(A)
+                                    V = G2lat.calc_V(A)
                                     print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f" % (M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)
                                     if M20 >= 2.0:
                                         cells.append([M20,X20,ibrav,a,b,c,alp,bet,gam,V,False])
@@ -1413,7 +1413,7 @@ def ImageCalibrate(self,data):
         return True
         
     Bravais,cell = calFile.Calibrants[data['calibrant']]
-    A = cell2A(cell)
+    A = G2lat.cell2A(cell)
     wave = data['wavelength']
     cent = data['center']
     pixLimit = data['pixLimit']

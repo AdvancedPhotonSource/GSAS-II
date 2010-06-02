@@ -823,7 +823,7 @@ def IndexPeakListSave(self,peaks):
     
 def ReadEXPPhase(filename):
     import GSASIIspc as G2spc
-    import GSASIIcomp as G2cmp
+    import GSASIIlattice as G2lat
     import GSASIIElem as G2el
     file = open(filename, 'Ur')
     Phase = {}
@@ -904,7 +904,7 @@ def ReadEXPPhase(filename):
                 XYZ = Atom[6:9]
                 Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)
                 Atoms.append(Atom)
-    Volume = G2cmp.calc_V(G2cmp.cell2A(abc+angles))
+    Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
     Phase['General'] = [PhaseName,Ptype,SGData,[False,]+abc+angles+[Volume,],[False,1.0],
         0,0,0,0,0]
     Phase['Atoms'] = Atoms
@@ -912,7 +912,7 @@ def ReadEXPPhase(filename):
        
 def ReadPDBPhase(filename):
     import GSASIIspc as G2spc
-    import GSASIIcomp as G2cmp
+    import GSASIIlattice as G2lat
     import GSASIIElem as G2el
     EightPiSq = 8.*math.pi**2
     file = open(filename, 'Ur')
@@ -935,8 +935,8 @@ def ReadPDBPhase(filename):
             angles = S[34:55].split()
             cell=[float(abc[0]),float(abc[1]),float(abc[2]),
                 float(angles[0]),float(angles[1]),float(angles[2])]
-            Volume = G2cmp.calc_V(G2cmp.cell2A(cell))
-            AA,AB = G2cmp.cell2AB(cell)
+            Volume = G2lat.calc_V(G2lat.cell2A(cell))
+            AA,AB = G2lat.cell2AB(cell)
             SpGrp = S[55:65]
             E,SGData = G2spc.SpcGroup(SpGrp)
             S = file.readline()

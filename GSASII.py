@@ -1103,7 +1103,7 @@ class GSASII(wx.Frame):
     def OnHelpAboutMenu(self, event):
         info = wx.AboutDialogInfo()
         info.Name = 'GSAS-II'
-        info.Version = '0.0.1'
+        info.Version = __version__
         info.Copyright = '''
 Robert B. Von Dreele
 Argonne National Laboratory(C)

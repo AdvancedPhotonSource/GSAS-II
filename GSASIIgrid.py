@@ -372,7 +372,7 @@ def UpdatePeakGrid(self, data):
         limits = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
         inst = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
         data = self.PatternTree.GetItemPyData(PatternId)[1]
-        OK,smin,Rwp,runtime,GoOn = G2indx.DoPeakFit(peaks,background,limits,inst,data)
+        OK,smin,Rwp,runtime,GoOn = G2cmp.DoPeakFit(peaks,background,limits,inst,data)
         UpdatePeakGrid(self,peaks)
         G2plt.PlotPatterns(self)
         if not OK:
@@ -408,7 +408,7 @@ def UpdatePeakGrid(self, data):
         GoOn = True
         while GoOn:
             osmin = smin
-            OK,smin,Rwp,runtime,GoOn = G2indx.DoPeakFit(peaks,background,limits,inst,data)
+            OK,smin,Rwp,runtime,GoOn = G2cmp.DoPeakFit(peaks,background,limits,inst,data)
             UpdatePeakGrid(self,peaks)
             if not OK:
                 break

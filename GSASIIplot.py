@@ -7,7 +7,7 @@ import wx.aui
 import matplotlib as mpl
 import GSASIIpath
 import GSASIIgrid as G2gd
-import GSASIIcomp as G2cmp
+import GSASIIimage as G2img
 import GSASIIIO as G2IO
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
@@ -584,7 +584,7 @@ def PlotImage(self,newPlot=False):
                         ang = int(atan2d(xpos,ypos))
                         Page.canvas.SetToolTipString('%6d deg'%(ang))
                     elif 'line1' in  str(item) or 'line2' in str(item):
-                        tth = G2cmp.GetTth(event.xdata,event.ydata,Data)
+                        tth = G2img.GetTth(event.xdata,event.ydata,Data)
                         Page.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
             else:
                 xpos = event.xdata
@@ -593,7 +593,7 @@ def PlotImage(self,newPlot=False):
                 ypix = ypos*scaley
                 if (0 <= xpix <= size) and (0 <= ypix <= size):
                     Page.canvas.SetToolTipString('%6d'%(self.ImageZ[ypix][xpix]))
-                tth,azm,dsp = G2cmp.GetTthAzmDsp(xpos,ypos,Data)
+                tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 self.G2plotNB.status.SetFields(\
                     ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),''])
@@ -634,7 +634,7 @@ def PlotImage(self,newPlot=False):
                 if event.button == 1:
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
-                    xpos,ypos,I,J = G2cmp.ImageLocalMax(self.ImageZ,20,Xpix,Ypix)
+                    xpos,ypos,I,J = G2img.ImageLocalMax(self.ImageZ,20,Xpix,Ypix)
                     if I and J:
                         xpos += .5                              #shift to pixel center
                         ypos += .5
@@ -654,7 +654,7 @@ def PlotImage(self,newPlot=False):
                         if np.allclose(ring,xypos,.01,0):
                             rings.remove(ring)                                                                       
                 else:
-                    tth,azm,dsp = G2cmp.GetTthAzmDsp(xpos,ypos,Data)
+                    tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                     if 'Line2D' in str(self.itemPicked):
                         if 'line1' in str(self.itemPicked):
                             Data['IOtth'][0] = tth
@@ -668,7 +668,7 @@ def PlotImage(self,newPlot=False):
                         if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
                             Data['LRazimuth'][1] += 360
                         if  Data['IOtth'][0] > Data['IOtth'][1]:
-                            Data['IOtth'] = G2cmp.SwapXY(Data['IOtth'][0],Data['IOtth'][1])
+                            Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
                             
                         self.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
                         self.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
@@ -725,7 +725,7 @@ def PlotImage(self,newPlot=False):
     Plot.set_xlabel('Image x-axis, mm',fontsize=12)
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
     #need "applyMask" routine here
-    A = G2cmp.ImageCompress(self.ImageZ,imScale)
+    A = G2img.ImageCompress(self.ImageZ,imScale)
     Img = Plot.imshow(A,aspect='equal',cmap=acolor,
         interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
 
@@ -735,9 +735,9 @@ def PlotImage(self,newPlot=False):
         IOtth = Data['IOtth']
         wave = Data['wavelength']
         dspI = wave/(2.0*sind(IOtth[0]/2.0))
-        ellI = G2cmp.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+        ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
         dspO = wave/(2.0*sind(IOtth[1]/2.0))
-        ellO = G2cmp.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
+        ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
         if Data['fullIntegrate']:
             Azm = np.array(range(0,361))
         else:
@@ -745,14 +745,14 @@ def PlotImage(self,newPlot=False):
         if ellI:
             xyI = []
             for azm in Azm:
-                xyI.append(G2cmp.GetDetectorXY(dspI,azm,Data))
+                xyI.append(G2img.GetDetectorXY(dspI,azm,Data))
             xyI = np.array(xyI)
             arcxI,arcyI = xyI.T
             Plot.plot(arcxI,arcyI,picker=3)
         if ellO:
             xyO = []
             for azm in Azm:
-                xyO.append(G2cmp.GetDetectorXY(dspO,azm,Data))
+                xyO.append(G2img.GetDetectorXY(dspO,azm,Data))
             xyO = np.array(xyO)
             arcxO,arcyO = xyO.T
             Plot.plot(arcxO,arcyO,picker=3)
@@ -827,13 +827,13 @@ def PlotIntegration(self,newPlot=False):
     if Data['setRings']:
         rings = np.concatenate((Data['rings']),axis=0)
         for xring,yring,dsp in rings:
-            x,y = G2cmp.GetTthAzm(xring,yring,Data)
+            x,y = G2img.GetTthAzm(xring,yring,Data)
             Plot.plot(x,y,'r+')
     if Data['ellipses']:            
         for ellipse in Data['ellipses']:
-            ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
+            ring = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
             x,y = np.hsplit(ring,2)
-            tth,azm = G2cmp.GetTthAzm(x,y,Data)
+            tth,azm = G2img.GetTthAzm(x,y,Data)
             Plot.plot(tth,azm,'b,')
     if not newPlot:
         Page.toolbar.push_current()
@@ -900,13 +900,13 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
     if Data['setRings']:
         rings = np.concatenate((Data['rings']),axis=0)
         for xring,yring,dsp in rings:
-            x,y = G2cmp.GetTthAzm(xring,yring,Data)
+            x,y = G2img.GetTthAzm(xring,yring,Data)
             Plot.plot(y,x,'r+')            
     if Data['ellipses']:            
         for ellipse in Data['ellipses']:
-            ring = np.array(G2cmp.makeIdealRing(ellipse[:3])) #skip color
+            ring = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
             x,y = np.hsplit(ring,2)
-            tth,azm = G2cmp.GetTthAzm(x,y,Data)
+            tth,azm = G2img.GetTthAzm(x,y,Data)
             Plot.plot(azm,tth,'b,')
     if not newPlot:
         Page.toolbar.push_current()

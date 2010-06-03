@@ -9,6 +9,7 @@ import GSASIIpath
 import GSASIIcomp as G2cmp
 import GSASIIlattice as G2lat
 import GSASIIindex as G2indx
+import GSASIIimage as G2img
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIplot as G2plt
@@ -1306,7 +1307,7 @@ def UpdateImageControls(self,data):
         dlg.ShowModal()
         self.ifGetRing = False
         
-        if G2cmp.ImageCalibrate(self,data):
+        if G2img.ImageCalibrate(self,data):
             Status.SetStatusText('Calibration successful')
             cent = data['center']
             centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
@@ -1318,7 +1319,7 @@ def UpdateImageControls(self,data):
             Status.SetStatusText('Calibration failed')
                     
     def OnIntegrate(event):
-        G2cmp.ImageIntegrate(self,data)
+        G2img.ImageIntegrate(self,data)
         G2plt.PlotIntegration(self,newPlot=True)
         self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=True)
         
@@ -1349,7 +1350,7 @@ def UpdateImageControls(self,data):
                             self.ImageZ = G2IO.GetImageData(imagefile,imageOnly=True)
                             Id = GetPatternTreeItemId(self,id, 'Image Controls')
                             Data = self.PatternTree.GetItemPyData(Id)
-                            G2cmp.ImageIntegrate(self,Data)
+                            G2img.ImageIntegrate(self,Data)
                             G2plt.PlotIntegration(self,newPlot=True)
                             self.dataFrame.ImageEdit.Enable(id=wxID_SAVEINTG,enable=True)
                             G2IO.SaveIntegration(self,Id,Data)

@@ -13,7 +13,6 @@ import matplotlib as mpl
 # load the GSAS routines
 import GSASIIpath
 import GSASIIIO as G2IO
-import GSASIIcomp as G2cmp
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
 

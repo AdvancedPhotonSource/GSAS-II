@@ -241,7 +241,6 @@ def PlotPatterns(self,newPlot=False):
         elif event.key == 'd' and self.Offset > 0.:
             self.Offset -= 1.
         elif event.key == 'c':
-            print 'contouring'
             if self.Contour:
                 self.Contour = False
             else:

@@ -288,7 +288,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
     data = [x,y,w,yc,yb,yd]
     return True,smin,Rwp,runtime,GoOn
     
-#some cell utilities
+#reflection generation routines
 #for these: H = [h,k,l]; A is as used in calc_rDsq; G - inv metric tensor, g - metric tensor; 
 #           cell - a,b,c,alp,bet,gam in A & deg
    
@@ -300,7 +300,7 @@ def calc_rDsqZ(H,A,Z,tth,lam):
     rpd = math.pi/180.
     rdsq = calc_rDsq(H,A)+Z*math.sin(tth*rpd)*2.0*rpd/(lam*lam)
     return rdsq
-   
+       
 def MaxIndex(dmin,A):
     #finds maximum allowed hkl for given A within dmin
     Hmax = [0,0,0]
@@ -332,7 +332,31 @@ def sortHKLd(HKLd,ifreverse,ifdup):
         okey = key
     return X
     
- 
+def SwapIndx(Axis,H):
+    if Axis in [1,-1]:
+        return H
+    elif Axis in [2,-3]:
+        return [H[1],H[2],H[0]]
+    else:
+        return [H[2],H[0],H[1]]
+        
+def CentCheck(Cent,H):
+    h,k,l = H
+    if Cent == 'A' and (k+l)%2:
+        return False
+    elif Cent == 'B' and (h+l)%2:
+        return False
+    elif Cent == 'C' and (h+k)%2:
+        return False
+    elif Cent == 'I' and (h+k+l)%2:
+        return False
+    elif Cent == 'F' and ((h+k)%2 or (h+l)%2 or (k+l)%2):
+        return False
+    elif Cent == 'R' and (-h+k+l)%3:
+        return False
+    else:
+        return True
+                                    
 def GenHBravais(dmin,Bravais,A):
     '''Generate the positionally unique powder diffraction reflections 
     for a lattice and Bravais type'''
@@ -428,31 +452,6 @@ def GenHBravais(dmin,Bravais,A):
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
     return sortHKLd(HKL,True,False)
     
-def SwapIndx(Axis,H):
-    if Axis in [1,-1]:
-        return H
-    elif Axis in [2,-3]:
-        return [H[1],H[2],H[0]]
-    else:
-        return [H[2],H[0],H[1]]
-        
-def CentCheck(Cent,H):
-    h,k,l = H
-    if Cent == 'A' and (k+l)%2:
-        return False
-    elif Cent == 'B' and (h+l)%2:
-        return False
-    elif Cent == 'C' and (h+k)%2:
-        return False
-    elif Cent == 'I' and (h+k+l)%2:
-        return False
-    elif Cent == 'F' and ((h+k)%2 or (h+l)%2 or (k+l)%2):
-        return False
-    elif Cent == 'R' and (-h+k+l)%3:
-        return False
-    else:
-        return True
-                                    
 def GenHLaue(dmin,Laue,Cent,Axis,A):
     '''Generate the crystallographically unique powder diffraction reflections
     for a lattice and Bravais type
@@ -555,7 +554,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
     return sortHKLd(HKL,True,True)
     
 #GSASII cell indexing program: variation on that of A. Coehlo
-#   includes cell refinement from peal positions (not zero as yet)
+#   includes cell refinement from peak positions (not zero as yet)
     
 def scaleAbyV(A,V):
     v = G2lat.calc_V(A)
@@ -576,12 +575,12 @@ def ran2axis(k,N):
     R = (T-B)*rand.random()+B
     return R
     
-def ranNaxis(k,N):
-    import random as rand
-    T = 1.0+1.0*k/N
-    B = 1.0-1.0*k/N
-    R = (T-B)*rand.random()+B
-    return R
+#def ranNaxis(k,N):
+#    import random as rand
+#    T = 1.0+1.0*k/N
+#    B = 1.0-1.0*k/N
+#    R = (T-B)*rand.random()+B
+#    return R
     
 def ranAbyV(Bravais,dmin,dmax,V):
     cell = [0,0,0,0,0,0]
@@ -589,9 +588,9 @@ def ranAbyV(Bravais,dmin,dmax,V):
     while bad:
         bad = False
         cell = rancell(Bravais,dmin,dmax)
-        G,g = cell2Gmat(cell)
-        A = Gmat2A(G)
-        if calc_rVsq(A) < 1:
+        G,g = G2lat.cell2Gmat(cell)
+        A = G2lat.Gmat2A(G)
+        if G2lat.calc_rVsq(A) < 1:
             scaleAbyV(A,V)
             cell = G2lat.A2cell(A)
             for i in range(3):

@@ -576,7 +576,7 @@ def ImageCalibrate(self,data):
     cent = data['center']
     pixLimit = data['pixLimit']
     elcent,phi,radii = ellipse
-    HKL = GenHBravais(0.5,Bravais,A)
+    HKL = G2lat.GenHBravais(0.5,Bravais,A)
     dsp = HKL[0][3]
     tth = 2.0*asind(wave/(2.*dsp))
     ttth = tand(tth)

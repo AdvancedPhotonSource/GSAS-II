@@ -15,6 +15,7 @@ import GSASIIpath
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
+import GSASIIpwdGUI as G2pdG
 
 # print versions
 print "Available python module versions for GSASII:"
@@ -1073,11 +1074,11 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
             if self.dataDisplay.GetName() == item:
                 if item == 'Background':
-                    G2gd.UpdateBackgroundGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+                    G2pdG.UpdateBackgroundGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
                 elif item == 'Instrument Parameters':
-                    G2gd.UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+                    G2pdG.UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
                 elif item == 'Peak List':
-                    G2gd.UpdatePeakGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+                    G2pdG.UpdatePeakGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
             print item,' recovered'
         file.close()
         

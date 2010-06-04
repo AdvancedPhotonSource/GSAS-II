@@ -9,6 +9,7 @@ import GSASIIpath
 import GSASIIgrid as G2gd
 import GSASIIimage as G2img
 import GSASIIIO as G2IO
+import GSASIIpwdGUI as G2pdG
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
@@ -211,7 +212,7 @@ def PlotPatterns(self,newPlot=False):
                 data = self.PatternTree.GetItemPyData(self.PickId)
                 XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st   
                 data.append(XY)
-                G2gd.UpdatePeakGrid(self,data)
+                G2pdG.UpdatePeakGrid(self,data)
                 PlotPatterns(self)
             else:                                                   #picked a peak list line
                 self.itemPicked = pick
@@ -224,7 +225,7 @@ def PlotPatterns(self,newPlot=False):
                 if mouse.button==3:
                     data[1][1] = max(xy[0],data[1][0])
                 self.PatternTree.SetItemPyData(LimitId,data)
-                G2gd.UpdateLimitsGrid(self,data)
+                G2pdG.UpdateLimitsGrid(self,data)
                 PlotPatterns(self)
             else:                                                   #picked a limit line
                 self.itemPicked = pick                
@@ -290,14 +291,14 @@ def PlotPatterns(self,newPlot=False):
                 data[1][lineNo] = xpos
                 self.PatternTree.SetItemPyData(LimitId,data)
                 if self.PatternTree.GetItemText(self.PickId) == 'Limits':
-                    G2gd.UpdateLimitsGrid(self,data)
+                    G2pdG.UpdateLimitsGrid(self,data)
             else:
                 PeakId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List')
                 data = self.PatternTree.GetItemPyData(PeakId)
                 print 'peaks',xpos
                 data[lineNo-2][0] = xpos
                 self.PatternTree.SetItemPyData(PeakId,data)
-                G2gd.UpdatePeakGrid(self,data)
+                G2pdG.UpdatePeakGrid(self,data)
         PlotPatterns(self)
         self.itemPicked = None    
 

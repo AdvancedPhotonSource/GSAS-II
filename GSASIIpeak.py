@@ -1,4 +1,4 @@
-#GSASII computational module
+#GSASII peak fitting module
 import sys
 import math
 import wx

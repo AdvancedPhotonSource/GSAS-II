@@ -1,7 +1,6 @@
 #GSASII - data display routines
 import wx
 import wx.grid as wg
-import matplotlib as mpl
 import math
 import time
 import cPickle
@@ -9,11 +8,7 @@ import GSASIIpath
 import GSASIIpeak as G2pk
 import GSASIIlattice as G2lat
 import GSASIIindex as G2indx
-import GSASIIimage as G2img
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
 import GSASIIplot as G2plt
-import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 
 # trig functions in degrees

@@ -5,11 +5,9 @@ import wx
 import time
 import numpy as np
 import numpy.linalg as nl
-import os.path as ospath
 import GSASIIpath
 import pypowder as pyp              #assumes path has been amended to include correctr bin directory
 import GSASIIplot as G2plt
-import GSASIIlattice as G2lat
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)

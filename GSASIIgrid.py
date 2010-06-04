@@ -1,29 +1,14 @@
 #GSASII - data display routines
 import wx
 import wx.grid as wg
-import matplotlib as mpl
-import math
 import time
 import cPickle
 import GSASIIpath
-import GSASIIpeak as G2pk
-import GSASIIlattice as G2lat
-import GSASIIindex as G2indx
-import GSASIIimage as G2img
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
 import GSASIIplot as G2plt
-import GSASIIIO as G2IO
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 
-# trig functions in degrees
-sind = lambda x: math.sin(x*math.pi/180.)
-tand = lambda x: math.tan(x*math.pi/180.)
-cosd = lambda x: math.cos(x*math.pi/180.)
-asind = lambda x: 180.*math.asin(x)/math.pi
-       
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, 
 ] = [wx.NewId() for _init_coll_Atom_Items in range(2)]
 

@@ -7,6 +7,7 @@ import math
 import sys
 import os.path
 import  wx.lib.colourselect as wscs
+import GSASIIpath
 
 def GetFormFactorCoeff(El):
     """Read form factor coefficients from atomdata.asc file

@@ -543,9 +543,7 @@ def GetTifData(filename,imageOnly=False):
     # only works for APS Perkin-Elmer detector data files in "TIFF" format that are readable by Fit2D
     import struct as st
     import array as ar
-    if not imageOnly:
-        print 'Read APS PE-detector tiff file: ',filename
-    File = open(filename,'Ur')
+    File = open(filename,'rb')
     dataType = 5
     try:
         Meta = open(filename+'.metadata','Ur')
@@ -560,22 +558,46 @@ def GetTifData(filename,imageOnly=False):
         head = 'no metadata file found'
     tag = File.read(3)
     if tag != 'II*':
-        lines = ['not a APS PE-detector tiff file',]
+        lines = ['not a detector tiff file',]
         return lines,0,0
-    size = st.unpack('<i',File.read(4))[0]
+    size,Ityp = st.unpack('<ii',File.read(8))
+    if Ityp == 0:
+        tifType = 'Pilatus'
+        pixy = (172,172)
+        pos = 4096
+        if not imageOnly:
+            print 'Read Pilatus tiff file: ',filename
+    elif Ityp == 1:
+        tifType = 'PE'
+        pixy = (200,200)
+        pos = 8
+        if not imageOnly:
+            print 'Read APS PE-detector tiff file: ',filename
+    elif Ityp == 3328:
+        tifType = 'MAR'
+        pixy = (79,79)
+        pos = 4096
+        if not imageOnly:
+            print 'Read MAR CCD tiff file: ',filename
+    else:
+        lines = 'unknown tif type'
+        return lines,0,0
     image = np.zeros(shape=(size,size),dtype=np.int32)
     row = 0
-    pos = 8
     while row < size:
         File.seek(pos)
-        if dataType == 5:
-            line = ar.array('f',File.read(4*size))
-        else:
-            line = ar.array('l',File.read(4*size))
+        if 'PE' in tifType: 
+            if dataType == 5:
+                line = ar.array('f',File.read(4*size))
+            else:
+                line = ar.array('l',File.read(4*size))
+            pos += 4*size
+        elif 'MAR' in tifType:
+            line = ar.array('H',File.read(2*size))
+            pos += 2*size
         image[row] = np.asarray(line)
         row += 1
-        pos += 4*size
-    data = {'pixelSize':(200,200),'wavelength':0.10,'distance':100.0,'center':[204.8,204.8]}
+    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':[204.8,204.8]}
     File.close()    
     if imageOnly:
         return image

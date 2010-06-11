@@ -252,7 +252,7 @@ def UpdateBackgroundGrid(self,data):
         self.PatternTree.SetItemPyData(BackId,data)
                   
     self.dataFrame.setSizePosLeft([700,150])
-    maxTerm = 7
+    maxTerm = 9
     self.BackTable = []
     N = len(data[0])
     M = data[0][2]
@@ -387,6 +387,15 @@ def UpdateIndexPeaksGrid(self, data):
         data = self.IndexPeaksTable.GetData()
         self.PatternTree.SetItemPyData(IndexId,data)
         
+    def OnReload(event):
+        data = []
+        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
+        for peak in peaks:
+            dsp = inst[1]/(2.0*sind(peak[0]/2.0))
+            data.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
+        self.PatternTree.SetItemPyData(IndexId,data)
+        UpdateIndexPeaksGrid(self,data)
+        
     def KeyEditPickGrid(event):
         colList = self.dataDisplay.GetSelectedCols()
         rowList = self.dataDisplay.GetSelectedRows()
@@ -397,19 +406,6 @@ def UpdateIndexPeaksGrid(self, data):
             event.Skip(True)
         elif event.GetKeyCode() == wx.WXK_SHIFT:
             event.Skip(True)
-        elif event.GetKeyCode() == wx.WXK_DELETE:
-            dlg = wx.MessageDialog(self, 'Delete Index Peak List?', ' ', wx.YES | wx.NO)
-            try:
-                result = dlg.ShowModal()
-                if result == wx.ID_YES:
-                    oldlen = len(data)
-                    data = []
-                    self.PatternTree.SetItemPyData(IndexId,data)
-                    self.dataDisplay.Clear() 
-                    self.dataDisplay.Destroy()
-                    self.IndexPeaksTable = []
-            finally:
-                dlg.Destroy()
         elif colList:
             self.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
@@ -423,15 +419,13 @@ def UpdateIndexPeaksGrid(self, data):
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.setSizePosLeft([500,300])
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataFrame.SetMenuBar(self.dataFrame.IndPeaksMenu)
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
+    self.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
     inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
     self.IndexPeaksTable = []
-    if not data:
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
-        for peak in peaks:
-            dsp = inst[1]/(2.0*sind(peak[0]/2.0))
-            data.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
-    else:
+    if data:
         cells = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List'))
         if cells:
             cellist = cells[2]

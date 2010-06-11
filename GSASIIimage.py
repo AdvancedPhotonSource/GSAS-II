@@ -308,13 +308,13 @@ def ImageCalibrate(self,data):
         print 'no calibration material selected'
         return True
         
-    Bravais,cell = calFile.Calibrants[data['calibrant']]
+    Bravais,cell,skip = calFile.Calibrants[data['calibrant']]
     A = G2lat.cell2A(cell)
     wave = data['wavelength']
     cent = data['center']
     pixLimit = data['pixLimit']
     elcent,phi,radii = ellipse
-    HKL = G2lat.GenHBravais(0.5,Bravais,A)
+    HKL = G2lat.GenHBravais(0.5,Bravais,A)[skip:]
     dsp = HKL[0][3]
     tth = 2.0*asind(wave/(2.*dsp))
     ttth = tand(tth)
@@ -443,22 +443,20 @@ def Make2ThetaAzimuthMap(data,imageN):
     tay = np.asfarray(tay*scaley,dtype=np.float32)
     return GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
 
-def Fill2ThetaAzimuthMap(data,TA,image):
+def Fill2ThetaAzimuthMap(masks,TA,image):
     import numpy.ma as ma
-    LUtth = data['IOtth']
-    if data['fullIntegrate']:
-        LRazm = [-180,180]
-    else:
-        LRazm = data['LRazimuth']
+    Zlim = masks['Thresholds'][1]
     imageN = len(image)
     TA = np.reshape(TA,(2,imageN,imageN))
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
     tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
-    tax = ma.masked_outside(tax.flatten(),LRazm[0],LRazm[1])
-    tay = ma.masked_outside(tay.flatten(),LUtth[0],LUtth[1])
-    tam = ma.getmask(tax)+ma.getmask(tay)
-    taz = ma.masked_where(tam,image.flatten())
-    return tax,tay,taz,tam
+    taz = ma.masked_greater(ma.masked_less(image,Zlim[0]),Zlim[1]).flatten()
+    tam = ma.getmask(taz)
+    tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
+    tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
+    taz = ma.compressed(taz)
+    del(tam)
+    return tax,tay,taz
     
 def Bin2ThetaAzimuthMap(data,tax,tay,taz):
     import numpy.ma as ma
@@ -473,7 +471,7 @@ def Bin2ThetaAzimuthMap(data,tax,tay,taz):
     HST = np.histogram2d(tax,tay,normed=False,bins=(numAzms,numChans),range=[LRazm,LUtth],weights=taz)
     return NST,HST
 
-def ImageIntegrate(self,data):
+def ImageIntegrate(self,data,masks):
     dlg = wx.ProgressDialog("Elapsed time","2D image integration",5,
         style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
     try:
@@ -485,7 +483,7 @@ def ImageIntegrate(self,data):
         TA = Make2ThetaAzimuthMap(data,imageN)           #2-theta & azimuth arrays
         dlg.Update(1)
         print 'Fill map with 2-theta/azimuth values'
-        tax,tay,taz,tam = Fill2ThetaAzimuthMap(data,TA,self.ImageZ)
+        tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,self.ImageZ)
         del TA
         dlg.Update(2)
         print 'Bin image by 2-theta/azimuth intervals'

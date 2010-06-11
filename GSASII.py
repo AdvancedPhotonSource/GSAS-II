@@ -369,7 +369,7 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose image files', '.', '',\
         'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
-        |*.img|Perkin-Elmer TIF (*.tif)|*.tif|GE Image sum (*.sum)\
+        |*.img|Detector tif (*.tif;*.tiff)|*.tif;*.tiff|GE Image sum (*.sum)\
         |*.sum|GE Image avg (*.avg)|*.avg|All files (*.*)|*.*',wx.OPEN | wx.MULTIPLE)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
@@ -414,7 +414,7 @@ class GSASII(wx.Frame):
                         Data['setDefault'] = False
                         Data['range'] = [(Imin,Imax),[Imin,Imax]]
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
-                        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                        Masks = {'Spots':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
                         self.PatternTree.SetItemPyData(Id,[Size,imagefile])
                         self.PickId = Id
@@ -481,7 +481,7 @@ class GSASII(wx.Frame):
             mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
             mainSizer.Add((10,10),1)
             dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=1,hgap=2,vgap=2)
-            for id,item in enumerate(self.data[:-1]):
+            for id,item in enumerate(self.data):
                 ckbox = wx.CheckBox(panel,id,item[1])
                 ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)                    
                 dataGridSizer.Add(ckbox,0,wx.LEFT,10)
@@ -731,6 +731,7 @@ class GSASII(wx.Frame):
                             else:
                                 imSize = size
                                 newImage = newImage+scale*image
+                            del(image)
                     newImage = np.asfarray(newImage,dtype=np.float32)                        
                     print 'result dtype',newImage.dtype                                
                     outname = 'IMG '+result[-1]
@@ -753,9 +754,12 @@ class GSASII(wx.Frame):
                             self.dirname = dlg.GetDirectory()
                             newimagefile = dlg.GetPath()
                             G2IO.PutG2Image(newimagefile,newImage)
+                            Imax = np.amax(newImage)
+                            Imin = np.amin(newImage)
                             newImage = []
                             self.PatternTree.SetItemPyData(Id,[imSize,newimagefile])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
+                        del(newImage)
                         if self.imageDefault:
                             Data = copy.copy(self.imageDefault)
                             Data['showLines'] = True
@@ -765,11 +769,14 @@ class GSASII(wx.Frame):
                             Data['pixLimit'] = 20
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
+                            Data['range'] = [(Imin,Imax),[Imin,Imax]]
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
                             self.PatternTree.SelectItem(Id)
                             self.PatternTree.Expand(Id)
-                        self.PickId = Id
-                        self.Image = Id
+                        Masks = {'Spots':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
+                        self.PickId = G2gd.GetPatternTreeItemId(self,self.root,outname)
+                        self.Image = self.PickId
             finally:
                 dlg.Destroy()
                       

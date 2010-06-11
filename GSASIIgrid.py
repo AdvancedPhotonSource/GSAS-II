@@ -22,6 +22,9 @@ import GSASIIphsGUI as G2phG
 [ wxID_INSTPRMRESET,
 ] = [wx.NewId() for _init_coll_INST_Items in range(1)]
 
+[ wxID_INDXRELOAD,
+] = [wx.NewId() for _init_coll_IndPeaks_Items in range(1)]
+
 [ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
 ] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
 
@@ -34,6 +37,9 @@ class DataFrame(wx.Frame):
         
     def _init_coll_AtomsMenu(self,parent):
         parent.Append(menu=self.AtomEdit, title='Add atom')
+
+    def _init_coll_IndPeaksMenu(self,parent):
+        parent.Append(menu=self.IndPeaksEdit,title='Index Peaks Operations')
                    
     def _init_coll_ImageMenu(self,parent):
         parent.Append(menu=self.ImageEdit, title='Image Operations')
@@ -54,6 +60,10 @@ class DataFrame(wx.Frame):
         parent.Append(help='',id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append empty atom')
         parent.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert empty atom',
             help='Double left click on atom row to Insert before')
+            
+    def _init_coll_IndPeaks_Items(self,parent):
+        parent.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
+            kind=wx.ITEM_NORMAL,text='Load/Reload')
             
     def _init_coll_Image_Items(self,parent):
         parent.Append(help='Calibrate detector by fitting to calibrant lines', 
@@ -101,12 +111,14 @@ class DataFrame(wx.Frame):
         self.MaskMenu = wx.MenuBar()
         self.InstMenu = wx.MenuBar()
         self.PeakMenu = wx.MenuBar()
+        self.IndPeaksMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
         self.InstEdit = wx.Menu(title='')
         self.PeakEdit = wx.Menu(title='')
+        self.IndPeaksEdit = wx.Menu(title='')
         self.IndexEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
@@ -118,6 +130,8 @@ class DataFrame(wx.Frame):
         self._init_coll_Inst_Items(self.InstEdit)
         self._init_coll_PeakMenu(self.PeakMenu)
         self._init_coll_Peak_Items(self.PeakEdit)
+        self._init_coll_IndPeaksMenu(self.IndPeaksMenu)
+        self._init_coll_IndPeaks_Items(self.IndPeaksEdit)
         self._init_coll_IndexMenu(self.IndexMenu)
         self._init_coll_Index_Items(self.IndexEdit)
         self.UnDo.Enable(False)
@@ -487,8 +501,10 @@ def MovePatternTreeToGrid(self,item):
         self.dataFrame.SetTitle('Image Controls')
         self.PickId = item
         self.Image = self.PatternTree.GetItemParent(item)
+        masks = self.PatternTree.GetItemPyData(
+            GetPatternTreeItemId(self,self.Image, 'Masks'))
         data = self.PatternTree.GetItemPyData(item)
-        G2imG.UpdateImageControls(self,data)
+        G2imG.UpdateImageControls(self,data,masks)
         G2plt.PlotImage(self)
     elif self.PatternTree.GetItemText(item) == 'Masks':
         self.dataFrame.SetTitle('Masks')

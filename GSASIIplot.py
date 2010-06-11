@@ -287,7 +287,7 @@ def PlotPatterns(self,newPlot=False):
             if  lineNo in [0,1]:
                 LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
                 data = self.PatternTree.GetItemPyData(LimitId)
-                print 'limits',xpos
+#                print 'limits',xpos
                 data[1][lineNo] = xpos
                 self.PatternTree.SetItemPyData(LimitId,data)
                 if self.PatternTree.GetItemText(self.PickId) == 'Limits':
@@ -295,7 +295,7 @@ def PlotPatterns(self,newPlot=False):
             else:
                 PeakId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List')
                 data = self.PatternTree.GetItemPyData(PeakId)
-                print 'peaks',xpos
+#                print 'peaks',xpos
                 data[lineNo-2][0] = xpos
                 self.PatternTree.SetItemPyData(PeakId,data)
                 G2pdG.UpdatePeakGrid(self,data)
@@ -562,6 +562,7 @@ def PlotExposedImage(self,newPlot=False):
 
 def PlotImage(self,newPlot=False):
     from matplotlib.patches import Ellipse,Arc
+    import numpy.ma as ma
 
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
@@ -592,12 +593,14 @@ def PlotImage(self,newPlot=False):
                 ypos = event.ydata
                 xpix = xpos*scalex
                 ypix = ypos*scaley
+                Int = 0
                 if (0 <= xpix <= size) and (0 <= ypix <= size):
-                    Page.canvas.SetToolTipString('%6d'%(self.ImageZ[ypix][xpix]))
+                    Int = self.ImageZ[ypix][xpix]
+#                    Page.canvas.SetToolTipString('%4x'%((ypix*2048+xpix)*2+4096))
                 tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 self.G2plotNB.status.SetFields(\
-                    ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg'%(tth,dsp,Q,azm),''])
+                    ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int),''])
 
     def OnImPlotKeyPress(event):
         if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
@@ -705,11 +708,8 @@ def PlotImage(self,newPlot=False):
         self.oldImagefile = imagefile
     Data = self.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-    try:
-        Masks = self.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
-    except TypeError:       #missing Masks
-        Masks = {}
+    Masks = self.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
     imScale = 1
     if len(self.ImageZ) > 1024:
         imScale = len(self.ImageZ)/1024
@@ -726,7 +726,14 @@ def PlotImage(self,newPlot=False):
     Plot.set_xlabel('Image x-axis, mm',fontsize=12)
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
     #need "applyMask" routine here
-    A = G2img.ImageCompress(self.ImageZ,imScale)
+    Zlim = Masks['Thresholds'][1]
+    MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
+    MaskA = ma.getmaskarray(MA)
+    A = G2img.ImageCompress(MA,imScale)
+    AM = G2img.ImageCompress(MaskA,imScale)
+    
+    ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
+        interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
     Img = Plot.imshow(A,aspect='equal',cmap=acolor,
         interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
 

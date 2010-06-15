@@ -433,7 +433,7 @@ def ImageCalibrate(self,data):
     G2plt.PlotImage(self)        
     return True
     
-def Make2ThetaAzimuthMap(data,imageN):
+def Make2ThetaAzimuthMap(data,masks,imageN):
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
@@ -441,9 +441,11 @@ def Make2ThetaAzimuthMap(data,imageN):
     tax,tay = np.mgrid[0.5:imageN+.5,0.5:imageN+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32)
     tay = np.asfarray(tay*scaley,dtype=np.float32)
-    return GetTthAzm(tay,tax,data)           #2-theta & azimuth arrays
+    #make position masks here
+    XY = np.dstack((tax,tay))
+    return GetTthAzm(tay,tax,data),0           #2-theta & azimuth arrays & position mask
 
-def Fill2ThetaAzimuthMap(masks,TA,image):
+def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     import numpy.ma as ma
     Zlim = masks['Thresholds'][1]
     imageN = len(image)
@@ -480,10 +482,10 @@ def ImageIntegrate(self,data,masks):
         t0 = time.time()
         dlg.Update(0)
         imageN = len(self.ImageZ)
-        TA = Make2ThetaAzimuthMap(data,imageN)           #2-theta & azimuth arrays
+        TA,tam = Make2ThetaAzimuthMap(data,masks,imageN)           #2-theta & azimuth arrays & create position mask
         dlg.Update(1)
         print 'Fill map with 2-theta/azimuth values'
-        tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,self.ImageZ)
+        tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,self.ImageZ)    #and apply masks
         del TA
         dlg.Update(2)
         print 'Bin image by 2-theta/azimuth intervals'
@@ -495,7 +497,7 @@ def ImageIntegrate(self,data,masks):
         del NST,HST
         dlg.Update(4)
         t1 = time.time()
-        print 'Integration complete'
         print "Elapsed time:","%8.3f"%(t1-t0), "s"
+        print 'Integration complete'
     finally:
         dlg.Destroy()

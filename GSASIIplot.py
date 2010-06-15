@@ -10,6 +10,7 @@ import GSASIIgrid as G2gd
 import GSASIIimage as G2img
 import GSASIIIO as G2IO
 import GSASIIpwdGUI as G2pdG
+import GSASIIimgGUI as G2imG
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
@@ -48,7 +49,7 @@ class G2PlotNoteBook(wx.Panel):
         self.SetSizer(sizer)
         self.status = parent.CreateStatusBar()
         self.status.SetFieldsCount(2)
-        self.status.SetStatusWidths([-1,120])
+        self.status.SetStatusWidths([125,-1])
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         
         self.plotList = []
@@ -98,7 +99,7 @@ def PlotSngl(self,newPlot=False):
         i = HKL.all(hkl)
         print i
         HKLtxt = '(%3d,%3d,%3d %10.2f %6.3f %10.2f)'%(h,k,l,Fosq,sig,Fcsq)
-        self.G2plotNB.status.SetFields(['HKL, Fosq, sig, Fcsq = '+HKLtxt,''])
+        self.G2plotNB.status.SetFields(['','HKL, Fosq, sig, Fcsq = '+HKLtxt])
                          
         
     def OnSCKeyPress(event):
@@ -271,11 +272,11 @@ def PlotPatterns(self,newPlot=False):
                 dsp = 0.0
                 if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                     dsp = wave/(2.*sind(abs(xpos)/2.0))
-                self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),0)
+                self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
                 if self.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
             except TypeError:
-                self.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',0)
+                self.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',1)
                                    
     def OnRelease(event):
         if self.itemPicked is None: return
@@ -324,8 +325,6 @@ def PlotPatterns(self,newPlot=False):
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=(' key press','d: offset down','u: offset up','c: toggle contour','s: toggle single plot'))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
-    rect = self.G2plotNB.status.GetFieldRect(1)
-    cb.SetPosition((rect.x,rect.y))
     cb.SetValue(' key press')
     
     PickId = self.PickId
@@ -432,7 +431,7 @@ def PlotPowderLines(self):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
-            self.G2plotNB.status.SetFields(['2-theta =%9.3f '%(xpos,),''])
+            self.G2plotNB.status.SetFields(['','2-theta =%9.3f '%(xpos,)])
 
     try:
         plotNum = self.G2plotNB.plotList.index('Powder Lines')
@@ -561,15 +560,13 @@ def PlotExposedImage(self,newPlot=False):
         PlotIntegration(self,newPlot)
 
 def PlotImage(self,newPlot=False):
-    from matplotlib.patches import Ellipse,Arc
+    from matplotlib.patches import Ellipse,Arc,Circle
     import numpy.ma as ma
 
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
         size = len(self.ImageZ)
         if event.xdata and event.ydata:                 #avoid out of frame errors
-            Data = self.PatternTree.GetItemPyData( \
-                G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             item = self.itemPicked
             pixelSize = Data['pixelSize']
@@ -596,39 +593,43 @@ def PlotImage(self,newPlot=False):
                 Int = 0
                 if (0 <= xpix <= size) and (0 <= ypix <= size):
                     Int = self.ImageZ[ypix][xpix]
-#                    Page.canvas.SetToolTipString('%4x'%((ypix*2048+xpix)*2+4096))
                 tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 self.G2plotNB.status.SetFields(\
-                    ['Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int),''])
+                    ['','Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
-        if self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
-            Data = self.PatternTree.GetItemPyData(self.PickId)
-            pixelSize = Data['pixelSize']
-            size = len(self.ImageZ)
+        if self.PatternTree.GetItemText(self.PickId) == 'Masks':
+            Mask = self.PatternTree.GetItemPyData(self.PickId)
             Xpos = event.xdata
             if not Xpos:            #got point out of frame
                 return
             Ypos = event.ydata
-            if event.key == 'm':
-                print 'mask = ',Xpos,Ypos
+            if event.key == 's':
+                print 'spot mask @ ',Xpos,Ypos
+                Mask['Points'].append([Xpos,Ypos,1])
+            elif event.key == 'r':
+                print 'ring mask @ ',Xpos,Ypos
+            elif event.key == 'a':
+                print 'arc mask @ ', Xpos,Ypos
+            G2imG.UpdateMasks(self,Mask)
+        PlotImage(self)
             
     def OnImPick(event):
-        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+        if self.PatternTree.GetItemText(self.PickId) not in ['Image Controls','Masks']:
             return
         if self.itemPicked is not None: return
         pick = event.artist
         self.itemPicked = pick
         
     def OnImRelease(event):
-        if self.PatternTree.GetItemText(self.PickId) != 'Image Controls':
+        PickName = self.PatternTree.GetItemText(self.PickId)
+        if PickName not in ['Image Controls','Masks']:
             return
-        Data = self.PatternTree.GetItemPyData(self.PickId)
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
-        if self.itemPicked is None:
+        if self.itemPicked is None and PickName == 'Image Controls':
             size = len(self.ImageZ)
             Xpos = event.xdata
             if not (Xpos and self.ifGetRing):                   #got point out of frame
@@ -659,7 +660,8 @@ def PlotImage(self,newPlot=False):
                             rings.remove(ring)                                                                       
                 else:
                     tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
-                    if 'Line2D' in str(self.itemPicked):
+                    itemPicked = str(self.itemPicked)
+                    if 'Line2D' in itemPicked and PickName == 'Image Controls':
                         if 'line1' in str(self.itemPicked):
                             Data['IOtth'][0] = tth
                         elif 'line2' in str(self.itemPicked):
@@ -678,8 +680,16 @@ def PlotImage(self,newPlot=False):
                         self.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
                         self.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
                         self.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
+                    elif 'Circle' in itemPicked and PickName == 'Masks':
+                        spots = Masks['Points']
+                        newPos = itemPicked.split(')')[0].split('(')[2].split(',')
+                        newPos = np.array([float(newPos[0]),float(newPos[1])])
+                        for spot in spots:
+                            if np.allclose(np.array([spot[:2]]),newPos):
+                                spot[:2] = xpos,ypos
+                        G2imG.UpdateMasks(self,Masks)
                     else:
-                        print event.xdata,event.ydata,event.button
+                        print str(self.itemPicked),event.xdata,event.ydata,event.button
                 PlotImage(self)
             self.itemPicked = None
             
@@ -710,6 +720,7 @@ def PlotImage(self,newPlot=False):
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
     Masks = self.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
+
     imScale = 1
     if len(self.ImageZ) > 1024:
         imScale = len(self.ImageZ)/1024
@@ -727,6 +738,7 @@ def PlotImage(self,newPlot=False):
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
     #need "applyMask" routine here
     Zlim = Masks['Thresholds'][1]
+    spots = Masks['Points']
     MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
     MaskA = ma.getmaskarray(MA)
     A = G2img.ImageCompress(MA,imScale)
@@ -736,6 +748,8 @@ def PlotImage(self,newPlot=False):
         interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
     Img = Plot.imshow(A,aspect='equal',cmap=acolor,
         interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
+    for x,y,d in spots:
+        Plot.add_artist(Circle((x,y),radius=d/2,fc='r',ec='r',picker=3))
 
     Plot.plot(xcent,ycent,'x')
     if Data['showLines']:
@@ -799,7 +813,7 @@ def PlotIntegration(self,newPlot=False):
         tth = event.xdata
         if azm and tth:
             self.G2plotNB.status.SetFields(\
-                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),''])
+                ['','Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm)])
                                 
     try:
         plotNum = self.G2plotNB.plotList.index('2D Integration')
@@ -864,7 +878,7 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         tth = event.ydata
         if azm and tth:
             self.G2plotNB.status.SetFields(\
-                ['Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),''])
+                ['','Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm)])
                                 
     try:
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')

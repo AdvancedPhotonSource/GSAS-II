@@ -153,14 +153,20 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         return []
     return ring
     
-def makeIdealRing(ellipse):
+def makeIdealRing(ellipse,azm=None):
     cent,phi,radii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
     ring = []
-    for a in range(0,360,2):
-        x = radii[0]*cosd(a)
-        y = radii[1]*sind(a)
+    if azm:
+        aR = azm[0],azm[1],1
+        if azm[1]-azm[0] > 180:
+            aR[2] = 2
+    else:
+        aR = 0,362,2
+    for a in range(aR[0],aR[1],aR[2]):
+        x = radii[0]*cosd(a-phi)
+        y = radii[1]*sind(a-phi)
         X = (cphi*x-sphi*y+cent[0])
         Y = (sphi*x+cphi*y+cent[1])
         ring.append([X,Y])
@@ -258,6 +264,9 @@ def GetTthAzm(x,y,data):
     
 def GetDsp(x,y,data):
     return GetTthAzmDsp(x,y,data)[2]
+       
+def GetAzm(x,y,data):
+    return GetTthAzmDsp(x,y,data)[1]
        
 def ImageCompress(image,scale):
     if scale == 1:
@@ -434,29 +443,40 @@ def ImageCalibrate(self,data):
     return True
     
 def Make2ThetaAzimuthMap(data,masks,imageN):
+    import numpy.ma as ma
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    tax,tay = np.mgrid[0.5:imageN+.5,0.5:imageN+.5]         #bin centers not corners
+    tay,tax = np.mgrid[0.5:imageN+.5,0.5:imageN+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32)
     tay = np.asfarray(tay*scaley,dtype=np.float32)
     #make position masks here
-    XY = np.dstack((tax,tay))
-    return GetTthAzm(tay,tax,data),0           #2-theta & azimuth arrays & position mask
+    spots = masks['Points']
+    tam = ma.make_mask_none((imageN,imageN))
+    for X,Y,diam in spots:
+        tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))
+    return GetTthAzm(tax,tay,data),tam           #2-theta & azimuth arrays & position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     import numpy.ma as ma
     Zlim = masks['Thresholds'][1]
+    rings = masks['Rings']
+    arcs = masks['Arcs']
     imageN = len(image)
     TA = np.reshape(TA,(2,imageN,imageN))
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
     tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
+    for tth,thick in rings:
+        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),tth-thick/2.,tth+thick/2.)))
+    for tth,azm,thick in arcs:
+        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),tth-thick/2.,tth+thick/2.))* \
+            ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1])))
     taz = ma.masked_greater(ma.masked_less(image,Zlim[0]),Zlim[1]).flatten()
-    tam = ma.getmask(taz)
+    tam = ma.mask_or(tam,ma.getmask(taz))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
-    taz = ma.compressed(taz)
+    taz = ma.compressed(ma.array(taz,mask=tam))
     del(tam)
     return tax,tay,taz
     

@@ -562,8 +562,11 @@ def PlotExposedImage(self,newPlot=False):
 def PlotImage(self,newPlot=False):
     from matplotlib.patches import Ellipse,Arc,Circle
     import numpy.ma as ma
+    Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
 
     def OnImMotion(event):
+        Data = self.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
         Page.canvas.SetToolTipString('')
         size = len(self.ImageZ)
         if event.xdata and event.ydata:                 #avoid out of frame errors
@@ -600,19 +603,27 @@ def PlotImage(self,newPlot=False):
 
     def OnImPlotKeyPress(event):
         if self.PatternTree.GetItemText(self.PickId) == 'Masks':
-            Mask = self.PatternTree.GetItemPyData(self.PickId)
+            Data = self.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+            Masks = self.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
             Xpos = event.xdata
             if not Xpos:            #got point out of frame
                 return
             Ypos = event.ydata
             if event.key == 's':
                 print 'spot mask @ ',Xpos,Ypos
-                Mask['Points'].append([Xpos,Ypos,1])
+                Masks['Points'].append([Xpos,Ypos,1.])
             elif event.key == 'r':
-                print 'ring mask @ ',Xpos,Ypos
+                tth = G2img.GetTth(Xpos,Ypos,Data)
+                print 'ring mask @ ',Xpos,Ypos,tth
+                Masks['Rings'].append([tth,0.1])
             elif event.key == 'a':
+                tth,azm = G2img.GetTthAzm(Xpos,Ypos,Data)
+                azm = int(azm)                
                 print 'arc mask @ ', Xpos,Ypos
-            G2imG.UpdateMasks(self,Mask)
+                Masks['Arcs'].append([tth,[azm-5,azm+5],0.1])
+            G2imG.UpdateMasks(self,Masks)
         PlotImage(self)
             
     def OnImPick(event):
@@ -626,6 +637,10 @@ def PlotImage(self,newPlot=False):
         PickName = self.PatternTree.GetItemText(self.PickId)
         if PickName not in ['Image Controls','Masks']:
             return
+        Data = self.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+        Masks = self.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
@@ -662,13 +677,14 @@ def PlotImage(self,newPlot=False):
                     tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                     itemPicked = str(self.itemPicked)
                     if 'Line2D' in itemPicked and PickName == 'Image Controls':
-                        if 'line1' in str(self.itemPicked):
+                        print int(itemPicked.split('_line')[1].strip(')'))
+                        if 'line1' in itemPicked:
                             Data['IOtth'][0] = tth
-                        elif 'line2' in str(self.itemPicked):
+                        elif 'line2' in itemPicked:
                             Data['IOtth'][1] = tth
-                        elif 'line3' in str(self.itemPicked) and not Data['fullIntegrate']:
+                        elif 'line3' in itemPicked and not Data['fullIntegrate']:
                             Data['LRazimuth'][0] = int(azm)
-                        elif 'line4' in str(self.itemPicked) and not Data['fullIntegrate']:
+                        elif 'line4' in itemPicked and not Data['fullIntegrate']:
                             Data['LRazimuth'][1] = int(azm)
                             
                         if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
@@ -688,8 +704,31 @@ def PlotImage(self,newPlot=False):
                             if np.allclose(np.array([spot[:2]]),newPos):
                                 spot[:2] = xpos,ypos
                         G2imG.UpdateMasks(self,Masks)
-                    else:
-                        print str(self.itemPicked),event.xdata,event.ydata,event.button
+                    elif 'Line2D' in itemPicked and PickName == 'Masks':
+                        Obj = self.itemPicked.findobj()
+                        rings = Masks['Rings']
+                        arcs = Masks['Arcs']
+                        for ring in self.ringList:
+                            if Obj == ring[0]:
+                                rN = ring[1]
+                                if ring[2] == 'o':
+                                    rings[rN][0] = G2img.GetTth(xpos,ypos,Data)-rings[rN][1]/2.
+                                else:
+                                    rings[rN][0] = G2img.GetTth(xpos,ypos,Data)+rings[rN][1]/2.
+                        for arc in self.arcList:
+                            if Obj == arc[0]:
+                                aN = arc[1]
+                                if arc[2] == 'o':
+                                    arcs[aN][0] = G2img.GetTth(xpos,ypos,Data)-arcs[aN][2]/2
+                                elif arc[2] == 'i':
+                                    arcs[aN][0] = G2img.GetTth(xpos,ypos,Data)+arcs[aN][2]/2
+                                elif arc[2] == 'l':
+                                    arcs[aN][1][0] = int(G2img.GetAzm(xpos,ypos,Data))
+                                else:
+                                    arcs[aN][1][1] = int(G2img.GetAzm(xpos,ypos,Data))
+                        G2imG.UpdateMasks(self,Masks)
+#                    else:                  #keep for future debugging
+#                        print str(self.itemPicked),event.xdata,event.ydata,event.button
                 PlotImage(self)
             self.itemPicked = None
             
@@ -736,9 +775,8 @@ def PlotImage(self,newPlot=False):
     xcent,ycent = Data['center']
     Plot.set_xlabel('Image x-axis, mm',fontsize=12)
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
-    #need "applyMask" routine here
+    #do threshold mask - "real" mask - others are just bondaries
     Zlim = Masks['Thresholds'][1]
-    spots = Masks['Points']
     MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
     MaskA = ma.getmaskarray(MA)
     A = G2img.ImageCompress(MA,imScale)
@@ -748,8 +786,6 @@ def PlotImage(self,newPlot=False):
         interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
     Img = Plot.imshow(A,aspect='equal',cmap=acolor,
         interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
-    for x,y,d in spots:
-        Plot.add_artist(Circle((x,y),radius=d/2,fc='r',ec='r',picker=3))
 
     Plot.plot(xcent,ycent,'x')
     if Data['showLines']:
@@ -791,6 +827,28 @@ def PlotImage(self,newPlot=False):
         cent,phi,[width,height],col = ellipse
         Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
         Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+    #masks - mask lines numbered after integration limit lines
+    spots = Masks['Points']
+    rings = Masks['Rings']
+    arcs = Masks['Arcs']
+    for x,y,d in spots:
+        Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
+    self.ringList = []
+    for iring,(tth,thick) in enumerate(rings):
+        wave = Data['wavelength']
+        x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data))),2)
+        x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data))),2)
+        self.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
+        self.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
+    self.arcList = []
+    for iarc,(tth,azm,thick) in enumerate(arcs):            
+        wave = Data['wavelength']
+        x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
+        x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data),azm)),2)
+        self.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
+        self.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
+        self.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
+        self.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
     colorBar = Page.figure.colorbar(Img)
     Plot.set_xlim(xlim)
     Plot.set_ylim(ylim)

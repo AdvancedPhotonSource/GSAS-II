@@ -844,7 +844,7 @@ def PlotImage(self,newPlot=False):
     for iarc,(tth,azm,thick) in enumerate(arcs):            
         wave = Data['wavelength']
         x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
-        x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data),azm)),2)
+        x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(max(0.01,tth-thick/2.),wave),Data),azm)),2)
         self.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
         self.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
         self.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])

@@ -468,9 +468,9 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
     tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
     for tth,thick in rings:
-        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),tth-thick/2.,tth+thick/2.)))
+        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
     for tth,azm,thick in arcs:
-        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),tth-thick/2.,tth+thick/2.))* \
+        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))* \
             ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1])))
     taz = ma.masked_greater(ma.masked_less(image,Zlim[0]),Zlim[1]).flatten()
     tam = ma.mask_or(tam,ma.getmask(taz))

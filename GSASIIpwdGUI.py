@@ -512,32 +512,46 @@ def UpdateUnitCellsGrid(self, data):
         Obj = event.GetEventObject()
         ObjId = cellList.index(Obj.GetId())
         try:
-            if ibrav in [0,1,2]:
-                controls[6] = controls[7] = controls[8] = float(Obj.GetValue())
-                controls[9] = controls[10] = controls[11] = 90.0
-            elif ibrav in [3,4,5,6]:
-                if ObjId == 0:
-                    controls[6] = controls[7] = float(Obj.GetValue())
-                else:
-                    controls[8] = float(Obj.GetValue())
-                controls[9] = controls[10] = controls[11] = 90.0
-                if ibrav in [3,4]:
-                    controls[11] = 120.
-            elif ibrav in [7,8,9,10]:
-                controls[6+ObjId] = float(Obj.GetValue())
-                controls[9] = controls[10] = controls[11] = 90.0
-            elif ibrav in [11,12]:
-                controls[9] = controls[11] = 90.0
-                if ObjId != 3:
-                    controls[6+ObjId] = float(Obj.GetValue())
-                else:
-                    controls[10] = float(Obj.GetValue())
-            else:
-                controls[6+ObjId] = float(Obj.GetValue())
-            controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
-            UpdateUnitCellsGrid(self,data)
+            value = max(1.0,float(Obj.GetValue()))
         except ValueError:
-            Pass
+            if ObjId < 3:               #bad cell edge - reset
+                value = controls[6+ObjId]
+            else:                       #bad angle
+                value = 90.
+        if ibrav in [0,1,2]:
+            controls[6] = controls[7] = controls[8] = value
+            controls[9] = controls[10] = controls[11] = 90.0
+            Obj.SetValue("%.5f"%(controls[6]))
+        elif ibrav in [3,4,5,6]:
+            if ObjId == 0:
+                controls[6] = controls[7] = value
+                Obj.SetValue("%.5f"%(controls[6]))
+            else:
+                controls[8] = value
+                Obj.SetValue("%.5f"%(controls[8]))
+            controls[9] = controls[10] = controls[11] = 90.0
+            if ibrav in [3,4]:
+                controls[11] = 120.
+        elif ibrav in [7,8,9,10]:
+            controls[6+ObjId] = value
+            Obj.SetValue("%.5f"%(controls[6+ObjId]))
+            controls[9] = controls[10] = controls[11] = 90.0
+        elif ibrav in [11,12]:
+            controls[9] = controls[11] = 90.0
+            if ObjId != 3:
+                controls[6+ObjId] = value
+                Obj.SetValue("%.5f"%(controls[6+ObjId]))
+            else:
+                controls[10] = value
+                Obj.SetValue("%.3f"%(controls[6+ObjId]))
+        else:
+            controls[6+ObjId] = value
+            if ObjId < 3:
+                Obj.SetValue("%.5f"%(controls[6+ObjId]))
+            else:
+                Obj.SetValue("%.3f"%(controls[6+ObjId]))
+        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
+        volVal.SetValue("%.3f"%(controls[12]))
         
     def OnRefineCell(event):
         def cellPrint(ibrav,A):
@@ -674,12 +688,15 @@ def UpdateUnitCellsGrid(self, data):
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic']
-    cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],[True,False],[0,0])],
-    [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],[True,True,False],[0,2,0])],
-    [[7,8,9,10],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[True,True,True,False],[0,1,2,0])],
-    [[11,12],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],[True,True,True,True,False],[0,1,2,4,0])],
+    cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
+    [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
+    [[7,8,9,10],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],["%.5f","%.5f","%.5f","%.3f"],
+        [True,True,True,False],[0,1,2,0])],
+    [[11,12],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
+        ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
     [[13,],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
-        [True,True,True,False,True,True,True],[0,1,2,0,3,4,6])]]
+        ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
+        [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
     
     self.dataFrame.SetLabel('Unit Cells List')
     self.sp = wx.SplitterWindow(self.dataFrame)
@@ -737,15 +754,16 @@ def UpdateUnitCellsGrid(self, data):
             useGUI = cellGUI
     cellList = []
     littleSizer = wx.FlexGridSizer(2,useGUI[1],5,5)
-    for txt,ifEdit,Id in useGUI[2]:
+    for txt,fmt,ifEdit,Id in useGUI[2]:
         littleSizer.Add(wx.StaticText(self.dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
         if ifEdit:          #a,b,c,etc.
-            cellVal = wx.TextCtrl(self.dataDisplay,value=("%.5f"%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
+            cellVal = wx.TextCtrl(self.dataDisplay,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
             cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
             littleSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
             cellList.append(cellVal.GetId())
         else:               #volume
-            littleSizer.Add(wx.TextCtrl(self.dataDisplay,value=("%.3f"%(controls[12])),style=wx.TE_READONLY),0,wx.ALIGN_CENTER_VERTICAL)
+            volVal = wx.TextCtrl(self.dataDisplay,value=(fmt%(controls[12])),style=wx.TE_READONLY)
+            littleSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)

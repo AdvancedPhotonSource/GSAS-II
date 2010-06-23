@@ -460,6 +460,85 @@ def UpdateUnitCellsGrid(self, data):
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
         
+    def SetLattice(controls):
+        ibrav = bravaisSymb.index(controls[5])
+        if ibrav in [0,1,2]:
+            controls[7] = controls[8] = controls[6]
+            controls[9] = controls[10] = controls[11] = 90.
+        elif ibrav in [3,4,5,6]:
+            controls[7] = controls[6]
+            controls[9] = controls[10] = controls[11] = 90.
+            if ibrav in [3,4]:
+                controls[11] = 120.
+        elif ibrav in [7,8,9,10]:
+            controls[9] = controls[10] = controls[11] = 90.
+        elif ibrav in [11,12]:
+            controls[9] = controls[11] = 90.  # b unique
+        if len(controls) < 13: controls.append(0)
+        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
+        return ibrav
+        
+    def OnNcNo(event):
+        controls[2] = NcNo.GetValue()
+        
+    def OnStartVol(event):
+        try:
+            stVol = int(startVol.GetValue())
+        except ValueError:
+            stVol = 25
+        controls[3] = stVol
+        
+    def OnBravais(event):
+        Obj = event.GetEventObject()
+        bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
+        
+    def OnZero(event):
+        try:
+            Zero = min(0.1,max(-0.1,float(zero.GetValue())))
+        except ValueError:
+            Zero = 0.0
+        controls[1] = Zero
+        zero.SetValue("%.2f"%(Zero))
+        
+    def OnZeroVar(event):
+        controls[0] = zeroVar.GetValue()
+        
+    def OnBravSel(event):
+        controls[5] = bravSel.GetString(bravSel.GetSelection())       
+        UpdateUnitCellsGrid(self,data)
+        
+    def OnCellChange(event):
+        ibrav = bravaisSymb.index(controls[5])
+        Obj = event.GetEventObject()
+        ObjId = cellList.index(Obj.GetId())
+        try:
+            if ibrav in [0,1,2]:
+                controls[6] = controls[7] = controls[8] = float(Obj.GetValue())
+                controls[9] = controls[10] = controls[11] = 90.0
+            elif ibrav in [3,4,5,6]:
+                if ObjId == 0:
+                    controls[6] = controls[7] = float(Obj.GetValue())
+                else:
+                    controls[8] = float(Obj.GetValue())
+                controls[9] = controls[10] = controls[11] = 90.0
+                if ibrav in [3,4]:
+                    controls[11] = 120.
+            elif ibrav in [7,8,9,10]:
+                controls[6+ObjId] = float(Obj.GetValue())
+                controls[9] = controls[10] = controls[11] = 90.0
+            elif ibrav in [11,12]:
+                controls[9] = controls[11] = 90.0
+                if ObjId != 3:
+                    controls[6+ObjId] = float(Obj.GetValue())
+                else:
+                    controls[10] = float(Obj.GetValue())
+            else:
+                controls[6+ObjId] = float(Obj.GetValue())
+            controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
+            UpdateUnitCellsGrid(self,data)
+        except ValueError:
+            Pass
+        
     def OnRefineCell(event):
         def cellPrint(ibrav,A):
             cell = G2lat.A2cell(A)
@@ -476,8 +555,6 @@ def UpdateUnitCellsGrid(self, data):
                 print "%s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2])
                 print "%s%8.3f %s%8.3f %s%8.3f %s%12.3f" % ('alpha =',cell[3],'beta =',cell[4],'gamma =',cell[5],' volume =',Vol)
              
-        bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
-            'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
         PatternId = self.PatternId
         PickId = self.PickId    
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
@@ -544,6 +621,7 @@ def UpdateUnitCellsGrid(self, data):
                     G2plt.PlotPatterns(self)
         self.dataFrame.CopyCell.Enable(True)
         self.dataFrame.IndexPeaks.Enable(True)
+        UpdateUnitCellsGrid(self,data)
                 
     def CopyUnitCell(event):
         controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
@@ -555,21 +633,19 @@ def UpdateUnitCellsGrid(self, data):
         controls[5] = bravaisSymb[cell[0]]
         controls[6:12] = cell[1:8]
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
-        for i in range(4,13):
-            self.UnitCellsTable.SetValue(i,1,controls[i])
         self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
-        self.dataDisplay.ForceRefresh()
+        UpdateUnitCellsGrid(self,data)
         self.dataFrame.RefineCell.Enable(True)
             
     def RefreshUnitCellsGrid(event):
         cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)[2:]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
-            if c == 6:
-                for i in range(min(self.UnitCellsTable.GetNumberRows(),len(cells))):
+            if c == 2:
+                for i in range(len(cells)):
                     cells[i][-1] = False
-                    self.UnitCellsTable.SetValue(i,c,0)
-                self.UnitCellsTable.SetValue(r,c,1)
+                    UnitCellsTable.SetValue(i,c,False)
+                UnitCellsTable.SetValue(r,c,True)
                 cells[r][-1] = True
                 ibrav = cells[r][2]
                 A = G2lat.cell2A(cells[r][3:9])
@@ -580,178 +656,136 @@ def UpdateUnitCellsGrid(self, data):
                     G2plt.PlotPowderLines(self)
                 else:
                     G2plt.PlotPatterns(self)
-        controls = []
-        bravais = [0,0,0,0,0,0,0, 0,0,0,0,0,0,0]
-        table = self.UnitCellsTable.GetData()
-        for i,row in enumerate(table):
-            if i in [0,4]:
-                if row[1]:
-                    controls.append(1)
-                else:
-                    controls.append(0)
-            elif i in [1,3]:
-                controls.append(float(row[1]))
-            elif i in [2]:
-                controls.append(int(row[1]))
-            elif i in [5]:
-                controls.append(row[1])
-            elif i in [6,7,8,9,10,11]:
-                if controls[5] in bravaisSymb[:3]:              #cubic
-                    if i in [6]:
-                        controls.append(float(row[1]))
-                        controls.append(float(row[1]))
-                        controls.append(float(row[1]))
-                        controls.append(90.)
-                        controls.append(90.)
-                        controls.append(90.)
-                elif controls[5] in bravaisSymb[3:7]:           #hexagonal & tetragonal
-                    if i in [6]:
-                        controls.append(float(row[1]))
-                        controls.append(float(row[1]))
-                    elif i in [8]:
-                        controls.append(float(row[1]))
-                        controls.append(90.)
-                        controls.append(90.)
-                        if controls[5] in bravaisSymb[3:5]:     #hexagonal
-                            controls.append(120.)
-                        else:                                   #tetragonal
-                            controls.append(90.)
-                elif controls[5] in bravaisSymb[7:13]:          #orthorhombic & monoclinic
-                    if i in [6,7,8]:
-                        controls.append(float(row[1]))
-                    if i in [9,10,11]:
-                        if controls[5] in bravaisSymb[7:11]:
-                            controls.append(90.)
-                            controls.append(90.)
-                            controls.append(90.)
-                            break
-                        else:
-                            if i in [9,11]:
-                                controls.append(90.)
-                            else:
-                                controls.append(float(row[1]))
-                else:                                           #triclinic
-                    controls.append(float(row[1]))
-        controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))        #volume        
-        for i,row in enumerate(table):
-            if i < 14:
-                bravais[i] = int(row[2])
-            else:
-                break
-        if controls[4]:
-            for i in range(6,13):
-                self.UnitCellsTable.SetValue(i,1,controls[i])
-        self.dataDisplay.ForceRefresh()
-        if controls[4] and not False in controls[6:12]:
-            self.dataFrame.RefineCell.Enable(True)
-        else:
-            self.dataFrame.RefineCell.Enable(False)
-        data = [controls,bravais,cells,dmin]                    
-        self.PatternTree.SetItemPyData(UnitCellsId,data)
         
     if self.dataDisplay:
-        self.dataDisplay.Destroy()
+        self.dataFrame.Clear()
     self.dataFrame.SetMenuBar(self.dataFrame.IndexMenu)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2gd.wxID_INDEXPEAKS)
     self.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
     self.Bind(wx.EVT_MENU, OnRefineCell, id=G2gd.wxID_REFINECELL)
-    self.UnitCellsTable = []
+    
     controls,bravais,cells,dmin = data
-    if cells:
-        self.dataFrame.setSizePosLeft([900,320])
-    else:
-        self.dataFrame.setSizePosLeft([280,320])
-    if len(controls) < 13:
+    if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
-    self.PatternTree.SetItemPyData(UnitCellsId,data)
+    self.PatternTree.SetItemPyData(UnitCellsId,data)            #update with volume
     inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
-    if cells:
-        colLabels = ['controls','value','try','Bravais cells',
-            'M20','X20','use','Bravais','a','b','c','alpha','beta','gamma','Volume']
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+":10,1",
-            wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':10,2',
-            wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',
-            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',
-            wg.GRID_VALUE_FLOAT+':10,2']
-    else:
-        colLabels = ['controls','value','try','Bravais cells']
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,
-            wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING]
-    controlNames = ['Vary zero?','Max zero error','Max Nc/Nobs','Start volume','refine cell?',
-        'bravais','a=','b=','c=','alpha=','beta=','gamma=','Volume=']
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic']
-    rowLabels = []
-    table = []
-    numRows = max(len(bravais),len(cells))
-    for i in range(numRows):
-        rowLabels.append('')
-        if i < 13:
-            row = [controlNames[i],controls[i],bravais[i],bravaisSymb[i]]
-        elif i < 14:
-            row = ['','',bravais[i],bravaisSymb[i]]
-        else:
-            row = ['','','','']
-        if cells:
-            if i < len(cells):
-                cell = cells[i]
-                row += cell[0:2]+[cell[-1]]+[bravaisSymb[cell[2]]]+cell[3:10]
-                if cell[-1]:
-                    A = G2lat.cell2A(cell[3:9])
-                    self.HKL = G2lat.GenHBravais(dmin,cell[2],A)
-                    for hkl in self.HKL:
-                        hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))
-            else:
-                row += 14*['',]
-        table.append(row)
-    self.UnitCellsTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],[True,False],[0,0])],
+    [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],[True,True,False],[0,2,0])],
+    [[7,8,9,10],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[True,True,True,False],[0,1,2,0])],
+    [[11,12],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],[True,True,True,True,False],[0,1,2,4,0])],
+    [[13,],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
+        [True,True,True,False,True,True,True],[0,1,2,0,3,4,6])]]
+    
     self.dataFrame.SetLabel('Unit Cells List')
-    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)                
-    self.dataDisplay.SetTable(self.UnitCellsTable, True)
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshUnitCellsGrid)
-    self.dataDisplay.SetMargins(0,0)
-    self.dataDisplay.SetRowLabelSize(0)
-    self.dataDisplay.SetCellRenderer(0,1,wg.GridCellBoolRenderer())
-    self.dataDisplay.SetCellEditor(0,1,wg.GridCellBoolEditor())
-    self.dataDisplay.SetCellRenderer(1,1,wg.GridCellFloatRenderer(5,2))
-    self.dataDisplay.SetCellEditor(1,1,wg.GridCellFloatEditor(5,0))
-    self.dataDisplay.SetCellRenderer(2,1,wg.GridCellNumberRenderer())
-    self.dataDisplay.SetCellEditor(2,1,wg.GridCellNumberEditor(1,10))
-    self.dataDisplay.SetCellRenderer(3,1,wg.GridCellFloatRenderer(5,0))
-    self.dataDisplay.SetCellEditor(3,1,wg.GridCellFloatEditor(5,2))
-    self.dataDisplay.SetCellRenderer(4,1,wg.GridCellBoolRenderer())
-    self.dataDisplay.SetCellEditor(4,1,wg.GridCellBoolEditor())
-    self.dataDisplay.SetCellRenderer(5,1,wg.GridCellStringRenderer())
-    self.dataDisplay.SetCellEditor(5,1,wg.GridCellChoiceEditor(bravaisSymb,False))
-    for i in range(6,9):
-        self.dataDisplay.SetCellRenderer(i,1,wg.GridCellFloatRenderer(10,5))
-        self.dataDisplay.SetCellEditor(i,1,wg.GridCellFloatEditor(10,5))
-    for i in range(9,13):
-        self.dataDisplay.SetCellRenderer(i,1,wg.GridCellFloatRenderer(10,3))
-        self.dataDisplay.SetCellEditor(i,1,wg.GridCellFloatEditor(10,3))
-    for i in range(14):
-        self.dataDisplay.SetReadOnly(i,0,isReadOnly=True)
-        self.dataDisplay.SetReadOnly(i,3,isReadOnly=True)
+    self.sp = wx.SplitterWindow(self.dataFrame)
+    self.dataDisplay = wx.Panel(self.sp, style=wx.SUNKEN_BORDER)
     if cells:
+        self.bottom = wx.Panel(self.sp, style=wx.SUNKEN_BORDER)
+        self.sp.SplitHorizontally(self.dataDisplay,self.bottom,0)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Indexing controls '),0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer = wx.FlexGridSizer(2,5,5,5)
+    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max Nc/Nobs '),0,wx.ALIGN_CENTER_VERTICAL)
+    NcNo = wx.SpinCtrl(self.dataDisplay)
+    NcNo.SetRange(1,6)
+    NcNo.SetValue(controls[2])
+    NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
+    littleSizer.Add(NcNo,0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start Volume '),0,wx.ALIGN_CENTER_VERTICAL)
+    startVol = wx.TextCtrl(self.dataDisplay,value=str(controls[3]),style=wx.TE_PROCESS_ENTER)
+    startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
+    littleSizer.Add(startVol,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(littleSizer,0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Select Bravais Lattices for indexing '),
+        0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer = wx.FlexGridSizer(2,7,5,5)
+    bravList = []
+    bravs = zip(bravais,bravaisNames)
+    for brav,bravName in bravs:
+        bravCk = wx.CheckBox(self.dataDisplay,label=bravName)
+        bravList.append(bravCk.GetId())
+        bravCk.SetValue(brav)
+        bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
+        littleSizer.Add(bravCk,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(littleSizer,0)
+    littleSizer = wx.FlexGridSizer(1,3,5,5)
+    littleSizer.Add(wx.StaticText(self.dataDisplay,label="Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
+    zero = wx.TextCtrl(self.dataDisplay,value=str(controls[1]),style=wx.TE_PROCESS_ENTER)
+    zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
+    littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
+    zeroVar = wx.CheckBox(self.dataDisplay,label="Vary? (not implemented)")
+    zero.SetValue("%.2f"%(controls[1]))
+    zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
+    littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(littleSizer,0)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Cell Refinement '),0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer = wx.FlexGridSizer(1,2,5,5)
+    littleSizer.Add(wx.StaticText(self.dataDisplay,label="Bravais lattice"),0,wx.ALIGN_CENTER_VERTICAL)
+    bravSel = wx.Choice(self.dataDisplay,choices=bravaisSymb)
+    bravSel.SetSelection(bravaisSymb.index(controls[5]))
+    bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
+    littleSizer.Add(bravSel,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(littleSizer,0)
+    ibrav = SetLattice(controls)
+    for cellGUI in cellGUIlist:
+        if ibrav in cellGUI[0]:
+            useGUI = cellGUI
+    cellList = []
+    littleSizer = wx.FlexGridSizer(2,useGUI[1],5,5)
+    for txt,ifEdit,Id in useGUI[2]:
+        littleSizer.Add(wx.StaticText(self.dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
+        if ifEdit:          #a,b,c,etc.
+            cellVal = wx.TextCtrl(self.dataDisplay,value=("%.5f"%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
+            cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
+            littleSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
+            cellList.append(cellVal.GetId())
+        else:               #volume
+            littleSizer.Add(wx.TextCtrl(self.dataDisplay,value=("%.3f"%(controls[12])),style=wx.TE_READONLY),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(littleSizer,0)
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    topSize = mainSizer.Fit(self.dataFrame)
+    self.dataDisplay.SetSize(topSize)
+    if cells:
+        topSize[1] += 200
+    self.dataFrame.setSizePosLeft(topSize)
+    
+    if cells:
+        wx.StaticText(parent=self.bottom,label=' Indexing Result ')
+        rowLabels = []
+        colLabels = ['M20','X20','use','Bravais','a','b','c','alpha','beta','gamma','Volume']
+        Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,
+            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',
+            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',
+            wg.GRID_VALUE_FLOAT+':10,2']
+        numRows = len(cells)
+        table = []
+        for cell in cells:
+            rowLabels.append('')
+            row = cell[0:2]+[cell[-1]]+[bravaisSymb[cell[2]]]+cell[3:10]
+            if cell[-1]:
+                A = G2lat.cell2A(cell[3:9])
+                self.HKL = G2lat.GenHBravais(dmin,cell[2],A)
+                for hkl in self.HKL:
+                    hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))
+            table.append(row)
+        UnitCellsTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        gridDisplay = G2gd.GSGrid(self.bottom)
+        gridDisplay.SetPosition(wx.Point(0,20))                
+        gridDisplay.SetTable(UnitCellsTable, True)
         self.dataFrame.CopyCell.Enable(True)
-        for r in range(max(len(cells),14)):
-            if r > 12:
-                self.dataDisplay.SetCellRenderer(r,0,wg.GridCellStringRenderer())                    
-                self.dataDisplay.SetCellRenderer(r,1,wg.GridCellStringRenderer())
-            if r > 13:
-                self.dataDisplay.SetCellRenderer(r,2,wg.GridCellStringRenderer())
-            for c in range(4,15):
-                if r >= len(cells):
-                    self.dataDisplay.SetCellRenderer(r,c,wg.GridCellStringRenderer())
-                if c != 6:
-                    self.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
-    self.dataDisplay.AutoSizeColumns(False)
-    if controls[4] and not False in controls[6:12]:
-        self.dataFrame.RefineCell.Enable(True)
-    else:
-        self.dataFrame.RefineCell.Enable(False)
-        
+        gridDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshUnitCellsGrid)
+        gridDisplay.SetMargins(0,0)
+        gridDisplay.SetRowLabelSize(0)
+        gridDisplay.AutoSizeColumns(False)
+        for r in range(gridDisplay.GetNumberRows()):
+            for c in range(gridDisplay.GetNumberCols()):
+                if c == 2:
+                    gridDisplay.SetReadOnly(r,c,isReadOnly=False)
+                else:
+                    gridDisplay.SetReadOnly(r,c,isReadOnly=True)

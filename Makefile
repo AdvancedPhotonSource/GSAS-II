@@ -1,7 +1,8 @@
 # build the compiled fortran codes needed by GSAS-II
 
 BIN = bin
-LIBS = $(BIN)/pack_f.$(SUFFIX) $(BIN)/pypowder.$(SUFFIX) $(BIN)/pyspg.$(SUFFIX) 
+LIBS = $(BIN)/pack_f.$(SUFFIX) $(BIN)/pyspg.$(SUFFIX) 
+LIBSwGSAS = $(BIN)/pypowder.$(SUFFIX)
 SYMLIB := $(wildcard spsubs/*.for)
 #----------------------------------------------------------------------
 # linux (gfortran)
@@ -15,7 +16,7 @@ SYMLIB := $(wildcard spsubs/*.for)
 # mac (gfortran)
 GSASlib = /Users/toby/software/work/gsas/2009Aug31/libgsas.a
 COMPILER=--fcompiler=gnu95 --f90exec=/usr/local/bin/gfortran
-PACKCOPTS=--f77flags="-fno-range-check"
+#PACKCOPTS=--f77flags="-fno-range-check -static-libgcc"
 SUFFIX=so
 F2PY=f2py
 MOVE=mv
@@ -31,8 +32,12 @@ DEL=echo
 #----------------------------------------------------------------------
 
 ask: 
+	@echo ""
 	@echo "Use make all or choose a target: "
-	@echo "	$(LIBS)"
+	@echo "	$(LIBS) $(LIBSwGSAS)"
+	@echo "   Note: target $(LIBSwGSAS) requires the GSAS object library."
+	@echo "     This is not built with make all. You will need to edit the"
+	@echo "     Makefile to set GSASlib to point to the correct location."
 
 all:: $(BIN) $(LIBS)
 

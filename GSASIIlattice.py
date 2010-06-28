@@ -203,12 +203,68 @@ def CentCheck(Cent,H):
     else:
         return True
                                     
+def GetBraviasNum(center,system):
+    '''Determine the Bravais lattice number, as used in GenHBravais
+         center = one of: P, C, I, F, R (see SGLatt from GSASIIspc.SpcGroup)
+         lattice = is cubic, hexagonal, tetragonal, orthorhombic, trigonal (R)
+             monoclinic, triclinic (see SGSys from GSASIIspc.SpcGroup)
+       Returns a number between 0 and 13 
+          or throws an exception if the setting is non-standard
+       '''
+    if center.upper() == 'F' and system.lower() == 'cubic':
+        return 0
+    elif center.upper() == 'I' and system.lower() == 'cubic':
+        return 1
+    elif center.upper() == 'P' and system.lower() == 'cubic':
+        return 2
+    elif center.upper() == 'R' and system.lower() == 'trigonal':
+        return 3
+    elif center.upper() == 'P' and system.lower() == 'hexagonal':
+        return 4
+    elif center.upper() == 'I' and system.lower() == 'tetragonal':
+        return 5
+    elif center.upper() == 'P' and system.lower() == 'tetragonal':
+        return 6
+    elif center.upper() == 'F' and system.lower() == 'orthorhombic':
+        return 7
+    elif center.upper() == 'I' and system.lower() == 'orthorhombic':
+        return 8
+    elif center.upper() == 'C' and system.lower() == 'orthorhombic':
+        return 9
+    elif center.upper() == 'P' and system.lower() == 'orthorhombic':
+        return 10
+    elif center.upper() == 'C' and system.lower() == 'monoclinic':
+        return 11
+    elif center.upper() == 'P' and system.lower() == 'monoclinic':
+        return 12
+    elif center.upper() == 'P' and system.lower() == 'triclinic':
+        return 13
+    raise ValueError,'non-standard Bravais lattice center=%s, cell=%s' % (center,system)
+
 def GenHBravais(dmin,Bravais,A):
     '''Generate the positionally unique powder diffraction reflections 
-    for a lattice and Bravais type'''
-# dmin - minimum d-spacing
-# Bravais in range(14) to indicate Bravais lattice; 0-2 cubic, 3,4 - hexagonal/trigonal,
-# 5,6 - tetragonal, 7-10 - orthorhombic, 11,12 - monoclinic, 13 - triclinic
+    input:
+       dmin is minimum d-space
+       Bravais is 0-13 to indicate lattice type (see GetBraviasNum)
+       A is reciprocal cell tensor (see Gmat2A or cell2A)
+    returns:
+       a list of tuples containing: h,k,l,d-space,-1   
+    '''
+# Bravais in range(14) to indicate Bravais lattice:
+#   0 F cubic
+#   1 I cubic
+#   2 P cubic
+#   3 R hexagonal (trigonal not rhombohedral)
+#   4 P hexagonal
+#   5 I tetragonal
+#   6 P tetragonal
+#   7 F orthorhombic
+#   8 I orthorhombic
+#   9 C orthorhombic
+#  10 P orthorhombic
+#  11 C monoclinic
+#  12 P monoclinic
+#  13 P triclinic
 # A - as defined in calc_rDsq
 # returns HKL = [h,k,l,d,0] sorted so d largest first 
     import math
@@ -400,8 +456,13 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
     return sortHKLd(HKL,True,True)
     
 # output from uctbx computed on platform darwin on 2010-05-28
-array = np.array
-CellTestData = [
+NeedTestData = True
+def TestData():
+    array = np.array
+    global NeedTestData
+    NeedTestData = False
+    global CellTestData
+    CellTestData = [
 # cell, g, G, cell*, V, V*
   [(4, 4, 4, 90, 90, 90), 
    array([[  1.60000000e+01,   9.79717439e-16,   9.79717439e-16],
@@ -423,8 +484,9 @@ CellTestData = [
        [  1.28587914e-15,   1.28587914e-15,   3.60000000e+01]]), array([[  1.08843537e-01,   5.44217687e-02,   3.36690552e-18],
        [  5.44217687e-02,   1.08843537e-01,   3.36690552e-18],
        [  3.36690552e-18,   3.36690552e-18,   2.77777778e-02]]), (0.32991443953692895, 0.32991443953692895, 0.16666666666666669, 90.0, 90.0, 60.000000000000021), 63.652867178156257, 0.015710211406520427],
-]
-CoordTestData = [
+  ]
+    global CoordTestData
+    CoordTestData = [
 # cell, ((frac, ortho),...)
   ((4,4,4,90,90,90,), [
  ((0.10000000000000001, 0.0, 0.0),(0.40000000000000002, 0.0, 0.0)),
@@ -458,6 +520,7 @@ CoordTestData = [
 ]
 
 def test0():
+    if NeedTestData: TestData()
     msg = 'test cell2Gmat, fillgmat, Gmat2cell'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         G, g = cell2Gmat(cell)
@@ -469,6 +532,7 @@ def test0():
         assert np.allclose(tcell,trcell),msg
 
 def test1():
+    if NeedTestData: TestData()
     msg = 'test cell2A and A2Gmat'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         G, g = A2Gmat(cell2A(cell))
@@ -476,6 +540,7 @@ def test1():
         assert np.allclose(g,tg),msg
 
 def test2():
+    if NeedTestData: TestData()
     msg = 'test Gmat2A, A2cell, A2Gmat, Gmat2cell'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         G, g = cell2Gmat(cell)
@@ -483,6 +548,7 @@ def test2():
         assert np.allclose(cell,tcell),msg
 
 def test3():
+    if NeedTestData: TestData()
     msg = 'test invcell2Gmat'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         G, g = invcell2Gmat(trcell)
@@ -490,18 +556,21 @@ def test3():
         assert np.allclose(g,tg),msg
 
 def test4():
+    if NeedTestData: TestData()
     msg = 'test calc_rVsq, calc_rV, calc_V'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         assert np.allclose(calc_rV(cell2A(cell)),trV), msg
         assert np.allclose(calc_V(cell2A(cell)),tV), msg
 
 def test5():
+    if NeedTestData: TestData()
     msg = 'test A2invcell'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         rcell = A2invcell(cell2A(cell))
         assert np.allclose(rcell,trcell),msg
 
 def test6():
+    if NeedTestData: TestData()
     msg = 'test cell2AB'
     for (cell,coordlist) in CoordTestData:
         A,B = cell2AB(cell)

@@ -1,4 +1,4 @@
-#!/Users/toby/build/cctbx_build/bin/python
+#!/usr/bin/env /Users/toby/build/cctbx_build/bin/python
 '''
 Generate symmetry operations in cctbx.sgtbx for use in testing the 
 GSASII space group generation code. All 230 spacegroups are tested plus 

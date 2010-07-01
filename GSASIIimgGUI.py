@@ -588,7 +588,7 @@ def UpdateMasks(self,data):
         for x,y,d in spots:
             spotText = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f,%.2f" % (x,y)),
                 style=wx.TE_READONLY)
-            spotTextazmText
+            spotText.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(spotText,0,wx.ALIGN_CENTER_VERTICAL)
             spotText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
             spotDiameter = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (d)),

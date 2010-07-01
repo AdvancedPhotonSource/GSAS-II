@@ -4,6 +4,7 @@ import wx
 import time
 import numpy as np
 import numpy.linalg as nl
+import GSASIIpath
 import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 
@@ -459,6 +460,7 @@ def ImageCalibrate(self,data):
     
 def Make2ThetaAzimuthMap(data,masks,imageN):
     import numpy.ma as ma
+    import polymask as pm
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
@@ -470,10 +472,13 @@ def Make2ThetaAzimuthMap(data,masks,imageN):
     spots = masks['Points']
     polygons = masks['Polygons']
     tam = ma.make_mask_none((imageN,imageN))
+    for polygon in polygons:
+        tamp = ma.make_mask_none((imageN*imageN))
+        tam = ma.mask_or(tam.flatten(),ma.make_mask(pm.polymask(imageN*imageN,
+            tax.flatten(),tay.flatten(),len(polygon),polygon,tamp)))
+    tam = np.reshape(tam,(imageN,imageN))
     for X,Y,diam in spots:
         tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))
-    for polygon in polygons:
-        tam = ma.mask_or(tam.flatten(),ma.make_mask([pointInPolygon(polygon,xy) for xy in zip(tax.flatten(),tay.flatten())]))
     return GetTthAzm(tax,tay,data),tam           #2-theta & azimuth arrays & position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):

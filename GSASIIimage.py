@@ -472,10 +472,14 @@ def Make2ThetaAzimuthMap(data,masks,imageN):
     spots = masks['Points']
     polygons = masks['Polygons']
     tam = ma.make_mask_none((imageN,imageN))
+    if polygons:
+        print 'Generate polygon mask'
     for polygon in polygons:
         tamp = ma.make_mask_none((imageN*imageN))
         tam = ma.mask_or(tam.flatten(),ma.make_mask(pm.polymask(imageN*imageN,
             tax.flatten(),tay.flatten(),len(polygon),polygon,tamp)))
+    if spots:
+        print 'Generate spot mask'
     tam = np.reshape(tam,(imageN,imageN))
     for X,Y,diam in spots:
         tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))
@@ -490,8 +494,12 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     TA = np.reshape(TA,(2,imageN,imageN))
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
     tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
+    if rings:
+        print 'Generate ring mask'
     for tth,thick in rings:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
+    if arcs:
+        print 'Generate arc mask'
     for tth,azm,thick in arcs:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))* \
             ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1])))
@@ -505,6 +513,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     
 def Bin2ThetaAzimuthMap(data,tax,tay,taz):
     import numpy.ma as ma
+    import histogram2d as h2d
     LUtth = data['IOtth']
     if data['fullIntegrate']:
         LRazm = [-180,180]
@@ -512,8 +521,12 @@ def Bin2ThetaAzimuthMap(data,tax,tay,taz):
         LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
-    NST = np.histogram2d(tax,tay,normed=False,bins=(numAzms,numChans),range=[LRazm,LUtth])
-    HST = np.histogram2d(tax,tay,normed=False,bins=(numAzms,numChans),range=[LRazm,LUtth],weights=taz)
+    NST = np.zeros(shape=(numAzms,numChans),dtype=int,order='F')
+    H0 = np.zeros(shape=(numAzms,numChans),order='F')
+    H1 = np.zeros(shape=(numAzms+1,))
+    H2 = np.zeros(shape=(numChans+1,))    
+    NST,H0,H1,H2 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,NST,H0,H1,H2)
+    HST = [H0,H1,H2]
     return NST,HST
 
 def ImageIntegrate(self,data,masks):

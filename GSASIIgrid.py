@@ -31,6 +31,8 @@ import GSASIIphsGUI as G2phG
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL,
 ] = [wx.NewId() for _init_coll_INDEX_Items in range(3)]
 
+VERY_LIGHT_GREY = wx.Colour(235,235,235)
+
 class DataFrame(wx.Frame):
     def _init_coll_BlankMenu(self,parent):
         parent.Append(menu=self.Blank,title='')

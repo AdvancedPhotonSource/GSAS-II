@@ -12,6 +12,8 @@ import GSASIIElem as G2elem
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 
+VERY_LIGHT_GREY = wx.Colour(235,235,235)
+
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)

@@ -11,6 +11,8 @@ import GSASIIplot as G2plt
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 
+VERY_LIGHT_GREY = wx.Colour(235,235,235)
+
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
@@ -339,6 +341,7 @@ def UpdateImageControls(self,data,masks):
         wx.ALIGN_CENTER_VERTICAL)
     cent = data['center']
     centText = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f,%8.3f" % (cent[0],cent[1])),style=wx.TE_READONLY)
+    centText.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(centText,0,wx.ALIGN_CENTER_VERTICAL)
     
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Inner/Outer 2-theta'),0,
@@ -380,6 +383,7 @@ def UpdateImageControls(self,data,masks):
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Distance'),0,
         wx.ALIGN_CENTER_VERTICAL)
     distSel = wx.TextCtrl(parent=self.dataDisplay,value=("%8.3f"%(data['distance'])),style=wx.TE_READONLY)
+    distSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(distSel,0,wx.ALIGN_CENTER_VERTICAL)
 
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' No. 2-theta/azimuth bins'),0,
@@ -396,6 +400,7 @@ def UpdateImageControls(self,data,masks):
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt angle'),0,
         wx.ALIGN_CENTER_VERTICAL)
     tiltSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['tilt'])),style=wx.TE_READONLY)
+    tiltSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(tiltSel,0,wx.ALIGN_CENTER_VERTICAL)
     showLines = wx.CheckBox(parent=self.dataDisplay,label='Show integration limits?')
     dataSizer.Add(showLines,0)
@@ -409,6 +414,7 @@ def UpdateImageControls(self,data,masks):
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt rotation'),0,
         wx.ALIGN_CENTER_VERTICAL)
     rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
+    rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault = wx.CheckBox(parent=self.dataDisplay,label='Use as default for all images?')
     dataSizer.Add(setDefault,0)
@@ -494,6 +500,12 @@ def UpdateMasks(self,data):
         UpdateMasks(self,data)           
         G2plt.PlotExposedImage(self)
 
+    def OnDeletePoly(event):
+        Obj = event.GetEventObject()
+        del(data['Polygons'][delPolyId.index(Obj)])
+        UpdateMasks(self,data)           
+        G2plt.PlotExposedImage(self)
+
     def OnCopyMask(event):
         TextList = []
         Names = []
@@ -529,7 +541,7 @@ def UpdateMasks(self,data):
     self.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=G2gd.wxID_MASKCOPY)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
-        Status.SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot")
+        Status.SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon")
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
@@ -543,12 +555,14 @@ def UpdateMasks(self,data):
     littleSizer = wx.FlexGridSizer(2,3,0,5)
     littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Lower/Upper limits '),0,
         wx.ALIGN_CENTER_VERTICAL)
-    littleSizer.Add(wx.TextCtrl(parent=self.dataDisplay,
-        value=("%8d" % (thresh[0][0])),style=wx.TE_READONLY),0,wx.ALIGN_CENTER_VERTICAL)
-    littleSizer.Add(wx.TextCtrl(parent=self.dataDisplay,
-        value=("%8d" % (thresh[0][1])),style=wx.wx.TE_READONLY),0,wx.ALIGN_CENTER_VERTICAL)    
-    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Lower/Upper thresholds '),0,
-        wx.ALIGN_CENTER_VERTICAL)
+    Text = wx.TextCtrl(self.dataDisplay,value=("%8d" % (thresh[0][0])),style=wx.TE_READONLY)
+    littleSizer.Add(Text,0,wx.ALIGN_CENTER_VERTICAL)
+    Text.SetBackgroundColour(VERY_LIGHT_GREY)
+    Text = wx.TextCtrl(self.dataDisplay,value=("%8d" % (thresh[0][1])),style=wx.TE_READONLY)
+    littleSizer.Add(Text,0,wx.ALIGN_CENTER_VERTICAL)
+    Text.SetBackgroundColour(VERY_LIGHT_GREY)
+    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Lower/Upper thresholds '),
+        0,wx.ALIGN_CENTER_VERTICAL)
     lowerThreshold = wx.TextCtrl(parent=self.dataDisplay,
         value=("%8d" % (thresh[1][0])),style=wx.TE_PROCESS_ENTER)
     lowerThreshold.Bind(wx.EVT_TEXT_ENTER,OnThreshold)
@@ -574,6 +588,7 @@ def UpdateMasks(self,data):
         for x,y,d in spots:
             spotText = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f,%.2f" % (x,y)),
                 style=wx.TE_READONLY)
+            spotTextazmText
             littleSizer.Add(spotText,0,wx.ALIGN_CENTER_VERTICAL)
             spotText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
             spotDiameter = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (d)),
@@ -602,6 +617,7 @@ def UpdateMasks(self,data):
         for tth,thick in rings:
             ringText = wx.TextCtrl(parent=self.dataDisplay,value=("%.3f" % (tth)),
                 style=wx.TE_READONLY)
+            ringText.SetBackgroundColour(VERY_LIGHT_GREY)
             ringText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
             littleSizer.Add(ringText,0,wx.ALIGN_CENTER_VERTICAL)
             ringThick = wx.TextCtrl(parent=self.dataDisplay,value=("%.3f" % (thick)),
@@ -633,10 +649,12 @@ def UpdateMasks(self,data):
         for tth,azimuth,thick in arcs:
             arcText = wx.TextCtrl(parent=self.dataDisplay,value=("%.3f" % (tth)),
                 style=wx.TE_READONLY)
+            arcText.SetBackgroundColour(VERY_LIGHT_GREY)
             arcText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
             littleSizer.Add(arcText,0,wx.ALIGN_CENTER_VERTICAL)
             azmText = wx.TextCtrl(parent=self.dataDisplay,value=("%d,%d" % (azimuth[0],azimuth[1])),
                 style=wx.TE_READONLY)
+            azmText.SetBackgroundColour(VERY_LIGHT_GREY)
             azmText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
             littleSizer.Add(azmText,0,wx.ALIGN_CENTER_VERTICAL)
             arcThick = wx.TextCtrl(parent=self.dataDisplay,value=("%.3f" % (thick)),
@@ -649,10 +667,25 @@ def UpdateMasks(self,data):
             delArcId.append(arcDelete)
             littleSizer.Add(arcDelete,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(littleSizer,0,)
-            
-        
-    
-
+    polyIds = []
+    delPolyId = []
+    if polygons:
+        littleSizer = wx.FlexGridSizer(len(polygons)+2,2,0,5)
+        littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Polygon masks:'),0,
+            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add((5,0),0)
+        for polygon in polygons:
+            if polygon:
+                polyList = []
+                for x,y in polygon:
+                    polyList.append("%.2f, %.2f"%(x,y))
+                polyText = wx.ComboBox(self.dataDisplay,value=polyList[0],choices=polyList,style=wx.CB_READONLY)
+                littleSizer.Add(polyText,0,wx.ALIGN_CENTER_VERTICAL)
+                polyDelete = wx.CheckBox(parent=self.dataDisplay,label='delete?')
+                polyDelete.Bind(wx.EVT_CHECKBOX,OnDeletePoly)
+                delPolyId.append(polyDelete)
+                littleSizer.Add(polyDelete,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(littleSizer,0,)
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))

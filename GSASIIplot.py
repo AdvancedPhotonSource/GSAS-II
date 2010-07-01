@@ -560,7 +560,7 @@ def PlotExposedImage(self,newPlot=False):
         PlotIntegration(self,newPlot)
 
 def PlotImage(self,newPlot=False):
-    from matplotlib.patches import Ellipse,Arc,Circle
+    from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
 
@@ -623,15 +623,35 @@ def PlotImage(self,newPlot=False):
                 azm = int(azm)                
                 print 'arc mask @ ', Xpos,Ypos
                 Masks['Arcs'].append([tth,[azm-5,azm+5],0.1])
+            elif event.key == 'p':
+                self.setPoly = True
+                Masks['Polygons'].append([])
+                print 'Polygon mask active - pick points with mouse LB'
+                print '   use RB to close when > 2 points chosen'
+                print 'Vertices can be dragged with LB down after polygon closed'
             G2imG.UpdateMasks(self,Masks)
         PlotImage(self)
             
     def OnImPick(event):
         if self.PatternTree.GetItemText(self.PickId) not in ['Image Controls','Masks']:
             return
-        if self.itemPicked is not None: return
-        pick = event.artist
-        self.itemPicked = pick
+        if self.setPoly:
+            Masks = self.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
+            polygon = Masks['Polygons'][-1]
+            xpos,ypos = event.mouseevent.xdata,event.mouseevent.ydata
+            if xpos and ypos:                       #point inside image
+                if len(polygon) > 2 and event.mouseevent.button == 3:
+                    x0,y0 = polygon[0]
+                    polygon.append([x0,y0])
+                    self.setPoly = False
+                else:           
+                    polygon.append([xpos,ypos])
+                G2imG.UpdateMasks(self,Masks)
+        else:
+            if self.itemPicked is not None: return
+            self.itemPicked = event.artist
+            self.mousePicked = event.mouseevent
         
     def OnImRelease(event):
         PickName = self.PatternTree.GetItemText(self.PickId)
@@ -708,6 +728,7 @@ def PlotImage(self,newPlot=False):
                         Obj = self.itemPicked.findobj()
                         rings = Masks['Rings']
                         arcs = Masks['Arcs']
+                        polygons = Masks['Polygons']
                         for ring in self.ringList:
                             if Obj == ring[0]:
                                 rN = ring[1]
@@ -726,6 +747,14 @@ def PlotImage(self,newPlot=False):
                                     arcs[aN][1][0] = int(G2img.GetAzm(xpos,ypos,Data))
                                 else:
                                     arcs[aN][1][1] = int(G2img.GetAzm(xpos,ypos,Data))
+                        for poly in self.polyList:
+                            if Obj == poly[0]:
+                                ind = self.itemPicked.contains(self.mousePicked)[1]['ind'][0]
+                                oldPos = np.array([self.mousePicked.xdata,self.mousePicked.ydata])
+                                pN = poly[1]
+                                for i,xy in enumerate(polygons[pN]):
+                                    if np.allclose(np.array([xy]),oldPos,atol=1.0):
+                                        polygons[pN][i] = xpos,ypos
                         G2imG.UpdateMasks(self,Masks)
 #                    else:                  #keep for future debugging
 #                        print str(self.itemPicked),event.xdata,event.ydata,event.button
@@ -785,7 +814,7 @@ def PlotImage(self,newPlot=False):
     ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
         interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
     Img = Plot.imshow(A,aspect='equal',cmap=acolor,
-        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
+        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0],picker=True)
 
     Plot.plot(xcent,ycent,'x')
     if Data['showLines']:
@@ -831,6 +860,7 @@ def PlotImage(self,newPlot=False):
     spots = Masks['Points']
     rings = Masks['Rings']
     arcs = Masks['Arcs']
+    polygons = Masks['Polygons']
     for x,y,d in spots:
         Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
     self.ringList = []
@@ -849,6 +879,10 @@ def PlotImage(self,newPlot=False):
         self.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
         self.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
         self.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
+    self.polyList = []
+    for ipoly,polygon in enumerate(polygons):
+        x,y = np.hsplit(np.array(polygon),2)
+        self.polyList.append([Plot.plot(x,y,'r',picker=3),ipoly])            
     colorBar = Page.figure.colorbar(Img)
     Plot.set_xlim(xlim)
     Plot.set_ylim(ylim)

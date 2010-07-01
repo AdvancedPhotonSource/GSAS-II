@@ -243,6 +243,7 @@ class GSASII(wx.Frame):
         self.imageDefault = {}
         self.Sngl = 0
         self.ifGetRing = False
+        self.setPoly = False
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -1039,7 +1040,7 @@ class GSASII(wx.Frame):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.peaklistfile = dlg.GetPath()
-                file = open(self.peaklistfile,'wa')                
+                file = open(self.peaklistfile,'w')                
                 item, cookie = self.PatternTree.GetFirstChild(self.root)
                 while item:
                     name = self.PatternTree.GetItemText(item)

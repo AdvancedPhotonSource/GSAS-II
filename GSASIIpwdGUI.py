@@ -11,6 +11,8 @@ import GSASIIindex as G2indx
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 
+VERY_LIGHT_GREY = wx.Colour(235,235,235)
+
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
@@ -19,7 +21,7 @@ asind = lambda x: 180.*math.asin(x)/math.pi
        
 def UpdatePeakGrid(self, data):
     if self.dataDisplay:
-        self.dataDisplay.Destroy()
+        self.dataFrame.Clear()
     
     def OnUnDo(event):
         DoUnDo()
@@ -223,9 +225,11 @@ def UpdatePeakGrid(self, data):
     self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)                 
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([550,350])
+    self.dataFrame.setSizePosLeft([535,350])
         
 def UpdateBackgroundGrid(self,data):
+    if self.dataDisplay:
+        self.dataFrame.Clear()
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
     
     def RefreshBackgroundGrid(event):
@@ -250,8 +254,8 @@ def UpdateBackgroundGrid(self,data):
                 wg.GRIDTABLE_NOTIFY_COLS_DELETED,0,M-N)
             self.dataDisplay.ProcessTableMessage(msg)                         
         self.PatternTree.SetItemPyData(BackId,data)
+        UpdateBackgroundGrid(self,data)
                   
-    self.dataFrame.setSizePosLeft([700,150])
     maxTerm = 9
     self.BackTable = []
     N = len(data[0])
@@ -267,16 +271,21 @@ def UpdateBackgroundGrid(self,data):
     self.BackTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Background')
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)
+    gridPanel = wx.Panel(self.dataFrame)
+    self.dataDisplay = G2gd.GSGrid(gridPanel)                
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshBackgroundGrid)                
     self.dataDisplay.SetTable(self.BackTable, True)
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(self.dataDisplay,0)
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
         
 def UpdateLimitsGrid(self, data):
     if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    self.dataFrame.setSizePosLeft([250,150])
+        self.dataFrame.Clear()
     LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
     def RefreshLimitsGrid(event):
         data = self.LimitsTable.GetData()
@@ -294,21 +303,24 @@ def UpdateLimitsGrid(self, data):
     self.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Limits')
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)                
+    gridPanel = wx.Panel(self.dataFrame)
+    self.dataDisplay = G2gd.GSGrid(gridPanel)                
     self.dataDisplay.SetTable(self.LimitsTable, True)
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(self.dataDisplay,0)
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
     
 def UpdateInstrumentGrid(self, data):
     if self.dataDisplay:
-        self.dataDisplay.Destroy()
+        self.dataFrame.Clear()
     Ka2 = False
-    Xwid = 700
     if len(data[0]) == 13: 
         Ka2 = True
-        Xwid = 840        
-    self.dataFrame.setSizePosLeft([Xwid,170])
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     InstId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters')
     
@@ -353,11 +365,13 @@ def UpdateInstrumentGrid(self, data):
         rowLabels = ['default','changed','refine']
         self.InstrumentTable = G2gd.Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
         self.dataFrame.SetLabel('Instrument Parameters')
-        self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)                
+        gridPanel = wx.Panel(self.dataFrame)
+        self.dataDisplay = G2gd.GSGrid(gridPanel)                
         self.dataDisplay.SetTable(self.InstrumentTable, True)
         self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshInstrumentGrid)                
         self.dataDisplay.SetMargins(0,0)
         self.dataDisplay.AutoSizeColumns(False)
+        print len(Types)
         beg = 4
         if Ka2: beg = 6
         for i in range(len(data[2])):
@@ -374,11 +388,17 @@ def UpdateInstrumentGrid(self, data):
         rowLabels = ['original','changed']
         self.InstrumentTable = Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
         self.dataFrame.SetLabel('Instrument Parameters')
-        self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)                
+        gridPanel = wx.Panel(self.dataFrame)
+        self.dataDisplay = G2gd.GSGrid(gridPanel)                
         self.dataDisplay.SetTable(self.InstrumentTable, True)
         self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshInstrumentGrid)                
         self.dataDisplay.SetMargins(0,0)
         self.dataDisplay.AutoSizeColumns(False)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(self.dataDisplay,0)
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
                 
 def UpdateIndexPeaksGrid(self, data):
     IndexId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List')
@@ -417,8 +437,7 @@ def UpdateIndexPeaksGrid(self, data):
                         for row in range(self.IndexPeaksTable.GetNumberRows()): data[row][col]=False
             
     if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    self.dataFrame.setSizePosLeft([500,300])
+        self.dataFrame.Clear()
     self.dataFrame.SetMenuBar(self.dataFrame.IndPeaksMenu)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
@@ -454,7 +473,8 @@ def UpdateIndexPeaksGrid(self, data):
     self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
-
+    self.dataFrame.setSizePosLeft([490,300])
+  
 def UpdateUnitCellsGrid(self, data):
     UnitCellsId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List')
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
@@ -705,7 +725,8 @@ def UpdateUnitCellsGrid(self, data):
         self.bottom = wx.Panel(self.sp, style=wx.SUNKEN_BORDER)
         self.sp.SplitHorizontally(self.dataDisplay,self.bottom,0)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Indexing controls '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Indexing controls: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(2,5,5,5)
     littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max Nc/Nobs '),0,wx.ALIGN_CENTER_VERTICAL)
     NcNo = wx.SpinCtrl(self.dataDisplay)
@@ -718,8 +739,10 @@ def UpdateUnitCellsGrid(self, data):
     startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
     littleSizer.Add(startVol,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Select Bravais Lattices for indexing '),
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Select Bravais Lattices for indexing: '),
         0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(2,7,5,5)
     bravList = []
     bravs = zip(bravais,bravaisNames)
@@ -730,8 +753,9 @@ def UpdateUnitCellsGrid(self, data):
         bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
         littleSizer.Add(bravCk,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
+    mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(1,3,5,5)
-    littleSizer.Add(wx.StaticText(self.dataDisplay,label="Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
     zero = wx.TextCtrl(self.dataDisplay,value=str(controls[1]),style=wx.TE_PROCESS_ENTER)
     zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
     littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
@@ -740,14 +764,17 @@ def UpdateUnitCellsGrid(self, data):
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Cell Refinement '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Cell Refinement: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(1,2,5,5)
-    littleSizer.Add(wx.StaticText(self.dataDisplay,label="Bravais lattice"),0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Bravais lattice"),0,wx.ALIGN_CENTER_VERTICAL)
     bravSel = wx.Choice(self.dataDisplay,choices=bravaisSymb)
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
+    mainSizer.Add((5,5),0)
     ibrav = SetLattice(controls)
     for cellGUI in cellGUIlist:
         if ibrav in cellGUI[0]:
@@ -763,6 +790,7 @@ def UpdateUnitCellsGrid(self, data):
             cellList.append(cellVal.GetId())
         else:               #volume
             volVal = wx.TextCtrl(self.dataDisplay,value=(fmt%(controls[12])),style=wx.TE_READONLY)
+            volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     mainSizer.Layout()    
@@ -770,10 +798,19 @@ def UpdateUnitCellsGrid(self, data):
     topSize = mainSizer.Fit(self.dataFrame)
     self.dataDisplay.SetSize(topSize)
     if cells:
-        topSize[1] += 200
+        if ibrav == 13:
+            topSize[1] += 230
+        else:
+            topSize[1] += 200
     self.dataFrame.setSizePosLeft(topSize)
     
+    
     if cells:
+        bottomSize = self.bottom.GetSize()
+        if ibrav == 13:
+            bottomSize[1] -= 240
+        else:
+            bottomSize[1] -= 210
         wx.StaticText(parent=self.bottom,label=' Indexing Result ')
         rowLabels = []
         colLabels = ['M20','X20','use','Bravais','a','b','c','alpha','beta','gamma','Volume']
@@ -807,3 +844,4 @@ def UpdateUnitCellsGrid(self, data):
                     gridDisplay.SetReadOnly(r,c,isReadOnly=False)
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
+        gridDisplay.SetSize(bottomSize)

@@ -968,7 +968,7 @@ def ReadPDBPhase(filename):
             S = file.readline()
         elif 'ATOM' in S[:4] or 'HETATM' in S[:6]:
             XYZ = [float(S[31:39]),float(S[39:47]),float(S[47:55])]
-            XYZ = np.sum(AA*XYZ,axis=1)
+            XYZ = np.sum(AB*XYZ,axis=1)
             SytSym,Mult = G2spc.SytSym(XYZ,SGData)
             Uiso = float(S[61:67])/EightPiSq
             Type = S[12:14].upper()

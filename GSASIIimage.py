@@ -23,6 +23,21 @@ npcosd = lambda x: np.cos(x*np.pi/180.)
 nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+    
+def pointInPolygon(pXY,xy):
+    #pXY - assumed closed 1st & last points are duplicates
+    Inside = False
+    N = len(pXY)
+    p1x,p1y = pXY[0]
+    for i in range(N+1):
+        p2x,p2y = pXY[i%N]
+        if (max(p1y,p2y) >= xy[1] > min(p1y,p2y)) and (xy[0] <= max(p1x,p2x)):
+            if p1y != p2y:
+                xinters = (xy[1]-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+            if p1x == p2x or xy[0] <= xinters:
+                Inside = not Inside
+        p1x,p1y = p2x,p2y
+    return Inside
         
 def makeMat(Angle,Axis):
     #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
@@ -453,9 +468,12 @@ def Make2ThetaAzimuthMap(data,masks,imageN):
     tay = np.asfarray(tay*scaley,dtype=np.float32)
     #make position masks here
     spots = masks['Points']
+    polygons = masks['Polygons']
     tam = ma.make_mask_none((imageN,imageN))
     for X,Y,diam in spots:
         tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))
+    for polygon in polygons:
+        tam = ma.mask_or(tam.flatten(),ma.make_mask([pointInPolygon(polygon,xy) for xy in zip(tax.flatten(),tay.flatten())]))
     return GetTthAzm(tax,tay,data),tam           #2-theta & azimuth arrays & position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):

@@ -488,6 +488,74 @@ def SytSym(XYZ,SGData):
           
     return GetKNsym(str(Isym)),Mult
     
+'''A list of space groups as ordered and named in the pre-2002 International 
+Tables Volume A, except that spaces are used following the GSAS convention to 
+separate the different crystallographic directions.
+Note that the symmetry codes here will recognize many non-standard space group 
+symbols with different settings.
+'''
+spglist = {
+    'triclinic' : ('P 1','P -1',), # 1-2
+    'monoclinic': ('P 2','P 21','C 2','P m','P c','C m','C c','P 2/m','P 21/m',
+                   'C 2/m','P 2/c','P 21/c','C 2/c',), #3-15
+    'orthorhombic': ('P 2 2 2','P 2 2 21','P 21 21 2','P 21 21 21','C 2 2 21',
+                     'C 2 2 2','F 2 2 2','I 2 2 2','I 21 21 21',
+                     'P m m 2','P m c 21','P c c 2','P m a 2','P c a 21',
+                     'P n c 2','P m n 21','P b a 2','P n a 21','P n n 2',
+                     'C m m 2','C m c 21','C c c 2','A m m 2','A b m 2',
+                     'A m a 2','A b a 2','F m m 2','F d d 2','I m m 2',
+                     'I b a 2','I m a 2','P m m m','P n n n','P c c m',
+                     'P b a n','P m m a','P n n a','P m n a','P c c a',
+                     'P b a m','P c c n','P b c m','P n n m','P m m n',
+                     'P b c n','P b c a','P n m a','C m c m','C m c a',
+                     'C m m m','C c c m','C m m a','C c c a','F m m m',
+                     'F d d d','I m m m','I b a m','I b c a','I m m a',), #16-74
+    'tetragonal': ('P 4','P 41','P 42','P 43','I 4','I 41','P -4','I -4',
+                   'P 4/m','P 42/m','P 4/n','P 42/n','I 4/m','I 41/a',
+                   'P 4 2 2','P 4 21 2','P 41 2 2','P 41 21 2','P 42 2 2',
+                   'P 42 21 2','P 43 2 2','P 43 21 2','I 4 2 2','I 41 2 2',
+                   'P 4 m m','P 4 b m','P 42 c m','P 42 n m','P 4 c c',
+                   'P 4 n c','P 42 m c','P 42 b c','I 4 m m','I 4 c m',
+                   'I 41 m d','I 41 c d','P -4 2 m','P -4 2 c','P -4 21 m',
+                   'P -4 21 c','P -4 m 2','P -4 c 2','P -4 b 2','P -4 n 2',
+                   'I -4 m 2','I -4 c 2','I -4 2 m','I -4 2 d','P 4/m m m',
+                   'P 4/m c c','P 4/n b m','P 4/n n c','P 4/m b m','P 4/m n c',
+                   'P 4/n m m','P 4/n c c','P 42/m m c','P 42/m c m',
+                   'P 42/n b c','P 42/n n m','P 42/m b c','P 42/m n m',
+                   'P 42/n m c','P 42/n c m','I 4/m m m','I 4/m c m',
+                   'I 41/a m d','I 41/a c d',), # 75-142
+    'trigonal': ('P 3','P 31','P 32','R 3','P -3','R -3','P 3 1 2','P 3 2 1',
+                 'P 31 1 2','P 31 2 1','P 32 1 2','P 32 2 1','R 3 2', 'P 3 m 1',
+                 'P 3 1 m','P 3 c 1','P 3 1 c','R 3 m','R 3 c','P -3 1 m',
+                 'P -3 1 c','P -3 m 1','P -3 c 1','R -3 m','R -3 c',), #143-167
+    'hexagonal': ('P 6','P 61','P 65','P 62','P 64','P 63','P -6','P 6/m',
+                  'P 63/m','P 6 2 2','P 61 2 2','P 65 2 2','P 62 2 2',
+                  'P 64 2 2','P 63 2 2','P 6 m m','P 6 c c','P 63 c m',
+                  'P 63 m c','P -6 m 2','P -6 c 2','P -6 2 m','P -6 2 c',
+                  'P 6/m m m','P 6/m c c','P 63/m c m','P 63/m m c',), #144-194
+    'cubic': ('P 2 3','F 2 3','I 2 3','P 21 3','I 21 3','P m -3','P n -3',
+              'F m -3','F d -3','I m -3','P a -3','I a -3','P 4 3 2','P 42 3 2',
+              'F 4 3 2','F 41 3 2','I 4 3 2','P 43 3 2','P 41 3 2','I 41 3 2',
+              'P -4 3 m','F -4 3 m','I -4 3 m','P -4 3 n','F -4 3 c','I -4 3 d',
+              'P m -3 m','P n -3 n','P m -3 n','P n -3 m','F m -3 m','F m -3 c',
+              'F d -3 m','F d -3 c','I m -3 m','I a -3 d',), #195-230
+}
+'A few non-standard space groups for test use'
+nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h', 
+                      'R -3 r', 'R 3 2 r','R 3 m h', 'R 3 m r',
+                      'R 3 c r','R -3 c r','R -3 m r',),
+'''A list of orthorhombic space groups that were renamed in the 2002 Volume A,
+along with the pre-2002 name. The e designates a double glide-plane'''
+sgequiv_2002_orthorhombic= (('A e m 2', 'A b m 2',),
+                            ('A e a 2', 'A b a 2',),
+                            ('C m c e', 'C m c a',),
+                            ('C m m e', 'C m m a',),
+                            ('C c c e', 'C c c a'),)
+'''Use the space groups types in this order to list the symbols in the 
+order they are listed in the International Tables, vol. A'''
+symtypelist = ('triclinic', 'monoclinic', 'orthorhombic', 'tetragonal', 
+               'trigonal', 'hexagonal', 'cubic')
+
 # self-test materials follow. Requires files in directory testinp
 def test0():
     '''test #0: exercise MoveToUnitCell'''

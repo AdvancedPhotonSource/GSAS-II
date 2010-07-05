@@ -22,6 +22,10 @@ def test_GSASIIlattice5():
     G2l.test5()
 def test_GSASIIlattice6():
     G2l.test6()
+def test_GSASIIlattice7():
+    G2l.test7()
+def test_GSASIIlattice8():
+    G2l.test8()
 
 if __name__ == '__main__':
     test_GSASIIspc()
@@ -35,4 +39,6 @@ if __name__ == '__main__':
     G2l.test4()
     G2l.test5()
     G2l.test6()
+    G2l.test7()
+    G2l.test8()
     print "OK"

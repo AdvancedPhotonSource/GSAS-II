@@ -382,26 +382,27 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                     if 0 < rdsq <= dminsq:
                         HKL.append([h,k,l,1/math.sqrt(rdsq)])
     elif Laue == '2/m':                #monoclinic
-        Hmax = SwapIndx(Axis,Hmax)
+        axisnum = 1 + ['a','b','c'].index(Axis)
+        Hmax = SwapIndx(axisnum,Hmax)
         for h in range(Hmax[0]+1):
             for k in range(-Hmax[1],Hmax[1]+1):
                 lmin = 0
                 if k < 0:lmin = 1
                 for l in range(lmin,Hmax[2]+1):
-                    [h,k,l] = SwapIndx(-Axis,[h,k,l])
+                    [h,k,l] = SwapIndx(-axisnum,[h,k,l])
                     H = []
                     if CentCheck(Cent,[h,k,l]): H=[h,k,l]
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
-                    [h,k,l] = SwapIndx(Axis,[h,k,l])
+                    [h,k,l] = SwapIndx(axisnum,[h,k,l])
     elif Laue in ['mmm','4/m','6/m']:            #orthorhombic
         for l in range(Hmax[2]+1):
             for h in range(Hmax[0]+1):
                 kmin = 1
                 if Laue == 'mmm' or h ==0: kmin = 0
-                for k in range(kmin,Hmax[2]+1):
+                for k in range(kmin,Hmax[1]+1):
                     H = []
                     if CentCheck(Cent,[h,k,l]): H=[h,k,l]
                     if H:
@@ -580,6 +581,113 @@ def test6():
             assert np.allclose(ortho,to), msg
             assert np.allclose(frac,tf), msg
 
+# test GetBraviasNum(...) and GenHBravais(...)
+def test7():
+    import os.path
+    import sys
+    import GSASIIspc as spc
+    testdir = os.path.join(os.path.split(os.path.abspath( __file__ ))[0],'testinp')
+    if os.path.exists(testdir):
+        if testdir not in sys.path: sys.path.insert(0,testdir)
+    import sgtbxlattinp
+    derror = 1e-4
+    def indexmatch(hklin, hkllist, system):
+        for hklref in hkllist:
+            hklref = list(hklref)
+            # these permutations are far from complete, but are sufficient to 
+            # allow the test to complete
+            if system == 'cubic':
+                permlist = [(1,2,3),(1,3,2),(2,1,3),(2,3,1),(3,1,2),(3,2,1),]
+            elif system == 'monoclinic':
+                permlist = [(1,2,3),(-1,2,-3)]
+            else:
+                permlist = [(1,2,3)]
+
+            for perm in permlist:
+                hkl = [abs(i) * hklin[abs(i)-1] / i for i in perm]
+                if hkl == hklref: return True
+                if [-i for i in hkl] == hklref: return True
+        else:
+            return False
+
+    for key in sgtbxlattinp.sgtbx7:
+        spdict = spc.SpcGroup(key)
+        cell = sgtbxlattinp.sgtbx7[key][0]
+        system = spdict[1]['SGSys']
+        center = spdict[1]['SGLatt']
+
+        bravcode = GetBraviasNum(center, system)
+
+        g2list = GenHBravais(sgtbxlattinp.dmin, bravcode, cell2A(cell))
+
+        assert len(sgtbxlattinp.sgtbx7[key][1]) == len(g2list), 'Reflection lists differ for %s' % key
+        for h,k,l,d,num in g2list:
+            for hkllist,dref in sgtbxlattinp.sgtbx7[key][1]: 
+                if abs(d-dref) < derror:
+                    if indexmatch((h,k,l,), hkllist, system):
+                        break
+            else:
+                assert 0,'No match for %s at %s (%s)' % ((h,k,l),d,key)
+
+def test8():
+    import GSASIIspc as spc
+    import sgtbxlattinp
+    derror = 1e-4
+    dmin = sgtbxlattinp.dmin
+
+    def indexmatch(hklin, hklref, system, axis):
+        # these permutations are far from complete, but are sufficient to 
+        # allow the test to complete
+        if system == 'cubic':
+            permlist = [(1,2,3),(1,3,2),(2,1,3),(2,3,1),(3,1,2),(3,2,1),]
+        elif system == 'monoclinic' and axis=='b':
+            permlist = [(1,2,3),(-1,2,-3)]
+        elif system == 'monoclinic' and axis=='a':
+            permlist = [(1,2,3),(1,-2,-3)]
+        elif system == 'monoclinic' and axis=='c':
+            permlist = [(1,2,3),(-1,-2,3)]
+        elif system == 'trigonal':
+            permlist = [(1,2,3),(2,1,3),(-1,-2,3),(-2,-1,3)]
+        else:
+            permlist = [(1,2,3)]
+
+        hklref = list(hklref)
+        for perm in permlist:
+            hkl = [abs(i) * hklin[abs(i)-1] / i for i in perm]
+            if hkl == hklref: return True
+            if [-i for i in hkl] == hklref: return True
+        return False
+
+    for key in sgtbxlattinp.sgtbx8:
+        spdict = spc.SpcGroup(key)[1]
+        cell = sgtbxlattinp.sgtbx8[key][0]
+        center = spdict['SGLatt']
+        Laue = spdict['SGLaue']
+        Axis = spdict['SGUniq']
+        system = spdict['SGSys']
+
+        g2list = GenHLaue(dmin,Laue,center,Axis,cell2A(cell))
+        #if len(g2list) != len(sgtbxlattinp.sgtbx8[key][1]):
+        #    print 'failed',key,':' ,len(g2list),'vs',len(sgtbxlattinp.sgtbx8[key][1])
+        #    print 'GSAS-II:'
+        #    for h,k,l,d in g2list: print '  ',(h,k,l),d
+        #    print 'SGTBX:'
+        #    for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
+        assert len(g2list) == len(sgtbxlattinp.sgtbx8[key][1]), (
+            'Reflection lists differ for %s' % key
+            )
+        #match = True
+        for h,k,l,d in g2list:
+            for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: 
+                if abs(d-dref) < derror:
+                    if indexmatch((h,k,l,), hkllist, system, Axis): break
+            else:
+                assert 0,'No match for %s at %s (%s)' % ((h,k,l),d,key)
+                #match = False
+        #if not match: 
+            #for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
+            #print center, Laue, Axis, system
+
 if __name__ == '__main__':
     test0()
     test1()
@@ -588,4 +696,6 @@ if __name__ == '__main__':
     test4()
     test5()
     test6()
+    test7()
+    test8()
     print "OK"

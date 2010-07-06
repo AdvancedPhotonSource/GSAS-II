@@ -118,8 +118,8 @@ def cell2AB(cell):
     '''Computes orthogonalization matrix from unit cell constants
     cell is tuple with a,b,c,alpha, beta, gamma (degrees)
     returns list of two 3x3 numpy arrays
-       A for Cartesian to crystal transformations A*X = x 
-       B (inverse) for crystal to Cartesian transformation B*x = X
+       A for crystal to Cartesian transformations A*x = X 
+       B (inverse) for Cartesian to crystal transformation B*X = x
     '''
     G,g = cell2Gmat(cell) 
     cellstar = Gmat2cell(G)

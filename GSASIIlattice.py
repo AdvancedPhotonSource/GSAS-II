@@ -359,7 +359,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
     for a lattice and Bravais type
     '''
 # dmin - minimum d-spacing
-# Laue - Laue group symbol = '-1','2/m','mmmm','4/m','6/m','4/mmm','6/mmm',
+# Laue - Laue group symbol = '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
 #                            '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
 # Cent - lattice centering = 'P','A','B','C','I','F'
 # Axis - code for unique monoclinic axis = 'a','b','c'

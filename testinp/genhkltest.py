@@ -58,9 +58,19 @@ spg = ("P -1",
        "C m m m",
        "F m m m",
        "I m m m",
+       "P -4",
        "P 4/m m m",
        "I 4/m m m",
+       "P 3",
+       "P 3 2 1",
+       "P 3 1 m",
+       "P -3 1 m",
+       "R 3",
+       "R 3 m",
        "R -3 m",
+       "R 3 R",
+       "R -3 m R",
+       "P -6",
        "P 6/m m m",
        "P m -3 m",
        "I m -3 m",
@@ -74,7 +84,10 @@ for sg in spg:
     cs = sgi.any_compatible_crystal_symmetry(volume=1000)
     ms = cs.build_miller_set(anomalous_flag=False, d_min=dmin)
     #ms.show_summary()
-    spcg = ("%s" %  ms.space_group_info()).split(':')[0]
+    spcglist = ("%s" %  ms.space_group_info()).split(':')
+    spcg = spcglist[0]
+    if len(spcglist) > 1:
+        if spcglist[1] == 'R': spcg += ' R'
     print spcg
     #fp.write("'%s': [\n" % spcg)
     fp.write("'%s': [\n" % sg)

@@ -13,13 +13,13 @@ Cf2py intent(in) NYBINS
 Cf2py intent(in) XLIM
 Cf2py intent(in) YLIM
 Cf2py intent(in,out) NST
-Cf2py depend(NXBINS,NYBINS) 
+Cf2py depend(NXBINS,NYBINS) NST
 Cf2py intent(in,out) HST
-Cf2py depend(NXBINS,NYBINS) 
+Cf2py depend(NXBINS,NYBINS) HST
 Cf2py intent(in,out) HSTX
-Cf2py depend(NXBINS) 
+Cf2py depend(NXBINS) HSTX
 Cf2py intent(in,out) HSTY
-Cf2py depend(NYBINS) 
+Cf2py depend(NYBINS) HSTY
 
       IMPLICIT NONE
       INTEGER*4   N
@@ -42,12 +42,12 @@ Cf2py depend(NYBINS)
       DO J=0,NYBINS
         HSTY(J) = YLIM(0)+FLOAT(J)*DY
       END DO
-
-      DO K=0,N
+      
+      DO K=0,N-1
         IF ( ( X(K) .GE. XLIM(0) .AND. X(K) .LE. XLIM(1)) .AND.
      1    (Y(K) .GE. YLIM(0) .AND. Y(K). LE. YLIM(1)) ) THEN
-          I = INT((X(K)-XLIM(0))/DX)
-          J = INT((Y(K)-YLIM(0))/DY)
+          I = NINT((X(K)-XLIM(0))/DX+0.5)-1
+          J = NINT((Y(K)-YLIM(0))/DY+0.5)-1
           NST(I,J) = NST(I,J)+1
           HST(I,J) = HST(I,J)+Z(K)
         END IF

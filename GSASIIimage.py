@@ -523,12 +523,11 @@ def Bin2ThetaAzimuthMap(data,tax,tay,taz):
     numChans = data['outChannels']
     t0 = time.time()
     NST = np.zeros(shape=(numAzms,numChans),dtype=np.int,order='F')
-    H0 = np.zeros(shape=(numAzms,numChans),order='F')
+    H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H1 = np.zeros(shape=(numAzms+1,))
     H2 = np.zeros(shape=(numChans+1,))    
-    NST,H0,H1,H2 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,NST,H0,H1,H2)
     HST = [H0,H1,H2]
-    print "Binning elapsed time:","%8.3f"%(time.time()-t0), "s"
+    NST,H0,H1,H2 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,NST,H0,H1,H2)
     return NST,HST
 
 def ImageIntegrate(self,data,masks):
@@ -548,11 +547,14 @@ def ImageIntegrate(self,data,masks):
         dlg.Update(2)
         print 'Bin image by 2-theta/azimuth intervals'
         NST,HST = Bin2ThetaAzimuthMap(data,tax,tay,taz)
+        print 'Binning complete'
         del tax,tay,taz
         dlg.Update(3)
         print 'Form normalized 1D pattern(s)'
-        self.Integrate = [HST[0]/NST,HST[1],HST[2]]
-        del NST,HST
+        HST[0] = np.divide(HST[0],NST)
+        print 'Normalize done'
+        self.Integrate = HST
+        del NST
         dlg.Update(4)
         t1 = time.time()
         print "Elapsed time:","%8.3f"%(t1-t0), "s"

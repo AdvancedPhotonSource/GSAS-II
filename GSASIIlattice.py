@@ -148,7 +148,6 @@ def calc_rDsqZ(H,A,Z,tth,lam):
     return rdsq
        
 def MaxIndex(dmin,A):
-    #finds maximum allowed hkl for given A within dmin
     Hmax = [0,0,0]
     try:
         cell = A2cell(A)
@@ -185,6 +184,27 @@ def SwapIndx(Axis,H):
         return [H[1],H[2],H[0]]
     else:
         return [H[2],H[0],H[1]]
+        
+def Rh2Hx(Rh):
+    Hx = [0,0,0]
+    Hx[0] = Rh[0]-Rh[1]
+    Hx[1] = Rh[1]-Rh[2]
+    Hx[2] = np.sum(Rh)
+    return Hx
+    
+def Hx2Rh(Hx):
+        Rh = [0,0,0]
+        itk = -Hx[0]+Hx[1]+Hx[2]
+        if itk%3 != 0:
+            return 0        #error - not rhombohedral reflection
+        else:
+            Rh[1] = itk/3
+            Rh[0] = Rh[1]+Hx[0]
+            Rh[2] = Rh[1]-Hx[1]
+            if Rh[0] < 0:
+                for i in range(3):
+                    Rh[i] = -Rh[i]
+            return Rh
         
 def CentCheck(Cent,H):
     h,k,l = H
@@ -367,7 +387,18 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
 # returns - HKL = list of [h,k,l,d] sorted with largest d first and is unique 
 # part of reciprocal space ignoring anomalous dispersion
     import math
-    Hmax = MaxIndex(dmin,A)
+    #finds maximum allowed hkl for given A within dmin
+    if Laue in ['3R','3mR']:        #Rhombohedral axes
+        Hmax = [0,0,0]
+        cell = A2cell(A)
+        aHx = cell[0]*math.sqrt(2.0*(1.0-cosd(cell[3])))
+        cHx = cell[0]*math.sqrt(3.0*(1.0+2.0*cosd(cell[3])))
+        Hmax[0] = Hmax[1] = int(round(aHx/dmin))
+        Hmax[2] = int(round(cHx/dmin))
+        print Hmax,aHx,cHx
+    else:                           # all others
+        Hmax = MaxIndex(dmin,A)
+        
     dminsq = 1./(dmin**2)
     HKL = []
     if Laue == '-1':                       #triclinic
@@ -426,7 +457,8 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
             for h in range(hmin,Hmax[0]+1):
                 if Laue in ['3R','3']:
                     kmax = h
-                    kmin = -int((h-1)/2.)
+#                    kmin = -int((h-1.)/2.)
+                    kmin = -(h-1)/2
                 else:
                     kmin = 0
                     kmax = h
@@ -435,10 +467,13 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                 for k in range(kmin,kmax+1):
                     H = []
                     if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if Laue in ['3R','3mR']:
+                        H = Hx2Rh(H)
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                            print H,1/math.sqrt(rdsq)
     else:                                   #cubic
         for h in range(Hmax[0]+1):
             for k in range(h+1):
@@ -580,6 +615,10 @@ def test6():
             tf = np.inner(B,to)
             assert np.allclose(ortho,to), msg
             assert np.allclose(frac,tf), msg
+            to = np.sum(A*frac,axis=1)
+            tf = np.sum(B*to,axis=1)
+            assert np.allclose(ortho,to), msg
+            assert np.allclose(frac,tf), msg
 
 # test GetBraviasNum(...) and GenHBravais(...)
 def test7():
@@ -648,6 +687,8 @@ def test8():
             permlist = [(1,2,3),(-1,-2,3)]
         elif system == 'trigonal':
             permlist = [(1,2,3),(2,1,3),(-1,-2,3),(-2,-1,3)]
+        elif system == 'rhombohedral':
+            permlist = [(1,2,3),(2,3,1),(3,1,2),(-1,-2,-3),(-2,-3,-1),(-3,-1,-2)]
         else:
             permlist = [(1,2,3)]
 

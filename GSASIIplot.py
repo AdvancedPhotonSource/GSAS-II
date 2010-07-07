@@ -664,6 +664,7 @@ def PlotImage(self,newPlot=False):
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
+        print self.itemPicked
         if self.itemPicked is None and PickName == 'Image Controls':
             size = len(self.ImageZ)
             Xpos = event.xdata
@@ -814,7 +815,7 @@ def PlotImage(self,newPlot=False):
     ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
         interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
     Img = Plot.imshow(A,aspect='equal',cmap=acolor,
-        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0],picker=True)
+        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
 
     Plot.plot(xcent,ycent,'x')
     if Data['showLines']:

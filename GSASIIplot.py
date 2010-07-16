@@ -345,7 +345,6 @@ def PlotPatterns(self,newPlot=False):
                 PlotList.append(Pattern)
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
     Ymax = 1.0
-    print len(PlotList)
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))

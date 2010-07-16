@@ -395,7 +395,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
         cHx = cell[0]*math.sqrt(3.0*(1.0+2.0*cosd(cell[3])))
         Hmax[0] = Hmax[1] = int(round(aHx/dmin))
         Hmax[2] = int(round(cHx/dmin))
-        print Hmax,aHx,cHx
+        #print Hmax,aHx,cHx
     else:                           # all others
         Hmax = MaxIndex(dmin,A)
         
@@ -457,8 +457,8 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
             for h in range(hmin,Hmax[0]+1):
                 if Laue in ['3R','3']:
                     kmax = h
-#                    kmin = -int((h-1.)/2.)
-                    kmin = -(h-1)/2
+                    kmin = -int((h-1.)/2.)
+                    #kmin = -(h-1)/2
                 else:
                     kmin = 0
                     kmax = h
@@ -472,8 +472,8 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
-                            print H,1/math.sqrt(rdsq)
+                            HKL.append([H[0],H[1],H[2],1/math.sqrt(rdsq)])
+                            #print H,1/math.sqrt(rdsq)
     else:                                   #cubic
         for h in range(Hmax[0]+1):
             for k in range(h+1):

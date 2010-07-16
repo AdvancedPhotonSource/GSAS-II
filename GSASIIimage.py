@@ -458,29 +458,28 @@ def ImageCalibrate(self,data):
     G2plt.PlotImage(self)        
     return True
     
-def Make2ThetaAzimuthMap(data,masks,imageN):
+def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     import numpy.ma as ma
     import polymask as pm
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    tay,tax = np.mgrid[0.5:imageN+.5,0.5:imageN+.5]         #bin centers not corners
+    
+    tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32)
     tay = np.asfarray(tay*scaley,dtype=np.float32)
+    nI = iLim[1]-iLim[0]
+    nJ = jLim[1]-jLim[0]
     #make position masks here
     spots = masks['Points']
     polygons = masks['Polygons']
-    tam = ma.make_mask_none((imageN,imageN))
-    if polygons:
-        print 'Generate polygon mask'
+    tam = ma.make_mask_none((iLim[1]-iLim[0],jLim[1]-jLim[0]))
     for polygon in polygons:
-        tamp = ma.make_mask_none((imageN*imageN))
-        tam = ma.mask_or(tam.flatten(),ma.make_mask(pm.polymask(imageN*imageN,
+        tamp = ma.make_mask_none((nI*nJ))
+        tam = ma.mask_or(tam.flatten(),ma.make_mask(pm.polymask(nI*nJ,
             tax.flatten(),tay.flatten(),len(polygon),polygon,tamp)))
-    if spots:
-        print 'Generate spot mask'
-    tam = np.reshape(tam,(imageN,imageN))
+    if tam.shape: tam = np.reshape(tam,(nI,nJ))
     for X,Y,diam in spots:
         tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))
     return GetTthAzm(tax,tay,data),tam           #2-theta & azimuth arrays & position mask
@@ -490,16 +489,13 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     Zlim = masks['Thresholds'][1]
     rings = masks['Rings']
     arcs = masks['Arcs']
-    imageN = len(image)
-    TA = np.reshape(TA,(2,imageN,imageN))
+    nJ = len(image)
+    nI = len(image[0])
+    TA = np.reshape(TA,(2,nI,nJ))
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
     tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
-    if rings:
-        print 'Generate ring mask'
     for tth,thick in rings:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
-    if arcs:
-        print 'Generate arc mask'
     for tth,azm,thick in arcs:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))* \
             ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1])))
@@ -511,9 +507,9 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     del(tam)
     return tax,tay,taz
     
-def Bin2ThetaAzimuthMap(data,tax,tay,taz):
-    import numpy.ma as ma
+def ImageIntegrate(self,data,masks):
     import histogram2d as h2d
+    print 'Begin image integration'
     LUtth = data['IOtth']
     if data['fullIntegrate']:
         LRazm = [-180,180]
@@ -521,41 +517,50 @@ def Bin2ThetaAzimuthMap(data,tax,tay,taz):
         LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
-    t0 = time.time()
+    Dtth = (LUtth[1]-LUtth[0])/numChans
+    Dazm = (LRazm[1]-LRazm[0])/numAzms
     NST = np.zeros(shape=(numAzms,numChans),dtype=np.int,order='F')
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
-    H1 = np.zeros(shape=(numAzms+1,))
-    H2 = np.zeros(shape=(numChans+1,))    
-    HST = [H0,H1,H2]
-    NST,H0,H1,H2 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,NST,H0,H1,H2)
-    return NST,HST
-
-def ImageIntegrate(self,data,masks):
-    dlg = wx.ProgressDialog("Elapsed time","2D image integration",5,
+    imageN = len(self.ImageZ)
+    nBlks = (imageN-1)/1024+1
+    dlg = wx.ProgressDialog("Elapsed time","2D image integration",nBlks*nBlks*3+3,
         style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
     try:
-        print 'Begin image integration'
-        print 'Create 2-theta,azimuth map'
         t0 = time.time()
-        dlg.Update(0)
-        imageN = len(self.ImageZ)
-        TA,tam = Make2ThetaAzimuthMap(data,masks,imageN)           #2-theta & azimuth arrays & create position mask
-        dlg.Update(1)
-        print 'Fill map with 2-theta/azimuth values'
-        tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,self.ImageZ)    #and apply masks
-        del TA
-        dlg.Update(2)
-        print 'Bin image by 2-theta/azimuth intervals'
-        NST,HST = Bin2ThetaAzimuthMap(data,tax,tay,taz)
-        print 'Binning complete'
-        del tax,tay,taz
-        dlg.Update(3)
-        print 'Form normalized 1D pattern(s)'
-        HST[0] = np.divide(HST[0],NST)
-        print 'Normalize done'
-        self.Integrate = HST
+        Nup = 0
+        dlg.Update(Nup)
+        for iBlk in range(nBlks):
+            iBeg = iBlk*1024
+            iFin = min(iBeg+1024,imageN)
+            for jBlk in range(nBlks):
+                jBeg = jBlk*1024
+                jFin = min(jBeg+1024,imageN)                
+                print 'Process map block',iBlk,jBlk,iBeg,iFin,jBeg,jFin
+                TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+                Nup += 1
+                dlg.Update(Nup)
+                Block = self.ImageZ[iBeg:iFin,jBeg:jFin]
+                tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
+                del TA
+                Nup += 1
+                dlg.Update(Nup)
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
+                Nup += 1
+                dlg.Update(Nup)
+        H0 = np.nan_to_num(np.divide(H0,NST))
         del NST
-        dlg.Update(4)
+        if Dtth:
+            H2 = [tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)]
+        else:
+            H2 = LUtth
+        if Dazm:        
+            H1 = [azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)]
+        else:
+            H1 = LRazm
+        self.Integrate = [H0,H1,H2]
+        print 'Binning complete'
+        Nup += 1
+        dlg.Update(Nup)
         t1 = time.time()
         print "Elapsed time:","%8.3f"%(t1-t0), "s"
         print 'Integration complete'

@@ -24,7 +24,7 @@ def UpdateImageControls(self,data,masks):
     
     def OnNewColorBar(event):
         data['color'] = colSel.GetValue()
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnNewCalibrant(event):
         data['calibrant'] = calSel.GetValue()
@@ -37,13 +37,13 @@ def UpdateImageControls(self,data,masks):
         imax = int(maxSel.GetValue())*logDeltZero/100.
         data['range'][1][1] = imax**2+data['range'][0][0]
         data['range'][1][0] = min(data['range'][1][1]-1,data['range'][1][0])
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnMinSlider(event):
         DeltOne = data['range'][1][1]-data['range'][0][0]
         imin = int(minSel.GetValue())*DeltOne/100.
         data['range'][1][0] = min(data['range'][1][1]-1,imin+data['range'][0][0])
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnNumOutChans(event):
         try:
@@ -90,7 +90,7 @@ def UpdateImageControls(self,data,masks):
             data['showLines'] = False
         else:
             data['showLines'] = True
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnFullIntegrate(event):
         if data['fullIntegrate']:
@@ -102,7 +102,7 @@ def UpdateImageControls(self,data,masks):
             self.Lazim.SetEditable(False)            
             self.Razim.SetEditable(False)            
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnSetDefault(event):
         import copy
@@ -121,15 +121,15 @@ def UpdateImageControls(self,data,masks):
         data['IOtth'] = [Ltth,Utth]
         self.InnerTth.SetValue("%8.2f" % (Ltth))
         self.OuterTth.SetValue("%8.2f" % (Utth))
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
-        G2plt.PlotExposedImage(self)
+        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnLRazim(event):
         Lazm = int(self.Lazim.GetValue())
         Razm = int(self.Razim.GetValue())
         data['LRazimuth'] = [Lazm,Razm]
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
-        G2plt.PlotExposedImage(self)
+        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)
+        G2plt.PlotExposedImage(self,event=event)
             
     def OnSetRings(event):
         if data['setRings']:
@@ -137,14 +137,14 @@ def UpdateImageControls(self,data,masks):
         else:
             data['setRings'] = True
         setRings.SetValue(data['setRings'])
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
             
     def OnClearCalib(event):
         data['ring'] = []
         data['rings'] = []
         data['ellipses'] = []
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=False)    
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
             
     def OnCalibrate(event):        
         data['setRings'] = False
@@ -211,7 +211,7 @@ def UpdateImageControls(self,data,masks):
                                 self.PatternTree.SetItemPyData(
                                     G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'),Masks)                                
                             G2img.ImageIntegrate(self,Data,Masks)
-                            G2plt.PlotIntegration(self,newPlot=True)
+                            G2plt.PlotIntegration(self,newPlot=True,event=event)
                             self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=True)
                             G2IO.SaveIntegration(self,Id,Data)
             finally:
@@ -324,6 +324,7 @@ def UpdateImageControls(self,data,masks):
     cutOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['cutoff'])),
         style=wx.TE_PROCESS_ENTER)
     cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
+    cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
     comboSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
 
     mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
@@ -352,10 +353,12 @@ def UpdateImageControls(self,data,masks):
     self.InnerTth = wx.TextCtrl(parent=self.dataDisplay,
         value=("%8.2f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
     self.InnerTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
+    self.InnerTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
     littleSizer.Add(self.InnerTth,0,wx.ALIGN_CENTER_VERTICAL)
     self.OuterTth = wx.TextCtrl(parent=self.dataDisplay,
         value=("%8.2f" % (IOtth[1])),style=wx.TE_PROCESS_ENTER)
     self.OuterTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
+    self.OuterTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
     littleSizer.Add(self.OuterTth,0,wx.ALIGN_CENTER_VERTICAL)
     dataSizer.Add(littleSizer,0,)
        
@@ -364,6 +367,7 @@ def UpdateImageControls(self,data,masks):
     waveSel = wx.TextCtrl(parent=self.dataDisplay,value=("%6.5f" % (data['wavelength'])),
         style=wx.TE_PROCESS_ENTER)
     waveSel.Bind(wx.EVT_TEXT_ENTER,OnWavelength)
+    waveSel.Bind(wx.EVT_KILL_FOCUS,OnWavelength)
     dataSizer.Add(waveSel,0,wx.ALIGN_CENTER_VERTICAL)
          
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start/End azimuth'),0,
@@ -373,10 +377,12 @@ def UpdateImageControls(self,data,masks):
     self.Lazim = wx.TextCtrl(parent=self.dataDisplay,
         value=("%6d" % (LRazim[0])),style=wx.TE_PROCESS_ENTER)
     self.Lazim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
+    self.Lazim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
     littleSizer.Add(self.Lazim,0,wx.ALIGN_CENTER_VERTICAL)
     self.Razim = wx.TextCtrl(parent=self.dataDisplay,
         value=("%6d" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
     self.Razim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
+    self.Razim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
     littleSizer.Add(self.Razim,0,wx.ALIGN_CENTER_VERTICAL)
     dataSizer.Add(littleSizer,0,)
        
@@ -391,9 +397,11 @@ def UpdateImageControls(self,data,masks):
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     outChan = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outChannels']),style=wx.TE_PROCESS_ENTER)
     outChan.Bind(wx.EVT_TEXT_ENTER,OnNumOutChans)
+    outChan.Bind(wx.EVT_KILL_FOCUS,OnNumOutChans)
     littleSizer.Add(outChan,0,wx.ALIGN_CENTER_VERTICAL)
     outAzim = wx.TextCtrl(parent=self.dataDisplay,value=str(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
     outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
+    outAzim.Bind(wx.EVT_KILL_FOCUS,OnNumOutAzms)
     littleSizer.Add(outAzim,0,wx.ALIGN_CENTER_VERTICAL)
     dataSizer.Add(littleSizer,0,)
 
@@ -450,7 +458,7 @@ def UpdateMasks(self,data):
         data['Thresholds'][1] = [lower,upper]
         lowerThreshold.SetValue("%8d" % (lower))
         upperThreshold.SetValue("%8d" % (upper))
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnSpotDiameter(event):
         Obj = event.GetEventObject()
@@ -460,13 +468,13 @@ def UpdateMasks(self,data):
             diameter = 1.0
         Obj.SetValue("%.2f"%(diameter))
         data['Points'][spotIds.index(Obj.GetId())][2] = diameter
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnDeleteSpot(event):
         Obj = event.GetEventObject()
         del(data['Points'][delSpotId.index(Obj)])
         UpdateMasks(self,data)           
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnRingThickness(event):
         Obj = event.GetEventObject()
@@ -476,13 +484,13 @@ def UpdateMasks(self,data):
             thick = 0.1
         Obj.SetValue("%.3f"%(thick))
         data['Rings'][ringIds.index(Obj.GetId())][1] = thick
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnDeleteRing(event):
         Obj = event.GetEventObject()
         del(data['Rings'][delRingId.index(Obj)])
         UpdateMasks(self,data)           
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
 
     def OnArcThickness(event):
         Obj = event.GetEventObject()
@@ -492,19 +500,19 @@ def UpdateMasks(self,data):
             thick = 0.1
         Obj.SetValue("%.3f"%(thick))
         data['Arcs'][arcIds.index(Obj.GetId())][2] = thick
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnDeleteArc(event):
         Obj = event.GetEventObject()
         del(data['Arcs'][delArcId.index(Obj)])
         UpdateMasks(self,data)           
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
 
     def OnDeletePoly(event):
         Obj = event.GetEventObject()
         del(data['Polygons'][delPolyId.index(Obj)])
         UpdateMasks(self,data)           
-        G2plt.PlotExposedImage(self)
+        G2plt.PlotExposedImage(self,event=event)
 
     def OnCopyMask(event):
         TextList = []
@@ -566,10 +574,12 @@ def UpdateMasks(self,data):
     lowerThreshold = wx.TextCtrl(parent=self.dataDisplay,
         value=("%8d" % (thresh[1][0])),style=wx.TE_PROCESS_ENTER)
     lowerThreshold.Bind(wx.EVT_TEXT_ENTER,OnThreshold)
+    lowerThreshold.Bind(wx.EVT_KILL_FOCUS,OnThreshold)
     littleSizer.Add(lowerThreshold,0,wx.ALIGN_CENTER_VERTICAL)
     upperThreshold = wx.TextCtrl(parent=self.dataDisplay,
         value=("%8d" % (thresh[1][1])),style=wx.TE_PROCESS_ENTER)
     upperThreshold.Bind(wx.EVT_TEXT_ENTER,OnThreshold)
+    upperThreshold.Bind(wx.EVT_KILL_FOCUS,OnThreshold)
     littleSizer.Add(upperThreshold,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0,)
     spotIds = []
@@ -595,6 +605,7 @@ def UpdateMasks(self,data):
                 style=wx.TE_PROCESS_ENTER)
             littleSizer.Add(spotDiameter,0,wx.ALIGN_CENTER_VERTICAL)
             spotDiameter.Bind(wx.EVT_TEXT_ENTER,OnSpotDiameter)
+            spotDiameter.Bind(wx.EVT_KILL_FOCUS,OnSpotDiameter)
             spotIds.append(spotDiameter.GetId())
             spotDelete = wx.CheckBox(parent=self.dataDisplay,label='delete?')
             spotDelete.Bind(wx.EVT_CHECKBOX,OnDeleteSpot)
@@ -624,6 +635,7 @@ def UpdateMasks(self,data):
                 style=wx.TE_PROCESS_ENTER)
             littleSizer.Add(ringThick,0,wx.ALIGN_CENTER_VERTICAL)
             ringThick.Bind(wx.EVT_TEXT_ENTER,OnRingThickness)
+            ringThick.Bind(wx.EVT_KILL_FOCUS,OnRingThickness)
             ringIds.append(ringThick.GetId())
             ringDelete = wx.CheckBox(parent=self.dataDisplay,label='delete?')
             ringDelete.Bind(wx.EVT_CHECKBOX,OnDeleteRing)
@@ -661,6 +673,7 @@ def UpdateMasks(self,data):
                 style=wx.TE_PROCESS_ENTER)
             littleSizer.Add(arcThick,0,wx.ALIGN_CENTER_VERTICAL)
             arcThick.Bind(wx.EVT_TEXT_ENTER,OnArcThickness)
+            arcThick.Bind(wx.EVT_KILL_FOCUS,OnArcThickness)
             arcIds.append(arcThick.GetId())
             arcDelete = wx.CheckBox(parent=self.dataDisplay,label='delete?')
             arcDelete.Bind(wx.EVT_CHECKBOX,OnDeleteArc)

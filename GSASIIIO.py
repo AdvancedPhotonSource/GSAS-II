@@ -709,7 +709,7 @@ def ProjFileSave(self):
         
 def SaveIntegration(self,PickId,data):
     azms = self.Integrate[1]
-    X = self.Integrate[2].flatten()[:-1]
+    X = self.Integrate[2][:-1]
     Xminmax = [X[0],X[-1]]
     N = len(X)
     Id = self.PatternTree.GetItemParent(PickId)
@@ -729,7 +729,7 @@ def SaveIntegration(self,PickId,data):
                 Id = item
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         parms[10] = azm
-        Y = self.Integrate[0][i].flatten()
+        Y = self.Integrate[0][i]
         W = np.sqrt(Y)
         if Id:
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    

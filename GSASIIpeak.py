@@ -128,7 +128,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
     dlg.SetPosition(wx.Point(screenSize[0]-Size[0]-300,0))
     try:
         i = 0
-        for xi in x:
+        for xi in x :
             Go = dlg.Update(i)[0]
             if GoOn:
                 GoOn = Go
@@ -197,7 +197,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
                 yd[i] = y[i]-yc[i]
                 swobs += w[i]*y[i]**2
                 t2 = w[i]*yd[i]
-                smin += t2*yd[i]                 
+                smin += t2*yd[i]
                 if first:
                     first = False
                     M = len(dp)
@@ -207,7 +207,6 @@ def DoPeakFit(peaks,background,limits,inst,data):
             i += 1
     finally:
         dlg.Destroy()
-    print GoOn
     Rwp = smin/swobs
     Rwp = math.sqrt(Rwp)*100.0
     norm = np.diag(A)

@@ -228,9 +228,15 @@ def UpdatePeakGrid(self, data):
     self.dataFrame.setSizePosLeft([535,350])
         
 def UpdateBackgroundGrid(self,data):
-    if self.dataDisplay:
-        self.dataFrame.Clear()
+#    if self.dataDisplay:
+    self.dataFrame.Clear()
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
+    maxTerm = 9
+    Types = [wg.GRID_VALUE_CHOICE+':chebyschev,another,more',
+        wg.GRID_VALUE_BOOL,
+        wg.GRID_VALUE_NUMBER+':1,'+str(maxTerm)]
+    for i in range(maxTerm):
+        Types.append(wg.GRID_VALUE_FLOAT+':10,3')
     
     def RefreshBackgroundGrid(event):
         data = self.BackTable.GetData()
@@ -252,29 +258,22 @@ def UpdateBackgroundGrid(self,data):
             data = [new]
             msg = wg.GridTableMessage(self.BackTable, 
                 wg.GRIDTABLE_NOTIFY_COLS_DELETED,0,M-N)
-            self.dataDisplay.ProcessTableMessage(msg)                         
+            self.dataDisplay.ProcessTableMessage(msg)
         self.PatternTree.SetItemPyData(BackId,data)
-        UpdateBackgroundGrid(self,data)
                   
-    maxTerm = 9
     self.BackTable = []
     N = len(data[0])
     M = data[0][2]
     colLabels = ['function','refine','Nterms']
     rowLabels=['background']
     for i in range(M): colLabels.append(str(i+1))
-    Types = [wg.GRID_VALUE_CHOICE+':chebyschev,another,more',
-        wg.GRID_VALUE_BOOL,
-        wg.GRID_VALUE_NUMBER+':1,'+str(maxTerm)]
-    for i in range(maxTerm):
-        Types.append(wg.GRID_VALUE_FLOAT+':10,3')
     self.BackTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Background')
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     gridPanel = wx.Panel(self.dataFrame)
     self.dataDisplay = G2gd.GSGrid(gridPanel)                
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshBackgroundGrid)                
     self.dataDisplay.SetTable(self.BackTable, True)
+    self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshBackgroundGrid)                
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -371,7 +370,6 @@ def UpdateInstrumentGrid(self, data):
         self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshInstrumentGrid)                
         self.dataDisplay.SetMargins(0,0)
         self.dataDisplay.AutoSizeColumns(False)
-        print len(Types)
         beg = 4
         if Ka2: beg = 6
         for i in range(len(data[2])):
@@ -507,6 +505,7 @@ def UpdateUnitCellsGrid(self, data):
         except ValueError:
             stVol = 25
         controls[3] = stVol
+        startVol.SetValue("%d"%(stVol))
         
     def OnBravais(event):
         Obj = event.GetEventObject()
@@ -516,7 +515,7 @@ def UpdateUnitCellsGrid(self, data):
         try:
             Zero = min(0.1,max(-0.1,float(zero.GetValue())))
         except ValueError:
-            Zero = 0.0
+            Zero = 0.1
         controls[1] = Zero
         zero.SetValue("%.2f"%(Zero))
         
@@ -737,6 +736,7 @@ def UpdateUnitCellsGrid(self, data):
     littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start Volume '),0,wx.ALIGN_CENTER_VERTICAL)
     startVol = wx.TextCtrl(self.dataDisplay,value=str(controls[3]),style=wx.TE_PROCESS_ENTER)
     startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
+    startVol.Bind(wx.EVT_KILL_FOCUS,OnStartVol)
     littleSizer.Add(startVol,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
@@ -758,6 +758,7 @@ def UpdateUnitCellsGrid(self, data):
     littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
     zero = wx.TextCtrl(self.dataDisplay,value=str(controls[1]),style=wx.TE_PROCESS_ENTER)
     zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
+    zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
     littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
     zeroVar = wx.CheckBox(self.dataDisplay,label="Vary? (not implemented)")
     zero.SetValue("%.2f"%(controls[1]))
@@ -786,6 +787,7 @@ def UpdateUnitCellsGrid(self, data):
         if ifEdit:          #a,b,c,etc.
             cellVal = wx.TextCtrl(self.dataDisplay,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
             cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
+            cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
             littleSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
             cellList.append(cellVal.GetId())
         else:               #volume

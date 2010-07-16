@@ -507,14 +507,14 @@ def MovePatternTreeToGrid(self,item):
             GetPatternTreeItemId(self,self.Image, 'Masks'))
         data = self.PatternTree.GetItemPyData(item)
         G2imG.UpdateImageControls(self,data,masks)
-        G2plt.PlotImage(self)
+#        G2plt.PlotImage(self)
     elif self.PatternTree.GetItemText(item) == 'Masks':
         self.dataFrame.SetTitle('Masks')
         self.PickId = item
         self.Image = self.PatternTree.GetItemParent(item)
         data = self.PatternTree.GetItemPyData(item)
         G2imG.UpdateMasks(self,data)
-        G2plt.PlotImage(self)
+#        G2plt.PlotImage(self)
     elif self.PatternTree.GetItemText(item) == 'HKL Plot Controls':
         self.PickId = item
         self.Sngl = self.PatternTree.GetItemParent(item)

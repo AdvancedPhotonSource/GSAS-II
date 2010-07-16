@@ -229,7 +229,7 @@ def PlotPatterns(self,newPlot=False):
                 G2pdG.UpdateLimitsGrid(self,data)
                 PlotPatterns(self)
             else:                                                   #picked a limit line
-                self.itemPicked = pick                
+                self.itemPicked = pick
         
     def OnPlotKeyPress(event):
         if event.key == 'w':
@@ -552,14 +552,14 @@ def PlotPeakWidths(self):
     Plot.legend(loc='best')
     Page.canvas.draw()
             
-def PlotExposedImage(self,newPlot=False):
+def PlotExposedImage(self,newPlot=False,event=None):
     plotNo = self.G2plotNB.nb.GetSelection()
     if self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
-        PlotImage(self,newPlot)
+        PlotImage(self,newPlot,event)
     elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
-        PlotIntegration(self,newPlot)
+        PlotIntegration(self,newPlot,event)
 
-def PlotImage(self,newPlot=False):
+def PlotImage(self,newPlot=False,event=None):
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
@@ -664,7 +664,6 @@ def PlotImage(self,newPlot=False):
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
-        print self.itemPicked
         if self.itemPicked is None and PickName == 'Image Controls':
             size = len(self.ImageZ)
             Xpos = event.xdata
@@ -779,7 +778,8 @@ def PlotImage(self,newPlot=False):
         Page.canvas.mpl_connect('motion_notify_event', OnImMotion)
         Page.canvas.mpl_connect('pick_event', OnImPick)
         Page.canvas.mpl_connect('button_release_event', OnImRelease)
-    Page.SetFocus()
+    if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
+        Page.SetFocus()
     Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
     size,imagefile = self.PatternTree.GetItemPyData(self.Image)
     if imagefile != self.oldImagefile:
@@ -807,97 +807,101 @@ def PlotImage(self,newPlot=False):
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
     #do threshold mask - "real" mask - others are just bondaries
     Zlim = Masks['Thresholds'][1]
-    MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
-    MaskA = ma.getmaskarray(MA)
-    A = G2img.ImageCompress(MA,imScale)
-    AM = G2img.ImageCompress(MaskA,imScale)
-    
-    ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
-        interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
-    Img = Plot.imshow(A,aspect='equal',cmap=acolor,
-        interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
-
-    Plot.plot(xcent,ycent,'x')
-    if Data['showLines']:
-        LRAzim = Data['LRazimuth']                  #NB: integers
-        IOtth = Data['IOtth']
-        wave = Data['wavelength']
-        dspI = wave/(2.0*sind(IOtth[0]/2.0))
-        ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
-        dspO = wave/(2.0*sind(IOtth[1]/2.0))
-        ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
-        if Data['fullIntegrate']:
-            Azm = np.array(range(0,361))
-        else:
-            Azm = np.array(range(LRAzim[0],LRAzim[1]+1))
-        if ellI:
-            xyI = []
-            for azm in Azm:
-                xyI.append(G2img.GetDetectorXY(dspI,azm,Data))
-            xyI = np.array(xyI)
-            arcxI,arcyI = xyI.T
-            Plot.plot(arcxI,arcyI,picker=3)
-        if ellO:
-            xyO = []
-            for azm in Azm:
-                xyO.append(G2img.GetDetectorXY(dspO,azm,Data))
-            xyO = np.array(xyO)
-            arcxO,arcyO = xyO.T
-            Plot.plot(arcxO,arcyO,picker=3)
-        if ellO and ellI and not Data['fullIntegrate']:
-            Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
-            Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
-    for xring,yring in Data['ring']:
-        Plot.plot(xring,yring,'r+',picker=3)
-    if Data['setRings']:
-        rings = np.concatenate((Data['rings']),axis=0)
-        for xring,yring,dsp in rings:
-            Plot.plot(xring,yring,'r+')            
-    for ellipse in Data['ellipses']:
-        cent,phi,[width,height],col = ellipse
-        Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
-        Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
-    #masks - mask lines numbered after integration limit lines
-    spots = Masks['Points']
-    rings = Masks['Rings']
-    arcs = Masks['Arcs']
-    polygons = Masks['Polygons']
-    for x,y,d in spots:
-        Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
-    self.ringList = []
-    for iring,(tth,thick) in enumerate(rings):
-        wave = Data['wavelength']
-        x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data))),2)
-        x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data))),2)
-        self.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
-        self.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
-    self.arcList = []
-    for iarc,(tth,azm,thick) in enumerate(arcs):            
-        wave = Data['wavelength']
-        x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
-        x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(max(0.01,tth-thick/2.),wave),Data),azm)),2)
-        self.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
-        self.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
-        self.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
-        self.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
-    self.polyList = []
-    for ipoly,polygon in enumerate(polygons):
-        x,y = np.hsplit(np.array(polygon),2)
-        self.polyList.append([Plot.plot(x,y,'r',picker=3),ipoly])            
-    colorBar = Page.figure.colorbar(Img)
-    Plot.set_xlim(xlim)
-    Plot.set_ylim(ylim)
-    if not newPlot:
-        Page.toolbar.push_current()
-        Plot.set_xlim(xylim[0])
-        Plot.set_ylim(xylim[1])
-        xylim = []
-        Page.toolbar.push_current()
-        Page.toolbar.draw()
-    else:
-        Page.canvas.draw()
+    wx.BeginBusyCursor()
+    try:
+        MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
+        MaskA = ma.getmaskarray(MA)
+        A = G2img.ImageCompress(MA,imScale)
+        AM = G2img.ImageCompress(MaskA,imScale)
         
-def PlotIntegration(self,newPlot=False):
+        ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
+            interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
+        Img = Plot.imshow(A,aspect='equal',cmap=acolor,
+            interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
+    
+        Plot.plot(xcent,ycent,'x')
+        if Data['showLines']:
+            LRAzim = Data['LRazimuth']                  #NB: integers
+            IOtth = Data['IOtth']
+            wave = Data['wavelength']
+            dspI = wave/(2.0*sind(IOtth[0]/2.0))
+            ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+            dspO = wave/(2.0*sind(IOtth[1]/2.0))
+            ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
+            if Data['fullIntegrate']:
+                Azm = np.array(range(0,361))
+            else:
+                Azm = np.array(range(LRAzim[0],LRAzim[1]+1))
+            if ellI:
+                xyI = []
+                for azm in Azm:
+                    xyI.append(G2img.GetDetectorXY(dspI,azm,Data))
+                xyI = np.array(xyI)
+                arcxI,arcyI = xyI.T
+                Plot.plot(arcxI,arcyI,picker=3)
+            if ellO:
+                xyO = []
+                for azm in Azm:
+                    xyO.append(G2img.GetDetectorXY(dspO,azm,Data))
+                xyO = np.array(xyO)
+                arcxO,arcyO = xyO.T
+                Plot.plot(arcxO,arcyO,picker=3)
+            if ellO and ellI and not Data['fullIntegrate']:
+                Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
+                Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
+        for xring,yring in Data['ring']:
+            Plot.plot(xring,yring,'r+',picker=3)
+        if Data['setRings']:
+            rings = np.concatenate((Data['rings']),axis=0)
+            for xring,yring,dsp in rings:
+                Plot.plot(xring,yring,'r+')            
+        for ellipse in Data['ellipses']:
+            cent,phi,[width,height],col = ellipse
+            Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
+            Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+        #masks - mask lines numbered after integration limit lines
+        spots = Masks['Points']
+        rings = Masks['Rings']
+        arcs = Masks['Arcs']
+        polygons = Masks['Polygons']
+        for x,y,d in spots:
+            Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
+        self.ringList = []
+        for iring,(tth,thick) in enumerate(rings):
+            wave = Data['wavelength']
+            x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data))),2)
+            x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data))),2)
+            self.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
+            self.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
+        self.arcList = []
+        for iarc,(tth,azm,thick) in enumerate(arcs):            
+            wave = Data['wavelength']
+            x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
+            x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(max(0.01,tth-thick/2.),wave),Data),azm)),2)
+            self.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
+            self.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
+            self.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
+            self.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
+        self.polyList = []
+        for ipoly,polygon in enumerate(polygons):
+            x,y = np.hsplit(np.array(polygon),2)
+            self.polyList.append([Plot.plot(x,y,'r',picker=3),ipoly])            
+        colorBar = Page.figure.colorbar(Img)
+        Plot.set_xlim(xlim)
+        Plot.set_ylim(ylim)
+        if not newPlot:
+            Page.toolbar.push_current()
+            Plot.set_xlim(xylim[0])
+            Plot.set_ylim(xylim[1])
+            xylim = []
+            Page.toolbar.push_current()
+            Page.toolbar.draw()
+        else:
+            Page.canvas.draw()
+    finally:
+        wx.EndBusyCursor()
+        
+def PlotIntegration(self,newPlot=False,event=None):
             
     def OnMotion(event):
         Page.canvas.SetToolTipString('')
@@ -924,7 +928,8 @@ def PlotIntegration(self,newPlot=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
         view = False
-    Page.SetFocus()
+    if not event:
+        Page.SetFocus()
         
     Data = self.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))

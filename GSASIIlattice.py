@@ -458,7 +458,6 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                 if Laue in ['3R','3']:
                     kmax = h
                     kmin = -int((h-1.)/2.)
-                    #kmin = -(h-1)/2
                 else:
                     kmin = 0
                     kmax = h
@@ -473,7 +472,6 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
                             HKL.append([H[0],H[1],H[2],1/math.sqrt(rdsq)])
-                            #print H,1/math.sqrt(rdsq)
     else:                                   #cubic
         for h in range(Hmax[0]+1):
             for k in range(h+1):

@@ -171,7 +171,7 @@ def UpdateImageControls(self,data,masks):
             Status.SetStatusText('Calibration failed')
                     
     def OnIntegrate(event):
-        G2img.ImageIntegrate(self,data,masks)
+        self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
         G2plt.PlotIntegration(self,newPlot=True)
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=True)
         
@@ -199,7 +199,7 @@ def UpdateImageControls(self,data,masks):
                         if ifintegrate:
                             id = G2gd.GetPatternTreeItemId(self, self.root, name)
                             size,imagefile = self.PatternTree.GetItemPyData(id)
-                            self.ImageZ = G2IO.GetImageData(imagefile,imageOnly=True)
+                            image = G2IO.GetImageData(imagefile,imageOnly=True)
                             Id = G2gd.GetPatternTreeItemId(self,id, 'Image Controls')
                             Data = self.PatternTree.GetItemPyData(Id)
                             try:
@@ -210,7 +210,7 @@ def UpdateImageControls(self,data,masks):
                                 Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                                 self.PatternTree.SetItemPyData(
                                     G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'),Masks)                                
-                            G2img.ImageIntegrate(self,Data,Masks)
+                            self.Integrate = G2img.ImageIntegrate(image,Data,Masks)
                             G2plt.PlotIntegration(self,newPlot=True,event=event)
                             self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=True)
                             G2IO.SaveIntegration(self,Id,Data)

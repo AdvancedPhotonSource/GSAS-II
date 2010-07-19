@@ -219,8 +219,8 @@ class GSASII(wx.Frame):
     def __init__(self, parent):
         self._init_ctrls(parent)
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
-        self.dirname = ''
         self.GSASprojectfile = ''
+        self.dirname = ''
         self.Offset = 0.0
         self.Weight = False
         self.IparmName = ''
@@ -244,6 +244,12 @@ class GSASII(wx.Frame):
         self.Sngl = 0
         self.ifGetRing = False
         self.setPoly = False
+        arg = sys.argv
+        if len(arg) > 1:
+            self.GSASprojectfile = arg[1]
+            self.dirname = ospath.dirname(arg[1])
+            G2IO.ProjFileOpen(self)
+            self.PatternTree.Expand(self.root)
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -618,7 +624,7 @@ class GSASII(wx.Frame):
             if len(TextList) < 2:
                 self.ErrorDialog('Not enough data to sum','There must be more than one "PWDR" pattern')
                 return
-            TextList.append('default sum name')                
+            TextList.append('default_sum_name')                
             dlg = self.SumDialog(self,'Sum data','Enter scale for each pattern in summation','PWDR',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -705,17 +711,19 @@ class GSASII(wx.Frame):
             if len(TextList) < 2:
                 self.ErrorDialog('Not enough data to sum','There must be more than one "IMG" pattern')
                 return
-            TextList.append('default sum name')                
+            TextList.append('default_sum_name')                
             dlg = self.SumDialog(self,'Sum data','Enter scale for each image in summation','IMG',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     imSize = 0
                     result = dlg.GetData()
                     First = True
+                    Found = False
                     for i,item in enumerate(result[:-1]):
                         scale,name = item
                         data = DataList[i]
-                        if scale:                                
+                        if scale:
+                            Found = True                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
                             size,imagefile = data
                             image = G2IO.GetImageData(imagefile,imageOnly=True)
@@ -733,8 +741,11 @@ class GSASII(wx.Frame):
                                 imSize = size
                                 newImage = newImage+scale*image
                             del(image)
+                    if not Found:
+                        self.ErrorDialog('Image sum error','No nonzero image multipliers found')
+                        return
+                        
                     newImage = np.asfarray(newImage,dtype=np.float32)                        
-                    print 'result dtype',newImage.dtype                                
                     outname = 'IMG '+result[-1]
                     Id = 0
                     if outname in Names:
@@ -763,19 +774,19 @@ class GSASII(wx.Frame):
                         del(newImage)
                         if self.imageDefault:
                             Data = copy.copy(self.imageDefault)
-                            Data['showLines'] = True
-                            Data['ring'] = []
-                            Data['rings'] = []
-                            Data['cutoff'] = 10
-                            Data['pixLimit'] = 20
-                            Data['ellipses'] = []
-                            Data['calibrant'] = ''
-                            Data['range'] = [(Imin,Imax),[Imin,Imax]]
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
-                            self.PatternTree.SelectItem(Id)
-                            self.PatternTree.Expand(Id)
+                        Data['showLines'] = True
+                        Data['ring'] = []
+                        Data['rings'] = []
+                        Data['cutoff'] = 10
+                        Data['pixLimit'] = 20
+                        Data['ellipses'] = []
+                        Data['calibrant'] = ''
+                        Data['range'] = [(Imin,Imax),[Imin,Imax]]
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
                         Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
+                        self.PatternTree.SelectItem(Id)
+                        self.PatternTree.Expand(Id)
                         self.PickId = G2gd.GetPatternTreeItemId(self,self.root,outname)
                         self.Image = self.PickId
             finally:

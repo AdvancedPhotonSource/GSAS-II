@@ -500,14 +500,14 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))* \
             ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1])))
     taz = ma.masked_greater(ma.masked_less(image,Zlim[0]),Zlim[1]).flatten()
-    tam = ma.mask_or(tam,ma.getmask(taz))
+    tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
-    taz = ma.compressed(ma.array(taz,mask=tam))
+    taz = ma.compressed(ma.array(taz.flatten(),mask=tam))
     del(tam)
     return tax,tay,taz
     
-def ImageIntegrate(self,data,masks):
+def ImageIntegrate(image,data,masks):
     import histogram2d as h2d
     print 'Begin image integration'
     LUtth = data['IOtth']
@@ -521,7 +521,7 @@ def ImageIntegrate(self,data,masks):
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     NST = np.zeros(shape=(numAzms,numChans),dtype=np.int,order='F')
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
-    imageN = len(self.ImageZ)
+    imageN = len(image)
     nBlks = (imageN-1)/1024+1
     dlg = wx.ProgressDialog("Elapsed time","2D image integration",nBlks*nBlks*3+3,
         style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
@@ -539,12 +539,13 @@ def ImageIntegrate(self,data,masks):
                 TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
                 Nup += 1
                 dlg.Update(Nup)
-                Block = self.ImageZ[iBeg:iFin,jBeg:jFin]
+                Block = image[iBeg:iFin,jBeg:jFin]
                 tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
-                del TA
+                del TA,tam
                 Nup += 1
                 dlg.Update(Nup)
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
+                del tax,tay,taz
                 Nup += 1
                 dlg.Update(Nup)
         H0 = np.nan_to_num(np.divide(H0,NST))
@@ -557,12 +558,11 @@ def ImageIntegrate(self,data,masks):
             H1 = [azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)]
         else:
             H1 = LRazm
-        self.Integrate = [H0,H1,H2]
-        print 'Binning complete'
         Nup += 1
         dlg.Update(Nup)
         t1 = time.time()
-        print "Elapsed time:","%8.3f"%(t1-t0), "s"
-        print 'Integration complete'
     finally:
         dlg.Destroy()
+    print 'Integration complete'
+    print "Elapsed time:","%8.3f"%(t1-t0), "s"
+    return H0,H1,H2

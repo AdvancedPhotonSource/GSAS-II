@@ -818,6 +818,8 @@ def PlotImage(self,newPlot=False,event=None):
             interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
         Img = Plot.imshow(A,aspect='equal',cmap=acolor,
             interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
+        if self.setPoly:
+            Img.set_picker(True)
     
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']:

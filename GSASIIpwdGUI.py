@@ -562,7 +562,7 @@ def UpdateUnitCellsGrid(self, data):
                 Obj.SetValue("%.5f"%(controls[6+ObjId]))
             else:
                 controls[10] = value
-                Obj.SetValue("%.3f"%(controls[6+ObjId]))
+                Obj.SetValue("%.3f"%(controls[10]))
         else:
             controls[6+ObjId] = value
             if ObjId < 3:

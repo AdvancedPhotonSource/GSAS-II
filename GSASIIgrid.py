@@ -486,7 +486,7 @@ def MovePatternTreeToGrid(self,item):
         elif 'PWDR' in self.PatternTree.GetItemText(item):            
             self.ExportPattern.Enable(True)
             G2plt.PlotPatterns(self,newPlot=True)
-        elif 'SXTL' in self.PatternTree.GetItemText(item):
+        elif 'HKLF' in self.PatternTree.GetItemText(item):
             self.Sngl = item
             G2plt.PlotSngl(self,newPlot=True)
             

@@ -62,11 +62,18 @@ class G2PlotNoteBook(wx.Panel):
         
         return page.figure
         
+    def clear(self):
+        while self.nb.GetPageCount():
+            self.nb.DeletePage(0)
+        self.plotList = []
+        self.status.DestroyChildren()
+        
     def OnPageChanged(self,event):
         self.status.DestroyChildren()                           #get rid of special stuff on status bar
         
 def PlotSngl(self,newPlot=False):
     from matplotlib.patches import Circle
+    global HKL,HKLF
 
     def OnSCMotion(event):
         xpos = event.xdata
@@ -88,20 +95,20 @@ def PlotSngl(self,newPlot=False):
         pos = event.artist.center
         if '100' in Data['Zone']:
             Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(zpos,pos[0],pos[1]))
-            hkl = [zpos,pos[0],pos[1]]
+            hkl = np.array([zpos,pos[0],pos[1]])
         elif '010' in Data['Zone']:
             Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],zpos,pos[1]))
-            hkl = [pos[0],zpos,pos[1]]
+            hkl = np.array([pos[0],zpos,pos[1]])
         elif '001' in Data['Zone']:
             Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],pos[1],zpos))
-            hkl = [pos[0],pos[1],zpos]
+            hkl = np.array([pos[0],pos[1],zpos])
         h,k,l = hkl
-        i = HKL.all(hkl)
-        print i
-        HKLtxt = '(%3d,%3d,%3d %10.2f %6.3f %10.2f)'%(h,k,l,Fosq,sig,Fcsq)
-        self.G2plotNB.status.SetFields(['','HKL, Fosq, sig, Fcsq = '+HKLtxt])
-                         
-        
+        hklf = HKLF[np.where(np.all(HKL-hkl == [0,0,0],axis=1))]
+        if len(hklf):
+            Fosq,sig,Fcsq = hklf[0]
+            HKLtxt = '(%3d,%3d,%3d %.2f %.3f %.2f %.2f)'%(h,k,l,Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
+            self.G2plotNB.status.SetFields(['','HKL, Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt])
+                                 
     def OnSCKeyPress(event):
         print event.key
 
@@ -117,7 +124,7 @@ def PlotSngl(self,newPlot=False):
         Plot = self.G2plotNB.add('Structure Factors').gca()
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
         Page = self.G2plotNB.nb.GetPage(plotNum)
-        Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
+#        Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
         Page.canvas.mpl_connect('pick_event', OnSCPick)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
     Page.SetFocus()
@@ -140,8 +147,10 @@ def PlotSngl(self,newPlot=False):
     izone = zones.index(Data['Zone'])
     Plot.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
     HKL = []
+    HKLF = []
     for H,Fosq,sig,Fcsq,x,x,x in HKLref:
         HKL.append(H)
+        HKLF.append([Fosq,sig,Fcsq])
         if H[izone] == Data['Layer']:
             B = 0
             if Type == 'Fosq':
@@ -168,10 +177,11 @@ def PlotSngl(self,newPlot=False):
                 radius = C
                 if radius > 0:
                     if A > B:
-                        Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
-                    else:                    
                         Plot.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
-    HKL = np.array(HKL)
+                    else:                    
+                        Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
+    HKL = np.array(HKL,dtype=np.int)
+    HKLF = np.array(HKLF)
     Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
     Plot.set_ylabel(ylabel[izone],fontsize=12)
     Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
@@ -187,6 +197,7 @@ def PlotSngl(self,newPlot=False):
         Page.canvas.draw()
        
 def PlotPatterns(self,newPlot=False):
+    global HKL
     
     def OnPick(event):
         if self.itemPicked is not None: return
@@ -275,9 +286,19 @@ def PlotPatterns(self,newPlot=False):
                 self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
                 if self.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
+                if self.PickId and self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List']:
+                    found = []
+                    if len(HKL):
+                        found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.05)]
+                    if len(found):
+                        h,k,l = found[0][:3] 
+                        Page.canvas.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
+                    else:
+                        Page.canvas.SetToolTipString('')
+
             except TypeError:
                 self.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',1)
-                                   
+                                                   
     def OnRelease(event):
         if self.itemPicked is None: return
         xpos = event.xdata
@@ -345,6 +366,7 @@ def PlotPatterns(self,newPlot=False):
                 PlotList.append(Pattern)
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
     Ymax = 1.0
+    HKL = np.array(self.HKL)
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
@@ -402,7 +424,7 @@ def PlotPatterns(self,newPlot=False):
             else:
                 Plot.plot(X,Y,colors[N%6],picker=False)
     if PickId and self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
+        peaks = np.array((self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))))
         for peak in peaks:
             Plot.axvline(peak[0],color='b')
         for hkl in self.HKL:
@@ -426,12 +448,22 @@ def PlotPatterns(self,newPlot=False):
     self.Pwdr = True
 
 def PlotPowderLines(self):
+    global HKL
 
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             self.G2plotNB.status.SetFields(['','2-theta =%9.3f '%(xpos,)])
+            if self.PickId and self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List']:
+                found = []
+                if len(HKL):
+                    found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.05)]
+                if len(found):
+                    h,k,l = found[0][:3] 
+                    Page.canvas.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
+                else:
+                    Page.canvas.SetToolTipString('')
 
     try:
         plotNum = self.G2plotNB.plotList.index('Powder Lines')
@@ -452,6 +484,7 @@ def PlotPowderLines(self):
     peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
     for peak in peaks:
         Plot.axvline(peak[0],color='b')
+    HKL = np.array(self.HKL)
     for hkl in self.HKL:
         Plot.axvline(hkl[5],color='r',dashes=(5,5))
     xmin = peaks[0][0]

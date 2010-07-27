@@ -384,7 +384,7 @@ def UpdateInstrumentGrid(self, data):
         Types = [wg.GRID_VALUE_CHOICE+":SXC,SNC,SNT",wg.GRID_VALUE_FLOAT+':10,6']
         colLabels = data[2]
         rowLabels = ['original','changed']
-        self.InstrumentTable = Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        self.InstrumentTable = G2gd.Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
         self.dataFrame.SetLabel('Instrument Parameters')
         gridPanel = wx.Panel(self.dataFrame)
         self.dataDisplay = G2gd.GSGrid(gridPanel)                

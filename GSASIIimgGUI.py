@@ -33,16 +33,18 @@ def UpdateImageControls(self,data,masks):
         data['pixLimit'] = int(pixLimit.GetValue())
         
     def OnMaxSlider(event):
-        logDeltZero = math.sqrt(data['range'][0][1]-data['range'][0][0])
-        imax = int(maxSel.GetValue())*logDeltZero/100.
+        sqrtDeltZero = math.sqrt(data['range'][0][1]-data['range'][0][0])
+        imax = int(maxSel.GetValue())*sqrtDeltZero/100.
         data['range'][1][1] = imax**2+data['range'][0][0]
         data['range'][1][0] = min(data['range'][1][1]-1,data['range'][1][0])
+        DeltOne = data['range'][1][1]-data['range'][0][0]
+        minSel.SetValue(int(100*(data['range'][1][0]-data['range'][0][0])/DeltOne))
         G2plt.PlotExposedImage(self,event=event)
         
     def OnMinSlider(event):
         DeltOne = data['range'][1][1]-data['range'][0][0]
         imin = int(minSel.GetValue())*DeltOne/100.
-        data['range'][1][0] = min(data['range'][1][1]-1,imin+data['range'][0][0])
+        data['range'][1][0] = min(data['range'][1][1]-1,imin)+data['range'][0][0]
         G2plt.PlotExposedImage(self,event=event)
         
     def OnNumOutChans(event):
@@ -211,7 +213,7 @@ def UpdateImageControls(self,data,masks):
                                 self.PatternTree.SetItemPyData(
                                     G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'),Masks)                                
                             self.Integrate = G2img.ImageIntegrate(image,Data,Masks)
-                            G2plt.PlotIntegration(self,newPlot=True,event=event)
+#                            G2plt.PlotIntegration(self,newPlot=True,event=event)
                             self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=True)
                             G2IO.SaveIntegration(self,Id,Data)
             finally:
@@ -282,19 +284,19 @@ def UpdateImageControls(self,data,masks):
     
     maxSizer = wx.FlexGridSizer(2,2,0,5)
     maxSizer.AddGrowableCol(1,1)
-    logDeltZero = math.log(data['range'][0][1]-data['range'][0][0])
+    sqrtDeltZero = math.sqrt(data['range'][0][1]-data['range'][0][0])
     DeltOne = data['range'][1][1]-data['range'][0][0]
-    logDeltOne = math.sqrt(DeltOne)
+    sqrtDeltOne = math.sqrt(DeltOne)
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     maxSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
-        value=int(100*logDeltOne/logDeltZero))
+        value=int(100*sqrtDeltOne/sqrtDeltZero))
     maxSizer.Add(maxSel,1,wx.EXPAND|wx.RIGHT)
     maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)    
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     minSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
-        value=int(100*data['range'][1][0]/DeltOne))
+        value=int(100*(data['range'][1][0]-data['range'][0][0])/DeltOne))
     maxSizer.Add(minSel,1,wx.EXPAND|wx.RIGHT)
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
     mainSizer.Add(maxSizer,1,wx.EXPAND|wx.RIGHT)

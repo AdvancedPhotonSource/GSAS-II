@@ -37,27 +37,27 @@ atan2d = lambda x,y: 180.*math.atan2(y,x)/math.pi
 def create(parent):
     return GSASII(parent)
 
-[wxID_GSASII, wxID_GSASIIPATTERNTREE, wxID_GSASIIDATA, wxID_GSASIIPICKGRID,
-] = [wx.NewId() for _init_ctrls in range(4)]
+[wxID_PATTERNTREE, 
+] = [wx.NewId() for _init_ctrls in range(1)]
 
-[wxID_GSASIIFILECLOSE, wxID_GSASIIFILEEXIT, wxID_GSASIIFILEOPEN, 
- wxID_GSASIIFILESAVE, wxID_GSASIIFILESAVEAS, wxID_GSASIIUNDO, 
+[wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN, 
+ wxID_FILESAVE, wxID_FILESAVEAS, wxID_UNDO, 
 ] = [wx.NewId() for _init_coll_File_Items in range(6)]
 
-[wxID_GSASIIPWDRREAD,wxID_GSASIISNGLREAD,wxID_GSASIIADDPHASE,wxID_GSASIIDELETEPHASE,
- wxID_GSASIIDATADELETE,wxID_GSASIIREADPEAKS,wxID_GSASIIPWDSUM,wxID_GSASIIIMGREAD,
- wxID_GSASIIIMSUM,
-] = [wx.NewId() for _init_coll_Data_Items in range(9)]
+[wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
+ wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
+ wxID_IMSUM, wxID_DATARENAME,
+] = [wx.NewId() for _init_coll_Data_Items in range(10)]
 
-[wxID_GSASIIIMPORT, wxID_GSASIIIMPORTPATTERN, wxID_GSASIIIMPORTHKL, wxID_GSASIIIMPORTPHASE,
-wxID_GSASIIIMPORTCIF, wxID_GSASIIIMPORTPDB,  
+[wxID_IMPORT, wxID_IMPORTPATTERN, wxID_IMPORTHKL, wxID_IMPORTPHASE,
+wxID_IMPORTCIF, wxID_IMPORTPDB,  
 ] = [wx.NewId() for _init_coll_Import_Items in range(6)]
 
-[wxID_GSAIIEXPORT, wxID_GSASIIEXPORTPATTERN, wxID_GSASIIEXPORTHKL, wxID_GSASIIEXPORTPHASE,
-wxID_GSASIIEXPORTCIF, wxID_GSASIIEXPORTPEAKLIST
+[wxID_EXPORT, wxID_EXPORTPATTERN, wxID_EXPORTHKL, wxID_EXPORTPHASE,
+wxID_EXPORTCIF, wxID_EXPORTPEAKLIST
 ] = [wx.NewId() for _init_coll_Export_Items in range(6)]
 
-[wxID_GSASIIHELPABOUT, wxID_GSASIIHELPHELP, 
+[wxID_HELPABOUT, wxID_HELPHELP, 
 ] = [wx.NewId() for _init_coll_Help_Items in range(2)]
 
 class GSASII(wx.Frame):
@@ -71,103 +71,106 @@ class GSASII(wx.Frame):
         parent.Append(menu=self.Help, title='Help')
 
     def _init_coll_File_Items(self, parent):
-        parent.Append(help='Open a gsasii project file (*.gpx)', id=wxID_GSASIIFILEOPEN,
+        parent.Append(help='Open a gsasii project file (*.gpx)', id=wxID_FILEOPEN,
              kind=wx.ITEM_NORMAL,text='Open project...')
-        parent.Append(help='SAve project to old file', id=wxID_GSASIIFILESAVE, 
+        parent.Append(help='SAve project to old file', id=wxID_FILESAVE, 
             kind=wx.ITEM_NORMAL,text='Save project')
-        parent.Append(help='Save project to new file', id=wxID_GSASIIFILESAVEAS, 
+        parent.Append(help='Save project to new file', id=wxID_FILESAVEAS, 
             kind=wx.ITEM_NORMAL,text='Save As...')
-        parent.Append(help='Close project, saving is optional', id=wxID_GSASIIFILECLOSE, 
+        parent.Append(help='Close project, saving is optional', id=wxID_FILECLOSE, 
             kind=wx.ITEM_NORMAL,text='Close project')
-        parent.Append(help='Exit from gsasii', id=wxID_GSASIIFILEEXIT, kind=wx.ITEM_NORMAL,
+        parent.Append(help='Exit from gsasii', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
             text='Exit')
-        self.Bind(wx.EVT_MENU, self.OnFileOpenMenu, id=wxID_GSASIIFILEOPEN)
-        self.Bind(wx.EVT_MENU, self.OnFileSaveMenu, id=wxID_GSASIIFILESAVE)
-        self.Bind(wx.EVT_MENU, self.OnFileSaveasMenu, id=wxID_GSASIIFILESAVEAS)
-        self.Bind(wx.EVT_MENU, self.OnFileCloseMenu, id=wxID_GSASIIFILECLOSE)
-        self.Bind(wx.EVT_MENU, self.OnFileExitMenu, id=wxID_GSASIIFILEEXIT)
+        self.Bind(wx.EVT_MENU, self.OnFileOpen, id=wxID_FILEOPEN)
+        self.Bind(wx.EVT_MENU, self.OnFileSave, id=wxID_FILESAVE)
+        self.Bind(wx.EVT_MENU, self.OnFileSaveas, id=wxID_FILESAVEAS)
+        self.Bind(wx.EVT_MENU, self.OnFileClose, id=wxID_FILECLOSE)
+        self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
         
     def _init_coll_Data_Items(self,parent):
-        parent.Append(help='', id=wxID_GSASIIPWDRREAD, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_PWDRREAD, kind=wx.ITEM_NORMAL,
             text='Read powder data...')
-        parent.Append(help='',id=wxID_GSASIIIMGREAD, kind=wx.ITEM_NORMAL,
+        parent.Append(help='',id=wxID_IMGREAD, kind=wx.ITEM_NORMAL,
             text='Read image data...')
-        parent.Append(help='',id=wxID_GSASIIREADPEAKS, kind=wx.ITEM_NORMAL,
+        parent.Append(help='',id=wxID_READPEAKS, kind=wx.ITEM_NORMAL,
             text='Read Powder Pattern Peaks...')
-        parent.Append(help='', id=wxID_GSASIISNGLREAD, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_SNGLREAD, kind=wx.ITEM_NORMAL,
             text='Read single crystal data...')
-        parent.Append(help='', id=wxID_GSASIIPWDSUM, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_PWDSUM, kind=wx.ITEM_NORMAL,
             text='Sum powder data')
-        parent.Append(help='',id=wxID_GSASIIIMSUM, kind=wx.ITEM_NORMAL,
+        parent.Append(help='',id=wxID_IMSUM, kind=wx.ITEM_NORMAL,
             text='Sum image data')
-        parent.Append(help='', id=wxID_GSASIIADDPHASE, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_ADDPHASE, kind=wx.ITEM_NORMAL,
             text='Add phase')
-        parent.Append(help='', id=wxID_GSASIIDELETEPHASE, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_DELETEPHASE, kind=wx.ITEM_NORMAL,
             text='Delete phase')
-        parent.Append(help='', id=wxID_GSASIIDATADELETE, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_DATARENAME, kind=wx.ITEM_NORMAL,
+            text='Rename data') 
+        parent.Append(help='', id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,
             text='Delete data')
-        self.Bind(wx.EVT_MENU, self.OnPwdrReadMenu, id=wxID_GSASIIPWDRREAD)
-        self.Bind(wx.EVT_MENU, self.OnPwdrSumMenu, id=wxID_GSASIIPWDSUM)
-        self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=wxID_GSASIIREADPEAKS)
-        self.Bind(wx.EVT_MENU, self.OnImageRead, id=wxID_GSASIIIMGREAD)
-        self.Bind(wx.EVT_MENU, self.OnImageSum, id=wxID_GSASIIIMSUM)
-        self.Bind(wx.EVT_MENU, self.OnSnglReadMenu, id=wxID_GSASIISNGLREAD)
-        self.Bind(wx.EVT_MENU, self.OnAddPhase, id=wxID_GSASIIADDPHASE)
-        self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=wxID_GSASIIDELETEPHASE)
-        self.Bind(wx.EVT_MENU, self.OnDataDeleteMenu, id=wxID_GSASIIDATADELETE)
+        self.Bind(wx.EVT_MENU, self.OnPwdrRead, id=wxID_PWDRREAD)
+        self.Bind(wx.EVT_MENU, self.OnPwdrSum, id=wxID_PWDSUM)
+        self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=wxID_READPEAKS)
+        self.Bind(wx.EVT_MENU, self.OnImageRead, id=wxID_IMGREAD)
+        self.Bind(wx.EVT_MENU, self.OnImageSum, id=wxID_IMSUM)
+        self.Bind(wx.EVT_MENU, self.OnSnglRead, id=wxID_SNGLREAD)
+        self.Bind(wx.EVT_MENU, self.OnAddPhase, id=wxID_ADDPHASE)
+        self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=wxID_DELETEPHASE)
+        self.Bind(wx.EVT_MENU, self.OnRenameData, id=wxID_DATARENAME)
+        self.Bind(wx.EVT_MENU, self.OnDataDelete, id=wxID_DATADELETE)
                 
     def _init_coll_Calculate_Items(self,parent):
-        self.UnDo = parent.Append(help='', id=wxID_GSASIIUNDO, kind=wx.ITEM_NORMAL,
+        self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
             text='UnDo')
         self.UnDo.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnUnDo, id=wxID_GSASIIUNDO)
+        self.Bind(wx.EVT_MENU, self.OnUnDo, id=wxID_UNDO)
         
     def _init_coll_Import_Items(self,parent):
         self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
-            id=wxID_GSASIIIMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase...')
+            id=wxID_IMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase...')
         self.ImportPDB = parent.Append(help='Import phase data from PDB file',
-            id=wxID_GSASIIIMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase...')
-        self.ImportPattern = parent.Append(help='',id=wxID_GSASIIIMPORTPATTERN, kind=wx.ITEM_NORMAL,
+            id=wxID_IMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase...')
+        self.ImportPattern = parent.Append(help='',id=wxID_IMPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Import Powder Pattern...')
-        self.ImportHKL = parent.Append(help='',id=wxID_GSASIIIMPORTHKL, kind=wx.ITEM_NORMAL,
+        self.ImportHKL = parent.Append(help='',id=wxID_IMPORTHKL, kind=wx.ITEM_NORMAL,
             text='Import HKLs...')
-        self.ImportCIF = parent.Append(help='',id=wxID_GSASIIIMPORTCIF, kind=wx.ITEM_NORMAL,
+        self.ImportCIF = parent.Append(help='',id=wxID_IMPORTCIF, kind=wx.ITEM_NORMAL,
             text='Import CIF...')
-        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=wxID_GSASIIIMPORTPHASE)
-        self.Bind(wx.EVT_MENU, self.OnImportPDB, id=wxID_GSASIIIMPORTPDB)
-        self.Bind(wx.EVT_MENU, self.OnImportPattern, id=wxID_GSASIIIMPORTPATTERN)
-        self.Bind(wx.EVT_MENU, self.OnImportHKL, id=wxID_GSASIIIMPORTHKL)
-        self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_GSASIIIMPORTCIF)
+        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=wxID_IMPORTPHASE)
+        self.Bind(wx.EVT_MENU, self.OnImportPDB, id=wxID_IMPORTPDB)
+        self.Bind(wx.EVT_MENU, self.OnImportPattern, id=wxID_IMPORTPATTERN)
+        self.Bind(wx.EVT_MENU, self.OnImportHKL, id=wxID_IMPORTHKL)
+        self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_IMPORTCIF)
 
     def _init_coll_Export_Items(self,parent):
-        self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_GSASIIEXPORTPATTERN, kind=wx.ITEM_NORMAL,
+        self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_EXPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Export Powder Pattern...')
-        self.ExportPeakList = parent.Append(help='',id=wxID_GSASIIEXPORTPEAKLIST, kind=wx.ITEM_NORMAL,
+        self.ExportPeakList = parent.Append(help='',id=wxID_EXPORTPEAKLIST, kind=wx.ITEM_NORMAL,
             text='Export All Peak Lists...')
-        self.ExportHKL = parent.Append(help='',id=wxID_GSASIIEXPORTHKL, kind=wx.ITEM_NORMAL,
+        self.ExportHKL = parent.Append(help='',id=wxID_EXPORTHKL, kind=wx.ITEM_NORMAL,
             text='Export HKLs...')
-        self.ExportPhase = parent.Append(help='',id=wxID_GSASIIEXPORTPHASE, kind=wx.ITEM_NORMAL,
+        self.ExportPhase = parent.Append(help='',id=wxID_EXPORTPHASE, kind=wx.ITEM_NORMAL,
             text='Export Phase...')
-        self.ExportCIF = parent.Append(help='',id=wxID_GSASIIEXPORTCIF, kind=wx.ITEM_NORMAL,
+        self.ExportCIF = parent.Append(help='',id=wxID_EXPORTCIF, kind=wx.ITEM_NORMAL,
             text='Export CIF...')
         self.ExportPattern.Enable(False)
         self.ExportPeakList.Enable(True)
         self.ExportHKL.Enable(False)
         self.ExportPhase.Enable(False)
         self.ExportCIF.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnExportPattern, id=wxID_GSASIIEXPORTPATTERN)
-        self.Bind(wx.EVT_MENU, self.OnExportPeakList, id=wxID_GSASIIEXPORTPEAKLIST)
-        self.Bind(wx.EVT_MENU, self.OnExportHKL, id=wxID_GSASIIEXPORTHKL)
-        self.Bind(wx.EVT_MENU, self.OnExportPhase, id=wxID_GSASIIEXPORTPHASE)
-        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=wxID_GSASIIEXPORTCIF)
+        self.Bind(wx.EVT_MENU, self.OnExportPattern, id=wxID_EXPORTPATTERN)
+        self.Bind(wx.EVT_MENU, self.OnExportPeakList, id=wxID_EXPORTPEAKLIST)
+        self.Bind(wx.EVT_MENU, self.OnExportHKL, id=wxID_EXPORTHKL)
+        self.Bind(wx.EVT_MENU, self.OnExportPhase, id=wxID_EXPORTPHASE)
+        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=wxID_EXPORTCIF)
                
     def _init_coll_Help_Items(self, parent):
-        parent.Append(help='', id=wxID_GSASIIHELPHELP, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_HELPHELP, kind=wx.ITEM_NORMAL,
             text='Help')
-        parent.Append(help='', id=wxID_GSASIIHELPABOUT, kind=wx.ITEM_NORMAL,
+        parent.Append(help='', id=wxID_HELPABOUT, kind=wx.ITEM_NORMAL,
             text='About')
-        self.Bind(wx.EVT_MENU, self.OnHelpHelpMenu, id=wxID_GSASIIHELPHELP)
-        self.Bind(wx.EVT_MENU, self.OnHelpAboutMenu, id=wxID_GSASIIHELPABOUT)
+        self.Bind(wx.EVT_MENU, self.OnHelpHelp, id=wxID_HELPHELP)
+        self.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wxID_HELPABOUT)
 
     def _init_utils(self):
         self.GSASIIMenu = wx.MenuBar()
@@ -187,7 +190,7 @@ class GSASII(wx.Frame):
         self._init_coll_Help_Items(self.Help)
         
     def _init_ctrls(self, parent):
-        wx.Frame.__init__(self, id=wxID_GSASII, name='GSASII', parent=parent,
+        wx.Frame.__init__(self, name='GSASII', parent=parent,
             size=wx.Size(300, 250),style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II')
         screenSize = wx.DisplaySize()
         Size = self.GetSize()
@@ -199,14 +202,14 @@ class GSASII(wx.Frame):
         self.CreateStatusBar()
         self.mainPanel = wx.Panel(self,-1)
         
-        self.PatternTree = wx.TreeCtrl(id=wxID_GSASIIPATTERNTREE,
+        self.PatternTree = wx.TreeCtrl(id=wxID_PATTERNTREE,
             parent=self.mainPanel, pos=wx.Point(0, 0),style=wx.TR_DEFAULT_STYLE )
         self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED,
-            self.OnPatternTreeSelChanged, id=wxID_GSASIIPATTERNTREE)
+            self.OnPatternTreeSelChanged, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_COLLAPSED,
-            self.OnPatternTreeItemCollapsed, id=wxID_GSASIIPATTERNTREE)
+            self.OnPatternTreeItemCollapsed, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_EXPANDED,
-            self.OnPatternTreeItemExpanded, id=wxID_GSASIIPATTERNTREE)
+            self.OnPatternTreeItemExpanded, id=wxID_PATTERNTREE)
         self.root = self.PatternTree.AddRoot("Loaded Data")
         
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
@@ -276,7 +279,7 @@ class GSASII(wx.Frame):
     def OnPatternTreeItemActivated(self, event):
         event.Skip()
         
-    def OnPwdrReadMenu(self, event):
+    def OnPwdrRead(self, event):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose files', '.', '', 
             'GSAS fxye files (*.fxye)|*.fxye|GSAS fxy files (*.fxy)|*.fxy|All files (*.*)|*.*', 
@@ -431,7 +434,7 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         
-    def OnSnglReadMenu(self,event):
+    def OnSnglRead(self,event):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose file', '.', '', 
             'hkl files (*.hkl)|*.hkl|All files (*.*)|*.*', 
@@ -446,7 +449,7 @@ class GSASII(wx.Frame):
                     Data = {}
                     names = ['Type','Lam']
                     HKLref,HKLmin,HKLmax,FoMax,ifFc = G2IO.GetHKLData(filename)
-                    Id = self.PatternTree.AppendItem(parent=self.root,text='SXTL '+ospath.basename(filename))
+                    Id = self.PatternTree.AppendItem(parent=self.root,text='HKLF '+ospath.basename(filename))
                     self.PatternTree.SetItemPyData(Id,HKLref)
                     Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
                     data = ['SXC',1.5428,]
@@ -531,7 +534,7 @@ class GSASII(wx.Frame):
                 return self.data
         
     class SumDialog(wx.Dialog):
-        def __init__(self,parent,title,text,type,data):
+        def __init__(self,parent,title,text,dataType,data):
             wx.Dialog.__init__(self,parent,-1,title, 
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
             self.data = data
@@ -549,7 +552,7 @@ class GSASII(wx.Frame):
                 scale.Bind(wx.EVT_TEXT,self.OnScaleChange)                    
                 dataGridSizer.Add(scale,0,wx.LEFT,10)
                 dataGridSizer.Add(name,0,wx.RIGHT,10)
-            dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+type),0, \
+            dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
                 wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
             self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(200,20),style=wx.TE_PROCESS_ENTER)
             self.name.Bind(wx.EVT_TEXT,self.OnNameChange)
@@ -602,7 +605,7 @@ class GSASII(wx.Frame):
         def GetData(self):
                 return self.data
             
-    def OnPwdrSumMenu(self,event):
+    def OnPwdrSum(self,event):
         TextList = []
         DataList = []
         SumList = []
@@ -838,9 +841,21 @@ class GSASII(wx.Frame):
                     for item in DelItemList:
                         self.PatternTree.Delete(item)
             finally:
-                dlg.Destroy()       
+                dlg.Destroy()
+                
+    def OnRenameData(self,event):
+        name = self.PatternTree.GetItemText(self.PickId)      
+        if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
+            dataType = name[:name.index(' ')+1]                 #includes the ' '
+            dlg = wx.TextEntryDialog(self,'Data name: '+dataType,'Change data name',
+                defaultValue=name[name.index(' ')+1:])
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    self.PatternTree.SetItemText(self.PickId,dataType+dlg.GetValue())
+            finally:
+                dlg.Destroy()
         
-    def OnDataDeleteMenu(self, event):
+    def OnDataDelete(self, event):
         TextList = []
         DelList = []
         DelItemList = []
@@ -848,7 +863,7 @@ class GSASII(wx.Frame):
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
                 name = self.PatternTree.GetItemText(item)
-                if 'PWDR' in name or 'SXTL' in name or 'IMG' in name:
+                if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
             dlg = wx.MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
@@ -866,7 +881,7 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
 
-    def OnFileOpenMenu(self, event):
+    def OnFileOpen(self, event):
         result = ''
         Id = 0
         if self.PatternTree.GetChildrenCount(self.root,False):
@@ -877,7 +892,11 @@ class GSASII(wx.Frame):
                 result = dlg.ShowModal()
                 if result == wx.ID_OK:
                     self.PatternTree.DeleteChildren(self.root)
-                    print 'children deleted'
+                    self.GSASprojectfile = ''
+                    self.PatternTree.DeleteChildren(self.root)
+                    if self.HKL: self.HKL = []
+                    if self.G2plotNB.plotList:
+                        self.G2plotNB.clear()
             finally:
                 dlg.Destroy()
         if result != wx.ID_CANCEL:    
@@ -895,7 +914,7 @@ class GSASII(wx.Frame):
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item and not Id:
                         name = self.PatternTree.GetItemText(item)
-                        if 'PWDR' in name or 'SXTL' in name or 'IMG' in name:
+                        if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
                             Id = item
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
@@ -903,7 +922,7 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
 
-    def OnFileCloseMenu(self, event):
+    def OnFileClose(self, event):
         if self.dataFrame:
             self.dataFrame.Clear()
             self.dataFrame.SetLabel('GSAS-II data display') 
@@ -916,16 +935,18 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = ''
                 self.PatternTree.DeleteChildren(self.root)
                 if self.HKL: self.HKL = []
+                if self.G2plotNB.plotList:
+                    self.G2plotNB.clear()
         finally:
             dlg.Destroy()
 
-    def OnFileSaveMenu(self, event):
+    def OnFileSave(self, event):
         if self.GSASprojectfile: 
             G2IO.ProjFileSave(self)
         else:
-            self.OnFileSaveasMenu(event)
+            self.OnFileSaveas(event)
 
-    def OnFileSaveasMenu(self, event):
+    def OnFileSaveas(self, event):
         dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', '.', '', 
             'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         if self.dirname:
@@ -941,7 +962,7 @@ class GSASII(wx.Frame):
     def ExitMain(self, event):
         sys.exit()
         
-    def OnFileExitMenu(self, event):
+    def OnFileExit(self, event):
         if self.dataFrame:
             self.dataFrame.Clear() 
             self.dataFrame.Destroy()
@@ -1116,10 +1137,10 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
 
-    def OnHelpHelpMenu(self, event):
+    def OnHelpHelp(self, event):
         event.Skip()
         
-    def OnHelpAboutMenu(self, event):
+    def OnHelpAbout(self, event):
         info = wx.AboutDialogInfo()
         info.Name = 'GSAS-II'
         info.Version = __version__

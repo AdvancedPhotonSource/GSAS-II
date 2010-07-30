@@ -289,7 +289,9 @@ def PlotPatterns(self,newPlot=False):
                 if self.PickId and self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List']:
                     found = []
                     if len(HKL):
-                        found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.05)]
+                        view = Page.toolbar._views.forward()[0][:2]
+                        wid = view[1]-view[0]
+                        found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.002*wid)]
                     if len(found):
                         h,k,l = found[0][:3] 
                         Page.canvas.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
@@ -458,7 +460,9 @@ def PlotPowderLines(self):
             if self.PickId and self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List']:
                 found = []
                 if len(HKL):
-                    found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.05)]
+                    view = Page.toolbar._views.forward()[0][:2]
+                    wid = view[1]-view[0]
+                    found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.002*wid)]
                 if len(found):
                     h,k,l = found[0][:3] 
                     Page.canvas.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))

@@ -333,13 +333,13 @@ def ImageCalibrate(self,data):
         print 'no calibration material selected'
         return True
         
-    Bravais,cell,skip = calFile.Calibrants[data['calibrant']]
+    Bravais,cell,skip,limits = calFile.Calibrants[data['calibrant']]
     A = G2lat.cell2A(cell)
     wave = data['wavelength']
     cent = data['center']
     pixLimit = data['pixLimit']
     elcent,phi,radii = ellipse
-    HKL = G2lat.GenHBravais(0.5,Bravais,A)[skip:]
+    HKL = G2lat.GenHBravais(limits[0],Bravais,A)[skip:]
     dsp = HKL[0][3]
     tth = 2.0*asind(wave/(2.*dsp))
     ttth = tand(tth)

@@ -28,9 +28,22 @@ def UpdateImageControls(self,data,masks):
         
     def OnNewCalibrant(event):
         data['calibrant'] = calSel.GetValue()
+        limits = calFile.Calibrants[data['calibrant']][3]
+        data['pixLimit'] = limits[1]
+        pixLimit.SetValue(str(limits[1]))
+        data['cutoff'] = limits[2]
+        cutOff.SetValue('%.1f'%(limits[2]))
         
     def OnPixLimit(event):
         data['pixLimit'] = int(pixLimit.GetValue())
+        
+    def OnCutOff(event):
+        try:
+            cutoff = float(cutOff.GetValue())
+            data['cutoff'] = cutoff
+        except ValueError:
+            pass
+        cutOff.SetValue("%.1f"%(data['cutoff']))          #reset in case of error  
         
     def OnMaxSlider(event):
         sqrtDeltZero = math.sqrt(data['range'][0][1]-data['range'][0][0])
@@ -78,14 +91,6 @@ def UpdateImageControls(self,data,masks):
         except ValueError:
             pass
         waveSel.SetValue("%6.5f" % (data['wavelength']))          #reset in case of error          
-        
-    def OnCutOff(event):
-        try:
-            cutoff = float(cutOff.GetValue())
-            data['cutoff'] = cutoff
-        except ValueError:
-            pass
-        cutOff.SetValue("%.1f"%(data['cutoff']))          #reset in case of error  
         
     def OnShowLines(event):
         if data['showLines']:

@@ -9,8 +9,8 @@ import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 
-[ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, 
-] = [wx.NewId() for _init_coll_Atom_Items in range(2)]
+[ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, 
+] = [wx.NewId() for _init_coll_Atom_Items in range(3)]
 
 [ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG, 
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL,
@@ -38,7 +38,7 @@ class DataFrame(wx.Frame):
         parent.Append(menu=self.Blank,title='')
         
     def _init_coll_AtomsMenu(self,parent):
-        parent.Append(menu=self.AtomEdit, title='Add atom')
+        parent.Append(menu=self.AtomEdit, title='Edit atom list')
 
     def _init_coll_IndPeaksMenu(self,parent):
         parent.Append(menu=self.IndPeaksEdit,title='Index Peaks Operations')
@@ -62,6 +62,8 @@ class DataFrame(wx.Frame):
         parent.Append(help='',id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append empty atom')
         parent.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert empty atom',
             help='Double left click on atom row to Insert before')
+        parent.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
+            help='Select atoms to delete first')
             
     def _init_coll_IndPeaks_Items(self,parent):
         parent.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 

@@ -809,8 +809,9 @@ class GSASII(wx.Frame):
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
         SGData = {'SpGrp':'P 1'}
         self.PatternTree.SetItemPyData(sub, \
-            {'General':[PhaseName,'nuclear',SGData,[False,10.,10.,10.,90.,90.,90,1000.],
-            [False,1.0],[],{},[],[],[]],'Atoms':[]})
+            {'General':{'Name':'phase name','Type':'nuclear','SGData':SGData,'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
+            'Scale':[False,1.0],'Pawley dmin':0.25},'Atoms':[]})
+
         
     def OnDeletePhase(self,event):
         if self.dataFrame:
@@ -1006,7 +1007,7 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
             if Phase:
-                PhaseName = Phase['General'][0]
+                PhaseName = Phase['General']['Name']
                 if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
                     sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
                 else:
@@ -1027,7 +1028,7 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
             if Phase:
-                PhaseName = Phase['General'][0]
+                PhaseName = Phase['General']['Name']
                 if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
                     sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
                 else:

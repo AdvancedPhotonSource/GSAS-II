@@ -9,8 +9,9 @@ import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 
-[ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, 
-] = [wx.NewId() for _init_coll_Atom_Items in range(3)]
+[ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
+    wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM,
+] = [wx.NewId() for _init_coll_Atom_Items in range(6)]
 
 [ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG, 
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL,
@@ -64,6 +65,12 @@ class DataFrame(wx.Frame):
             help='Double left click on atom row to Insert before')
         parent.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
             help='Select atoms to delete first')
+        parent.Append(id=wxID_ATOMSREFINE, kind=wx.ITEM_NORMAL,text='Set atom refinement flags',
+            help='Select atoms to refine first')
+        parent.Append(id=wxID_ATOMSMODIFY, kind=wx.ITEM_NORMAL,text='Modify atom parameters',
+            help='Select atoms to modify first')
+        parent.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
+            help='Select atoms to transform first')
             
     def _init_coll_IndPeaks_Items(self,parent):
         parent.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
@@ -184,7 +191,7 @@ class GSGrid(wg.Grid):
     def SetCellStyle(self,r,c,color="white",readonly=True):
         self.SetCellBackgroundColour(r,c,color)
         self.SetReadOnly(r,c,isReadOnly=readonly)
-        
+                        
 class GSNoteBook(wx.Notebook):
     def __init__(self, parent, name='',size = None):
         wx.Notebook.__init__(self, parent, -1, name=name, style= wx.BK_TOP)

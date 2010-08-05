@@ -116,8 +116,6 @@ def SGPrint(SGData):
     input:  SGData, from SpcGroup
     returns a list of strings with the space group details
     '''
-    XYZ = ('-Z ','-Y ','-X ','X-Y','ERR','Y-X',' X ',' Y ',' Z ','+X ','+Y ','+Z ')
-    TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
     POL = (' ','x','y','x y','z','x z','y z','xyz','111')
     Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
     NP = [1,2,4]
@@ -146,18 +144,8 @@ def SGPrint(SGData):
     if NPol:
         SGText.append('The location of the origin is arbitrary in '+POL[NPol])
     SGText.append('\n'+'The equivalent positions are:')
-    if SGData['SGLatt'] in 'A':
-        SGText.append('\n'+'    (0,0,0; 0,1/2,1/2)+')
-    elif SGData['SGLatt'] in 'B':
-        SGText.append('\n'+'    (0,0,0; 1/2,0,1/2)+')
-    elif SGData['SGLatt'] in 'C':
-        SGText.append('\n'+'    (0,0,0; 1/2,1/2,0)+')
-    elif SGData['SGLatt'] in 'I':
-        SGText.append('\n'+'    (0,0,0; 1/2,1/2,1/2)+')
-    elif SGData['SGLatt'] in 'F':
-        SGText.append('\n'+'    (0,0,0; 0,1/2,1/2; 1/2,0,1/2; 1/2,1/2,0)+')
-    elif SGData['SGLatt'] in 'R':
-        SGText.append('\n'+'    (0,0,0; 1/3,2/3,2/3; 2/3,1/3,1/3)+')
+    if SGData['SGLatt'] != 'P':
+        SGText.append('\n('+Latt2text(SGData['SGLatt'])+')+')
     if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
         Ncol = 2
     else:
@@ -167,17 +155,32 @@ def SGPrint(SGData):
         if iop % Ncol == 0:
             SGText.append(line)        
             line = ''
-        Fld = '(%2i) ' % (iop+1)
-        for j in range(3):
-            IJ = int(round(2*M[j][0]+3*M[j][1]+4*M[j][2]+4)) % 12
-            IK = int(round(T[j]*12)) % 12
-            if IK > 0 and IJ > 4: IJ += 3
-            Fld += TRA[IK]+XYZ[IJ]
-            if j != 2: Fld += ','
+        Fld = '(%2i) ' % (iop+1)+MT2text(M,T)+'\t'
         line += Fld
     SGText.append(line)        
     return SGText
     
+def MT2text(M,T):
+    #From space group matrix/translation operator returns text version
+    XYZ = ('-Z ','-Y ','-X ','X-Y','ERR','Y-X',' X ',' Y ',' Z ','+X ','+Y ','+Z ')
+    TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
+    Fld = ''
+    for j in range(3):
+        IJ = int(round(2*M[j][0]+3*M[j][1]+4*M[j][2]+4)) % 12
+        IK = int(round(T[j]*12)) % 12
+        if IK > 0 and IJ > 4: IJ += 3
+        Fld += TRA[IK]+XYZ[IJ]
+        if j != 2: Fld += ','
+    return Fld
+    
+def Latt2text(Latt):
+    #From lattice type ('P',A', etc.) returns ';' delimited cell centering vectors
+    lattTxt = {'A':'0,0,0; 0,1/2,1/2','B':'0,0,0; 1/2,0,1/2',
+        'C':'0,0,0; 1/2,1/2,0','I':'0,0,0; 1/2,1/2,1/2',
+        'F':'0,0,0; 0,1/2,1/2; 1/2,0,1/2; 1/2,1/2,0',
+        'R':'0,0,0; 1/3,2/3,2/3; 2/3,1/3,1/3','P':'0,0,0'}
+    return lattTxt[Latt]    
+        
 def SpaceGroup(SgSym):
     '''
     Print the output of SpcGroup in a nicely formatted way. 
@@ -488,6 +491,14 @@ def SytSym(XYZ,SGData):
     Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)/Jdup
           
     return GetKNsym(str(Isym)),Mult
+    
+def U2Uij(U):
+    #returns the UIJ vector U11,U22,U33,U12,U13,U23 from tensor U
+    return [U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]]
+    
+def Uij2U(Uij):
+    #returns the thermal motion tensor U from Uij as numpy array
+    return np.array([[Uij[0],Uij[3],Uij[4]],[Uij[3],Uij[1],Uij[5]],[Uij[4],Uij[5],Uij[2]]])
     
 '''A list of space groups as ordered and named in the pre-2002 International 
 Tables Volume A, except that spaces are used following the GSAS convention to 

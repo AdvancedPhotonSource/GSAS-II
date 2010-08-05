@@ -603,7 +603,7 @@ class GSASII(wx.Frame):
             self.Destroy()
             
         def GetData(self):
-                return self.data
+            return self.data
             
     def OnPwdrSum(self,event):
         TextList = []

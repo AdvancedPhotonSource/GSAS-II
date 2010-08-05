@@ -3,6 +3,7 @@ import wx
 import wx.grid as wg
 import matplotlib as mpl
 import math
+import copy
 import time
 import cPickle
 import GSASIIpath
@@ -22,8 +23,105 @@ sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
-       
+            
 def UpdatePhaseData(self,item,data,oldPage):
+    
+    class SymOpDialog(wx.Dialog):
+        def __init__(self,parent,SGData):
+            wx.Dialog.__init__(self,parent,-1,'Select symmetry operator', 
+                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            panel = wx.Panel(self)
+            self.SGData = SGData
+            self.OpSelected = [0,0,0,0,0,0]
+            mainSizer = wx.BoxSizer(wx.VERTICAL)            
+            mainSizer.Add((5,5),0)
+            if SGData['SGInv']:
+                choice = ['No','Yes']
+                self.inv = wx.RadioBox(panel,-1,'Choose inversion?',choices=choice)
+                self.inv.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+                mainSizer.Add(self.inv,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+            if SGData['SGLatt'] != 'P':
+                LattOp = G2spc.Latt2text(SGData['SGLatt']).split(';')
+                self.latt = wx.RadioBox(panel,-1,'Choose cell centering?',choices=LattOp)
+                self.latt.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+                mainSizer.Add(self.latt,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+            if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
+                Ncol = 2
+            else:
+                Ncol = 3
+            OpList = []
+            for M,T in SGData['SGOps']:
+                OpList.append(G2spc.MT2text(M,T))
+            self.oprs = wx.RadioBox(panel,-1,'Choose space group operator?',choices=OpList,
+                majorDimension=Ncol)
+            self.oprs.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.oprs,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+            mainSizer.Add(wx.StaticText(panel,-1,"   Choose unit cell?"),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+            cellSizer = wx.BoxSizer(wx.HORIZONTAL)
+            cellSizer.Add((5,0),0)
+            cellName = ['X','Y','Z']
+            self.cell = []
+            for i in range(3):
+                self.cell.append(wx.SpinCtrl(panel,-1,cellName[i],size=wx.Size(50,20)))
+                self.cell[-1].SetRange(-3,3)
+                self.cell[-1].SetValue(0)
+                self.cell[-1].Bind(wx.EVT_SPINCTRL, self.OnOpSelect)
+                cellSizer.Add(self.cell[-1],0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(cellSizer,0,)
+            choice = ['No','Yes']
+            self.new = wx.RadioBox(panel,-1,'Generate new positions?',choices=choice)
+            self.new.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.new,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+                            
+            OkBtn = wx.Button(panel,-1,"Ok")
+            OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+            cancelBtn = wx.Button(panel,-1,"Cancel")
+            cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(OkBtn)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(cancelBtn)
+            btnSizer.Add((20,20),1)
+            
+            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+            panel.SetSizer(mainSizer)
+            panel.Fit()
+            self.Fit()
+            
+        def OnOpSelect(self,event):
+            self.OpSelected = [0,0,0,[],0]
+            if self.SGData['SGInv']:
+                self.OpSelected[0] = self.inv.GetSelection()
+            if self.SGData['SGLatt'] != 'P':            
+                self.OpSelected[1] = self.latt.GetSelection()
+            self.OpSelected[2] = self.oprs.GetSelection()
+            for i in range(3):
+                self.OpSelected[3].append(float(self.cell[i].GetValue()))
+            self.OpSelected[4] = self.new.GetSelection()
+                
+        def GetSelection(self):
+            return self.OpSelected
+                            
+        def OnOk(self,event):
+            parent = self.GetParent()
+            parent.Raise()
+            self.SetReturnCode(wx.ID_OK)
+            self.MakeModal(False)              
+            self.Destroy()
+            
+        def OnCancel(self,event):
+            parent = self.GetParent()
+            parent.Raise()
+            self.SetReturnCode(wx.ID_CANCEL)
+            self.MakeModal(False)              
+            self.Destroy()            
+        
     Atoms = []
     self.SelectedRow = 0
     
@@ -83,7 +181,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     Style = wx.ICON_EXCLAMATION
                 else:
                     text = G2spc.SGPrint(SGData)
-                    generalData[SGData] = SGData
+                    generalData['SGData'] = SGData
                     msg = 'Space Group Information'
                     Style = wx.ICON_INFORMATION
                 Text = ''
@@ -199,24 +297,117 @@ def UpdatePhaseData(self,item,data,oldPage):
                 return Uij
                 
             r,c =  event.GetRow(),event.GetCol()
-            if r < 0:                          #on col label!
+            if r < 0 and c < 0:
+                Atoms.ClearSelection()
+            if r < 0:                          #double click on col label! Change all atoms!
                 sel = -1
+                noSkip = True
                 if Atoms.GetColLabelValue(c) == 'refine':
-                    choice = ['F - site fraction','X - coordinates','U - thermal parameters']
+                    Type = generalData['Type']
+                    if Type in ['nuclear','macromolecular']:
+                        choice = ['F - site fraction','X - coordinates','U - thermal parameters']
+                    elif Type in ['magnetic',]:
+                        choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']                        
                     dlg = wx.MultiChoiceDialog(self,'Select','Refinement controls',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelections()
                         parms = ''
                         for x in sel:
-                            parms += choice[x][0]                            
+                            parms += choice[x][0]
+                    dlg.Destroy()                            
                 elif Atoms.GetColLabelValue(c) == 'I/A':
                     choice = ['Isotropic','Anisotropic']
                     dlg = wx.SingleChoiceDialog(self,'Select','Thermal Motion',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = choice[sel][0]
-                if sel >= 0:
+                    dlg.Destroy()
+                elif Atoms.GetColLabelValue(c) == 'Type':
+                    choice = generalData['AtomTypes']                           
+                    dlg = wx.SingleChoiceDialog(self,'Select','Atom types',choice)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        sel = dlg.GetSelection()
+                        parms = choice[sel]
+                        noSkip = False
+                        Atoms.ClearSelection()
+                        for row in range(Atoms.GetNumberRows()):
+                            if parms == atomData[row][c]:
+                                Atoms.SelectRow(row,True)
+                elif Atoms.GetColLabelValue(c) == 'residue':
+                    choice = []
                     for r in range(Atoms.GetNumberRows()):
+                        if str(atomData[r][c]) not in choice:
+                            choice.append(str(atomData[r][c]))
+                    choice.sort()
+                    dlg = wx.SingleChoiceDialog(self,'Select','Residue',choice)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        sel = dlg.GetSelection()
+                        parms = choice[sel]
+                        noSkip = False
+                        Atoms.ClearSelection()
+                        for row in range(Atoms.GetNumberRows()):
+                            if parms == atomData[row][c]:
+                                Atoms.SelectRow(row,True)
+                elif Atoms.GetColLabelValue(c) == 'res no':
+                    choice = []
+                    for r in range(Atoms.GetNumberRows()):
+                        if str(atomData[r][c]) not in choice:
+                            choice.append(str(atomData[r][c]))
+                    dlg = wx.SingleChoiceDialog(self,'Select','Residue no.',choice)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        sel = dlg.GetSelection()
+                        parms = choice[sel]
+                        noSkip = False
+                        Atoms.ClearSelection()
+                        for row in range(Atoms.GetNumberRows()):
+                            if int(parms) == atomData[row][c]:
+                                Atoms.SelectRow(row,True)
+                elif Atoms.GetColLabelValue(c) == 'chain':
+                    choice = []
+                    for r in range(Atoms.GetNumberRows()):
+                        if atomData[r][c] not in choice:
+                            choice.append(atomData[r][c])
+                    dlg = wx.SingleChoiceDialog(self,'Select','Chain',choice)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        sel = dlg.GetSelection()
+                        parms = choice[sel]
+                        noSkip = False
+                        Atoms.ClearSelection()
+                        for row in range(Atoms.GetNumberRows()):
+                            if parms == atomData[row][c]:
+                                Atoms.SelectRow(row,True)
+                    dlg.Destroy()
+                if sel >= 0 and noSkip:
+                    ui = colLabels.index('U11')
+                    us = colLabels.index('Uiso')
+                    ss = colLabels.index('site sym')
+                    for r in range(Atoms.GetNumberRows()):
+                        if parms != atomData[r][c] and Atoms.GetColLabelValue(c) == 'I/A':
+                            if parms == 'A':                #'I' --> 'A'
+                                Uiso = atomData[r][us]
+                                sytsym = atomData[r][ss]
+                                CSI = G2spc.GetCSuinel(sytsym)
+                                atomData[r][ui:ui+6] = Uiso*np.array(CSI[3])
+                                atomData[r][us] = ''
+                                Atoms.SetCellRenderer(r,us,wg.GridCellStringRenderer())
+                                Atoms.SetCellStyle(r,us,VERY_LIGHT_GREY,True)
+                                for i in range(6):
+                                    ci = ui+i
+                                    Atoms.SetCellRenderer(r,ci,wg.GridCellFloatRenderer(10,4))
+                                    Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
+                                    if CSI[2][i]:
+                                        Atoms.SetCellStyle(r,ci,WHITE,False)
+                            else:                           #'A' --> 'I'
+                                Uij = atomData[r][ui:ui+6]
+                                atomData[r][us] = (Uij[0]+Uij[1]+Uij[2])/3.0
+                                atomData[r][ui:ui+6] = [0,0,0,0,0,0] 
+                                Atoms.SetCellRenderer(r,us,wg.GridCellFloatRenderer(10,4))
+                                Atoms.SetCellStyle(r,us,WHITE,False)
+                                for i in range(6):
+                                    ci = ui+i
+                                    Atoms.SetCellRenderer(r,ci,wg.GridCellStringRenderer())
+                                    Atoms.SetCellValue(r,ci,'')
+                                    Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)                        
                         Atoms.SetCellValue(r,c,parms)
             elif c < 0:                    #picked atom row
                 self.SelectedRow = r
@@ -272,6 +463,22 @@ def UpdatePhaseData(self,item,data,oldPage):
                 for i in range(6):
                     if iUij == CSI[0][i]:
                         atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]                
+            Atoms.ForceRefresh()
+            
+        def ChangeSelection(event):
+            r,c =  event.GetRow(),event.GetCol()
+            if r < 0 and c < 0:
+                Atoms.ClearSelection()
+            if c < 0:
+                if r in Atoms.GetSelectedRows():
+                    Atoms.DeselectRow(r)
+                else:
+                    Atoms.SelectRow(r,True)
+            if r < 0:
+                if c in Atoms.GetSelectedCols():
+                    Atoms.DeselectCol(c)
+                else:
+                    Atoms.SelectCol(c,True)            
                     
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -290,8 +497,8 @@ def UpdatePhaseData(self,item,data,oldPage):
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
             wg.GRID_VALUE_STRING,wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_CHOICE+":I,A",
             wg.GRID_VALUE_FLOAT+':10,4',                                                            #Uiso
-            wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4',    #Uij
-            wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4']
+            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,                         #Uij - placeholders
+            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING]
         colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
         if generalData['Type'] == 'magnetic':
             colLabels += ['Mx','My','Mz']
@@ -302,38 +509,47 @@ def UpdatePhaseData(self,item,data,oldPage):
             colLabels = ['res no','residue','chain'] + colLabels
             Types = [wg.GRID_VALUE_NUMBER,
                 wg.GRID_VALUE_CHOICE+": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK",
-                wg.GRID_VALUE_STRING] + Types        
+                wg.GRID_VALUE_STRING] + Types
+        elif generalData['Type'] == 'modulated':
+            Types += []
+            colLabels += []        
         table = []
         rowLabels = []
         for i,atom in enumerate(atomData):
-            table.append(atom)
+            if atom[colLabels.index('I/A')] == 'I':
+                table.append(atom[:colLabels.index('U11')]+['','','','','',''])
+            else:
+                table.append(atom)
             rowLabels.append(str(i+1))
         atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         Atoms.SetTable(atomTable, True)
         Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
+        Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
         Atoms.Bind(wg.EVT_GRID_SELECT_CELL, AtomTypeSelect)
         Atoms.SetMargins(0,0)
         Atoms.AutoSizeColumns(True)
         colType = colLabels.index('Type')
         colSS = colLabels.index('site sym')
         colIA = colLabels.index('I/A')
+        colU11 = colLabels.index('U11')
+        colUiso = colLabels.index('Uiso')
+        attr = wg.GridCellAttr()                                #to set Uij defaults
+        attr.SetBackgroundColour(VERY_LIGHT_GREY)
+        attr.SetReadOnly(True)
+        for i in range(colU11,colU11+6):
+            Atoms.SetColAttr(i,attr)
         for row in range(Atoms.GetNumberRows()):
             Atoms.SetReadOnly(row,colSS,True)                         #site sym
             Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
-            if Atoms.GetCellValue(row,colIA) == 'I':
-                for i in range(2,8):
-                    Atoms.SetCellRenderer(row,colIA+i,wg.GridCellStringRenderer())
-                    Atoms.SetCellValue(row,colIA+i,'')
-                    Atoms.SetCellStyle(row,colIA+i,VERY_LIGHT_GREY,True)
-            elif Atoms.GetCellValue(row,colIA) == 'A':
+            if Atoms.GetCellValue(row,colIA) == 'A':
                 CSI = G2spc.GetCSuinel(atomData[row][colLabels.index('site sym')])
-                Atoms.SetCellRenderer(row,colIA+1,wg.GridCellStringRenderer())
-                Atoms.SetCellStyle(row,colIA+1,VERY_LIGHT_GREY,True)
-                Atoms.SetCellValue(row,colIA+1,'')
+                Atoms.SetCellRenderer(row,colUiso,wg.GridCellStringRenderer())
+                Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
+                Atoms.SetCellValue(row,colUiso,'')
                 for i in range(6):
-                    ci = colIA+i+2
-                    Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
+                    ci = colU11+i
+                    Atoms.SetCellRenderer(row,ci,wg.GridCellFloatRenderer(10,4))
                     if CSI[2][i]:
                         Atoms.SetCellStyle(row,ci,WHITE,False)
                             
@@ -380,6 +596,81 @@ def UpdatePhaseData(self,item,data,oldPage):
             FillAtomsGrid()            
         event.StopPropagation()
         
+    def AtomRefine(event):
+        indx = Atoms.GetSelectedRows()
+        if indx:
+            atomData = data['Atoms']
+            generalData = data['General']
+            Type = generalData['Type']
+            if Type in ['nuclear','macromolecular']:
+                choice = ['F - site fraction','X - coordinates','U - thermal parameters']
+            elif Type in ['magnetic',]:
+                choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']                        
+            dlg = wx.MultiChoiceDialog(self,'Select','Refinement controls',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelections()
+                parms = ''
+                for x in sel:
+                    parms += choice[x][0]                            
+            dlg.Destroy()            
+            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            c = colLabels.index('refine')
+            for r in indx:
+                atomData[r][c] = parms
+            Atoms.ForceRefresh()                           
+        
+    def AtomModify(event):
+        indx = Atoms.GetSelectedRows()
+        if indx:
+            atomData = data['Atoms']
+            generalData = data['General']
+        
+    def AtomTransform(event):        
+        indx = Atoms.GetSelectedRows()
+        if indx:
+            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            cx = colLabels.index('x')
+            cuia = colLabels.index('I/A')
+            cuij = colLabels.index('U11')
+            css = colLabels.index('site sym')
+            atomData = data['Atoms']
+            generalData = data['General']
+            SGData = generalData['SGData']
+            dlg = SymOpDialog(self,SGData)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    Inv,Cent,Opr,Cell,New = dlg.GetSelection()
+                    Cell = np.array(Cell)
+                    cent = SGData['SGCen'][Cent]
+                    M,T = SGData['SGOps'][Opr]
+                    for ind in indx:
+                        XYZ = np.array(atomData[ind][cx:cx+3])
+                        XYZ = np.inner(M,XYZ)+T
+                        if Inv:
+                            XYZ = -XYZ
+                        XYZ = XYZ+cent+Cell
+                        if New:
+                            atom = copy.copy(atomData[ind])
+                        else:
+                            atom = atomData[ind]
+                        atom[cx:cx+3] = XYZ
+                        atom[css:css+2] = G2spc.SytSym(XYZ,SGData)
+                        if atom[cuia] == 'A':
+                            Uij = atom[cuij:cuij+6]
+                            U = G2spc.Uij2U(Uij)
+                            U = np.inner(np.inner(M.T,U),M)
+                            Uij = G2spc.U2Uij(U)
+                            atom[cuij:cuij+6] = Uij
+                        if New:
+                            atomData.append(atom)
+            finally:
+                dlg.Destroy()
+            Atoms.ClearSelection()
+            if New:
+                FillAtomsGrid()            
+            else:                        
+                Atoms.ForceRefresh()
+        
     def UpdateDrawing():
         print 'Drawing'
         
@@ -396,6 +687,9 @@ def UpdatePhaseData(self,item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, AtomAdd, id=G2gd.wxID_ATOMSEDITADD)
             self.dataFrame.Bind(wx.EVT_MENU, AtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
             self.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
+            self.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
+            self.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
+            self.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
             FillAtomsGrid()            
         else:
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
@@ -406,20 +700,21 @@ def UpdatePhaseData(self,item,data,oldPage):
     PhaseName = self.PatternTree.GetItemText(item)
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataFrame.SetLabel('Phase Data for '+PhaseName)
+    self.dataFrame.CreateStatusBar()
     self.dataDisplay = G2gd.GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
     
-    General = G2gd.GSGrid(parent=self.dataDisplay)
+    General = G2gd.GSGrid(self.dataDisplay)
     FillGeneralGrid()
     self.dataDisplay.AddPage(General,'General')
      
     GeneralData = data['General']
     if GeneralData['Type'] == 'Pawley':
-        PawleyRefl = G2gd.GSGrid(parent=self.dataDisplay)
+        PawleyRefl = G2gd.GSGrid(self.dataDisplay)
         self.dataDisplay.AddPage(PawleyRefl,'Pawley reflections')
     else:
-        Atoms = G2gd.GSGrid(parent=self.dataDisplay)
+        Atoms = G2gd.GSGrid(self.dataDisplay)
         self.dataDisplay.AddPage(Atoms,'Atoms')
-        Drawing = wx.Window(parent=self.dataDisplay)
+        Drawing = wx.Window(self.dataDisplay)
         self.dataDisplay.AddPage(Drawing,'Drawing')
    
     self.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)

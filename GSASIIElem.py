@@ -46,46 +46,6 @@ def GetFormFactorCoeff(El):
     FFdata.close()
     return FormFactors
     
-def GetAtomColors():
-    import ColorTable as CT
-    filename = os.path.join(sys.path[1],'atmdata.dat')
-    try:
-        FFdata = open(filename,'Ur')
-    except:
-        wx.MessageBox(message="File atmdata.dat not found in directory %s" % sys.path[0],
-            caption="No atmdata.dat file",style=wx.OK | wx.ICON_EXCLAMATION | wx.STAY_ON_TOP)
-        sys.exit()
-    S = '1'
-    Colors = []
-    while S:        
-        S = FFdata.readline()
-        if S[5:9] == '_SIZ':
-            print S,int(S[37:42])-1
-            Color = CT.ColorTable[int(S[37:42])-1][0]
-            if not Colors.count(Color):
-                Colors.append(Color)
-    FFdata.close()
-    return Colors
-    
-def GetElemColor(El):
-    import ColorTable as CT
-    filename = os.path.join(sys.path[1],'atmdata.dat')
-    ElS = El.upper().rjust(2)
-    try:
-        FFdata = open(filename,'Ur')
-    except:
-        wx.MessageBox(message="File atmdata.dat not found in directory %s" % sys.path[0],
-            caption="No atmdata.dat file",style=wx.OK | wx.ICON_EXCLAMATION | wx.STAY_ON_TOP)
-        sys.exit()
-    S = '1'
-    Colors = []
-    while S:        
-        S = FFdata.readline()
-        if S[3:9] == ElS+'_SIZ':
-            return CT.ColorTable[int(S[37:42])-1][0]
-    FFdata.close()
-    return wx.Color(255,255,255)
-
 def GetAtomInfo(El):
     
     import ElementTable as ET

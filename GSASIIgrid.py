@@ -29,8 +29,8 @@ import GSASIIphsGUI as G2phG
 [ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
 ] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
 
-[  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL,
-] = [wx.NewId() for _init_coll_INDEX_Items in range(3)]
+[  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
+] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
@@ -113,6 +113,8 @@ class DataFrame(wx.Frame):
             help='Copy selected unit cell from indexing to cell refinement fields')
         self.RefineCell = parent.Append( id=wxID_REFINECELL, kind=wx.ITEM_NORMAL, 
             text='Refine Cell',help='Refine unit cell parameters from indexed peaks')
+        self.MakeNewPhase = parent.Append( id=wxID_MAKENEWPHASE, kind=wx.ITEM_NORMAL,
+            text='Make new phase',help='Make new phase from selected unit cell')
 
     def _init_utils(self):
         self.BlankMenu = wx.MenuBar()
@@ -151,6 +153,7 @@ class DataFrame(wx.Frame):
         self.IndexPeaks.Enable(False)
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)
+        self.MakeNewPhase.Enable(False)
                
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,
@@ -576,8 +579,6 @@ def MovePatternTreeToGrid(self,item):
             data.append([])                                 #empty dmin
             self.PatternTree.SetItemPyData(item,data)                             
         G2pdG.UpdateUnitCellsGrid(self,data)
-        self.dataFrame.RefineCell.Enable(True)
-        self.dataFrame.IndexPeaks.Enable(True)
         if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
             G2plt.PlotPowderLines(self)
         else:

@@ -8,6 +8,7 @@ import sys
 import os.path
 import  wx.lib.colourselect as wscs
 import GSASIIpath
+import numpy as np
 
 def GetFormFactorCoeff(El):
     """Read form factor coefficients from atomdata.asc file
@@ -45,8 +46,56 @@ def GetFormFactorCoeff(El):
     FFdata.close()
     return FormFactors
     
-def GetAtomInfo(El):
+def GetAtomColors():
+    import ColorTable as CT
+    filename = os.path.join(sys.path[1],'atmdata.dat')
+    try:
+        FFdata = open(filename,'Ur')
+    except:
+        wx.MessageBox(message="File atmdata.dat not found in directory %s" % sys.path[0],
+            caption="No atmdata.dat file",style=wx.OK | wx.ICON_EXCLAMATION | wx.STAY_ON_TOP)
+        sys.exit()
+    S = '1'
+    Colors = []
+    while S:        
+        S = FFdata.readline()
+        if S[5:9] == '_SIZ':
+            print S,int(S[37:42])-1
+            Color = CT.ColorTable[int(S[37:42])-1][0]
+            if not Colors.count(Color):
+                Colors.append(Color)
+    FFdata.close()
+    return Colors
+    
+def GetElemColor(El):
+    import ColorTable as CT
+    filename = os.path.join(sys.path[1],'atmdata.dat')
     ElS = El.upper().rjust(2)
+    try:
+        FFdata = open(filename,'Ur')
+    except:
+        wx.MessageBox(message="File atmdata.dat not found in directory %s" % sys.path[0],
+            caption="No atmdata.dat file",style=wx.OK | wx.ICON_EXCLAMATION | wx.STAY_ON_TOP)
+        sys.exit()
+    S = '1'
+    Colors = []
+    while S:        
+        S = FFdata.readline()
+        if S[3:9] == ElS+'_SIZ':
+            return CT.ColorTable[int(S[37:42])-1][0]
+    FFdata.close()
+    return wx.Color(255,255,255)
+
+def GetAtomInfo(El):
+    
+    import ElementTable as ET
+    Elements = []
+    for elem in ET.ElTable:
+        Elements.append(elem[0][0])
+    if len(El) in [2,4]:
+        ElS = El.upper()[:2].rjust(2)
+    else:
+        ElS = El.upper()[:1].rjust(2)
     filename = os.path.join(sys.path[1],'atmdata.dat')
     try:
         FFdata = open(filename,'Ur')
@@ -65,11 +114,12 @@ def GetAtomInfo(El):
                     Mass = float(S[10:19])
                 if S[5:9] == '_SIZ':
                     Z=int(S[:2])
-                    Symbol = S[3:5].strip()
+                    Symbol = S[3:5].strip().lower().capitalize()
                     Drad = float(S[12:22])
                     Arad = float(S[22:32])
+                    Color = ET.ElTable[Elements.index(Symbol)][6]
     FFdata.close()
-    AtomInfo={'Symbol':Symbol,'Mass':Mass,'Z':Z,'Drad':Drad,'Arad':Arad}    
+    AtomInfo={'Symbol':Symbol,'Mass':Mass,'Z':Z,'Drad':Drad,'Arad':Arad,'Color':Color}    
     return AtomInfo
       
 def GetXsectionCoeff(El):
@@ -302,124 +352,14 @@ class PickElement(wx.Dialog):
         wx.Dialog.__init__(self, id=-1, name='PickElement',
               parent=prnt, pos=wx.DefaultPosition, 
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
+        import ElementTable as ET
         self.SetClientSize(wx.Size(770, 250))
         
-        REcolor = wx.Colour(128, 128, 255)
-        Metcolor = wx.Colour(192, 192, 192)
-        Noblecolor = wx.Colour(255, 128, 255)
-        Alkcolor = wx.Colour(255, 255, 128)
-        AlkEcolor = wx.Colour(255, 128, 0)
-        SemMetcolor = wx.Colour(128, 255, 0)
-        NonMetcolor = wx.Colour(0, 255, 255)
-        White = wx.Colour(255, 255, 255)
-
-        ElTable = [
-            (["H","H-1"],                  0,0, "Hydrogen",    White,           0.0000),
-            (["He",],                     17,0, "Helium",      Noblecolor,      0.0000),
-            (["Li","Li+1"],                0,1, "Lithium",     Alkcolor,        0.0004),
-            (["Be","Be+2"],                1,1, "Beryllium",   AlkEcolor,       0.0006),
-            (["B",],                       2,1, "Boron",       NonMetcolor,     0.0012),
-            (["C",],                      13,1, "Carbon",      NonMetcolor,     0.0018),
-            (["N",],                      14,1, "Nitrogen",    NonMetcolor,     0.0030),
-            (["O","O-","O-2"],            15,1, "Oxygen",      NonMetcolor,     0.0042),
-            (["F","F-"],                  16,1, "Fluorine",    NonMetcolor,     0.0054),
-            (["Ne",],                     17,1, "Neon",        Noblecolor,      0.0066),
-            (["Na","Na+"],                 0,2, "Sodium",      Alkcolor,        0.0084),
-            (["Mg","Mg+2"],                1,2, "Magnesium",   AlkEcolor,       0.0110),
-            (["Al","Al+3"],                2,2, "Aluminum",    SemMetcolor,     0.0125),
-            (["Si","Si+4"],               13,2, "Silicon",     NonMetcolor,     0.0158),
-            (["P",],                      14,2, "Phosphorus",  NonMetcolor,     0.0180),
-            (["S",],                      15,2, "Sulphur",     NonMetcolor,     0.0210),
-            (["Cl","Cl-1"],               16,2, "Chlorine",    NonMetcolor,     0.0250),
-            (["Ar",],                     17,2, "Argon",       Noblecolor,      0.0285),
-            (["K","K+1"],                  0,3, "Potassium",   Alkcolor,        0.0320),
-            (["Ca","Ca+2"],                1,3, "Calcium",     AlkEcolor,       0.0362),
-            (["Sc","Sc+3"],                2,3, "Scandium",    Metcolor,        0.0410),
-            (["Ti","Ti+2","Ti+3","Ti+4"],  3,3, "Titanium",    Metcolor,        0.0460),
-            (["V","V+2","V+3","V+5"],      4,3, "Vanadium",    Metcolor,        0.0510),
-            (["Cr","Cr+2","Cr+3"],         5,3, "Chromium",    Metcolor,        0.0560),
-            (["Mn","Mn+2","Mn+3","Mn+4"],  6,3, "Manganese",   Metcolor,        0.0616),
-            (["Fe","Fe+2","Fe3"],          7,3, "Iron",        Metcolor,        0.0680),
-            (["Co","Co+2","Co+3"],         8,3, "Cobalt",      Metcolor,        0.0740),
-            (["Ni","Ni+2","Ni+3"],         9,3, "Nickel",      Metcolor,        0.0815),
-            (["Cu","Cu+1","Cu+2"],        10,3, "Copper",      Metcolor,        0.0878),
-            (["Zn","Zn+2"],               11,3, "Zinc",        Metcolor,        0.0960),
-            (["Ga","Ga+3"],               12,3, "Gallium",     SemMetcolor,      0.104),
-            (["Ge","Ge+4"],               13,3, "Germanium",   SemMetcolor,      0.114),
-            (["As",],                     14,3, "Arsenic",     NonMetcolor,      0.120),
-            (["Se",],                     15,3, "Selenium",    NonMetcolor,      0.132),
-            (["Br","Br-1"],               16,3, "Bromine",     NonMetcolor,      0.141),
-            (["Kr",],                     17,3, "Krypton",     Noblecolor,       0.150),
-            (["Rb","Rb+1"],                0,4, "Rubidium",    Alkcolor,         0.159),
-            (["Sr","Sr+2"],                1,4, "Strontium",   AlkEcolor,        0.171),
-            (["Y","Y+3"],                  2,4, "Yittrium",    Metcolor,         0.180),
-            (["Zr","Zr+4"],                3,4, "Zirconium",   Metcolor,         0.192),
-            (["Nb","Nb+3","Nb+5"],         4,4, "Niobium",     Metcolor,         0.204),
-            (["Mo","Mo+3","Mo+5","Mo+6"],  5,4, "Molybdenium", Metcolor,         0.216),
-            (["Tc",],                      6,4, "Technetium",  Metcolor,         0.228),
-            (["Ru","Ru+3","Ru+4"],         7,4, "Ruthenium",   Metcolor,         0.246),
-            (["Rh","Rh+3","Rh+4"],         8,4, "Rhodium",     Metcolor,         0.258),
-            (["Pd","Pd+2","Pd+4"],         9,4, "Palladium",   Metcolor,         0.270),
-            (["Ag","Ag+1","Ag+2"],        10,4, "Silver",      Metcolor,         0.285),
-            (["Cd","Cd+2"],               11,4, "Cadmium",     Metcolor,         0.300),
-            (["In","In+3"],               12,4, "Indium",      SemMetcolor,      0.318),
-            (["Sn","Sn+2","Sn+4"],        13,4, "Tin",         SemMetcolor,      0.330),
-            (["Sb","Sb+3","Sb+5"],        14,4, "Antimony",    SemMetcolor,      0.348),
-            (["Te",],                     15,4, "Tellurium",   NonMetcolor,      0.363),
-            (["I","I-1"],                 16,4, "Iodine",      NonMetcolor,      0.384),
-            (["Xe",],                     17,4, "Xenon",       Noblecolor,       0.396),
-            (["Cs","Cs+1"],                0,5, "Caesium",     Alkcolor,         0.414),
-            (["Ba","Ba+2"],                1,5, "Barium",      AlkEcolor,        0.438),
-            (["La","La+3"],                2,5, "Lanthanium",  Metcolor,         0.456),
-            (["Ce","Ce+3","Ce+4"],     3.5,6.5, "Cerium",      REcolor,      0.474),
-            (["Pr","Pr+3","Pr+4"],     4.5,6.5, "Praseodymium",REcolor,      0.492),
-            (["Nd","Nd+3"],            5.5,6.5, "Neodymium",   REcolor,      0.516),
-            (["Pm","Pm+3"],            6.5,6.5, "Promethium",  REcolor,      0.534),
-            (["Sm","Sm+3"],            7.5,6.5, "Samarium",    REcolor,      0.558),
-            (["Eu","Eu+2","Eu+3"],     8.5,6.5, "Europium",    REcolor,      0.582),
-            (["Gd","Gd+3"],            9.5,6.5, "Gadolinium",  REcolor,      0.610),
-            (["Tb","Tb+3"],           10.5,6.5, "Terbium",     REcolor,      0.624),
-            (["Dy","Dy+3"],           11.5,6.5, "Dysprosium",  REcolor,      0.648),
-            (["Ho","Ho+3"],           12.5,6.5, "Holmium",     REcolor,      0.672),
-            (["Er","Er+3"],           13.5,6.5, "Erbium",      REcolor,      0.696),
-            (["Tm","Tm+3"],           14.5,6.5, "Thulium",     REcolor,      0.723),
-            (["Yb","Yb+2","Yb+3"],    15.5,6.5, "Ytterbium",   REcolor,      0.750),
-            (["Lu","Lu+3"],           16.5,6.5, "Lutetium",    REcolor,      0.780),
-            (["Hf","Hf+4"],                3,5, "Hafnium",     Metcolor,         0.804),
-            (["Ta","Ta+5"],                4,5, "Tantalum",    Metcolor,         0.834),
-            (["W","W+6"],                  5,5, "Tungsten",    Metcolor,         0.864),
-            (["Re",],                      6,5, "Rhenium",     Metcolor,         0.900),
-            (["Os","Os+4"],                7,5, "Osmium",      Metcolor,         0.919),
-            (["Ir","Ir+3","Ir+4"],         8,5, "Iridium",     Metcolor,         0.948),
-            (["Pt","Pt+2","Pt+4"],         9,5, "Platinium",   Metcolor,         0.984),
-            (["Au","Au+1","Au+3"],        10,5, "Gold",        Metcolor,         1.014),
-            (["Hg","Hg+1","Hg+2"],        11,5, "Mercury",     Metcolor,         1.046),
-            (["Tl","Tl+1","Tl+3"],        12,5, "Thallium",    SemMetcolor,      1.080),
-            (["Pb","Pb+2","Pb+4"],        13,5, "Lead",        SemMetcolor,      1.116),
-            (["Bi","Bi+3","Bi+5"],        14,5, "Bismuth",     SemMetcolor,      1.149),
-            (["Po",],                     15,5, "Polonium",    SemMetcolor,      1.189),
-            (["At",],                     16,5, "Astatine",    NonMetcolor,      1.224),
-            (["Rn",],                     17,5, "Radon",       Noblecolor,       1.260),
-            (["Fr",],                      0,6, "Francium",    Alkcolor,         1.296),
-            (["Ra","Ra+2"],                1,6, "Radium",      AlkEcolor,        1.332),
-            (["Ac","Ac+3"],                2,6, "Actinium",    Metcolor,         1.374),
-            (["Th","Th+4"],            3.5,7.5, "Thorium",     REcolor,      1.416),
-            (["Pa",],                  4.5,7.5, "Protactinium",REcolor,      1.458),
-            (["U","U+3","U+4","U+6"],  5.5,7.5, "Uranium",     REcolor,      1.470),
-            (["Np","Np+3","Np+4","Np+6"], 6.5,7.5, "Neptunium",   REcolor,      1.536),
-            (["Pu","Pu+3","Pu+4","Pu+6"], 7.5,7.5, "Plutonium",   REcolor,      1.584),
-            (["Am",],                  8.5,7.5, "Americium",   REcolor,      1.626),
-            (["Cm",],                  9.5,7.5, "Curium",      REcolor,      1.669),
-            (["Bk",],                 10.5,7.5, "Berkelium",   REcolor,      1.716),
-            (["Cf",],                 11.5,7.5, "Californium", REcolor,      1.764),
-            (["Q","QA","QB","QC","QD"],  14.5,7.5, "Special form factor", REcolor,  0.000),
-            ]
-            
-            
         i=0
-        for E in ElTable:
+        for E in ET.ElTable:
             PickElement.ElButton(self,name=E[0],
-            pos=wx.Point(E[1]*40+25,E[2]*24+24),tip=E[3],color=E[4])
+#            pos=wx.Point(E[1]*40+25,E[2]*24+24),tip=E[3],color=E[4])
+            pos=wx.Point(E[1]*40+25,E[2]*24+24),tip=E[3],color=E[6])
             i+=1
 
     def __init__(self, parent):

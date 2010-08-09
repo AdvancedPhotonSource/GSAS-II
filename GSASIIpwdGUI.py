@@ -441,8 +441,10 @@ def UpdateIndexPeaksGrid(self, data):
         Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
     inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
+    self.dataFrame.IndexPeaks.Enable(False)
     self.IndexPeaksTable = []
     if data:
+        self.dataFrame.IndexPeaks.Enable(True)
         cells = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List'))
         if cells:
             cellist = cells[2]
@@ -477,6 +479,8 @@ def UpdateUnitCellsGrid(self, data):
     UnitCellsId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List')
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
+    spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3- H','P 6/m m m','I 4/m m m',
+        'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P 1']
         
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
@@ -572,7 +576,7 @@ def UpdateUnitCellsGrid(self, data):
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         volVal.SetValue("%.3f"%(controls[12]))
         
-    def OnRefineCell(event):
+    def RefineCell(event):
         def cellPrint(ibrav,A):
             cell = G2lat.A2cell(A)
             Vol = G2lat.calc_V(A)
@@ -619,12 +623,12 @@ def UpdateUnitCellsGrid(self, data):
         else:
             G2plt.PlotPatterns(self)
         
-    def OnIndexPeaks(event):
+    def IndexPeaks(event):
         PatternId = self.PatternId    
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
-        if not peaks:
-            self.ErrorDialog('No peaks!', 'Nothing to index!')
-            return
+#        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
+#        if not peaks:
+#            self.ErrorDialog('No peaks!', 'Nothing to index!')
+#            return
         inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
         print 'Peak Indexing'
         try:
@@ -636,7 +640,6 @@ def UpdateUnitCellsGrid(self, data):
         if True not in bravais:
             self.ErrorDialog('Error','No Bravais lattices selected')
             return
-        self.dataFrame.IndexPeaks.Enable(False)
         self.dataFrame.CopyCell.Enable(False)
         OK,dmin,cells = G2indx.DoIndexPeaks(peaks,inst,controls,bravais)
         if OK:
@@ -654,6 +657,7 @@ def UpdateUnitCellsGrid(self, data):
                     G2plt.PlotPatterns(self)
         self.dataFrame.CopyCell.Enable(True)
         self.dataFrame.IndexPeaks.Enable(True)
+        self.dataFrame.MakeNewPhase.Enable(True)
         UpdateUnitCellsGrid(self,data)
                 
     def CopyUnitCell(event):
@@ -669,6 +673,29 @@ def UpdateUnitCellsGrid(self, data):
         self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
         UpdateUnitCellsGrid(self,data)
         self.dataFrame.RefineCell.Enable(True)
+        
+    def MakeNewPhase(event):
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+        else:
+            sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        PhaseName = ''
+        dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
+            style=wx.OK)
+        if dlg.ShowModal() == wx.ID_OK:
+            PhaseName = dlg.GetValue()
+        dlg.Destroy()
+        cells = self.PatternTree.GetItemPyData(UnitCellsId)[2]
+        for Cell in cells:
+            if Cell[-1]:
+                break
+        cell = Cell[2:10]        
+        sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+        SGData = {'SpGrp':spaceGroups[cell[0]]}
+        self.PatternTree.SetItemPyData(sub, \
+            {'General':{'Name':'phase name','Type':'nuclear','SGData':SGData,'Cell':[False,]+cell[1:],
+            'Scale':[False,1.0],'Pawley dmin':0.25},'Atoms':[]})
+        Status.SetStatusText('Change space group if needed')
             
     def RefreshUnitCellsGrid(event):
         cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)[2:]
@@ -695,9 +722,10 @@ def UpdateUnitCellsGrid(self, data):
     self.dataFrame.SetMenuBar(self.dataFrame.IndexMenu)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
-    self.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2gd.wxID_INDEXPEAKS)
+    self.Bind(wx.EVT_MENU, IndexPeaks, id=G2gd.wxID_INDEXPEAKS)
     self.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
-    self.Bind(wx.EVT_MENU, OnRefineCell, id=G2gd.wxID_REFINECELL)
+    self.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
+    self.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)
     
     controls,bravais,cells,dmin = data
     if len(controls) < 13:              #add cell volume if missing
@@ -720,9 +748,20 @@ def UpdateUnitCellsGrid(self, data):
     self.dataFrame.SetLabel('Unit Cells List')
     self.sp = wx.SplitterWindow(self.dataFrame)
     self.dataDisplay = wx.Panel(self.sp, style=wx.SUNKEN_BORDER)
+    self.dataFrame.IndexPeaks.Enable(False)
+    peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List'))
+    if peaks:
+        self.dataFrame.IndexPeaks.Enable(True)
+    self.dataFrame.RefineCell.Enable(False)
+    if controls[12] > 1.0:                               #if a "real" volume (i.e. not default)
+        self.dataFrame.RefineCell.Enable(True)    
+    self.dataFrame.CopyCell.Enable(False)
+    self.dataFrame.MakeNewPhase.Enable(False)        
     if cells:
         self.bottom = wx.Panel(self.sp, style=wx.SUNKEN_BORDER)
         self.sp.SplitHorizontally(self.dataDisplay,self.bottom,0)
+        self.dataFrame.CopyCell.Enable(True)
+        self.dataFrame.MakeNewPhase.Enable(True)        
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Indexing controls: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)

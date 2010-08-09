@@ -130,6 +130,9 @@ def UpdatePhaseData(self,item,data,oldPage):
         self.dataDisplay.SetSize(wx.Size(w,h))
         
     def FillGeneralGrid():
+        rowLabels = ['Phase name','Phase type','Space group',
+            'Lattice ',' parameters','Scale factor','Elements','No. per cell',
+            'Atom weight','','Bond radii','Angle radii','Color']
         def SetLatticeParametersStyle(SGData,table):
             clist = [1,2,3,4,5,6]
             if SGData['SGLaue'] in ['m3','m3m']:
@@ -196,9 +199,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             SetLatticeParametersStyle(SGData,table)
             generalData['Scale'][1] = float(General.GetCellValue(5,1))
             General.ForceRefresh()
-                        
-        rowLabels = ['Phase name','Phase type','Space group',
-            'Lattice ',' parameters','Scale factor','Elements','No. per cell','Atom weight','','Bond radii','Angle radii']
+            
         generalData = data['General']
         atomData = data['Atoms']
         generalData['AtomTypes'] = []
@@ -206,6 +207,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
         generalData['AtomMass'] = []
+        generalData['Color'] = []
         colType = 1
         colSS = 7
         self.dataFrame.setSizePosLeft([600,350])
@@ -213,15 +215,17 @@ def UpdatePhaseData(self,item,data,oldPage):
             colType = 4
             colSS = 10
         for atom in atomData:
+            atom[colType] = atom[colType].lower().capitalize()              #force to standard form
             if generalData['AtomTypes'].count(atom[colType]):
                 generalData['NoAtoms'][atom[colType]] += atom[colSS-1]*atom[colSS+1]
-            else:
+            elif atom[colType] != 'UNK':
                 Info = G2elem.GetAtomInfo(atom[colType])
-                generalData['AtomTypes'].append(Info['Symbol'])
+                generalData['AtomTypes'].append(atom[colType])
                 generalData['BondRadii'].append(Info['Drad'])
                 generalData['AngleRadii'].append(Info['Arad'])
                 generalData['AtomMass'].append(Info['Mass'])
                 generalData['NoAtoms'][atom[colType]] = atom[colSS-1]*atom[colSS+1]
+                generalData['Color'].append(Info['Color'])
         colLabels = []
         colLabels += ['' for i in range(max(8,len(generalData['AtomTypes'])))]
         table = []
@@ -251,6 +255,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                 table.append(['density',mass/(0.6022137*Volume),'','','','','','',''])
             table.append(generalData['BondRadii']+['' for i in range(max(8,len(generalData['AtomTypes'])))])
             table.append(generalData['AngleRadii']+['' for i in range(max(8,len(generalData['AtomTypes'])))])
+            table.append(['','','','','','','',''])                        #contains colors
         Types = [wg.GRID_VALUE_STRING for i in range(max(8,len(generalData['AtomTypes'])))]
         generalTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         General.SetTable(generalTable, True)
@@ -258,6 +263,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         General.SetMargins(0,0)
         General.SetColSize(0,100)
         General.SetColLabelSize(0)
+        attr = wg.GridCellAttr()
         for c in range(max(8,len(generalData['AtomTypes']))):
             if c > 0:
                 General.SetReadOnly(0,c,isReadOnly=True)
@@ -274,6 +280,10 @@ def UpdatePhaseData(self,item,data,oldPage):
                 General.SetCellEditor(4,c,wg.GridCellFloatEditor(10,3))
             for r in range(6,12):
                 General.SetReadOnly(r,c,isReadOnly=True)
+        r = rowLabels.index('Color')
+        for c in range(len(generalData['AtomTypes'])):
+            General.SetCellBackgroundColour(r,c,generalData['Color'][c])
+
         General.SetReadOnly(4,7,isReadOnly=True)                            #cell volume - no edit
         General.SetCellEditor(1,0,wg.GridCellChoiceEditor(['nuclear','modulated',   #phase type 
             'magnetic','macromolecular','Pawley'],False))                           #- change only if no atoms
@@ -291,6 +301,29 @@ def UpdatePhaseData(self,item,data,oldPage):
     
     def FillAtomsGrid():
         
+        generalData = data['General']
+        atomData = data['Atoms']
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",
+            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
+            wg.GRID_VALUE_STRING,wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_CHOICE+":I,A",
+            wg.GRID_VALUE_FLOAT+':10,4',                                                            #Uiso
+            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,                         #Uij - placeholders
+            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING]
+        colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
+        if generalData['Type'] == 'magnetic':
+            colLabels += ['Mx','My','Mz']
+            Types[2] = wg.GRID_VALUE_CHOICE+": ,X,XU,U,M,MX,MXU,MU,F,FX,FXU,FU,FM,FMX,FMU,"
+            Types += [
+                wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4']
+        elif generalData['Type'] == 'macromolecular':
+            colLabels = ['res no','residue','chain'] + colLabels
+            Types = [wg.GRID_VALUE_NUMBER,
+                wg.GRID_VALUE_CHOICE+": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK",
+                wg.GRID_VALUE_STRING] + Types
+        elif generalData['Type'] == 'modulated':
+            Types += []
+            colLabels += []
+                    
         def RefreshAtomGrid(event):
             
             def chkUij(Uij,CSI):
@@ -411,6 +444,8 @@ def UpdatePhaseData(self,item,data,oldPage):
                         Atoms.SetCellValue(r,c,parms)
             elif c < 0:                    #picked atom row
                 self.SelectedRow = r
+            elif Atoms.GetColLabelValue(c) in ['Name']:
+                atomData[r][c] = Atoms.GetCellValue(r,c)
             elif Atoms.GetColLabelValue(c) in ['x','y','z']:
                 ci = colLabels.index('x')
                 XYZ = atomData[r][ci:ci+3]
@@ -462,7 +497,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                 iUij = CSI[0][c-colLabels.index('U11')]
                 for i in range(6):
                     if iUij == CSI[0][i]:
-                        atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]                
+                        atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
             Atoms.ForceRefresh()
             
         def ChangeSelection(event):
@@ -486,33 +521,16 @@ def UpdatePhaseData(self,item,data,oldPage):
                 PE = G2elem.PickElement(self)
                 if PE.ShowModal() == wx.ID_OK:
                     atomData[r][c] = PE.Elem.strip()
+                    name = atomData[r][c]
+                    if len(name) in [2,4]:
+                        atomData[r][c-1] = name[:2]+'(%d)'%(r+1)
+                    else:
+                        atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
                 PE.Destroy()
                 Atoms.ForceRefresh()
             else:
                 event.Skip()
         
-        generalData = data['General']
-        atomData = data['Atoms']
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
-            wg.GRID_VALUE_STRING,wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_CHOICE+":I,A",
-            wg.GRID_VALUE_FLOAT+':10,4',                                                            #Uiso
-            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,                         #Uij - placeholders
-            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING]
-        colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
-        if generalData['Type'] == 'magnetic':
-            colLabels += ['Mx','My','Mz']
-            Types[2] = wg.GRID_VALUE_CHOICE+": ,X,XU,U,M,MX,MXU,MU,F,FX,FXU,FU,FM,FMX,FMU,"
-            Types += [
-                wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4']
-        elif generalData['Type'] == 'macromolecular':
-            colLabels = ['res no','residue','chain'] + colLabels
-            Types = [wg.GRID_VALUE_NUMBER,
-                wg.GRID_VALUE_CHOICE+": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK",
-                wg.GRID_VALUE_STRING] + Types
-        elif generalData['Type'] == 'modulated':
-            Types += []
-            colLabels += []        
         table = []
         rowLabels = []
         for i,atom in enumerate(atomData):
@@ -567,7 +585,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             atomData.append(['UNK','UNK','',0,0,0,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
         FillAtomsGrid()            
         event.StopPropagation()
-            
+                
     def AtomInsert(event):
         indx = Atoms.GetSelectedRows()
         if indx:
@@ -592,6 +610,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             atomData = data['Atoms']
             indx.reverse()
             for ind in indx:
+                atom = atomData[ind]
                 del atomData[ind]                
             FillAtomsGrid()            
         event.StopPropagation()
@@ -690,7 +709,10 @@ def UpdatePhaseData(self,item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
             self.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
             self.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
-            FillAtomsGrid()            
+            FillAtomsGrid()
+        elif text == 'General':
+            FillGeneralGrid()                    
+            self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
         else:
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
         event.Skip()

@@ -13,6 +13,10 @@ import GSASIIphsGUI as G2phG
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM,
 ] = [wx.NewId() for _init_coll_Atom_Items in range(6)]
 
+[ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM,
+    wxID_DRAWDELETE, wxID_DRAWFILLCELL, wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD,
+] = [wx.NewId() for _init_coll_DrawAtom_Items in range(8)]
+
 [ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG, 
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL,
 ] = [wx.NewId() for _init_coll_IMAGE_Items in range(6)]
@@ -39,7 +43,10 @@ class DataFrame(wx.Frame):
         parent.Append(menu=self.Blank,title='')
         
     def _init_coll_AtomsMenu(self,parent):
-        parent.Append(menu=self.AtomEdit, title='Edit atom list')
+        parent.Append(menu=self.AtomEdit, title='Edit')
+        
+    def _init_coll_DrawAtomsMenu(self,parent):
+        parent.Append(menu=self.DrawAtomEdit, title='Edit')        
 
     def _init_coll_IndPeaksMenu(self,parent):
         parent.Append(menu=self.IndPeaksEdit,title='Index Peaks Operations')
@@ -72,6 +79,24 @@ class DataFrame(wx.Frame):
         parent.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
             help='Select atoms to transform first')
             
+    def _init_coll_DrawAtom_Items(self,parent):
+        parent.Append(id=wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
+            help='Select atoms first')
+        parent.Append(id=wxID_DRAWATOMLABEL, kind=wx.ITEM_NORMAL,text='Atom label',
+            help='Select atoms first')
+        parent.Append(id=wxID_DRAWVIEWPOINT, kind=wx.ITEM_NORMAL,text='View point',
+            help='View point is 1st atom selected')
+        parent.Append(id=wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',
+            help='Add symmetry & cell equivalents to drawing set from selected atoms')
+        parent.Append(id=wxID_DRAWTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
+            help='Transform selected atoms by symmetry & cell translations')
+        parent.Append(id=wxID_DRAWFILLCOORD, kind=wx.ITEM_NORMAL,text='Fill CN-sphere',
+            help='Fill coordination sphere for selected atoms')            
+        parent.Append(id=wxID_DRAWFILLCELL, kind=wx.ITEM_NORMAL,text='Fill unit cell',
+            help='Fill unit cell with selected atoms')
+        parent.Append(id=wxID_DRAWDELETE, kind=wx.ITEM_NORMAL,text='Delete atoms',
+            help='Delete atoms from drawing set')
+
     def _init_coll_IndPeaks_Items(self,parent):
         parent.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
             kind=wx.ITEM_NORMAL,text='Load/Reload')
@@ -120,6 +145,7 @@ class DataFrame(wx.Frame):
         self.BlankMenu = wx.MenuBar()
         
         self.AtomsMenu = wx.MenuBar()
+        self.DrawAtomsMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
         self.InstMenu = wx.MenuBar()
@@ -127,6 +153,7 @@ class DataFrame(wx.Frame):
         self.IndPeaksMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
+        self.DrawAtomEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
         self.InstEdit = wx.Menu(title='')
@@ -135,6 +162,8 @@ class DataFrame(wx.Frame):
         self.IndexEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
+        self._init_coll_DrawAtomsMenu(self.DrawAtomsMenu)
+        self._init_coll_DrawAtom_Items(self.DrawAtomEdit)
         self._init_coll_ImageMenu(self.ImageMenu)
         self._init_coll_Image_Items(self.ImageEdit)
         self._init_coll_MaskMenu(self.MaskMenu)

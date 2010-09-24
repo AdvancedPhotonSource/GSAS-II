@@ -1,6 +1,7 @@
 "GSASII - Space group interpretion routines"
 
 import numpy as np
+import math
 import sys
 import os.path as ospath
 
@@ -197,37 +198,52 @@ def SpaceGroup(SgSym):
 def MoveToUnitCell(XYZ):
     '''
     Translates a set of coordinates so that all values are >=0 and < 1 
-      input: a list or numpy array of any length. Note that the object is modified  in place.
-      output: none
+      input: a list or numpy array of any length.
+      output: none; the object is modified in place.
     '''
     for i,x in enumerate(XYZ):
-        x = ((x % 1.0)+1.0) % 1.0
-        if x > 0.9999: x = 0.0
-        XYZ[i] = x
+        XYZ[i] = (x-int(x))%1.0
         
-def GenAtom(XYZ,SGData,ifAll=False):
+def Opposite(XYZ,toler=0.0002):
+    '''
+    Gives opposite corner, edge or face of unit cell for position within tolerance. 
+        Result may be just outside the cell within tolerance 
+    input:
+        XYZ: 0 >= np.array[x,y,z] > 1 as by MoveToUnitCell
+        toler: unit cell fraction tolerance making opposite
+    returns:
+        XYZ: array of opposite positions; always contains XYZ
+    '''
+    perm3 = [[1,1,1],[0,1,1],[1,0,1],[1,1,0],[1,0,0],[0,1,0],[0,0,1],[0,0,0]]
+    TB = np.where(abs(XYZ-1)<toler,-1,0)+np.where(abs(XYZ)<toler,1,0)
+    perm = TB*perm3
+    cperm = ['%d%d%d'%(i,j,k) for i,j,k in perm]
+    D = dict(zip(cperm,perm))
+    new = []
+    for key in D:
+        new.append(np.array(D[key])+np.array(XYZ))
+    return new
+        
+def GenAtom(XYZ,SGData,All=False,Uij=[]):
     '''
     Generates the equivalent positions for a specified coordinate and space group
     input:  
-       XYZ an array, tuple or list containing 3 elements: x, y & z
-       SGData, from SpcGroup
-       ifAll=True causes the return to provide the unique set of 
-                  equivalent positions
-            =False causes the input position to be repeated. This is the default,
-                   but why someone would want this, I am not sure.
-    Returns a list of two element tuples: 
-       The first element is the coordinate as a three-element array and 
-       the second describes the symmetry used to generate the site, of form [-][C]SS
-          C indicates a centering operation was used (omitted if the 1st, [0,0,0])
-          SS is the symmetry operator number (1-24)
-          - indicates the center of symmetry was used (omitted otherwise)      
+        XYZ an array, tuple or list containing 3 elements: x, y & z
+        SGData, from SpcGroup
+        All  = True return all equivalent positions including duplicates
+             = False return only unique positions
+        Uij  = [U11,U22,U33,U12,U13,U23] or [] if no Uij       
+    return: [[XYZEquiv],Idup,[UijEquiv]]
+        [XYZEquiv] is list of equivalent positions (XYZ is first entry)
+        Idup = [-][C]SS where SS is the symmetry operator number (1-24), C (if not 0,0,0)
+        is centering operator number (1-4) and - is for inversion
+        [UijEquiv] - equivalent Uij; absent if no Uij given
     '''
     XYZEquiv = []
+    UijEquiv = []
     Idup = []
     X = np.array(XYZ)
     MoveToUnitCell(X)
-    XYZEquiv.append(np.array(X))
-    Idup.append(1)
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):
@@ -235,30 +251,28 @@ def GenAtom(XYZ,SGData,ifAll=False):
                 idup = ((io+1)+100*ic)*(1-2*invers)
                 T = np.array(ops[1])
                 M =  np.array(ops[0])
-                newX = np.sum(M*X,axis=1)+T
+                newX = np.inner(M,X)+T
+                if len(Uij):
+                    U = Uij2U(Uij)
+                    U = np.inner(M,np.inner(U,M).T)
+                    newUij = U2Uij(U)
                 if invers:
                     newX = -newX
                 newX += C
                 MoveToUnitCell(newX)
-                New = True
-                if ifAll:
+                if All:
                     if np.allclose(newX,X,atol=0.0002):
-                        New = False
-                        idup = 0                    
+                        idup = 0
+                else:
+                    if True in [np.allclose(newX,X,atol=0.0002) for oldX in XYZEquiv]:
+                        idup = 0
+                if All or idup:
                     XYZEquiv.append(newX)
-                else:
-                    for oldX in XYZEquiv[:-1]:
-                        if np.allclose(newX,oldX,atol=0.0002):
-                            New = False
-                            idup = 0
-                    if New or ifAll:
-                        XYZEquiv.append(newX)
-                if ifAll and len(XYZEquiv) == 2:
-                    Idup.append(1)
-                else:
                     Idup.append(idup)
-    if ifAll:
-        return zip(XYZEquiv[1:],Idup[1:])                  #eliminate duplicate initial entry 
+                    if len(Uij):
+                        UijEquiv.append(newUij)                    
+    if len(Uij):
+        return zip(XYZEquiv,UijEquiv,Idup)
     else:
         return zip(XYZEquiv,Idup)
                                    
@@ -453,7 +467,7 @@ def SytSym(XYZ,SGData):
        XYZ: an array, tuple or list containing 3 elements: x, y & z
        SGData: from SpcGroup
     Returns a two element tuple:
-       The 1st element is a code for the site symmetry (see GetOprPtrName)
+       The 1st element is a code for the site symmetry (see GetKNsym)
        The 2nd element is the site multiplicity
     '''
     def PackRot(SGOps):
@@ -473,7 +487,7 @@ def SytSym(XYZ,SGData):
     Isym = 0
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
         Isym = 1073741824
-    Jdup = 1
+    Jdup = 0
     Xeqv = GenAtom(XYZ,SGData,True)
     IRT = PackRot(SGData['SGOps'])
     L = -1

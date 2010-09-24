@@ -77,9 +77,10 @@ def GetAtomInfo(El):
                     Symbol = S[3:5].strip().lower().capitalize()
                     Drad = float(S[12:22])
                     Arad = float(S[22:32])
+                    Vdrad = float(S[32:38])
                     Color = ET.ElTable[Elements.index(Symbol)][6]
     FFdata.close()
-    AtomInfo={'Symbol':Symbol,'Mass':Mass,'Z':Z,'Drad':Drad,'Arad':Arad,'Color':Color}    
+    AtomInfo={'Symbol':Symbol,'Mass':Mass,'Z':Z,'Drad':Drad,'Arad':Arad,'Vdrad':Vdrad,'Color':Color}    
     return AtomInfo
       
 def GetXsectionCoeff(El):

@@ -2,8 +2,10 @@ import math
 import time
 import copy
 import numpy as np
+import numpy.linalg as nl
 import wx
 import wx.aui
+import wx.glcanvas
 import matplotlib as mpl
 import GSASIIpath
 import GSASIIgrid as G2gd
@@ -11,6 +13,12 @@ import GSASIIimage as G2img
 import GSASIIIO as G2IO
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
+import GSASIIphsGUI as G2phG
+import GSASIIlattice as G2lat
+import GSASIIspc as G2spc
+from  OpenGL.GL import *
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
@@ -23,8 +31,7 @@ acosd = lambda x: 180.*math.acos(x)/math.pi
 atan2d = lambda x,y: 180.*math.atan2(y,x)/math.pi
 atand = lambda x: 180.*math.atan(x)/math.pi
     
-class G2Plot(wx.Panel):
-    
+class G2PlotMpl(wx.Panel):    
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,7))
@@ -37,6 +44,15 @@ class G2Plot(wx.Panel):
         sizer.Add(self.canvas,1,wx.EXPAND)
         sizer.Add(self.toolbar,0,wx.LEFT|wx.EXPAND)
         self.SetSizer(sizer)
+        
+class G2PlotOgl(wx.Panel):
+    def __init__(self,parent,id=-1,dpi=None,**kwargs):
+        self.figure = wx.Panel.__init__(self,parent,id=id,**kwargs)
+        self.canvas = wx.glcanvas.GLCanvas(self,-1,**kwargs)
+        self.camera = {}
+        sizer=wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.canvas,1,wx.EXPAND)
+        self.SetSizer(sizer)           
                 
 class G2PlotNoteBook(wx.Panel):
     def __init__(self,parent,id=-1):
@@ -54,19 +70,43 @@ class G2PlotNoteBook(wx.Panel):
         
         self.plotList = []
             
-    def add(self,name=""):
-        page = G2Plot(self.nb)
+    def addMpl(self,name=""):
+        page = G2PlotMpl(self.nb)
         self.nb.AddPage(page,name)
         
         self.plotList.append(name)
         
         return page.figure
         
+    def addOgl(self,name=""):
+        page = G2PlotOgl(self.nb)
+        self.nb.AddPage(page,name)
+        
+        self.plotList.append(name)
+        
+        return page.figure
+        
+    def Delete(self,name):
+        try:
+            item = self.plotList.index(name)
+            del self.plotList[item]
+            self.nb.DeletePage(item)
+        except ValueError:          #no plot of this name - do nothing
+            return      
+                
     def clear(self):
         while self.nb.GetPageCount():
             self.nb.DeletePage(0)
         self.plotList = []
         self.status.DestroyChildren()
+        
+    def Rename(self,oldName,newName):
+        try:
+            item = self.plotList.index(oldName)
+            self.plotList[item] = newName
+            self.nb.SetPageText(item,newName)
+        except ValueError:          #no plot of this name - do nothing
+            return      
         
     def OnPageChanged(self,event):
         self.status.DestroyChildren()                           #get rid of special stuff on status bar
@@ -121,7 +161,7 @@ def PlotSngl(self,newPlot=False):
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError,error:
-        Plot = self.G2plotNB.add('Structure Factors').gca()
+        Plot = self.G2plotNB.addMpl('Structure Factors').gca()
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
         Page = self.G2plotNB.nb.GetPage(plotNum)
 #        Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
@@ -337,7 +377,7 @@ def PlotPatterns(self,newPlot=False):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError,error:
         newPlot = True
-        Plot = self.G2plotNB.add('Powder Patterns').gca()
+        Plot = self.G2plotNB.addMpl('Powder Patterns').gca()
         plotNum = self.G2plotNB.plotList.index('Powder Patterns')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
@@ -475,7 +515,7 @@ def PlotPowderLines(self):
         Page.figure.clf()
         Plot = Page.figure.gca()
     except ValueError,error:
-        Plot = self.G2plotNB.add('Powder Lines').gca()
+        Plot = self.G2plotNB.addMpl('Powder Lines').gca()
         plotNum = self.G2plotNB.plotList.index('Powder Lines')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -525,7 +565,7 @@ def PlotPeakWidths(self):
         Page.figure.clf()
         Plot = Page.figure.gca()
     except ValueError,error:
-        Plot = self.G2plotNB.add('Peak Widths').gca()
+        Plot = self.G2plotNB.addMpl('Peak Widths').gca()
         plotNum = self.G2plotNB.plotList.index('Peak Widths')
         Page = self.G2plotNB.nb.GetPage(plotNum)
     Page.SetFocus()
@@ -808,7 +848,7 @@ def PlotImage(self,newPlot=False,event=None):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError,error:
-        Plot = self.G2plotNB.add('2D Powder Image').gca()
+        Plot = self.G2plotNB.addMpl('2D Powder Image').gca()
         plotNum = self.G2plotNB.plotList.index('2D Powder Image')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnImPlotKeyPress)
@@ -961,7 +1001,7 @@ def PlotIntegration(self,newPlot=False,event=None):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError,error:
-        Plot = self.G2plotNB.add('2D Integration').gca()
+        Plot = self.G2plotNB.addMpl('2D Integration').gca()
         plotNum = self.G2plotNB.plotList.index('2D Integration')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -1003,8 +1043,7 @@ def PlotIntegration(self,newPlot=False,event=None):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-        
-        
+                
 def PlotTRImage(self,tax,tay,taz,newPlot=False):
     #a test plot routine - not normally used 
             
@@ -1027,7 +1066,7 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError,error:
-        Plot = self.G2plotNB.add('2D Transformed Powder Image').gca()
+        Plot = self.G2plotNB.addMpl('2D Transformed Powder Image').gca()
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -1077,4 +1116,412 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
     else:
         Page.canvas.draw()
         
+def PlotStructure(self,data):
+    generalData = data['General']
+    atomData = data['Atoms']
+    drawingData = data['Drawing']
+    drawAtoms = drawingData['Atoms']
+    Wt = [255,255,255,255]
+    Rd = [255,0,0,255]
+    Gr = [0,255,0,255]
+    Bl = [0,0,255,255]
+    uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
+    uEdges = np.array([
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
+        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+        [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
+    uColors = [Rd,Gr,Bl,Wt, Wt,Wt,Wt,Wt, Wt,Wt,Wt,Wt]
+    
+    def OnMouseDown(event):
+        drawingData['Rotation'][3] = event.GetPosition()
+    def OnMouseWheel(event):
+        drawingData['cameraPos'] += event.GetWheelRotation()/24
+        drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
+        page = self.dataDisplay.GetSelection()
+        if self.dataDisplay.GetPageText(page) == 'Draw Options':
+            panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
+            names = [child.GetName() for child in panel]
+            panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
+            panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
+        Draw()
+            
+    def SetViewPointText(VP):
+        page = self.dataDisplay.GetSelection()
+        if self.dataDisplay.GetPageText(page) == 'Draw Options':
+            panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
+            names = [child.GetName() for child in panel]
+            panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
+                            
+    def OnKey(event):
+        keyCode = event.GetKeyCode()
+        key,xyz = chr(keyCode),event.GetPosition()
+        indx = drawingData['selectedAtoms']
+        cx,ct,cs = drawingData['atomPtrs']
+        if key in ['c','C']:
+            drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
+            drawingData['Rotation'] = [0.0,0.0,0.0,np.array([0,0])]
+            SetViewPointText(drawingData['viewPoint'][0])
+        elif key in ['n','N']:
+            drawAtoms = drawingData['Atoms']
+            pI = drawingData['viewPoint'][1]
+            if indx:
+                pI[0] = indx[pI[1]]
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                pI[1] += 1
+                if pI[1] >= len(indx):
+                    pI[1] = 0
+            else:
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
+                pI[0] += 1
+                if pI[0] >= len(drawAtoms):
+                    pI[0] = 0
+            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
+            SetViewPointText(drawingData['viewPoint'][0])
+                
+        elif key in ['p','P']:
+            drawAtoms = drawingData['Atoms']
+            pI = drawingData['viewPoint'][1]
+            if indx:
+                pI[0] = indx[pI[1]]
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                pI[1] -= 1
+                if pI[1] < 0:
+                    pI[1] = len(indx)-1
+            else:
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
+                pI[0] -= 1
+                if pI[0] < 0:
+                    pI[0] = len(drawAtoms)-1
+            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
+            SetViewPointText(drawingData['viewPoint'][0])
+            
+        elif key in ['a','A']:
+            print xyz,GetTruePosition(xyz)
+        Draw()
+            
+    def OnMouseMove(event):
+        newxy = event.GetPosition()
+        if event.Dragging():
+            if event.LeftIsDown():
+                SetRotation(newxy)
+            elif event.RightIsDown():
+                SetTranslation(newxy)
+            elif event.MiddleIsDown():
+                SetRotationZ(newxy)
+            Draw()
+        
+    def GetTruePosition(xy):
+        View = glGetIntegerv(GL_VIEWPORT)
+        x,y,z = gluUnProject(xy[0],xy[1],0,view=View)
+        return x,y,z
+        
+    def SetBackground():
+        R,G,B,A = Page.camera['backColor']
+        glClearColor(R,G,B,A)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+    def SetLights():
+        glEnable(GL_DEPTH_TEST)
+        glShadeModel(GL_SMOOTH)
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
+        glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
+        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        
+    def SetFog():       #doesn't work for some reason
+        cPos = drawingData['cameraPos']
+        Zclip = drawingData['Zclip']*cPos/200.
+        glFogi(GL_FOG_MODE,GL_LINEAR)
+        glFogfv(GL_FOG_COLOR,Page.camera['backColor'])
+        glFogf(GL_FOG_START,cPos-Zclip)
+        glFogf(GL_FOG_END,cPos+Zclip)
+        glFogf(GL_FOG_DENSITY,drawingData['fogFactor'])
+                  
+    def SetTranslation(newxy):
+        Tx,Ty,Tz = drawingData['viewPoint'][0]
+        oldxy = drawingData['Rotation'][3]
+        dxy = newxy-oldxy
+        Tx += dxy[0]*0.01
+        Ty -= dxy[1]*0.01
+        drawingData['Rotation'][3] = newxy
+        drawingData['viewPoint'][0] =  Tx,Ty,Tz
+               
+    def SetRotation(newxy):        
+        anglex,angley,anglez,oldxy = drawingData['Rotation']
+        dxy = newxy-oldxy
+        anglex += dxy[1]
+        angley += dxy[0]
+        oldxy = newxy
+        drawingData['Rotation'] = [anglex,angley,anglez,oldxy]
+        
+    def SetRotationZ(newxy):
+        def sign(x):
+            if x < 0:
+                return -1
+            else:
+                return 1
+                        
+        anglex,angley,anglez,oldxy = drawingData['Rotation']
+        dxy = newxy-oldxy
+        anglez += dxy[0]+dxy[1]
+        oldxy = newxy
+        drawingData['Rotation'] = [anglex,angley,anglez,oldxy]
+        
+    def RenderBox():
+        glEnable(GL_COLOR_MATERIAL)
+        glBegin(GL_LINES)
+        for line,color in zip(uEdges,uColors):
+            glColor4ubv(color)
+            glVertex3fv(line[0])
+            glVertex3fv(line[1])
+        glEnd()
+        glColor4ubv([0,0,0,0])
+        glDisable(GL_COLOR_MATERIAL)
+        
+    def RenderUnitVectors():
+        glEnable(GL_COLOR_MATERIAL)
+        glBegin(GL_LINES)
+        for line,color in zip(uEdges,uColors)[:3]:
+            glColor4ubv(color)
+            glVertex3fv(line[0])
+            glVertex3fv(line[1])
+        glEnd()
+        glColor4ubv([0,0,0,0])
+        glDisable(GL_COLOR_MATERIAL)
+                
+    def RenderSphere(x,y,z,radius,color):
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glMultMatrixf(B4mat.T)
+        q = gluNewQuadric()
+        gluSphere(q,radius,20,20)
+        glPopMatrix()
+        
+    def RenderEllipsoid(x,y,z,ellipseProb,E,R4,color):
+        s1,s2,s3 = E
+        glLightfv(GL_LIGHT0,GL_DIFFUSE,[.7,.7,.7,1])        
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glMultMatrixf(B4mat.T)
+        glMultMatrixf(R4.T)
+        glEnable(GL_RESCALE_NORMAL)
+        glScale(s1,s2,s3)
+        q = gluNewQuadric()
+        gluSphere(q,ellipseProb,20,20)
+        glDisable(GL_RESCALE_NORMAL)
+        glPopMatrix()
+        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])        
+        
+    def RenderBonds(x,y,z,Bonds,radius,color):
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glMultMatrixf(B4mat.T)
+        for bond in Bonds:
+            glPushMatrix()
+            Dx = np.inner(Amat,bond)
+            Z = np.sqrt(np.sum(Dx**2))
+            azm = atan2d(-Dx[1],-Dx[0])
+            phi = acosd(Dx[2]/Z)
+            glRotate(-azm,0,0,1)
+            glRotate(phi,1,0,0)
+            q = gluNewQuadric()
+            gluCylinder(q,radius,radius,Z,20,2)
+            glPopMatrix()            
+        glPopMatrix()
+        
+    def RenderLines(x,y,z,Bonds,color):
+        glEnable(GL_COLOR_MATERIAL)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glBegin(GL_LINES)
+        for bond in Bonds:
+            glColor4fv(color)
+            glVertex3fv([0,0,0])
+            glVertex3fv(bond)
+        glEnd()
+        glColor4ubv([0,0,0,0])
+        glPopMatrix()
+        glDisable(GL_COLOR_MATERIAL)
+        
+    def RenderPolyhedra(x,y,z,Faces,color):
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glShadeModel(GL_SMOOTH)
+        glMultMatrixf(B4mat.T)
+        for face,norm in Faces:
+            glPolygonMode(GL_FRONT,GL_FILL)
+            glColor3fv(color[:3])
+            glBegin(GL_TRIANGLES)
+            glNormal3fv(norm)
+            for vert in face:
+                glVertex3fv(vert)
+            glEnd()
+        glPopMatrix()
+        
+    def RenderLabel(x,y,z,label,r):       
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glMultMatrixf(B4mat.T)
+        glDisable(GL_LIGHTING)
+        glColor3f(0,1.,0)
+        glRasterPos3f(r,r,r)
+        for c in list(label):
+            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        glEnable(GL_LIGHTING)
+        glPopMatrix()
+                            
+    def Draw():
+        import numpy.linalg as nl
+        VS = np.array(Page.canvas.GetSize())
+        aspect = float(VS[0])/float(VS[1])
+        cPos = drawingData['cameraPos']
+        Zclip = drawingData['Zclip']*cPos/200.
+        anglex,angley,anglez, = drawingData['Rotation'][:3]
+        Tx,Ty,Tz = drawingData['viewPoint'][0]
+        cx,ct,cs = drawingData['atomPtrs']
+        bondR = drawingData['bondRadius']
+        G,g = G2lat.cell2Gmat(cell)
+        GS = G
+        GS[0][1] = GS[1][0] = math.sqrt(GS[0][0]*GS[1][1])
+        GS[0][2] = GS[2][0] = math.sqrt(GS[0][0]*GS[2][2])
+        GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
+        ellipseProb = G2lat.criticalEllipse(drawingData['ellipseProb']/100.)
+        
+        SetBackground()
+        
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glViewport(0,0,VS[0],VS[1])
+        gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
+        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        SetLights()            
+        if drawingData['depthFog']:
+            glEnable(GL_FOG)
+            SetFog()
+        else:
+            glDisable(GL_FOG)
+        
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        glRotate(anglez,0,0,1)
+        glRotate(anglex,1,0,0)
+        glRotate(angley,0,1,0)
+        glMultMatrixf(A4mat.T)
+        glTranslate(-Tx,-Ty,-Tz)
+        if drawingData['unitCellBox']:
+            RenderBox()
+        if drawingData['showABC']:
+            glPushMatrix()
+            glTranslate(-.1,-.1,-.1)
+            glScalef(1/cell[0],1/cell[1],1/cell[2])
+            RenderUnitVectors()
+            glPopMatrix()
+        for iat,atom in enumerate(drawingData['Atoms']):
+            x,y,z = atom[cx:cx+3]
+            Bonds = atom[-1]
+            atNum = generalData['AtomTypes'].index(atom[ct])
+            CL = list(generalData['Color'][atNum])
+            CL.extend([255,])
+            color = np.array(CL)/255.
+            radius = 0.5
+            if 'balls' in atom[cs]:
+                vdwScale = drawingData['vdwScale']
+                ballScale = drawingData['ballScale']
+                if 'H' == atom[ct]:
+                    if drawingData['showHydrogen']:
+                        if 'vdW' in atom[cs]:
+                            radius = vdwScale*generalData['vdWRadii'][atNum]
+                        else:
+                            radius = ballScale*drawingData['sizeH']
+                    else:
+                        radius = 0.0
+                else:
+                    if 'vdW' in atom[cs]:
+                        radius = vdwScale*generalData['vdWRadii'][atNum]
+                    else:
+                        radius = ballScale*generalData['BondRadii'][atNum]
+                RenderSphere(x,y,z,radius,color)
+                if 'sticks' in atom[cs]:
+                    RenderBonds(x,y,z,Bonds,bondR,color)
+            elif 'ellipsoids' in atom[cs]:
+                RenderBonds(x,y,z,Bonds,bondR,color)
+                if atom[cs+2] == 'A':                    
+                    Uij = atom[cs+4:cs+10]
+                    U = np.multiply(G2spc.Uij2U(Uij),GS)
+                    U = np.inner(Amat,np.inner(U,Amat).T)
+                    E,R = nl.eigh(U)
+                    R4 = np.concatenate((np.concatenate((R,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+                    E = np.sqrt(E)
+                    RenderEllipsoid(x,y,z,ellipseProb,E,R4,color)
+                else:
+                    radius = ellipseProb*math.sqrt(abs(atom[cs+3]))
+                    RenderSphere(x,y,z,radius,color)
+            elif 'lines' in atom[cs]:
+                radius = 0.5
+                RenderLines(x,y,z,Bonds,color)
+            elif atom[cs] == 'sticks':
+                radius = 0.5
+                RenderBonds(x,y,z,Bonds,bondR,color)
+            elif atom[cs] == 'polyhedra':
+                if len(Bonds) > 2:
+                    FaceGen = G2lat.uniqueCombinations(Bonds,3)     #N.B. this is a generator
+                    Faces = []
+                    for face in FaceGen:
+                        vol = nl.det(face)
+                        if abs(vol) > 1.:
+                            if vol < 0.:
+                                face = [face[0],face[2],face[1]]
+                            norm = np.cross(face[1]-face[0],face[2]-face[0])
+                            norm /= np.sqrt(np.sum(norm**2))
+                            Faces.append([face,norm])
+                    RenderPolyhedra(x,y,z,Faces,color)
+            if atom[cs+1] == 'type':
+                RenderLabel(x,y,z,atom[ct],radius)
+            elif atom[cs+1] == 'name':
+                RenderLabel(x,y,z,atom[ct-1],radius)
+            elif atom[cs+1] == 'number':
+                RenderLabel(x,y,z,str(iat+1),radius)
+            elif atom[cs+1] == 'residue' and atom[ct-1] == 'CA':
+                RenderLabel(x,y,z,atom[ct-4],radius)
+            elif atom[cs+1] == '1-letter' and atom[ct-1] == 'CA':
+                RenderLabel(x,y,z,atom[ct-3],radius)
+            elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
+                RenderLabel(x,y,z,atom[ct-2],radius)
+            
+        Page.canvas.SwapBuffers()
+       
+    def OnSize(event):
+        Draw()
+        
+    try:
+        plotNum = self.G2plotNB.plotList.index(generalData['Name'])
+        Page = self.G2plotNB.nb.GetPage(plotNum)        
+    except ValueError,error:
+        Plot = self.G2plotNB.addOgl(generalData['Name'])
+        plotNum = self.G2plotNB.plotList.index(generalData['Name'])
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.views = False
+        view = False
+    Page.SetFocus()
+    Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
+    Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_KEY_UP, OnKey)
+    Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
+    Page.canvas.Bind(wx.EVT_SIZE, OnSize)
+    cell = generalData['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    Page.camera['position'] = drawingData['cameraPos']
+    Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
+    Page.camera['backColor'] = np.array(list(drawingData['backColor'])+[0,])/255.
+    Page.canvas.SetCurrent()
+    Draw()
         

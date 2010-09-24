@@ -1,5 +1,6 @@
 '''Perform lattice-related computations'''
 
+import math
 import numpy as np
 import numpy.linalg as nl
 
@@ -117,9 +118,9 @@ def A2invcell(A):
 def cell2AB(cell):
     '''Computes orthogonalization matrix from unit cell constants
     cell is tuple with a,b,c,alpha, beta, gamma (degrees)
-    returns list of two 3x3 numpy arrays
-       A for crystal to Cartesian transformations A*x = X 
-       B (inverse) for Cartesian to crystal transformation B*X = x
+    returns tuple of two 3x3 numpy arrays (A,B)
+       A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
+       B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B*x) = x
     '''
     G,g = cell2Gmat(cell) 
     cellstar = Gmat2cell(G)
@@ -133,6 +134,88 @@ def cell2AB(cell):
     A[2][2] = 1/cellstar[2]         # 1/c*
     B = nl.inv(A)
     return A,B
+    
+#def U2Uij(U):
+#    #returns the UIJ vector U11,U22,U33,U12,U13,U23 from tensor U
+#    return [U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]]
+#    
+#def Uij2U(Uij):
+#    #returns the thermal motion tensor U from Uij as numpy array
+#    return np.array([[Uij[0],Uij[3],Uij[4]],[Uij[3],Uij[1],Uij[5]],[Uij[4],Uij[5],Uij[2]]])
+#    
+def Uij2betaij(Uij,G):
+    '''
+    Convert Uij to beta-ij tensors
+    input:
+    Uij - numpy array [Uij]
+    G - reciprocal metric tensor
+    returns:
+    beta-ij - numpy array [beta-ij]
+    '''
+    pass
+    
+def criticalEllipse(prob):
+    '''
+    Calculate critical values for probability ellipsoids from probability
+    '''
+    if not ( 0.01 <= prob < 1.0):
+        return 1.54 
+    coeff = np.array([6.44988E-09,4.16479E-07,1.11172E-05,1.58767E-04,0.00130554,
+        0.00604091,0.0114921,-0.040301,-0.6337203,1.311582])
+    llpr = math.log(-math.log(prob))
+    return np.polyval(coeff,llpr)
+    
+def CellBlock(nCells):
+    '''
+    Generate block of unit cells n*n*n on a side; [0,0,0] centered, n = 2*nCells+1
+    currently only works for nCells = 0 or 1 (not >1)
+    '''
+    if nCells:
+        N = 2*nCells+1
+        N2 = N*N
+        N3 = N*N*N
+        cellArray = []
+        A = np.array(range(N3))
+        cellGen = np.array([A/N2-1,A/N%N-1,A%N-1]).T
+        for cell in cellGen:
+            cellArray.append(cell)
+        return cellArray
+    else:
+        return [0,0,0]
+                        
+    
+
+#Permutations and Combinations
+# Four routines: combinations,uniqueCombinations, selections & permutations
+#These taken from Python Cookbook, 2nd Edition. 19.15 p724-726
+#    
+def _combinators(_handle, items, n):
+    ''' factored-out common structure of all following combinators '''
+    if n==0:
+        yield [ ]
+        return
+    for i, item in enumerate(items):
+        this_one = [ item ]
+        for cc in _combinators(_handle, _handle(items, i), n-1):
+            yield this_one + cc
+def combinations(items, n):
+    ''' take n distinct items, order matters '''
+    def skipIthItem(items, i):
+        return items[:i] + items[i+1:]
+    return _combinators(skipIthItem, items, n)
+def uniqueCombinations(items, n):
+    ''' take n distinct items, order is irrelevant '''
+    def afterIthItem(items, i):
+        return items[i+1:]
+    return _combinators(afterIthItem, items, n)
+def selections(items, n):
+    ''' take n (not necessarily distinct) items, order matters '''
+    def keepAllItems(items, i):
+        return items
+    return _combinators(keepAllItems, items, n)
+def permutations(items):
+    ''' take all items, order matters '''
+    return combinations(items, len(items))
 
 #reflection generation routines
 #for these: H = [h,k,l]; A is as used in calc_rDsq; G - inv metric tensor, g - metric tensor; 

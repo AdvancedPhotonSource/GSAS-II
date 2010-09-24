@@ -843,7 +843,7 @@ def IndexPeakListSave(self,peaks):
         wx.EndBusyCursor()
     print 'index peak list saved'
     
-def ReadEXPPhase(filename):
+def ReadEXPPhase(self,filename):
     import GSASIIspc as G2spc
     import GSASIIlattice as G2lat
     import GSASIIElem as G2el
@@ -929,6 +929,7 @@ def ReadEXPPhase(filename):
     Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
     Phase['General'] = {'Name':PhaseName,'Type':Ptype,'SGData':SGData,'Cell':[False,]+abc+angles+[Volume,],'Scale':[False,1.0]}
     Phase['Atoms'] = Atoms
+    Phase['Drawing'] = {}
     return Phase
        
 def ReadPDBPhase(filename):
@@ -973,7 +974,7 @@ def ReadPDBPhase(filename):
             Type = S[12:14].upper()
             if Type[0] in '123456789':
                 Type = Type[1:]
-            Atom = [int(S[22:27]),S[17:20].upper(),S[20:22],
+            Atom = [S[22:27].strip(),S[17:20].upper(),S[20:22],
                 S[12:17].strip(),Type.strip(),'',XYZ[0],XYZ[1],XYZ[2],
                 float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]
             S = file.readline()
@@ -996,6 +997,7 @@ def ReadPDBPhase(filename):
         PhaseName = 'None'
     Phase['General'] = {'Name':PhaseName,'Type':'macromolecular','SGData':SGData,'Cell':[False,]+cell+[Volume,],'Scale':[False,1.0]}
     Phase['Atoms'] = Atoms
+    Phase['Drawing'] = {}
     
     return Phase
     

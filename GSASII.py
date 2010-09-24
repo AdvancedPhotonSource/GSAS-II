@@ -16,6 +16,7 @@ import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
+import OpenGL as ogl
 
 # print versions
 print "Available python module versions for GSASII:"
@@ -23,8 +24,9 @@ print "python:     ",sys.version[:5]
 print "wxpython:   ",wx.__version__
 print "matplotlib: ",mpl.__version__
 print "numpy:      ",np.__version__
+print "OpenGL:     ",ogl.__version__
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -263,7 +265,8 @@ class GSASII(wx.Frame):
         pltNum = self.G2plotNB.nb.GetSelection()
         if pltNum >= 0:                         #to avoid the startup with no plot!
             pltPage = self.G2plotNB.nb.GetPage(pltNum)
-            pltPlot = pltPage.figure.gca()
+#            pltPlot = pltPage.figure.gca()
+            pltPlot = pltPage.figure
         item = event.GetItem()
         G2gd.MovePatternTreeToGrid(self,item)
         
@@ -519,15 +522,13 @@ class GSASII(wx.Frame):
         def OnOk(self,event):
             parent = self.GetParent()
             parent.Raise()
-            self.SetReturnCode(wx.ID_OK)
-            self.MakeModal(False)              
+            self.EndModal(wx.ID_OK)              
             self.Destroy()
             
         def OnCancel(self,event):
             parent = self.GetParent()
             parent.Raise()
-            self.SetReturnCode(wx.ID_CANCEL)
-            self.MakeModal(False)              
+            self.EndModal(wx.ID_CANCEL)              
             self.Destroy()
             
         def GetData(self):
@@ -591,15 +592,13 @@ class GSASII(wx.Frame):
         def OnOk(self,event):
             parent = self.GetParent()
             parent.Raise()
-            self.SetReturnCode(wx.ID_OK)
-            self.MakeModal(False)              
+            self.EndModal(wx.ID_OK)              
             self.Destroy()
             
         def OnCancel(self,event):
             parent = self.GetParent()
             parent.Raise()
-            self.SetReturnCode(wx.ID_CANCEL)
-            self.MakeModal(False)              
+            self.EndModal(wx.ID_CANCEL)              
             self.Destroy()
             
         def GetData(self):
@@ -809,8 +808,8 @@ class GSASII(wx.Frame):
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
         SGData = {'SpGrp':'P 1'}
         self.PatternTree.SetItemPyData(sub, \
-            {'General':{'Name':'phase name','Type':'nuclear','SGData':SGData,'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
-            'Scale':[False,1.0],'Pawley dmin':0.25},'Atoms':[]})
+            {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
+            'Scale':[False,1.0],'Pawley dmin':0.25},'Atoms':[],'Drawing':{}})
 
         
     def OnDeletePhase(self,event):
@@ -840,7 +839,9 @@ class GSASII(wx.Frame):
                         item, cookie = self.PatternTree.GetNextChild(sub, cookie)
                         i += 1
                     for item in DelItemList:
+                        name = self.PatternTree.GetItemText(item)
                         self.PatternTree.Delete(item)
+                        self.G2plotNB.Delete(name)
             finally:
                 dlg.Destroy()
                 
@@ -1003,7 +1004,7 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() == wx.ID_OK:
                     EXPfile = dlg.GetPath()
                     self.dirname = dlg.GetDirectory()
-                    Phase = G2IO.ReadEXPPhase(EXPfile)
+                    Phase = G2IO.ReadEXPPhase(self,EXPfile)
             finally:
                 dlg.Destroy()
             if Phase:

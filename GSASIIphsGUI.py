@@ -1147,7 +1147,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
             
-    def FindBonds6():
+    def FindBondsToo():                         #works but slow for large structures - keep as reference
         cx,ct,cs = data['Drawing']['atomPtrs']
         atomData = data['Drawing']['Atoms']
         generalData = data['General']
@@ -1160,41 +1160,65 @@ def UpdatePhaseData(self,item,data,oldPage):
         except:
             pass            
         for atom in atomData:
-            atom[-1] = []               #clear out old bonds
-        
-            
-    def FindBonds():
-        cx,ct,cs = data['Drawing']['atomPtrs']
-        atomData = data['Drawing']['Atoms']
-        generalData = data['General']
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        radii = generalData['BondRadii']
-        atomTypes = generalData['AtomTypes']
-        try:
-            indH = atomTypes.index('H')
-            radii[indH] = 0.5
-        except:
-            pass            
-        for atom in atomData:
-            atom[-1] = []               #clear out old bonds
-        for i,atomA in enumerate(atomData):
-            if atomA[cs] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
-                xyzA = np.array(atomA[cx:cx+3])
-                indA = atomTypes.index(atomA[ct])
-                for j,atomB in enumerate(atomData):
-                    xyzB = np.array(atomB[cx:cx+3])
-                    indB = atomTypes.index(atomB[ct])
-                    Dx = xyzB-xyzA
+            atom[-1] = []
+        Atoms = []
+        for i,atom in enumerate(atomData):
+            Atoms.append([i,np.array(atom[cx:cx+3]),atom[cs],radii[atomTypes.index(atom[ct])]])
+        for atomA in Atoms:
+            if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
+                for atomB in Atoms:                    
+                    Dx = atomB[1]-atomA[1]
                     DX = np.inner(Amat,Dx)
                     dist = np.sqrt(np.sum(DX**2))
-                    sumR = radii[indA]+radii[indB]
-                    if 0 < dist <= 0.85*sumR:
-                        inc = i+1
-                        if atomA[cs] == 'polyhedra':
-                            atomA[-1].append(np.inner(Amat,Dx))
-                        elif atomB[cs] != 'polyhedra':
-                            atomA[-1].append(Dx*radii[indA]/sumR)
-                            atomB[-1].append(-Dx*radii[indB]/sumR)
+                    sumR = atomA[3]+atomB[3]
+                    if 0.5 < dist <= 0.85*sumR:
+                        i = atomA[0]
+                        if atomA[2] == 'polyhedra':
+                            atomData[i][-1].append(DX)
+                        elif atomB[1] != 'polyhedra':
+                            j = atomB[0]
+                            atomData[i][-1].append(Dx*atomA[3]/sumR)
+                            atomData[j][-1].append(-Dx*atomB[3]/sumR)
+                    
+    def FindBonds():                    #uses numpy & masks - very fast even for proteins!
+        import numpy.ma as ma
+        cx,ct,cs = data['Drawing']['atomPtrs']
+        atomData = data['Drawing']['Atoms']
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+        radii = generalData['BondRadii']
+        atomTypes = generalData['AtomTypes']
+        try:
+            indH = atomTypes.index('H')
+            radii[indH] = 0.5
+        except:
+            pass            
+        for atom in atomData:
+            atom[-1] = []               #clear out old bonds
+        Indx = range(len(atomData))
+        Atoms = []
+        Types = []
+        Radii = []
+        for atom in atomData:
+            Atoms.append(np.array(atom[cx:cx+3]))
+            Types.append(atom[cs])
+            Radii.append(radii[atomTypes.index(atom[ct])])
+        Atoms = np.array(Atoms)
+        Radii = np.array(Radii)
+        IATR = zip(Indx,Atoms,Types,Radii)
+        for atomA in IATR:
+            if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
+                Dx = Atoms-atomA[1]
+                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of self & disorder "bonds" < 0.5A
+                sumR = atomA[3]+Radii
+                IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))                 #get indices of bonded atoms
+                i = atomA[0]
+                for j in IndB[0]:
+                    if Types[i] == 'polyhedra':
+                        atomData[i][-1].append(np.inner(Amat,Dx[j]))
+                    elif Types[j] != 'polyhedra':
+                        atomData[i][-1].append(Dx[j]*Radii[i]/sumR[j])
+                        atomData[j][-1].append(-Dx[j]*Radii[j]/sumR[j])
 
     def DrawAtomsDelete(event):   
         indx = drawAtoms.GetSelectedRows()

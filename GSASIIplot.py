@@ -1421,6 +1421,7 @@ def PlotStructure(self,data):
             glScalef(1/cell[0],1/cell[1],1/cell[2])
             RenderUnitVectors()
             glPopMatrix()
+        time0 = time.time()
         for iat,atom in enumerate(drawingData['Atoms']):
             x,y,z = atom[cx:cx+3]
             Bonds = atom[-1]
@@ -1462,10 +1463,10 @@ def PlotStructure(self,data):
                     radius = ellipseProb*math.sqrt(abs(atom[cs+3]))
                     RenderSphere(x,y,z,radius,color)
             elif 'lines' in atom[cs]:
-                radius = 0.5
+                radius = 0.1
                 RenderLines(x,y,z,Bonds,color)
             elif atom[cs] == 'sticks':
-                radius = 0.5
+                radius = 0.1
                 RenderBonds(x,y,z,Bonds,bondR,color)
             elif atom[cs] == 'polyhedra':
                 if len(Bonds) > 2:
@@ -1492,7 +1493,7 @@ def PlotStructure(self,data):
                 RenderLabel(x,y,z,atom[ct-3],radius)
             elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
                 RenderLabel(x,y,z,atom[ct-2],radius)
-            
+        print time.time()-time0    
         Page.canvas.SwapBuffers()
        
     def OnSize(event):

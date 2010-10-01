@@ -19,6 +19,17 @@ def sec2HMS(sec):
     M = int(sec/60-H*60)
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
+    
+def rotdMat(angle,axis=0):
+    '''Prepare rotation matrix for angle in degrees about axis(=0,1,2)
+    Returns numpy 3,3 array
+    '''
+    if axis == 2:
+        return np.array([[cosd(angle),-sind(angle),0],[sind(angle),cosd(angle),0],[0,0,1]])
+    elif axis == 1:
+        return np.array([[cosd(angle),0,-sind(angle)],[0,1,0],[sind(angle),0,cosd(angle)]])
+    else:
+        return np.array([[1,0,0],[0,cosd(angle),-sind(angle)],[0,sind(angle),cosd(angle)]])
 
 def fillgmat(cell):
     '''Compute lattice metric tensor from unit cell constants
@@ -134,7 +145,7 @@ def cell2AB(cell):
     A[2][2] = 1/cellstar[2]         # 1/c*
     B = nl.inv(A)
     return A,B
-    
+        
 #def U2Uij(U):
 #    #returns the UIJ vector U11,U22,U33,U12,U13,U23 from tensor U
 #    return [U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]]

@@ -611,22 +611,51 @@ def UpdatePhaseData(self,item,data,oldPage):
                     if CSI[2][i]:
                         Atoms.SetCellStyle(row,ci,WHITE,False)
 
-    def AtomAdd(event):
+    def OnAtomAdd(event):
+        AtomAdd(0,0,0)
+        FillAtomsGrid()
+        event.StopPropagation()
+        
+    def OnAtomTestAdd(event):
+        try:
+            drawData = data['Drawing']
+            x,y,z = drawData['testPos']
+            AtomAdd(x,y,z)
+        except:
+            AtomAdd(0,0,0)
+        FillAtomsGrid()
+        event.StopPropagation()
+                
+    def AtomAdd(x,y,z):
         atomData = data['Atoms']
         generalData = data['General']
         Ncol = Atoms.GetNumberCols()
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-        Sytsym,Mult = G2spc.SytSym([0,0,0],SGData)
+        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
         if generalData['Type'] == 'macromolecular':
-            atomData.append([0,'UNK','','UNK','UNK',Sytsym,Mult,0,0,1,'',0,'I',0.10,0,0,0,0,0,0])
+            atomData.append([0,'UNK','','UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0])
         elif generalData['Type'] == 'nuclear':
-            atomData.append(['UNK','UNK','',0,0,0,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
+            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
         elif generalData['Type'] == 'magnetic':
-            atomData.append(['UNK','UNK','',0,0,0,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
+            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
+        UpdateGeneral()
+
+    def OnAtomInsert(event):
+        AtomInsert(0,0,0)
         FillAtomsGrid()
         event.StopPropagation()
-
-    def AtomInsert(event):
+        
+    def OnAtomTestInsert(event):
+        try:
+            drawData = data['Drawing']
+            x,y,z = drawData['testPos']
+            AtomAdd(x,y,z)
+        except:
+            AtomAdd(0,0,0)
+        FillAtomsGrid()
+        event.StopPropagation()
+            
+    def AtomInsert(x,y,z):
         indx = Atoms.GetSelectedRows()
         if indx:
             indx = indx[0]
@@ -636,13 +665,12 @@ def UpdatePhaseData(self,item,data,oldPage):
             E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
             Sytsym,Mult = G2spc.SytSym([0,0,0],SGData)
             if generalData['Type'] == 'macromolecular':
-                atomData.insert(indx,[0,'UNK','','UNK','UNK',Sytsym,Mult,0,0,1,'',0,'I',0.10,0,0,0,0,0,0])
+                atomData.insert(indx,[0,'UNK','','UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0])
             elif generalData['Type'] == 'nuclear':
-                atomData.insert(indx,['UNK','UNK','',0,0,0,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
+                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
             elif generalData['Type'] == 'magnetic':
-                atomData.insert(indx,['UNK','UNK','',0,0,0,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,0,0,0])
-            FillAtomsGrid()
-        event.StopPropagation()
+                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
+            UpdateGeneral()
 
     def AtomDelete(event):
         indx = Atoms.GetSelectedRows()
@@ -738,11 +766,11 @@ def UpdatePhaseData(self,item,data,oldPage):
             'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
-        defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[0,0]],'showHydrogen':True,'backColor':[0,0,0],'depthFog':False,
+        defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,'backColor':[0,0,0],'depthFog':False,
             'Zclip':50.0,'cameraPos':50.,'pickItem':'Atoms','showBadContacts':False,
-            'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'packing':False,
-            'unitCellBox':False,'showABC':True,'fogFactor':1.0,'showSymElem':False,'selectedAtoms':[],
-            'Rotation':[0.0,0.0,0.0,np.array([0,0])],'bondList':{}}
+            'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,
+            'unitCellBox':False,'showABC':True,'showSymElem':False,'selectedAtoms':[],
+            'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[-.1,-.1,-.1]}
         try:
             drawingData = data['Drawing']
         except KeyError:
@@ -773,7 +801,6 @@ def UpdatePhaseData(self,item,data,oldPage):
             data['Drawing'] = drawingData
 
     def UpdateDrawAtoms():
-        self.dataFrame.setSizePosLeft([600,300])
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
@@ -788,8 +815,8 @@ def UpdatePhaseData(self,item,data,oldPage):
         if generalData['Type'] == 'macromolecular':
             colLabels = ['Residue','1-letter','Chain'] + colLabels
             Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING]+Types
-            Types[8] = wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,ribbons,schematic"
-            styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','ribbons','schematic']
+            Types[8] = wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,backbone,ribbons,schematic"
+            styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','backbone','ribbons','schematic']
             labelChoice = [' ','type','name','number','residue','1-letter','chain']
             Types[9] = wg.GRID_VALUE_CHOICE+": ,type,name,number,residue,1-letter,chain"
 #        elif generalData['Type'] == 'modulated':
@@ -828,6 +855,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                         if  test in parms:
                             drawAtoms.SelectRow(row,True)
                             drawingData['selectedAtoms'].append(row)
+                    G2plt.PlotStructure(self,data)                    
                 dlg.Destroy()
                 
             r,c =  event.GetRow(),event.GetCol()
@@ -858,7 +886,6 @@ def UpdatePhaseData(self,item,data,oldPage):
                         for r in range(len(atomData)):
                             atomData[r][c] = parms
                             drawAtoms.SetCellValue(r,c,parms)
-                        G2plt.PlotStructure(self,data)
                     dlg.Destroy()                    
                 elif drawAtoms.GetColLabelValue(c) == 'Residue':
                     SetChoice('Residue',c,3)
@@ -878,7 +905,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                 if drawAtoms.GetColLabelValue(c) in ['Style','Label']:
                     atomData[r][c] = drawAtoms.GetCellValue(r,c)
                     FindBonds()
-                    G2plt.PlotStructure(self,data)                    
+            G2plt.PlotStructure(self,data)
                     
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -899,6 +926,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     drawAtoms.SelectRow(r,True)                
             drawingData['selectedAtoms'] = []
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
+            G2plt.PlotStructure(self,data)                    
                 
         table = []
         rowLabels = []
@@ -925,6 +953,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                 attr.SetReadOnly(True)
                 attr.SetBackgroundColour(VERY_LIGHT_GREY)
                 drawAtoms.SetColAttr(c,attr)
+        self.dataFrame.setSizePosLeft([600,300])
         FindBonds()
         G2plt.PlotStructure(self,data)
 
@@ -936,7 +965,8 @@ def UpdatePhaseData(self,item,data,oldPage):
             cx,ct,cs = data['Drawing']['atomPtrs']
             styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
             if generalData['Type'] == 'macromolecular':
-                styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','ribbons','schematic']
+                styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
+                'backbone','ribbons','schematic']
             dlg = wx.SingleChoiceDialog(self,'Select','Atom drawing style',styleChoice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
@@ -1214,11 +1244,12 @@ def UpdatePhaseData(self,item,data,oldPage):
                 IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))                 #get indices of bonded atoms
                 i = atomA[0]
                 for j in IndB[0]:
-                    if Types[i] == 'polyhedra':
-                        atomData[i][-1].append(np.inner(Amat,Dx[j]))
-                    elif Types[j] != 'polyhedra':
-                        atomData[i][-1].append(Dx[j]*Radii[i]/sumR[j])
-                        atomData[j][-1].append(-Dx[j]*Radii[j]/sumR[j])
+                    if j > i:
+                        if Types[i] == 'polyhedra':
+                            atomData[i][-1].append(np.inner(Amat,Dx[j]))
+                        elif Types[j] != 'polyhedra':
+                            atomData[i][-1].append(Dx[j]*Radii[i]/sumR[j])
+                            atomData[j][-1].append(-Dx[j]*Radii[j]/sumR[j])
 
     def DrawAtomsDelete(event):   
         indx = drawAtoms.GetSelectedRows()
@@ -1236,7 +1267,7 @@ def UpdatePhaseData(self,item,data,oldPage):
     def UpdateDrawOptions():
         import copy
         import wx.lib.colourselect as wcs
-        self.dataFrame.setSizePosLeft([300,470])
+        self.dataFrame.setSizePosLeft([300,430])
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
@@ -1260,14 +1291,6 @@ def UpdatePhaseData(self,item,data,oldPage):
             drawingData['backColor'] = event.GetValue()
             G2plt.PlotStructure(self,data)
 
-        def OnDepthFog(event):
-            drawingData['depthFog'] = depthFog.GetValue()
-            G2plt.PlotStructure(self,data)
-
-        def OnFogFactor(event):
-            drawingData['fogFactor'] = fogFactor.GetValue()/100.
-            fogFactorTxt.SetLabel('Fog factor: '+'%.2f'%(drawingData['fogFactor']))
-            G2plt.PlotStructure(self,data)
 
         def OnBallScale(event):
             drawingData['ballScale'] = ballScale.GetValue()/100.
@@ -1296,9 +1319,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         def OnShowUnitCell(event):
             drawingData['unitCellBox'] = unitCellBox.GetValue()
             G2plt.PlotStructure(self,data)
-
-        def OnPacking(event):
-            drawingData['packing'] = packing.GetValue()
 
         def OnShowBadContacts(event):
             drawingData['showBadContacts'] = showBadContacts.GetValue()
@@ -1329,7 +1349,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         mainSizer.Add((5,5),0)
         
         slopSizer = wx.BoxSizer(wx.HORIZONTAL)
-        slideSizer = wx.FlexGridSizer(7,2,5,0)
+        slideSizer = wx.FlexGridSizer(6,2,5,0)
         slideSizer.AddGrowableCol(1,1)
 
         cameraPosTxt = wx.StaticText(dataDisplay,-1,
@@ -1373,17 +1393,12 @@ def UpdatePhaseData(self,item,data,oldPage):
         bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
         slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
         
-        fogFactorTxt = wx.StaticText(dataDisplay,-1,'Fog factor: '+'%.2f'%(drawingData['fogFactor']))
-        slideSizer.Add(fogFactorTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        fogFactor = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['fogFactor']))
-        fogFactor.Bind(wx.EVT_SLIDER, OnFogFactor)
-        slideSizer.Add(fogFactor,1,wx.EXPAND|wx.RIGHT)
-
         slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
         slopSizer.Add((10,5),0)
+        slopSizer.SetMinSize(wx.Size(300,180))
         mainSizer.Add(slopSizer,1,wx.EXPAND)
 
-        flexSizer = wx.FlexGridSizer(7,2,5,0)
+        flexSizer = wx.FlexGridSizer(6,2,5,0)
         flexSizer.Add(wx.StaticText(dataDisplay,-1,'View Point:  '),0,wx.ALIGN_CENTER_VERTICAL)
         VP = drawingData['viewPoint'][0]
         viewPoint = wx.TextCtrl(dataDisplay,value='%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]),
@@ -1391,10 +1406,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         viewPoint.SetBackgroundColour(VERY_LIGHT_GREY)
         flexSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
         
-        depthFog = wx.CheckBox(dataDisplay,-1,label='Use depth fog?')
-        depthFog.Bind(wx.EVT_CHECKBOX, OnDepthFog)
-        depthFog.SetValue(drawingData['depthFog'])
-        flexSizer.Add(depthFog,0,wx.ALIGN_CENTER_VERTICAL)
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
         lineSizer.Add(wx.StaticText(dataDisplay,-1,'Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
         backColor = wcs.ColourSelect(dataDisplay, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
@@ -1402,7 +1413,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
         flexSizer.Add(lineSizer,0,)
 
-        showABC = wx.CheckBox(dataDisplay,-1,label='Show cell vectors?')
+        showABC = wx.CheckBox(dataDisplay,-1,label='Show test point?')
         showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
         showABC.SetValue(drawingData['showABC'])
         flexSizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1411,11 +1422,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         unitCellBox.Bind(wx.EVT_CHECKBOX, OnShowUnitCell)
         unitCellBox.SetValue(drawingData['unitCellBox'])
         flexSizer.Add(unitCellBox,0,wx.ALIGN_CENTER_VERTICAL)
-
-        packing = wx.CheckBox(dataDisplay,-1,label='Packing diagram?')
-        packing.Bind(wx.EVT_CHECKBOX, OnPacking)
-        packing.SetValue(drawingData['packing'])
-        flexSizer.Add(packing,0,wx.ALIGN_CENTER_VERTICAL)
 
         showBadContacts = wx.CheckBox(dataDisplay,-1,label='Show bad contacts?')
         showBadContacts.Bind(wx.EVT_CHECKBOX, OnShowBadContacts)
@@ -1444,7 +1450,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         pickItem.SetSelection(pickChoice.index(drawingData['pickItem']))
         flexSizer.Add(pickItem,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(flexSizer,0,)
-        mainSizer.SetMinSize(wx.Size(300,370))
+#        mainSizer.SetMinSize(wx.Size(300,340))          #to get sliders long enough
 
         dataDisplay.SetSizer(mainSizer)
         self.dataFrame.SetSize(dataDisplay.Fit())
@@ -1459,8 +1465,10 @@ def UpdatePhaseData(self,item,data,oldPage):
         text = self.dataDisplay.GetPageText(page)
         if text == 'Atoms':
             self.dataFrame.SetMenuBar(self.dataFrame.AtomsMenu)
-            self.dataFrame.Bind(wx.EVT_MENU, AtomAdd, id=G2gd.wxID_ATOMSEDITADD)
-            self.dataFrame.Bind(wx.EVT_MENU, AtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
+            self.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
+            self.dataFrame.Bind(wx.EVT_MENU, OnAtomTestAdd, id=G2gd.wxID_ATOMSTESTADD)
+            self.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
+            self.dataFrame.Bind(wx.EVT_MENU, OnAtomTestInsert, id=G2gd.wxID_ATONTESTINSERT)
             self.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
             self.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
             self.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)

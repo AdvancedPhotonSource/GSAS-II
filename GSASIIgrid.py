@@ -10,8 +10,8 @@ import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
-    wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM,
-] = [wx.NewId() for _init_coll_Atom_Items in range(6)]
+    wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSTESTADD, wxID_ATONTESTINSERT,
+] = [wx.NewId() for _init_coll_Atom_Items in range(8)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM,
     wxID_DRAWDELETE, wxID_DRAWFILLCELL, wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD,
@@ -67,9 +67,14 @@ class DataFrame(wx.Frame):
         parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         
     def _init_coll_Atom_Items(self,parent):
-        parent.Append(help='',id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append empty atom')
-        parent.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert empty atom',
-            help='Double left click on atom row to Insert before')
+        parent.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
+            help='Inserted as an H atom')
+        parent.Append(id=wxID_ATOMSTESTADD, kind=wx.ITEM_NORMAL,text='Append test point',
+            help='Inserted as an H atom')
+        parent.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
+            help='Select atom row to insert before; inserted as an H atom')
+        parent.Append(id=wxID_ATONTESTINSERT, kind=wx.ITEM_NORMAL,text='Insert test point',
+            help='Select atom row to insert before; inserted as an H atom')
         parent.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
             help='Select atoms to delete first')
         parent.Append(id=wxID_ATOMSREFINE, kind=wx.ITEM_NORMAL,text='Set atom refinement flags',

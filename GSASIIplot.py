@@ -19,6 +19,7 @@ import GSASIIspc as G2spc
 from  OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+from OpenGL.GLE import *
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
@@ -1133,7 +1134,9 @@ def PlotStructure(self,data):
     uColors = [Rd,Gr,Bl,Wt, Wt,Wt,Wt,Wt, Wt,Wt,Wt,Wt]
     
     def OnMouseDown(event):
-        drawingData['Rotation'][3] = event.GetPosition()
+        xy = event.GetPosition()
+        drawingData['Rotation'][3] = xy
+        
     def OnMouseWheel(event):
         drawingData['cameraPos'] += event.GetWheelRotation()/24
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
@@ -1151,15 +1154,25 @@ def PlotStructure(self,data):
             panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
             names = [child.GetName() for child in panel]
             panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
-                            
+            
+    def GetSelectedAtoms():
+        page = self.dataDisplay.GetSelection()
+        Ind = []
+        if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
+            Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
+        return Ind
+                                       
     def OnKey(event):
         keyCode = event.GetKeyCode()
+        if keyCode > 255:
+            keyCode = 0
         key,xyz = chr(keyCode),event.GetPosition()
         indx = drawingData['selectedAtoms']
         cx,ct,cs = drawingData['atomPtrs']
         if key in ['c','C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
-            drawingData['Rotation'] = [0.0,0.0,0.0,np.array([0,0])]
+            drawingData['testPos'] = [-.1,-.1,-.1]
+            drawingData['Rotation'] = [0.0,0.0,0.0,[]]
             SetViewPointText(drawingData['viewPoint'][0])
         elif key in ['n','N']:
             drawAtoms = drawingData['Atoms']
@@ -1201,6 +1214,9 @@ def PlotStructure(self,data):
             
     def OnMouseMove(event):
         newxy = event.GetPosition()
+        if event.ShiftDown() and drawingData['showABC']:
+            if event.RightIsDown():
+                SetTestPos(newxy)
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
@@ -1229,29 +1245,40 @@ def PlotStructure(self,data):
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
-    def SetFog():       #doesn't work for some reason
-        cPos = drawingData['cameraPos']
-        Zclip = drawingData['Zclip']*cPos/200.
-        glFogi(GL_FOG_MODE,GL_LINEAR)
-        glFogfv(GL_FOG_COLOR,Page.camera['backColor'])
-        glFogf(GL_FOG_START,cPos-Zclip)
-        glFogf(GL_FOG_END,cPos+Zclip)
-        glFogf(GL_FOG_DENSITY,drawingData['fogFactor'])
-                  
     def SetTranslation(newxy):
         Tx,Ty,Tz = drawingData['viewPoint'][0]
-        oldxy = drawingData['Rotation'][3]
-        dxy = newxy-oldxy
-        Tx += dxy[0]*0.01
-        Ty -= dxy[1]*0.01
+        anglex,angley,anglez,oldxy = drawingData['Rotation']
+        Rx = G2lat.rotdMat(anglex,0)
+        Ry = G2lat.rotdMat(angley,1)
+        Rz = G2lat.rotdMat(anglez,2)
+        dxy = list(newxy-oldxy)+[0,]
+        dxy = np.inner(Bmat,np.inner(Rz,np.inner(Ry,np.inner(Rx,dxy))))
+        Tx -= dxy[0]*0.01
+        Ty += dxy[1]*0.01
+        Tz -= dxy[2]*0.01
         drawingData['Rotation'][3] = newxy
         drawingData['viewPoint'][0] =  Tx,Ty,Tz
-               
+        SetViewPointText([Tx,Ty,Tz])
+        
+    def SetTestPos(newxy):
+        Tx,Ty,Tz = drawingData['testPos']
+        anglex,angley,anglez,oldxy = drawingData['Rotation']
+        Rx = G2lat.rotdMat(anglex,0)
+        Ry = G2lat.rotdMat(angley,1)
+        Rz = G2lat.rotdMat(anglez,2)
+        dxy = list(newxy-oldxy)+[0,]
+        dxy = np.inner(Rz,np.inner(Ry,np.inner(Rx,dxy)))
+        Tx += dxy[0]*0.001
+        Ty -= dxy[1]*0.001
+        Tz += dxy[2]*0.001
+        drawingData['Rotation'][3] = newxy
+        drawingData['testPos'] =  Tx,Ty,Tz
+                              
     def SetRotation(newxy):        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         dxy = newxy-oldxy
-        anglex += dxy[1]
-        angley += dxy[0]
+        anglex += dxy[1]*.25
+        angley += dxy[0]*.25
         oldxy = newxy
         drawingData['Rotation'] = [anglex,angley,anglez,oldxy]
         
@@ -1279,14 +1306,19 @@ def PlotStructure(self,data):
         glColor4ubv([0,0,0,0])
         glDisable(GL_COLOR_MATERIAL)
         
-    def RenderUnitVectors():
+    def RenderUnitVectors(x,y,z):
+        xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glScalef(1/cell[0],1/cell[1],1/cell[2])
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors)[:3]:
             glColor4ubv(color)
             glVertex3fv(line[0])
             glVertex3fv(line[1])
         glEnd()
+        glPopMatrix()
         glColor4ubv([0,0,0,0])
         glDisable(GL_COLOR_MATERIAL)
                 
@@ -1296,26 +1328,24 @@ def PlotStructure(self,data):
         glTranslate(x,y,z)
         glMultMatrixf(B4mat.T)
         q = gluNewQuadric()
-        gluSphere(q,radius,20,20)
+        gluSphere(q,radius,20,10)
         glPopMatrix()
         
     def RenderEllipsoid(x,y,z,ellipseProb,E,R4,color):
         s1,s2,s3 = E
-        glLightfv(GL_LIGHT0,GL_DIFFUSE,[.7,.7,.7,1])        
         glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
         glPushMatrix()
         glTranslate(x,y,z)
         glMultMatrixf(B4mat.T)
         glMultMatrixf(R4.T)
-        glEnable(GL_RESCALE_NORMAL)
+        glEnable(GL_NORMALIZE)
         glScale(s1,s2,s3)
         q = gluNewQuadric()
-        gluSphere(q,ellipseProb,20,20)
-        glDisable(GL_RESCALE_NORMAL)
+        gluSphere(q,ellipseProb,20,10)
+        glDisable(GL_NORMALIZE)
         glPopMatrix()
-        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])        
         
-    def RenderBonds(x,y,z,Bonds,radius,color):
+    def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
         glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
         glPushMatrix()
         glTranslate(x,y,z)
@@ -1329,19 +1359,19 @@ def PlotStructure(self,data):
             glRotate(-azm,0,0,1)
             glRotate(phi,1,0,0)
             q = gluNewQuadric()
-            gluCylinder(q,radius,radius,Z,20,2)
+            gluCylinder(q,radius,radius,Z,slice,2)
             glPopMatrix()            
         glPopMatrix()
-        
+                
     def RenderLines(x,y,z,Bonds,color):
+        xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
+        glColor4fv(color)
         glPushMatrix()
-        glTranslate(x,y,z)
         glBegin(GL_LINES)
         for bond in Bonds:
-            glColor4fv(color)
-            glVertex3fv([0,0,0])
-            glVertex3fv(bond)
+            glVertex3fv(xyz)
+            glVertex3fv(xyz+bond)
         glEnd()
         glColor4ubv([0,0,0,0])
         glPopMatrix()
@@ -1355,13 +1385,22 @@ def PlotStructure(self,data):
         glMultMatrixf(B4mat.T)
         for face,norm in Faces:
             glPolygonMode(GL_FRONT,GL_FILL)
-            glColor3fv(color[:3])
-            glBegin(GL_TRIANGLES)
             glNormal3fv(norm)
+            glBegin(GL_TRIANGLES)
             for vert in face:
                 glVertex3fv(vert)
             glEnd()
         glPopMatrix()
+        
+    def RenderBackbone(Backbone,BackboneColor,radius):
+        glPushMatrix()
+        glMultMatrixf(B4mat.T)
+        glEnable(GL_COLOR_MATERIAL)
+        glShadeModel(GL_SMOOTH)
+        gleSetJoinStyle(TUBE_NORM_EDGE | TUBE_JN_ANGLE | TUBE_JN_CAP)
+        glePolyCylinder(Backbone,BackboneColor,radius)
+        glPopMatrix()        
+        glDisable(GL_COLOR_MATERIAL)
         
     def RenderLabel(x,y,z,label,r):       
         glPushMatrix()
@@ -1377,11 +1416,14 @@ def PlotStructure(self,data):
                             
     def Draw():
         import numpy.linalg as nl
+        Ind = GetSelectedAtoms()
+        x,y,z = drawingData['testPos']
+        self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
         cPos = drawingData['cameraPos']
         Zclip = drawingData['Zclip']*cPos/200.
-        anglex,angley,anglez, = drawingData['Rotation'][:3]
+        anglex,angley,anglez = drawingData['Rotation'][:3]
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         cx,ct,cs = drawingData['atomPtrs']
         bondR = drawingData['bondRadius']
@@ -1400,27 +1442,21 @@ def PlotStructure(self,data):
         gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
         gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
-        if drawingData['depthFog']:
-            glEnable(GL_FOG)
-            SetFog()
-        else:
-            glDisable(GL_FOG)
-        
+            
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+        glRotate(anglex,cosd(anglez),-sind(anglez),0)
+        glRotate(angley,sind(anglez),cosd(anglez),0)
         glRotate(anglez,0,0,1)
-        glRotate(anglex,1,0,0)
-        glRotate(angley,0,1,0)
         glMultMatrixf(A4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
         if drawingData['unitCellBox']:
             RenderBox()
         if drawingData['showABC']:
-            glPushMatrix()
-            glTranslate(-.1,-.1,-.1)
-            glScalef(1/cell[0],1/cell[1],1/cell[2])
-            RenderUnitVectors()
-            glPopMatrix()
+            x,y,z = drawingData['testPos']
+            RenderUnitVectors(x,y,z)
+        Backbone = []
+        BackboneColor = []
         time0 = time.time()
         for iat,atom in enumerate(drawingData['Atoms']):
             x,y,z = atom[cx:cx+3]
@@ -1429,6 +1465,8 @@ def PlotStructure(self,data):
             CL = list(generalData['Color'][atNum])
             CL.extend([255,])
             color = np.array(CL)/255.
+            if iat in Ind:
+                color = np.array(Gr)/255.
             radius = 0.5
             if 'balls' in atom[cs]:
                 vdwScale = drawingData['vdwScale']
@@ -1465,6 +1503,7 @@ def PlotStructure(self,data):
             elif 'lines' in atom[cs]:
                 radius = 0.1
                 RenderLines(x,y,z,Bonds,color)
+#                RenderBonds(x,y,z,Bonds,0.05,color,6)
             elif atom[cs] == 'sticks':
                 radius = 0.1
                 RenderBonds(x,y,z,Bonds,bondR,color)
@@ -1481,6 +1520,11 @@ def PlotStructure(self,data):
                             norm /= np.sqrt(np.sum(norm**2))
                             Faces.append([face,norm])
                     RenderPolyhedra(x,y,z,Faces,color)
+            elif atom[cs] == 'backbone':
+                if atom[ct-1].split()[0] in ['C','N']:
+                    Backbone.append(list(np.inner(Amat,np.array([x,y,z]))))
+                    BackboneColor.append(list(color))
+                    
             if atom[cs+1] == 'type':
                 RenderLabel(x,y,z,atom[ct],radius)
             elif atom[cs+1] == 'name':
@@ -1493,7 +1537,9 @@ def PlotStructure(self,data):
                 RenderLabel(x,y,z,atom[ct-3],radius)
             elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
                 RenderLabel(x,y,z,atom[ct-2],radius)
-        print time.time()-time0    
+        if Backbone:
+            RenderBackbone(Backbone,BackboneColor,bondR)
+#        print time.time()-time0
         Page.canvas.SwapBuffers()
        
     def OnSize(event):

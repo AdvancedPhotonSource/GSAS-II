@@ -1,6 +1,7 @@
 "GSASII - Space group interpretion routines"
 
 import numpy as np
+import numpy.ma as ma
 import math
 import sys
 import os.path as ospath
@@ -10,20 +11,21 @@ import pyspg
 
 def SpcGroup(SGSymbol):
     '''
-   Determines cell and symmetry information from a short H-M space group name
-   input: space group symbol (string) with spaces between axial fields
-   returns [SGError,SGData]
-       SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
-       returns dictionary SGData with entries:
-         'SpGrp': space group symbol slightly cleaned up
-         'Laue':  one of '-1','2/m','mmm','4/m','4/mmm','3R','3mR','3',
-                  '3m1','31m','6/m','6/mmm','m3','m3m'
-         'SGInv': boolean; True if centrosymmetric, False if not
-         'SGLatt': one of 'P','A','B','C','I','F','R'
-         'SGUniq': one of 'a','b','c' if monoclinic, '' otherwise
-         'SGCen': cell centering vectors [0,0,0] at least
-         'SGOps': symmetry operations as [M,T] so that M*x+T = x'
-         'SGSys': one of 'triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic'
+    Determines cell and symmetry information from a short H-M space group name
+    input:
+        SGSymbol - space group symbol (string) with spaces between axial fields
+    returns:
+        SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
+        SGData - dictionary with entries:
+             'SpGrp': space group symbol slightly cleaned up
+             'Laue':  one of '-1','2/m','mmm','4/m','4/mmm','3R','3mR','3',
+                      '3m1','31m','6/m','6/mmm','m3','m3m'
+             'SGInv': boolean; True if centrosymmetric, False if not
+             'SGLatt': one of 'P','A','B','C','I','F','R'
+             'SGUniq': one of 'a','b','c' if monoclinic, '' otherwise
+             'SGCen': cell centering vectors [0,0,0] at least
+             'SGOps': symmetry operations as [M,T] so that M*x+T = x'
+             'SGSys': one of 'triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic'
        '''
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
     LattSym = ('P','A','B','C','I','F','R')
@@ -74,9 +76,12 @@ def SpcGroup(SGSymbol):
     return SGInfo[8],SGData
 
 def SGErrors(IErr):
-    '''Interprets the error message code from SpcGroup. Used in SpaceGroup.
-    input:  SGError, from SpcGroup
-    returns a string with the error message or "Unknown error"
+    '''
+    Interprets the error message code from SpcGroup. Used in SpaceGroup.
+    input:
+        SGError - from SpcGroup
+    returns:
+        ErrString - a string with the error message or "Unknown error"
     '''
 
     ErrString = [' ',
@@ -114,8 +119,10 @@ def SGErrors(IErr):
 def SGPrint(SGData):
     '''
     Print the output of SpcGroup in a nicely formatted way. Used in SpaceGroup
-    input:  SGData, from SpcGroup
-    returns a list of strings with the space group details
+    input:
+        SGData - from SpcGroup
+    returns:
+        SGText - list of strings with the space group details
     '''
     POL = (' ','x','y','x y','z','x z','y z','xyz','111')
     Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
@@ -182,13 +189,15 @@ def Latt2text(Latt):
         'R':'0,0,0; 1/3,2/3,2/3; 2/3,1/3,1/3','P':'0,0,0'}
     return lattTxt[Latt]    
         
-def SpaceGroup(SgSym):
+def SpaceGroup(SGSymbol):
     '''
     Print the output of SpcGroup in a nicely formatted way. 
-      input: space group symbol (string) with spaces between axial fields
-      returns nothing
+    input: 
+        SGSymbol - space group symbol (string) with spaces between axial fields
+    returns:
+        nothing
     '''
-    E,A = SpcGroup(SgSym)
+    E,A = SpcGroup(SGSymbol)
     if E > 0:
         print SGErrors(E)
         return
@@ -198,8 +207,10 @@ def SpaceGroup(SgSym):
 def MoveToUnitCell(XYZ):
     '''
     Translates a set of coordinates so that all values are >=0 and < 1 
-      input: a list or numpy array of any length.
-      output: none; the object is modified in place.
+    input:
+        XYZ - a list or numpy array of fractional coordinates
+    output: 
+        none; the object is modified in place.
     '''
     for i,x in enumerate(XYZ):
         XYZ[i] = (x-int(x))%1.0
@@ -247,10 +258,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[]):
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):
-            for io,ops in enumerate(SGData['SGOps']):
+            for io,M,T in enumerate(SGData['SGOps']):
                 idup = ((io+1)+100*ic)*(1-2*invers)
-                T = np.array(ops[1])
-                M =  np.array(ops[0])
                 newX = np.inner(M,X)+T
                 if len(Uij):
                     U = Uij2U(Uij)
@@ -275,6 +284,55 @@ def GenAtom(XYZ,SGData,All=False,Uij=[]):
         return zip(XYZEquiv,UijEquiv,Idup)
     else:
         return zip(XYZEquiv,Idup)
+        
+def GenHKL(HKL,SGData,Friedel=False):
+    '''
+    Generate set of equivalent reflections
+    input:
+        HKL - [h,k,l]
+        SGData - space group data obtained from SpcGroup
+        Friedel = True to retain Friedel pairs for centrosymmetric case
+    returns:
+        iabsnt = True is reflection is forbidden by symmetry
+        mulp = reflection multiplicity including Fridel pairs
+        Uniq = numpy array of equivalent hkl in descending order of h,k,l
+        Phs = numpy array of corresponding phase factors (multiples of 2pi)
+    ''' 
+    iabsnt = False
+    H = np.array(HKL)
+    Inv = SGData['SGInv']
+    Cen = SGData['SGCen'][1:]           #skip P
+    # do cell centering extinction check
+    for cen in Cen:
+        iabsnt |= bool(int(round(np.sum(cen*H*12)))%12)
+    # get operators & expand if centrosymmetric
+    Ops = SGData['SGOps']
+    opM = np.array([op[0].T for op in Ops])
+    opT = np.array([op[1] for op in Ops])
+    if Inv:
+        opM = np.concatenate((opM,-opM))
+        opT = np.concatenate((opT,-opT))
+    # generate full hkl table and phase factors; find duplicates for multiplicity
+    eqH = np.inner(opM,H)
+    HT = np.dot(opT,H)%1.
+    dup = len(ma.nonzero([ma.allclose(HKL,hkl,atol=0.001) for hkl in eqH])[0])
+    mulp = len(eqH)/dup
+    # generate unique reflection set (with or without Friedel pairs)
+    HPT = [tuple(hp) for hp in np.column_stack((eqH,HT))]
+    HPT.sort()
+    UPT = HPT[::dup]
+    UPT.reverse()
+    if Inv and not Friedel:
+        UPT = UPT[:len(UPT)/2]            
+    Uniq = np.split(UPT,[3,4],axis=1)
+    Phs = Uniq[1].T[0]
+    Uniq = Uniq[0]
+    # determine if extinct
+    HPT = np.split(HPT,[3,4],axis=1)[1].T[0]
+    HPT = np.reshape(HPT,(mulp,-1)).T
+    HPT = np.around(HPT-HPT[0],4)%1.
+    iabsnt |= np.any(HPT)
+    return iabsnt,mulp,Uniq,Phs
                                    
 def GetOprPtrName(key):            
     OprPtrName = {

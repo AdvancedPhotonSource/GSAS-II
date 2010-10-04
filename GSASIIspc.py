@@ -258,7 +258,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[]):
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):
-            for io,M,T in enumerate(SGData['SGOps']):
+            for io,[M,T] in enumerate(SGData['SGOps']):
                 idup = ((io+1)+100*ic)*(1-2*invers)
                 newX = np.inner(M,X)+T
                 if len(Uij):

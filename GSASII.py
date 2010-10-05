@@ -193,7 +193,7 @@ class GSASII(wx.Frame):
         
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,
-            size=wx.Size(300, 250),style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II')
+            size=wx.Size(300, 250),style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II data tree')
         screenSize = wx.DisplaySize()
         Size = self.GetSize()
         xPos = screenSize[0]-Size[0]

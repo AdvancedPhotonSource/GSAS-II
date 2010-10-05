@@ -109,7 +109,9 @@ class G2PlotNoteBook(wx.Panel):
         except ValueError:          #no plot of this name - do nothing
             return      
         
-    def OnPageChanged(self,event):
+    def OnPageChanged(self,event):        
+        if self.plotList:
+            self.status.SetStatusText('Better to select this from GSAS-II data tree',1)
         self.status.DestroyChildren()                           #get rid of special stuff on status bar
         
 def PlotSngl(self,newPlot=False):
@@ -1119,6 +1121,7 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         
 def PlotStructure(self,data):
     generalData = data['General']
+    Myself = generalData['Myself']
     atomData = data['Atoms']
     drawingData = data['Drawing']
     drawAtoms = drawingData['Atoms']
@@ -1132,6 +1135,25 @@ def PlotStructure(self,data):
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl,Wt, Wt,Wt,Wt,Wt, Wt,Wt,Wt,Wt]
+    
+    def OnKeyBox(event):
+        import Image
+        Draw()
+        mode = cb.GetValue()
+        dirname = Myself.dirname
+        Fname = dirname+'\\'+generalData['Name']+'.'+mode
+        size = Page.canvas.GetSize()
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        if mode in ['jpeg',]:
+            Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+            im = Image.new("RGBA", (size[0],size[1]))
+        else:
+            Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+            im = Image.new("RGB", (size[0],size[1]))
+        im.fromstring(Pix)
+        im.save(Fname,mode)
+        cb.SetValue(' save as:')
+        Draw()
     
     def OnMouseDown(event):
         xy = event.GetPosition()
@@ -1297,6 +1319,10 @@ def PlotStructure(self,data):
         
     def RenderBox():
         glEnable(GL_COLOR_MATERIAL)
+        glLineWidth(3)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_LINE_SMOOTH)
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors):
             glColor4ubv(color)
@@ -1304,11 +1330,14 @@ def PlotStructure(self,data):
             glVertex3fv(line[1])
         glEnd()
         glColor4ubv([0,0,0,0])
+        glDisable(GL_LINE_SMOOTH)
+        glDisable(GL_BLEND)
         glDisable(GL_COLOR_MATERIAL)
         
     def RenderUnitVectors(x,y,z):
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
+        glLineWidth(1)
         glPushMatrix()
         glTranslate(x,y,z)
         glScalef(1/cell[0],1/cell[1],1/cell[2])
@@ -1366,6 +1395,7 @@ def PlotStructure(self,data):
     def RenderLines(x,y,z,Bonds,color):
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
+        glLineWidth(1)
         glColor4fv(color)
         glPushMatrix()
         glBegin(GL_LINES)
@@ -1555,6 +1585,10 @@ def PlotStructure(self,data):
         Page.views = False
         view = False
     Page.SetFocus()
+    cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
+        choices=(' save as:','jpeg','tiff','bmp'))
+    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
+    cb.SetValue(' save as:')
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)

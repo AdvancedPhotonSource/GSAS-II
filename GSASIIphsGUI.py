@@ -126,10 +126,10 @@ def UpdatePhaseData(self,item,data,oldPage):
     Atoms = []
     self.SelectedRow = 0
 
-    def BookResize(event):
-        w,h = self.GetSize()
-        self.dataDisplay.SetSize(wx.Size(w,h))
-        
+#    def BookResize(event):
+#        w,h = self.GetSize()
+#        self.dataDisplay.SetSize(wx.Size(w,h))
+#        
     def UpdateGeneral():
         generalData = data['General']
         atomData = data['Atoms']
@@ -140,6 +140,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         generalData['vdWRadii'] = []
         generalData['AtomMass'] = []
         generalData['Color'] = []
+        generalData['Myself'] = self
         colType = 1
         colSS = 7
         if generalData['Type'] =='macromolecular':

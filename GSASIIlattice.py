@@ -780,7 +780,7 @@ def test8():
         elif system == 'trigonal':
             permlist = [(1,2,3),(2,1,3),(-1,-2,3),(-2,-1,3)]
         elif system == 'rhombohedral':
-            permlist = [(1,2,3),(2,3,1),(3,1,2),(-1,-2,-3),(-2,-3,-1),(-3,-1,-2)]
+            permlist = [(1,2,3),(2,3,1),(3,1,2)]
         else:
             permlist = [(1,2,3)]
 

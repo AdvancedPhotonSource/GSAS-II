@@ -517,6 +517,36 @@ def GetCSuinel(siteSym):
         ]
     indx = GetNXUPQsym(siteSym)
     return CSuinel[indx[1]]
+    
+def MustrainNames(SGData):
+    laue = SGData['SGLaue']
+    uniq = SGData['SGUniq']
+    if laue in ['m3','m3m']:
+        return ['S400','S220']
+    elif laue in ['6/m','6/mmm','3m1']:
+        return ['S400','S004','S202']
+    elif laue in ['31m','3']:
+        return ['S400','S004','S202','S211']
+    elif laue in ['3R','3mR']:
+        return ['S400','S220','S310','S211']
+    elif laue in ['4/m','4/mmm']:
+        return ['S400','S004','S220','S022']
+    elif laue in ['mmm']:
+        return ['S400','S040','S004','S220','S202','S022']
+    elif laue in ['2/m']:
+        SHKL = ['S400','S040','S004','S220','S202','S022']
+        if uniq == 'a':
+            SHKL += ['S013','S031','S211']
+        elif uniq == 'b':
+            SHKL += ['S301','S103','S121']
+        elif uniq == 'c':
+            SHKL += ['S130','S310','S112']
+        return SHKL
+    else:
+        SHKL = ['S400','S040','S004','S220','S202','S022']
+        SHKL += ['S310','S103','S031','S130','S301','S013']
+        SHKL += ['S211','S121','S112']
+        return SHKL
         
 def SytSym(XYZ,SGData):
     '''

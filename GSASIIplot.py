@@ -1121,7 +1121,7 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         
 def PlotStructure(self,data):
     generalData = data['General']
-    Myself = generalData['Myself']
+    Mydir = generalData['Mydir']
     atomData = data['Atoms']
     drawingData = data['Drawing']
     drawAtoms = drawingData['Atoms']
@@ -1138,10 +1138,9 @@ def PlotStructure(self,data):
     
     def OnKeyBox(event):
         import Image
-        Draw()
+        Draw()                          #make sure plot is fresh!!
         mode = cb.GetValue()
-        dirname = Myself.dirname
-        Fname = dirname+'\\'+generalData['Name']+'.'+mode
+        Fname = Mydir+'\\'+generalData['Name']+'.'+mode
         size = Page.canvas.GetSize()
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         if mode in ['jpeg',]:
@@ -1152,8 +1151,8 @@ def PlotStructure(self,data):
             im = Image.new("RGB", (size[0],size[1]))
         im.fromstring(Pix)
         im.save(Fname,mode)
-        cb.SetValue(' save as:')
-        Draw()
+        cb.SetValue(' Save as:')
+        self.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
     
     def OnMouseDown(event):
         xy = event.GetPosition()
@@ -1313,7 +1312,7 @@ def PlotStructure(self,data):
                         
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         dxy = newxy-oldxy
-        anglez += dxy[0]+dxy[1]
+        anglez += (dxy[0]+dxy[1])*.25
         oldxy = newxy
         drawingData['Rotation'] = [anglex,angley,anglez,oldxy]
         
@@ -1475,9 +1474,9 @@ def PlotStructure(self,data):
             
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+        glRotate(anglez,0,0,1)
         glRotate(anglex,cosd(anglez),-sind(anglez),0)
         glRotate(angley,sind(anglez),cosd(anglez),0)
-        glRotate(anglez,0,0,1)
         glMultMatrixf(A4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
         if drawingData['unitCellBox']:
@@ -1492,8 +1491,9 @@ def PlotStructure(self,data):
             x,y,z = atom[cx:cx+3]
             Bonds = atom[-1]
             atNum = generalData['AtomTypes'].index(atom[ct])
-            CL = list(generalData['Color'][atNum])
-            CL.extend([255,])
+            CL = atom[cs+2]
+#            CL = list(generalData['Color'][atNum])
+#            CL.extend([255,])
             color = np.array(CL)/255.
             if iat in Ind:
                 color = np.array(Gr)/255.

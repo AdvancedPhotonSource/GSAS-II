@@ -124,13 +124,15 @@ class SymOpDialog(wx.Dialog):
 def UpdatePhaseData(self,item,data,oldPage):
 
     Atoms = []
-    self.SelectedRow = 0
+    if self.dataDisplay:
+        self.dataDisplay.Destroy()
+    PhaseName = self.PatternTree.GetItemText(item)
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataFrame.SetLabel('Phase Data for '+PhaseName)
+    self.dataFrame.CreateStatusBar()
+    self.dataDisplay = G2gd.GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
 
-#    def BookResize(event):
-#        w,h = self.GetSize()
-#        self.dataDisplay.SetSize(wx.Size(w,h))
-#        
-    def UpdateGeneral():
+    def SetupGeneral():
         generalData = data['General']
         atomData = data['Atoms']
         generalData['AtomTypes'] = []
@@ -140,7 +142,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         generalData['vdWRadii'] = []
         generalData['AtomMass'] = []
         generalData['Color'] = []
-        generalData['Myself'] = self
+        generalData['Mydir'] = self.dirname
         colType = 1
         colSS = 7
         if generalData['Type'] =='macromolecular':
@@ -160,155 +162,289 @@ def UpdatePhaseData(self,item,data,oldPage):
                 generalData['NoAtoms'][atom[colType]] = atom[colSS-1]*float(atom[colSS+1])
                 generalData['Color'].append(Info['Color'])
 
-    def FillGeneralGrid():
-        rowLabels = ['Phase name','Phase type','Space group',
-            'Lattice ',' parameters','Scale factor','Density','Elements','No. per cell',
-            'Atom weight','Bond radii','Angle radii','vdw radii','Color']
-        def SetLatticeParametersStyle(SGData,table):
-            clist = [1,2,3,4,5,6]
-            if SGData['SGLaue'] in ['m3','m3m']:
-                table[4][2] = table[4][3] = table[4][1]
-                table[4][4] = table[4][5] = table[4][6] = 90.
-                clist = [2,3,4,5,6]
-            elif SGData['SGLaue'] in ['3R','3mR']:
-                table[4][2] = table[4][3] = table[4][1]
-                table[4][5] = table[4][6] = table[4][4]
-                clist = [2,3,5,6]
-            elif SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
-                table[4][2] = table[4][1]
-                table[4][4] = table[4][5] = 90.
-                table[4][6] = 120.
-                clist = [2,4,5,6]
-            elif SGData['SGLaue'] in ['4/m','4/mmm']:
-                table[4][2] = table[4][1]
-                table[4][4] = table[4][5] = table[4][6] = 90.
-                clist = [2,4,5,6]
-            elif SGData['SGLaue'] in ['mmm']:
-                table[4][4] = table[4][5] = table[4][6] = 90.
-                clist = [4,5,6]
-            elif SGData['SGLaue'] in ['2/m']:
-                if SGData['SGUniq'] == 'a':
-                    table[4][5]= table[4][6] = 90.
-                    clist = [5,6]
-                if SGData['SGUniq'] == 'b':
-                    table[4][4]= table[4][6] = 90.
-                    clist = [4,6]
-                if SGData['SGUniq'] == 'c':
-                    table[4][4]= table[4][5] = 90.
-                    clist = [4,5]
-            for c in clist:
-                General.SetCellStyle(4,c,VERY_LIGHT_GREY,True)
-
-        def RefreshGeneralGrid(event):
-
-            r,c =  event.GetRow(),event.GetCol()
-            generalData['Name'] = table[0][0]
-            self.PatternTree.SetItemText(item,generalData['Name'])
-            generalData['Type'] = table[1][0]
-            SpcGp = table[2][0]
-            SGErr,SGData = G2spc.SpcGroup(SpcGp)
-            if r == 0:
-                self.G2plotNB.Rename(oldName,generalData['Name'])
-            elif r == 2 and c == 0:
-                if SGErr:
-                    text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
-                    table[2][0] = generalData['SGData']['SpGrp']
-                    msg = 'Space Group Error'
-                    Style = wx.ICON_EXCLAMATION
-                else:
-                    text = G2spc.SGPrint(SGData)
-                    generalData['SGData'] = SGData
-                    msg = 'Space Group Information'
-                    Style = wx.ICON_INFORMATION
-                Text = ''
-                for line in text:
-                    Text += line+'\n'
-                wx.MessageBox(Text,caption=msg,style=Style)
-            General.SetCellValue(4,0,str(generalData['Cell'][0]))
-            for c in range(1,7):
-                General.SetCellStyle(4,c,"white",False)
-                generalData['Cell'][c] = float(General.GetCellValue(4,c))
-            generalData['Cell'][7] = G2lat.calc_V(G2lat.cell2A(generalData['Cell'][1:7]))
-            SetLatticeParametersStyle(SGData,table)
-            generalData['Scale'][1] = float(General.GetCellValue(5,1))
-            General.ForceRefresh()
-
-        UpdateGeneral()
+    def UpdateGeneral():
+        
+        ''' default dictionary structure for "General" phase item: (taken from GSASII.py)
+        'General':{
+            'Name':PhaseName
+            'Type':'nuclear'
+            'SGData':SGData
+            'Cell':[False,10.,10.,10.,90.,90.,90,1000.]
+            'Histogram list':['',]
+            'Pawley dmin':1.0}
+            'Atoms':[]
+            'Drawing':{}
+        })
+        '''
+        phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
+        SetupGeneral()
         generalData = data['General']
-        self.dataFrame.setSizePosLeft([750,340])
-        colLabels = []
-        colLabels += ['' for i in range(max(8,len(generalData['AtomTypes'])))]
-        table = []
-        table.append([generalData['Name'],'','','','','','','',''])      #phase name
-        table.append([generalData['Type'],'','','','','','','',''])      #phase type
-        E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-        table.append([SGData['SpGrp'],'','','','','','','',''])     #space group symbol
-        table.append(['refine','a    ','b    ','c    ','alpha ','beta ','gamma','volume  '])
-        table.append(generalData['Cell'])                      #lattice parameters
-        table.append([generalData['Scale'][0],generalData['Scale'][1],'','','','','',''])   #scale factor
-        line = []
-        if generalData['Type'] == 'Pawley':
-            table.append(max(0.25,generalData['Pawley dmin']))
-            rowLabels[6] = 'd min'
-        else:
+        
+        def OnPhaseName(event):
+            oldName = generalData['Name']
+            generalData['Name'] = NameTxt.GetValue()
+            self.G2plotNB.Rename(oldName,generalData['Name'])
+            self.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
+            self.PatternTree.SetItemText(item,generalData['Name'])
+                        
+        def OnPhaseType(event):
+            if not generalData['AtomTypes']:             #can change only if no atoms!
+                generalData['Type'] = TypeTxt.GetValue()
+                dataDisplay.Destroy()           #needed to clear away bad cellSizer, etc.
+                UpdateGeneral()
+                if generalData['Type'] == 'Pawley':
+                    if self.dataDisplay.FindPage('Atoms'):
+                        self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Atoms'))
+                        self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Options'))
+                        self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Atoms'))
+                        self.dataDisplay.AdvanceSelection()
+                    if not self.dataDisplay.FindPage('Pawley reflections'):      
+                        self.dataDisplay.AddPage(G2gd.GSGrid(self.dataDisplay),'Pawley reflections')
+            else:
+                TypeTxt.SetValue(generalData['Type'])
+                
+                
+        def OnSpaceGroup(event):
+            SpcGp = SGTxt.GetValue()
+            SGErr,SGData = G2spc.SpcGroup(SpcGp)
+            if SGErr:
+                text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
+                SGTxt.SetValue(generalData['SGData']['SpGrp'])
+                msg = 'Space Group Error'
+                Style = wx.ICON_EXCLAMATION
+            else:
+                text = G2spc.SGPrint(SGData)
+                generalData['SGData'] = SGData
+                msg = 'Space Group Information'
+                Style = wx.ICON_INFORMATION
+            Text = ''
+            for line in text:
+                Text += line+'\n'
+            wx.MessageBox(Text,caption=msg,style=Style)
+            dataDisplay.Destroy()           #needed to clear away bad cellSizer, etc.
+            UpdateGeneral()
+            
+        def OnCellRef(event):
+            generalData['Cell'][0] = cellRef.GetValue()
+            
+        def OnCellChange(event):
+            SGData = generalData['SGData']
+            laue = SGData['SGLaue']
+            if laue == '2/m':
+                laue += SGData['SGUniq']
+            cell = generalData['Cell']
+            Obj = event.GetEventObject()
+            ObjId = cellList.index(Obj.GetId())
+            try:
+                value = max(1.0,float(Obj.GetValue()))
+            except ValueError:
+                if ObjId < 3:               #bad cell edge - reset
+                    value = controls[6+ObjId]
+                else:                       #bad angle
+                    value = 90.
+            if laue in ['m3','m3m']:
+                cell[1] = cell[2] = cell[3] = value
+                cell[4] = cell[5] = cell[6] = 90.0
+                Obj.SetValue("%.5f"%(cell[1]))
+            elif laue in ['3R','3mR']:
+                if ObjId == 0:
+                    cell[1] = cell[2] = cell[3] = value
+                    Obj.SetValue("%.5f"%(cell[1]))
+                else:
+                    cell[4] = cell[5] = cell[6] = value
+                    Obj.SetValue("%.5f"%(cell[4]))
+            elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:                    
+                if ObjId == 0:
+                    cell[1] = cell[2] = value
+                    Obj.SetValue("%.5f"%(cell[1]))
+                else:
+                    cell[3] = value
+                    Obj.SetValue("%.5f"%(cell[3]))
+            elif laue in ['mmm']:
+                cell[ObjId+1] = value
+                Obj.SetValue("%.5f"%(cell[ObjId+1]))
+            elif laue in ['2/m'+'a']:
+                if ObjId != 3:
+                    cell[ObjId+1] = value
+                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                else:
+                    cell[4] = value
+                    Obj.SetValue("%.3f"%(cell[4]))
+            elif laue in ['2/m'+'b']:
+                if ObjId != 3:
+                    cell[ObjId+1] = value
+                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                else:
+                    cell[5] = value
+                    Obj.SetValue("%.3f"%(cell[5]))
+            elif laue in ['2/m'+'c']:
+                if ObjId != 3:
+                    cell[ObjId+1] = value
+                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                else:
+                    cell[6] = value
+                    Obj.SetValue("%.3f"%(cell[6]))
+            else:
+                cell[ObjId+1] = value
+                if ObjId < 3:
+                    Obj.SetValue("%.5f"%(cell[1+ObjId]))
+                else:
+                    Obj.SetValue("%.3f"%(cell[1+ObjId]))
+            cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
+            volVal.SetValue("%.3f"%(cell[7]))
+            generalData['Cell'] = cell
+            dataDisplay.Destroy()           #needed to clear away bad cellSizer, etc.
+            UpdateGeneral()
+                        
+        def OnPawleyVal(event):
+            try:
+                dmin = float(pawlVal.GetValue())
+                if 0.25 <= dmin <= 10.:
+                    generalData['Pawley dmin'] = dmin
+            except ValueError:
+                pass
+            pawlVal.SetValue("%.2f"%(generalData['Pawley dmin']))          #reset in case of error            
+                                    
+        cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
+        [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],
+        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
+        [['mmm'],8,zip([" a = "," b = "," c = "," Vol = "],["%.5f","%.5f","%.5f","%.3f"],
+            [True,True,True,False],[0,1,2,0])],
+        [['2/m'+'a'],10,zip([" a = "," b = "," c = "," alpha = "," Vol = "],
+            ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+        [['2/m'+'b'],10,zip([" a = "," b = "," c = "," beta = "," Vol = "],
+            ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+        [['2/m'+'c'],10,zip([" a = "," b = "," c = "," gamma = "," Vol = "],
+            ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+        [['-1'],8,zip([" a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
+            ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
+            [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
+        
+        General.DestroyChildren()
+        dataDisplay = wx.Panel(General)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'General phase data:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+        nameSizer = wx.BoxSizer(wx.HORIZONTAL)
+        nameSizer.Add(wx.StaticText(dataDisplay,-1,' Phase name: '),0,wx.ALIGN_CENTER_VERTICAL)
+        NameTxt = wx.TextCtrl(dataDisplay,-1,value=generalData['Name'],style=wx.TE_PROCESS_ENTER)
+        NameTxt.Bind(wx.EVT_TEXT_ENTER,OnPhaseName)
+        NameTxt.Bind(wx.EVT_KILL_FOCUS,OnPhaseName)
+        nameSizer.Add(NameTxt,0,wx.ALIGN_CENTER_VERTICAL)
+        nameSizer.Add(wx.StaticText(dataDisplay,-1,'  Phase type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        TypeTxt = wx.ComboBox(dataDisplay,-1,value=generalData['Type'],choices=phaseTypes,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        TypeTxt.Bind(wx.EVT_COMBOBOX, OnPhaseType)
+        nameSizer.Add(TypeTxt,0,wx.ALIGN_CENTER_VERTICAL)
+        nameSizer.Add(wx.StaticText(dataDisplay,-1,'  Space group: '),0,wx.ALIGN_CENTER_VERTICAL)
+        SGTxt = wx.TextCtrl(dataDisplay,-1,value=generalData['SGData']['SpGrp'],style=wx.TE_PROCESS_ENTER)
+        SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
+        nameSizer.Add(SGTxt,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(nameSizer,0)
+        mainSizer.Add((5,5),0)
+        cell = generalData['Cell']
+        laue = generalData['SGData']['SGLaue']
+        if laue == '2/m':
+            laue += generalData['SGData']['SGUniq']
+        for cellGUI in cellGUIlist:
+            if laue in cellGUI[0]:
+                useGUI = cellGUI
+        cellList = []
+        cellSizer = wx.FlexGridSizer(2,useGUI[1]+1,5,5)
+        cellRef = wx.CheckBox(dataDisplay,label='Refine unit cell:')
+        cellSizer.Add(cellRef,0,wx.ALIGN_CENTER_VERTICAL)
+        cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
+        cellRef.SetValue(cell[0])
+        for txt,fmt,ifEdit,Id in useGUI[2]:
+            cellSizer.Add(wx.StaticText(dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
+            if ifEdit:          #a,b,c,etc.
+                cellVal = wx.TextCtrl(dataDisplay,value=(fmt%(cell[Id+1])),
+                    style=wx.TE_PROCESS_ENTER)
+                cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
+                cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
+                cellSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
+                cellList.append(cellVal.GetId())
+            else:               #volume
+                volVal = wx.TextCtrl(dataDisplay,value=(fmt%(cell[7])),style=wx.TE_READONLY)
+                volVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                cellSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(cellSizer,0)
+        mainSizer.Add((5,5),0)
+        
+        if len(generalData['AtomTypes']):
             mass = 0.
             for i,elem in enumerate(generalData['AtomTypes']):
                 mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
+            denSizer = wx.BoxSizer(wx.HORIZONTAL)
+            denSizer.Add(wx.StaticText(dataDisplay,-1,' Density: '),0,wx.ALIGN_CENTER_VERTICAL)
             Volume = generalData['Cell'][7]
+            density = mass/(0.6022137*Volume)
+            denTxt = wx.TextCtrl(dataDisplay,-1,'%.3f'%(density),style=wx.TE_READONLY)
+            denTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+            denSizer.Add(denTxt,0,wx.ALIGN_CENTER_VERTICAL)        
             if generalData['Type'] == 'macromolecular' and mass > 0.0:
-                table.append([mass/(0.6022137*Volume),'Matthews coeff.',Volume/mass,'','','','','',''])
-            else:
-                table.append([mass/(0.6022137*Volume),'','','','','','','',''])
-            for i,elem in enumerate(generalData['AtomTypes']):
-                line.append(generalData['NoAtoms'][elem])
-            table.append(generalData['AtomTypes']+['' for i in range(max(8,len(generalData['AtomTypes'])))]) #element list
-            table.append(line+['' for i in range(max(8,len(generalData['AtomTypes'])))]) #No. per cell
-            table.append(generalData['AtomMass']+['' for i in range(max(8,len(generalData['AtomTypes'])))])  #At. wt.
-            table.append(generalData['BondRadii']+['' for i in range(max(8,len(generalData['AtomTypes'])))])
-            table.append(generalData['AngleRadii']+['' for i in range(max(8,len(generalData['AtomTypes'])))])
-            table.append(generalData['vdWRadii']+['' for i in range(max(8,len(generalData['AtomTypes'])))])
-            table.append(['','','','','','','',''])                        #contains colors
-        Types = [wg.GRID_VALUE_STRING for i in range(max(8,len(generalData['AtomTypes'])))]
-        generalTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        General.SetTable(generalTable, True)
-        General.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshGeneralGrid)
-        General.SetMargins(0,0)
-        General.SetColSize(0,100)
-        General.SetColLabelSize(0)
-        attr = wg.GridCellAttr()
-        for c in range(max(8,len(generalData['AtomTypes']))):
-            if c > 0:
-                General.SetReadOnly(0,c,isReadOnly=True)
-                General.SetReadOnly(1,c,isReadOnly=True)
-                General.SetReadOnly(2,c,isReadOnly=True)
-            General.SetReadOnly(3,c,isReadOnly=True)                         #unit cell labels
-            General.SetCellAlignment(3,c,wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
-            if c < 4:
-                General.SetCellRenderer(4,c,wg.GridCellFloatRenderer(10,5))
-                General.SetCellEditor(4,c,wg.GridCellFloatEditor(10,5))
-            else:
-                General.SetCellRenderer(4,c,wg.GridCellFloatRenderer(10,3))
-                General.SetCellEditor(4,c,wg.GridCellFloatEditor(10,3))
-            for r in range(6,13):
-                General.SetReadOnly(r,c,isReadOnly=True)
-        r = rowLabels.index('Color')
-        for c in range(len(generalData['AtomTypes'])):
-            General.SetCellBackgroundColour(r,c,generalData['Color'][c])
+                denSizer.Add(wx.StaticText(dataDisplay,-1,' Matthews coeff.: '),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+                mattTxt = wx.TextCtrl(dataDisplay,-1,'%.3f'%(Volume/mass),style=wx.TE_READONLY)
+                mattTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                denSizer.Add(mattTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(denSizer)
+            mainSizer.Add((5,5),0)
+            
+            elemSizer = wx.FlexGridSizer(7,len(generalData['AtomTypes'])+1,1,1)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='Elements'),0,wx.ALIGN_CENTER_VERTICAL)
+            for elem in generalData['AtomTypes']:
+                typTxt = wx.TextCtrl(dataDisplay,value=elem,style=wx.TE_READONLY)
+                typTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(typTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='No. per cell'),0,wx.ALIGN_CENTER_VERTICAL)
+            for elem in generalData['AtomTypes']:
+                numbTxt = wx.TextCtrl(dataDisplay,value='%.1f'%(generalData['NoAtoms'][elem]),
+                    style=wx.TE_READONLY)
+                numbTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(numbTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='Atom weight'),0,wx.ALIGN_CENTER_VERTICAL)
+            for wt in generalData['AtomMass']:
+                wtTxt = wx.TextCtrl(dataDisplay,value='%.3f'%(wt),style=wx.TE_READONLY)
+                wtTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(wtTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
+            for rad in generalData['BondRadii']:
+                bondRadii = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
+                bondRadii.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(bondRadii,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
+            for rad in generalData['AngleRadii']:
+                elemTxt = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
+                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='van der Waals radii'),0,wx.ALIGN_CENTER_VERTICAL)
+            for rad in generalData['vdWRadii']:
+                elemTxt = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
+                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='Default color'),0,wx.ALIGN_CENTER_VERTICAL)
+            for color in generalData['Color']:
+                colorTxt = wx.TextCtrl(dataDisplay,value='',style=wx.TE_READONLY)
+                colorTxt.SetBackgroundColour(color)
+                elemSizer.Add(colorTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(elemSizer)
+            
+        elif generalData['Type'] == 'Pawley':
+            pawlSizer = wx.BoxSizer(wx.HORIZONTAL)
+            pawlSizer.Add(wx.StaticText(dataDisplay,label=' Pawley dmin: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pawlVal = wx.TextCtrl(dataDisplay,value='%.2f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
+            pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
+            pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
+            pawlSizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(pawlSizer)
 
-        General.SetReadOnly(4,7,isReadOnly=True)                            #cell volume - no edit
-        General.SetCellEditor(1,0,wg.GridCellChoiceEditor(['nuclear','modulated',   #phase type
-            'magnetic','macromolecular','Pawley'],False))                           #- change only if no atoms
-        if line:                                                    #no.of atoms not zero!
-            General.SetReadOnly(1,0,isReadOnly=True)                #can't change phase type
-        General.SetCellRenderer(4,0,wg.GridCellBoolRenderer())              #lattice parameters
-        General.SetCellEditor(4,0,wg.GridCellBoolEditor())
-        SetLatticeParametersStyle(SGData,table)
-        General.SetCellRenderer(5,1,wg.GridCellFloatRenderer(10,4))         #scale factor
-        General.SetCellEditor(5,1,wg.GridCellFloatEditor(10,4))
-        General.SetCellRenderer(5,0,wg.GridCellBoolRenderer())
-        General.SetCellEditor(5,0,wg.GridCellBoolEditor())
-        General.SetCellRenderer(6,0,wg.GridCellFloatRenderer(8,3))
-        General.SetCellRenderer(6,2,wg.GridCellFloatRenderer(8,3))
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[1] += 26                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
 
     def FillAtomsGrid():
 
@@ -483,7 +619,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                         Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
                         if CSI[2][i]:
                             Atoms.SetCellStyle(r,ci,WHITE,False)
-                UpdateGeneral()
+                SetupGeneral()
             elif Atoms.GetColLabelValue(c) == 'I/A':
                 atomData[r][c] = Atoms.GetCellValue(r,c)
                 if atomData[r][c] == 'I':
@@ -566,7 +702,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     else:
                         atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
                 PE.Destroy()
-                UpdateGeneral()
+                SetupGeneral()
                 FillAtomsGrid()
             else:
                 event.Skip()
@@ -639,7 +775,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
         elif generalData['Type'] == 'magnetic':
             atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
-        UpdateGeneral()
+        SetupGeneral()
 
     def OnAtomInsert(event):
         AtomInsert(0,0,0)
@@ -671,7 +807,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                 atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
             elif generalData['Type'] == 'magnetic':
                 atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
-            UpdateGeneral()
+            SetupGeneral()
 
     def AtomDelete(event):
         indx = Atoms.GetSelectedRows()
@@ -768,7 +904,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,'backColor':[0,0,0],'depthFog':False,
-            'Zclip':50.0,'cameraPos':50.,'pickItem':'Atoms','showBadContacts':False,
+            'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,'showBadContacts':False,
             'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,
             'unitCellBox':False,'showABC':True,'showSymElem':False,'selectedAtoms':[],
             'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[-.1,-.1,-.1]}
@@ -783,36 +919,42 @@ def UpdatePhaseData(self,item,data,oldPage):
         if not drawingData['Atoms']:
             for atom in atomData:
                 if generalData['Type'] == 'nuclear':
-                    drawingData['Atoms'].append(atom[:2]+atom[3:6]+['1',]+['lines',]+
-                        ['',]+atom[9:17]+[[]])
-                    drawingData['atomPtrs'] = [2,1,6]         #x, type & style
+                    atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
+                        ['',]+[[255,255,255],]+atom[9:17]+[[]]][0]
+                    cx,ct,cs = [2,1,6]         #x, type & style
                 elif generalData['Type'] == 'macromolecular':
                     try:
                         oneLetter = AA3letter.index(atom[1])
                     except ValueError:
                         oneLetter = -1
-                    drawingData['Atoms'].append([atom[1].strip()+atom[0],]+
+                    atomInfo = [[atom[1].strip()+atom[0],]+
                         [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
-                        atom[6:9]+['1',]+['lines',]+['',]+atom[12:20]+[[]])
-                    drawingData['atomPtrs'] = [5,4,9]         #x, type & style
+                        atom[6:9]+['1',]+['sticks',]+['',]+[[255,255,255],]+atom[12:20]+[[]]][0]
+                    cx,ct,cs = [5,4,9]         #x, type & style
                 elif generalData['Type'] == 'magnetic':
-                    drawingData['Atoms'].append(atom[:2]+atom[3:6]+['lines',]+['',]+atom[9:20]+[[]])
-#            elif generalData['Type'] == 'modulated':
-#                ?????   for future
+                    atomData = [atom[:2]+atom[3:6]+['vdW balls',]+['',]+atom[9:20]+[[]]][0]
+                    cx,ct,cs = [2,1,6]         #x, type & style
+#                elif generalData['Type'] == 'modulated':
+#                   ?????   for future
+                atNum = generalData['AtomTypes'].index(atom[ct])
+                atomInfo[cs+2] = list(generalData['Color'][atNum])
+                drawingData['Atoms'].append(atomInfo)
+            drawingData['atomPtrs'] = [cx,ct,cs]
             data['Drawing'] = drawingData
 
     def UpdateDrawAtoms():
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
+        cx,ct,cs = drawingData['atomPtrs']
         atomData = drawingData['Atoms']
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',    #x,y,z
             wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,polyhedra",
-            wg.GRID_VALUE_CHOICE+": ,type,name,number",wg.GRID_VALUE_STRING,]
+            wg.GRID_VALUE_CHOICE+": ,type,name,number",wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]
         styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
         labelChoice = [' ','type','name','number']
-        colLabels = ['Name','Type','x','y','z','Sym Op','Style','Label','I/A']
+        colLabels = ['Name','Type','x','y','z','Sym Op','Style','Label','Color','I/A']
         if generalData['Type'] == 'macromolecular':
             colLabels = ['Residue','1-letter','Chain'] + colLabels
             Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING]+Types
@@ -888,6 +1030,19 @@ def UpdatePhaseData(self,item,data,oldPage):
                             atomData[r][c] = parms
                             drawAtoms.SetCellValue(r,c,parms)
                     dlg.Destroy()                    
+                elif drawAtoms.GetColLabelValue(c) == 'Color':
+                    dlg = wx.ColourDialog(self)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        color = dlg.GetColourData().GetColour()
+                        attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
+                        attr.SetReadOnly(True)
+                        attr.SetBackgroundColour(color)
+                        for r in range(len(atomData)):
+                            atomData[r][c] = color
+                            drawingData['Atoms'][r][c] = color
+                            drawAtoms.SetAttr(r,c,attr)
+                        UpdateDrawAtoms()
+                    dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Residue':
                     SetChoice('Residue',c,3)
                 elif drawAtoms.GetColLabelValue(c) == '1-letter':
@@ -906,6 +1061,19 @@ def UpdatePhaseData(self,item,data,oldPage):
                 if drawAtoms.GetColLabelValue(c) in ['Style','Label']:
                     atomData[r][c] = drawAtoms.GetCellValue(r,c)
                     FindBonds()
+                elif drawAtoms.GetColLabelValue(c) == 'Color':
+                    dlg = wx.ColourDialog(self)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        color = dlg.GetColourData().GetColour()
+                        attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
+                        attr.SetReadOnly(True)
+                        attr.SetBackgroundColour(color)
+                        atomData[r][c] = color
+                        drawingData['Atoms'][r][c] = color
+                        drawAtoms.SetAttr(i,cs+2,attr)
+                    dlg.Destroy()
+                    event.StopPropagation()
+                    UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
                     
         def RowSelect(event):
@@ -940,19 +1108,27 @@ def UpdatePhaseData(self,item,data,oldPage):
         drawAtoms.SetMargins(0,0)
         drawAtoms.AutoSizeColumns(True)
         drawAtoms.SetColSize(colLabels.index('Style'),80)
+        drawAtoms.SetColSize(colLabels.index('Color'),50)
         drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
+        drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
+        for i,atom in enumerate(drawingData['Atoms']):
+            attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
+            attr.SetReadOnly(True)
+            attr.SetBackgroundColour(atom[cs+2])
+            drawAtoms.SetAttr(i,cs+2,attr)
+            drawAtoms.SetCellValue(i,cs+2,'')
         indx = drawingData['selectedAtoms']
         if indx:
             for r in range(len(atomData)):
                 if r in indx:
                     drawAtoms.SelectRow(r)
         for c in range(len(colLabels)):
-            if colLabels[c] not in ['Style','Label']:
-                attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
-                attr.SetReadOnly(True)
-                attr.SetBackgroundColour(VERY_LIGHT_GREY)
+           attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
+           attr.SetReadOnly(True)
+           attr.SetBackgroundColour(VERY_LIGHT_GREY)
+           if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
         self.dataFrame.setSizePosLeft([600,300])
         FindBonds()
@@ -997,7 +1173,34 @@ def UpdatePhaseData(self,item,data,oldPage):
                     drawAtoms.SetCellValue(r,cs+1,parms)
             dlg.Destroy()
             G2plt.PlotStructure(self,data)
-
+            
+    def DrawAtomColor(event):
+        indx = drawAtoms.GetSelectedRows()
+        if indx:
+            generalData = data['General']
+            atomData = data['Drawing']['Atoms']
+            cx,ct,cs = data['Drawing']['atomPtrs']
+            dlg = wx.ColourDialog(self)
+            if dlg.ShowModal() == wx.ID_OK:
+                color = dlg.GetColourData().GetColour()
+                for r in indx:
+                    atomData[r][cs+2] = color
+                    attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
+                    attr.SetBackgroundColour(color)
+                    drawAtoms.SetAttr(r,cs+2,attr)
+                    data['Drawing']['Atoms'][r][cs+2] = color
+            dlg.Destroy()
+            
+    def ResetAtomColors(event):
+        generalData = data['General']
+        atomData = data['Drawing']['Atoms']
+        cx,ct,cs = data['Drawing']['atomPtrs']
+        for atom in atomData:            
+            atNum = generalData['AtomTypes'].index(atom[ct])
+            atom[cs+2] = list(generalData['Color'][atNum])
+        UpdateDrawAtoms()
+        G2plt.PlotStructure(self,data)        
+        
     def SetViewPoint(event):
         indx = drawAtoms.GetSelectedRows()
         if indx:
@@ -1125,7 +1328,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     xyzB = np.array(atomB[cx:cx+3])
                     for xyz in cellArray+xyzB:
                         dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
-                        if 0 < dist <= 0.85*sumR:
+                        if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
                             if noDuplicate(xyz,atomData):
                                 newAtom = atomB[:]
                                 newAtom[cx:cx+3] = xyz
@@ -1242,7 +1445,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                 Dx = Atoms-atomA[1]
                 dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of self & disorder "bonds" < 0.5A
                 sumR = atomA[3]+Radii
-                IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))                 #get indices of bonded atoms
+                IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
                 i = atomA[0]
                 for j in IndB[0]:
                     if j > i:
@@ -1268,7 +1471,6 @@ def UpdatePhaseData(self,item,data,oldPage):
     def UpdateDrawOptions():
         import copy
         import wx.lib.colourselect as wcs
-        self.dataFrame.setSizePosLeft([300,430])
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
@@ -1291,7 +1493,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         def OnBackColor(event):
             drawingData['backColor'] = event.GetValue()
             G2plt.PlotStructure(self,data)
-
 
         def OnBallScale(event):
             drawingData['ballScale'] = ballScale.GetValue()/100.
@@ -1339,9 +1540,19 @@ def UpdatePhaseData(self,item,data,oldPage):
             drawingData['sizeH'] = value
             sizeH.SetValue("%.2f"%(value))
             G2plt.PlotStructure(self,data)
+            
+        def OnRadFactor(event):
+            try:
+                value = max(0.1,min(1.2,float(radFactor.GetValue())))
+            except ValueError:
+                value = 0.85
+            drawingData['radiusFactor'] = value
+            radFactor.SetValue("%.2f"%(value))
+            FindBonds()
+            G2plt.PlotStructure(self,data)
+            
+        
 
-        def OnPickItem(event):
-            drawingData['pickItem'] = pickChoice[pickItem.GetSelection()]
 
         dataDisplay = wx.Panel(drawOptions)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1350,7 +1561,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         mainSizer.Add((5,5),0)
         
         slopSizer = wx.BoxSizer(wx.HORIZONTAL)
-        slideSizer = wx.FlexGridSizer(6,2,5,0)
+        slideSizer = wx.FlexGridSizer(6,2)
         slideSizer.AddGrowableCol(1,1)
 
         cameraPosTxt = wx.StaticText(dataDisplay,-1,
@@ -1396,8 +1607,9 @@ def UpdatePhaseData(self,item,data,oldPage):
         
         slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
         slopSizer.Add((10,5),0)
-        slopSizer.SetMinSize(wx.Size(300,180))
-        mainSizer.Add(slopSizer,1,wx.EXPAND)
+        slopSizer.SetMinSize(wx.Size(300,10))
+        mainSizer.Add(slopSizer,0)
+        mainSizer.Add((5,5),0)
 
         flexSizer = wx.FlexGridSizer(6,2,5,0)
         flexSizer.Add(wx.StaticText(dataDisplay,-1,'View Point:  '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1407,13 +1619,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         viewPoint.SetBackgroundColour(VERY_LIGHT_GREY)
         flexSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
         
-        lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-        lineSizer.Add(wx.StaticText(dataDisplay,-1,'Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
-        backColor = wcs.ColourSelect(dataDisplay, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
-        backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
-        lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
-        flexSizer.Add(lineSizer,0,)
-
         showABC = wx.CheckBox(dataDisplay,-1,label='Show test point?')
         showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
         showABC.SetValue(drawingData['showABC'])
@@ -1439,26 +1644,346 @@ def UpdatePhaseData(self,item,data,oldPage):
         showHydrogen.SetValue(drawingData['showHydrogen'])
         flexSizer.Add(showHydrogen,0,wx.ALIGN_CENTER_VERTICAL)
 
+        lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+        lineSizer.Add(wx.StaticText(dataDisplay,-1,'Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
+        backColor = wcs.ColourSelect(dataDisplay, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
+        backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
+        lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
+        flexSizer.Add(lineSizer,0,)
+
         flexSizer.Add(wx.StaticText(dataDisplay,-1,'Hydrogen radius, A:  '),0,wx.ALIGN_CENTER_VERTICAL)
         sizeH = wx.TextCtrl(dataDisplay,-1,value='%.2f'%(drawingData['sizeH']),style=wx.TE_PROCESS_ENTER)
         sizeH.Bind(wx.EVT_TEXT_ENTER,OnSizeHatoms)
         sizeH.Bind(wx.EVT_KILL_FOCUS,OnSizeHatoms)
         flexSizer.Add(sizeH,0,wx.ALIGN_CENTER_VERTICAL)
 
-        flexSizer.Add(wx.StaticText(dataDisplay,-1,'Pick items on drawing by:  '),0,wx.ALIGN_CENTER_VERTICAL)
-        pickItem = wx.Choice(dataDisplay,-1,choices=pickChoice)
-        pickItem.Bind(wx.EVT_CHOICE, OnPickItem)
-        pickItem.SetSelection(pickChoice.index(drawingData['pickItem']))
-        flexSizer.Add(pickItem,0,wx.ALIGN_CENTER_VERTICAL)
+        flexSizer.Add(wx.StaticText(dataDisplay,-1,'Bond search factor:  '),0,wx.ALIGN_CENTER_VERTICAL)
+        radFactor = wx.TextCtrl(dataDisplay,value='%.2f'%(drawingData['radiusFactor']),style=wx.TE_PROCESS_ENTER)
+        radFactor.Bind(wx.EVT_TEXT_ENTER,OnRadFactor)
+        radFactor.Bind(wx.EVT_KILL_FOCUS,OnRadFactor)
+        flexSizer.Add(radFactor,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(flexSizer,0,)
-#        mainSizer.SetMinSize(wx.Size(300,340))          #to get sliders long enough
 
         dataDisplay.SetSizer(mainSizer)
-        self.dataFrame.SetSize(dataDisplay.Fit())
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[1] += 26                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
+
+    def UpdateDData():
+        UseList = data['Histograms']
+        generalData = data['General']
+        SGData = generalData['SGData']
+        keyList = UseList.keys()
+        keyList.sort()
+        Indx = {}
+        
+        def OnScaleRef(event):
+            Obj = event.GetEventObject()
+            UseList[Indx[Obj.GetId()]]['Scale'][1] = Obj.GetValue()
+            
+        def OnScaleVal(event):
+            Obj = event.GetEventObject()
+            try:
+                scale = float(Obj.GetValue())
+                if scale > 0:
+                    UseList[Indx[Obj.GetId()]]['Scale'][0] = scale
+            except ValueError:
+                pass
+            Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Scale'][0]))          #reset in case of error
+            
+        def OnSizeType(event):
+            Obj = event.GetEventObject()
+            UseList[Indx[Obj.GetId()]]['Size'][0] = Obj.GetValue()
+            dataDisplay.Destroy()
+            UpdateDData()
+            
+        def OnSizeRef(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            UseList[hist]['Size'][2][pid] = Obj.GetValue()
+            
+        def OnSizeVal(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            try:
+                size = float(Obj.GetValue())
+                if size > 0:
+                    UseList[hist]['Size'][1][pid] = size
+            except ValueError:
+                pass
+            Obj.SetValue("%.1f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
+            
+        def OnSizeAxis(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            UseList[hist]['Size'][3][pid] = Obj.GetValue()
+            
+        def OnStrainType(event):
+            Obj = event.GetEventObject()
+            UseList[Indx[Obj.GetId()]]['Mustrain'][0] = Obj.GetValue()
+            dataDisplay.Destroy()
+            UpdateDData()
+            
+        def OnStrainRef(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            UseList[hist]['Mustrain'][2][pid] = Obj.GetValue()
+            
+        def OnStrainVal(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            try:
+                strain = float(Obj.GetValue())
+                if strain > 0:
+                    UseList[hist]['Mustrain'][1][pid] = strain
+            except ValueError:
+                pass
+            Obj.SetValue("%.1f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
+            
+        def OnStrainAxis(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            UseList[hist]['Mustrain'][3][pid] = Obj.GetValue()
+        
+        DData.DestroyChildren()
+        dataDisplay = wx.Panel(DData)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        for item in keyList:
+            histData = UseList[item]
+            mainSizer.Add(wx.StaticText(dataDisplay,-1,50*'_'))                
+            mainSizer.Add((5,5),0)
+            mainSizer.Add(wx.StaticText(dataDisplay,-1,'  '+item),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((0,5),0)
+            scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            scaleRef = wx.CheckBox(dataDisplay,label=' Scale factor: ')
+            scaleRef.SetValue(UseList[item]['Scale'][1])
+            Indx[scaleRef.GetId()] = item
+            scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
+            scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
+            scaleVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                '%.4f'%(UseList[item]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
+            Indx[scaleVal.GetId()] = item
+            scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
+            scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
+            scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(scaleSizer)
+            mainSizer.Add((0,5),0)
+                
+            if item[:4] == 'PWDR':
+                sizeSizer = wx.BoxSizer(wx.HORIZONTAL)
+                choices = ['isotropic','uniaxial',]
+                sizeType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=UseList[item]['Size'][0],choices=choices,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                sizeType.Bind(wx.EVT_COMBOBOX, OnSizeType)
+                Indx[sizeType.GetId()] = item
+                sizeSizer.Add(sizeType)
+                sizeSizer.Add((5,0),0)
+                if UseList[item]['Size'][0] == 'isotropic':
+                    sizeRef = wx.CheckBox(dataDisplay,label=' Cryst. size: ')
+                    sizeRef.SetValue(UseList[item]['Size'][2][0])
+                    Indx[sizeRef.GetId()] = [item,0]
+                    sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
+                    sizeSizer.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
+                    sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                        '%.1f'%(UseList[item]['Size'][1][0]),style=wx.TE_PROCESS_ENTER)
+                    Indx[sizeVal.GetId()] = [item,0]
+                    sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
+                    sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
+                    sizeSizer.Add(sizeVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    mainSizer.Add(sizeSizer)
+                    mainSizer.Add((0,5),0)
+                elif UseList[item]['Size'][0] == 'uniaxial':
+                    sizeSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    axes = zip(['H:','K:','L:'],UseList[item]['Size'][3],range(3))                    
+                    for ax,H,i in axes:                            
+                        Axis = wx.SpinCtrl(dataDisplay,wx.ID_ANY,ax,min=-3,max=3,size=wx.Size(40,20))
+                        Axis.SetValue(H)
+                        Indx[Axis.GetId()] = [item,i]
+                        sizeSizer.Add(Axis)
+                        Axis.Bind(wx.EVT_SPINCTRL, OnSizeAxis)
+                    mainSizer.Add(sizeSizer)
+                    mainSizer.Add((0,5),0)
+                    sizeSizer = wx.BoxSizer(wx.HORIZONTAL)
+                    parms = zip([' Equatorial size: ',' Axial size: '],UseList[item]['Size'][1],
+                        UseList[item]['Size'][2],range(2))
+                    for Pa,val,ref,id in parms:
+                        sizeRef = wx.CheckBox(dataDisplay,label=Pa)
+                        sizeRef.SetValue(ref)
+                        Indx[sizeRef.GetId()] = [item,id]
+                        sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
+                        sizeSizer.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
+                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.1f'%(val),style=wx.TE_PROCESS_ENTER)
+                        Indx[sizeVal.GetId()] = [item,id]
+                        sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
+                        sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
+                        sizeSizer.Add(sizeVal,0,wx.ALIGN_CENTER_VERTICAL)
+                        sizeSizer.Add((5,0),0)
+                    sizeSizer.Add((5,0),0)                    
+                    mainSizer.Add(sizeSizer)
+                
+                strainSizer = wx.BoxSizer(wx.HORIZONTAL)
+                choices = ['isotropic','uniaxial','generalized',]
+                strainType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=UseList[item]['Mustrain'][0],choices=choices,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                strainType.Bind(wx.EVT_COMBOBOX, OnStrainType)
+                Indx[strainType.GetId()] = item
+                strainSizer.Add(strainType)
+                strainSizer.Add((5,0),0)
+                if UseList[item]['Mustrain'][0] == 'isotropic':
+                    strainRef = wx.CheckBox(dataDisplay,label=' microstrain: ')
+                    strainRef.SetValue(UseList[item]['Mustrain'][2][0])
+                    Indx[strainRef.GetId()] = [item,0]
+                    strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
+                    strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
+                    strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                        '%.4f'%(UseList[item]['Mustrain'][1][0]),style=wx.TE_PROCESS_ENTER)
+                    Indx[strainVal.GetId()] = [item,0]
+                    strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
+                    strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
+                    strainSizer.Add(strainVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    mainSizer.Add(strainSizer)
+                    mainSizer.Add((0,5),0)
+                elif UseList[item]['Mustrain'][0] == 'uniaxial':
+                    strainSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    axes = zip(['H:','K:','L:'],UseList[item]['Mustrain'][3],range(3))                    
+                    for ax,H,i in axes:                            
+                        Axis = wx.SpinCtrl(dataDisplay,wx.ID_ANY,ax,min=-3,max=3,size=wx.Size(40,20))
+                        Axis.SetValue(H)
+                        Indx[Axis.GetId()] = [item,i]
+                        strainSizer.Add(Axis)
+                        Axis.Bind(wx.EVT_SPINCTRL, OnStrainAxis)
+                    mainSizer.Add(strainSizer)
+                    mainSizer.Add((0,5),0)
+                    strainSizer = wx.BoxSizer(wx.HORIZONTAL)
+                    parms = zip([' Equatorial mustrain: ',' Axial mustrain: '],
+                        UseList[item]['Mustrain'][1],UseList[item]['Mustrain'][2],range(2))
+                    for Pa,val,ref,id in parms:
+                        strainRef = wx.CheckBox(dataDisplay,label=Pa)
+                        strainRef.SetValue(ref)
+                        Indx[strainRef.GetId()] = [item,id]
+                        strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
+                        strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
+                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.4f'%(val),style=wx.TE_PROCESS_ENTER)
+                        Indx[strainVal.GetId()] = [item,id]
+                        strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
+                        strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
+                        strainSizer.Add(strainVal,0,wx.ALIGN_CENTER_VERTICAL)
+                        strainSizer.Add((5,0),0)
+                    strainSizer.Add((5,0),0)                    
+                    mainSizer.Add(strainSizer)
+                elif UseList[item]['Mustrain'][0] == 'generalized':
+                    strainSizer.Add(wx.StaticText(dataDisplay,-1,' Coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    mainSizer.Add(strainSizer)
+                    mainSizer.Add((0,5),0)
+                    Snames = G2spc.MustrainNames(SGData)
+                    numb = len(Snames)
+                    if len(UseList[item]['Mustrain'][1]) < numb:
+                        UseList[item]['Mustrain'][1] = numb*[0.0,]
+                        UseList[item]['Mustrain'][2] = numb*[False,]
+                    parms = zip(Snames,UseList[item]['Mustrain'][1],UseList[item]['Mustrain'][2],range(numb))
+                    strainSizer = wx.FlexGridSizer(numb%3+1,6,5,5)
+                    for Pa,val,ref,id in parms:
+                        strainRef = wx.CheckBox(dataDisplay,label=Pa)
+                        strainRef.SetValue(ref)
+                        Indx[strainRef.GetId()] = [item,id]
+                        strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
+                        strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
+                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.4f'%(val),style=wx.TE_PROCESS_ENTER)
+                        Indx[strainVal.GetId()] = [item,id]
+                        strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
+                        strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
+                        strainSizer.Add(strainVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    mainSizer.Add(strainSizer)
+            elif item[:4] == 'HKLF':
+                pass
+            else:
+                print 'error - unknown histogram type'      #place holder - never invoked
+        mainSizer.Add((5,5),0)
+
+
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[0] = max(Size[0],300)
+        Size[1] += 26                           #compensate for status bar
+        DData.Fit()
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
+        
+    def OnHklfAdd(event):
+        UseList = data['Histograms']
+        keyList = UseList.keys()
+        TextList = []
+        if self.PatternTree.GetCount():
+            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            while item:
+                name = self.PatternTree.GetItemText(item)
+                if name not in keyList and 'HKLF' in name:
+                    TextList.append(name)
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                        
+            dlg = wx.MultiChoiceDialog(self, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetSelections()
+                    for i in result:
+                        histoName = TextList[i]
+                        UseList[histoName] = {'Histogram':histoName,'Scale':[1.0,True],
+                            'Extinction':['Lorentzian','Secondary Type I',{'Eg':[0.0,False]},]}                        
+                    data['Histograms'] = UseList
+                    UpdateDData()
+            finally:
+                dlg.Destroy()
+        
+    def OnPwdrAdd(event):
+        UseList = data['Histograms']
+        keyList = UseList.keys()
+        TextList = []
+        if self.PatternTree.GetCount():
+            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            while item:
+                name = self.PatternTree.GetItemText(item)
+                if name not in keyList and 'PWDR' in name:
+                    TextList.append(name)
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            dlg = wx.MultiChoiceDialog(self, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetSelections()
+                    for i in result: 
+                        histoName = TextList[i]
+                        UseList[histoName] = {'Histogram':histoName,'Scale':[1.0,False],
+                            'Size':['isotropic',[10000.,0,],[False,False],[0,0,1]],
+                            'Mustrain':['isotropic',[0.0,0,],[False,False],[0,0,1]],
+                            'MDtexture':[[0,0,1],1.0,False],
+                            'Extinction':[0.0,False]}
+                    data['Histograms'] = UseList
+                    UpdateDData()
+            finally:
+                dlg.Destroy()
+        
+    def OnDataDelete(event):
+        UseList = data['Histograms']
+        keyList = UseList.keys()
+        keyList.sort()
+        DelList = []
+        if UseList:
+            DelList = []
+            dlg = wx.MultiChoiceDialog(self, 
+                'Which histogram to delete from this phase?', 'Delete histogram', 
+                keyList, wx.CHOICEDLG_STYLE)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetSelections()
+                    for i in result: DelList.append(keyList[i])
+                    for i in DelList:
+                        del UseList[i]
+                    UpdateDData()
+            finally:
+                dlg.Destroy()
 
     def FillPawleyReflectionsGrid():
         generalData = data['General']
-
         print 'Pawley reflections'
 
     def OnPageChanged(event):
@@ -1476,8 +2001,14 @@ def UpdatePhaseData(self,item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
             FillAtomsGrid()
         elif text == 'General':
-            FillGeneralGrid()
+            UpdateGeneral()
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+        elif text == 'Data':
+            self.dataFrame.SetMenuBar(self.dataFrame.DataMenu)
+            self.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
+            self.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
+            self.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
+            UpdateDData()            
         elif text == 'Draw Options':
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
             UpdateDrawOptions()
@@ -1486,6 +2017,8 @@ def UpdatePhaseData(self,item,data,oldPage):
             self.dataFrame.SetMenuBar(self.dataFrame.DrawAtomsMenu)
             self.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
             self.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
+            self.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
+            self.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
             self.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
             self.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
             self.dataFrame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2gd.wxID_DRAWTRANSFORM)
@@ -1497,24 +2030,19 @@ def UpdatePhaseData(self,item,data,oldPage):
         else:
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
         event.Skip()
-
-    if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    PhaseName = self.PatternTree.GetItemText(item)
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    self.dataFrame.SetLabel('Phase Data for '+PhaseName)
-    self.dataFrame.CreateStatusBar()
-    self.dataDisplay = G2gd.GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
-
-    General = G2gd.GSGrid(self.dataDisplay)
-    FillGeneralGrid()
+        
+    General = wx.Window(self.dataDisplay)
     self.dataDisplay.AddPage(General,'General')
-
+    SetupGeneral()
     GeneralData = data['General']
+    UpdateGeneral()
+
     if GeneralData['Type'] == 'Pawley':
         PawleyRefl = G2gd.GSGrid(self.dataDisplay)
         self.dataDisplay.AddPage(PawleyRefl,'Pawley reflections')
     else:
+        DData = wx.Window(self.dataDisplay)
+        self.dataDisplay.AddPage(DData,'Data')
         Atoms = G2gd.GSGrid(self.dataDisplay)
         self.dataDisplay.AddPage(Atoms,'Atoms')
         drawOptions = wx.Window(self.dataDisplay)

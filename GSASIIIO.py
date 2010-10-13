@@ -927,9 +927,11 @@ def ReadEXPPhase(self,filename):
                 Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)
                 Atoms.append(Atom)
     Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
-    Phase['General'] = {'Name':PhaseName,'Type':Ptype,'SGData':SGData,'Cell':[False,]+abc+angles+[Volume,],'Scale':[False,1.0]}
+    Phase['General'] = {'Name':PhaseName,'Type':Ptype,'SGData':SGData,
+        'Cell':[False,]+abc+angles+[Volume,]}
     Phase['Atoms'] = Atoms
     Phase['Drawing'] = {}
+    Phase['Histograms'] = {}
     return Phase
        
 def ReadPDBPhase(filename):
@@ -995,9 +997,11 @@ def ReadPDBPhase(filename):
         PhaseName = Compnd
     else:
         PhaseName = 'None'
-    Phase['General'] = {'Name':PhaseName,'Type':'macromolecular','SGData':SGData,'Cell':[False,]+cell+[Volume,],'Scale':[False,1.0]}
+    Phase['General'] = {'Name':PhaseName,'Type':'macromolecular','SGData':SGData,
+        'Cell':[False,]+cell+[Volume,]}
     Phase['Atoms'] = Atoms
     Phase['Drawing'] = {}
+    Phase['Histograms'] = {}
     
     return Phase
     

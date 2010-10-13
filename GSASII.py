@@ -16,6 +16,7 @@ import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
+import GSASIIspc as G2spc
 import OpenGL as ogl
 
 # print versions
@@ -806,11 +807,11 @@ class GSASII(wx.Frame):
             PhaseName = dlg.GetValue()
         dlg.Destroy()
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-        SGData = {'SpGrp':'P 1'}
+        E,SGData = G2spc.SpcGroup('P 1')
         self.PatternTree.SetItemPyData(sub, \
-            {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
-            'Scale':[False,1.0],'Pawley dmin':0.25},'Atoms':[],'Drawing':{}})
-
+            {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,
+            'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
+            'Pawley dmin':1.0},'Atoms':[],'Drawing':{},'Histograms':{}})
         
     def OnDeletePhase(self,event):
         if self.dataFrame:

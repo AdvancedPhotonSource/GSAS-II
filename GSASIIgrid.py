@@ -13,9 +13,13 @@ import GSASIIphsGUI as G2phG
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSTESTADD, wxID_ATONTESTINSERT,
 ] = [wx.NewId() for _init_coll_Atom_Items in range(8)]
 
-[ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM,
-    wxID_DRAWDELETE, wxID_DRAWFILLCELL, wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD,
-] = [wx.NewId() for _init_coll_DrawAtom_Items in range(8)]
+[ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
+] = [wx.NewId() for _init_coll_Data_Items in range(3)]
+
+[ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
+    wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
+    wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD,
+] = [wx.NewId() for _init_coll_DrawAtom_Items in range(10)]
 
 [ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG, 
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL,
@@ -44,6 +48,9 @@ class DataFrame(wx.Frame):
         
     def _init_coll_AtomsMenu(self,parent):
         parent.Append(menu=self.AtomEdit, title='Edit')
+        
+    def _init_coll_DataMenu(self,parent):
+        parent.Append(menu=self.DataEdit, title='Edit')
         
     def _init_coll_DrawAtomsMenu(self,parent):
         parent.Append(menu=self.DrawAtomEdit, title='Edit')        
@@ -84,11 +91,23 @@ class DataFrame(wx.Frame):
         parent.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
             help='Select atoms to transform first')
             
+    def _init_coll_Data_Items(self,parent):
+        parent.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
+            help='Select new powder histograms to be used for this phase')
+        parent.Append(id=wxID_HKLFADD, kind=wx.ITEM_NORMAL,text='Add single crystal histograms',
+            help='Select new single crystal histograms to be used for this phase')
+        parent.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Delete histograms',
+            help='Delete histograms from use for this phase')
+            
     def _init_coll_DrawAtom_Items(self,parent):
         parent.Append(id=wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
             help='Select atoms first')
         parent.Append(id=wxID_DRAWATOMLABEL, kind=wx.ITEM_NORMAL,text='Atom label',
             help='Select atoms first')
+        parent.Append(id=wxID_DRAWATOMCOLOR, kind=wx.ITEM_NORMAL,text='Atom color',
+            help='Select atoms first')
+        parent.Append(id=wxID_DRAWATOMRESETCOLOR, kind=wx.ITEM_NORMAL,text='Reset atom colors',
+            help='Resets all atom colors to defaults')
         parent.Append(id=wxID_DRAWVIEWPOINT, kind=wx.ITEM_NORMAL,text='View point',
             help='View point is 1st atom selected')
         parent.Append(id=wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',
@@ -150,6 +169,7 @@ class DataFrame(wx.Frame):
         self.BlankMenu = wx.MenuBar()
         
         self.AtomsMenu = wx.MenuBar()
+        self.DataMenu = wx.MenuBar()
         self.DrawAtomsMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
@@ -158,6 +178,7 @@ class DataFrame(wx.Frame):
         self.IndPeaksMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
+        self.DataEdit = wx.Menu(title='')
         self.DrawAtomEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
@@ -167,6 +188,8 @@ class DataFrame(wx.Frame):
         self.IndexEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
+        self._init_coll_DataMenu(self.DataMenu)
+        self._init_coll_Data_Items(self.DataEdit)
         self._init_coll_DrawAtomsMenu(self.DrawAtomsMenu)
         self._init_coll_DrawAtom_Items(self.DrawAtomEdit)
         self._init_coll_ImageMenu(self.ImageMenu)
@@ -217,6 +240,20 @@ class DataFrame(wx.Frame):
         self.ClearBackground()
         self.DestroyChildren()
                    
+class GSNoteBook(wx.Notebook):
+    def __init__(self, parent, name='',size = None):
+        wx.Notebook.__init__(self, parent, -1, name=name, style= wx.BK_TOP)
+        if size: self.SetSize(size)
+                                                      
+    def Clear(self):        
+        GSNoteBook.DeleteAllPages(self)
+        
+    def FindPage(self,name):
+        numPage = self.GetPageCount()
+        for page in range(numPage):
+            if self.GetPageText(page) == name:
+                return page
+        
 class GSGrid(wg.Grid):
     def __init__(self, parent, name=''):
         wg.Grid.__init__(self,parent,-1,name=name)                    
@@ -229,14 +266,6 @@ class GSGrid(wg.Grid):
         self.SetCellBackgroundColour(r,c,color)
         self.SetReadOnly(r,c,isReadOnly=readonly)
                         
-class GSNoteBook(wx.Notebook):
-    def __init__(self, parent, name='',size = None):
-        wx.Notebook.__init__(self, parent, -1, name=name, style= wx.BK_TOP)
-        if size: self.SetSize(size)
-                                                      
-    def Clear(self):        
-        GSNoteBook.DeleteAllPages(self)
-        
 class Table(wg.PyGridTableBase):
     def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):
         wg.PyGridTableBase.__init__(self)

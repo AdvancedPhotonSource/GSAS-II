@@ -5,6 +5,8 @@ import matplotlib as mpl
 import math
 import copy
 import time
+import sys
+import random as ran
 import cPickle
 import GSASIIpath
 import GSASIIlattice as G2lat
@@ -31,7 +33,7 @@ class SymOpDialog(wx.Dialog):
         panel = wx.Panel(self)
         self.SGData = SGData
         self.New = New
-        self.OpSelected = [0,0,0,0,0,0]
+        self.OpSelected = [0,0,0,[0,0,0],False]
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         if SGData['SGInv']:
@@ -95,16 +97,15 @@ class SymOpDialog(wx.Dialog):
         self.Fit()
 
     def OnOpSelect(self,event):
-        self.OpSelected = [0,0,0,[]]
         if self.SGData['SGInv']:
             self.OpSelected[0] = self.inv.GetSelection()
         if self.SGData['SGLatt'] != 'P':
             self.OpSelected[1] = self.latt.GetSelection()
         self.OpSelected[2] = self.oprs.GetSelection()
         for i in range(3):
-            self.OpSelected[3].append(float(self.cell[i].GetValue()))
+            self.OpSelected[3][i] = float(self.cell[i].GetValue())
         if self.New:
-            self.OpSelected.append(self.new.GetSelection())
+            self.OpSelected[4] = self.new.GetSelection()
 
     def GetSelection(self):
         return self.OpSelected
@@ -221,7 +222,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             for line in text:
                 Text += line+'\n'
             wx.MessageBox(Text,caption=msg,style=Style)
-            dataDisplay.Destroy()           #needed to clear away bad cellSizer, etc.
+            dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
             UpdateGeneral()
             
         def OnCellRef(event):
@@ -595,7 +596,11 @@ def UpdatePhaseData(self,item,data,oldPage):
                                     Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
                         Atoms.SetCellValue(r,c,parms)
             elif Atoms.GetColLabelValue(c) in ['Name']:
-                atomData[r][c] = Atoms.GetCellValue(r,c)
+                value = Atoms.GetCellValue(r,c)
+                atomData[r][c] = value
+                ID = [atomData[r][-1],]
+                if 'Atoms' in data['Drawing']:
+                    DrawAtomsReplaceByIDs(data['Drawing'],atomData[r],ID)
             elif Atoms.GetColLabelValue(c) in ['x','y','z']:
                 atomData[r][c] = float(Atoms.GetCellValue(r,c))
                 ci = colLabels.index('x')
@@ -704,6 +709,11 @@ def UpdatePhaseData(self,item,data,oldPage):
                 PE.Destroy()
                 SetupGeneral()
                 FillAtomsGrid()
+                value = Atoms.GetCellValue(r,c)
+                atomData[r][c] = value
+                ID = [atomData[r][-1],]
+                if 'Atoms' in data['Drawing']:
+                    DrawAtomsReplaceByIDs(data['Drawing'],atomData[r],ID)
             else:
                 event.Skip()
 
@@ -767,15 +777,19 @@ def UpdatePhaseData(self,item,data,oldPage):
         atomData = data['Atoms']
         generalData = data['General']
         Ncol = Atoms.GetNumberCols()
+        atId = ran.randint(0,sys.maxint)
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
         if generalData['Type'] == 'macromolecular':
-            atomData.append([0,'UNK','','UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0])
+            atomData.append([0,'UNK','','UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'nuclear':
-            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
+            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'magnetic':
-            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
+            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
         SetupGeneral()
+        if 'Drawing' in data:            
+            DrawAtomAdd(data['Drawing'],atomData[-1])
+            G2plt.PlotStructure(self,data)
 
     def OnAtomInsert(event):
         AtomInsert(0,0,0)
@@ -783,13 +797,11 @@ def UpdatePhaseData(self,item,data,oldPage):
         event.StopPropagation()
         
     def OnAtomTestInsert(event):
-        try:
+        if 'Drawing' in data:
             drawData = data['Drawing']
             x,y,z = drawData['testPos']
             AtomAdd(x,y,z)
-        except:
-            AtomAdd(0,0,0)
-        FillAtomsGrid()
+            FillAtomsGrid()
         event.StopPropagation()
             
     def AtomInsert(x,y,z):
@@ -801,23 +813,29 @@ def UpdatePhaseData(self,item,data,oldPage):
             Ncol = Atoms.GetNumberCols()
             E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
             Sytsym,Mult = G2spc.SytSym([0,0,0],SGData)
+            atId = ran.randint(0,sys.maxint)
             if generalData['Type'] == 'macromolecular':
-                atomData.insert(indx,[0,'UNK','','UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0])
+                atomData.insert(indx,[0,'UNK','','UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
             elif generalData['Type'] == 'nuclear':
-                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0])
+                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
             elif generalData['Type'] == 'magnetic':
-                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0])
+                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
             SetupGeneral()
 
     def AtomDelete(event):
         indx = Atoms.GetSelectedRows()
+        IDs = []
         if indx:
             atomData = data['Atoms']
             indx.reverse()
             for ind in indx:
                 atom = atomData[ind]
+                IDs.append(atom[-1])
                 del atomData[ind]
-            FillAtomsGrid()
+            if 'Atoms' in data['Drawing']:
+                DrawAtomsDeleteByIDs(IDs)
+                FillAtomsGrid()
+                G2plt.PlotStructure(self,data)
         event.StopPropagation()
 
     def AtomRefine(event):
@@ -867,7 +885,6 @@ def UpdatePhaseData(self,item,data,oldPage):
                     Cell = np.array(Cell)
                     cent = SGData['SGCen'][Cent]
                     M,T = SGData['SGOps'][Opr]
-                    print M,T
                     for ind in indx:
                         XYZ = np.array(atomData[ind][cx:cx+3])
                         XYZ = np.inner(M,XYZ)+T
@@ -916,32 +933,64 @@ def UpdatePhaseData(self,item,data,oldPage):
         if not drawingData:                 #fill with defaults if empty
             drawingData = copy.copy(defaultDrawing)
             drawingData['Atoms'] = []
+        cx,ct,cs = [0,0,0]
+        if generalData['Type'] == 'nuclear':
+            cx,ct,cs = [2,1,6]         #x, type & style
+        elif generalData['Type'] == 'macromolecular':
+            cx,ct,cs = [5,4,9]         #x, type & style
+        elif generalData['Type'] == 'magnetic':
+            cx,ct,cs = [2,1,6]         #x, type & style
+#        elif generalData['Type'] == 'modulated':
+#           ?????   for future
         if not drawingData['Atoms']:
             for atom in atomData:
-                if generalData['Type'] == 'nuclear':
-                    atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
-                        ['',]+[[255,255,255],]+atom[9:17]+[[]]][0]
-                    cx,ct,cs = [2,1,6]         #x, type & style
-                elif generalData['Type'] == 'macromolecular':
-                    try:
-                        oneLetter = AA3letter.index(atom[1])
-                    except ValueError:
-                        oneLetter = -1
-                    atomInfo = [[atom[1].strip()+atom[0],]+
-                        [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
-                        atom[6:9]+['1',]+['sticks',]+['',]+[[255,255,255],]+atom[12:20]+[[]]][0]
-                    cx,ct,cs = [5,4,9]         #x, type & style
-                elif generalData['Type'] == 'magnetic':
-                    atomData = [atom[:2]+atom[3:6]+['vdW balls',]+['',]+atom[9:20]+[[]]][0]
-                    cx,ct,cs = [2,1,6]         #x, type & style
-#                elif generalData['Type'] == 'modulated':
-#                   ?????   for future
-                atNum = generalData['AtomTypes'].index(atom[ct])
-                atomInfo[cs+2] = list(generalData['Color'][atNum])
-                drawingData['Atoms'].append(atomInfo)
+                DrawAtomAdd(drawingData,atom)
             drawingData['atomPtrs'] = [cx,ct,cs]
             data['Drawing'] = drawingData
-
+            
+    def MakeDrawAtom(atom,oldatom=None):
+        AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+            'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
+        AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
+            'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
+        generalData = data['General']
+        if generalData['Type'] == 'nuclear':
+            if oldatom:
+                atomInfo = [atom[:2]+oldatom[2:]][0]
+            else:
+                atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
+                    ['',]+[[255,255,255],]+atom[9:]+[[]]][0]
+            ct,cs = [1,8]         #type & color
+        elif generalData['Type'] == 'macromolecular':
+            try:
+                oneLetter = AA3letter.index(atom[1])
+            except ValueError:
+                oneLetter = -1
+            atomInfo = [[atom[1].strip()+atom[0],]+
+                [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
+                atom[6:9]+['1',]+['sticks',]+['',]+[[255,255,255],]+atom[12:]+[[]]][0]
+            ct,cs = [4,11]         #type & color
+        elif generalData['Type'] == 'magnetic':
+            if oldatom:
+                atomInfo = [atom[:2]+oldatom[3:]][0]
+            else:
+                atomInfo = [atom[:2]+atom[3:6]+['vdW balls',]+['',]+atom[9:]+[[]]][0]
+            ct,cs = [1,8]         #type & color
+#        elif generalData['Type'] == 'modulated':
+#           ?????   for future
+        atNum = generalData['AtomTypes'].index(atom[ct])
+        atomInfo[cs] = list(generalData['Color'][atNum])
+        return atomInfo
+            
+    def DrawAtomAdd(drawingData,atom):
+        drawingData['Atoms'].append(MakeDrawAtom(atom))
+        
+    def DrawAtomsReplaceByIDs(drawingData,atom,IDs):
+        atomData = drawingData['Atoms']
+        indx = FindAtomIndexByIDs(atomData,IDs)
+        for ind in indx:
+            atomData[ind] = MakeDrawAtom(atom,atomData[ind])
+            
     def UpdateDrawAtoms():
         generalData = data['General']
         SetupDrawingData()
@@ -1131,6 +1180,7 @@ def UpdatePhaseData(self,item,data,oldPage):
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
         self.dataFrame.setSizePosLeft([600,300])
+        
         FindBonds()
         G2plt.PlotStructure(self,data)
 
@@ -1231,7 +1281,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             dlg = SymOpDialog(self,SGData,False)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell = dlg.GetSelection()
+                    Inv,Cent,Opr,Cell,New = dlg.GetSelection()
                     Cell = np.array(Cell)
                     cent = SGData['SGCen'][Cent]
                     M,T = SGData['SGOps'][Opr]
@@ -1273,7 +1323,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             dlg = SymOpDialog(self,SGData,False)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell = dlg.GetSelection()
+                    Inv,Cent,Opr,Cell,New = dlg.GetSelection()
                     Cell = np.array(Cell)
                     cent = SGData['SGCen'][Cent]
                     M,T = SGData['SGOps'][Opr]
@@ -1335,7 +1385,6 @@ def UpdatePhaseData(self,item,data,oldPage):
                                 atomData.append(newAtom)
             data['Drawing']['Atoms'] = atomData
             UpdateDrawAtoms()
-            FindBonds()
             G2plt.PlotStructure(self,data)
             
     def FillUnitCell(event):
@@ -1417,6 +1466,7 @@ def UpdatePhaseData(self,item,data,oldPage):
     def FindBonds():                    #uses numpy & masks - very fast even for proteins!
         import numpy.ma as ma
         cx,ct,cs = data['Drawing']['atomPtrs']
+        hydro = data['Drawing']['showHydrogen']
         atomData = data['Drawing']['Atoms']
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -1431,16 +1481,22 @@ def UpdatePhaseData(self,item,data,oldPage):
             atom[-1] = []               #clear out old bonds
         Indx = range(len(atomData))
         Atoms = []
-        Types = []
+        Styles = []
         Radii = []
         for atom in atomData:
             Atoms.append(np.array(atom[cx:cx+3]))
-            Types.append(atom[cs])
-            Radii.append(radii[atomTypes.index(atom[ct])])
+            Styles.append(atom[cs])
+            try:
+                if not hydro and atom[ct] == 'H':
+                    Radii.append(0.0)
+                else:
+                    Radii.append(radii[atomTypes.index(atom[ct])])
+            except ValueError:          #changed atom type!
+                Radii.append(0.20)
         Atoms = np.array(Atoms)
         Radii = np.array(Radii)
-        IATR = zip(Indx,Atoms,Types,Radii)
-        for atomA in IATR:
+        IASR = zip(Indx,Atoms,Styles,Radii)
+        for atomA in IASR:
             if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
                 Dx = Atoms-atomA[1]
                 dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of self & disorder "bonds" < 0.5A
@@ -1449,9 +1505,9 @@ def UpdatePhaseData(self,item,data,oldPage):
                 i = atomA[0]
                 for j in IndB[0]:
                     if j > i:
-                        if Types[i] == 'polyhedra':
+                        if Styles[i] == 'polyhedra':
                             atomData[i][-1].append(np.inner(Amat,Dx[j]))
-                        elif Types[j] != 'polyhedra':
+                        elif Styles[j] != 'polyhedra':
                             atomData[i][-1].append(Dx[j]*Radii[i]/sumR[j])
                             atomData[j][-1].append(-Dx[j]*Radii[j]/sumR[j])
 
@@ -1462,12 +1518,38 @@ def UpdatePhaseData(self,item,data,oldPage):
             atomData = data['Drawing']['Atoms']
             indx.reverse()
             for ind in indx:
-                atom = atomData[ind]
                 del atomData[ind]
             UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
         event.StopPropagation()
-
+        
+    def FindAtomIndexByIDs(atomData,IDs):
+        indx = []
+        for i,atom in enumerate(atomData):
+            if atom[-2] in IDs:
+                indx.append(i)
+        return indx
+        
+    def DrawAtomsDeleteByIDs(IDs):
+        atomData = data['Drawing']['Atoms']
+        indx = FindAtomIndexByIDs(atomData,IDs)
+        indx.reverse()
+        for ind in indx:
+            del atomData[ind]
+            
+    def ChangeDrawAtomsByIDs(colName,IDs,value):
+        atomData = data['Drawing']['Atoms']
+        cx,ct,cs = data['Drawing']['atomPtrs']
+        if colName == 'Name':
+            col = ct-1
+        elif colName == 'Type':
+            col = ct
+        elif colName == 'I/A':
+            col = cs
+        indx = FindAtomIndexByIDs(atomData,IDs)
+        for ind in indx:
+            atomData[ind][col] = value
+                
     def UpdateDrawOptions():
         import copy
         import wx.lib.colourselect as wcs
@@ -1530,6 +1612,7 @@ def UpdatePhaseData(self,item,data,oldPage):
 
         def OnShowHyd(event):
             drawingData['showHydrogen'] = showHydrogen.GetValue()
+            FindBonds()
             G2plt.PlotStructure(self,data)
 
         def OnSizeHatoms(event):
@@ -1678,6 +1761,12 @@ def UpdatePhaseData(self,item,data,oldPage):
         keyList.sort()
         Indx = {}
         
+        def OnShowData(event):
+            Obj = event.GetEventObject()
+            hist = Indx[Obj.GetId()]
+            UseList[hist]['Show'] = Obj.GetValue()
+            UpdateDData()
+        
         def OnScaleRef(event):
             Obj = event.GetEventObject()
             UseList[Indx[Obj.GetId()]]['Scale'][1] = Obj.GetValue()
@@ -1717,8 +1806,13 @@ def UpdatePhaseData(self,item,data,oldPage):
         def OnSizeAxis(event):
             Obj = event.GetEventObject()
             hist,pid = Indx[Obj.GetId()]
+            axis = np.array(UseList[hist]['Size'][3])
             UseList[hist]['Size'][3][pid] = Obj.GetValue()
-            
+            new = np.array(UseList[hist]['Size'][3])
+            if not np.any(new):
+                UseList[hist]['Size'][3] += new-axis
+            Obj.SetValue(UseList[hist]['Size'][3][pid])
+                        
         def OnStrainType(event):
             Obj = event.GetEventObject()
             UseList[Indx[Obj.GetId()]]['Mustrain'][0] = Obj.GetValue()
@@ -1735,7 +1829,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             hist,pid = Indx[Obj.GetId()]
             try:
                 strain = float(Obj.GetValue())
-                if strain > 0:
+                if strain >= 0:
                     UseList[hist]['Mustrain'][1][pid] = strain
             except ValueError:
                 pass
@@ -1744,8 +1838,58 @@ def UpdatePhaseData(self,item,data,oldPage):
         def OnStrainAxis(event):
             Obj = event.GetEventObject()
             hist,pid = Indx[Obj.GetId()]
+            axis = np.array(UseList[hist]['Mustrain'][3])
             UseList[hist]['Mustrain'][3][pid] = Obj.GetValue()
-        
+            new = np.array(UseList[hist]['Mustrain'][3])
+            if not np.any(new):
+                UseList[hist]['Mustrain'][3] += new-axis
+            Obj.SetValue(UseList[hist]['Mustrain'][3][pid])
+
+        def OnMDRef(event):
+            Obj = event.GetEventObject()
+            hist = Indx[Obj.GetId()]
+            UseList[hist]['MDtexture'][1][pid] = Obj.GetValue()
+            
+        def OnMDVal(event):
+            Obj = event.GetEventObject()
+            hist = Indx[Obj.GetId()]
+            try:
+                mdVal = float(Obj.GetValue())
+                if mdVal > 0:
+                    UseList[hist]['MDtexture'][0] = mdVal
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[hist]['MDtexture'][0]))          #reset in case of error
+            
+        def OnMDAxis(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            axis = np.array(UseList[hist]['MDtexture'][2])
+            UseList[hist]['MDtexture'][2][pid] = Obj.GetValue()
+            new = np.array(UseList[hist]['MDtexture'][2])
+            if not np.any(new):
+                UseList[hist]['MDtexture'][2] += new-axis
+            Obj.SetValue(UseList[hist]['MDtexture'][2][pid])
+            
+        def OnExtRef(event):
+            Obj = event.GetEventObject()
+            UseList[Indx[Obj.GetId()]]['Extinction'][1] = Obj.GetValue()
+            
+        def OnExtVal(event):
+            Obj = event.GetEventObject()
+            try:
+                ext = float(Obj.GetValue())
+                if ext >= 0:
+                    UseList[Indx[Obj.GetId()]]['Extinction'][0] = ext
+            except ValueError:
+                pass
+            Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Extinction'][0]))          #reset in case of error
+            
+        def checkAxis(axis):
+            if not np.any(np.array(axis)):
+                return False
+            return axis
+            
         DData.DestroyChildren()
         dataDisplay = wx.Panel(DData)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1754,24 +1898,29 @@ def UpdatePhaseData(self,item,data,oldPage):
             histData = UseList[item]
             mainSizer.Add(wx.StaticText(dataDisplay,-1,50*'_'))                
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(dataDisplay,-1,'  '+item),0,wx.ALIGN_CENTER_VERTICAL)
+            showData = wx.CheckBox(dataDisplay,label=' Show '+item)
+            showData.SetValue(UseList[item]['Show'])
+            Indx[showData.GetId()] = item
+            showData.Bind(wx.EVT_CHECKBOX, OnShowData)
+            mainSizer.Add(showData,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
-            scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
-            scaleRef = wx.CheckBox(dataDisplay,label=' Scale factor: ')
-            scaleRef.SetValue(UseList[item]['Scale'][1])
-            Indx[scaleRef.GetId()] = item
-            scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
-            scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
-            scaleVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                '%.4f'%(UseList[item]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
-            Indx[scaleVal.GetId()] = item
-            scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
-            scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
-            scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(scaleSizer)
-            mainSizer.Add((0,5),0)
+            if UseList[item]['Show']:
+                scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
+                scaleRef = wx.CheckBox(dataDisplay,label=' Scale factor: ')
+                scaleRef.SetValue(UseList[item]['Scale'][1])
+                Indx[scaleRef.GetId()] = item
+                scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
+                scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
+                scaleVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                    '%.4f'%(UseList[item]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
+                Indx[scaleVal.GetId()] = item
+                scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
+                scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
+                scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(scaleSizer)
+                mainSizer.Add((0,5),0)
                 
-            if item[:4] == 'PWDR':
+            if item[:4] == 'PWDR' and UseList[item]['Show']:
                 sizeSizer = wx.BoxSizer(wx.HORIZONTAL)
                 choices = ['isotropic','uniaxial',]
                 sizeType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=UseList[item]['Size'][0],choices=choices,
@@ -1896,20 +2045,56 @@ def UpdatePhaseData(self,item,data,oldPage):
                         strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
                         strainSizer.Add(strainVal,0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(strainSizer)
-            elif item[:4] == 'HKLF':
+                #MD texture  'MDtexture':[1.0,False,[0,0,1]]
+                mdSizer = wx.BoxSizer(wx.HORIZONTAL)
+                mdRef = wx.CheckBox(dataDisplay,label=' March-Dollase texture ratio: ')
+                mdRef.SetValue(UseList[item]['MDtexture'][1])
+                Indx[mdRef.GetId()] = item
+                mdRef.Bind(wx.EVT_CHECKBOX, OnMDRef)
+                mdSizer.Add(mdRef,0,wx.ALIGN_CENTER_VERTICAL)
+                mdVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                    '%.3f'%(UseList[item]['MDtexture'][0]),style=wx.TE_PROCESS_ENTER)
+                Indx[mdVal.GetId()] = item
+                mdVal.Bind(wx.EVT_TEXT_ENTER,OnMDVal)
+                mdVal.Bind(wx.EVT_KILL_FOCUS,OnMDVal)
+                mdSizer.Add(mdVal,0,wx.ALIGN_CENTER_VERTICAL)
+                mdSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis: '),0,wx.ALIGN_CENTER_VERTICAL)
+                axes = zip(['H:','K:','L:'],UseList[item]['MDtexture'][2],range(3))                    
+                for ax,H,i in axes:                            
+                    Axis = wx.SpinCtrl(dataDisplay,wx.ID_ANY,ax,min=-3,max=3,size=wx.Size(40,20))
+                    Axis.SetValue(H)
+                    Indx[Axis.GetId()] = [item,i]
+                    mdSizer.Add(Axis)
+                    Axis.Bind(wx.EVT_SPINCTRL, OnMDAxis)
+                mainSizer.Add(mdSizer)
+                mainSizer.Add((0,5),0)
+                
+                #Extinction  'Extinction':[0.0,False]
+                extSizer = wx.BoxSizer(wx.HORIZONTAL)
+                extRef = wx.CheckBox(dataDisplay,label=' Extinction: ')
+                extRef.SetValue(UseList[item]['Extinction'][1])
+                Indx[extRef.GetId()] = item
+                extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
+                extSizer.Add(extRef,0,wx.ALIGN_CENTER_VERTICAL)
+                extVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                    '%.4f'%(UseList[item]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
+                Indx[extVal.GetId()] = item
+                extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
+                extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
+                extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(extSizer)
+                mainSizer.Add((0,5),0)
+            elif item[:4] == 'HKLF' and UseList[item]['Show']:
                 pass
-            else:
-                print 'error - unknown histogram type'      #place holder - never invoked
         mainSizer.Add((5,5),0)
-
 
         dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.dataFrame)
-        Size[0] = max(Size[0],300)
-        Size[1] += 26                           #compensate for status bar
-        DData.Fit()
-        dataDisplay.SetSize(Size)
+        Size[0] = max(Size[0],300)+20
+        Size[1] += 30                           #compensate for status bar
+        DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-10)
         self.dataFrame.setSizePosLeft(Size)
+        dataDisplay.SetSize(Size)
         
     def OnHklfAdd(event):
         UseList = data['Histograms']
@@ -1928,7 +2113,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     result = dlg.GetSelections()
                     for i in result:
                         histoName = TextList[i]
-                        UseList[histoName] = {'Histogram':histoName,'Scale':[1.0,True],
+                        UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
                             'Extinction':['Lorentzian','Secondary Type I',{'Eg':[0.0,False]},]}                        
                     data['Histograms'] = UseList
                     UpdateDData()
@@ -1952,10 +2137,10 @@ def UpdatePhaseData(self,item,data,oldPage):
                     result = dlg.GetSelections()
                     for i in result: 
                         histoName = TextList[i]
-                        UseList[histoName] = {'Histogram':histoName,'Scale':[1.0,False],
+                        UseList[histoName] = {'Histogram':histoName,'Show':False,
+                            'Scale':[1.0,False],'MDtexture':[1.0,False,[0,0,1]],
                             'Size':['isotropic',[10000.,0,],[False,False],[0,0,1]],
-                            'Mustrain':['isotropic',[0.0,0,],[False,False],[0,0,1]],
-                            'MDtexture':[[0,0,1],1.0,False],
+                            'Mustrain':['isotropic',[0.0,0,],[False,False],[0,0,1]],                            
                             'Extinction':[0.0,False]}
                     data['Histograms'] = UseList
                     UpdateDData()
@@ -2041,7 +2226,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         PawleyRefl = G2gd.GSGrid(self.dataDisplay)
         self.dataDisplay.AddPage(PawleyRefl,'Pawley reflections')
     else:
-        DData = wx.Window(self.dataDisplay)
+        DData = wx.ScrolledWindow(self.dataDisplay)
         self.dataDisplay.AddPage(DData,'Data')
         Atoms = G2gd.GSGrid(self.dataDisplay)
         self.dataDisplay.AddPage(Atoms,'Atoms')

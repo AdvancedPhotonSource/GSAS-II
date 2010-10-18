@@ -266,7 +266,6 @@ class GSASII(wx.Frame):
         pltNum = self.G2plotNB.nb.GetSelection()
         if pltNum >= 0:                         #to avoid the startup with no plot!
             pltPage = self.G2plotNB.nb.GetPage(pltNum)
-#            pltPlot = pltPage.figure.gca()
             pltPlot = pltPage.figure
         item = event.GetItem()
         G2gd.MovePatternTreeToGrid(self,item)
@@ -301,6 +300,8 @@ class GSASII(wx.Frame):
                     DataType = Iparm['INS   HTYPE ']                                #expect only 4 char string
                     DataType = DataType.strip()[0:3]                                #just 1st 3 chars
                     wx.BeginBusyCursor()
+                    Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
+                        'DisplaceY':[0.0,False],'Diffuse':[]}
                     try:
                         for Item in Data:
                             vals = Item[2].split()          #split up the BANK record
@@ -341,6 +342,7 @@ class GSASII(wx.Frame):
                                     data.extend([0.0,0.0,0.002,0.0])                                      #OK defaults if fxn #3 not 1st in iprm file
                                 codes.extend([0,0,0,0,0,0,0])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(data),data,codes,names])
+                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
@@ -679,11 +681,14 @@ class GSASII(wx.Frame):
                     else:
                         Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
+                        Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
+                            'DisplaceY':[0.0,False],'Diffuse':[]}
                         self.PatternTree.SetItemPyData(Id,[[''],[Xsum,Ysum,Wsum,YCsum,YBsum,YDsum]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),Inst)
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             

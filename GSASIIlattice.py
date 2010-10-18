@@ -30,7 +30,14 @@ def rotdMat(angle,axis=0):
         return np.array([[cosd(angle),0,-sind(angle)],[0,1,0],[sind(angle),0,cosd(angle)]])
     else:
         return np.array([[1,0,0],[0,cosd(angle),-sind(angle)],[0,sind(angle),cosd(angle)]])
-
+        
+def rotdMat4(angle,axis=0):
+    '''Prepare rotation matrix for angle in degrees about axis(=0,1,2) with scaling for OpenGL
+    Returns numpy 4,4 array
+    '''
+    Mat = rotdMat(angle,axis)
+    return np.concatenate((np.concatenate((Mat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    
 def fillgmat(cell):
     '''Compute lattice metric tensor from unit cell constants
     cell is tuple with a,b,c,alpha, beta, gamma (degrees)

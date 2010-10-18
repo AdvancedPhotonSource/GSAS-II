@@ -233,6 +233,7 @@ class DataFrame(wx.Frame):
         
     def setSizePosLeft(self,Width):
         screenSize = wx.DisplaySize()
+        Width[1] = min(Width[1],screenSize[1]-300)
         self.SetSize(Width)
         self.SetPosition(wx.Point(screenSize[0]-Width[0],250))
         
@@ -621,6 +622,12 @@ def MovePatternTreeToGrid(self,item):
         data = self.PatternTree.GetItemPyData(item)
         G2pdG.UpdateInstrumentGrid(self,data)
         G2plt.PlotPeakWidths(self)
+    elif self.PatternTree.GetItemText(item) == 'Sample Parameters':
+        self.PatternId = self.PatternTree.GetItemParent(item)
+        self.PickId = item
+        data = self.PatternTree.GetItemPyData(item)
+        G2pdG.UpdateSampleGrid(self,data)
+        G2plt.PlotPatterns(self)
     elif self.PatternTree.GetItemText(item) == 'Index Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.ExportPeakList.Enable(True)

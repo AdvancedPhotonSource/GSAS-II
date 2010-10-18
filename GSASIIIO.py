@@ -7,8 +7,12 @@ import math
 import numpy as np
 import cPickle
 import sys
+import random as ran
 import GSASIIpath
 import GSASIIgrid as G2gd
+import GSASIIspc as G2spc
+import GSASIIlattice as G2lat
+import GSASIIElem as G2el
 import os.path as ospath
 
 def sfloat(S):
@@ -731,11 +735,14 @@ def SaveIntegration(self,PickId,data):
         parms[10] = azm
         Y = self.Integrate[0][i]
         W = np.sqrt(Y)
+        Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
+            'DisplaceY':[0.0,False],'Diffuse':[]}
         if Id:
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'),[tuple(parms),parms,codes,names])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Sample Parameters'),Sample)
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
@@ -745,6 +752,7 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms,codes,names])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(self,Id,'Sample Parameters'),Sample)
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
@@ -844,9 +852,6 @@ def IndexPeakListSave(self,peaks):
     print 'index peak list saved'
     
 def ReadEXPPhase(self,filename):
-    import GSASIIspc as G2spc
-    import GSASIIlattice as G2lat
-    import GSASIIElem as G2el
     file = open(filename, 'Ur')
     Phase = {}
     S = 1
@@ -914,6 +919,7 @@ def ReadEXPPhase(self,filename):
                             float(S[108:118]),float(S[118:128])]
                     XYZ = Atom[3:6]
                     Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)
+                    Atom.append(ran.randint(0,sys.maxint))
                     Atoms.append(Atom)
     elif Ptype == 'macromolecular':
         for key in keyList:
@@ -925,6 +931,7 @@ def ReadEXPPhase(self,filename):
                     float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]
                 XYZ = Atom[6:9]
                 Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)
+                Atom.append(ran.randint(0,sys.maxint))
                 Atoms.append(Atom)
     Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
     Phase['General'] = {'Name':PhaseName,'Type':Ptype,'SGData':SGData,
@@ -935,9 +942,6 @@ def ReadEXPPhase(self,filename):
     return Phase
        
 def ReadPDBPhase(filename):
-    import GSASIIspc as G2spc
-    import GSASIIlattice as G2lat
-    import GSASIIElem as G2el
     EightPiSq = 8.*math.pi**2
     file = open(filename, 'Ur')
     Phase = {}
@@ -987,6 +991,7 @@ def ReadPDBPhase(filename):
                 Atom = Atom[:14]+Uij
                 Atom[12] = 'A'
                 S = file.readline()
+            Atom.append(ran.randint(0,sys.maxint))
             Atoms.append(Atom)
         else:           
             S = file.readline()

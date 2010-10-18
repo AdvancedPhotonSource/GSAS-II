@@ -1303,13 +1303,7 @@ def PlotStructure(self,data):
         oldxy = newxy
         drawingData['Rotation'] = [anglex,angley,anglez,oldxy]
         
-    def SetRotationZ(newxy):
-        def sign(x):
-            if x < 0:
-                return -1
-            else:
-                return 1
-                        
+    def SetRotationZ(newxy):                        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         dxy = newxy-oldxy
         anglez += (dxy[0]+dxy[1])*.25
@@ -1318,7 +1312,7 @@ def PlotStructure(self,data):
         
     def RenderBox():
         glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(3)
+        glLineWidth(2)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_LINE_SMOOTH)
@@ -1413,7 +1407,8 @@ def PlotStructure(self,data):
         glShadeModel(GL_SMOOTH)
         glMultMatrixf(B4mat.T)
         for face,norm in Faces:
-            glPolygonMode(GL_FRONT,GL_FILL)
+            glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
+            glFrontFace(GL_CW)
             glNormal3fv(norm)
             glBegin(GL_TRIANGLES)
             for vert in face:
@@ -1474,6 +1469,14 @@ def PlotStructure(self,data):
             
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+#        Mz = G2lat.rotdMat4(anglez,2)
+#        My = G2lat.rotdMat4(angley,1)
+#        Mx = G2lat.rotdMat4(anglex,0)
+#        Myz = np.inner(Mz,My)
+#        Mxyz = np.inner(Myz,Mx)
+#        glMultMatrixf(Mz)
+#        glMultMatrixf(My)
+#        glMultMatrixf(Mx)
         glRotate(anglez,0,0,1)
         glRotate(anglex,cosd(anglez),-sind(anglez),0)
         glRotate(angley,sind(anglez),cosd(anglez),0)
@@ -1490,10 +1493,11 @@ def PlotStructure(self,data):
         for iat,atom in enumerate(drawingData['Atoms']):
             x,y,z = atom[cx:cx+3]
             Bonds = atom[-1]
-            atNum = generalData['AtomTypes'].index(atom[ct])
+            try:
+                atNum = generalData['AtomTypes'].index(atom[ct])
+            except ValueError:
+                atNum = -1
             CL = atom[cs+2]
-#            CL = list(generalData['Color'][atNum])
-#            CL.extend([255,])
             color = np.array(CL)/255.
             if iat in Ind:
                 color = np.array(Gr)/255.
@@ -1501,9 +1505,11 @@ def PlotStructure(self,data):
             if 'balls' in atom[cs]:
                 vdwScale = drawingData['vdwScale']
                 ballScale = drawingData['ballScale']
-                if 'H' == atom[ct]:
+                if atNum < 0:
+                    radius = 0.2
+                elif 'H' == atom[ct]:
                     if drawingData['showHydrogen']:
-                        if 'vdW' in atom[cs]:
+                        if 'vdW' in atom[cs] and atNum >= 0:
                             radius = vdwScale*generalData['vdWRadii'][atNum]
                         else:
                             radius = ballScale*drawingData['sizeH']
@@ -1519,8 +1525,8 @@ def PlotStructure(self,data):
                     RenderBonds(x,y,z,Bonds,bondR,color)
             elif 'ellipsoids' in atom[cs]:
                 RenderBonds(x,y,z,Bonds,bondR,color)
-                if atom[cs+2] == 'A':                    
-                    Uij = atom[cs+4:cs+10]
+                if atom[cs+3] == 'A':                    
+                    Uij = atom[cs+5:cs+11]
                     U = np.multiply(G2spc.Uij2U(Uij),GS)
                     U = np.inner(Amat,np.inner(U,Amat).T)
                     E,R = nl.eigh(U)
@@ -1528,7 +1534,7 @@ def PlotStructure(self,data):
                     E = np.sqrt(E)
                     RenderEllipsoid(x,y,z,ellipseProb,E,R4,color)
                 else:
-                    radius = ellipseProb*math.sqrt(abs(atom[cs+3]))
+                    radius = ellipseProb*math.sqrt(abs(atom[cs+4]))
                     RenderSphere(x,y,z,radius,color)
             elif 'lines' in atom[cs]:
                 radius = 0.1
@@ -1543,7 +1549,7 @@ def PlotStructure(self,data):
                     Faces = []
                     for face in FaceGen:
                         vol = nl.det(face)
-                        if abs(vol) > 1.:
+                        if abs(vol) > 1. or len(Bonds) == 3:
                             if vol < 0.:
                                 face = [face[0],face[2],face[1]]
                             norm = np.cross(face[1]-face[0],face[2]-face[0])

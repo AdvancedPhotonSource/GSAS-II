@@ -7,6 +7,7 @@ import cPickle
 import GSASIIpath
 import GSASIIpeak as G2pk
 import GSASIIlattice as G2lat
+import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
@@ -228,8 +229,8 @@ def UpdatePeakGrid(self, data):
     self.dataFrame.setSizePosLeft([535,350])
         
 def UpdateBackgroundGrid(self,data):
-#    if self.dataDisplay:
-    self.dataFrame.Clear()
+    if self.dataDisplay:
+        self.dataFrame.Clear()
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
     maxTerm = 9
     Types = [wg.GRID_VALUE_CHOICE+':chebyschev,another,more',
@@ -260,6 +261,7 @@ def UpdateBackgroundGrid(self,data):
                 wg.GRIDTABLE_NOTIFY_COLS_DELETED,0,M-N)
             self.dataDisplay.ProcessTableMessage(msg)
         self.PatternTree.SetItemPyData(BackId,data)
+        event.StopPropagation()
                   
     self.BackTable = []
     N = len(data[0])
@@ -285,7 +287,6 @@ def UpdateBackgroundGrid(self,data):
 def UpdateLimitsGrid(self, data):
     if self.dataDisplay:
         self.dataFrame.Clear()
-    LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
     def RefreshLimitsGrid(event):
         data = self.LimitsTable.GetData()
         old = data[0]
@@ -321,7 +322,6 @@ def UpdateInstrumentGrid(self, data):
     if len(data[0]) == 13: 
         Ka2 = True
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    InstId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters')
     
     def RefreshInstrumentGrid(event,doAnyway=False):
         if doAnyway or event.GetRow() == 1:
@@ -397,6 +397,108 @@ def UpdateInstrumentGrid(self, data):
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    
+def UpdateSampleGrid(self,data):
+    if self.dataDisplay:
+        self.dataFrame.Clear()
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()    
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    
+    if data['Type'] == 'Debye-Scherrer':
+        parms = [['DisplaceX',' Sample X displacement: ','%.4f',],
+            ['DisplaceY',' Sample Y displacement: ','%.4f',],
+            ['Absorption',' Sample absorption: ','%.4f',],]
+    elif data['Type'] == 'Bragg-Brentano':
+        parms = [['Shift',' Sample displacement: ','%.4f',],
+            ['Transparency',' Sample transparency: ','%.4f'],]
+    objList = {}
+
+    def OnScaleRef(event):
+        Obj = event.GetEventObject()
+        data['Scale'][1] = Obj.GetValue()
+        
+    def OnScaleVal(event):
+        Obj = event.GetEventObject()
+        try:
+            scale = float(Obj.GetValue())
+            if scale > 0:
+                data['Scale'][0] = scale
+        except ValueError:
+            pass
+        Obj.SetValue("%.4f"%(data['Scale'][0]))          #reset in case of error
+        
+    def OnHistoType(event):
+        Obj = event.GetEventObject()
+        data['Type'] = Obj.GetValue()
+        if data['Type'] == 'Bragg-Brentano' and 'Shift' not in data:    #set up defaults for new type(s)
+            data['Shift'] = [0.0,False]
+            data['Transparency'] = [0.0,False]
+        self.dataDisplay.Destroy()
+        UpdateSampleGrid(self,data)
+        
+    def OnParmRef(event):
+        Obj = event.GetEventObject()
+        parm = objList[Obj.GetId()]
+        data[parm][1] = Obj.GetValue()
+        
+    def OnParmVal(event):
+        Obj = event.GetEventObject()
+        parm = objList[Obj.GetId()]
+        try:
+            data[parm[0]][0] = float(Obj.GetValue())
+        except ValueError:
+            pass
+        Obj.SetValue(parm[2]%(data[parm[0]][0]))          #reset in case of error
+                
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Sample parameters: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
+    scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
+    scaleRef = wx.CheckBox(self.dataDisplay,label=' Histogram scale factor: ')
+    scaleRef.SetValue(data['Scale'][1])
+    scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
+    scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
+    scaleVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
+        '%.4f'%(data['Scale'][0]),style=wx.TE_PROCESS_ENTER)
+    scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
+    scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
+    scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(scaleSizer)
+    mainSizer.Add((0,5),0)
+    typeSizer = wx.BoxSizer(wx.HORIZONTAL)
+    choices = ['Debye-Scherrer','Bragg-Brentano',]
+    histoType = wx.ComboBox(self.dataDisplay,wx.ID_ANY,value=data['Type'],choices=choices,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    histoType.Bind(wx.EVT_COMBOBOX, OnHistoType)
+    typeSizer.Add(histoType)
+    mainSizer.Add(typeSizer)
+    mainSizer.Add((0,5),0)
+    
+    for parm in parms:
+        parmSizer = wx.BoxSizer(wx.HORIZONTAL)
+        parmRef = wx.CheckBox(self.dataDisplay,label=parm[1])
+        objList[parmRef.GetId()] = parm[0]
+        parmRef.SetValue(data[parm[0]][1])
+        parmRef.Bind(wx.EVT_CHECKBOX, OnParmRef)
+        parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL)
+        parmVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
+            parm[2]%(data[parm[0]][0]),style=wx.TE_PROCESS_ENTER)
+        objList[parmVal.GetId()] = parm
+        parmVal.Bind(wx.EVT_TEXT_ENTER,OnParmVal)
+        parmVal.Bind(wx.EVT_KILL_FOCUS,OnParmVal)
+        parmSizer.Add(parmVal,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(parmSizer)
+        mainSizer.Add((0,5),0)    
+    
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    Size = mainSizer.Fit(self.dataFrame)
+    self.dataDisplay.SetSize(Size)
+    self.dataFrame.setSizePosLeft(Size)
+    
+    
                 
 def UpdateIndexPeaksGrid(self, data):
     IndexId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List')
@@ -479,8 +581,8 @@ def UpdateUnitCellsGrid(self, data):
     UnitCellsId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List')
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
-    spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3- H','P 6/m m m','I 4/m m m',
-        'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P 1']
+    spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R -3 H','P 6/m m m','I 4/m m m',
+        'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
         
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
@@ -691,10 +793,11 @@ def UpdateUnitCellsGrid(self, data):
                 break
         cell = Cell[2:10]        
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-        SGData = {'SpGrp':spaceGroups[cell[0]]}
+        E,SGData = G2spc.SpcGroup(spaceGroups[cell[0]])
         self.PatternTree.SetItemPyData(sub, \
-            {'General':{'Name':'phase name','Type':'nuclear','SGData':SGData,'Cell':[False,]+cell[1:],
-            'Scale':[False,1.0],'Pawley dmin':0.25},'Atoms':[]})
+            {'General':{'Name':'phase name','Type':'nuclear','SGData':SGData,
+            'Cell':[False,]+cell[1:],
+            'Pawley dmin':0.25},'Atoms':[],'Drawing':{},'Histograms':{}})
         Status.SetStatusText('Change space group if needed')
             
     def RefreshUnitCellsGrid(event):

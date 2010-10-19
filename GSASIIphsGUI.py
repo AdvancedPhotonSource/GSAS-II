@@ -452,6 +452,15 @@ def UpdatePhaseData(self,item,data,oldPage):
         self.dataFrame.setSizePosLeft([700,300])
         generalData = data['General']
         atomData = data['Atoms']
+        Items = [G2gd.wxID_ATOMSEDITINSERT, G2gd.wxID_ATOMSEDITDELETE, G2gd.wxID_ATOMSREFINE, 
+            G2gd.wxID_ATOMSMODIFY, G2gd.wxID_ATOMSTRANSFORM, G2gd.wxID_ATONTESTINSERT]
+        if atomData:
+            for item in Items:    
+                self.dataFrame.AtomsMenu.Enable(item,True)
+        else:
+            for item in Items:
+                self.dataFrame.AtomsMenu.Enable(item,False)            
+            
         AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
@@ -1504,12 +1513,11 @@ def UpdatePhaseData(self,item,data,oldPage):
                 IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
                 i = atomA[0]
                 for j in IndB[0]:
-                    if j > i:
-                        if Styles[i] == 'polyhedra':
-                            atomData[i][-1].append(np.inner(Amat,Dx[j]))
-                        elif Styles[j] != 'polyhedra':
-                            atomData[i][-1].append(Dx[j]*Radii[i]/sumR[j])
-                            atomData[j][-1].append(-Dx[j]*Radii[j]/sumR[j])
+                    if Styles[i] == 'polyhedra':
+                        atomData[i][-1].append(np.inner(Amat,Dx[j]))
+                    elif Styles[j] != 'polyhedra' and j > i:
+                        atomData[i][-1].append(Dx[j]*Radii[i]/sumR[j])
+                        atomData[j][-1].append(-Dx[j]*Radii[j]/sumR[j])
 
     def DrawAtomsDelete(event):   
         indx = drawAtoms.GetSelectedRows()
@@ -1755,6 +1763,10 @@ def UpdatePhaseData(self,item,data,oldPage):
 
     def UpdateDData():
         UseList = data['Histograms']
+        if UseList:
+            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
+        else:
+            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)            
         generalData = data['General']
         SGData = generalData['SGData']
         keyList = UseList.keys()
@@ -1781,6 +1793,16 @@ def UpdatePhaseData(self,item,data,oldPage):
                 pass
             Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Scale'][0]))          #reset in case of error
             
+        def OnCutoffVal(event):
+            Obj = event.GetEventObject()
+            try:
+                cutoff = float(Obj.GetValue())
+                if cutoff > 0:
+                    UseList[Indx[Obj.GetId()]]['Cutoff'] = cutoff
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[Indx[Obj.GetId()]]['Cutoff']))          #reset in case of error
+
         def OnSizeType(event):
             Obj = event.GetEventObject()
             UseList[Indx[Obj.GetId()]]['Size'][0] = Obj.GetValue()
@@ -1848,7 +1870,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         def OnMDRef(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
-            UseList[hist]['MDtexture'][1][pid] = Obj.GetValue()
+            UseList[hist]['MDtexture'][1] = Obj.GetValue()
             
         def OnMDVal(event):
             Obj = event.GetEventObject()
@@ -1921,6 +1943,16 @@ def UpdatePhaseData(self,item,data,oldPage):
                 mainSizer.Add((0,5),0)
                 
             if item[:4] == 'PWDR' and UseList[item]['Show']:
+                cutoffSizer = wx.BoxSizer(wx.HORIZONTAL)
+                cutoffSizer.Add(wx.StaticText(dataDisplay,label=' Peak cutoff ratio: '),0,wx.ALIGN_CENTER_VERTICAL)
+                cutoffVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(UseList[item]['Cutoff']),
+                    style=wx.TE_PROCESS_ENTER)                
+                Indx[cutoffVal.GetId()] = item
+                cutoffVal.Bind(wx.EVT_TEXT_ENTER,OnCutoffVal)
+                cutoffVal.Bind(wx.EVT_KILL_FOCUS,OnCutoffVal)
+                cutoffSizer.Add(cutoffVal,0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(cutoffSizer)
+                mainSizer.Add((0,5),0)
                 sizeSizer = wx.BoxSizer(wx.HORIZONTAL)
                 choices = ['isotropic','uniaxial',]
                 sizeType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=UseList[item]['Size'][0],choices=choices,
@@ -2141,7 +2173,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                             'Scale':[1.0,False],'MDtexture':[1.0,False,[0,0,1]],
                             'Size':['isotropic',[10000.,0,],[False,False],[0,0,1]],
                             'Mustrain':['isotropic',[0.0,0,],[False,False],[0,0,1]],                            
-                            'Extinction':[0.0,False]}
+                            'Extinction':[0.0,False],'Cutoff':0.01}
                     data['Histograms'] = UseList
                     UpdateDData()
             finally:

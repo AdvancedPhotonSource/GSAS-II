@@ -1125,10 +1125,10 @@ def PlotStructure(self,data):
     atomData = data['Atoms']
     drawingData = data['Drawing']
     drawAtoms = drawingData['Atoms']
-    Wt = [255,255,255,255]
-    Rd = [255,0,0,255]
-    Gr = [0,255,0,255]
-    Bl = [0,0,255,255]
+    Wt = [255,255,255]
+    Rd = [255,0,0]
+    Gr = [0,255,0]
+    Bl = [0,0,255]
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -1318,7 +1318,7 @@ def PlotStructure(self,data):
         glEnable(GL_LINE_SMOOTH)
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors):
-            glColor4ubv(color)
+            glColor3ubv(color)
             glVertex3fv(line[0])
             glVertex3fv(line[1])
         glEnd()
@@ -1336,7 +1336,7 @@ def PlotStructure(self,data):
         glScalef(1/cell[0],1/cell[1],1/cell[2])
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors)[:3]:
-            glColor4ubv(color)
+            glColor3ubv(color)
             glVertex3fv(line[0])
             glVertex3fv(line[1])
         glEnd()
@@ -1389,7 +1389,7 @@ def PlotStructure(self,data):
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(1)
-        glColor4fv(color)
+        glColor3fv(color)
         glPushMatrix()
         glBegin(GL_LINES)
         for bond in Bonds:
@@ -1532,10 +1532,16 @@ def PlotStructure(self,data):
                     E,R = nl.eigh(U)
                     R4 = np.concatenate((np.concatenate((R,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
                     E = np.sqrt(E)
-                    RenderEllipsoid(x,y,z,ellipseProb,E,R4,color)
+                    if atom[ct] == 'H' and not drawingData['showHydrogen']:
+                        pass
+                    else:
+                        RenderEllipsoid(x,y,z,ellipseProb,E,R4,color)                    
                 else:
-                    radius = ellipseProb*math.sqrt(abs(atom[cs+4]))
-                    RenderSphere(x,y,z,radius,color)
+                    if atom[ct] == 'H' and not drawingData['showHydrogen']:
+                        pass
+                    else:
+                        radius = ellipseProb*math.sqrt(abs(atom[cs+4]))
+                        RenderSphere(x,y,z,radius,color)
             elif 'lines' in atom[cs]:
                 radius = 0.1
                 RenderLines(x,y,z,Bonds,color)

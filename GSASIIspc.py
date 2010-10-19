@@ -2,6 +2,7 @@
 
 import numpy as np
 import numpy.ma as ma
+import numpy.linalg as nl
 import math
 import sys
 import os.path as ospath
@@ -593,6 +594,64 @@ def SytSym(XYZ,SGData):
     Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)/Jdup
           
     return GetKNsym(str(Isym)),Mult
+    
+def ElemPosition(SGData):
+    ''' Under development
+    Object here is to return a list of symmetry element types and locations suitable
+    for say drawing them.
+    So far I have the element type... getting all possible locations without lookup may be impossible!
+    '''
+    SymElements = []
+    Inv = SGData['SGInv']
+    Cen = SGData['SGCen']
+    eleSym = {-3:['','-1'],-2:['',-6],-1:['2','-4'],0:['3','-3'],1:['4','m'],2:['6',''],3:['1','']}
+    # get operators & expand if centrosymmetric
+    Ops = SGData['SGOps']
+    opM = np.array([op[0].T for op in Ops])
+    opT = np.array([op[1] for op in Ops])
+    if Inv:
+        opM = np.concatenate((opM,-opM))
+        opT = np.concatenate((opT,-opT))
+    opMT = zip(opM,opT)
+    for M,T in opMT[1:]:        #skip I
+        Dt = int(nl.det(M))
+        Tr = int(np.trace(M))
+        Dt = -(Dt-1)/2
+        Es = eleSym[Tr][Dt]
+        if Dt:              #rotation-inversion
+            I = np.eye(3)
+            if Tr == 1:     #mirrors/glides
+                if np.any(T):       #glide
+                    M2 = np.inner(M,M)
+                    MT = np.inner(M,T)+T
+                    print 'glide',Es,MT
+                    print M2
+                else:               #mirror
+                    print 'mirror',Es,T
+                    print I-M
+                X = [-1,-1,-1]
+            elif Tr == -3:  # pure inversion
+                X = np.inner(nl.inv(I-M),T)
+                print 'inversion',Es,X
+            else:           #other rotation-inversion
+                M2 = np.inner(M,M)
+                MT = np.inner(M,T)+T
+                print 'rot-inv',Es,MT
+                print M2
+                X = [-1,-1,-1]
+                
+            
+            
+        else:               #rotations
+            print 'rotation',Es
+            X = [-1,-1,-1]
+        #SymElements.append([Es,X])
+        
+    return #SymElements
+        
+        
+        
+    
     
 def U2Uij(U):
     #returns the UIJ vector U11,U22,U33,U12,U13,U23 from tensor U

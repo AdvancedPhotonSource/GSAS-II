@@ -206,19 +206,16 @@ def GetMagFormFacCoeff(El):
     FFdata.close()
     return MagFormFactors
 
-def ScatFac(FormFac, SThL):
+def ScatFac(FormFac, SQ):
     """compute value of form factor
     @param FormFac: dictionary  defined in GetFormFactorCoeff 
-    @param SThL: sin-theta/lambda
+    @param SQ: (sin-theta/lambda)**2
     @return: f: real part of form factor
     """
-    f = FormFac['fc']
-    fa = FormFac['fa']
-    fb = FormFac['fb']
-    for i in range(4):
-        t = -fb[i]*SThL*SThL
-        if t > -35.0: f += fa[i]*math.exp(t)
-    return f
+    fa = np.array(FormFac['fa'])
+    fb = np.array(FormFac['fb'])
+    t = -fb*SQ
+    return np.sum(fa*np.exp(t))+FormFac['fc']
             
 def FPcalc(Orbs, KEv):
     """Compute real & imaginary resonant X-ray scattering factors

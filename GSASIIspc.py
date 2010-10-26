@@ -205,16 +205,18 @@ def SpaceGroup(SGSymbol):
     for l in SGPrint(A):
         print l
 
-def MoveToUnitCell(XYZ):
+def MoveToUnitCell(xyz):
     '''
     Translates a set of coordinates so that all values are >=0 and < 1 
     input:
-        XYZ - a list or numpy array of fractional coordinates
-    output: 
-        none; the object is modified in place.
+        xyz - a list or numpy array of fractional coordinates
+    returns: 
+        XYZ - numpy array of new coordinates inside 0-1
     '''
-    for i,x in enumerate(XYZ):
+    XYZ = np.zeros(3)
+    for i,x in enumerate(xyz):
         XYZ[i] = (x-int(x))%1.0
+    return XYZ
         
 def Opposite(XYZ,toler=0.0002):
     '''
@@ -249,42 +251,46 @@ def GenAtom(XYZ,SGData,All=False,Uij=[]):
         [XYZEquiv] is list of equivalent positions (XYZ is first entry)
         Idup = [-][C]SS where SS is the symmetry operator number (1-24), C (if not 0,0,0)
         is centering operator number (1-4) and - is for inversion
+        Cell = unit cell translations needed to put new positions inside cell
         [UijEquiv] - equivalent Uij; absent if no Uij given
     '''
     XYZEquiv = []
     UijEquiv = []
     Idup = []
+    Cell = []
     X = np.array(XYZ)
-    MoveToUnitCell(X)
+    X = MoveToUnitCell(X)
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):
             for io,[M,T] in enumerate(SGData['SGOps']):
                 idup = ((io+1)+100*ic)*(1-2*invers)
-                newX = np.inner(M,X)+T
+                XT = np.inner(M,X)+T
                 if len(Uij):
                     U = Uij2U(Uij)
                     U = np.inner(M,np.inner(U,M).T)
                     newUij = U2Uij(U)
                 if invers:
-                    newX = -newX
-                newX += C
-                MoveToUnitCell(newX)
+                    XT = -XT
+                XT += C
+                newX = MoveToUnitCell(XT)
+                cell = np.asarray(np.rint(newX-XT),dtype=np.int32)
                 if All:
                     if np.allclose(newX,X,atol=0.0002):
-                        idup = 0
+                        idup = False
                 else:
                     if True in [np.allclose(newX,X,atol=0.0002) for oldX in XYZEquiv]:
-                        idup = 0
+                        idup = False
                 if All or idup:
                     XYZEquiv.append(newX)
                     Idup.append(idup)
+                    Cell.append(cell)
                     if len(Uij):
                         UijEquiv.append(newUij)                    
     if len(Uij):
-        return zip(XYZEquiv,UijEquiv,Idup)
+        return zip(XYZEquiv,UijEquiv,Idup,Cell)
     else:
-        return zip(XYZEquiv,Idup)
+        return zip(XYZEquiv,Idup,Cell)
         
 def GenHKL(HKL,SGData,Friedel=False):
     '''
@@ -648,11 +654,79 @@ def ElemPosition(SGData):
         #SymElements.append([Es,X])
         
     return #SymElements
-        
-        
-        
     
-    
+def ApplyStringOps(A,SGData,X,Uij=[]):
+    SGOps = SGData['SGOps']
+    SGCen = SGData['SGCen']
+    Ax = A.split('+')
+    Ax[0] = int(Ax[0])
+    iC = 0
+    if Ax[0] < 0:
+        iC = 1
+    Ax[0] = abs(Ax[0])
+    nA = Ax[0]%100-1
+    cA = Ax[0]/100
+    Cen = SGCen[cA]
+    M,T = SGOps[nA]
+    if len(Ax)>1:
+        cellA = Ax[1].split(',')
+        cellA = np.array([int(a) for a in cellA])
+    else:
+        cellA = np.zeros(3)
+    newX = (1-2*iC)*(Cen+np.inner(M,X)+T)+cellA
+    if len(Uij):
+        U = Uij2U(Uij)
+        U = np.inner(M,np.inner(U,M).T)
+        newUij = U2Uij(U)
+        return [newX,newUij]
+    else:
+        return newX
+        
+def StringOpsProd(A,B,SGData):
+    ''' Find A*B where A & B are in strings '-' + '100*c+n' + '+ijk'
+    where '-' indicates inversion, c(>0) is the cell centering operator, 
+    n is operator number from SgOps and ijk are unit cell translations (each may be <0).
+    Should return resultant string - C.
+        SGData - dictionary using entries:
+             'SGCen': cell centering vectors [0,0,0] at least
+             'SGOps': symmetry operations as [M,T] so that M*x+T = x'
+    '''
+    SGOps = SGData['SGOps']
+    SGCen = SGData['SGCen']
+    #1st split out the cell translation part & work on the operator parts
+    Ax = A.split('+'); Bx = B.split('+')
+    Ax[0] = int(Ax[0]); Bx[0] = int(Bx[0])
+    iC = 0
+    if Ax[0]*Bx[0] < 0:
+        iC = 1
+    Ax[0] = abs(Ax[0]); Bx[0] = abs(Bx[0])
+    nA = Ax[0]%100-1;  nB = Bx[0]%100-1
+    cA = Ax[0]/100;  cB = Bx[0]/100
+    Cen = (SGCen[cA]+SGCen[cB])%1.0
+    cC = np.nonzero([np.allclose(C,Cen) for C in SGCen])[0][0]
+    Ma,Ta = SGOps[nA]; Mb,Tb = SGOps[nB]
+    Mc = np.inner(Ma,Mb.T)
+#    print Ma,Mb,Mc
+    Tc = (np.add(np.inner(Mb,Ta)+1.,Tb))%1.0
+#    print Ta,Tb,Tc
+#    print [np.allclose(M,Mc)&np.allclose(T,Tc) for M,T in SGOps]
+    nC = np.nonzero([np.allclose(M,Mc)&np.allclose(T,Tc) for M,T in SGOps])[0][0]
+    #now the cell translation part
+    if len(Ax)>1:
+        cellA = Ax[1].split(',')
+        cellA = [int(a) for a in cellA]
+    else:
+        cellA = [0,0,0]
+    if len(Bx)>1:
+        cellB = Bx[1].split(',')
+        cellB = [int(b) for b in cellB]
+    else:
+        cellB = [0,0,0]
+    cellC = np.add(cellA,cellB)
+    C = str(((nC+1)+(100*cC))*(1-2*iC))+'+'+ \
+        str(int(cellC[0]))+','+str(int(cellC[1]))+','+str(int(cellC[2]))
+    return C
+            
 def U2Uij(U):
     #returns the UIJ vector U11,U22,U33,U12,U13,U23 from tensor U
     return [U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]]
@@ -787,7 +861,7 @@ def test2():
             for inv in onebar:
                 for cen in spc['SGCen']:
                     noff = off + cen
-                    MoveToUnitCell(noff)
+                    noff = MoveToUnitCell(noff)
                     mult = tuple((op*inv).ravel().tolist())
                     if debug: print "\n%s: %s + %s" % (spcname,mult,noff)
                     for refop in cctbx:
@@ -797,7 +871,7 @@ def test2():
                         if debug: print "mult match"
                         # check the translation
                         reftrans = list(refop[-3:])
-                        MoveToUnitCell(reftrans)
+                        reftrans = MoveToUnitCell(reftrans)
                         if all(abs(noff - reftrans) < 1.e-5):
                             cctbx.remove(refop)
                             break

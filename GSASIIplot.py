@@ -407,7 +407,8 @@ def PlotPatterns(self,newPlot=False):
         while item:
             if 'PWDR' in self.PatternTree.GetItemText(item):
                 Pattern = self.PatternTree.GetItemPyData(item)
-                Pattern.append(self.PatternTree.GetItemText(item))
+                if len(Pattern) < 3:                    # put name on end if needed
+                    Pattern.append(self.PatternTree.GetItemText(item))
                 PlotList.append(Pattern)
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
     Ymax = 1.0
@@ -1587,6 +1588,9 @@ def PlotStructure(self,data):
     def OnSize(event):
         Draw()
         
+    def OnFocus(event):
+        Draw()
+        
     try:
         plotNum = self.G2plotNB.plotList.index(generalData['Name'])
         Page = self.G2plotNB.nb.GetPage(plotNum)        
@@ -1608,6 +1612,7 @@ def PlotStructure(self,data):
     Page.canvas.Bind(wx.EVT_KEY_UP, OnKey)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
+    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
     cell = generalData['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)

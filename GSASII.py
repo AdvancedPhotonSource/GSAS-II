@@ -1,5 +1,6 @@
 #GSASII
 
+import os
 import os.path as ospath
 import sys
 import math
@@ -213,7 +214,7 @@ class GSASII(wx.Frame):
             self.OnPatternTreeItemCollapsed, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_EXPANDED,
             self.OnPatternTreeItemExpanded, id=wxID_PATTERNTREE)
-        self.root = self.PatternTree.AddRoot("Loaded Data")
+        self.root = self.PatternTree.AddRoot('Loaded Data: ')
         
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
@@ -227,6 +228,7 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
         self.GSASprojectfile = ''
         self.dirname = ''
+        self.undofile = ''
         self.Offset = 0.0
         self.Weight = False
         self.IparmName = ''
@@ -917,6 +919,7 @@ class GSASII(wx.Frame):
                     self.GSASprojectfile = dlg.GetPath()
                     self.dirname = dlg.GetDirectory()
                     G2IO.ProjFileOpen(self)
+                    self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
                     self.PatternTree.Expand(self.root)
                     self.HKL = []
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -941,6 +944,7 @@ class GSASII(wx.Frame):
                 self.OnFileSaveMenu(event)
             if result != wx.ID_CANCEL:
                 self.GSASprojectfile = ''
+                self.PatternTree.SetItemText(self.root,'Loaded Data: ')
                 self.PatternTree.DeleteChildren(self.root)
                 if self.HKL: self.HKL = []
                 if self.G2plotNB.plotList:
@@ -950,6 +954,7 @@ class GSASII(wx.Frame):
 
     def OnFileSave(self, event):
         if self.GSASprojectfile: 
+            self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
             G2IO.ProjFileSave(self)
         else:
             self.OnFileSaveas(event)
@@ -962,12 +967,15 @@ class GSASII(wx.Frame):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GSASprojectfile = dlg.GetPath()
+                self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
                 G2IO.ProjFileSave(self)
                 self.dirname = dlg.GetDirectory()
         finally:
             dlg.Destroy()
 
     def ExitMain(self, event):
+        if self.undofile:
+            os.remove(self.undofile)
         sys.exit()
         
     def OnFileExit(self, event):
@@ -1116,7 +1124,7 @@ class GSASII(wx.Frame):
         
     def DoUnDo(self):
         print 'Undo last refinement'
-        file = open('GSASII.save','rb')
+        file = open(self.undofile,'rb')
         PatternId = self.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
@@ -1131,7 +1139,8 @@ class GSASII(wx.Frame):
         file.close()
         
     def SaveState(self):
-        file = open('GSASII.save','wb')
+        self.undofile = self.dirname+'\\GSASII.save'
+        file = open(self.undofile,'wb')
         PatternId = self.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
             cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)

@@ -153,14 +153,6 @@ def cell2AB(cell):
     B = nl.inv(A)
     return A,B
         
-#def U2Uij(U):
-#    #returns the UIJ vector U11,U22,U33,U12,U13,U23 from tensor U
-#    return [U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]]
-#    
-#def Uij2U(Uij):
-#    #returns the thermal motion tensor U from Uij as numpy array
-#    return np.array([[Uij[0],Uij[3],Uij[4]],[Uij[3],Uij[1],Uij[5]],[Uij[4],Uij[5],Uij[2]]])
-#    
 def Uij2betaij(Uij,G):
     '''
     Convert Uij to beta-ij tensors
@@ -200,8 +192,6 @@ def CellBlock(nCells):
         return cellArray
     else:
         return [0,0,0]
-                        
-    
 
 #Permutations and Combinations
 # Four routines: combinations,uniqueCombinations, selections & permutations
@@ -242,6 +232,9 @@ def permutations(items):
 def calc_rDsq(H,A):
     rdsq = H[0]*H[0]*A[0]+H[1]*H[1]*A[1]+H[2]*H[2]*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]
     return rdsq
+    
+def calc_rDsq2(H,G):
+    return np.inner(H,np.inner(G,H))
     
 def calc_rDsqZ(H,A,Z,tth,lam):
     rpd = math.pi/180.

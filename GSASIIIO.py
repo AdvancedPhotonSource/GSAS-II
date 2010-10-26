@@ -216,7 +216,7 @@ def GetHKLData(filename):
                     HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
                     HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
                     FoMax = max(FoMax,Fosq)
-                    HKLref.append([HKL,Fosq,sigFosq,Fcsq,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
+                    HKLref.append([HKL,Fosq,sigFosq,Fcsq,0,0,0])                 #room for Fcp, Fcpp & phase
             S = File.readline()
     else:                   #dumb h,k,l,Fo,sigFo .hkl file
         while S:
@@ -621,66 +621,23 @@ def ProjFileOpen(self):
             datum = data[0]
             print 'load: ',datum[0]
             
-            #temporary fixes to old project files
-            #fix to convert old style list arrays to numpy arrays
-            if 'PWDR' in datum[0] and 'list' in str(type(datum[1][1][0])):      
-                X = datum[1][1]
-                X = [np.array(X[0]),np.array(X[1]),np.array(X[2]),np.array(X[3]),np.array(X[4]),np.array(X[5])]
-                datum[1] = [datum[1][0],X]
-                print 'powder data converted to numpy arrays'
-            #temporary fix to insert 'PWDR' in front of powder names
-            if 'PKS' not in datum[0] and 'IMG' not in datum[0] and 'SNGL' not in datum[0]:
-                if datum[0] not in ['Notebook','Controls','Phases'] and 'PWDR' not in datum[0]:
-                    datum[0] = 'PWDR '+datum[0]
-                    print 'add PWDR to powder names'
-            #end of temporary fixes
-            
             Id = self.PatternTree.AppendItem(parent=self.root,text=datum[0])
-            self.PatternTree.SetItemPyData(Id,datum[1])
+            if 'PWDR' in datum[0]:                
+                self.PatternTree.SetItemPyData(Id,datum[1][:3])     #temp. trim off junk
+            else:
+                self.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
                 print '    load: ',datus[0]
-                
-                #temporary fix to add azimuthal angle to instrument parameters
-                if 'PWDR' in datum[0] and 'Instrument Parameters' in datus[0]:
-                    if len(datus[1][0]) == 10 or len(datus[1][0]) == 12:
-                        datus[1][0] += (0.0,)                   #add missing azimuthal angle
-                        datus[1][1].append(0.0)
-                        datus[1][2].append(0.0)
-                        datus[1][3].append('Azimuth')
-                        print 'add azimuth to instrument parameters'
-                #end of temporary fix        
-                
+                                
                 sub = self.PatternTree.AppendItem(Id,datus[0])
                 self.PatternTree.SetItemPyData(sub,datus[1])
-                
-            #temporary fix to add Comments to powder data sets
-            if 'PWDR' in datum[0] and not G2gd.GetPatternTreeItemId(self,Id, 'Comments'):
-                print 'no comments - add comments'
-                sub = self.PatternTree.AppendItem(Id,'Comments')
-                self.PatternTree.SetItemPyData(sub,['no comments'])
-            #end of temporary fix
-                                
+                                                
             if 'IMG' in datum[0]:                   #retreive image default flag & data if set
                 Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))
                 if Data['setDefault']:
-                    self.imageDefault = Data
-                #temporary fix to add masks
-                if not G2gd.GetPatternTreeItemId(self,Id, 'Masks'):
-                    Imin,Imax = Data['range'][0]
-                    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
-                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
-                #end of temporary fix
-                
+                    self.imageDefault = Data                
         file.close()
         
-        #temporary fix to add Notebook & Controls to project
-        if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
-            self.PatternTree.SetItemPyData(sub,[''])
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
-            self.PatternTree.SetItemPyData(sub,[0])
-            print 'add Notebook and Controls to project'
-            
     finally:
         wx.EndBusyCursor()
     print 'project load successful'

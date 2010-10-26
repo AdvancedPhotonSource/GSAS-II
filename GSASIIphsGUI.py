@@ -19,6 +19,7 @@ import numpy.linalg as nl
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
+BLACK = wx.Colour(0,0,0)
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -144,38 +145,38 @@ def UpdatePhaseData(self,item,data,oldPage):
         generalData['AtomMass'] = []
         generalData['Color'] = []
         generalData['Mydir'] = self.dirname
-        colType = 1
-        colSS = 7
+        cx,ct,cs,cia = [3,1,7,9]
+        generalData['AtomPtrs'] = [cx,ct,cs,cia]
         if generalData['Type'] =='macromolecular':
-            colType = 4
-            colSS = 10
+            cx,ct,cs,cia = [6,4,10,12]
+            generalData['AtomPtrs'] = [cx,ct,cs,cia]
         for atom in atomData:
-            atom[colType] = atom[colType].lower().capitalize()              #force to standard form
-            if generalData['AtomTypes'].count(atom[colType]):
-                generalData['NoAtoms'][atom[colType]] += atom[colSS-1]*float(atom[colSS+1])
-            elif atom[colType] != 'UNK':
-                Info = G2elem.GetAtomInfo(atom[colType])
-                generalData['AtomTypes'].append(atom[colType])
+            atom[ct] = atom[ct].lower().capitalize()              #force to standard form
+            if generalData['AtomTypes'].count(atom[ct]):
+                generalData['NoAtoms'][atom[ct]] += atom[cs-1]*float(atom[cs+1])
+            elif atom[ct] != 'UNK':
+                Info = G2elem.GetAtomInfo(atom[ct])
+                generalData['AtomTypes'].append(atom[ct])
                 generalData['BondRadii'].append(Info['Drad'])
                 generalData['AngleRadii'].append(Info['Arad'])
                 generalData['vdWRadii'].append(Info['Vdrad'])
                 generalData['AtomMass'].append(Info['Mass'])
-                generalData['NoAtoms'][atom[colType]] = atom[colSS-1]*float(atom[colSS+1])
+                generalData['NoAtoms'][atom[ct]] = atom[cs-1]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
 
     def UpdateGeneral():
         
-        ''' default dictionary structure for "General" phase item: (taken from GSASII.py)
+        ''' default dictionary structure for phase data: (taken from GSASII.py)
         'General':{
             'Name':PhaseName
             'Type':'nuclear'
             'SGData':SGData
             'Cell':[False,10.,10.,10.,90.,90.,90,1000.]
+            'AtomPtrs':[]
             'Histogram list':['',]
             'Pawley dmin':1.0}
-            'Atoms':[]
-            'Drawing':{}
-        })
+        'Atoms':[]
+        'Drawing':{}
         '''
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
         SetupGeneral()
@@ -464,10 +465,8 @@ def UpdatePhaseData(self,item,data,oldPage):
         AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
-            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",
-            wg.GRID_VALUE_FLOAT+':10,4',                                                            #Uiso
-            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,                         #Uij - placeholders
-            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING]
+            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",]
+        Types += 7*[wg.GRID_VALUE_FLOAT+':10,4',]
         colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
         if generalData['Type'] == 'magnetic':
             colLabels += ['Mx','My','Mz']
@@ -484,9 +483,6 @@ def UpdatePhaseData(self,item,data,oldPage):
             colLabels += []
 
         def RefreshAtomGrid(event):
-
-            def chkUij(Uij,CSI):
-                return Uij
 
             r,c =  event.GetRow(),event.GetCol()
             if r < 0 and c < 0:
@@ -577,99 +573,122 @@ def UpdatePhaseData(self,item,data,oldPage):
                     us = colLabels.index('Uiso')
                     ss = colLabels.index('site sym')
                     for r in range(Atoms.GetNumberRows()):
+                        ID = atomData[r][-1]
                         if parms != atomData[r][c] and Atoms.GetColLabelValue(c) == 'I/A':
                             if parms == 'A':                #'I' --> 'A'
-                                Uiso = atomData[r][us]
+                                Uiso = float(Atoms.GetCellValue(r,us))
                                 sytsym = atomData[r][ss]
                                 CSI = G2spc.GetCSuinel(sytsym)
                                 atomData[r][ui:ui+6] = Uiso*np.array(CSI[3])
-                                atomData[r][us] = ''
-                                Atoms.SetCellRenderer(r,us,wg.GridCellStringRenderer())
+                                atomData[r][us] = 0.0
                                 Atoms.SetCellStyle(r,us,VERY_LIGHT_GREY,True)
                                 for i in range(6):
                                     ci = ui+i
-                                    Atoms.SetCellRenderer(r,ci,wg.GridCellFloatRenderer(10,4))
                                     Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
                                     if CSI[2][i]:
                                         Atoms.SetCellStyle(r,ci,WHITE,False)
                             else:                           #'A' --> 'I'
                                 Uij = atomData[r][ui:ui+6]
-                                atomData[r][us] = (Uij[0]+Uij[1]+Uij[2])/3.0
-                                atomData[r][ui:ui+6] = [0,0,0,0,0,0]
-                                Atoms.SetCellRenderer(r,us,wg.GridCellFloatRenderer(10,4))
+                                Uiso = (Uij[0]+Uij[1]+Uij[2])/3.0
+                                atomData[r][us] = Uiso
                                 Atoms.SetCellStyle(r,us,WHITE,False)
                                 for i in range(6):
                                     ci = ui+i
-                                    Atoms.SetCellRenderer(r,ci,wg.GridCellStringRenderer())
-                                    Atoms.SetCellValue(r,ci,'')
+                                    atomData[r][ci] = 0.0
                                     Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
-                        Atoms.SetCellValue(r,c,parms)
-            elif Atoms.GetColLabelValue(c) in ['Name']:
+                        atomData[r][c] = parms
+                        if 'Atoms' in data['Drawing']:
+                            DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                    FillAtomsGrid()
+                    
+        def ChangeAtomCell(event):
+            
+            def chkUij(Uij,CSI):
+                return Uij
+
+            r,c =  event.GetRow(),event.GetCol()
+            if r >= 0 and c >= 0:
+                ID = atomData[r][-1]
+                if Atoms.GetColLabelValue(c) in ['x','y','z']:
+                    ci = colLabels.index('x')
+                    XYZ = atomData[r][ci:ci+3]
+                    if None in XYZ:
+                        XYZ = [0,0,0]
+                    SScol = colLabels.index('site sym')
+                    Mulcol = colLabels.index('mult')
+                    E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
+                    Sytsym,Mult = G2spc.SytSym(XYZ,SGData)
+                    atomData[r][SScol] = Sytsym
+                    atomData[r][Mulcol] = Mult
+                    if atomData[r][colLabels.index('I/A')] == 'A':
+                        ui = colLabels.index('U11')
+                        CSI = G2spc.GetCSuinel(Sytsym)
+                        atomData[r][ui:ui+6] = chkUij(atomData[r][ui:ui+6],Sytsym)
+                        for i in range(6):
+                            ci = i+ui
+                            Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
+                            if CSI[2][i]:
+                                Atoms.SetCellStyle(r,ci,WHITE,False)
+                    SetupGeneral()
+                elif Atoms.GetColLabelValue(c) == 'I/A':            #note use of text color to make it vanish!
+                    atomData[r][c] = Atoms.GetCellValue(r,c)
+                    if atomData[r][c] == 'I':
+                        Uij = atomData[r][c+2:c+8]
+                        atomData[r][c+1] = (Uij[0]+Uij[1]+Uij[2])/3.0
+                        Atoms.SetCellStyle(r,c+1,WHITE,False)
+                        Atoms.SetCellTextColour(r,c+1,BLACK)
+                        Atoms.SetCellRenderer(r,c+1,wg.GridCellFloatRenderer(10,4))
+                        for i in range(6):
+                            ci = i+colLabels.index('U11')
+                            Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
+                            Atoms.SetCellTextColour(r,ci,VERY_LIGHT_GREY)
+                            atomData[r][ci] = 0.0
+                    else:
+                        value = atomData[r][c+1]
+                        CSI = G2spc.GetCSuinel(atomData[r][colLabels.index('site sym')])
+                        atomData[r][c+1] =  0.0
+                        Atoms.SetCellRenderer(r,c+1,wg.GridCellFloatRenderer(10,4))
+                        Atoms.SetCellStyle(r,c+1,VERY_LIGHT_GREY,True)
+                        Atoms.SetCellTextColour(r,c+1,VERY_LIGHT_GREY)
+                        for i in range(6):
+                            ci = i+colLabels.index('U11')
+                            atomData[r][ci] = value*CSI[3][i]
+                            Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
+                            Atoms.SetCellTextColour(r,ci,BLACK)
+                            Atoms.SetCellRenderer(r,ci,wg.GridCellFloatRenderer(10,4))
+                            if CSI[2][i]:
+                                Atoms.SetCellStyle(r,ci,WHITE,False)
+                elif Atoms.GetColLabelValue(c) in ['U11','U22','U33','U12','U13','U23']:
+                    value = atomData[r][c]
+                    CSI = G2spc.GetCSuinel(atomData[r][colLabels.index('site sym')])
+                    iUij = CSI[0][c-colLabels.index('U11')]
+                    for i in range(6):
+                        if iUij == CSI[0][i]:
+                            atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
+                if 'Atoms' in data['Drawing']:
+                    DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                    
+        def AtomTypeSelect(event):
+            r,c =  event.GetRow(),event.GetCol()
+            if Atoms.GetColLabelValue(c) == 'Type':
+                PE = G2elem.PickElement(self)
+                if PE.ShowModal() == wx.ID_OK:
+                    atomData[r][c] = PE.Elem.strip()
+                    name = atomData[r][c]
+                    if len(name) in [2,4]:
+                        atomData[r][c-1] = name[:2]+'(%d)'%(r+1)
+                    else:
+                        atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
+                PE.Destroy()
+                SetupGeneral()
+                FillAtomsGrid()
                 value = Atoms.GetCellValue(r,c)
                 atomData[r][c] = value
-                ID = [atomData[r][-1],]
+                ID = atomData[r][-1]
                 if 'Atoms' in data['Drawing']:
-                    DrawAtomsReplaceByIDs(data['Drawing'],atomData[r],ID)
-            elif Atoms.GetColLabelValue(c) in ['x','y','z']:
-                atomData[r][c] = float(Atoms.GetCellValue(r,c))
-                ci = colLabels.index('x')
-                XYZ = atomData[r][ci:ci+3]
-                if None in XYZ:
-                    XYZ = [0,0,0]
-                SScol = colLabels.index('site sym')
-                Mulcol = colLabels.index('mult')
-                E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-                Sytsym,Mult = G2spc.SytSym(XYZ,SGData)
-                atomData[r][SScol] = Sytsym
-                atomData[r][Mulcol] = Mult
-                Atoms.SetCellValue(r,SScol,Sytsym)
-                Atoms.SetCellValue(r,Mulcol,str(Mult))
-                if atomData[r][colLabels.index('I/A')] == 'A':
-                    ui = colLabels.index('U11')
-                    CSI = G2spc.GetCSuinel(Sytsym)
-                    atomData[r][ui:ui+6] = chkUij(atomData[r][ui:ui+6],Sytsym)
-                    for i in range(6):
-                        ci = i+ui
-                        Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
-                        if CSI[2][i]:
-                            Atoms.SetCellStyle(r,ci,WHITE,False)
-                SetupGeneral()
-            elif Atoms.GetColLabelValue(c) == 'I/A':
-                atomData[r][c] = Atoms.GetCellValue(r,c)
-                if atomData[r][c] == 'I':
-                    Uij = atomData[r][c+2:c+8]
-                    atomData[r][c+1] = (Uij[0]+Uij[1]+Uij[2])/3.0
-                    atomData[r][c+2:c+8] = [0,0,0,0,0,0]
-                    Atoms.SetCellRenderer(r,c+1,wg.GridCellFloatRenderer(10,4))
-                    Atoms.SetCellStyle(r,c+1,WHITE,False)
-                    for i in range(6):
-                        ci = i+colLabels.index('U11')
-                        Atoms.SetCellRenderer(r,ci,wg.GridCellStringRenderer())
-                        Atoms.SetCellValue(r,ci,'')
-                        Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
-                else:
-                    Uiso = atomData[r][c+1]
-                    atomData[r][c+1] = ''
-                    CSI = G2spc.GetCSuinel(atomData[r][colLabels.index('site sym')])
-                    atomData[r][c+2:c+8] = Uiso*np.array(CSI[3])
-                    Atoms.SetCellRenderer(r,c+1,wg.GridCellStringRenderer())
-                    Atoms.SetCellStyle(r,c+1,VERY_LIGHT_GREY,True)
-                    for i in range(6):
-                        ci = i+colLabels.index('U11')
-                        Atoms.SetCellRenderer(r,ci,wg.GridCellFloatRenderer(10,4))
-                        Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
-                        if CSI[2][i]:
-                            Atoms.SetCellStyle(r,ci,WHITE,False)
-            elif Atoms.GetColLabelValue(c) in ['U11','U22','U33','U12','U13','U23']:
-                atomData[r][c] = float(Atoms.GetCellValue(r,c))
-                CSI = G2spc.GetCSuinel(atomData[r][colLabels.index('site sym')])
-                iUij = CSI[0][c-colLabels.index('U11')]
-                for i in range(6):
-                    if iUij == CSI[0][i]:
-                        atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
-            elif Atoms.GetColLabelValue(c) == 'Uiso':
-                atomData[r][c] = float(Atoms.GetCellValue(r,c))                
-            data['Atoms'] = atomData
+                    DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+            else:
+                event.Skip()
 
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -704,45 +723,20 @@ def UpdatePhaseData(self,item,data,oldPage):
                 else:
                     Atoms.SelectCol(c,True)
 
-        def AtomTypeSelect(event):
-            r,c =  event.GetRow(),event.GetCol()
-            if Atoms.GetColLabelValue(c) == 'Type':
-                PE = G2elem.PickElement(self)
-                if PE.ShowModal() == wx.ID_OK:
-                    atomData[r][c] = PE.Elem.strip()
-                    name = atomData[r][c]
-                    if len(name) in [2,4]:
-                        atomData[r][c-1] = name[:2]+'(%d)'%(r+1)
-                    else:
-                        atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
-                PE.Destroy()
-                SetupGeneral()
-                FillAtomsGrid()
-                value = Atoms.GetCellValue(r,c)
-                atomData[r][c] = value
-                ID = [atomData[r][-1],]
-                if 'Atoms' in data['Drawing']:
-                    DrawAtomsReplaceByIDs(data['Drawing'],atomData[r],ID)
-            else:
-                event.Skip()
-
         table = []
         rowLabels = []
         for i,atom in enumerate(atomData):
-            if atom[colLabels.index('I/A')] == 'I':
-                table.append(atom[:colLabels.index('U11')]+['','','','','',''])
-            else:
-                table.append(atom)
+            table.append(atom)
             rowLabels.append(str(i+1))
         atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         Atoms.SetTable(atomTable, True)
-        Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshAtomGrid)
+        Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
+        Atoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
-        Atoms.Bind(wg.EVT_GRID_SELECT_CELL, AtomTypeSelect)
         Atoms.SetMargins(0,0)
-        Atoms.AutoSizeColumns(True)
+        Atoms.AutoSizeColumns(False)
         colType = colLabels.index('Type')
         colSS = colLabels.index('site sym')
         colIA = colLabels.index('I/A')
@@ -753,19 +747,25 @@ def UpdatePhaseData(self,item,data,oldPage):
         attr.SetReadOnly(True)
         for i in range(colU11,colU11+6):
             Atoms.SetColAttr(i,attr)
+        for i in range(colU11-1,colU11+6):
+            Atoms.SetColSize(i,50)            
         for row in range(Atoms.GetNumberRows()):
+            Atoms.SetReadOnly(row,colType,True)
             Atoms.SetReadOnly(row,colSS,True)                         #site sym
             Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
             if Atoms.GetCellValue(row,colIA) == 'A':
-                CSI = G2spc.GetCSuinel(atomData[row][colLabels.index('site sym')])
                 Atoms.SetCellRenderer(row,colUiso,wg.GridCellStringRenderer())
-                Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                 Atoms.SetCellValue(row,colUiso,'')
+                CSI = G2spc.GetCSuinel(atomData[row][colLabels.index('site sym')])
+                Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                 for i in range(6):
                     ci = colU11+i
-                    Atoms.SetCellRenderer(row,ci,wg.GridCellFloatRenderer(10,4))
                     if CSI[2][i]:
                         Atoms.SetCellStyle(row,ci,WHITE,False)
+            else:
+                for i in range(6):
+                    Atoms.SetCellRenderer(row,colU11+i,wg.GridCellStringRenderer())
+                    Atoms.SetCellValue(row,colU11+i,'')
 
     def OnAtomAdd(event):
         AtomAdd(0,0,0)
@@ -930,9 +930,9 @@ def UpdatePhaseData(self,item,data,oldPage):
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,'backColor':[0,0,0],'depthFog':False,
-            'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,'showBadContacts':False,
+            'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,
             'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,
-            'unitCellBox':False,'showABC':True,'showSymElem':False,'selectedAtoms':[],
+            'unitCellBox':False,'showABC':True,'selectedAtoms':[],
             'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[-.1,-.1,-.1]}
         try:
             drawingData = data['Drawing']
@@ -963,9 +963,16 @@ def UpdatePhaseData(self,item,data,oldPage):
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         generalData = data['General']
+        SGData = generalData['SGData']
         if generalData['Type'] == 'nuclear':
             if oldatom:
-                atomInfo = [atom[:2]+oldatom[2:]][0]
+                opr = oldatom[5]
+                if atom[9] == 'A':                    
+                    X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[11:17])
+                    atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:11]+list(U)+oldatom[17:]][0]
+                else:
+                    X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
+                    atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+[oldatom[-1]]][0]
             else:
                 atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
                     ['',]+[[255,255,255],]+atom[9:]+[[]]][0]
@@ -994,7 +1001,8 @@ def UpdatePhaseData(self,item,data,oldPage):
     def DrawAtomAdd(drawingData,atom):
         drawingData['Atoms'].append(MakeDrawAtom(atom))
         
-    def DrawAtomsReplaceByIDs(drawingData,atom,IDs):
+    def DrawAtomsReplaceByID(drawingData,atom,ID):
+        IDs = [ID,]
         atomData = drawingData['Atoms']
         indx = FindAtomIndexByIDs(atomData,IDs)
         for ind in indx:
@@ -1120,7 +1128,13 @@ def UpdatePhaseData(self,item,data,oldPage):
                     atomData[r][c] = drawAtoms.GetCellValue(r,c)
                     FindBonds()
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
-                    dlg = wx.ColourDialog(self)
+                    color = atomData[r][c]
+                    colors = wx.ColourData()
+                    colors.SetChooseFull(True)
+                    colors.SetCustomColour(0,color)
+                    colors.SetColour(color)
+                    dlg = wx.ColourDialog(self,colors)
+                    dlg.GetColourData().SetCustomColour(0,color)
                     if dlg.ShowModal() == wx.ID_OK:
                         color = dlg.GetColourData().GetColour()
                         attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
@@ -1239,10 +1253,25 @@ def UpdatePhaseData(self,item,data,oldPage):
             generalData = data['General']
             atomData = data['Drawing']['Atoms']
             cx,ct,cs = data['Drawing']['atomPtrs']
-            dlg = wx.ColourDialog(self)
+            atmColors = []
+            atmTypes = []
+            for r in indx:
+                if atomData[r][cs+2] not in atmColors:
+                    atmColors.append(atomData[r][cs+2])
+                    atmTypes.append(atomData[r][ct])
+                    if len(atmColors) > 16:
+                        break
+            colors = wx.ColourData()
+            colors.SetChooseFull(True)
+            for i,color in enumerate(atmColors):
+                colors.SetCustomColour(i,color)
+            dlg = wx.ColourDialog(self,colors)
             if dlg.ShowModal() == wx.ID_OK:
-                color = dlg.GetColourData().GetColour()
+                for i in range(len(atmColors)):                    
+                    atmColors[i] = dlg.GetColourData().GetCustomColour(i)
+                colorDict = dict(zip(atmTypes,atmColors))
                 for r in indx:
+                    color = colorDict[atomData[r][ct]]
                     atomData[r][cs+2] = color
                     attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
                     attr.SetBackgroundColour(color)
@@ -1303,8 +1332,10 @@ def UpdatePhaseData(self,item,data,oldPage):
                         if noDuplicate(XYZ,atomData):
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = XYZ
-                            atom[cx+3] = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
-                                str(int(Cell[0]))+str(int(Cell[1]))+str(int(Cell[2]))
+                            atomOp = atom[cx+3]
+                            newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
+                                str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))                            
+                            atom[cx+3] = G2spc.StringOpsProd(atomOp,newOp,SGData)
                             if atom[cuia] == 'A':
                                 Uij = atom[cuij:cuij+6]
                                 U = G2spc.Uij2U(Uij)
@@ -1344,8 +1375,10 @@ def UpdatePhaseData(self,item,data,oldPage):
                         XYZ = XYZ+cent+Cell
                         atom = atomData[ind]
                         atom[cx:cx+3] = XYZ
-                        atom[cx+3] = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
-                            str(int(Cell[0]))+str(int(Cell[1]))+str(int(Cell[2]))
+                        atomOp = atom[cx+3]
+                        newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
+                            str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))
+                        atom[cx+3] = G2spc.StringOpsProd(atomOp,newOp,SGData)
                         if atom[cuia] == 'A':
                             Uij = atom[cuij:cuij+6]
                             U = G2spc.Uij2U(Uij)
@@ -1389,8 +1422,12 @@ def UpdatePhaseData(self,item,data,oldPage):
                         dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
                         if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
                             if noDuplicate(xyz,atomData):
+                                oprB = atomB[cx+3]
+                                C = xyz-xyzB
+                                newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
                                 newAtom = atomB[:]
                                 newAtom[cx:cx+3] = xyz
+                                newAtom[cx+3] = G2spc.StringOpsProd(oprB,newOp,SGData)
                                 atomData.append(newAtom)
             data['Drawing']['Atoms'] = atomData
             UpdateDrawAtoms()
@@ -1416,23 +1453,33 @@ def UpdatePhaseData(self,item,data,oldPage):
                     for item in result:
                         atom = copy.copy(atomData[ind])
                         atom[cx:cx+3] = item[0]
-                        atom[cx+3] = str(item[2])+'+000'
+                        atom[cx+3] = str(item[2])+'+' \
+                            +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
                         atom[cuij:cuij+6] = item[1]
                         Opp = G2spc.Opposite(item[0])
                         for xyz in Opp:
                             if noDuplicate(xyz,atomData):
+                                cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
+                                cell = '1'+'+'+ \
+                                    str(cell[0])+','+str(cell[1])+','+str(cell[2])
                                 atom[cx:cx+3] = xyz
+                                atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
                                 atomData.append(atom[:])
                 else:
                     result = G2spc.GenAtom(XYZ,SGData,False)
                     for item in result:
                         atom = copy.copy(atomData[ind])
                         atom[cx:cx+3] = item[0]
-                        atom[cx+3] = str(item[1])+'+000'
+                        atom[cx+3] = str(item[1])+'+' \
+                            +str(item[2][0])+','+str(item[2][1])+','+str(item[2][2])
                         Opp = G2spc.Opposite(item[0])
                         for xyz in Opp:
                             if noDuplicate(xyz,atomData):
+                                cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
+                                cell = '1'+'+'+ \
+                                    str(cell[0])+','+str(cell[1])+','+str(cell[2])
                                 atom[cx:cx+3] = xyz
+                                atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
                                 atomData.append(atom[:])               
                 data['Drawing']['Atoms'] = atomData
                 
@@ -1612,12 +1659,6 @@ def UpdatePhaseData(self,item,data,oldPage):
             drawingData['unitCellBox'] = unitCellBox.GetValue()
             G2plt.PlotStructure(self,data)
 
-        def OnShowBadContacts(event):
-            drawingData['showBadContacts'] = showBadContacts.GetValue()
-
-        def OnShowSymElem(event):
-            drawingData['showSymElem'] = showSymElem.GetValue()
-
         def OnShowHyd(event):
             drawingData['showHydrogen'] = showHydrogen.GetValue()
             FindBonds()
@@ -1702,7 +1743,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         mainSizer.Add(slopSizer,0)
         mainSizer.Add((5,5),0)
 
-        flexSizer = wx.FlexGridSizer(6,2,5,0)
+        flexSizer = wx.FlexGridSizer(5,2,5,0)
         flexSizer.Add(wx.StaticText(dataDisplay,-1,'View Point:  '),0,wx.ALIGN_CENTER_VERTICAL)
         VP = drawingData['viewPoint'][0]
         viewPoint = wx.TextCtrl(dataDisplay,value='%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]),
@@ -1719,16 +1760,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         unitCellBox.Bind(wx.EVT_CHECKBOX, OnShowUnitCell)
         unitCellBox.SetValue(drawingData['unitCellBox'])
         flexSizer.Add(unitCellBox,0,wx.ALIGN_CENTER_VERTICAL)
-
-        showBadContacts = wx.CheckBox(dataDisplay,-1,label='Show bad contacts?')
-        showBadContacts.Bind(wx.EVT_CHECKBOX, OnShowBadContacts)
-        showBadContacts.SetValue(drawingData['showBadContacts'])
-        flexSizer.Add(showBadContacts,0,wx.ALIGN_CENTER_VERTICAL)
-
-        showSymElem = wx.CheckBox(dataDisplay,-1,label='Show sym. elem.?')
-        showSymElem.Bind(wx.EVT_CHECKBOX, OnShowSymElem)
-        showSymElem.SetValue(drawingData['showSymElem'])
-        flexSizer.Add(showSymElem,0,wx.ALIGN_CENTER_VERTICAL)
 
         showHydrogen = wx.CheckBox(dataDisplay,-1,label='Show hydrogens?')
         showHydrogen.Bind(wx.EVT_CHECKBOX, OnShowHyd)

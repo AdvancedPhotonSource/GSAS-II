@@ -165,7 +165,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             X /= scalex                         #convert to mm
             Y /= scaley
             ring.append([X,Y,dsp])
-    if len(ring) < 45:             #want more than 1/4 of a circle
+    if len(ring) < 20:             #want more than 1/4 of a circle
         return []
     return ring
     
@@ -298,6 +298,7 @@ def ImageCalibrate(self,data):
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
+    pixLimit = data['pixLimit']
     cutoff = data['cutoff']
     if len(ring) < 5:
         print 'not enough inner ring points for ellipse'
@@ -313,10 +314,10 @@ def ImageCalibrate(self,data):
         return False
         
     #setup 180 points on that ring for "good" fit
-    Ring = makeRing(1.0,ellipse,20,cutoff,scalex,scaley,self.ImageZ)
+    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
         ellipse = FitRing(Ring)
-        Ring = makeRing(1.0,ellipse,20,cutoff,scalex,scaley,self.ImageZ)    #do again
+        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)    #do again
         ellipse = FitRing(Ring)
     else:
         print '1st ring not sufficiently complete to proceed'
@@ -337,7 +338,6 @@ def ImageCalibrate(self,data):
     A = G2lat.cell2A(cell)
     wave = data['wavelength']
     cent = data['center']
-    pixLimit = data['pixLimit']
     elcent,phi,radii = ellipse
     HKL = G2lat.GenHBravais(limits[0],Bravais,A)[skip:]
     dsp = HKL[0][3]

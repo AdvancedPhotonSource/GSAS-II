@@ -631,13 +631,11 @@ def UpdatePhaseData(self,item,data,oldPage):
                                 Atoms.SetCellStyle(r,ci,WHITE,False)
                     SetupGeneral()
                 elif Atoms.GetColLabelValue(c) == 'I/A':            #note use of text color to make it vanish!
-                    atomData[r][c] = Atoms.GetCellValue(r,c)
                     if atomData[r][c] == 'I':
                         Uij = atomData[r][c+2:c+8]
                         atomData[r][c+1] = (Uij[0]+Uij[1]+Uij[2])/3.0
                         Atoms.SetCellStyle(r,c+1,WHITE,False)
                         Atoms.SetCellTextColour(r,c+1,BLACK)
-                        Atoms.SetCellRenderer(r,c+1,wg.GridCellFloatRenderer(10,4))
                         for i in range(6):
                             ci = i+colLabels.index('U11')
                             Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
@@ -647,7 +645,6 @@ def UpdatePhaseData(self,item,data,oldPage):
                         value = atomData[r][c+1]
                         CSI = G2spc.GetCSuinel(atomData[r][colLabels.index('site sym')])
                         atomData[r][c+1] =  0.0
-                        Atoms.SetCellRenderer(r,c+1,wg.GridCellFloatRenderer(10,4))
                         Atoms.SetCellStyle(r,c+1,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(r,c+1,VERY_LIGHT_GREY)
                         for i in range(6):
@@ -655,7 +652,6 @@ def UpdatePhaseData(self,item,data,oldPage):
                             atomData[r][ci] = value*CSI[3][i]
                             Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
                             Atoms.SetCellTextColour(r,ci,BLACK)
-                            Atoms.SetCellRenderer(r,ci,wg.GridCellFloatRenderer(10,4))
                             if CSI[2][i]:
                                 Atoms.SetCellStyle(r,ci,WHITE,False)
                 elif Atoms.GetColLabelValue(c) in ['U11','U22','U33','U12','U13','U23']:
@@ -667,6 +663,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                             atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                    FindBonds()
                     
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -742,11 +739,6 @@ def UpdatePhaseData(self,item,data,oldPage):
         colIA = colLabels.index('I/A')
         colU11 = colLabels.index('U11')
         colUiso = colLabels.index('Uiso')
-        attr = wg.GridCellAttr()                                #to set Uij defaults
-        attr.SetBackgroundColour(VERY_LIGHT_GREY)
-        attr.SetReadOnly(True)
-        for i in range(colU11,colU11+6):
-            Atoms.SetColAttr(i,attr)
         for i in range(colU11-1,colU11+6):
             Atoms.SetColSize(i,50)            
         for row in range(Atoms.GetNumberRows()):
@@ -754,18 +746,22 @@ def UpdatePhaseData(self,item,data,oldPage):
             Atoms.SetReadOnly(row,colSS,True)                         #site sym
             Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
             if Atoms.GetCellValue(row,colIA) == 'A':
-                Atoms.SetCellRenderer(row,colUiso,wg.GridCellStringRenderer())
-                Atoms.SetCellValue(row,colUiso,'')
                 CSI = G2spc.GetCSuinel(atomData[row][colLabels.index('site sym')])
                 Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
+                Atoms.SetCellTextColour(row,colUiso,VERY_LIGHT_GREY)
                 for i in range(6):
                     ci = colU11+i
+                    Atoms.SetCellTextColour(row,ci,BLACK)
+                    Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
                     if CSI[2][i]:
                         Atoms.SetCellStyle(row,ci,WHITE,False)
             else:
+                Atoms.SetCellStyle(row,colUiso,WHITE,False)
+                Atoms.SetCellTextColour(row,colUiso,BLACK)
                 for i in range(6):
-                    Atoms.SetCellRenderer(row,colU11+i,wg.GridCellStringRenderer())
-                    Atoms.SetCellValue(row,colU11+i,'')
+                    ci = colU11+i
+                    Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
+                    Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
 
     def OnAtomAdd(event):
         AtomAdd(0,0,0)
@@ -796,7 +792,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         elif generalData['Type'] == 'magnetic':
             atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
         SetupGeneral()
-        if 'Drawing' in data:            
+        if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
             G2plt.PlotStructure(self,data)
 
@@ -1886,7 +1882,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     UseList[hist]['Mustrain'][1][pid] = strain
             except ValueError:
                 pass
-            Obj.SetValue("%.1f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
+            Obj.SetValue("%.3f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
             
         def OnStrainAxis(event):
             Obj = event.GetEventObject()
@@ -1936,7 +1932,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     UseList[Indx[Obj.GetId()]]['Extinction'][0] = ext
             except ValueError:
                 pass
-            Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Extinction'][0]))          #reset in case of error
+            Obj.SetValue("%.2f"%(UseList[Indx[Obj.GetId()]]['Extinction'][0]))          #reset in case of error
             
         def checkAxis(axis):
             if not np.any(np.array(axis)):
@@ -2050,7 +2046,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
                     strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
                     strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                        '%.4f'%(UseList[item]['Mustrain'][1][0]),style=wx.TE_PROCESS_ENTER)
+                        '%.3f'%(UseList[item]['Mustrain'][1][0]),style=wx.TE_PROCESS_ENTER)
                     Indx[strainVal.GetId()] = [item,0]
                     strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
                     strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -2077,7 +2073,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                         Indx[strainRef.GetId()] = [item,id]
                         strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
                         strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.4f'%(val),style=wx.TE_PROCESS_ENTER)
+                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[strainVal.GetId()] = [item,id]
                         strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
                         strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -2102,7 +2098,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                         Indx[strainRef.GetId()] = [item,id]
                         strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
                         strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.4f'%(val),style=wx.TE_PROCESS_ENTER)
+                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[strainVal.GetId()] = [item,id]
                         strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
                         strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -2140,7 +2136,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                 extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
                 extSizer.Add(extRef,0,wx.ALIGN_CENTER_VERTICAL)
                 extVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                    '%.4f'%(UseList[item]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
+                    '%.2f'%(UseList[item]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
                 Indx[extVal.GetId()] = item
                 extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
                 extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)

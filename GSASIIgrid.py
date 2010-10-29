@@ -404,17 +404,121 @@ def UpdateNotebook(self,data):
             self.dataDisplay.AppendText('Notebook entry @ '+time.ctime()+"\n")
             
 def UpdateControls(self,data):
-    if data:
-        self.dataFrame.SetLabel('Controls')
+    '''
+    #Fourier controls
+    'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
+    'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],
+    #distance/angle controls
+    'distMax':0.0,'angleMax':0.0,'useMapPeaks':False}
+    '''
         
+    def SetStatusLine(text):
+        Status.SetStatusText(text)
+                                      
+    def OnNumCycles(event):
+        try:
+            value = max(0,min(200,int(Ncyc.GetValue())))
+        except ValueError:
+            value = 3
+        data['Ncycles'] = value
+        Ncyc.SetValue('%d'%(value))
+        
+    def OnConvergence(event):
+        try:
+            value = max(0.01,min(100.,float(Cnvrg.GetValue())))
+        except ValueError:
+            value = 0.01
+        data['minSumShftESD'] = value
+        Cnvrg.SetValue('%.2f'%(value))
+        
+    def OnAtomShift(event):
+        try:
+            value = max(0.1,min(5.,float(AtShft.GetValue())))
+        except ValueError:
+            value = 2.0
+        data['maxShift'] = value
+        AtShft.SetValue('%.1f'%(value))
+        
+    def OnMarquardt(event):
+        try:
+            value = max(1.0,min(10.0,float(Marq.GetValue())))
+        except ValueError:
+            value = 1.0
+        data['Marquardt'] = value
+        Marq.SetValue('%.2f'%(value))
+        
+    def OnBandWidth(event):
+        try:
+            value = max(0,min(200,int(Band.GetValue())))
+        except ValueError:
+            value = 0
+        data['bandWidth'] = value
+        Band.SetValue('%d'%(value))
+        
+    def OnRestraint(event):
+        data['restraintWeight'] = Restraint.GetValue()
+
+    if self.dataDisplay:
+        self.dataDisplay.Destroy()
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
+    SetStatusLine('')
+    self.dataFrame.SetLabel('Controls')
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
+    LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Max cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
+    Ncyc = wx.TextCtrl(self.dataDisplay,-1,value='%d'%(data['Ncycles']),style=wx.TE_PROCESS_ENTER)
+    Ncyc.Bind(wx.EVT_TEXT_ENTER,OnNumCycles)
+    Ncyc.Bind(wx.EVT_KILL_FOCUS,OnNumCycles)
+    LSSizer.Add(Ncyc,0,wx.ALIGN_CENTER_VERTICAL)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Min sum(shift/esd)^2: '),0,wx.ALIGN_CENTER_VERTICAL)
+    Cnvrg = wx.TextCtrl(self.dataDisplay,-1,value='%.2f'%(data['minSumShftESD']),style=wx.TE_PROCESS_ENTER)
+    Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
+    Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
+    LSSizer.Add(Cnvrg,0,wx.ALIGN_CENTER_VERTICAL)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Max atom shift: '),0,wx.ALIGN_CENTER_VERTICAL)
+    AtShft = wx.TextCtrl(self.dataDisplay,-1,value='%.1f'%(data['maxShift']),style=wx.TE_PROCESS_ENTER)
+    AtShft.Bind(wx.EVT_TEXT_ENTER,OnAtomShift)
+    AtShft.Bind(wx.EVT_KILL_FOCUS,OnAtomShift)
+    LSSizer.Add(AtShft,0,wx.ALIGN_CENTER_VERTICAL)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Marquardt factor: '),0,wx.ALIGN_CENTER_VERTICAL)
+    Marq = wx.TextCtrl(self.dataDisplay,-1,value='%.2f'%(data['Marquardt']),style=wx.TE_PROCESS_ENTER)
+    Marq.Bind(wx.EVT_TEXT_ENTER,OnMarquardt)
+    Marq.Bind(wx.EVT_KILL_FOCUS,OnMarquardt)
+    LSSizer.Add(Marq,0,wx.ALIGN_CENTER_VERTICAL)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Matrix band width: '),0,wx.ALIGN_CENTER_VERTICAL)
+    Band = wx.TextCtrl(self.dataDisplay,-1,value='%d'%(data['bandWidth']),style=wx.TE_PROCESS_ENTER)
+    Band.Bind(wx.EVT_TEXT_ENTER,OnBandWidth)
+    Band.Bind(wx.EVT_KILL_FOCUS,OnBandWidth)
+    LSSizer.Add(Band,0,wx.ALIGN_CENTER_VERTICAL)
+    Restraint = wx.CheckBox(self.dataDisplay,-1,label='Modify restraint weights?')
+    Restraint.Bind(wx.EVT_CHECKBOX, OnRestraint)
+    Restraint.SetValue(data['restraintWeight'])
+    LSSizer.Add(Restraint,0,wx.ALIGN_CENTER_VERTICAL)
+    
+    
+    mainSizer.Add(LSSizer)
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Density Map Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
+
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Distance/angle Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
+        
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
      
 def UpdateComments(self,data):                   
-    if data:
-        self.dataFrame.SetLabel('Comments')
-        self.dataDisplay = wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
-            style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
-        for line in data:
-            self.dataDisplay.AppendText(line+"\n")
+    self.dataFrame.SetLabel('Comments')
+    self.dataDisplay = wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+        style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
+    for line in data:
+        self.dataDisplay.AppendText(line+"\n")
              
 def UpdateHKLControls(self,data):
     
@@ -553,6 +657,18 @@ def MovePatternTreeToGrid(self,item):
             self.PatternId = 0
             self.ExportPattern.Enable(False)
             data = self.PatternTree.GetItemPyData(item)
+            if data == [0] or data == {}:           #fill in defaults
+                data = {
+                    #least squares controls
+                    'Ncycles':3,'maxShift':2.0,'bandWidth':0,'Marquardt':1.0,'restraintWeight':False,
+                    'minSumShftESD':0.01,
+                    #Fourier controls
+                    'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
+                    'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],
+                    #distance/angle controls
+                    'distMax':0.0,'angleMax':0.0,'useMapPeaks':False}
+                self.PatternTree.SetItemPyData(item,data)                             
+            self.Refine.Enable(True)
             UpdateControls(self,data)
         elif 'IMG' in self.PatternTree.GetItemText(item):
             self.Image = item

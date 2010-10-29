@@ -745,6 +745,7 @@ def PlotImage(self,newPlot=False,event=None):
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
+        pixLimit = Data['pixLimit']
         if self.itemPicked is None and PickName == 'Image Controls':
             size = len(self.ImageZ)
             Xpos = event.xdata
@@ -755,7 +756,7 @@ def PlotImage(self,newPlot=False,event=None):
                 if event.button == 1:
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
-                    xpos,ypos,I,J = G2img.ImageLocalMax(self.ImageZ,20,Xpix,Ypix)
+                    xpos,ypos,I,J = G2img.ImageLocalMax(self.ImageZ,pixLimit,Xpix,Ypix)
                     if I and J:
                         xpos += .5                              #shift to pixel center
                         ypos += .5
@@ -1239,6 +1240,8 @@ def PlotStructure(self,data):
         if event.ShiftDown() and drawingData['showABC']:
             if event.RightIsDown():
                 SetTestPos(newxy)
+            if event.LeftIsDown():
+                SetNewPos(newxy)
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
@@ -1296,6 +1299,21 @@ def PlotStructure(self,data):
         drawingData['Rotation'][3] = newxy
         drawingData['testPos'] =  Tx,Ty,Tz
                               
+    def SetNewPos(newxy):
+        
+        Tx,Ty,Tz = drawingData['testPos']
+        anglex,angley,anglez,oldxy = drawingData['Rotation']
+        Rx = G2lat.rotdMat(anglex,0)
+        Ry = G2lat.rotdMat(angley,1)
+        Rz = G2lat.rotdMat(anglez,2)
+        dxy = list(newxy-oldxy)+[0,]
+        dxy = np.inner(Rz,np.inner(Ry,np.inner(Rx,dxy)))
+        Tx += dxy[0]*0.001
+        Ty -= dxy[1]*0.001
+        Tz += dxy[2]*0.001
+#        drawingData['Rotation'][3] = newxy
+#        drawingData['testPos'] =  Tx,Ty,Tz
+
     def SetRotation(newxy):        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         dxy = newxy-oldxy

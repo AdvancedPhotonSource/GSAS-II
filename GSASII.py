@@ -18,6 +18,7 @@ import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
+import GSASIIstruct as G2str
 import OpenGL as ogl
 
 # print versions
@@ -28,7 +29,7 @@ print "matplotlib: ",mpl.__version__
 print "numpy:      ",np.__version__
 print "OpenGL:     ",ogl.__version__
 
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -45,8 +46,8 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(1)]
 
 [wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN, 
- wxID_FILESAVE, wxID_FILESAVEAS, wxID_UNDO, 
-] = [wx.NewId() for _init_coll_File_Items in range(6)]
+ wxID_FILESAVE, wxID_FILESAVEAS, wxID_UNDO, wxID_REFINE, 
+] = [wx.NewId() for _init_coll_File_Items in range(7)]
 
 [wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
  wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
@@ -124,6 +125,10 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=wxID_DATADELETE)
                 
     def _init_coll_Calculate_Items(self,parent):
+        self.Refine = parent.Append(help='', id=wxID_REFINE, kind=wx.ITEM_NORMAL,
+            text='Refine')
+        self.Refine.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnRefine, id=wxID_REFINE)
         self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
             text='UnDo')
         self.UnDo.Enable(False)
@@ -258,6 +263,7 @@ class GSASII(wx.Frame):
             self.dirname = ospath.dirname(arg[1])
             G2IO.ProjFileOpen(self)
             self.PatternTree.Expand(self.root)
+            self.Refine.Enable(True)
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -388,7 +394,7 @@ class GSASII(wx.Frame):
         dlg = wx.FileDialog(self, 'Choose image files', '.', '',\
         'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
         |*.img|Detector tif (*.tif;*.tiff)|*.tif;*.tiff|GE Image sum (*.sum)\
-        |*.sum|GE Image avg (*.avg)|*.avg|All files (*.*)|*.*',wx.OPEN | wx.MULTIPLE)
+        |*.sum|GE Image avg (*.avg)|*.avg|GE Image raw (*)|*|All files (*.*)|*.*',wx.OPEN | wx.MULTIPLE)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
@@ -485,7 +491,7 @@ class GSASII(wx.Frame):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
             self.PatternTree.SetItemPyData(sub,[''])
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
-            self.PatternTree.SetItemPyData(sub,[0])
+            self.PatternTree.SetItemPyData(sub,{})
                 
     class CopyDialog(wx.Dialog):
         def __init__(self,parent,title,text,data):
@@ -925,8 +931,12 @@ class GSASII(wx.Frame):
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item and not Id:
                         name = self.PatternTree.GetItemText(item)
-                        if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
+                        if name[:4] in ['PWDR','HKLF','IMG']:
                             Id = item
+                        elif name == 'Controls':
+                            data = self.PatternTree.GetItemPyData(item)
+                            if data != [0] and data != {}:
+                                self.Refine.Enable(True)
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
                         self.PatternTree.SelectItem(Id)
@@ -1121,6 +1131,20 @@ class GSASII(wx.Frame):
     def OnUnDo(self,event):
         self.DoUnDo()
         self.UnDo.Enable(False)
+        
+    def OnRefine(self,event):
+        #works - but it'd be better if it could restore plots
+        G2str.Refine(self.GSASprojectfile)
+        dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.PatternTree.DeleteChildren(self.root)
+                if self.HKL: self.HKL = []
+                if self.G2plotNB.plotList:
+                    self.G2plotNB.clear()
+                G2IO.ProjFileOpen(self)
+        finally:
+            dlg.Destroy()
         
     def DoUnDo(self):
         print 'Undo last refinement'

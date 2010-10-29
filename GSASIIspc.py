@@ -136,34 +136,34 @@ def SGPrint(SGData):
         if M[1][2] > 0: NPZ[1] = 0
     NPol = (NP[0]+NP[1]+NP[2]+NPZ[0]*NPZ[1])*(1-int(SGData['SGInv']))
     SGText = []
-    SGText.append('Space Group '+SGData['SpGrp'])
+    SGText.append(' Space Group: '+SGData['SpGrp'])
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
     if SGData['SGLatt'] in 'ABCIFR':
-        SGText.append('The lattice is '+CentStr+' '+SGData['SGLatt']+'-centered '+SGData['SGSys'].lower())
+        SGText.append(' The lattice is '+CentStr+' '+SGData['SGLatt']+'-centered '+SGData['SGSys'].lower())
     else:
-        SGText.append('The lattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())        
-    SGText.append('Multiplicity of a general site is '+str(Mult))
-    SGText.append('The Laue symmetry is '+SGData['SGLaue'])
+        SGText.append(' The lattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())        
+    SGText.append(' Multiplicity of a general site is '+str(Mult))
+    SGText.append(' The Laue symmetry is '+SGData['SGLaue'])
     if SGData['SGUniq'] in ['a','b','c']:
-        SGText.append('The unique monoclinic axis is '+SGData['SGUniq'])
+        SGText.append(' The unique monoclinic axis is '+SGData['SGUniq'])
     if SGData['SGInv']:
-        SGText.append('The inversion center is located at 0,0,0')
+        SGText.append(' The inversion center is located at 0,0,0')
     if NPol:
-        SGText.append('The location of the origin is arbitrary in '+POL[NPol])
-    SGText.append('\n'+'The equivalent positions are:')
+        SGText.append(' The location of the origin is arbitrary in '+POL[NPol])
+    SGText.append('\n'+' The equivalent positions are:')
     if SGData['SGLatt'] != 'P':
-        SGText.append('\n('+Latt2text(SGData['SGLatt'])+')+')
+        SGText.append('\n ('+Latt2text(SGData['SGLatt'])+')+')
     if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
         Ncol = 2
     else:
         Ncol = 3
-    line = ''
+    line = ' '
     for iop,[M,T] in enumerate(SGData['SGOps']):
         if iop % Ncol == 0:
             SGText.append(line)        
-            line = ''
+            line = ' '
         Fld = '(%2i) ' % (iop+1)+MT2text(M,T)+'\t'
         line += Fld
     SGText.append(line)        

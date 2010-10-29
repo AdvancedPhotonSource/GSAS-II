@@ -391,7 +391,7 @@ def GetImageData(imagefile,imageOnly=False):
         Image[0][0] = 0
     elif ext == '.mar3450' or ext == '.mar2300':
         Comments,Data,Size,Image = GetMAR345Data(imagefile)
-    elif ext in ['.sum','.avg']:
+    elif ext in ['.sum','.avg','']:
         Comments,Data,Size,Image = GetGEsumData(imagefile)
     elif ext == '.G2img':
         return GetG2Image(imagefile)
@@ -418,19 +418,25 @@ def GetGEsumData(filename,imageOnly=False):
         print 'Read GE sum file: ',filename    
     File = open(filename,'rb')
     size = 2048
+    row = 0
+    pos = 0
     if '.sum' in filename:
         head = ['GE detector sum data from APS 1-ID',]
     if '.avg' in filename:
         head = ['GE detector avg data from APS 1-ID',]
+    else:
+        head = ['GE detector raw data from APS 1-ID',]
+        pos = 8192
     image = np.zeros(shape=(size,size),dtype=np.int32)
-    row = 0
-    pos = 0
     while row < size:
         File.seek(pos)
         if '.sum' in filename:
             line = ar.array('f',File.read(4*size))
             pos += 4*size
         elif '.avg' in filename:
+            line = ar.array('H',File.read(2*size))
+            pos += 2*size
+        else:
             line = ar.array('H',File.read(2*size))
             pos += 2*size
         image[row] = np.asarray(line)
@@ -699,7 +705,6 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'),[tuple(parms),parms,codes,names])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Sample Parameters'),Sample)
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
@@ -709,7 +714,7 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms,codes,names])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(self,Id,'Sample Parameters'),Sample)
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             

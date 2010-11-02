@@ -807,9 +807,10 @@ symtypelist = ('triclinic', 'monoclinic', 'orthorhombic', 'tetragonal',
 def test0():
     '''test #0: exercise MoveToUnitCell'''
     msg = "MoveToUnitCell failed"
-    v = [0,1,2,-1,-2]; MoveToUnitCell(v); assert v==[0,0,0,0,0], msg
-    v = np.array([-.1]); MoveToUnitCell(v); assert abs(v-0.9) < 1e-6, msg
-    v = np.array([.1]); MoveToUnitCell(v); assert abs(v-0.1) < 1e-6, msg
+    assert (MoveToUnitCell([1,2,3]) == [0,0,0]).all, msg
+    assert (MoveToUnitCell([2,-1,-2]) == [0,0,0]).all, msg
+    assert abs(MoveToUnitCell(np.array([-.1]))[0]-0.9) < 1e-6, msg
+    assert abs(MoveToUnitCell(np.array([.1]))[0]-0.1) < 1e-6, msg
 
 def test1():
     ''' test #1: SpcGroup and SGPrint against previous results'''
@@ -820,21 +821,28 @@ def test1():
     def CompareSpcGroup(spc, referr, refdict, reflist): 
         'Compare output from GSASIIspc.SpcGroup with results from a previous run'
         # if an error is reported, the dictionary can be ignored
-        msg = "failed on space group %s" % spc
+        msg0 = "CompareSpcGroup failed on space group %s" % spc
         result = SpcGroup(spc)
         if result[0] == referr and referr > 0: return True
         keys = result[1].keys()
         #print result[1]['SpGrp']
+        msg = msg0 + " in list lengths"
         assert len(keys) == len(refdict.keys()), msg
         for key in keys:
-        #print key, type(refdict[key])
             if key == 'SGOps' or  key == 'SGCen':
+                msg = msg0 + (" in key %s length" % key)
                 assert len(refdict[key]) == len(result[1][key]), msg
                 for i in range(len(refdict[key])):
+                    msg = msg0 + (" in key %s level 0" % key)
                     assert np.allclose(result[1][key][i][0],refdict[key][i][0]), msg
+                    msg = msg0 + (" in key %s level 1" % key)
                     assert np.allclose(result[1][key][i][1],refdict[key][i][1]), msg
             else:
+                msg = msg0 + (" in key %s" % key)
                 assert result[1][key] == refdict[key], msg
+        msg = msg0 + (" in key %s reflist" % key)
+        #for (l1,l2) in zip(reflist, SGPrint(result[1])):
+        #    assert l2.replace('\t','').replace(' ','') == l1.replace(' ',''), 'SGPrint ' +msg
         assert reflist == SGPrint(result[1]), 'SGPrint ' +msg
     for spc in spctestinp.SGdat:
         CompareSpcGroup(spc, 0, spctestinp.SGdat[spc], spctestinp.SGlist[spc] )

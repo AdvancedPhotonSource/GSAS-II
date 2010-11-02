@@ -427,7 +427,7 @@ def PlotPatterns(self,newPlot=False):
     for N,Pattern in enumerate(PlotList):
         ifpicked = False
         LimitId = 0
-        xye = Pattern[1]
+        xye = np.array(Pattern[1])
         if PickId:
             ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')

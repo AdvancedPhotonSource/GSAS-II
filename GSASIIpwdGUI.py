@@ -30,7 +30,7 @@ def UpdatePeakGrid(self, data):
         
     def DoUnDo():
         print 'Undo last refinement'
-        file = open('GSASII.save','rb')
+        file = open(self.undofile,'rb')
         PatternId = self.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
@@ -44,6 +44,15 @@ def UpdatePeakGrid(self, data):
             print item,' recovered'
         file.close()
         
+    def SaveState(self):
+        self.undofile = self.dirname+'\\GSASII.save'
+        file = open(self.undofile,'wb')
+        PatternId = self.PatternId
+        for item in ['Background','Instrument Parameters','Peak List']:
+            cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)
+        file.close()
+        self.dataFrame.UnDo.Enable(True)
+                
     def OnPeakFit(event):
         self.SaveState()
         print 'Peak Fitting - Do one cycle of peak fitting'

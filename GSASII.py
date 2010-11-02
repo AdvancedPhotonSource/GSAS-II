@@ -129,10 +129,10 @@ class GSASII(wx.Frame):
             text='Refine')
         self.Refine.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=wxID_REFINE)
-        self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
-            text='UnDo')
-        self.UnDo.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnUnDo, id=wxID_UNDO)
+#        self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
+#            text='UnDo')
+#        self.UnDo.Enable(False)
+#        self.Bind(wx.EVT_MENU, self.OnUnDo, id=wxID_UNDO)
         
     def _init_coll_Import_Items(self,parent):
         self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
@@ -1128,10 +1128,10 @@ class GSASII(wx.Frame):
     def OnExportCIF(self,event):
         event.Skip()
         
-    def OnUnDo(self,event):
-        self.DoUnDo()
-        self.UnDo.Enable(False)
-        
+#    def OnUnDo(self,event):
+#        self.DoUnDo()
+#        self.UnDo.Enable(False)
+#        
     def OnRefine(self,event):
         #works - but it'd be better if it could restore plots
         G2str.Refine(self.GSASprojectfile)
@@ -1146,31 +1146,31 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         
-    def DoUnDo(self):
-        print 'Undo last refinement'
-        file = open(self.undofile,'rb')
-        PatternId = self.PatternId
-        for item in ['Background','Instrument Parameters','Peak List']:
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
-            if self.dataDisplay.GetName() == item:
-                if item == 'Background':
-                    G2pdG.UpdateBackgroundGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
-                elif item == 'Instrument Parameters':
-                    G2pdG.UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
-                elif item == 'Peak List':
-                    G2pdG.UpdatePeakGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
-            print item,' recovered'
-        file.close()
-        
-    def SaveState(self):
-        self.undofile = self.dirname+'\\GSASII.save'
-        file = open(self.undofile,'wb')
-        PatternId = self.PatternId
-        for item in ['Background','Instrument Parameters','Peak List']:
-            cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)
-        file.close()
-        self.UnDo.Enable(True)
-                
+#    def DoUnDo(self):
+#        print 'Undo last refinement'
+#        file = open(self.undofile,'rb')
+#        PatternId = self.PatternId
+#        for item in ['Background','Instrument Parameters','Peak List']:
+#            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
+#            if self.dataDisplay.GetName() == item:
+#                if item == 'Background':
+#                    G2pdG.UpdateBackgroundGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+#                elif item == 'Instrument Parameters':
+#                    G2pdG.UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+#                elif item == 'Peak List':
+#                    G2pdG.UpdatePeakGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+#            print item,' recovered'
+#        file.close()
+#        
+#    def SaveState(self):
+#        self.undofile = self.dirname+'\\GSASII.save'
+#        file = open(self.undofile,'wb')
+#        PatternId = self.PatternId
+#        for item in ['Background','Instrument Parameters','Peak List']:
+#            cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)
+#        file.close()
+#        self.UnDo.Enable(True)
+#                
     def ErrorDialog(self,title,message):
         dlg = wx.MessageDialog(self, message, title,  wx.OK)
         try:

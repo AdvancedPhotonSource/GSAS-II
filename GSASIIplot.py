@@ -1148,6 +1148,9 @@ def PlotStructure(self,data):
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl,Wt, Wt,Wt,Wt,Wt, Wt,Wt,Wt,Wt]
+    altDown = False
+    shiftDown = False
+    ctrlDown = False
     
     def OnKeyBox(event):
         import Image
@@ -1172,6 +1175,7 @@ def PlotStructure(self,data):
         Proj = glGetDoublev(GL_PROJECTION_MATRIX)
         Model = glGetDoublev(GL_MODELVIEW_MATRIX)
         Zmax = 1.
+        ClearSelectedAtoms()
         for i,atom in enumerate(drawAtoms):
             x,y,z = atom[cx:cx+3]
             X,Y,Z = gluProject(x,y,z,Model,Proj,View)
@@ -1182,10 +1186,27 @@ def PlotStructure(self,data):
         
     def OnMouseDown(event):
         xy = event.GetPosition()
-        if event.AltDown():
+        if event.ShiftDown():
             GetTruePosition(xy)
         else:
             drawingData['Rotation'][3] = xy
+        Draw()
+        
+    def OnMouseMove(event):
+        newxy = event.GetPosition()
+        if event.AltDown() and drawingData['showABC']:
+            if event.RightIsDown():
+                altDown = True
+                SetTestPos(newxy)
+        if event.Dragging() and not event.AltDown():
+            altDown = False
+            if event.LeftIsDown():
+                SetRotation(newxy)
+            elif event.RightIsDown():
+                SetTranslation(newxy)
+            elif event.MiddleIsDown():
+                SetRotationZ(newxy)
+        Draw()
         
     def OnMouseWheel(event):
         drawingData['cameraPos'] += event.GetWheelRotation()/24
@@ -1205,12 +1226,16 @@ def PlotStructure(self,data):
             names = [child.GetName() for child in panel]
             panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
             
+    def ClearSelectedAtoms():
+        page = self.dataDisplay.GetSelection()
+        if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
+            self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
+                    
     def SetSelectedAtoms(ind):
         page = self.dataDisplay.GetSelection()
         if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
             self.dataDisplay.GetPage(page).SelectRow(ind)      #this is the Atoms grid in Draw Atoms
-        
-            
+                  
     def GetSelectedAtoms():
         page = self.dataDisplay.GetSelection()
         Ind = []
@@ -1264,22 +1289,6 @@ def PlotStructure(self,data):
             SetViewPointText(drawingData['viewPoint'][0])            
         Draw()
             
-    def OnMouseMove(event):
-        newxy = event.GetPosition()
-        if event.ShiftDown() and drawingData['showABC']:
-            if event.RightIsDown():
-                SetTestPos(newxy)
-            if event.LeftIsDown():
-                SetNewPos(newxy)
-        if event.Dragging() and not event.AltDown():
-            if event.LeftIsDown():
-                SetRotation(newxy)
-            elif event.RightIsDown():
-                SetTranslation(newxy)
-            elif event.MiddleIsDown():
-                SetRotationZ(newxy)
-            Draw()
-        
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
         glClearColor(R,G,B,A)
@@ -1485,7 +1494,10 @@ def PlotStructure(self,data):
         import numpy.linalg as nl
         Ind = GetSelectedAtoms()
         x,y,z = drawingData['testPos']
-        self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)
+        if altDown:
+            self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
+        else:
+            self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
         cPos = drawingData['cameraPos']
@@ -1646,6 +1658,7 @@ def PlotStructure(self,data):
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.views = False
         view = False
+        altDown = False
     Page.SetFocus()
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=(' save as:','jpeg','tiff','bmp'))

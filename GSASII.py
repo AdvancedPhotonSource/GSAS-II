@@ -46,8 +46,8 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(1)]
 
 [wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN, 
- wxID_FILESAVE, wxID_FILESAVEAS, wxID_UNDO, wxID_REFINE, 
-] = [wx.NewId() for _init_coll_File_Items in range(7)]
+ wxID_FILESAVE, wxID_FILESAVEAS, wxID_REFINE, 
+] = [wx.NewId() for _init_coll_File_Items in range(6)]
 
 [wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
  wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
@@ -129,27 +129,23 @@ class GSASII(wx.Frame):
             text='Refine')
         self.Refine.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=wxID_REFINE)
-#        self.UnDo = parent.Append(help='', id=wxID_UNDO, kind=wx.ITEM_NORMAL,
-#            text='UnDo')
-#        self.UnDo.Enable(False)
-#        self.Bind(wx.EVT_MENU, self.OnUnDo, id=wxID_UNDO)
         
     def _init_coll_Import_Items(self,parent):
         self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
             id=wxID_IMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase...')
         self.ImportPDB = parent.Append(help='Import phase data from PDB file',
             id=wxID_IMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase...')
+        self.ImportCIF = parent.Append(help='Import phase data from cif file',id=wxID_IMPORTCIF, kind=wx.ITEM_NORMAL,
+            text='Import CIF Phase...')
         self.ImportPattern = parent.Append(help='',id=wxID_IMPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Import Powder Pattern...')
         self.ImportHKL = parent.Append(help='',id=wxID_IMPORTHKL, kind=wx.ITEM_NORMAL,
             text='Import HKLs...')
-        self.ImportCIF = parent.Append(help='',id=wxID_IMPORTCIF, kind=wx.ITEM_NORMAL,
-            text='Import CIF...')
         self.Bind(wx.EVT_MENU, self.OnImportPhase, id=wxID_IMPORTPHASE)
         self.Bind(wx.EVT_MENU, self.OnImportPDB, id=wxID_IMPORTPDB)
+        self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_IMPORTCIF)
         self.Bind(wx.EVT_MENU, self.OnImportPattern, id=wxID_IMPORTPATTERN)
         self.Bind(wx.EVT_MENU, self.OnImportHKL, id=wxID_IMPORTHKL)
-        self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_IMPORTCIF)
 
     def _init_coll_Export_Items(self,parent):
         self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_EXPORTPATTERN, kind=wx.ITEM_NORMAL,
@@ -645,7 +641,7 @@ class GSASII(wx.Frame):
                     Xminmax = [0,0]
                     Xsum = []
                     Ysum = []
-                    Wsum = []
+                    Vsum = []
                     result = dlg.GetData()
                     for i,item in enumerate(result[:-1]):
                         scale,name = item
@@ -653,6 +649,7 @@ class GSASII(wx.Frame):
                         if scale:
                             Comments.append("%10.3f %s" % (scale,' * '+name))
                             x,y,w,yc,yb,yd = data
+                            v = 1./w
                             if lenX:
                                 if lenX != len(x):
                                     self.ErrorDialog('Data length error','Data to be summed must have same number of points'+ \
@@ -670,13 +667,15 @@ class GSASII(wx.Frame):
                                 else:
                                     for j,yi in enumerate(y):
                                          Ysum[j] += scale*yi
+                                         Vsum[j] += abs(scale)*v[j]
                             else:
                                 Xminmax = [x[0],x[-1]]
                                 YCsum = YBsum = YDsum = [0.0 for i in range(lenX)]
                                 for j,yi in enumerate(y):
                                     Xsum.append(x[j])
                                     Ysum.append(scale*yi)
-                                    Wsum.append(w[j])
+                                    Vsum.append(abs(scale*v[j]))
+                    Wsum = 1./np.array(Vsum)
                     outname = 'PWDR '+result[-1]
                     Id = 0
                     if outname in Names:
@@ -1068,10 +1067,19 @@ class GSASII(wx.Frame):
                 dlg.SetDirectory(self.dirname)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    self.CIFfile = dlg.GetPath()
+                    CIFfile = dlg.GetPath()
                     self.dirname = dlg.GetDirectory()
+                    Phase = G2IO.ReadCIFPhase(CIFfile)
             finally:
                 dlg.Destroy()
+            if Phase:
+                PhaseName = Phase['General']['Name']
+                if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+                    sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+                else:
+                    sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+                sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+                self.PatternTree.SetItemPyData(sub,Phase)        
         
     def OnExportPattern(self,event):
         dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
@@ -1128,10 +1136,6 @@ class GSASII(wx.Frame):
     def OnExportCIF(self,event):
         event.Skip()
         
-#    def OnUnDo(self,event):
-#        self.DoUnDo()
-#        self.UnDo.Enable(False)
-#        
     def OnRefine(self,event):
         #works - but it'd be better if it could restore plots
         G2str.Refine(self.GSASprojectfile)
@@ -1146,31 +1150,6 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         
-#    def DoUnDo(self):
-#        print 'Undo last refinement'
-#        file = open(self.undofile,'rb')
-#        PatternId = self.PatternId
-#        for item in ['Background','Instrument Parameters','Peak List']:
-#            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
-#            if self.dataDisplay.GetName() == item:
-#                if item == 'Background':
-#                    G2pdG.UpdateBackgroundGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
-#                elif item == 'Instrument Parameters':
-#                    G2pdG.UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
-#                elif item == 'Peak List':
-#                    G2pdG.UpdatePeakGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
-#            print item,' recovered'
-#        file.close()
-#        
-#    def SaveState(self):
-#        self.undofile = self.dirname+'\\GSASII.save'
-#        file = open(self.undofile,'wb')
-#        PatternId = self.PatternId
-#        for item in ['Background','Instrument Parameters','Peak List']:
-#            cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)
-#        file.close()
-#        self.UnDo.Enable(True)
-#                
     def ErrorDialog(self,title,message):
         dlg = wx.MessageDialog(self, message, title,  wx.OK)
         try:

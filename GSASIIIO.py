@@ -757,10 +757,11 @@ def powderFxyeSave(self,powderfile):
         x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(self.PickId)[1]
         file.write(powderfile+'\n')
         file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
-            100.*x[0],100.*(x[1]-x[0])))        
-        XYW = zip(x,y,w)
-        for X,Y,W in XYW:
-            file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,W))
+            100.*x[0],100.*(x[1]-x[0])))
+        s = list(np.sqrt(1./np.array(w)))        
+        XYW = zip(x,y,s)
+        for X,Y,S in XYW:
+            file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,S))
         file.close()
     finally:
         wx.EndBusyCursor()
@@ -929,6 +930,13 @@ def ReadPDBPhase(filename):
             AA,AB = G2lat.cell2AB(cell)
             SpGrp = S[55:65]
             E,SGData = G2spc.SpcGroup(SpGrp)
+            if E: 
+                print ' ERROR in space group symbol ',SpGrp,' in file ',filename
+                print ' N.B.: make sure spaces separate axial fields in symbol' 
+                print G2spc.SGErrors(E)
+                return None
+            SGlines = G2spc.SGPrint(SGData)
+            for line in SGlines: print line
             S = file.readline()
         elif 'SCALE' in S[:5]:
             V = (S[10:41].split())
@@ -972,5 +980,115 @@ def ReadPDBPhase(filename):
     
     return Phase
     
-def ReadCIFAtoms(self,data):
-    print data
+def ReadCIFPhase(filename):
+    anisoNames = ['aniso_u_11','aniso_u_22','aniso_u_33','aniso_u_12','aniso_u_13','aniso_u_23']
+    file = open(filename, 'Ur')
+    Phase = {}
+    Title = ospath.split(filename)[-1]
+    print '\n Reading cif file: ',Title
+    Compnd = ''
+    Atoms = []
+    A = np.zeros(shape=(3,3))
+    S = file.readline()
+    while S:
+        if '_symmetry_space_group_name_H-M' in S:
+            SpGrp = S.split("_symmetry_space_group_name_H-M")[1].strip().strip('"').strip("'")
+            E,SGData = G2spc.SpcGroup(SpGrp)
+            if E:
+                print ' ERROR in space group symbol ',SpGrp,' in file ',filename
+                print ' N.B.: make sure spaces separate axial fields in symbol' 
+                print G2spc.SGErrors(E)
+                return None
+            S = file.readline()
+        elif '_cell' in S:
+            if '_cell_length_a' in S:
+                a = S.split('_cell_length_a')[1].strip().strip('"').strip("'").split('(')[0]
+            elif '_cell_length_b' in S:
+                b = S.split('_cell_length_b')[1].strip().strip('"').strip("'").split('(')[0]
+            elif '_cell_length_c' in S:
+                c = S.split('_cell_length_c')[1].strip().strip('"').strip("'").split('(')[0]
+            elif '_cell_angle_alpha' in S:
+                alp = S.split('_cell_angle_alpha')[1].strip().strip('"').strip("'").split('(')[0]
+            elif '_cell_angle_beta' in S:
+                bet = S.split('_cell_angle_beta')[1].strip().strip('"').strip("'").split('(')[0]
+            elif '_cell_angle_gamma' in S:
+                gam = S.split('_cell_angle_gamma')[1].strip().strip('"').strip("'").split('(')[0]
+            S = file.readline()
+        elif 'loop_' in S:
+            labels = {}
+            i = 0
+            while S:
+                S = file.readline()
+                if '_atom_site' in S.strip()[:10]:
+                    labels[S.strip().split('_atom_site_')[1].lower()] = i
+                    i += 1
+                else:
+                    break
+            if labels:
+                if 'aniso_label' not in labels:
+                    while S:
+                        atom = ['','','',0,0,0,0,'','','I',0.01,0,0,0,0,0,0]
+                        S.strip()
+                        if len(S.split()) != len(labels):
+                            if 'loop_' in S:
+                                break
+                            S += file.readline().strip()
+                        data = S.split()
+                        if len(data) != len(labels):
+                            break
+                        for key in labels:
+                            if key == 'type_symbol':
+                                atom[1] = data[labels[key]]
+                            elif key == 'label':
+                                atom[0] = data[labels[key]]
+                            elif key == 'fract_x':
+                                atom[3] = float(data[labels[key]].split('(')[0])
+                            elif key == 'fract_y':
+                                atom[4] = float(data[labels[key]].split('(')[0])
+                            elif key == 'fract_z':
+                                atom[5] = float(data[labels[key]].split('(')[0])
+                            elif key == 'occupancy':
+                                atom[6] = float(data[labels[key]].split('(')[0])
+                            elif key == 'thermal_displace_type':
+                                if data[labels[key]].lower() == 'uiso':
+                                    atom[9] = 'I'
+                                    atom[10] = float(data[labels['u_iso_or_equiv']].split('(')[0])
+                                else:
+                                    atom[9] = 'A'
+                                    atom[10] = 0.0
+                                    
+                        atom[7],atom[8] = G2spc.SytSym(atom[3:6],SGData)
+                        atom.append(ran.randint(0,sys.maxint))
+                        Atoms.append(atom)
+                        S = file.readline()
+                else:
+                    while S:
+                        S.strip()
+                        data = S.split()
+                        if len(data) != len(labels):
+                            break
+                        name = data[labels['aniso_label']]
+                        for atom in Atoms:
+                            if name == atom[0]:
+                                for i,uname in enumerate(anisoNames):
+                                    atom[i+11] = float(data[labels[uname]].split('(')[0])
+                        S = file.readline()
+                                                                        
+        else:           
+            S = file.readline()
+    file.close()
+    if Title:
+        PhaseName = Title
+    else:
+        PhaseName = 'None'
+    SGlines = G2spc.SGPrint(SGData)
+    for line in SGlines: print line
+    cell = [float(a),float(b),float(c),float(alp),float(bet),float(gam)]
+    Volume = G2lat.calc_V(G2lat.cell2A(cell))
+    Phase['General'] = {'Name':PhaseName,'Type':'nuclear','SGData':SGData,
+        'Cell':[False,]+cell+[Volume,]}
+    Phase['Atoms'] = Atoms
+    Phase['Drawing'] = {}
+    Phase['Histograms'] = {}
+    
+    return Phase

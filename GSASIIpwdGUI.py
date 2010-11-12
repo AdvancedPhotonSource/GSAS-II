@@ -44,7 +44,7 @@ def UpdatePeakGrid(self, data):
             print item,' recovered'
         file.close()
         
-    def SaveState(self):
+    def SaveState():
         self.undofile = self.dirname+'\\GSASII.save'
         file = open(self.undofile,'wb')
         PatternId = self.PatternId
@@ -54,7 +54,7 @@ def UpdatePeakGrid(self, data):
         self.dataFrame.UnDo.Enable(True)
                 
     def OnPeakFit(event):
-        self.SaveState()
+        SaveState()
         print 'Peak Fitting - Do one cycle of peak fitting'
         PatternId = self.PatternId
         PickId = self.PickId
@@ -86,7 +86,7 @@ def UpdatePeakGrid(self, data):
         return
         
     def OnAutoPeakFit(event):
-        self.SaveState()
+        SaveState()
         print 'AutoPeak Fitting - run until minimized'
         PatternId = self.PatternId
         PickId = self.PickId

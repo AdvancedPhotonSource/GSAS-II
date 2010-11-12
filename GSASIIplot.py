@@ -292,10 +292,16 @@ def PlotPatterns(self,newPlot=False):
             else:
                 self.Weight = True
             print 'plot weighting:',self.Weight
-        elif event.key == 'u' and self.Offset < 100.:
-            self.Offset += 1.
-        elif event.key == 'd' and self.Offset > 0.:
-            self.Offset -= 1.
+        elif event.key == 'u':
+            if self.Contour:
+                self.Cmax = min(1.0,self.Cmax*1.1)
+            elif self.Offset < 100.:
+                self.Offset += 1.
+        elif event.key == 'd':
+            if self.Contour:
+                self.Cmax = max(0.0,self.Cmax*0.9)
+            elif self.Offset > 0.:
+                self.Offset -= 1.
         elif event.key == 'c':
             if self.Contour:
                 self.Contour = False
@@ -326,7 +332,10 @@ def PlotPatterns(self,newPlot=False):
                 dsp = 0.0
                 if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                     dsp = wave/(2.*sind(abs(xpos)/2.0))
-                self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
+                if self.Contour:
+                    self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d Max contour =%9.1f'%(xpos,dsp,int(ypos),self.Cmax*Ymax),1)
+                else:
+                    self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
                 if self.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
                 if self.PickId and self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List']:
@@ -380,6 +389,7 @@ def PlotPatterns(self,newPlot=False):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError,error:
         newPlot = True
+        self.Cmax = 1.0
         Plot = self.G2plotNB.addMpl('Powder Patterns').gca()
         plotNum = self.G2plotNB.plotList.index('Powder Patterns')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -477,7 +487,7 @@ def PlotPatterns(self,newPlot=False):
             Plot.axvline(hkl[5],color='r',dashes=(5,5))
     if self.Contour:
         acolor = mpl.cm.get_cmap('Paired')
-        Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax,interpolation='nearest', 
+        Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation='nearest', 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto')
         newPlot = True
     else:
@@ -1127,6 +1137,7 @@ def PlotStructure(self,data):
     atomData = data['Atoms']
     drawingData = data['Drawing']
     drawAtoms = drawingData['Atoms']
+    cx,ct,cs = drawingData['atomPtrs']
     Wt = [255,255,255]
     Rd = [255,0,0]
     Gr = [0,255,0]
@@ -1156,9 +1167,25 @@ def PlotStructure(self,data):
         cb.SetValue(' Save as:')
         self.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
     
+    def GetTruePosition(xy):
+        View = glGetIntegerv(GL_VIEWPORT)
+        Proj = glGetDoublev(GL_PROJECTION_MATRIX)
+        Model = glGetDoublev(GL_MODELVIEW_MATRIX)
+        Zmax = 1.
+        for i,atom in enumerate(drawAtoms):
+            x,y,z = atom[cx:cx+3]
+            X,Y,Z = gluProject(x,y,z,Model,Proj,View)
+            XY = [int(X),int(View[3]-Y)]
+            if np.allclose(xy,XY,atol=10) and Z < Zmax:
+                Zmax = Z
+                SetSelectedAtoms(i)
+        
     def OnMouseDown(event):
         xy = event.GetPosition()
-        drawingData['Rotation'][3] = xy
+        if event.AltDown():
+            GetTruePosition(xy)
+        else:
+            drawingData['Rotation'][3] = xy
         
     def OnMouseWheel(event):
         drawingData['cameraPos'] += event.GetWheelRotation()/24
@@ -1178,6 +1205,12 @@ def PlotStructure(self,data):
             names = [child.GetName() for child in panel]
             panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
             
+    def SetSelectedAtoms(ind):
+        page = self.dataDisplay.GetSelection()
+        if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
+            self.dataDisplay.GetPage(page).SelectRow(ind)      #this is the Atoms grid in Draw Atoms
+        
+            
     def GetSelectedAtoms():
         page = self.dataDisplay.GetSelection()
         Ind = []
@@ -1185,13 +1218,12 @@ def PlotStructure(self,data):
             Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
         return Ind
                                        
-    def OnKey(event):
+    def OnKey(event):           #on key UP!!
         keyCode = event.GetKeyCode()
         if keyCode > 255:
             keyCode = 0
         key,xyz = chr(keyCode),event.GetPosition()
         indx = drawingData['selectedAtoms']
-        cx,ct,cs = drawingData['atomPtrs']
         if key in ['c','C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
             drawingData['testPos'] = [-.1,-.1,-.1]
@@ -1229,10 +1261,7 @@ def PlotStructure(self,data):
                 if pI[0] < 0:
                     pI[0] = len(drawAtoms)-1
             drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
-            SetViewPointText(drawingData['viewPoint'][0])
-            
-        elif key in ['a','A']:
-            print xyz,GetTruePosition(xyz)
+            SetViewPointText(drawingData['viewPoint'][0])            
         Draw()
             
     def OnMouseMove(event):
@@ -1242,7 +1271,7 @@ def PlotStructure(self,data):
                 SetTestPos(newxy)
             if event.LeftIsDown():
                 SetNewPos(newxy)
-        if event.Dragging():
+        if event.Dragging() and not event.AltDown():
             if event.LeftIsDown():
                 SetRotation(newxy)
             elif event.RightIsDown():
@@ -1250,11 +1279,6 @@ def PlotStructure(self,data):
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
             Draw()
-        
-    def GetTruePosition(xy):
-        View = glGetIntegerv(GL_VIEWPORT)
-        x,y,z = gluUnProject(xy[0],xy[1],0,view=View)
-        return x,y,z
         
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
@@ -1478,6 +1502,8 @@ def PlotStructure(self,data):
         ellipseProb = G2lat.criticalEllipse(drawingData['ellipseProb']/100.)
         
         SetBackground()
+        glInitNames()
+        glPushName(0)
         
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -1521,6 +1547,8 @@ def PlotStructure(self,data):
             if iat in Ind:
                 color = np.array(Gr)/255.
             radius = 0.5
+            if atom[cs] != '':
+                glLoadName(atom[-2])
             if 'balls' in atom[cs]:
                 vdwScale = drawingData['vdwScale']
                 ballScale = drawingData['ballScale']

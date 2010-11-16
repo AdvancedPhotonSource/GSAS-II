@@ -1201,6 +1201,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         self.dataFrame.setSizePosLeft([600,300])
         
         FindBonds()
+        drawAtoms.ClearSelection()
         G2plt.PlotStructure(self,data)
 
     def DrawAtomStyle(event):
@@ -1222,6 +1223,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     drawAtoms.SetCellValue(r,cs,parms)
             dlg.Destroy()
             FindBonds()
+            drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
 
     def DrawAtomLabel(event):
@@ -1241,6 +1243,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     atomData[r][cs+1] = parms
                     drawAtoms.SetCellValue(r,cs+1,parms)
             dlg.Destroy()
+            drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
     def DrawAtomColor(event):
@@ -1273,6 +1276,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     attr.SetBackgroundColour(color)
                     drawAtoms.SetAttr(r,cs+2,attr)
                     data['Drawing']['Atoms'][r][cs+2] = color
+            drawAtoms.ClearSelection()
             dlg.Destroy()
             
     def ResetAtomColors(event):
@@ -1283,6 +1287,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             atNum = generalData['AtomTypes'].index(atom[ct])
             atom[cs+2] = list(generalData['Color'][atNum])
         UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
         G2plt.PlotStructure(self,data)        
         
     def SetViewPoint(event):
@@ -1342,6 +1347,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             finally:
                 dlg.Destroy()
             UpdateDrawAtoms()
+            drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
     def TransformSymEquiv(event):
@@ -1385,6 +1391,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             finally:
                 dlg.Destroy()
             UpdateDrawAtoms()
+            drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
     def FillCoordSphere(event):
@@ -1427,6 +1434,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                                 atomData.append(newAtom)
             data['Drawing']['Atoms'] = atomData
             UpdateDrawAtoms()
+            drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
     def FillUnitCell(event):
@@ -1478,8 +1486,8 @@ def UpdatePhaseData(self,item,data,oldPage):
                                 atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
                                 atomData.append(atom[:])               
                 data['Drawing']['Atoms'] = atomData
-                
             UpdateDrawAtoms()
+            drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
     def FindBondsToo():                         #works but slow for large structures - keep as reference
@@ -1571,6 +1579,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             for ind in indx:
                 del atomData[ind]
             UpdateDrawAtoms()
+            drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
         event.StopPropagation()
         
@@ -1619,7 +1628,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             
         def OnCameraPos(event):
             drawingData['cameraPos'] = cameraPos.GetValue()
-            cameraPosTxt.SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
+            cameraPosTxt.SetLabel('Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
             ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
             G2plt.PlotStructure(self,data)
 
@@ -1693,7 +1702,7 @@ def UpdatePhaseData(self,item,data,oldPage):
         slideSizer.AddGrowableCol(1,1)
 
         cameraPosTxt = wx.StaticText(dataDisplay,-1,
-            'Camera Position: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
+            'Camera Distance: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
         slideSizer.Add(cameraPosTxt,0,wx.ALIGN_CENTER_VERTICAL)
         cameraPos = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
         cameraPos.SetRange(10,500)

@@ -286,6 +286,7 @@ def PlotPatterns(self,newPlot=False):
                 self.itemPicked = pick
         
     def OnPlotKeyPress(event):
+        newPlot = False
         if event.key == 'w':
             if self.Weight:
                 self.Weight = False
@@ -303,17 +304,20 @@ def PlotPatterns(self,newPlot=False):
             elif self.Offset > 0.:
                 self.Offset -= 1.
         elif event.key == 'c':
+            newPlot = True
             if self.Contour:
                 self.Contour = False
             else:
                 self.Contour = True
+                self.SinglePlot = False
+                self.Offset = 0
         elif event.key == 's':
             if self.SinglePlot:
                 self.SinglePlot = False
             else:
                 self.SinglePlot = True
             
-        PlotPatterns(self)
+        PlotPatterns(self,newPlot=newPlot)
         
     def OnKeyBox(event):
         if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('Powder Patterns'):
@@ -422,6 +426,7 @@ def PlotPatterns(self,newPlot=False):
                 PlotList.append(Pattern)
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
     Ymax = 1.0
+    lenX = 0
     HKL = np.array(self.HKL)
     for Pattern in PlotList:
         xye = Pattern[1]
@@ -442,17 +447,20 @@ def PlotPatterns(self,newPlot=False):
             ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
         X = xye[0]
+        if not lenX:
+            lenX = len(X)
         Y = xye[1]+offset*N
         if LimitId:
             limits = self.PatternTree.GetItemPyData(LimitId)
             Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
         if self.Contour:
-            ContourY.append(N)
-            ContourZ.append(Y)
-            ContourX = X
-            Nseq += 1
-            Plot.set_ylabel('Data sequence',fontsize=12)
+            if lenX == len(X):
+                ContourY.append(N)
+                ContourZ.append(Y)
+                ContourX = X
+                Nseq += 1
+                Plot.set_ylabel('Data sequence',fontsize=12)
         else:
             if ifpicked:
                 Z = xye[3]+offset*N
@@ -489,7 +497,6 @@ def PlotPatterns(self,newPlot=False):
         acolor = mpl.cm.get_cmap('Paired')
         Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation='nearest', 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto')
-        newPlot = True
     else:
         self.Lines = Lines
     if not newPlot:
@@ -1133,6 +1140,10 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         
 def PlotStructure(self,data):
     generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     Mydir = generalData['Mydir']
     atomData = data['Atoms']
     drawingData = data['Drawing']
@@ -1175,7 +1186,6 @@ def PlotStructure(self,data):
         Proj = glGetDoublev(GL_PROJECTION_MATRIX)
         Model = glGetDoublev(GL_MODELVIEW_MATRIX)
         Zmax = 1.
-        ClearSelectedAtoms()
         for i,atom in enumerate(drawAtoms):
             x,y,z = atom[cx:cx+3]
             X,Y,Z = gluProject(x,y,z,Model,Proj,View)
@@ -1183,7 +1193,7 @@ def PlotStructure(self,data):
             if np.allclose(xy,XY,atol=10) and Z < Zmax:
                 Zmax = Z
                 SetSelectedAtoms(i)
-        
+                    
     def OnMouseDown(event):
         xy = event.GetPosition()
         if event.ShiftDown():
@@ -1194,12 +1204,17 @@ def PlotStructure(self,data):
         
     def OnMouseMove(event):
         newxy = event.GetPosition()
-        if event.AltDown() and drawingData['showABC']:
-            if event.RightIsDown():
-                altDown = True
+        if event.ControlDown() and drawingData['showABC']:
+            if event.LeftIsDown():
+                ctrlDown = True
+                SetTestRot(newxy)
+            elif event.RightIsDown():
                 SetTestPos(newxy)
-        if event.Dragging() and not event.AltDown():
-            altDown = False
+            elif event.MiddleIsDown():
+                SetTestRotZ(newxy)
+                
+                
+        if event.Dragging() and not event.ControlDown():
             if event.LeftIsDown():
                 SetRotation(newxy)
             elif event.RightIsDown():
@@ -1230,17 +1245,26 @@ def PlotStructure(self,data):
         page = self.dataDisplay.GetSelection()
         if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
             self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
+        elif self.dataDisplay.GetPageText(page) == 'Atoms':
+            self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
                     
     def SetSelectedAtoms(ind):
         page = self.dataDisplay.GetSelection()
         if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
             self.dataDisplay.GetPage(page).SelectRow(ind)      #this is the Atoms grid in Draw Atoms
+        elif self.dataDisplay.GetPageText(page) == 'Atoms':
+            Id = drawAtoms[ind][-2]
+            for i,atom in enumerate(atomData):
+                if atom[-1] == Id:
+                    self.dataDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms
                   
     def GetSelectedAtoms():
         page = self.dataDisplay.GetSelection()
         Ind = []
         if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
             Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
+        elif self.dataDisplay.GetPageText(page) == 'Atoms':
+            Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
         return Ind
                                        
     def OnKey(event):           #on key UP!!
@@ -1251,7 +1275,7 @@ def PlotStructure(self,data):
         indx = drawingData['selectedAtoms']
         if key in ['c','C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
-            drawingData['testPos'] = [-.1,-.1,-.1]
+            drawingData['testPos'] = [[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]
             drawingData['Rotation'] = [0.0,0.0,0.0,[]]
             SetViewPointText(drawingData['viewPoint'][0])
         elif key in ['n','N']:
@@ -1319,7 +1343,7 @@ def PlotStructure(self,data):
         SetViewPointText([Tx,Ty,Tz])
         
     def SetTestPos(newxy):
-        Tx,Ty,Tz = drawingData['testPos']
+        Tx,Ty,Tz = drawingData['testPos'][0]
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         Rx = G2lat.rotdMat(anglex,0)
         Ry = G2lat.rotdMat(angley,1)
@@ -1330,23 +1354,40 @@ def PlotStructure(self,data):
         Ty -= dxy[1]*0.001
         Tz += dxy[2]*0.001
         drawingData['Rotation'][3] = newxy
-        drawingData['testPos'] =  Tx,Ty,Tz
-                              
-    def SetNewPos(newxy):
+        drawingData['testPos'][0] =  Tx,Ty,Tz
         
-        Tx,Ty,Tz = drawingData['testPos']
-        anglex,angley,anglez,oldxy = drawingData['Rotation']
-        Rx = G2lat.rotdMat(anglex,0)
-        Ry = G2lat.rotdMat(angley,1)
-        Rz = G2lat.rotdMat(anglez,2)
+    def SetTestRot(newxy):
+        Txyz = np.array(drawingData['testPos'][0])
+        oldxy = drawingData['testPos'][2]
+        Ax,Ay,Az = drawingData['testPos'][1]
+        Vxyz = np.array(drawingData['viewPoint'][0])
+        Dxyz = np.inner(Amat,Txyz-Vxyz)
         dxy = list(newxy-oldxy)+[0,]
-        dxy = np.inner(Rz,np.inner(Ry,np.inner(Rx,dxy)))
-        Tx += dxy[0]*0.001
-        Ty -= dxy[1]*0.001
-        Tz += dxy[2]*0.001
-#        drawingData['Rotation'][3] = newxy
-#        drawingData['testPos'] =  Tx,Ty,Tz
-
+        Ax += dxy[1]*0.01
+        Ay += dxy[0]*0.01
+        Rx = G2lat.rotdMat(Ax,0)
+        Ry = G2lat.rotdMat(Ay,1)
+        Dxyz = np.inner(Ry,np.inner(Rx,Dxyz))        
+        Dxyz = np.inner(Bmat,Dxyz)+Vxyz
+        drawingData['testPos'][1] = [Ax,Ay,Az]
+        drawingData['testPos'][2] = newxy
+        drawingData['testPos'][0] = Dxyz
+        
+    def SetTestRotZ(newxy):
+        Txyz = np.array(drawingData['testPos'][0])
+        oldxy = drawingData['testPos'][2]
+        Ax,Ay,Az = drawingData['testPos'][1]
+        Vxyz = np.array(drawingData['viewPoint'][0])
+        Dxyz = np.inner(Amat,Txyz-Vxyz)        
+        dxy = list(newxy-oldxy)+[0,]
+        Az += (dxy[0]+dxy[1])*.01
+        Rz = G2lat.rotdMat(Az,2)
+        Dxyz = np.inner(Rz,Dxyz)       
+        Dxyz = np.inner(Bmat,Dxyz)+Vxyz
+        drawingData['testPos'][1] = [Ax,Ay,Az]
+        drawingData['testPos'][2] = newxy
+        drawingData['testPos'][0] = Dxyz
+                              
     def SetRotation(newxy):        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         dxy = newxy-oldxy
@@ -1493,11 +1534,6 @@ def PlotStructure(self,data):
     def Draw():
         import numpy.linalg as nl
         Ind = GetSelectedAtoms()
-        x,y,z = drawingData['testPos']
-        if altDown:
-            self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
-        else:
-            self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
         cPos = drawingData['cameraPos']
@@ -1526,14 +1562,6 @@ def PlotStructure(self,data):
             
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-#        Mz = G2lat.rotdMat4(anglez,2)
-#        My = G2lat.rotdMat4(angley,1)
-#        Mx = G2lat.rotdMat4(anglex,0)
-#        Myz = np.inner(Mz,My)
-#        Mxyz = np.inner(Myz,Mx)
-#        glMultMatrixf(Mz)
-#        glMultMatrixf(My)
-#        glMultMatrixf(Mx)
         glRotate(anglez,0,0,1)
         glRotate(anglex,cosd(anglez),-sind(anglez),0)
         glRotate(angley,sind(anglez),cosd(anglez),0)
@@ -1542,7 +1570,15 @@ def PlotStructure(self,data):
         if drawingData['unitCellBox']:
             RenderBox()
         if drawingData['showABC']:
-            x,y,z = drawingData['testPos']
+#            try:            #temporary fix - not needed further?
+#                x,y,z = drawingData['testPos'][0]
+#            except TypeError:
+#                x,y,z = drawingData['testPos']
+            x,y,z = drawingData['testPos'][0]
+            if altDown:
+                self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
+            else:
+                self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
             RenderUnitVectors(x,y,z)
         Backbone = []
         BackboneColor = []
@@ -1672,10 +1708,6 @@ def PlotStructure(self,data):
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
     Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
-    cell = generalData['Cell'][1:7]
-    Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
-    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-    B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     Page.camera['position'] = drawingData['cameraPos']
     Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
     Page.camera['backColor'] = np.array(list(drawingData['backColor'])+[0,])/255.

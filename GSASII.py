@@ -242,6 +242,8 @@ class GSASII(wx.Frame):
         self.Lines = []
         self.itemPicked = None
         self.dataFrame = None
+        self.Interpolate = 'nearest'
+        self.ContourColor = 'Paired'
         self.Contour = False
         self.SinglePlot = False
         self.plotView = 0

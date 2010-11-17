@@ -295,12 +295,12 @@ def PlotPatterns(self,newPlot=False):
             print 'plot weighting:',self.Weight
         elif event.key == 'u':
             if self.Contour:
-                self.Cmax = min(1.0,self.Cmax*1.1)
+                self.Cmax = min(1.0,self.Cmax*1.2)
             elif self.Offset < 100.:
                 self.Offset += 1.
         elif event.key == 'd':
             if self.Contour:
-                self.Cmax = max(0.0,self.Cmax*0.9)
+                self.Cmax = max(0.0,self.Cmax*0.8)
             elif self.Offset > 0.:
                 self.Offset -= 1.
         elif event.key == 'c':
@@ -312,10 +312,34 @@ def PlotPatterns(self,newPlot=False):
                 self.SinglePlot = False
                 self.Offset = 0
         elif event.key == 's':
-            if self.SinglePlot:
-                self.SinglePlot = False
+            if self.Contour:
+                choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+                dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    self.ContourColor = choice[sel]
+                else:
+                    self.ContourColor = 'Paired'
+                dlg.Destroy()
+            else:                
+                if self.SinglePlot:
+                    self.SinglePlot = False
+                else:
+                    self.SinglePlot = True
+        elif event.key == '+':
+            if self.PickId:
+                self.PickId = False
+        elif event.key == 'i':
+            choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
+               'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
+               'mitchell','sinc','lanczos']
+            dlg = wx.SingleChoiceDialog(self,'Select','Interpolation',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                self.Interpolate = choice[sel]
             else:
-                self.SinglePlot = True
+                self.Interpolate = 'nearest'
+            dlg.Destroy()
             
         PlotPatterns(self,newPlot=newPlot)
         
@@ -337,7 +361,7 @@ def PlotPatterns(self,newPlot=False):
                 if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                     dsp = wave/(2.*sind(abs(xpos)/2.0))
                 if self.Contour:
-                    self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d Max contour =%9.1f'%(xpos,dsp,int(ypos),self.Cmax*Ymax),1)
+                    self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
                 else:
                     self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
                 if self.itemPicked:
@@ -402,8 +426,14 @@ def PlotPatterns(self,newPlot=False):
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
     Page.SetFocus()
+    self.G2plotNB.status.DestroyChildren()
+    if self.Contour:
+        Choice = (' key press','d: lower contour max','u: raise contour max',
+            'i: interpolation method','s: color scheme','c: contour off')
+    else:
+        Choice = (' key press','d: offset down','u: offset up','c: contour on','s: toggle single plot','+: no selection')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
-        choices=(' key press','d: offset down','u: offset up','c: toggle contour','s: toggle single plot'))
+        choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' key press')
     
@@ -494,9 +524,10 @@ def PlotPatterns(self,newPlot=False):
         for hkl in self.HKL:
             Plot.axvline(hkl[5],color='r',dashes=(5,5))
     if self.Contour:
-        acolor = mpl.cm.get_cmap('Paired')
-        Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation='nearest', 
+        acolor = mpl.cm.get_cmap(self.ContourColor)
+        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation=self.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto')
+        Page.figure.colorbar(Img)
     else:
         self.Lines = Lines
     if not newPlot:

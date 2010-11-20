@@ -699,7 +699,7 @@ def SaveIntegration(self,PickId,data):
         Y = self.Integrate[0][i]
         W = np.sqrt(Y)
         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
-            'DisplaceY':[0.0,False],'Diffuse':[]}
+            'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0}
         if Id:
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])

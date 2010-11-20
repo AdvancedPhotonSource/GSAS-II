@@ -422,6 +422,11 @@ def UpdateSampleGrid(self,data):
     elif data['Type'] == 'Bragg-Brentano':
         parms = [['Shift',' Sample displacement: ','%.4f',],
             ['Transparency',' Sample transparency: ','%.4f'],]
+    parms.append(['Temperature',' Sample temperature: ','%.2f'])
+    parms.append(['Pressure',' Sample pressure: ','%.3f'])
+    parms.append(['Humidity',' Sample humidity: ','%.1f'])
+    parms.append(['Voltage',' Sample voltage: ','%.3f'])
+    parms.append(['Force',' Sample force: ','%.3f'])
     objList = {}
 
     def OnScaleRef(event):
@@ -456,10 +461,16 @@ def UpdateSampleGrid(self,data):
         Obj = event.GetEventObject()
         parm = objList[Obj.GetId()]
         try:
-            data[parm[0]][0] = float(Obj.GetValue())
+            if 'list' in str(type(data[parm[0]])): 
+                data[parm[0]][0] = float(Obj.GetValue())
+            else:
+                data[parm[0]] = float(Obj.GetValue())
         except ValueError:
             pass
-        Obj.SetValue(parm[2]%(data[parm[0]][0]))          #reset in case of error
+        if 'list' in str(type(data[parm[0]])): 
+            Obj.SetValue(parm[2]%(data[parm[0]][0]))          #reset in case of error
+        else:
+            Obj.SetValue(parm[2]%(data[parm[0]]))          #reset in case of error
                 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Sample parameters: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -487,13 +498,19 @@ def UpdateSampleGrid(self,data):
     
     for parm in parms:
         parmSizer = wx.BoxSizer(wx.HORIZONTAL)
-        parmRef = wx.CheckBox(self.dataDisplay,label=parm[1])
-        objList[parmRef.GetId()] = parm[0]
-        parmRef.SetValue(data[parm[0]][1])
-        parmRef.Bind(wx.EVT_CHECKBOX, OnParmRef)
-        parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL)
-        parmVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
-            parm[2]%(data[parm[0]][0]),style=wx.TE_PROCESS_ENTER)
+        if 'list' in str(type(data[parm[0]])):
+            parmRef = wx.CheckBox(self.dataDisplay,label=parm[1])
+            objList[parmRef.GetId()] = parm[0]
+            parmRef.SetValue(data[parm[0]][1])
+            parmRef.Bind(wx.EVT_CHECKBOX, OnParmRef)
+            parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL)
+            parmVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
+                parm[2]%(data[parm[0]][0]),style=wx.TE_PROCESS_ENTER)
+        else:
+            parmSizer.Add(wx.StaticText(self.dataDisplay,label=parm[1]),
+                0,wx.ALIGN_CENTER_VERTICAL)
+            parmVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
+                parm[2]%(data[parm[0]]),style=wx.TE_PROCESS_ENTER)        
         objList[parmVal.GetId()] = parm
         parmVal.Bind(wx.EVT_TEXT_ENTER,OnParmVal)
         parmVal.Bind(wx.EVT_KILL_FOCUS,OnParmVal)
@@ -506,8 +523,6 @@ def UpdateSampleGrid(self,data):
     Size = mainSizer.Fit(self.dataFrame)
     self.dataDisplay.SetSize(Size)
     self.dataFrame.setSizePosLeft(Size)
-    
-    
                 
 def UpdateIndexPeaksGrid(self, data):
     IndexId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List')

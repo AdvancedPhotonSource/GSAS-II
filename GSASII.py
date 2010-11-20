@@ -691,7 +691,7 @@ class GSASII(wx.Frame):
                         Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
-                            'DisplaceY':[0.0,False],'Diffuse':[]}
+                            'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0}
                         self.PatternTree.SetItemPyData(Id,[[''],[Xsum,Ysum,Wsum,YCsum,YBsum,YDsum]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])

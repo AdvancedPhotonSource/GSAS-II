@@ -755,9 +755,7 @@ def PlotImage(self,newPlot=False,event=None):
             elif event.key == 'p':
                 self.setPoly = True
                 Masks['Polygons'].append([])
-                print 'Polygon mask active - pick points with mouse LB'
-                print '   use RB to close when > 2 points chosen'
-                print 'Vertices can be dragged with LB down after polygon closed'
+                self.G2plotNB.status.SetFields(['','Polygon mask active - LB pick points, RB closepolygon'])
             G2imG.UpdateMasks(self,Masks)
         PlotImage(self)
             
@@ -774,7 +772,9 @@ def PlotImage(self,newPlot=False,event=None):
                     x0,y0 = polygon[0]
                     polygon.append([x0,y0])
                     self.setPoly = False
-                else:           
+                    self.G2plotNB.status.SetFields(['','Polygon closed: %.1f,%.1f'%(x0,y0)])
+                else:
+                    self.G2plotNB.status.SetFields(['','Add polygon point: %.1f,%.1f'%(xpos,ypos)])
                     polygon.append([xpos,ypos])
                 G2imG.UpdateMasks(self,Masks)
         else:

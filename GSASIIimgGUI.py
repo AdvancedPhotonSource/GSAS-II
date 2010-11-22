@@ -49,7 +49,7 @@ def UpdateImageControls(self,data,masks):
         sqrtDeltZero = math.sqrt(data['range'][0][1]-data['range'][0][0])
         imax = int(maxSel.GetValue())*sqrtDeltZero/100.
         data['range'][1][1] = imax**2+data['range'][0][0]
-        data['range'][1][0] = min(data['range'][1][1]-1,data['range'][1][0])
+        data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,data['range'][1][0]))
         DeltOne = data['range'][1][1]-data['range'][0][0]
         minSel.SetValue(int(100*(data['range'][1][0]-data['range'][0][0])/DeltOne))
         G2plt.PlotExposedImage(self,event=event)
@@ -57,7 +57,7 @@ def UpdateImageControls(self,data,masks):
     def OnMinSlider(event):
         DeltOne = data['range'][1][1]-data['range'][0][0]
         imin = int(minSel.GetValue())*DeltOne/100.
-        data['range'][1][0] = min(data['range'][1][1]-1,imin)+data['range'][0][0]
+        data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,imin)+data['range'][0][0])
         G2plt.PlotExposedImage(self,event=event)
         
     def OnNumOutChans(event):
@@ -289,8 +289,8 @@ def UpdateImageControls(self,data,masks):
     
     maxSizer = wx.FlexGridSizer(2,2,0,5)
     maxSizer.AddGrowableCol(1,1)
-    sqrtDeltZero = math.sqrt(data['range'][0][1]-data['range'][0][0])
-    DeltOne = data['range'][1][1]-data['range'][0][0]
+    sqrtDeltZero = math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0]))
+    DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
     sqrtDeltOne = math.sqrt(DeltOne)
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
@@ -301,7 +301,7 @@ def UpdateImageControls(self,data,masks):
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min intensity'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     minSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
-        value=int(100*(data['range'][1][0]-data['range'][0][0])/DeltOne))
+        value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
     maxSizer.Add(minSel,1,wx.EXPAND|wx.RIGHT)
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
     mainSizer.Add(maxSizer,1,wx.EXPAND|wx.RIGHT)

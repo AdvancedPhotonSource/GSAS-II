@@ -46,18 +46,18 @@ def UpdateImageControls(self,data,masks):
         cutOff.SetValue("%.1f"%(data['cutoff']))          #reset in case of error  
         
     def OnMaxSlider(event):
-        sqrtDeltZero = math.sqrt(data['range'][0][1]-data['range'][0][0])
+        sqrtDeltZero = math.sqrt(data['range'][0][1])
         imax = int(maxSel.GetValue())*sqrtDeltZero/100.
-        data['range'][1][1] = imax**2+data['range'][0][0]
+        data['range'][1][1] = imax**2
         data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,data['range'][1][0]))
-        DeltOne = data['range'][1][1]-data['range'][0][0]
-        minSel.SetValue(int(100*(data['range'][1][0]-data['range'][0][0])/DeltOne))
+        DeltOne = max(1.0,data['range'][1][1]-data['range'][1][0])
+        minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
         G2plt.PlotExposedImage(self,event=event)
         
     def OnMinSlider(event):
-        DeltOne = data['range'][1][1]-data['range'][0][0]
+        DeltOne = data['range'][1][1]-data['range'][1][0]
         imin = int(minSel.GetValue())*DeltOne/100.
-        data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,imin)+data['range'][0][0])
+        data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,imin))
         G2plt.PlotExposedImage(self,event=event)
         
     def OnNumOutChans(event):

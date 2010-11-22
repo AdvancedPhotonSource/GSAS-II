@@ -426,7 +426,7 @@ def UpdateSampleGrid(self,data):
     parms.append(['Pressure',' Sample pressure: ','%.3f'])
     parms.append(['Humidity',' Sample humidity: ','%.1f'])
     parms.append(['Voltage',' Sample voltage: ','%.3f'])
-    parms.append(['Force',' Sample force: ','%.3f'])
+    parms.append(['Force',' Applied load: ','%.3f'])
     objList = {}
 
     def OnScaleRef(event):

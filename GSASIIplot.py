@@ -727,8 +727,11 @@ def PlotImage(self,newPlot=False,event=None):
                     Int = self.ImageZ[ypix][xpix]
                 tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
-                self.G2plotNB.status.SetFields(\
-                    ['','Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
+                if self.setPoly:
+                    self.G2plotNB.status.SetFields(['','Polygon mask pick - LB next point, RB close polygon'])
+                else:
+                    self.G2plotNB.status.SetFields(\
+                        ['','Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
         if self.PatternTree.GetItemText(self.PickId) == 'Masks':
@@ -755,7 +758,7 @@ def PlotImage(self,newPlot=False,event=None):
             elif event.key == 'p':
                 self.setPoly = True
                 Masks['Polygons'].append([])
-                self.G2plotNB.status.SetFields(['','Polygon mask active - LB pick points, RB closepolygon'])
+                self.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
             G2imG.UpdateMasks(self,Masks)
         PlotImage(self)
             
@@ -772,9 +775,9 @@ def PlotImage(self,newPlot=False,event=None):
                     x0,y0 = polygon[0]
                     polygon.append([x0,y0])
                     self.setPoly = False
-                    self.G2plotNB.status.SetFields(['','Polygon closed: %.1f,%.1f'%(x0,y0)])
+                    self.G2plotNB.status.SetFields(['','Polygon closed - RB drag a vertex to change shape'])
                 else:
-                    self.G2plotNB.status.SetFields(['','Add polygon point: %.1f,%.1f'%(xpos,ypos)])
+                    self.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(xpos,ypos)])
                     polygon.append([xpos,ypos])
                 G2imG.UpdateMasks(self,Masks)
         else:
@@ -1017,7 +1020,8 @@ def PlotImage(self,newPlot=False,event=None):
         self.polyList = []
         for ipoly,polygon in enumerate(polygons):
             x,y = np.hsplit(np.array(polygon),2)
-            self.polyList.append([Plot.plot(x,y,'r',picker=3),ipoly])            
+            self.polyList.append([Plot.plot(x,y,'r+',picker=10),ipoly])
+            Plot.plot(x,y,'r')            
         colorBar = Page.figure.colorbar(Img)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)

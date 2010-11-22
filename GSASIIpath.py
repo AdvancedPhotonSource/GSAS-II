@@ -3,9 +3,13 @@
 # this must be imported before anything that imports any .pyd/.so file for GSASII
 import os.path as ospath
 import sys
+import platform
 bindir = None
 if sys.platform == "win32":
-    bindir = 'binwin%d.%d' % sys.version_info[0:2]
+    if platform.architecture()[0] == '64bit':
+        bindir = 'binwin64-%d.%d' % sys.version_info[0:2]
+    else:
+        bindir = 'binwin%d.%d' % sys.version_info[0:2]
 elif sys.platform == "darwin":
     bindir = 'binmac%d.%d' % sys.version_info[0:2]
 elif sys.platform == "linux2":

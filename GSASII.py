@@ -406,7 +406,7 @@ class GSASII(wx.Frame):
                         Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(imagefile))
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
                         Imax = np.amax(Image)
-                        Imin = np.amin(Image)
+                        Imin = max(0.0,np.amin(Image))          #force positive
                         if self.imageDefault:
                             Data = copy.copy(self.imageDefault)
                             Data['showLines'] = True

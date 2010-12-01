@@ -771,7 +771,7 @@ def UpdatePhaseData(self,item,data,oldPage):
     def OnAtomTestAdd(event):
         try:
             drawData = data['Drawing']
-            x,y,z = drawData['testPos']
+            x,y,z = drawData['testPos'][0]
             AtomAdd(x,y,z)
         except:
             AtomAdd(0,0,0)
@@ -804,7 +804,7 @@ def UpdatePhaseData(self,item,data,oldPage):
     def OnAtomTestInsert(event):
         if 'Drawing' in data:
             drawData = data['Drawing']
-            x,y,z = drawData['testPos']
+            x,y,z = drawData['testPos'][0]
             AtomAdd(x,y,z)
             FillAtomsGrid()
         event.StopPropagation()
@@ -929,7 +929,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,
             'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,
             'unitCellBox':False,'showABC':True,'selectedAtoms':[],
-            'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[-.1,-.1,-.1]}
+            'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]}
         try:
             drawingData = data['Drawing']
         except KeyError:
@@ -1247,8 +1247,13 @@ def UpdatePhaseData(self,item,data,oldPage):
             G2plt.PlotStructure(self,data)
             
     def DrawAtomColor(event):
+
         indx = drawAtoms.GetSelectedRows()
         if indx:
+            if len(indx) > 1:
+                self.dataFrame.SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK')
+            else:
+                self.dataFrame.SetStatusText('Change color, Add to Custom Colors, then OK')
             generalData = data['General']
             atomData = data['Drawing']['Atoms']
             cx,ct,cs = data['Drawing']['atomPtrs']
@@ -1278,6 +1283,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     data['Drawing']['Atoms'][r][cs+2] = color
             drawAtoms.ClearSelection()
             dlg.Destroy()
+            self.dataFrame.SetStatusText('')
             
     def ResetAtomColors(event):
         generalData = data['General']

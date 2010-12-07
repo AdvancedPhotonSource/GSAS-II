@@ -468,15 +468,15 @@ def GenHBravais(dmin,Bravais,A):
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
     return sortHKLd(HKL,True,False)
     
-def GenHLaue(dmin,Laue,Cent,Axis,A):
+def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
     '''Generate the crystallographically unique powder diffraction reflections
     for a lattice and Bravais type
     '''
 # dmin - minimum d-spacing
 # Laue - Laue group symbol = '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
 #                            '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
-# Cent - lattice centering = 'P','A','B','C','I','F'
-# Axis - code for unique monoclinic axis = 'a','b','c'
+# SGLatt - lattice centering = 'P','A','B','C','I','F'
+# SGUniq - code for unique monoclinic axis = 'a','b','c'
 # A - 6 terms as defined in calc_rDsq
 # returns - HKL = list of [h,k,l,d] sorted with largest d first and is unique 
 # part of reciprocal space ignoring anomalous dispersion
@@ -502,12 +502,12 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                 if (k < 0) or (k ==0 and l < 0): hmin = 1
                 for h in range(hmin,Hmax[0]+1):
                     H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
                     rdsq = calc_rDsq(H,A)
                     if 0 < rdsq <= dminsq:
                         HKL.append([h,k,l,1/math.sqrt(rdsq)])
     elif Laue == '2/m':                #monoclinic
-        axisnum = 1 + ['a','b','c'].index(Axis)
+        axisnum = 1 + ['a','b','c'].index(SGUniq)
         Hmax = SwapIndx(axisnum,Hmax)
         for h in range(Hmax[0]+1):
             for k in range(-Hmax[1],Hmax[1]+1):
@@ -516,7 +516,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                 for l in range(lmin,Hmax[2]+1):
                     [h,k,l] = SwapIndx(-axisnum,[h,k,l])
                     H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
@@ -529,7 +529,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                 if Laue == 'mmm' or h ==0: kmin = 0
                 for k in range(kmin,Hmax[1]+1):
                     H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
@@ -539,7 +539,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
             for h in range(Hmax[0]+1):
                 for k in range(h+1):
                     H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
@@ -559,7 +559,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                     if Laue == '31m' and l < 0: kmin = 1
                 for k in range(kmin,kmax+1):
                     H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
                     if Laue in ['3R','3mR']:
                         H = Hx2Rh(H)
                     if H:
@@ -576,7 +576,7 @@ def GenHLaue(dmin,Laue,Cent,Axis,A):
                     if h == k: lmax += 1
                 for l in range(lmin,lmax+1):
                     H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
+                    if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:

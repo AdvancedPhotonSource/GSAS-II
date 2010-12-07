@@ -19,6 +19,7 @@ import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
 import GSASIIstruct as G2str
+import GSASIIsolve as G2sol
 import OpenGL as ogl
 
 # print versions
@@ -46,8 +47,8 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(1)]
 
 [wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN, 
- wxID_FILESAVE, wxID_FILESAVEAS, wxID_REFINE, 
-] = [wx.NewId() for _init_coll_File_Items in range(6)]
+ wxID_FILESAVE, wxID_FILESAVEAS, wxID_REFINE, wxID_SOLVE,
+] = [wx.NewId() for _init_coll_File_Items in range(7)]
 
 [wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
  wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
@@ -129,6 +130,10 @@ class GSASII(wx.Frame):
             text='Refine')
         self.Refine.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=wxID_REFINE)
+        self.Solve = parent.Append(help='', id=wxID_SOLVE, kind=wx.ITEM_NORMAL,
+            text='Solve')
+        self.Solve.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnSolve, id=wxID_SOLVE)
         
     def _init_coll_Import_Items(self,parent):
         self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
@@ -262,6 +267,7 @@ class GSASII(wx.Frame):
             G2IO.ProjFileOpen(self)
             self.PatternTree.Expand(self.root)
             self.Refine.Enable(True)
+            self.Solve.Enable(True)
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -825,7 +831,7 @@ class GSASII(wx.Frame):
         self.PatternTree.SetItemPyData(sub, \
             {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,
             'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
-            'Pawley dmin':1.0},'Atoms':[],'Drawing':{},'Histograms':{}})
+            'Pawley dmin':1.0},'Atoms':[],'Drawing':{},'Histograms':{},'Pawley ref':[],'Models':{}})
         
     def OnDeletePhase(self,event):
         if self.dataFrame:
@@ -938,6 +944,7 @@ class GSASII(wx.Frame):
                             data = self.PatternTree.GetItemPyData(item)
                             if data != [0] and data != {}:
                                 self.Refine.Enable(True)
+                                self.Solve.Enable(True)         #not right but something needed here
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
                         self.PatternTree.SelectItem(Id)
@@ -1142,6 +1149,20 @@ class GSASII(wx.Frame):
         #works - but it'd be better if it could restore plots
         G2str.Refine(self.GSASprojectfile)
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.PatternTree.DeleteChildren(self.root)
+                if self.HKL: self.HKL = []
+                if self.G2plotNB.plotList:
+                    self.G2plotNB.clear()
+                G2IO.ProjFileOpen(self)
+        finally:
+            dlg.Destroy()
+        
+    def OnSolve(self,event):
+        #works - but it'd be better if it could restore plots
+        G2sol.Solve(self.GSASprojectfile)
+        dlg = wx.MessageDialog(self,'Load new result?','Structure solution results',wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.PatternTree.DeleteChildren(self.root)

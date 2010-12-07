@@ -14,6 +14,7 @@ import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
+import GSASIIIO as G2IO
 import numpy as np
 import numpy.linalg as nl
 
@@ -123,12 +124,12 @@ class SymOpDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
         self.Destroy()
 
-def UpdatePhaseData(self,item,data,oldPage):
+def UpdatePhaseData(self,Item,data,oldPage):
 
     Atoms = []
     if self.dataDisplay:
         self.dataDisplay.Destroy()
-    PhaseName = self.PatternTree.GetItemText(item)
+    PhaseName = self.PatternTree.GetItemText(Item)
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataFrame.SetLabel('Phase Data for '+PhaseName)
     self.dataFrame.CreateStatusBar()
@@ -187,7 +188,7 @@ def UpdatePhaseData(self,item,data,oldPage):
             generalData['Name'] = NameTxt.GetValue()
             self.G2plotNB.Rename(oldName,generalData['Name'])
             self.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
-            self.PatternTree.SetItemText(item,generalData['Name'])
+            self.PatternTree.SetItemText(Item,generalData['Name'])
                         
         def OnPhaseType(event):
             if not generalData['AtomTypes']:             #can change only if no atoms!
@@ -1897,7 +1898,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                     UseList[hist]['Mustrain'][1][pid] = strain
             except ValueError:
                 pass
-            Obj.SetValue("%.3f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
+            Obj.SetValue("%.5f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
             
         def OnStrainAxis(event):
             Obj = event.GetEventObject()
@@ -2113,7 +2114,7 @@ def UpdatePhaseData(self,item,data,oldPage):
                         Indx[strainRef.GetId()] = [item,id]
                         strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
                         strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
+                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[strainVal.GetId()] = [item,id]
                         strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
                         strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -2242,8 +2243,113 @@ def UpdatePhaseData(self,item,data,oldPage):
                 dlg.Destroy()
 
     def FillPawleyReflectionsGrid():
+        
+            
+            
+        if data['Histograms']:
+            self.dataFrame.PawleyMenu.FindItemById(G2gd.wxID_PAWLEYLOAD).Enable(True)
+            self.dataFrame.PawleyMenu.FindItemById(G2gd.wxID_PAWLEYIMPORT).Enable(True)
+        else:
+            self.dataFrame.PawleyMenu.FindItemById(G2gd.wxID_PAWLEYLOAD).Enable(False)
+            self.dataFrame.PawleyMenu.FindItemById(G2gd.wxID_PAWLEYIMPORT).Enable(False)
+                        
+        def KeyEditPawleyGrid(event):
+            colList = PawleyRefl.GetSelectedCols()
+            PawleyPeaks = data['Pawley ref']
+            if event.GetKeyCode() == wx.WXK_RETURN:
+                event.Skip(True)
+            elif event.GetKeyCode() == wx.WXK_CONTROL:
+                event.Skip(True)
+            elif event.GetKeyCode() == wx.WXK_SHIFT:
+                event.Skip(True)
+            elif colList:
+                PawleyRefl.ClearSelection()
+                key = event.GetKeyCode()
+                for col in colList:
+                    if PawleyTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
+                        if key == 89: #'Y'
+                            for row in range(PawleyTable.GetNumberRows()): PawleyPeaks[row][col]=True
+                        elif key == 78:  #'N'
+                            for row in range(PawleyTable.GetNumberRows()): PawleyPeaks[row][col]=False
+                        FillPawleyReflectionsGrid()
+            
+        if 'Pawley ref' in data:
+            PawleyPeaks = data['Pawley ref']                        
+            rowLabels = []
+            for i in range(len(PawleyPeaks)): rowLabels.append(str(i+1))
+            colLabels = ['h','k','l','mul','2-theta','sigma','refine','Iobs','Icalc']
+            Types = [wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,
+                wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
+                wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5']
+            PawleyTable = G2gd.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            PawleyRefl.SetTable(PawleyTable, True)
+            PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
+            PawleyRefl.SetMargins(0,0)
+            PawleyRefl.AutoSizeColumns(False)
+            self.dataFrame.setSizePosLeft([500,300])
+                    
+    def OnPawleyLoad(event):
+        sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)/100.
+        gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))/100.
+        gamFW = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
+        choice = data['Histograms'].keys()
+        dlg = wx.SingleChoiceDialog(self,'Select','Powder histogram',choice)
+        if dlg.ShowModal() == wx.ID_OK:
+            histogram = choice[dlg.GetSelection()]
+            Id  = G2gd.GetPatternTreeItemId(self, self.root, histogram)
+            Iparms = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Instrument Parameters'))
+            try:                                            #try single wavelength
+                lam = Iparms[1][Iparms[3].index('Lam')]
+            except ValueError:                              #Ka1 & Ka2 present
+                lam = Iparms[1][Iparms[3].index('Lam1')]
+            GU = Iparms[1][Iparms[3].index('U')]               
+            GV = Iparms[1][Iparms[3].index('V')]               
+            GW = Iparms[1][Iparms[3].index('W')]               
+            LX = Iparms[1][Iparms[3].index('X')]               
+            LY = Iparms[1][Iparms[3].index('Y')]
+        dlg.Destroy()
         generalData = data['General']
-        print 'Pawley reflections'
+        dmin = generalData['Pawley dmin']
+        cell = generalData['Cell'][1:7]
+        A = G2lat.cell2A(cell)
+        SGData = generalData['SGData']
+        Laue = SGData['SGLaue']
+        SGLatt = SGData['SGLatt']
+        SGUniq = SGData['SGUniq']        
+        HKLd = G2lat.GenHLaue(dmin,Laue,SGLatt,SGUniq,A)
+        PawleyPeaks = []
+        for h,k,l,d in HKLd:
+            ext,mul = G2spc.GenHKL([h,k,l],SGData)[:2]
+            if not ext:
+                th = asind(lam/(2.0*d))
+                H = gamFW(sig(th,GU,GV,GW),gam(th,LX,LY))/2.35482
+                PawleyPeaks.append([h,k,l,mul,2*th,H,False,0,0])
+        data['Pawley ref'] = PawleyPeaks
+        FillPawleyReflectionsGrid()
+                
+            
+    def OnPawleyImport(event):
+        dlg = wx.FileDialog(self, 'Choose file with Pawley reflections', '.', '', 
+            'GSAS Pawley files (*.RFL)|*.RFL',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                PawleyFile = dlg.GetPath()
+                self.dirname = dlg.GetDirectory()
+                choice = data['Histograms'].keys()
+                dlg2 = wx.SingleChoiceDialog(self,'Select','Powder histogram',choice)
+                if dlg2.ShowModal() == wx.ID_OK:
+                    histogram = choice[dlg2.GetSelection()]
+                    Id  = G2gd.GetPatternTreeItemId(self, self.root, histogram)
+                    Iparms = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Instrument Parameters'))
+                dlg2.Destroy()
+                
+                PawleyPeaks = G2IO.GetPawleyPeaks(PawleyFile)
+                data['Pawley ref'] = PawleyPeaks
+                FillPawleyReflectionsGrid()
+        finally:
+            dlg.Destroy()
 
     def OnPageChanged(event):
         page = event.GetSelection()
@@ -2286,6 +2392,11 @@ def UpdatePhaseData(self,item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
             UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
+        elif text == 'Pawley reflections':
+            self.dataFrame.SetMenuBar(self.dataFrame.PawleyMenu)
+            self.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
+            self.dataFrame.Bind(wx.EVT_MENU, OnPawleyImport, id=G2gd.wxID_PAWLEYIMPORT)
+            FillPawleyReflectionsGrid()            
         else:
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
         event.Skip()
@@ -2297,6 +2408,8 @@ def UpdatePhaseData(self,item,data,oldPage):
     UpdateGeneral()
 
     if GeneralData['Type'] == 'Pawley':
+        DData = wx.ScrolledWindow(self.dataDisplay)
+        self.dataDisplay.AddPage(DData,'Data')
         PawleyRefl = G2gd.GSGrid(self.dataDisplay)
         self.dataDisplay.AddPage(PawleyRefl,'Pawley reflections')
     else:

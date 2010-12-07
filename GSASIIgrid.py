@@ -28,6 +28,9 @@ import GSASIIphsGUI as G2phG
 [ wxID_MASKCOPY,
 ] = [wx.NewId() for _init_coll_MASK_Items in range(1)]
 
+[ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT,
+] = [wx.NewId() for _init_coll_PAWLEY_Items in range(2)]
+
 [ wxID_INSTPRMRESET,
 ] = [wx.NewId() for _init_coll_INST_Items in range(1)]
 
@@ -53,8 +56,11 @@ class DataFrame(wx.Frame):
         parent.Append(menu=self.DataEdit, title='Edit')
         
     def _init_coll_DrawAtomsMenu(self,parent):
-        parent.Append(menu=self.DrawAtomEdit, title='Edit')        
+        parent.Append(menu=self.DrawAtomEdit, title='Edit')
 
+    def _init_coll_PawleyMenu(self,parent):
+        parent.Append(menu=self.PawleyEdit,title='Pawley Reflections Operations')
+      
     def _init_coll_IndPeaksMenu(self,parent):
         parent.Append(menu=self.IndPeaksEdit,title='Index Peaks Operations')
                    
@@ -121,6 +127,12 @@ class DataFrame(wx.Frame):
         parent.Append(id=wxID_DRAWDELETE, kind=wx.ITEM_NORMAL,text='Delete atoms',
             help='Delete atoms from drawing set')
 
+    def _init_coll_Pawley_Items(self,parent):
+        parent.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
+            help='Initialize Pawley reflection list')
+        parent.Append(id=wxID_PAWLEYIMPORT, kind=wx.ITEM_NORMAL,text='Pawley import',
+            help='Import Pawley reflection list')
+
     def _init_coll_IndPeaks_Items(self,parent):
         parent.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
             kind=wx.ITEM_NORMAL,text='Load/Reload')
@@ -171,6 +183,7 @@ class DataFrame(wx.Frame):
         self.AtomsMenu = wx.MenuBar()
         self.DataMenu = wx.MenuBar()
         self.DrawAtomsMenu = wx.MenuBar()
+        self.PawleyMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
         self.InstMenu = wx.MenuBar()
@@ -180,6 +193,7 @@ class DataFrame(wx.Frame):
         self.AtomEdit = wx.Menu(title='')
         self.DataEdit = wx.Menu(title='')
         self.DrawAtomEdit = wx.Menu(title='')
+        self.PawleyEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
         self.InstEdit = wx.Menu(title='')
@@ -192,6 +206,8 @@ class DataFrame(wx.Frame):
         self._init_coll_Data_Items(self.DataEdit)
         self._init_coll_DrawAtomsMenu(self.DrawAtomsMenu)
         self._init_coll_DrawAtom_Items(self.DrawAtomEdit)
+        self._init_coll_PawleyMenu(self.PawleyMenu)
+        self._init_coll_Pawley_Items(self.PawleyEdit)
         self._init_coll_ImageMenu(self.ImageMenu)
         self._init_coll_Image_Items(self.ImageEdit)
         self._init_coll_MaskMenu(self.MaskMenu)
@@ -211,7 +227,7 @@ class DataFrame(wx.Frame):
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)
         self.MakeNewPhase.Enable(False)
-               
+        
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,
             size=size,pos=pos,title='GSAS-II data display')
@@ -684,7 +700,7 @@ def MovePatternTreeToGrid(self,item):
             
     elif self.PatternTree.GetItemText(parentID) == 'Phases':
         self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
+        data = self.PatternTree.GetItemPyData(item)            
         G2phG.UpdatePhaseData(self,item,data,oldPage)
     elif self.PatternTree.GetItemText(item) == 'Comments':
         self.PatternId = self.PatternTree.GetItemParent(item)

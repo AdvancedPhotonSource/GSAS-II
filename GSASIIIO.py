@@ -163,6 +163,27 @@ def GetPowderPeaks(fileName):
             dsp = Cuka/(2.0*sind(tth/2.0))
             Peaks.append([tth,peak[1],True,False,0,0,0,dsp,0.0])
     return Comments,Peaks
+
+def GetPawleyPeaks(filename):
+    rt2ln2x2 = 2.35482
+    File = open(filename,'Ur')
+    PawleyPeaks = []
+    S = File.readline()         #skip header
+    S = File.readline()
+    item = S.split()
+    while S:
+        h,k,l = int(item[0]),int(item[1]),int(item[2])
+        mult = int(item[3])
+        tth = float(item[5])
+        sig = float(item[6])/rt2ln2x2
+        Iobs = float(item[7])*mult
+        PawleyPeaks.append([h,k,l,mult,tth,sig,False,Iobs,0.0,[]])
+        S = File.readline()
+        item = S.split()
+        if item[3] == '-100.0000':       #find trailer
+            break
+    File.close()
+    return PawleyPeaks
     
 def GetHKLData(filename):
     print 'Reading: '+filename

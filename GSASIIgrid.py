@@ -22,8 +22,8 @@ import GSASIIphsGUI as G2phG
 ] = [wx.NewId() for _init_coll_DrawAtom_Items in range(10)]
 
 [ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG, 
-    wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL,
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(6)]
+    wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(8)]
 
 [ wxID_MASKCOPY,
 ] = [wx.NewId() for _init_coll_MASK_Items in range(1)]
@@ -150,6 +150,11 @@ class DataFrame(wx.Frame):
             id=wxID_SAVEINTG, kind=wx.ITEM_NORMAL,text='Save Integration')
         parent.Append(help='Copy image controls to other images', 
             id=wxID_IMCOPYCONTROLS, kind=wx.ITEM_NORMAL,text='Copy Controls')
+        parent.Append(help='Save image controls to file', 
+            id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
+        parent.Append(help='Load image controls from file', 
+            id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
+
                     
     def _init_coll_Mask_Items(self,parent):
         parent.Append(help='Copy mask to other images', 
@@ -715,14 +720,14 @@ def MovePatternTreeToGrid(self,item):
             GetPatternTreeItemId(self,self.Image, 'Masks'))
         data = self.PatternTree.GetItemPyData(item)
         G2imG.UpdateImageControls(self,data,masks)
-#        G2plt.PlotImage(self)
+        G2plt.PlotImage(self)
     elif self.PatternTree.GetItemText(item) == 'Masks':
         self.dataFrame.SetTitle('Masks')
         self.PickId = item
         self.Image = self.PatternTree.GetItemParent(item)
         data = self.PatternTree.GetItemPyData(item)
         G2imG.UpdateMasks(self,data)
-#        G2plt.PlotImage(self)
+        G2plt.PlotImage(self)
     elif self.PatternTree.GetItemText(item) == 'HKL Plot Controls':
         self.PickId = item
         self.Sngl = self.PatternTree.GetItemParent(item)

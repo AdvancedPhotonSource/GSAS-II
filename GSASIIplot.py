@@ -1,12 +1,14 @@
 import math
 import time
 import copy
+import os.path
 import numpy as np
 import numpy.linalg as nl
 import wx
 import wx.aui
 import wx.glcanvas
 import matplotlib as mpl
+import mpl_toolkits.mplot3d.axes3d as mp3d
 import GSASIIpath
 import GSASIIgrid as G2gd
 import GSASIIimage as G2img
@@ -31,6 +33,10 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 acosd = lambda x: 180.*math.acos(x)/math.pi
 atan2d = lambda x,y: 180.*math.atan2(y,x)/math.pi
 atand = lambda x: 180.*math.atan(x)/math.pi
+# numpy versions
+npsind = lambda x: np.sin(x*np.pi/180.)
+npcosd = lambda x: np.cos(x*np.pi/180.)
+npacosd = lambda x: 180.*np.arccos(x)/np.pi
     
 class G2PlotMpl(wx.Panel):    
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -53,7 +59,22 @@ class G2PlotOgl(wx.Panel):
         self.camera = {}
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
-        self.SetSizer(sizer)           
+        self.SetSizer(sizer)
+        
+class G2Plot3D(wx.Panel):
+    def __init__(self,parent,id=-1,dpi=None,**kwargs):
+        wx.Panel.__init__(self,parent,id=id,**kwargs)
+        self.figure = mpl.figure.Figure(dpi=dpi,figsize=(6,6))
+        self.canvas = Canvas(self,-1,self.figure)
+        self.toolbar = Toolbar(self.canvas)
+
+        self.toolbar.Realize()
+        
+        sizer=wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.canvas,1,wx.EXPAND)
+        sizer.Add(self.toolbar,0,wx.LEFT|wx.EXPAND)
+        self.SetSizer(sizer)
+               
                 
 class G2PlotNoteBook(wx.Panel):
     def __init__(self,parent,id=-1):
@@ -73,6 +94,14 @@ class G2PlotNoteBook(wx.Panel):
             
     def addMpl(self,name=""):
         page = G2PlotMpl(self.nb)
+        self.nb.AddPage(page,name)
+        
+        self.plotList.append(name)
+        
+        return page.figure
+        
+    def add3D(self,name=""):
+        page = G2Plot3D(self.nb)
         self.nb.AddPage(page,name)
         
         self.plotList.append(name)
@@ -251,10 +280,7 @@ def PlotPatterns(self,newPlot=False):
         xpos = pick.get_xdata()
         ypos = pick.get_ydata()
         ind = event.ind
-        view = Page.toolbar._views.forward()
-        if view and 'line2' in str(pick):           #apply offset only for picked powder pattern points
-            ind += np.searchsorted(xye[0],view[0][0])
-        xy = zip(xpos[ind],ypos[ind])[0]
+        xy = zip(np.take(xpos,ind),np.take(ypos,ind))[0]
         if self.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
@@ -431,7 +457,8 @@ def PlotPatterns(self,newPlot=False):
         Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        Choice = (' key press','d: offset down','u: offset up','c: contour on','s: toggle single plot','+: no selection')
+        Choice = (' key press','d: offset down','u: offset up','c: contour on',
+            's: toggle single plot','+: no selection')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -462,7 +489,7 @@ def PlotPatterns(self,newPlot=False):
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
     offset = self.Offset*Ymax/100.0
-    Plot.set_title('Powder Patterns')
+    Plot.set_title('Powder Patterns: '+os.path.split(self.GSASprojectfile)[1])
     Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
     Plot.set_ylabel('Intensity',fontsize=12)
     if self.Contour:
@@ -485,6 +512,7 @@ def PlotPatterns(self,newPlot=False):
             Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
         if self.Contour:
+            
             if lenX == len(X):
                 ContourY.append(N)
                 ContourZ.append(Y)
@@ -526,7 +554,7 @@ def PlotPatterns(self,newPlot=False):
     if self.Contour:
         acolor = mpl.cm.get_cmap(self.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation=self.Interpolate, 
-            extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto')
+            extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
     else:
         self.Lines = Lines
@@ -679,6 +707,85 @@ def PlotPeakWidths(self):
     Plot.plot(X,W,'+',color='b',label='G+L peak')
     Plot.plot(X,V,'+',color='k',label='G+L2 peak')
     Plot.legend(loc='best')
+    Page.canvas.draw()
+    
+def PlotStrain(self,data):
+    # in this instance data is for a phase
+    PatternId = self.PatternId
+    generalData = data['General']
+    SGData = generalData['SGData']
+    MuStrKeys = G2spc.MustrainNames(SGData)
+    cell = generalData['Cell'][1:]
+    A,B = G2lat.cell2AB(cell[:6])
+    Vol = cell[6]
+    useList = data['Histograms']
+    numPlots = len(useList)
+    
+    try:
+        plotNum = self.G2plotNB.plotList.index('Microstrain')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = mp3d.Axes3D(Page.figure)
+    except ValueError,error:
+        Plot = mp3d.Axes3D(self.G2plotNB.add3D('Microstrain'))
+        plotNum = self.G2plotNB.plotList.index('Microstrain')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+    Page.SetFocus()
+    self.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
+    
+    for item in useList:
+        if useList[item]['Show']:
+            muStrain = useList[item]['Mustrain']
+            PHI = np.linspace(0.,360.,30,True)
+            PSI = np.linspace(0.,180.,30,True)
+            X = np.outer(npsind(PHI),npsind(PSI))
+            Y = np.outer(npcosd(PHI),npsind(PSI))
+            Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
+            if muStrain[0] == 'isotropic':
+                muiso = muStrain[1][0]*math.pi/0.018
+                X *= muiso
+                Y *= muiso
+                Z *= muiso                
+                
+            elif muStrain[0] == 'uniaxial':
+                def uniaxMustrain(xyz,muiso,muaniso,axes):
+                    cp = abs(np.dot(xyz,axes))
+                    S = muiso+muaniso*cp
+                    return S*xyz*math.pi/0.018
+                muiso,muaniso = muStrain[1][:2]
+                axes = np.inner(A,np.array(muStrain[3]))
+                axes /= nl.norm(axes)
+                Shkl = np.array(muStrain[1])
+                Shape = X.shape[0]
+                XYZ = np.dstack((X,Y,Z))
+                XYZ = np.nan_to_num(np.apply_along_axis(uniaxMustrain,2,XYZ,muiso,muaniso,axes))
+                X,Y,Z = np.dsplit(XYZ,3)
+                X = X[:,:,0]
+                Y = Y[:,:,0]
+                Z = Z[:,:,0]
+                
+            elif muStrain[0] == 'generalized':
+                def genMustrain(xyz,SGData,A,Shkl):
+                    uvw = np.inner(A.T,xyz)
+                    Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
+                    sum = np.sqrt(np.sum(np.multiply(Shkl,Strm)))*math.pi/0.018
+                    return sum*xyz
+                Shkl = np.array(muStrain[4])
+                if np.any(Shkl):
+                    Shape = X.shape[0]
+                    XYZ = np.dstack((X,Y,Z))
+                    XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,A,Shkl))
+                    X,Y,Z = np.dsplit(XYZ,3)
+                    X = X[:,:,0]
+                    Y = Y[:,:,0]
+                    Z = Z[:,:,0]
+                    
+            if np.any(X) and np.any(Y) and np.any(Z):
+                Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g')
+                
+            Plot.set_xlabel('X')
+            Plot.set_ylabel('Y')
+            Plot.set_zlabel('Z')
     Page.canvas.draw()
             
 def PlotExposedImage(self,newPlot=False,event=None):

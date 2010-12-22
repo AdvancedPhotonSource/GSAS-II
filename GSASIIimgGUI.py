@@ -266,6 +266,46 @@ def UpdateImageControls(self,data,masks):
                             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'),Data)
             finally:
                 dlg.Destroy()
+                
+    def OnSaveControls(event):
+        dlg = wx.FileDialog(self, 'Choose image controls file', '.', '', 
+            'image control files (*.imctrl)|*.imctrl',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'wb')
+                save = {}
+                keys = ['wavelength','calibrant','distance','center','tilt','rotation']
+                for key in keys:
+                    save[key] = data[key]
+                cPickle.dump(save,File,1)
+                File.close()
+        finally:
+            dlg.Destroy()
+        
+    def OnLoadControls(event):
+        dlg = wx.FileDialog(self, 'Choose image controls file', '.', '', 
+            'image control files (*.imctrl)|*.imctrl',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'rb')
+                save = cPickle.load(File)
+                data.update(save)
+                calSel.SetValue(data['calibrant']) 
+                waveSel.SetValue("%6.5f" % (data['wavelength']))
+                cent = data['center']
+                centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
+                distSel.SetValue("%8.3f"%(data['distance']))
+                tiltSel.SetValue("%9.3f"%(data['tilt']))            
+                rotSel.SetValue("%9.3f"%(data['rotation']))
+                File.close()
+        finally:
+            dlg.Destroy()
                                         
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
@@ -282,6 +322,8 @@ def UpdateImageControls(self,data,masks):
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrateAll, id=G2gd.wxID_INTEGRATEALL)
     self.dataFrame.Bind(wx.EVT_MENU, OnSaveIntegrate, id=G2gd.wxID_SAVEINTG)
     self.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)
+    self.dataFrame.Bind(wx.EVT_MENU, OnSaveControls, id=G2gd.wxID_IMSAVECONTROLS)
+    self.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
     self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)

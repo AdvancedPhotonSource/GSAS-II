@@ -554,7 +554,130 @@ def MustrainNames(SGData):
         SHKL += ['S310','S103','S031','S130','S301','S013']
         SHKL += ['S211','S121','S112']
         return SHKL
-        
+
+def MustrainCoeff(HKL,SGData):
+    #NB: order of terms is the same as returned by MustrainNames
+    laue = SGData['SGLaue']
+    uniq = SGData['SGUniq']
+    h,k,l = HKL
+    Strm = []
+    if laue in ['m3','m3m']:
+        Strm.append(h**4+k**4+l**4)
+        Strm.append(3.0*((h*k)**2+(h*l)**2+(k*l)**2))
+    elif laue in ['6/m','6/mmm','3m1']:
+        Strm.append(h**4+k**4+2.0*k*h**3+2.0*h*k**3+3.0*(h*k)**2)
+        Strm.append(l**4)
+        Strm.append(3.0*((h*l)**2+(k*l)**2+h*k*l**2))
+    elif laue in ['31m','3']:
+        Strm.append(h**4+k**4+2.0*k*h**3+2.0*h*k**3+3.0*(h*k)**2)
+        Strm.append(l**4)
+        Strm.append(3.0*((h*l)**2+(k*l)**2+h*k*l**2))
+        Strm.append(4.0*h*k*l*(h+k))
+    elif laue in ['3R','3mR']:
+        Strm.append(h**4+k**4+l**4)
+        Strm.append(3.0*((h*k)**2+(h*l)**2+(k*l)**2))
+        Strm.append(2.0*(h*l**3+l*k**3+k*h**3)+2.0*(l*h**3+k*l**3+l*k**3))
+        Strm.append(4.0*(k*l*h**2+h*l*k**2+h*k*l**2))
+    elif laue in ['4/m','4/mmm']:
+        Strm.append(h**4+k**4)
+        Strm.append(l**4)
+        Strm.append(3.0*(h*k)**2)
+        Strm.append(3.0*((h*l)**2+(k*l)**2))
+    elif laue in ['mmm']:
+        Strm.append(h**4)
+        Strm.append(k**4)
+        Strm.append(l**4)
+        Strm.append(3.0*(h*k)**2)
+        Strm.append(3.0*(h*l)**2)
+        Strm.append(3.0*(k*l)**2)
+    elif laue in ['2/m']:
+        Strm.append(h**4)
+        Strm.append(k**4)
+        Strm.append(l**4)
+        Strm.append(3.0*(h*k)**2)
+        Strm.append(3.0*(h*l)**2)
+        Strm.append(3.0*(k*l)**2)
+        if uniq == 'a':
+            Strm.append(2.0*k*l**3)
+            Strm.append(2.0*l*k**3)
+            Strm.append(4.0*k*l*h**2)
+        elif uniq == 'b':
+            Strm.append(2.0*l*h**3)
+            Strm.append(2.0*h*l**3)
+            Strm.append(4.0*h*l*k**2)
+        elif uniq == 'c':
+            Strm.append(2.0*h*k**3)
+            Strm.append(2.0*k*h**3)
+            Strm.append(4.0*h*k*l**2)
+    else:
+        Strm.append(h**4)
+        Strm.append(k**4)
+        Strm.append(l**4)
+        Strm.append(3.0*(h*k)**2)
+        Strm.append(3.0*(h*l)**2)
+        Strm.append(3.0*(k*l)**2)
+        Strm.append(2.0*k*h**3)
+        Strm.append(2.0*h*l**3)
+        Strm.append(2.0*l*k**3)
+        Strm.append(2.0*h*k**3)
+        Strm.append(2.0*l*h**3)
+        Strm.append(2.0*k*l**3)
+        Strm.append(4.0*k*l*h**2)
+        Strm.append(4.0*h*l*k**2)
+        Strm.append(4.0*k*h*l**2)
+    return Strm
+    
+def Muiso2Shkl(muiso,SGData,cell):
+    #this is to convert isotropic mustrain to generalized Shkls - doesn't work just now
+    import GSASIIlattice as G2lat
+    from scipy.optimize import fmin
+    A = G2lat.cell2AB(cell)[0]
+    def minMus(Shkl,H,muiso,SGData,A):
+        U = np.inner(A.T,H)
+        S = np.array(MustrainCoeff(H.T,SGData))
+        sum = np.sqrt(np.sum(np.multiply(S,Shkl)))
+        return abs(muiso-sum*H)
+    laue = SGData['SGLaue']
+    if laue in ['m3','m3m']:
+        H = [[1,0,0],[1,1,0]]
+        S0 = [0.01,0.01]
+    elif laue in ['6/m','6/mmm','3m1']:
+        H = [[1,0,0],[0,0,1],[1,0,1]]
+        S0 = [0.01,0.01,0.01]
+    elif laue in ['31m','3']:
+        H = [[1,0,0],[0,0,1],[1,0,1],[1,1,1]]
+        S0 = [0.01,0.01,0.01,0.01]
+    elif laue in ['3R','3mR']:
+        H = [[1,0,0],[1,1,0],[1,0,1],[1,1,1]]
+        S0 = [0.01,0.01,0.01,0.01]
+    elif laue in ['4/m','4/mmm']:
+        H = [[1,0,0],[0,0,1],[1,1,0],[1,0,1]]
+        S0 = [0.01,0.01,0.01,0.01]
+    elif laue in ['mmm']:
+        H = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1]]
+        S0 = [0.01,0.01,0.01,0.01,0.01,0.01]
+    elif laue in ['2/m']:
+        H = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1]]
+        if uniq == 'a':
+            H.append([0,1,-1])
+            H.append([0,-2,1])
+        elif uniq == 'b':
+            H.append([1,0,-1])
+            H.append([-2,0,1])
+        elif uniq == 'c':
+            H.append([1,-1,0])
+            H.append([-2,1,0])
+        H.append([1,1,1])
+        S0 = [9*[0.01,]]
+    else:
+        H = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],
+            [-1,1,0],[1,0,-1],[0,-1,1],[1,-2,0],[-2,0,1],[0,1,-2],
+            [1,-1,1],[-1, 1, 1],[1,-1,1]]
+        S0 = [15*[0.01,]]
+    H = np.array(H)
+    S0 = np.array(S0)
+    return fmin(minMus,S0,(H,muiso,SGData,A))
+       
 def SytSym(XYZ,SGData):
     '''
     Generates the number of equivalent positions and a site symmetry code for a specified coordinate and space group

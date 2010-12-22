@@ -468,12 +468,12 @@ def GenHBravais(dmin,Bravais,A):
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
     return sortHKLd(HKL,True,False)
     
-def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
+def GenHLaue(dmin,SGLaue,SGLatt,SGUniq,A):
     '''Generate the crystallographically unique powder diffraction reflections
     for a lattice and Bravais type
     '''
 # dmin - minimum d-spacing
-# Laue - Laue group symbol = '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
+# SGLaue - Laue group symbol = '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
 #                            '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
 # SGLatt - lattice centering = 'P','A','B','C','I','F'
 # SGUniq - code for unique monoclinic axis = 'a','b','c'
@@ -482,7 +482,7 @@ def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
 # part of reciprocal space ignoring anomalous dispersion
     import math
     #finds maximum allowed hkl for given A within dmin
-    if Laue in ['3R','3mR']:        #Rhombohedral axes
+    if SGLaue in ['3R','3mR']:        #Rhombohedral axes
         Hmax = [0,0,0]
         cell = A2cell(A)
         aHx = cell[0]*math.sqrt(2.0*(1.0-cosd(cell[3])))
@@ -495,7 +495,7 @@ def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
         
     dminsq = 1./(dmin**2)
     HKL = []
-    if Laue == '-1':                       #triclinic
+    if SGLaue == '-1':                       #triclinic
         for l in range(-Hmax[2],Hmax[2]+1):
             for k in range(-Hmax[1],Hmax[1]+1):
                 hmin = 0
@@ -506,7 +506,7 @@ def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
                     rdsq = calc_rDsq(H,A)
                     if 0 < rdsq <= dminsq:
                         HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    elif Laue == '2/m':                #monoclinic
+    elif SGLaue == '2/m':                #monoclinic
         axisnum = 1 + ['a','b','c'].index(SGUniq)
         Hmax = SwapIndx(axisnum,Hmax)
         for h in range(Hmax[0]+1):
@@ -522,11 +522,11 @@ def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
                     [h,k,l] = SwapIndx(axisnum,[h,k,l])
-    elif Laue in ['mmm','4/m','6/m']:            #orthorhombic
+    elif SGLaue in ['mmm','4/m','6/m']:            #orthorhombic
         for l in range(Hmax[2]+1):
             for h in range(Hmax[0]+1):
                 kmin = 1
-                if Laue == 'mmm' or h ==0: kmin = 0
+                if SGLaue == 'mmm' or h ==0: kmin = 0
                 for k in range(kmin,Hmax[1]+1):
                     H = []
                     if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
@@ -534,7 +534,7 @@ def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    elif Laue in ['4/mmm','6/mmm']:                  #tetragonal & hexagonal
+    elif SGLaue in ['4/mmm','6/mmm']:                  #tetragonal & hexagonal
         for l in range(Hmax[2]+1):
             for h in range(Hmax[0]+1):
                 for k in range(h+1):
@@ -544,23 +544,23 @@ def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
-    elif Laue in ['3m1','31m','3','3R','3mR']:                  #trigonals
+    elif SGLaue in ['3m1','31m','3','3R','3mR']:                  #trigonals
         for l in range(-Hmax[2],Hmax[2]+1):
             hmin = 0
             if l < 0: hmin = 1
             for h in range(hmin,Hmax[0]+1):
-                if Laue in ['3R','3']:
+                if SGLaue in ['3R','3']:
                     kmax = h
                     kmin = -int((h-1.)/2.)
                 else:
                     kmin = 0
                     kmax = h
-                    if Laue in ['3m1','3mR'] and l < 0: kmax = h-1
-                    if Laue == '31m' and l < 0: kmin = 1
+                    if SGLaue in ['3m1','3mR'] and l < 0: kmax = h-1
+                    if SGLaue == '31m' and l < 0: kmin = 1
                 for k in range(kmin,kmax+1):
                     H = []
                     if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
-                    if Laue in ['3R','3mR']:
+                    if SGLaue in ['3R','3mR']:
                         H = Hx2Rh(H)
                     if H:
                         rdsq = calc_rDsq(H,A)
@@ -571,7 +571,7 @@ def GenHLaue(dmin,Laue,SGLatt,SGUniq,A):
             for k in range(h+1):
                 lmin = 0
                 lmax = k
-                if Laue =='m3':
+                if SGLaue =='m3':
                     lmax = h-1
                     if h == k: lmax += 1
                 for l in range(lmin,lmax+1):

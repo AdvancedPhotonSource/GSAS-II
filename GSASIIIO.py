@@ -46,6 +46,7 @@ First line of this file:
     finally:
         dlg.Destroy()
     if result == wx.ID_NO: return (0,0)
+    Temperature = 300
         
     self.IparmName = GetInstrumentFile(self,filename)
     if self.IparmName:
@@ -72,6 +73,8 @@ First line of this file:
                     Pos.append(File.tell())
             else:
                 Comments.append(S[:-1])
+                if 'Temp' in S:
+                    Temperature = float(S[:-1].split()[-1])
         File.close()
     finally:
         wx.EndBusyCursor()
@@ -97,7 +100,7 @@ First line of this file:
             result = dlg.ShowModal()
         finally:
             dlg.Destroy()
-    return FoundData,Iparm,Comments
+    return FoundData,Iparm,Comments,Temperature
 
 def GetInstrumentFile(self,filename):
     import os.path as op

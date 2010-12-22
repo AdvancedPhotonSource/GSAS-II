@@ -1848,8 +1848,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
 
         def OnSizeType(event):
             Obj = event.GetEventObject()
-            UseList[Indx[Obj.GetId()]]['Size'][0] = Obj.GetValue()
-            dataDisplay.Destroy()
+            hist = Indx[Obj.GetId()]
+            UseList[hist]['Size'][0] = Obj.GetValue()
             UpdateDData()
             
         def OnSizeRef(event):
@@ -1862,53 +1862,82 @@ def UpdatePhaseData(self,Item,data,oldPage):
             hist,pid = Indx[Obj.GetId()]
             try:
                 size = float(Obj.GetValue())
-                if size > 0:
-                    UseList[hist]['Size'][1][pid] = size
+                if pid == 0 and size <= 0:
+                    raise ValueError
+                elif pid == 1 and size <= -UseList[hist]['Size'][1][0]:
+                    raise ValueError
+                UseList[hist]['Size'][1][pid] = size
             except ValueError:
                 pass
             Obj.SetValue("%.1f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
             
-        def OnSizeAxis(event):
+        def OnSizeAxis(event):            
             Obj = event.GetEventObject()
-            hist,pid = Indx[Obj.GetId()]
-            axis = np.array(UseList[hist]['Size'][3])
-            UseList[hist]['Size'][3][pid] = Obj.GetValue()
-            new = np.array(UseList[hist]['Size'][3])
-            if not np.any(new):
-                UseList[hist]['Size'][3] += new-axis
-            Obj.SetValue(UseList[hist]['Size'][3][pid])
+            hist = Indx[Obj.GetId()]
+            Saxis = Obj.GetValue().split()
+            try:
+                hkl = [int(Saxis[i]) for i in range(3)]
+            except (ValueError,IndexError):
+                hkl = UseList[hist]['Size'][3]
+            if not np.any(np.array(hkl)):
+                hkl = UseList[hist]['Size'][3]
+            UseList[hist]['Size'][3] = hkl
+            h,k,l = hkl
+            Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
                         
         def OnStrainType(event):
             Obj = event.GetEventObject()
-            UseList[Indx[Obj.GetId()]]['Mustrain'][0] = Obj.GetValue()
-            dataDisplay.Destroy()
+            hist = Indx[Obj.GetId()]
+            UseList[hist]['Mustrain'][0] = Obj.GetValue()
+            G2plt.PlotStrain(self,data)
             UpdateDData()
             
         def OnStrainRef(event):
             Obj = event.GetEventObject()
             hist,pid = Indx[Obj.GetId()]
-            UseList[hist]['Mustrain'][2][pid] = Obj.GetValue()
+            if UseList[hist]['Mustrain'][0] == 'generalized':
+                UseList[hist]['Mustrain'][5][pid] = Obj.GetValue()
+            else:
+                UseList[hist]['Mustrain'][2][pid] = Obj.GetValue()
             
         def OnStrainVal(event):
+            Snames = G2spc.MustrainNames(SGData)
             Obj = event.GetEventObject()
             hist,pid = Indx[Obj.GetId()]
             try:
                 strain = float(Obj.GetValue())
-                if strain >= 0:
+                if UseList[hist]['Mustrain'][0] == 'generalized':
+                    if '4' in Snames[pid] and strain < 0:
+                        raise ValueError
+                    UseList[hist]['Mustrain'][4][pid] = strain
+                else:
+                    if pid == 0 and strain < 0:
+                        raise ValueError
+                    elif pid == 1 and strain < -UseList[hist]['Mustrain'][1][0]:
+                        raise ValueError
                     UseList[hist]['Mustrain'][1][pid] = strain
             except ValueError:
                 pass
-            Obj.SetValue("%.5f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
+            if UseList[hist]['Mustrain'][0] == 'generalized':
+                Obj.SetValue("%.5f"%(UseList[hist]['Mustrain'][4][pid]))          #reset in case of error
+            else:
+                Obj.SetValue("%.5f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
+            G2plt.PlotStrain(self,data)
             
         def OnStrainAxis(event):
             Obj = event.GetEventObject()
-            hist,pid = Indx[Obj.GetId()]
-            axis = np.array(UseList[hist]['Mustrain'][3])
-            UseList[hist]['Mustrain'][3][pid] = Obj.GetValue()
-            new = np.array(UseList[hist]['Mustrain'][3])
-            if not np.any(new):
-                UseList[hist]['Mustrain'][3] += new-axis
-            Obj.SetValue(UseList[hist]['Mustrain'][3][pid])
+            hist = Indx[Obj.GetId()]
+            Saxis = Obj.GetValue().split()
+            try:
+                hkl = [int(Saxis[i]) for i in range(3)]
+            except (ValueError,IndexError):
+                hkl = UseList[hist]['Mustrain'][3]
+            if not np.any(np.array(hkl)):
+                hkl = UseList[hist]['Mustrain'][3]
+            UseList[hist]['Mustrain'][3] = hkl
+            h,k,l = hkl
+            Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
+            G2plt.PlotStrain(self,data)
 
         def OnMDRef(event):
             Obj = event.GetEventObject()
@@ -1928,13 +1957,17 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def OnMDAxis(event):
             Obj = event.GetEventObject()
-            hist,pid = Indx[Obj.GetId()]
-            axis = np.array(UseList[hist]['MDtexture'][2])
-            UseList[hist]['MDtexture'][2][pid] = Obj.GetValue()
-            new = np.array(UseList[hist]['MDtexture'][2])
-            if not np.any(new):
-                UseList[hist]['MDtexture'][2] += new-axis
-            Obj.SetValue(UseList[hist]['MDtexture'][2][pid])
+            hist = Indx[Obj.GetId()]
+            Saxis = Obj.GetValue().split()
+            try:
+                hkl = [int(Saxis[i]) for i in range(3)]
+            except (ValueError,IndexError):
+                hkl = UseList[hist]['MDtexture'][2]
+            if not np.any(np.array(hkl)):
+                hkl = UseList[hist]['MDtexture'][2]
+            UseList[hist]['MDtexture'][2] = hkl
+            h,k,l = hkl
+            Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
             
         def OnExtRef(event):
             Obj = event.GetEventObject()
@@ -2019,14 +2052,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     mainSizer.Add(sizeSizer)
                     mainSizer.Add((0,5),0)
                 elif UseList[item]['Size'][0] == 'uniaxial':
-                    sizeSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis: '),0,wx.ALIGN_CENTER_VERTICAL)
-                    axes = zip(['H:','K:','L:'],UseList[item]['Size'][3],range(3))                    
-                    for ax,H,i in axes:                            
-                        Axis = wx.SpinCtrl(dataDisplay,wx.ID_ANY,ax,min=-3,max=3,size=wx.Size(40,20))
-                        Axis.SetValue(H)
-                        Indx[Axis.GetId()] = [item,i]
-                        sizeSizer.Add(Axis)
-                        Axis.Bind(wx.EVT_SPINCTRL, OnSizeAxis)
+                    sizeSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    h,k,l = UseList[item]['Size'][3]
+                    sizeAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+                    Indx[sizeAxis.GetId()] = item
+                    sizeAxis.Bind(wx.EVT_TEXT_ENTER,OnSizeAxis)
+                    sizeAxis.Bind(wx.EVT_KILL_FOCUS,OnSizeAxis)
+                    sizeSizer.Add(sizeAxis,0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(sizeSizer)
                     mainSizer.Add((0,5),0)
                     sizeSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2070,14 +2102,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     mainSizer.Add(strainSizer)
                     mainSizer.Add((0,5),0)
                 elif UseList[item]['Mustrain'][0] == 'uniaxial':
-                    strainSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis: '),0,wx.ALIGN_CENTER_VERTICAL)
-                    axes = zip(['H:','K:','L:'],UseList[item]['Mustrain'][3],range(3))                    
-                    for ax,H,i in axes:                            
-                        Axis = wx.SpinCtrl(dataDisplay,wx.ID_ANY,ax,min=-3,max=3,size=wx.Size(40,20))
-                        Axis.SetValue(H)
-                        Indx[Axis.GetId()] = [item,i]
-                        strainSizer.Add(Axis)
-                        Axis.Bind(wx.EVT_SPINCTRL, OnStrainAxis)
+                    strainSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    h,k,l = UseList[item]['Mustrain'][3]
+                    strAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+                    Indx[strAxis.GetId()] = item
+                    strAxis.Bind(wx.EVT_TEXT_ENTER,OnStrainAxis)
+                    strAxis.Bind(wx.EVT_KILL_FOCUS,OnStrainAxis)
+                    strainSizer.Add(strAxis,0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(strainSizer)
                     mainSizer.Add((0,5),0)
                     strainSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2103,10 +2134,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     mainSizer.Add((0,5),0)
                     Snames = G2spc.MustrainNames(SGData)
                     numb = len(Snames)
-                    if len(UseList[item]['Mustrain'][1]) < numb:
-                        UseList[item]['Mustrain'][1] = numb*[0.0,]
-                        UseList[item]['Mustrain'][2] = numb*[False,]
-                    parms = zip(Snames,UseList[item]['Mustrain'][1],UseList[item]['Mustrain'][2],range(numb))
+                    if len(UseList[item]['Mustrain'][4]) < numb:
+                        UseList[item]['Mustrain'][4] = numb*[0.0,]
+                        UseList[item]['Mustrain'][5] = numb*[False,]
+                    parms = zip(Snames,UseList[item]['Mustrain'][4],UseList[item]['Mustrain'][5],range(numb))
                     strainSizer = wx.FlexGridSizer(numb%3+1,6,5,5)
                     for Pa,val,ref,id in parms:
                         strainRef = wx.CheckBox(dataDisplay,label=Pa)
@@ -2133,14 +2164,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 mdVal.Bind(wx.EVT_TEXT_ENTER,OnMDVal)
                 mdVal.Bind(wx.EVT_KILL_FOCUS,OnMDVal)
                 mdSizer.Add(mdVal,0,wx.ALIGN_CENTER_VERTICAL)
-                mdSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis: '),0,wx.ALIGN_CENTER_VERTICAL)
-                axes = zip(['H:','K:','L:'],UseList[item]['MDtexture'][2],range(3))                    
-                for ax,H,i in axes:                            
-                    Axis = wx.SpinCtrl(dataDisplay,wx.ID_ANY,ax,min=-3,max=3,size=wx.Size(40,20))
-                    Axis.SetValue(H)
-                    Indx[Axis.GetId()] = [item,i]
-                    mdSizer.Add(Axis)
-                    Axis.Bind(wx.EVT_SPINCTRL, OnMDAxis)
+                mdSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+                h,k,l = UseList[item]['MDtexture'][2]
+                mdAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+                Indx[mdAxis.GetId()] = item
+                mdAxis.Bind(wx.EVT_TEXT_ENTER,OnMDAxis)
+                mdAxis.Bind(wx.EVT_KILL_FOCUS,OnMDAxis)
+                mdSizer.Add(mdAxis,0,wx.ALIGN_CENTER_VERTICAL)
                 mainSizer.Add(mdSizer)
                 mainSizer.Add((0,5),0)
                 
@@ -2168,8 +2198,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
         Size[0] = max(Size[0],300)+20
         Size[1] += 30                           #compensate for status bar
         DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-10)
-        self.dataFrame.setSizePosLeft(Size)
         dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
         
     def OnHklfAdd(event):
         UseList = data['Histograms']
@@ -2196,7 +2226,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 dlg.Destroy()
         
     def OnPwdrAdd(event):
+        generalData = data['General']
+        SGData = generalData['SGData']
         UseList = data['Histograms']
+        NShkl = len(G2spc.MustrainNames(SGData))
         keyList = UseList.keys()
         TextList = []
         if self.PatternTree.GetCount():
@@ -2215,7 +2248,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'MDtexture':[1.0,False,[0,0,1]],
                             'Size':['isotropic',[10000.,0,],[False,False],[0,0,1]],
-                            'Mustrain':['isotropic',[0.0,0,],[False,False],[0,0,1]],                            
+                            'Mustrain':['isotropic',[1.0,0.0],[False,False],[0,0,1],
+                                NShkl*[0.01,],NShkl*[False,]],                            
                             'Extinction':[0.0,False],'Cutoff':0.01}
                     data['Histograms'] = UseList
                     UpdateDData()
@@ -2243,9 +2277,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 dlg.Destroy()
 
     def FillPawleyReflectionsGrid():
-        
-            
-            
         if data['Histograms']:
             self.dataFrame.PawleyMenu.FindItemById(G2gd.wxID_PAWLEYLOAD).Enable(True)
             self.dataFrame.PawleyMenu.FindItemById(G2gd.wxID_PAWLEYIMPORT).Enable(True)
@@ -2374,6 +2405,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
             self.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
             UpdateDData()            
+            G2plt.PlotStrain(self,data)
         elif text == 'Draw Options':
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
             UpdateDrawOptions()

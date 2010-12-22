@@ -306,14 +306,16 @@ class GSASII(wx.Frame):
                 filenames.sort()
                 self.dirname = dlg.GetDirectory()
                 for filename in filenames:
-                    Data,Iparm,Comments = G2IO.SelectPowderData(self, filename)              #Data: list of tuples (filename,Pos,Bank)
+                    Data,Iparm,Comments,Temperature = G2IO.SelectPowderData(self, filename)              #Data: list of tuples (filename,Pos,Bank)
                     if not Data:                                                    #if Data rejected by user - go to next one
                         continue
                     DataType = Iparm['INS   HTYPE ']                                #expect only 4 char string
                     DataType = DataType.strip()[0:3]                                #just 1st 3 chars
                     wx.BeginBusyCursor()
-                    Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
-                        'DisplaceY':[0.0,False],'Diffuse':[]}
+                    Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
+                        'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
+                        'Temperature':Temperature,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,
+                        'Force':0.0}
                     try:
                         for Item in Data:
                             vals = Item[2].split()          #split up the BANK record

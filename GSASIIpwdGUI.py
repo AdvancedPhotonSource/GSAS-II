@@ -296,7 +296,9 @@ def UpdateBackgroundGrid(self,data):
 def UpdateLimitsGrid(self, data):
     if self.dataDisplay:
         self.dataFrame.Clear()
+        
     def RefreshLimitsGrid(event):
+        event.StopPropagation()
         data = self.LimitsTable.GetData()
         old = data[0]
         new = data[1]
@@ -312,17 +314,12 @@ def UpdateLimitsGrid(self, data):
     self.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Limits')
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    gridPanel = wx.Panel(self.dataFrame)
-    self.dataDisplay = G2gd.GSGrid(gridPanel)                
+    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)
     self.dataDisplay.SetTable(self.LimitsTable, True)
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(self.dataDisplay,0)
-    mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    self.dataFrame.setSizePosLeft([230,120])
     
 def UpdateInstrumentGrid(self, data):
     if self.dataDisplay:

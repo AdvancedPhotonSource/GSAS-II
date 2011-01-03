@@ -245,9 +245,9 @@ def DoPeakFit(peaks,background,limits,inst,data):
         siginst = [0,0,0]
     for j in range(6):
         if insref[j]:
-            instVal[j+Ioff] += b[Bv+k]*0.5
+            instVal[j+Ioff] += b[Bv+k]
             siginst.append(sig[Bv+k])
-            delt.append(b[Bv+k]*0.5)
+            delt.append(b[Bv+k])
             k += 1
         else:
             delt.append(0.0)
@@ -265,7 +265,7 @@ def DoPeakFit(peaks,background,limits,inst,data):
         delgam = delt[3]/cosd(peak[0]/2.0)+delt[4]*tand(peak[0]/2.0)
         for j in range(0,len(peak[:-1]),2):
             if peak[j+1]: 
-                peak[j] += b[B]*0.5
+                peak[j] += b[B]
                 B += 1
         peak[4] += delsig
         if peak[4] < 0.0:

@@ -287,6 +287,10 @@ class GSGrid(wg.Grid):
     def SetCellStyle(self,r,c,color="white",readonly=True):
         self.SetCellBackgroundColour(r,c,color)
         self.SetReadOnly(r,c,isReadOnly=readonly)
+        
+    def GetSelection(self):
+        #this is to satisfy structure drawing stuff in G2plt when focus changes
+        return None
                         
 class Table(wg.PyGridTableBase):
     def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):

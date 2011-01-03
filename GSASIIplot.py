@@ -1369,44 +1369,49 @@ def PlotStructure(self,data):
         drawingData['cameraPos'] += event.GetWheelRotation()/24
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
         page = self.dataDisplay.GetSelection()
-        if self.dataDisplay.GetPageText(page) == 'Draw Options':
-            panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
-            names = [child.GetName() for child in panel]
-            panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
-            panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
+        if page:
+            if self.dataDisplay.GetPageText(page) == 'Draw Options':
+                panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
+                names = [child.GetName() for child in panel]
+                panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
+                panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
         Draw()
             
     def SetViewPointText(VP):
         page = self.dataDisplay.GetSelection()
-        if self.dataDisplay.GetPageText(page) == 'Draw Options':
-            panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
-            names = [child.GetName() for child in panel]
-            panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
+        if page:
+            if self.dataDisplay.GetPageText(page) == 'Draw Options':
+                panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
+                names = [child.GetName() for child in panel]
+                panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
             
     def ClearSelectedAtoms():
         page = self.dataDisplay.GetSelection()
-        if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
-            self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
-        elif self.dataDisplay.GetPageText(page) == 'Atoms':
-            self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
+        if page:
+            if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
+                self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
+            elif self.dataDisplay.GetPageText(page) == 'Atoms':
+                self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
                     
     def SetSelectedAtoms(ind):
         page = self.dataDisplay.GetSelection()
-        if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
-            self.dataDisplay.GetPage(page).SelectRow(ind)      #this is the Atoms grid in Draw Atoms
-        elif self.dataDisplay.GetPageText(page) == 'Atoms':
-            Id = drawAtoms[ind][-2]
-            for i,atom in enumerate(atomData):
-                if atom[-1] == Id:
-                    self.dataDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms
+        if page:
+            if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
+                self.dataDisplay.GetPage(page).SelectRow(ind)      #this is the Atoms grid in Draw Atoms
+            elif self.dataDisplay.GetPageText(page) == 'Atoms':
+                Id = drawAtoms[ind][-2]
+                for i,atom in enumerate(atomData):
+                    if atom[-1] == Id:
+                        self.dataDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms
                   
     def GetSelectedAtoms():
         page = self.dataDisplay.GetSelection()
         Ind = []
-        if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
-            Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
-        elif self.dataDisplay.GetPageText(page) == 'Atoms':
-            Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
+        if page:
+            if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
+                Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
+            elif self.dataDisplay.GetPageText(page) == 'Atoms':
+                Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
         return Ind
                                        
     def OnKey(event):           #on key UP!!
@@ -1830,7 +1835,7 @@ def PlotStructure(self,data):
     try:
         plotNum = self.G2plotNB.plotList.index(generalData['Name'])
         Page = self.G2plotNB.nb.GetPage(plotNum)        
-    except ValueError,error:
+    except (ValueError,error):
         Plot = self.G2plotNB.addOgl(generalData['Name'])
         plotNum = self.G2plotNB.plotList.index(generalData['Name'])
         Page = self.G2plotNB.nb.GetPage(plotNum)

@@ -145,6 +145,32 @@ def UpdatePeakGrid(self, data):
                        self.dataDisplay.SetCellBackgroundColour(r,c,wx.RED)
                    else:
                        self.dataDisplay.SetCellBackgroundColour(r,c,wx.WHITE)
+                       
+    def RefineSelect(event):
+        data = self.PatternTree.GetItemPyData(self.PickId)
+        r,c =  event.GetRow(),event.GetCol()
+        if r < 0 and self.dataDisplay.GetColLabelValue(c) == 'refine':
+            self.dataDisplay.SelectCol(c,False)
+        
+                       
+    def RowSelect(event):
+        r,c =  event.GetRow(),event.GetCol()
+        if r < 0 and c < 0:
+            if self.dataDisplay.IsSelection():
+                self.dataDisplay.ClearSelection()
+        elif c < 0:                   #only row clicks
+            if event.ControlDown():                    
+                if r in self.dataDisplay.GetSelectedRows():
+                    self.dataDisplay.DeselectRow(r)
+                else:
+                    self.dataDisplay.SelectRow(r,True)
+            elif event.ShiftDown():
+                for row in range(r+1):
+                    self.dataDisplay.SelectRow(row,True)
+            else:
+                self.dataDisplay.ClearSelection()
+                self.dataDisplay.SelectRow(r,True)                
+        
                            
     def KeyEditPeakGrid(event):
         rowList = self.dataDisplay.GetSelectedRows()
@@ -232,13 +258,16 @@ def UpdatePeakGrid(self, data):
     self.dataDisplay.SetTable(self.PeakTable, True)
     setBackgroundColors()                         
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
-    self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)                 
+    self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)                 
+    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefineSelect)
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
     self.dataFrame.setSizePosLeft([535,350])
         
 def UpdateBackgroundGrid(self,data):
     if self.dataDisplay:
+        print 'clearing background'
         self.dataFrame.Clear()
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
     maxTerm = 9
@@ -295,6 +324,7 @@ def UpdateBackgroundGrid(self,data):
         
 def UpdateLimitsGrid(self, data):
     if self.dataDisplay:
+        print 'clearing limits'
         self.dataFrame.Clear()
         
     def RefreshLimitsGrid(event):

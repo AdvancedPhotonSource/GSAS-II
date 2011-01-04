@@ -2,7 +2,7 @@
 
 !PURPOSE: Calculate cosine from angle in deg.
 
-      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+      INCLUDE       'INCLDS/COPYRIGT.FOR' 
 
 !CALLING ARGUMENTS:
 

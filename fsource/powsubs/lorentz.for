@@ -2,7 +2,7 @@
 
 !PURPOSE:Calculate Lorentzian function & derivatives
 
-      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+      INCLUDE       'INCLDS/COPYRIGT.FOR' 
 
 !PSEUDOCODE:
 

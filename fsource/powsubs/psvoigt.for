@@ -3,7 +3,7 @@
 !PURPOSE: Compute function & derivatives pseudovoigt
 !pseudo Voigt P.Tompson, D.E. Cox & J.B. Hastings (1987). J. Appl. Cryst.,20,79-83
 
-      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+      INCLUDE       'INCLDS/COPYRIGT.FOR' 
 
 !PSEUDOCODE:
 

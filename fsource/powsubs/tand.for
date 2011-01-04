@@ -2,7 +2,7 @@
 
 !PURPOSE: Calculate tangent from angle in deg.
 
-      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+      INCLUDE       'INCLDS/COPYRIGT.FOR' 
 
 !CALLING ARGUMENTS:
 

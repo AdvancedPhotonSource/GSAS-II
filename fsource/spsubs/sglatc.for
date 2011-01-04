@@ -2,7 +2,7 @@
 
 !Purpose:      Determine Laue group and some other preliminary data
 
-      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+      INCLUDE       'INCLDS/COPYRIGT.FOR' 
 
 !       This program was developed for
 !                    the Division of Chemistry

@@ -2,7 +2,7 @@
 
 !Purpose:      Form product of operators to generate the full group
 
-      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+      INCLUDE       'INCLDS/COPYRIGT.FOR' 
 
 C       This program was developed for
 C                    The Division of Chemistry

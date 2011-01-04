@@ -1,6 +1,6 @@
       SUBROUTINE SGLCEN(LCENT,CEN,NCV)
 
-      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+      INCLUDE       'INCLDS/COPYRIGT.FOR' 
 
 C       This program was developed for
 C                    The Division of Chemistry

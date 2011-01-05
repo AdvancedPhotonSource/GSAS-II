@@ -3,7 +3,7 @@
 
 !Purpose:      S.R. which generates a space group from the symbol  - no printing
 
-      INCLUDE       'INCLDS/COPYRIGT.FOR' 
+      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
 
 !       This program was developed for
 !                    The Division of Chemistry

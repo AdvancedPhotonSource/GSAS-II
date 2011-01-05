@@ -2,7 +2,7 @@
 
 !Purpose:      Search for translation conflicts
 
-      INCLUDE       'INCLDS/COPYRIGT.FOR' 
+      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
 
 C       This program was developed for
 C                    The Division of Chemistry

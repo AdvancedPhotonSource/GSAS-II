@@ -2,7 +2,7 @@
 
 !Purpose:      S.R. to create a 3,3 matrix from 9 scalers
 
-      INCLUDE       'INCLDS/COPYRIGT.FOR' 
+      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
 
 C       THIS PROGRAM WAS DEVELOPED FOR
 C                    THE DIVISION OF CHEMISTRY

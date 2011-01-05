@@ -3,7 +3,7 @@
 !Purpose: Determine the symmetry operation flags needed for control of
 !            spin flip operations
 
-      INCLUDE       'INCLDS/COPYRIGT.FOR' 
+      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
 
 !CALL SEQUENCE PARAMETERS:
 

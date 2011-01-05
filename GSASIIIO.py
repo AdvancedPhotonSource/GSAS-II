@@ -595,6 +595,8 @@ def GetTifData(filename,imageOnly=False):
         lines = ['not a detector tiff file',]
         return lines,0,0
     size,Ityp = st.unpack('<ii',File.read(8))
+    File.seek(30)
+    size = st.unpack('<i',File.read(4))[0]
     if Ityp == 0:
         tifType = 'Pilatus'
         pixy = (172,172)

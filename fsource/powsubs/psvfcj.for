@@ -10,7 +10,7 @@
 ! parameterized as asym1=S/L asym2=H/L
 
 
-      INCLUDE       'INCLDS/COPYRIGT.FOR' 
+      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
 
 !CALLING ARGUMENTS:
 

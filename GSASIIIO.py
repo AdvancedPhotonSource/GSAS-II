@@ -622,11 +622,21 @@ def GetTifData(filename,imageOnly=False):
         sizeScale = 1
         finalSize = origSize
     if Ityp == 0:
-        tifType = 'Pilatus'
-        pixy = (172*sizeScale,172*sizeScale)
-        pos = 4096
-        if not imageOnly:
-            print 'Read Pilatus tiff file: ',filename
+        print finalSize
+        if finalSize == 1207975936:
+            finalSize = origSize = 1536
+            sizeScale = 1
+            tifType = 'Gold'
+            pixy = (150,150)
+            pos = 64
+            if not imageOnly:
+                print 'Read Gold tiff file:',filename
+        else:
+            tifType = 'Pilatus'
+            pixy = (172*sizeScale,172*sizeScale)
+            pos = 4096
+            if not imageOnly:
+                print 'Read Pilatus tiff file: ',filename
     elif Ityp == 1:
         tifType = 'PE'
         pixy = (200*sizeScale,200*sizeScale)
@@ -652,7 +662,7 @@ def GetTifData(filename,imageOnly=False):
             else:
                 line = ar.array('l',File.read(4*finalSize))
             pos += 4*finalSize
-        elif 'MAR' in tifType:
+        elif 'MAR' in tifType or 'Gold' in tifType:
             line = ar.array('H',File.read(2*finalSize))
             pos += 2*finalSize
         image[row] = np.asarray(line)

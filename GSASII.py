@@ -750,7 +750,7 @@ class GSASII(wx.Frame):
                             Found = True                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
                             size,imagefile = data
-                            image = G2IO.GetImageData(imagefile,imageOnly=True)
+                            image = G2IO.GetImageData(self,imagefile,imageOnly=True)
                             if First:
                                 newImage = np.zeros_like(image)
                                 First = False

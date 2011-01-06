@@ -405,7 +405,26 @@ def GetSTDdata(filename,Pos,Bank,DataType):
     N = len(x)
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
-def GetImageData(imagefile,imageOnly=False):
+def CheckImageFile(self,imagefile):
+    if not ospath.exists(imagefile):
+        dlg = wx.FileDialog(self, 'Bad image file name; choose name', '.', '',\
+        'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
+        |*.img|Detector tif (*.tif;*.tiff)|*.tif;*.tiff|GE Image sum (*.sum)\
+        |*.sum|GE Image avg (*.avg)|*.avg|GE Image raw (*)|*|All files (*.*)|*.*',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            dlg.SetFilename(ospath.split(imagefile)[1])
+            if dlg.ShowModal() == wx.ID_OK:
+                self.dirname = dlg.GetDirectory()
+                imagefile = dlg.GetPath()
+            else:
+                imagefile = False
+        finally:
+            dlg.Destroy()
+    return imagefile
+        
+def GetImageData(self,imagefile,imageOnly=False):        
     ext = ospath.splitext(imagefile)[1]
     Comments = []
     if ext == '.tif':
@@ -574,7 +593,7 @@ def GetMAR345Data(filename,imageOnly=False):
         return head,data,size,image.T
     
 def GetTifData(filename,imageOnly=False):
-    # only works for APS Perkin-Elmer detector data files in "TIFF" format that are readable by Fit2D
+    # only works for APS Perkin-Elmer or MAR detector data files in "TIFF" format that are readable by Fit2D
     import struct as st
     import array as ar
     File = open(filename,'rb')
@@ -594,43 +613,48 @@ def GetTifData(filename,imageOnly=False):
     if tag != 'II*':
         lines = ['not a detector tiff file',]
         return lines,0,0
-    size,Ityp = st.unpack('<ii',File.read(8))
+    origSize,Ityp = st.unpack('<ii',File.read(8))
     File.seek(30)
-    size = st.unpack('<i',File.read(4))[0]
+    finalSize = st.unpack('<i',File.read(4))[0]
+    if finalSize:
+        sizeScale = origSize/finalSize
+    else:
+        sizeScale = 1
+        finalSize = origSize
     if Ityp == 0:
         tifType = 'Pilatus'
-        pixy = (172,172)
+        pixy = (172*sizeScale,172*sizeScale)
         pos = 4096
         if not imageOnly:
             print 'Read Pilatus tiff file: ',filename
     elif Ityp == 1:
         tifType = 'PE'
-        pixy = (200,200)
+        pixy = (200*sizeScale,200*sizeScale)
         pos = 8
         if not imageOnly:
             print 'Read APS PE-detector tiff file: ',filename
     elif Ityp == 3328:
         tifType = 'MAR'
-        pixy = (79,79)
+        pixy = (79*sizeScale,79*sizeScale)
         pos = 4096
         if not imageOnly:
             print 'Read MAR CCD tiff file: ',filename
     else:
         lines = 'unknown tif type'
         return lines,0,0
-    image = np.zeros(shape=(size,size),dtype=np.int32)
+    image = np.zeros(shape=(finalSize,finalSize),dtype=np.int32)
     row = 0
-    while row < size:
+    while row < finalSize:
         File.seek(pos)
         if 'PE' in tifType: 
             if dataType == 5:
-                line = ar.array('f',File.read(4*size))
+                line = ar.array('f',File.read(4*finalSize))
             else:
-                line = ar.array('l',File.read(4*size))
-            pos += 4*size
+                line = ar.array('l',File.read(4*finalSize))
+            pos += 4*finalSize
         elif 'MAR' in tifType:
-            line = ar.array('H',File.read(2*size))
-            pos += 2*size
+            line = ar.array('H',File.read(2*finalSize))
+            pos += 2*finalSize
         image[row] = np.asarray(line)
         row += 1
     data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':[204.8,204.8]}
@@ -638,7 +662,7 @@ def GetTifData(filename,imageOnly=False):
     if imageOnly:
         return image
     else:
-        return head,data,size,image
+        return head,data,finalSize,image
     
 def ProjFileOpen(self):
     file = open(self.GSASprojectfile,'rb')

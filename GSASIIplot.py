@@ -1018,12 +1018,18 @@ def PlotImage(self,newPlot=False,event=None):
         Page.canvas.mpl_connect('motion_notify_event', OnImMotion)
         Page.canvas.mpl_connect('pick_event', OnImPick)
         Page.canvas.mpl_connect('button_release_event', OnImRelease)
+        xylim = []
     if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
         Page.SetFocus()
     Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
     size,imagefile = self.PatternTree.GetItemPyData(self.Image)
     if imagefile != self.oldImagefile:
-        self.ImageZ = G2IO.GetImageData(imagefile,imageOnly=True)
+        imagefile = G2IO.CheckImageFile(self,imagefile)
+        if not imagefile:
+            self.G2plotNB.Delete('2D Powder Image')
+            return
+        self.PatternTree.SetItemPyData(self.Image,[size,imagefile])
+        self.ImageZ = G2IO.GetImageData(self,imagefile,imageOnly=True)
         self.oldImagefile = imagefile
     Data = self.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
@@ -1132,7 +1138,7 @@ def PlotImage(self,newPlot=False,event=None):
         colorBar = Page.figure.colorbar(Img)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)
-        if not newPlot:
+        if not newPlot and xylim:
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])
             Plot.set_ylim(xylim[1])

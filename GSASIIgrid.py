@@ -244,19 +244,19 @@ class DataFrame(wx.Frame):
     def __init__(self,parent,data=None,name=None, size=None,pos=None):
         self._init_ctrls(parent,name,size,pos)
         self.data = data
-        self.screenSize = wx.DisplaySize()
+        clientSize = wx.ClientDisplayRect()
         Size = self.GetSize()
-        xPos = self.screenSize[0]-Size[0]
-        self.SetPosition(wx.Point(xPos,250))
+        xPos = clientSize[2]-Size[0]
+        self.SetPosition(wx.Point(xPos,clientSize[1]+250))
         self.dirname = ''
         self.AtomGrid = []
         self.selectedRow = 0
         
     def setSizePosLeft(self,Width):
-        screenSize = wx.DisplaySize()
-        Width[1] = min(Width[1],screenSize[1]-300)
+        clientSize = wx.ClientDisplayRect()
+        Width[1] = min(Width[1],clientSize[2]-300)
         self.SetSize(Width)
-        self.SetPosition(wx.Point(screenSize[0]-Width[0],250))
+        self.SetPosition(wx.Point(clientSize[2]-Width[0],clientSize[1]+250))
         
     def Clear(self):
         self.ClearBackground()

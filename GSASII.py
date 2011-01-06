@@ -202,10 +202,10 @@ class GSASII(wx.Frame):
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,
             size=wx.Size(300, 250),style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II data tree')
-        screenSize = wx.DisplaySize()
+        clientSize = wx.ClientDisplayRect()
         Size = self.GetSize()
-        xPos = screenSize[0]-Size[0]
-        self.SetPosition(wx.Point(xPos,0))
+        xPos = clientSize[2]-Size[0]
+        self.SetPosition(wx.Point(xPos,clientSize[1]))
         self._init_utils()
         self.SetMenuBar(self.GSASIIMenu)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -409,7 +409,7 @@ class GSASII(wx.Frame):
                 imagefiles = dlg.GetPaths()
                 imagefiles.sort()
                 for imagefile in imagefiles:
-                    Comments,Data,Size,Image = G2IO.GetImageData(imagefile)
+                    Comments,Data,Size,Image = G2IO.GetImageData(self,imagefile)
                     if Comments:
                         Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(imagefile))
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
@@ -449,8 +449,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(Id,[Size,imagefile])
                         self.PickId = Id
                         self.Image = Id
-                self.PatternTree.SelectItem(Id)             #show last one
-                self.PatternTree.Expand(Id)
+                self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))             #show last one
         finally:
             dlg.Destroy()
         

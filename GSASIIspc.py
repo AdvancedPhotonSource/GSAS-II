@@ -1,5 +1,12 @@
 "GSASII - Space group interpretion routines"
 
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl

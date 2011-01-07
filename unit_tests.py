@@ -1,3 +1,10 @@
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import GSASIIspc
 import GSASIIlattice as G2l
 def test_GSASIIspc():

@@ -1,4 +1,11 @@
 #GSASIIstructure - structure computation routines
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import sys
 import os.path as ospath
 import numpy as np

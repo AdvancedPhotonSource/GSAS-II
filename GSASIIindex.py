@@ -1,5 +1,12 @@
 #GSASII cell indexing program: variation on that of A. Coehlo
 #   includes cell refinement from peak positions (not zero as yet)
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import math
 import wx
 import time

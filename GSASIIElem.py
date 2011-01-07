@@ -1,6 +1,13 @@
 """Element: functions for element types
    Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
 """
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 
 import wx
 import math

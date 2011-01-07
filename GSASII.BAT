@@ -1,1 +1,1 @@
-python c:\pyGSASII\GSASII.py %1
+python d:\pyGSASII\GSASII.py %1

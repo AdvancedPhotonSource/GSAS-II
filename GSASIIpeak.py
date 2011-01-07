@@ -1,4 +1,11 @@
 #GSASII peak fitting module
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import sys
 import math
 import wx

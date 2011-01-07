@@ -1,3 +1,10 @@
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import math
 import time
 import copy
@@ -74,8 +81,7 @@ class G2Plot3D(wx.Panel):
         sizer.Add(self.canvas,1,wx.EXPAND)
         sizer.Add(self.toolbar,0,wx.LEFT|wx.EXPAND)
         self.SetSizer(sizer)
-               
-                
+                              
 class G2PlotNoteBook(wx.Panel):
     def __init__(self,parent,id=-1):
         wx.Panel.__init__(self,parent,id=id)
@@ -319,14 +325,27 @@ def PlotPatterns(self,newPlot=False):
             else:
                 self.Weight = True
             print 'plot weighting:',self.Weight
+        elif event.key == 'l':
+            if self.Contour:
+                pass
+            else:
+                if self.logPlot:
+                    self.logPlot = False
+                else:
+                    self.Offset = 0
+                    self.logPlot = True
         elif event.key == 'u':
             if self.Contour:
                 self.Cmax = min(1.0,self.Cmax*1.2)
+            elif self.logPlot:
+                pass
             elif self.Offset < 100.:
                 self.Offset += 1.
         elif event.key == 'd':
             if self.Contour:
                 self.Cmax = max(0.0,self.Cmax*0.8)
+            elif self.logPlot:
+                pass
             elif self.Offset > 0.:
                 self.Offset -= 1.
         elif event.key == 'c':
@@ -457,8 +476,12 @@ def PlotPatterns(self,newPlot=False):
         Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        Choice = (' key press','d: offset down','u: offset up','c: contour on',
-            's: toggle single plot','+: no selection')
+        if self.logPlot:
+            Choice = (' key press','l: log(I) off',
+                'c: contour on','s: toggle single plot','+: no selection')
+        else:
+            Choice = (' key press','d: offset down','u: offset up','l: log(I) on',
+                'c: contour on','s: toggle single plot','+: no selection')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -505,7 +528,7 @@ def PlotPatterns(self,newPlot=False):
             LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
         X = xye[0]
         if not lenX:
-            lenX = len(X)
+            lenX = len(X)           
         Y = xye[1]+offset*N
         if LimitId:
             limits = self.PatternTree.GetItemPyData(LimitId)
@@ -527,11 +550,16 @@ def PlotPatterns(self,newPlot=False):
                 if self.Weight:
                     W2 = np.sqrt(xye[2])
                     D *= W2-Ymax*.02
-                Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
-                Plot.plot(X,Z,colors[(N+1)%6],picker=False)
-                Plot.plot(X,W,colors[(N+2)%6],picker=False)
-                Plot.plot(X,D,colors[(N+3)%6],picker=False)
-                Plot.axhline(0.,color=wx.BLACK)
+                if self.logPlot:
+                    Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
+                    Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
+                    Plot.semilogy(X,W,colors[(N+2)%6],picker=False,nonposy='mask')
+                else:
+                    Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                    Plot.plot(X,Z,colors[(N+1)%6],picker=False)
+                    Plot.plot(X,W,colors[(N+2)%6],picker=False)
+                    Plot.plot(X,D,colors[(N+3)%6],picker=False)
+                    Plot.axhline(0.,color=wx.BLACK)
                 Page.canvas.SetToolTipString('')
                 if self.PatternTree.GetItemText(PickId) == 'Peak List':
                     tip = 'On data point: Pick peak - L or R MB.On line: MB down to move'
@@ -544,7 +572,10 @@ def PlotPatterns(self,newPlot=False):
                     Page.canvas.SetToolTipString(tip)
                     data = self.LimitsTable.GetData()
             else:
-                Plot.plot(X,Y,colors[N%6],picker=False)
+                if self.logPlot:
+                    Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='clip')
+                else:
+                    Plot.plot(X,Y,colors[N%6],picker=False)
     if PickId and self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
         peaks = np.array((self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))))
         for peak in peaks:

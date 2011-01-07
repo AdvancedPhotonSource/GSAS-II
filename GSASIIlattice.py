@@ -1,5 +1,12 @@
 '''Perform lattice-related computations'''
 
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import math
 import numpy as np
 import numpy.linalg as nl

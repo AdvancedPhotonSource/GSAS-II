@@ -1,4 +1,11 @@
 #GSASII - phase data display routines
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import wx
 import wx.grid as wg
 import matplotlib as mpl

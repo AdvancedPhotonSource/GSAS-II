@@ -1,4 +1,11 @@
 #GSASII image calculations: ellipse fitting & image integration        
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import math
 import wx
 import time

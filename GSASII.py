@@ -1,4 +1,11 @@
 #GSASII
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 
 import os
 import os.path as ospath
@@ -249,6 +256,7 @@ class GSASII(wx.Frame):
         self.dataFrame = None
         self.Interpolate = 'nearest'
         self.ContourColor = 'Paired'
+        self.logPlot = False
         self.Contour = False
         self.SinglePlot = False
         self.plotView = 0

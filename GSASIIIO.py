@@ -1,7 +1,13 @@
 """GSASIIIO: functions for IO of data
    Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
 """
-
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 import wx
 import math
 import numpy as np

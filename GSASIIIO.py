@@ -667,7 +667,8 @@ def GetTifData(filename,imageOnly=False):
             pos += 2*finalSize
         image[row] = np.asarray(line)
         row += 1
-    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':[204.8,204.8]}
+    center = [pixy[0]*finalSize/2000,pixy[1]*finalSize/2000]
+    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':center}
     File.close()    
     if imageOnly:
         return image

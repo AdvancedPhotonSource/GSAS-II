@@ -841,11 +841,11 @@ def PlotImage(self,newPlot=False,event=None):
                         ['','Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
+        Data = self.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+        Masks = self.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
         if self.PatternTree.GetItemText(self.PickId) == 'Masks':
-            Data = self.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-            Masks = self.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
             Xpos = event.xdata
             if not Xpos:            #got point out of frame
                 return
@@ -867,6 +867,15 @@ def PlotImage(self,newPlot=False,event=None):
                 Masks['Polygons'].append([])
                 self.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
             G2imG.UpdateMasks(self,Masks)
+        else:
+            Xpos = event.xdata
+            if not Xpos:            #got point out of frame
+                return
+            Ypos = event.ydata
+            if event.key == 'c':
+                print 'move center to: ',Xpos,Ypos
+                Data['center'] = [Xpos,Ypos]
+                G2imG.UpdateImageControls(self,Data,Masks)
         PlotImage(self)
             
     def OnImPick(event):

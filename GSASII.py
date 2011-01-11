@@ -433,6 +433,7 @@ class GSASII(wx.Frame):
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
                         else:
+                            Data['type'] = 'PWDR'
                             Data['color'] = 'binary'
                             Data['tilt'] = 0.0
                             Data['rotation'] = 0.0

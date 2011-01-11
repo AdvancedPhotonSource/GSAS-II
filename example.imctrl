@@ -1,0 +1,11 @@
+#An example image control file; the items below can be in any order, but all should be present
+#type can be one of PWDR, SXAS or REFL
+#calibrant can be blank (or missing)
+#
+type:PWDR
+wavelength:0.62
+calibrant:LaB6  SRM660a
+distance:1000.0
+center:[ 200.0  200.0]
+tilt:-0.1
+rotation:270.0

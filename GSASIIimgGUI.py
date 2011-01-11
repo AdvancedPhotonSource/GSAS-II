@@ -29,6 +29,9 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 def UpdateImageControls(self,data,masks):
     import ImageCalibrants as calFile
     
+    def OnDataType(event):
+        data['type'] = typeSel.GetValue()[:4]
+    
     def OnNewColorBar(event):
         data['color'] = colSel.GetValue()
         G2plt.PlotExposedImage(self,event=event)
@@ -282,12 +285,11 @@ def UpdateImageControls(self,data,masks):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                File = open(filename,'wb')
+                File = open(filename,'w')
                 save = {}
-                keys = ['wavelength','calibrant','distance','center','tilt','rotation']
+                keys = ['type','wavelength','calibrant','distance','center','tilt','rotation']
                 for key in keys:
-                    save[key] = data[key]
-                cPickle.dump(save,File,1)
+                    File.write(key+':'+str(data[key])+'\n')
                 File.close()
         finally:
             dlg.Destroy()
@@ -300,8 +302,22 @@ def UpdateImageControls(self,data,masks):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                File = open(filename,'rb')
-                save = cPickle.load(File)
+                File = open(filename,'r')
+                save = {}
+                S = File.readline()
+                while S:
+                    if S[0] == '#':
+                        S = File.readline()
+                        continue
+                    [key,val] = S[:-1].split(':')
+                    if key in ['type','calibrant']:
+                        save[key] = val
+                    elif key in ['wavelength','distance','tilt','rotation']:
+                        save[key] = float(val)
+                    elif key in ['center',]:
+                        vals = val.strip('[] ').split()
+                        save[key] = [float(vals[0]),float(vals[1])]                    
+                    S = File.readline()
                 data.update(save)
                 calSel.SetValue(data['calibrant']) 
                 waveSel.SetValue("%6.5f" % (data['wavelength']))
@@ -316,6 +332,11 @@ def UpdateImageControls(self,data,masks):
                                         
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
+    typeList = ['PWDR - powder diffraction data','SXAS - small angle scattering data',
+        'REFL - reflectometry data']
+    if not data.get('type'):                        #patch for old project files
+        data['type'] = 'PWDR'
+    typeDict = {'PWDR':typeList[0],'SXAS':typeList[1],'REFL':typeList[2]}
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.ImageMenu)
@@ -336,6 +357,16 @@ def UpdateImageControls(self,data,masks):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
     
+    typeSizer = wx.BoxSizer(wx.HORIZONTAL)
+    typeSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Type of image data: '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    typeSel = wx.ComboBox(parent=self.dataDisplay,value=typeDict[data['type']],choices=typeList,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    typeSel.SetValue(data['type'])
+    typeSel.Bind(wx.EVT_COMBOBOX, OnDataType)
+    typeSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(typeSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
+            
     maxSizer = wx.FlexGridSizer(2,2,0,5)
     maxSizer.AddGrowableCol(1,1)
     sqrtDeltZero = math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0]))

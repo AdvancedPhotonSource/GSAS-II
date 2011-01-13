@@ -340,13 +340,15 @@ def ImageCalibrate(self,data):
     if not data['calibrant']:
         print 'no calibration material selected'
         return True
-        
-    Bravais,cell,skip,limits = calFile.Calibrants[data['calibrant']]
+    
+    skip = data['calibskip']
+    dmin = data['calibdmin']
+    Bravais,cell = calFile.Calibrants[data['calibrant']][:2]
     A = G2lat.cell2A(cell)
     wave = data['wavelength']
     cent = data['center']
     elcent,phi,radii = ellipse
-    HKL = G2lat.GenHBravais(limits[0],Bravais,A)[skip:]
+    HKL = G2lat.GenHBravais(dmin,Bravais,A)[skip:]
     dsp = HKL[0][3]
     tth = 2.0*asind(wave/(2.*dsp))
     ttth = tand(tth)
@@ -383,17 +385,22 @@ def ImageCalibrate(self,data):
         if Ring:
             numZ = len(Ring)
             data['rings'].append(np.array(Ring))
-            ellipse = FitRing(Ring)
-            elcent,phi,radii = ellipse                
+            newellipse = FitRing(Ring)
+            elcent,phi,radii = newellipse                
             if abs(phi) > 45. and phi < 0.:
                 phi += 180.
             dist = calcDist(radii,tth)
             distR = 1.-dist/data['distance']
+            if abs(distR) > 0.1:
+                print distR,dist,data['distance']
+                del data['rings'][-1]
+                continue
             if distR > 0.001:
                 print 'Wavelength too large?'
             elif distR < -0.001:
                 print 'Wavelength too small?'
             else:
+                ellipse = newellipse
                 if abs((radii[1]/radii[0]-ratio)/ratio) > 0.01:
                     print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i)
                     return False

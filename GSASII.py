@@ -408,7 +408,10 @@ class GSASII(wx.Frame):
         dlg = wx.FileDialog(self, 'Choose image files', '.', '',\
         'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
         |*.img|Detector tif (*.tif;*.tiff)|*.tif;*.tiff|GE Image sum (*.sum)\
-        |*.sum|GE Image avg (*.avg)|*.avg|GE Image raw (*)|*|All files (*.*)|*.*',wx.OPEN | wx.MULTIPLE)
+        |*.sum|GE Image avg (*.avg)\
+        |*.avg|Any image file (*.mar3450;*.mar2300;*.img;*.tif;*.tiff;*.sum)\
+        |*.mar3450;*.mar2300;*.img;*.tif;*.tiff;*.sum|All files (*.*)|*.*',
+        wx.OPEN | wx.MULTIPLE)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
@@ -430,6 +433,8 @@ class GSASII(wx.Frame):
                             Data['rings'] = []
                             Data['cutoff'] = 10
                             Data['pixLimit'] = 20
+                            Data['calibdmin'] = 0.5
+                            Data['calibskip'] = 0
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
                         else:
@@ -442,6 +447,8 @@ class GSASII(wx.Frame):
                             Data['rings'] = []
                             Data['cutoff'] = 10
                             Data['pixLimit'] = 20
+                            Data['calibdmin'] = 0.5
+                            Data['calibskip'] = 0
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
                             Data['IOtth'] = [2.0,5.0]

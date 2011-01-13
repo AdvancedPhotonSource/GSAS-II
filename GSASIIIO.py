@@ -490,7 +490,7 @@ def GetGEsumData(filename,imageOnly=False):
             pos += 2*size
         image[row] = np.asarray(line)
         row += 1
-    data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8]}  
+    data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':[size,size]}  
     File.close()    
     if imageOnly:
         return image
@@ -526,7 +526,7 @@ def GetImgData(filename,imageOnly=False):
             elif 'CENTER_Y' in line:
                 center[1] = float(line.split('=')[1])
             head.append(line)
-    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center}
+    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center,'size':[size,size]}
     image = []
     row = 0
     pos = 512
@@ -582,6 +582,7 @@ def GetMAR345Data(filename,imageOnly=False):
             items = line.split()
             size = int(items[1])
     pos = 4096
+    data['size'] = [size,size]
     File.seek(pos)
     line = File.read(8)
     while 'CCP4' not in line:       #get past overflow list for now
@@ -628,29 +629,37 @@ def GetTifData(filename,imageOnly=False):
         sizeScale = 1
         finalSize = origSize
     if Ityp == 0:
-        print finalSize
-        if finalSize == 1207975936:
-            finalSize = origSize = 1536
+        File.seek(62)
+        S = File.read(32)
+        if 'PILATUS' in S:
+            dataType = 0
+            tifType = 'Pilatus'
+            if '2M' in S:
+                sizexy = [1475,1679]
+            elif '100K' in S:
+                sizexy = [487,195]
+            pixy = (172,172)
+            pos = 4096
+            if not imageOnly:
+                print 'Read Pilatus tiff file: ',filename
+        else:
+            sizexy = [1536,1536]
             sizeScale = 1
             tifType = 'Gold'
             pixy = (150,150)
             pos = 64
             if not imageOnly:
                 print 'Read Gold tiff file:',filename
-        else:
-            tifType = 'Pilatus'
-            pixy = (172*sizeScale,172*sizeScale)
-            pos = 4096
-            if not imageOnly:
-                print 'Read Pilatus tiff file: ',filename
     elif Ityp == 1:
         tifType = 'PE'
+        sizexy = [finalSize,finalSize]
         pixy = (200*sizeScale,200*sizeScale)
         pos = 8
         if not imageOnly:
             print 'Read APS PE-detector tiff file: ',filename
     elif Ityp == 3328:
         tifType = 'MAR'
+        sizexy = [finalSize,finalSize]
         pixy = (79*sizeScale,79*sizeScale)
         pos = 4096
         if not imageOnly:
@@ -658,28 +667,28 @@ def GetTifData(filename,imageOnly=False):
     else:
         lines = 'unknown tif type'
         return lines,0,0
-    image = np.zeros(shape=(finalSize,finalSize),dtype=np.int32)
+    image = np.zeros(shape=(sizexy[1],sizexy[0]),dtype=np.int32)
     row = 0
-    while row < finalSize:
+    while row < sizexy[1]:
         File.seek(pos)
-        if 'PE' in tifType: 
+        if 'PE' in tifType or 'Pilatus' in tifType: 
             if dataType == 5:
-                line = ar.array('f',File.read(4*finalSize))
+                line = ar.array('f',File.read(4*sizexy[0]))
             else:
-                line = ar.array('l',File.read(4*finalSize))
-            pos += 4*finalSize
+                line = ar.array('L',File.read(4*sizexy[0]))
+            pos += 4*sizexy[0]
         elif 'MAR' in tifType or 'Gold' in tifType:
-            line = ar.array('H',File.read(2*finalSize))
-            pos += 2*finalSize
+            line = ar.array('H',File.read(2*sizexy[0]))
+            pos += 2*sizexy[0]
         image[row] = np.asarray(line)
         row += 1
-    center = [pixy[0]*finalSize/2000,pixy[1]*finalSize/2000]
-    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':center}
+    center = [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000]
+    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':center,'size':sizexy}
     File.close()    
     if imageOnly:
         return image
     else:
-        return head,data,finalSize,image
+        return head,data,sizexy[0],image
     
 def ProjFileOpen(self):
     file = open(self.GSASprojectfile,'rb')

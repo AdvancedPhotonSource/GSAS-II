@@ -38,18 +38,36 @@ def UpdateImageControls(self,data,masks):
         
     def OnNewCalibrant(event):
         data['calibrant'] = calSel.GetValue()
+        data['calibskip'] = calFile.Calibrants[data['calibrant']][2]
         limits = calFile.Calibrants[data['calibrant']][3]
-        data['pixLimit'] = limits[1]
+        data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
         pixLimit.SetValue(str(limits[1]))
-        data['cutoff'] = limits[2]
         cutOff.SetValue('%.1f'%(limits[2]))
+        calibSkip.SetValue(str(data['calibskip']))
+        calibDmin.SetValue('%.1f'%(limits[0]))
         
     def OnPixLimit(event):
         data['pixLimit'] = int(pixLimit.GetValue())
         
+    def OnCalibSkip(event):
+        data['calibskip'] = int(calibSkip.GetValue())
+        
+    def OnCalibDmin(event):
+        try:
+            dmin = float(calibDmin.GetValue())
+            if dmin < 0.5:
+                raise ValueError
+            data['calibdmin'] = dmin
+        except ValueError:
+            pass
+        calibDmin.SetValue("%.1f"%(data['calibdmin']))          #reset in case of error  
+        
+        
     def OnCutOff(event):
         try:
             cutoff = float(cutOff.GetValue())
+            if cutoff < 0.1:
+                raise ValueError
             data['cutoff'] = cutoff
         except ValueError:
             pass
@@ -216,7 +234,8 @@ def UpdateImageControls(self,data,masks):
                         if ifintegrate:
                             id = G2gd.GetPatternTreeItemId(self, self.root, name)
                             size,imagefile = self.PatternTree.GetItemPyData(id)
-                            image = G2IO.GetImageData(imagefile,imageOnly=True)
+                            print imagefile
+                            image = G2IO.GetImageData(self,imagefile,True)
                             Id = G2gd.GetPatternTreeItemId(self,id, 'Image Controls')
                             Data = self.PatternTree.GetItemPyData(Id)
                             try:
@@ -273,6 +292,9 @@ def UpdateImageControls(self,data,masks):
                         if ifcopy:
                             oldData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'))
                             Data['range'] = oldData['range']                                
+                            Data['ring'] = []
+                            Data['rings'] = []
+                            Data['ellipses'] = []
                             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'),Data)
             finally:
                 dlg.Destroy()
@@ -400,6 +422,10 @@ def UpdateImageControls(self,data,masks):
         style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
     calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)
     comboSizer.Add(calSel,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
+    mainSizer.Add((10,10),0)
+        
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
     comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Pixel search range '),0,
         wx.ALIGN_CENTER_VERTICAL)
     pixLimit = wx.ComboBox(parent=self.dataDisplay,value=str(data['pixLimit']),choices=['1','2','5','10','15','20'],
@@ -413,6 +439,19 @@ def UpdateImageControls(self,data,masks):
     cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
     cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
     comboSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calib lines to skip '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    calibSkip  = wx.ComboBox(parent=self.dataDisplay,value=str(data['calibskip']),choices=['0','1','2','3','4','5','6','7','8','9','10'],
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    calibSkip.Bind(wx.EVT_COMBOBOX, OnCalibSkip)
+    comboSizer.Add(calibSkip,0,wx.ALIGN_CENTER_VERTICAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min calib d-spacing '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    calibDmin = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['calibdmin'])),
+        style=wx.TE_PROCESS_ENTER)
+    calibDmin.Bind(wx.EVT_TEXT_ENTER,OnCalibDmin)
+    calibDmin.Bind(wx.EVT_KILL_FOCUS,OnCalibDmin)
+    comboSizer.Add(calibDmin,0,wx.ALIGN_CENTER_VERTICAL)
 
     mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
     mainSizer.Add((5,5),0)

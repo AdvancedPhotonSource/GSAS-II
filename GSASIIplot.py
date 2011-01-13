@@ -836,7 +836,7 @@ def PlotImage(self,newPlot=False,event=None):
         Data = self.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
         Page.canvas.SetToolTipString('')
-        size = len(self.ImageZ)
+        sizexy = Data['size']
         if event.xdata and event.ydata:                 #avoid out of frame errors
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             item = self.itemPicked
@@ -862,7 +862,7 @@ def PlotImage(self,newPlot=False,event=None):
                 xpix = xpos*scalex
                 ypix = ypos*scaley
                 Int = 0
-                if (0 <= xpix <= size) and (0 <= ypix <= size):
+                if (0 <= xpix <= sizexy[0]) and (0 <= ypix <= sizexy[1]):
                     Int = self.ImageZ[ypix][xpix]
                 tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
@@ -946,7 +946,7 @@ def PlotImage(self,newPlot=False,event=None):
         scaley = 1000./pixelSize[1]
         pixLimit = Data['pixLimit']
         if self.itemPicked is None and PickName == 'Image Controls':
-            size = len(self.ImageZ)
+#            sizexy = Data['size']
             Xpos = event.xdata
             if not (Xpos and self.ifGetRing):                   #got point out of frame
                 return
@@ -1080,13 +1080,15 @@ def PlotImage(self,newPlot=False,event=None):
     imScale = 1
     if len(self.ImageZ) > 1024:
         imScale = len(self.ImageZ)/1024
+    sizexy = Data['size']
     pixelSize = Data['pixelSize']
+#    print sizexy,pixelSize,len(self.ImageZ),len(self.ImageZ[0])
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
-    xmax = len(self.ImageZ)
-    Xmax = len(self.ImageZ)*pixelSize[0]/1000.
+    Xmax = sizexy[0]*pixelSize[0]/1000.
+    Ymax = sizexy[1]*pixelSize[1]/1000.
     xlim = (-0.5,Xmax-.5)
-    ylim = (Xmax-.5,-0.5,)
+    ylim = (Ymax-.5,-0.5,)
     Imin,Imax = Data['range'][1]
     acolor = mpl.cm.get_cmap(Data['color'])
     xcent,ycent = Data['center']

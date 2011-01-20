@@ -406,11 +406,13 @@ class GSASII(wx.Frame):
     def OnImageRead(self,event):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose image files', '.', '',\
-        'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
-        |*.img|Detector tif (*.tif;*.tiff)|*.tif;*.tiff|GE Image sum (*.sum)\
-        |*.sum|GE Image avg (*.avg)\
-        |*.avg|Any image file (*.mar3450;*.mar2300;*.img;*.tif;*.tiff;*.sum)\
-        |*.mar3450;*.mar2300;*.img;*.tif;*.tiff;*.sum|All files (*.*)|*.*',
+        'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
+        |*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|\
+        Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
+        MAR file (*.mar*)|*.mar*|\
+        GE Image (*.avg;*.sum)|*.avg;*.sum|\
+        ADSC Image (*.img)|*.img|\
+        All files (*.*)|*.*',
         wx.OPEN | wx.MULTIPLE)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
@@ -420,7 +422,7 @@ class GSASII(wx.Frame):
                 imagefiles = dlg.GetPaths()
                 imagefiles.sort()
                 for imagefile in imagefiles:
-                    Comments,Data,Size,Image = G2IO.GetImageData(self,imagefile)
+                    Comments,Data,Npix,Image = G2IO.GetImageData(self,imagefile)
                     if Comments:
                         Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(imagefile))
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
@@ -462,7 +464,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
                         Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
-                        self.PatternTree.SetItemPyData(Id,[Size,imagefile])
+                        self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
                         self.Image = Id
                 self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))             #show last one
@@ -765,20 +767,20 @@ class GSASII(wx.Frame):
                         if scale:
                             Found = True                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
-                            size,imagefile = data
+                            Npix,imagefile = data
                             image = G2IO.GetImageData(self,imagefile,imageOnly=True)
                             if First:
                                 newImage = np.zeros_like(image)
                                 First = False
                             if imSize:
-                                if imSize != size:
+                                if imSize != Npix:
                                     self.ErrorDialog('Image size error','Images to be summed must be same size'+ \
                                         '\nExpected:'+str(imSize)+ \
-                                        '\nFound:   '+str(size)+'\nfor '+name)
+                                        '\nFound:   '+str(Npix)+'\nfor '+name)
                                     return
                                 newImage = newImage+scale*image
                             else:
-                                imSize = size
+                                imSize = Npix
                                 newImage = newImage+scale*image
                             del(image)
                     if not Found:

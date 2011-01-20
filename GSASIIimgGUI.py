@@ -233,7 +233,7 @@ def UpdateImageControls(self,data,masks):
                         ifintegrate,name,id = item
                         if ifintegrate:
                             id = G2gd.GetPatternTreeItemId(self, self.root, name)
-                            size,imagefile = self.PatternTree.GetItemPyData(id)
+                            Npix,imagefile = self.PatternTree.GetItemPyData(id)
                             print imagefile
                             image = G2IO.GetImageData(self,imagefile,True)
                             Id = G2gd.GetPatternTreeItemId(self,id, 'Image Controls')
@@ -291,7 +291,8 @@ def UpdateImageControls(self,data,masks):
                         ifcopy,name,id = item
                         if ifcopy:
                             oldData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'))
-                            Data['range'] = oldData['range']                                
+                            Data['range'] = oldData['range']
+                            Data['size'] = oldData['size']                                
                             Data['ring'] = []
                             Data['rings'] = []
                             Data['ellipses'] = []

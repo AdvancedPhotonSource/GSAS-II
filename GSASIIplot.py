@@ -831,10 +831,13 @@ def PlotImage(self,newPlot=False,event=None):
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
+    global Data,Masks
+    Data = self.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+    Masks = self.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
 
     def OnImMotion(event):
-        Data = self.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
         if event.xdata and event.ydata:                 #avoid out of frame errors
@@ -842,7 +845,7 @@ def PlotImage(self,newPlot=False,event=None):
             item = self.itemPicked
             pixelSize = Data['pixelSize']
             scalex = 1000./pixelSize[0]
-            scaley = 1000./pixelSize[1]                    
+            scaley = 1000./pixelSize[1]
             if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
                 if 'Text' in str(item):
                     Page.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata,event.ydata))
@@ -873,10 +876,6 @@ def PlotImage(self,newPlot=False,event=None):
                         ['','Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
-        Data = self.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-        Masks = self.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
         if self.PatternTree.GetItemText(self.PickId) == 'Masks':
             Xpos = event.xdata
             if not Xpos:            #got point out of frame
@@ -914,8 +913,6 @@ def PlotImage(self,newPlot=False,event=None):
         if self.PatternTree.GetItemText(self.PickId) not in ['Image Controls','Masks']:
             return
         if self.setPoly:
-            Masks = self.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
             polygon = Masks['Polygons'][-1]
             xpos,ypos = event.mouseevent.xdata,event.mouseevent.ydata
             if xpos and ypos:                       #point inside image
@@ -937,10 +934,6 @@ def PlotImage(self,newPlot=False,event=None):
         PickName = self.PatternTree.GetItemText(self.PickId)
         if PickName not in ['Image Controls','Masks']:
             return
-        Data = self.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-        Masks = self.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
@@ -978,7 +971,6 @@ def PlotImage(self,newPlot=False,event=None):
                     tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                     itemPicked = str(self.itemPicked)
                     if 'Line2D' in itemPicked and PickName == 'Image Controls':
-                        print int(itemPicked.split('_line')[1].strip(')'))
                         if 'line1' in itemPicked:
                             Data['IOtth'][0] = tth
                         elif 'line2' in itemPicked:
@@ -1072,23 +1064,18 @@ def PlotImage(self,newPlot=False,event=None):
         self.PatternTree.SetItemPyData(self.Image,[size,imagefile])
         self.ImageZ = G2IO.GetImageData(self,imagefile,imageOnly=True)
         self.oldImagefile = imagefile
-    Data = self.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-    Masks = self.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
 
     imScale = 1
     if len(self.ImageZ) > 1024:
         imScale = len(self.ImageZ)/1024
     sizexy = Data['size']
     pixelSize = Data['pixelSize']
-#    print sizexy,pixelSize,len(self.ImageZ),len(self.ImageZ[0])
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
     Xmax = sizexy[0]*pixelSize[0]/1000.
     Ymax = sizexy[1]*pixelSize[1]/1000.
-    xlim = (-0.5,Xmax-.5)
-    ylim = (Ymax-.5,-0.5,)
+    xlim = (0,Xmax)
+    ylim = (Ymax,0)
     Imin,Imax = Data['range'][1]
     acolor = mpl.cm.get_cmap(Data['color'])
     xcent,ycent = Data['center']
@@ -1106,7 +1093,7 @@ def PlotImage(self,newPlot=False,event=None):
         ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
             interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
         Img = Plot.imshow(A,aspect='equal',cmap=acolor,
-            interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Xmax,0])
+            interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
         if self.setPoly:
             Img.set_picker(True)
     

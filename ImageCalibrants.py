@@ -1,7 +1,7 @@
 #GSASII powder calibrants file; dictionary of substances commonly used for powder
 #calibrations. Each entry consists of:
 # 'name':(Bravais no,(a,b,c,alpha,beta,gamma),no. lines skipped,(dmin,pixLimit,cutOff)
-#Useful Bravais nos.: F-cubic=0,I-cubic=1,P-cubic=2,R3/m(hex)=3, P6=4
+#Useful Bravais nos.: F-cubic=0,I-cubic=1,P-cubic=2,R3/m(hex)=3, P6=4, P4mmm=6
 Calibrants={
 '':(0,(0,0,0,0,0,0),0,(0,0,0)),
 'LaB6  SRM660a':(2,(4.1569162,4.1569162,4.1569162,90,90,90),0,(0.5,20,10)),
@@ -14,4 +14,6 @@ Calibrants={
 'Ni   @ 298K':(0,(3.52475,3.52475,3.52475,90,90,90),0,(0.5,20,10)),
 'NaCl @ 298K':(0,(5.6402,5.6402,5.6402,90,90,90),0,(0.5,20,10)),
 'CeO2  SRM674b skip 8':(0,(5.411651,5.411651,5.411651,90,90,90),8,(0.5,2,1)),
+'Ag behenate':(6,(1.0,1.0,58.380,90,90,90),0,(7.0,5,1)),
+'Spun Si grating':(6,(1.0,1.0,2777.78,90,90,90),2,(200.,5,1))
     }

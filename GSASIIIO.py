@@ -434,20 +434,20 @@ def GetImageData(self,imagefile,imageOnly=False):
     ext = ospath.splitext(imagefile)[1]
     Comments = []
     if ext == '.tif':
-        Comments,Data,Size,Image = GetTifData(imagefile)
+        Comments,Data,Npix,Image = GetTifData(imagefile)
     elif ext == '.img':
-        Comments,Data,Size,Image = GetImgData(imagefile)
+        Comments,Data,Npix,Image = GetImgData(imagefile)
         Image[0][0] = 0
     elif ext == '.mar3450' or ext == '.mar2300':
-        Comments,Data,Size,Image = GetMAR345Data(imagefile)
+        Comments,Data,Npix,Image = GetMAR345Data(imagefile)
     elif ext in ['.sum','.avg','']:
-        Comments,Data,Size,Image = GetGEsumData(imagefile)
+        Comments,Data,Npix,Image = GetGEsumData(imagefile)
     elif ext == '.G2img':
         return GetG2Image(imagefile)
     if imageOnly:
         return Image
     else:
-        return Comments,Data,Size,Image
+        return Comments,Data,Npix,Image
         
 def PutG2Image(filename,image):
     File = open(filename,'wb')
@@ -466,36 +466,31 @@ def GetGEsumData(filename,imageOnly=False):
     if not imageOnly:
         print 'Read GE sum file: ',filename    
     File = open(filename,'rb')
-    size = 2048
-    row = 0
-    pos = 0
     if '.sum' in filename:
         head = ['GE detector sum data from APS 1-ID',]
-    if '.avg' in filename:
+        sizexy = [2048,2047]
+    elif '.avg' in filename:
         head = ['GE detector avg data from APS 1-ID',]
+        sizexy = [2048,2048]
     else:
         head = ['GE detector raw data from APS 1-ID',]
+        sizexy = [2048,2048]
         pos = 8192
-    image = np.zeros(shape=(size,size),dtype=np.int32)
-    while row < size:
         File.seek(pos)
-        if '.sum' in filename:
-            line = ar.array('f',File.read(4*size))
-            pos += 4*size
-        elif '.avg' in filename:
-            line = ar.array('H',File.read(2*size))
-            pos += 2*size
-        else:
-            line = ar.array('H',File.read(2*size))
-            pos += 2*size
-        image[row] = np.asarray(line)
-        row += 1
-    data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':[size,size]}  
+    Npix = sizexy[0]*sizexy[1]
+    if '.sum' in filename:
+        image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
+    elif '.avg' in filename:
+        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    else:
+        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    image = np.reshape(image,(sizexy[1],sizexy[0]))
+    data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}  
     File.close()    
     if imageOnly:
         return image
     else:
-        return head,data,size,image
+        return head,data,Npix,image
         
 def GetImgData(filename,imageOnly=False):
     import struct as st
@@ -512,6 +507,7 @@ def GetImgData(filename,imageOnly=False):
         if line:
             if 'SIZE1' in line:
                 size = int(line.split('=')[1])
+                Npix = size*size
             elif 'WAVELENGTH' in line:
                 wave = float(line.split('=')[1])
             elif 'BIN' in line:
@@ -530,18 +526,21 @@ def GetImgData(filename,imageOnly=False):
     image = []
     row = 0
     pos = 512
-    image = np.zeros(shape=(size,size),dtype=np.int32)    
-    while row < size:
-        File.seek(pos)
-        line = ar.array('H',File.read(2*size))
-        image[row] = np.asarray(line)
-        row += 1
-        pos += 2*size
+    File.seek(pos)
+    image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    image = np.reshape(image,(sizexy[1],sizexy[0]))
+#    image = np.zeros(shape=(size,size),dtype=np.int32)    
+#    while row < size:
+#        File.seek(pos)
+#        line = ar.array('H',File.read(2*size))
+#        image[row] = np.asarray(line)
+#        row += 1
+#        pos += 2*size
     File.close()
     if imageOnly:
         return image
     else:
-        return lines[1:-2],data,size,image
+        return lines[1:-2],data,Npix,image
        
 def GetMAR345Data(filename,imageOnly=False):
     import array as ar
@@ -581,6 +580,7 @@ def GetMAR345Data(filename,imageOnly=False):
         if 'FORMAT' in line[0:6]:
             items = line.split()
             size = int(items[1])
+            Npix = size*size
     pos = 4096
     data['size'] = [size,size]
     File.seek(pos)
@@ -597,10 +597,9 @@ def GetMAR345Data(filename,imageOnly=False):
     if imageOnly:
         return image.T              #transpose to get it right way around
     else:
-        return head,data,size,image.T
-    
+        return head,data,Npix,image.T
+        
 def GetTifData(filename,imageOnly=False):
-    # only works for APS Perkin-Elmer or MAR detector data files in "TIFF" format that are readable by Fit2D
     import struct as st
     import array as ar
     File = open(filename,'rb')
@@ -615,7 +614,7 @@ def GetTifData(filename,imageOnly=False):
         Meta.close()
     except IOError:
         print 'no metadata file found - will try to read file anyway'
-        head = 'no metadata file found'
+        head = ['no metadata file found',]
     tag = File.read(3)
     if tag != 'II*':
         lines = ['not a detector tiff file',]
@@ -657,6 +656,13 @@ def GetTifData(filename,imageOnly=False):
         pos = 8
         if not imageOnly:
             print 'Read APS PE-detector tiff file: ',filename
+    elif Ityp == 3072:
+        tifType = 'Sect 5'
+        sizexy = [finalSize,finalSize]
+        pixy = [158,158]
+        pos = 512
+        if not imageOnly:
+            print 'Read Sect 5 tiff file: ',filename
     elif Ityp == 3328:
         tifType = 'MAR'
         sizexy = [finalSize,finalSize]
@@ -667,28 +673,24 @@ def GetTifData(filename,imageOnly=False):
     else:
         lines = 'unknown tif type'
         return lines,0,0
-    image = np.zeros(shape=(sizexy[1],sizexy[0]),dtype=np.int32)
-    row = 0
-    while row < sizexy[1]:
-        File.seek(pos)
-        if 'PE' in tifType or 'Pilatus' in tifType: 
-            if dataType == 5:
-                line = ar.array('f',File.read(4*sizexy[0]))
-            else:
-                line = ar.array('L',File.read(4*sizexy[0]))
-            pos += 4*sizexy[0]
-        elif 'MAR' in tifType or 'Gold' in tifType:
-            line = ar.array('H',File.read(2*sizexy[0]))
-            pos += 2*sizexy[0]
-        image[row] = np.asarray(line)
-        row += 1
+    Npix = sizexy[0]*sizexy[1]
+    File.seek(pos)
+    if 'PE' in tifType or 'Pilatus' in tifType: 
+        if dataType == 5:
+            image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
+        else:
+            image = ar.array('L',File.read(4*Npix))
+            image = np.array(np.asarray(image),dtype=np.int32)
+    elif 'MAR' in tifType or 'Gold' in tifType or 'Sect 5' in tifType:
+        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    image = np.reshape(image,(sizexy[1],sizexy[0]))
     center = [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000]
     data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':center,'size':sizexy}
     File.close()    
     if imageOnly:
         return image
     else:
-        return head,data,sizexy[0],image
+        return head,data,Npix,image
     
 def ProjFileOpen(self):
     file = open(self.GSASprojectfile,'rb')

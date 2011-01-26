@@ -925,6 +925,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 FillAtomsGrid()
             else:
                 Atoms.ForceRefresh()
+                
+#Structure drawing GUI stuff                
 
     def SetupDrawingData():
         generalData = data['General']
@@ -979,7 +981,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+[oldatom[-1]]][0]
             else:
                 atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
-                    ['',]+[[255,255,255],]+atom[9:]+[[]]][0]
+                    ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
             ct,cs = [1,8]         #type & color
         elif generalData['Type'] == 'macromolecular':
             try:
@@ -988,13 +990,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 oneLetter = -1
             atomInfo = [[atom[1].strip()+atom[0],]+
                 [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
-                atom[6:9]+['1',]+['sticks',]+['',]+[[255,255,255],]+atom[12:]+[[]]][0]
+                atom[6:9]+['1',]+['sticks',]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
             ct,cs = [4,11]         #type & color
         elif generalData['Type'] == 'magnetic':
             if oldatom:
                 atomInfo = [atom[:2]+oldatom[3:]][0]
             else:
-                atomInfo = [atom[:2]+atom[3:6]+['vdW balls',]+['',]+atom[9:]+[[]]][0]
+                atomInfo = [atom[:2]+atom[3:6]+['vdW balls',]+['',]+atom[9:]+[[],[]]][0]
             ct,cs = [1,8]         #type & color
 #        elif generalData['Type'] == 'modulated':
 #           ?????   for future
@@ -1552,7 +1554,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
         except:
             pass            
         for atom in atomData:
-            atom[-1] = []               #clear out old bonds
+            atom[-2] = []               #clear out old bonds/polyhedra
+            atom[-1] = []
         Indx = range(len(atomData))
         Atoms = []
         Styles = []
@@ -1579,11 +1582,27 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 i = atomA[0]
                 for j in IndB[0]:
                     if Styles[i] == 'polyhedra':
-                        atomData[i][-1].append(np.inner(Amat,Dx[j]))
+                        atomData[i][-2].append(np.inner(Amat,Dx[j]))
                     elif Styles[j] != 'polyhedra' and j > i:
-                        atomData[i][-1].append(Dx[j]*Radii[i]/sumR[j])
-                        atomData[j][-1].append(-Dx[j]*Radii[j]/sumR[j])
-
+                        atomData[i][-2].append(Dx[j]*Radii[i]/sumR[j])
+                        atomData[j][-2].append(-Dx[j]*Radii[j]/sumR[j])
+                if Styles[i] == 'polyhedra':
+                    Bonds = atomData[i][-2]
+                    Faces = []
+                    if len(Bonds) > 2:
+                        FaceGen = G2lat.uniqueCombinations(Bonds,3)     #N.B. this is a generator
+                        for face in FaceGen:
+                            vol = nl.det(face)
+                            if abs(vol) > 1. or len(Bonds) == 3:
+                                if vol < 0.:
+                                    face = [face[0],face[2],face[1]]
+                                face = np.array(face)
+                                if not np.array([np.array(nl.det(face-bond))+0.0001 < 0 for bond in Bonds]).any():
+                                    norm = np.cross(face[1]-face[0],face[2]-face[0])
+                                    norm /= np.sqrt(np.sum(norm**2))
+                                    Faces.append([face,norm])
+                        atomData[i][-1] = Faces
+                        
     def DrawAtomsDelete(event):   
         indx = drawAtoms.GetSelectedRows()
         indx.sort()
@@ -1595,6 +1614,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
+        event.StopPropagation()
+        
+    def OnReloadDrawAtoms(event):
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(self,data)
         event.StopPropagation()
         
     def FindAtomIndexByIDs(atomData,IDs):
@@ -2402,6 +2428,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
             self.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
             self.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
+            self.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
             FillAtomsGrid()
         elif text == 'General':
             UpdateGeneral()

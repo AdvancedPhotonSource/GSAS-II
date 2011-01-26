@@ -18,7 +18,8 @@ import GSASIIphsGUI as G2phG
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSTESTADD, wxID_ATONTESTINSERT,
-] = [wx.NewId() for _init_coll_Atom_Items in range(8)]
+    wxID_RELOADDRAWATOMS,
+] = [wx.NewId() for _init_coll_Atom_Items in range(9)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for _init_coll_Data_Items in range(3)]
@@ -103,6 +104,8 @@ class DataFrame(wx.Frame):
             help='Select atoms to modify first')
         parent.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
             help='Select atoms to transform first')
+        parent.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
+            help='Reload atom drawing list')
             
     def _init_coll_Data_Items(self,parent):
         parent.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',

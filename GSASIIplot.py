@@ -1768,7 +1768,8 @@ def PlotStructure(self,data):
         time0 = time.time()
         for iat,atom in enumerate(drawingData['Atoms']):
             x,y,z = atom[cx:cx+3]
-            Bonds = atom[-1]
+            Bonds = atom[-2]
+            Faces = atom[-1]
             try:
                 atNum = generalData['AtomTypes'].index(atom[ct])
             except ValueError:
@@ -1779,7 +1780,7 @@ def PlotStructure(self,data):
                 color = np.array(Gr)/255.
             radius = 0.5
             if atom[cs] != '':
-                glLoadName(atom[-2])
+                glLoadName(atom[-3])                    
             if 'balls' in atom[cs]:
                 vdwScale = drawingData['vdwScale']
                 ballScale = drawingData['ballScale']
@@ -1828,18 +1829,7 @@ def PlotStructure(self,data):
                 radius = 0.1
                 RenderBonds(x,y,z,Bonds,bondR,color)
             elif atom[cs] == 'polyhedra':
-                if len(Bonds) > 2:
-                    FaceGen = G2lat.uniqueCombinations(Bonds,3)     #N.B. this is a generator
-                    Faces = []
-                    for face in FaceGen:
-                        vol = nl.det(face)
-                        if abs(vol) > 1. or len(Bonds) == 3:
-                            if vol < 0.:
-                                face = [face[0],face[2],face[1]]
-                            norm = np.cross(face[1]-face[0],face[2]-face[0])
-                            norm /= np.sqrt(np.sum(norm**2))
-                            Faces.append([face,norm])
-                    RenderPolyhedra(x,y,z,Faces,color)
+                RenderPolyhedra(x,y,z,Faces,color)
             elif atom[cs] == 'backbone':
                 if atom[ct-1].split()[0] in ['C','N']:
                     Backbone.append(list(np.inner(Amat,np.array([x,y,z]))))

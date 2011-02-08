@@ -33,6 +33,48 @@ nptand = lambda x: np.tan(x*math.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
+def factorize(num):
+    ''' Provide prime number factors for integer num
+    Returns dictionary of prime factors (keys) & power for each (data)
+    '''
+    factors = {}
+    orig = num
+
+    # we take advantage of the fact that (i +1)**2 = i**2 + 2*i +1
+    i, sqi = 2, 4
+    while sqi <= num:
+        while not num%i:
+            num /= i
+            factors[i] = factors.get(i, 0) + 1
+
+        sqi += 2*i + 1
+        i += 1
+
+    if num != 1 and num != orig:
+        factors[num] = factors.get(num, 0) + 1
+
+    if factors:
+        return factors
+    else:
+        return {num:1}          #a prime number!
+            
+def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
+    ''' Provide list of optimal data sizes for FFT calculations
+    Input:
+        nmin: minimum data size >= 1
+        nmax: maximum data size > nmin
+        thresh: maximum prime factor allowed
+    Returns:
+        list of data sizes where the maximum prime factor is < thresh
+    ''' 
+    plist = []
+    nmin = max(1,nmin)
+    nmax = max(nmin+1,nmax)
+    for p in range(nmin,nmax):
+        if max(factorize(p).keys()) < thresh:
+            plist.append(p)
+    return plist
+
 def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
     # returns value(esd) string; nTZ=True for no trailing zeros
     # use esd < 0 for level of precision shown e.g. esd=-0.01 gives 2 places beyond decimal

@@ -873,7 +873,7 @@ def PlotImage(self,newPlot=False,event=None):
                     self.G2plotNB.status.SetFields(['','Polygon mask pick - LB next point, RB close polygon'])
                 else:
                     self.G2plotNB.status.SetFields(\
-                        ['','Detector 2-th =%9.2fdeg, dsp =%9.3fA, Q = %6.3fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
+                        ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
         if self.PatternTree.GetItemText(self.PickId) == 'Masks':

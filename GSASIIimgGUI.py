@@ -154,7 +154,7 @@ def UpdateImageControls(self,data,masks):
         if Ltth > Utth:
             Ltth,Utth = Utth,Ltth
         data['IOtth'] = [Ltth,Utth]
-        self.InnerTth.SetValue("%8.2f" % (Ltth))
+        self.InnerTth.SetValue("%8.3f" % (Ltth))
         self.OuterTth.SetValue("%8.2f" % (Utth))
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)
         G2plt.PlotExposedImage(self,event=event)
@@ -355,11 +355,11 @@ def UpdateImageControls(self,data,masks):
                                         
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
-    typeList = ['PWDR - powder diffraction data','SXAS - small angle scattering data',
+    typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',
         'REFL - reflectometry data']
     if not data.get('type'):                        #patch for old project files
         data['type'] = 'PWDR'
-    typeDict = {'PWDR':typeList[0],'SXAS':typeList[1],'REFL':typeList[2]}
+    typeDict = {'PWDR':typeList[0],'SASD':typeList[1],'REFL':typeList[2]}
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.ImageMenu)
@@ -478,7 +478,7 @@ def UpdateImageControls(self,data,masks):
     IOtth = data['IOtth']
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     self.InnerTth = wx.TextCtrl(parent=self.dataDisplay,
-        value=("%8.2f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
+        value=("%8.3f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
     self.InnerTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
     self.InnerTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
     littleSizer.Add(self.InnerTth,0,wx.ALIGN_CENTER_VERTICAL)

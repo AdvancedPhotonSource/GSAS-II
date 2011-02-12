@@ -414,9 +414,13 @@ def GetSTDdata(filename,Pos,Bank,DataType):
 def CheckImageFile(self,imagefile):
     if not ospath.exists(imagefile):
         dlg = wx.FileDialog(self, 'Bad image file name; choose name', '.', '',\
-        'MAR345 (*.mar3450;*.mar2300)|*.mar3450;*.mar2300|ADSC Image (*.img)\
-        |*.img|Detector tif (*.tif;*.tiff)|*.tif;*.tiff|GE Image sum (*.sum)\
-        |*.sum|GE Image avg (*.avg)|*.avg|GE Image raw (*)|*|All files (*.*)|*.*',wx.OPEN)
+        'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
+        |*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|\
+        Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
+        MAR file (*.mar*)|*.mar*|\
+        GE Image (*.avg;*.sum)|*.avg;*.sum|\
+        ADSC Image (*.img)|*.img|\
+        All files (*.*)|*.*',wx.OPEN)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
@@ -468,7 +472,7 @@ def GetGEsumData(filename,imageOnly=False):
     File = open(filename,'rb')
     if '.sum' in filename:
         head = ['GE detector sum data from APS 1-ID',]
-        sizexy = [2048,2047]
+        sizexy = [2048,2048]
     elif '.avg' in filename:
         head = ['GE detector avg data from APS 1-ID',]
         sizexy = [2048,2048]

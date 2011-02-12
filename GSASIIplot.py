@@ -1063,6 +1063,7 @@ def PlotImage(self,newPlot=False,event=None):
             return
         self.PatternTree.SetItemPyData(self.Image,[size,imagefile])
         self.ImageZ = G2IO.GetImageData(self,imagefile,imageOnly=True)
+#        print self.ImageZ.shape,self.ImageZ.size,Data['size'] #might be useful debugging line
         self.oldImagefile = imagefile
 
     imScale = 1

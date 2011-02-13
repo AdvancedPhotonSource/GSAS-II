@@ -119,7 +119,8 @@ def FitEllipse(ring):
     
 def FitDetector(rings,p0,wave):
     from scipy.optimize import leastsq
-    def ellipseCalc(B,xyd,wave):
+        
+    def ellipseCalcD(B,xyd,wave):
         x = xyd[0]
         y = xyd[1]
         dsp = xyd[2]
@@ -137,8 +138,18 @@ def FitDetector(rings,p0,wave):
         XR = X*npcosd(phi)-Y*npsind(phi)
         YR = X*npsind(phi)+Y*npcosd(phi)
         return (XR/R0)**2+(YR/R1)**2-1
-    result = leastsq(ellipseCalc,p0,args=(rings.T,wave))
-    return result[0]
+    def ellipseCalcW(C,xyd):
+        dist,x0,y0,phi,tilt,wave = C
+        B = dist,x0,y0,phi,tilt
+        return ellipseCalcD(B,xyd,wave)
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,wave))
+    if len(rings) > 1:
+        p0 = result[0]
+        p0 = np.append(p0,wave)
+        resultW = leastsq(ellipseCalcW,p0,args=(rings.T,))
+        return result[0],resultW[0][-1]
+    else:
+        return result[0],wave
             
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
@@ -172,7 +183,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             X /= scalex                         #convert to mm
             Y /= scaley
             ring.append([X,Y,dsp])
-    if len(ring) < 20:             #want more than 1/4 of a circle
+    if len(ring) < 10:             #want more than 20deg
         return []
     return ring
     
@@ -459,7 +470,8 @@ def ImageCalibrate(self,data):
     phi = data['rotation'] = phiSum/Zsum
     rings = np.concatenate((data['rings']),axis=0)
     p0 = [dist,cent[0],cent[1],phi,tilt]
-    result = FitDetector(rings,p0,wave)
+    result,newWave = FitDetector(rings,p0,wave)
+    print 'Suggested new wavelength = ',('%.5f')%(newWave),' (not reliable if distance > 2m)'
     data['distance'] = result[0]
     data['center'] = result[1:3]
     data['rotation'] = np.mod(result[3],360.0)
@@ -536,19 +548,22 @@ def ImageIntegrate(image,data,masks):
     NST = np.zeros(shape=(numAzms,numChans),dtype=np.int,order='F')
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     imageN = len(image)
-    nBlks = (imageN-1)/1024+1
-    dlg = wx.ProgressDialog("Elapsed time","2D image integration",nBlks*nBlks*3+3,
+    Nx,Ny = data['size']
+    nXBlks = (Nx-1)/1024+1
+    nYBlks = (Ny-1)/1024+1
+    print Nx,Ny,nXBlks,nYBlks
+    dlg = wx.ProgressDialog("Elapsed time","2D image integration",nXBlks*nYBlks*3+3,
         style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
     try:
         t0 = time.time()
         Nup = 0
         dlg.Update(Nup)
-        for iBlk in range(nBlks):
+        for iBlk in range(nYBlks):
             iBeg = iBlk*1024
-            iFin = min(iBeg+1024,imageN)
-            for jBlk in range(nBlks):
+            iFin = min(iBeg+1024,Ny)
+            for jBlk in range(nXBlks):
                 jBeg = jBlk*1024
-                jFin = min(jBeg+1024,imageN)                
+                jFin = min(jBeg+1024,Nx)                
                 print 'Process map block',iBlk,jBlk,iBeg,iFin,jBeg,jFin
                 TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
                 Nup += 1

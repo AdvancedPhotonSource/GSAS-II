@@ -149,7 +149,7 @@ def UpdateImageControls(self,data,masks):
             data['setDefault'] = True
             
     def OnIOtth(event):
-        Ltth = float(self.InnerTth.GetValue())
+        Ltth = max(float(self.InnerTth.GetValue()),0.001)
         Utth = float(self.OuterTth.GetValue())
         if Ltth > Utth:
             Ltth,Utth = Utth,Ltth

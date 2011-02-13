@@ -972,7 +972,7 @@ def PlotImage(self,newPlot=False,event=None):
                     itemPicked = str(self.itemPicked)
                     if 'Line2D' in itemPicked and PickName == 'Image Controls':
                         if 'line1' in itemPicked:
-                            Data['IOtth'][0] = tth
+                            Data['IOtth'][0] = max(tth,0.001)
                         elif 'line2' in itemPicked:
                             Data['IOtth'][1] = tth
                         elif 'line3' in itemPicked and not Data['fullIntegrate']:

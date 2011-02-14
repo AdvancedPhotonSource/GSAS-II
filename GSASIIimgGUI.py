@@ -258,6 +258,7 @@ def UpdateImageControls(self,data,masks):
         G2IO.SaveIntegration(self,self.PickId,data)
             
     def OnCopyControls(event):
+        import copy
         TextList = []
         Names = []
         if self.PatternTree.GetCount():
@@ -268,14 +269,11 @@ def UpdateImageControls(self,data,masks):
                 if 'IMG' in name:
                     if id == self.Image:
                         Source = name
-                        Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'))
+                        Data = copy.deepcopy(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls')))
                         Data['showLines'] = True
                         Data['ring'] = []
                         Data['rings'] = []
-                        Data['cutoff'] = 10
-                        Data['pixLimit'] = 20
                         Data['ellipses'] = []
-                        Data['calibrant'] = ''
                         Data['setDefault'] = False
                     else:
                         TextList.append([False,name,id])
@@ -290,7 +288,7 @@ def UpdateImageControls(self,data,masks):
                     for i,item in enumerate(result):
                         ifcopy,name,id = item
                         if ifcopy:
-                            oldData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'))
+                            oldData = copy.deepcopy(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls')))
                             Data['range'] = oldData['range']
                             Data['size'] = oldData['size']                                
                             Data['ring'] = []

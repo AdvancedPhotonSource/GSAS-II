@@ -466,6 +466,7 @@ def GetG2Image(filename):
     return image
     
 def GetGEsumData(filename,imageOnly=False):
+    import struct as st
     import array as ar
     if not imageOnly:
         print 'Read GE sum file: ',filename    
@@ -478,6 +479,8 @@ def GetGEsumData(filename,imageOnly=False):
         sizexy = [2048,2048]
     else:
         head = ['GE detector raw data from APS 1-ID',]
+        File.seek(18)
+        size,nframes = st.unpack('<ih',File.read(6))
         sizexy = [2048,2048]
         pos = 8192
         File.seek(pos)
@@ -488,6 +491,9 @@ def GetGEsumData(filename,imageOnly=False):
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     else:
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        while nframes > 1:
+            image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+            nframes -= 1
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}  
     File.close()    

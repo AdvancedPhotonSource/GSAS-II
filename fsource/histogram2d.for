@@ -1,25 +1,25 @@
       SUBROUTINE HISTOGRAM2D(N,X,Y,Z,NXBINS,NYBINS,XLIM,YLIM,
      1  NST,HST,HSTX,HSTY)
 
-Cf2py intent(in) N
-Cf2py intent(in) X
-Cf2py depend(N) X
-Cf2py intent(in) Y
-Cf2py depend(N) Y
-Cf2py intent(in) Z
-Cf2py depend(N) Z
-Cf2py intent(in) NXBINS
-Cf2py intent(in) NYBINS
-Cf2py intent(in) XLIM
-Cf2py intent(in) YLIM
-Cf2py intent(in,out) NST
-Cf2py depend(NXBINS,NYBINS) 
-Cf2py intent(in,out) HST
-Cf2py depend(NXBINS,NYBINS) 
-Cf2py intent(in,out) HSTX
-Cf2py depend(NXBINS) 
-Cf2py intent(in,out) HSTY
-Cf2py depend(NYBINS) 
+Cf2py intent(in) n
+Cf2py intent(in) x
+Cf2py depend(n) x
+Cf2py intent(in) y
+Cf2py depend(n) y
+Cf2py intent(in) z
+Cf2py depend(n) z
+Cf2py intent(in) nxbins
+Cf2py intent(in) nybins
+Cf2py intent(in) xlim       
+Cf2py intent(in) ylim       
+Cf2py intent(inout) nst
+Cf2py depend(nxbins,nybins) nst
+Cf2py intent(inout) hst
+Cf2py depend(nxbins,nybins) hst
+Cf2py intent(inout) hstx
+Cf2py depend(nxbins) hstx
+Cf2py intent(inout) hsty
+Cf2py depend(nybins) hsty
 
       IMPLICIT NONE
       INTEGER*4   N
@@ -42,7 +42,7 @@ Cf2py depend(NYBINS)
       DO J=0,NYBINS
         HSTY(J) = YLIM(0)+FLOAT(J)*DY
       END DO
-
+      
       DO K=0,N
         IF ( ( X(K) .GE. XLIM(0) .AND. X(K) .LE. XLIM(1)) .AND.
      1    (Y(K) .GE. YLIM(0) .AND. Y(K). LE. YLIM(1)) ) THEN

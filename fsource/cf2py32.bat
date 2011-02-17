@@ -5,10 +5,10 @@ if [%2] == [] goto ONE
 	del *.o
 	move  /Y lib%2.a ..
 	cd ..
-	f2py -c -m %1 %1.for --compiler=mingw32 -L./ -l%2
+	f2py -c -m %1 %1.for --compiler=mingw32 --fcompiler=gnu95 -L./ -l%2
 	goto TWO
 :ONE
-f2py -c -m %1 %1.for --compiler=mingw32 
+f2py -c -m %1 %1.for --compiler=mingw32 --fcompiler=gnu95
 :TWO
-move %1.pyd ..\binwin-2.6
+move %1.pyd ..\binwin2.6
 

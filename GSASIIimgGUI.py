@@ -61,7 +61,14 @@ def UpdateImageControls(self,data,masks):
         except ValueError:
             pass
         calibDmin.SetValue("%.1f"%(data['calibdmin']))          #reset in case of error  
-        
+                
+    def OnAzmthOff(event):
+        try:
+            azmthoff = float(azmthOff.GetValue())
+            data['azmthOff'] = azmthoff
+        except ValueError:
+            pass
+        azmthOff.SetValue("%.2f"%(data['azmthOff']))          #reset in case of error  
         
     def OnCutOff(event):
         try:
@@ -421,6 +428,20 @@ def UpdateImageControls(self,data,masks):
         style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
     calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)
     comboSizer.Add(calSel,0,wx.ALIGN_CENTER_VERTICAL)
+    
+    #fix for old files:
+    if 'azmthOff' not in data:
+        data['azmthOff'] = 0.0        
+    #end fix
+    
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Azimuth offset '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    azmthOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (data['azmthOff'])),
+        style=wx.TE_PROCESS_ENTER)
+    azmthOff.Bind(wx.EVT_TEXT_ENTER,OnAzmthOff)
+    azmthOff.Bind(wx.EVT_KILL_FOCUS,OnAzmthOff)
+    comboSizer.Add(azmthOff,0,wx.ALIGN_CENTER_VERTICAL)
+    
     mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
     mainSizer.Add((10,10),0)
         

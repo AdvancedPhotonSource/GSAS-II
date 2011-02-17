@@ -853,11 +853,10 @@ def PlotImage(self,newPlot=False,event=None):
                     xcent,ycent = Data['center']
                     xpos = event.xdata-xcent
                     ypos = event.ydata-ycent
+                    tth,azm = G2img.GetTthAzm(event.xdata,event.ydata,Data)
                     if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
-                        ang = int(atan2d(xpos,ypos))
-                        Page.canvas.SetToolTipString('%6d deg'%(ang))
+                        Page.canvas.SetToolTipString('%6d deg'%(azm))
                     elif 'line1' in  str(item) or 'line2' in str(item):
-                        tth = G2img.GetTth(event.xdata,event.ydata,Data)
                         Page.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
             else:
                 xpos = event.xdata
@@ -1101,6 +1100,7 @@ def PlotImage(self,newPlot=False,event=None):
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']:
             LRAzim = Data['LRazimuth']                  #NB: integers
+            AzmthOff = Data['azmthOff']
             IOtth = Data['IOtth']
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
@@ -1110,7 +1110,7 @@ def PlotImage(self,newPlot=False,event=None):
             if Data['fullIntegrate']:
                 Azm = np.array(range(0,361))
             else:
-                Azm = np.array(range(LRAzim[0],LRAzim[1]+1))
+                Azm = np.array(range(LRAzim[0],LRAzim[1]+1))-AzmthOff
             if ellI:
                 xyI = []
                 for azm in Azm:

@@ -280,6 +280,7 @@ def GetTthAzmDsp(x,y,data):
     cent = data['center']
     tilt = data['tilt']
     phi = data['rotation']
+    azmthoff = data['azmthOff']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)
     X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
@@ -287,7 +288,7 @@ def GetTthAzmDsp(x,y,data):
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dsp = wave/(2.*npsind(tth/2.))
-    azm = npatan2d(dy,dx)
+    azm = npatan2d(dy,dx)+azmthoff
     return tth,azm,dsp
     
 def GetTth(x,y,data):
@@ -508,16 +509,13 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
     for X,Y,diam in spots:
         tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))
-    return GetTthAzm(tax,tay,data),tam           #2-theta & azimuth arrays & position mask
+    return np.array(GetTthAzm(tax,tay,data)),tam           #2-theta & azimuth arrays & position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     import numpy.ma as ma
     Zlim = masks['Thresholds'][1]
     rings = masks['Rings']
     arcs = masks['Arcs']
-    nJ = len(image)
-    nI = len(image[0])
-    TA = np.reshape(TA,(2,nI,nJ))
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
     tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
     for tth,thick in rings:
@@ -525,7 +523,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     for tth,azm,thick in arcs:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))* \
             ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1])))
-    taz = ma.masked_greater(ma.masked_less(image,Zlim[0]),Zlim[1]).flatten()
+    taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
     tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
@@ -545,14 +543,14 @@ def ImageIntegrate(image,data,masks):
     numChans = data['outChannels']
     Dtth = (LUtth[1]-LUtth[0])/numChans
     Dazm = (LRazm[1]-LRazm[0])/numAzms
-    NST = np.zeros(shape=(numAzms,numChans),dtype=np.int,order='F')
+    NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     imageN = len(image)
     Nx,Ny = data['size']
     nXBlks = (Nx-1)/1024+1
     nYBlks = (Ny-1)/1024+1
-    print Nx,Ny,nXBlks,nYBlks
-    dlg = wx.ProgressDialog("Elapsed time","2D image integration",nXBlks*nYBlks*3+3,
+    Nup = nXBlks*nYBlks*3+3
+    dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
         style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
     try:
         t0 = time.time()
@@ -564,7 +562,7 @@ def ImageIntegrate(image,data,masks):
             for jBlk in range(nXBlks):
                 jBeg = jBlk*1024
                 jFin = min(jBeg+1024,Nx)                
-                print 'Process map block',iBlk,jBlk,iBeg,iFin,jBeg,jFin
+                print 'Process map block:',iBlk,jBlk,' limits:',iBeg,iFin,jBeg,jFin
                 TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
                 Nup += 1
                 dlg.Update(Nup)
@@ -577,7 +575,9 @@ def ImageIntegrate(image,data,masks):
                 del tax,tay,taz
                 Nup += 1
                 dlg.Update(Nup)
-        H0 = np.nan_to_num(np.divide(H0,NST))
+        NST = np.array(NST)
+        H0 = np.divide(H0,NST)
+        H0 = np.nan_to_num(H0)
         del NST
         if Dtth:
             H2 = [tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)]

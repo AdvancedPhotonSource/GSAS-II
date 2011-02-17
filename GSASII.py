@@ -455,6 +455,7 @@ class GSASII(wx.Frame):
                             Data['calibrant'] = ''
                             Data['IOtth'] = [2.0,5.0]
                             Data['LRazimuth'] = [-135,-45]
+                            Data['azmthOff'] = 0.0
                             Data['outChannels'] = 2500
                             Data['outAzimuths'] = 1
                             Data['fullIntegrate'] = False

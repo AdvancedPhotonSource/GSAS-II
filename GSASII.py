@@ -161,7 +161,7 @@ class GSASII(wx.Frame):
 
     def _init_coll_Export_Items(self,parent):
         self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_EXPORTPATTERN, kind=wx.ITEM_NORMAL,
-            text='Export Powder Pattern...')
+            text='Export Powder Patterns...')
         self.ExportPeakList = parent.Append(help='',id=wxID_EXPORTPEAKLIST, kind=wx.ITEM_NORMAL,
             text='Export All Peak Lists...')
         self.ExportHKL = parent.Append(help='',id=wxID_EXPORTHKL, kind=wx.ITEM_NORMAL,
@@ -175,7 +175,7 @@ class GSASII(wx.Frame):
         self.ExportHKL.Enable(False)
         self.ExportPhase.Enable(False)
         self.ExportCIF.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnExportPattern, id=wxID_EXPORTPATTERN)
+        self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=wxID_EXPORTPATTERN)
         self.Bind(wx.EVT_MENU, self.OnExportPeakList, id=wxID_EXPORTPEAKLIST)
         self.Bind(wx.EVT_MENU, self.OnExportHKL, id=wxID_EXPORTHKL)
         self.Bind(wx.EVT_MENU, self.OnExportPhase, id=wxID_EXPORTPHASE)
@@ -357,11 +357,15 @@ class GSASII(wx.Frame):
                                 v1 = Iparm['INS  1PRCF1 '].split()                                                  
                                 v = Iparm['INS  1PRCF11'].split()
                                 data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
+                                try:
+                                    azm = float(Iparm['INS  1DETAZM'])
+                                except KeyError:                                                #not in this Iparm file
+                                    azm = 0.0
                                 v = Iparm['INS  1PRCF12'].split()
                                 if v1[0] == 3:
-                                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],0.0)])  #get LX, LY, S+H/L & azimuth
+                                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
                                 else:
-                                    data.extend([0.0,0.0,0.002,0.0])                                      #OK defaults if fxn #3 not 1st in iprm file
+                                    data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                                 codes.extend([0,0,0,0,0,0,0])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(data),data,codes,names])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
@@ -899,21 +903,38 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
         
     def OnDataDelete(self, event):
-        TextList = []
+        TextList = ['All Data']
         DelList = []
         DelItemList = []
+        ifPWDR = False
+        ifIMG = False
+        ifHKLF = False
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
                 name = self.PatternTree.GetItemText(item)
                 if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
+                    if 'PWDR' in name: ifPWDR = True
+                    if 'IMG' in name: ifIMG = True
+                    if 'HKLF' in name: ifHKLF = True
                     TextList.append(name)
-                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            if ifPWDR: TextList.insert(1,'All PWDR')
+            if ifIMG: TextList.insert(1,'All IMG')
+            if ifHKLF: TextList.insert(1,'All HKLF')                
             dlg = wx.MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
                     for i in result: DelList.append(TextList[i])
+                    if 'All Data' in DelList:
+                        DelList = [item for item in TextList if item[:3] != 'All']
+                    elif 'All PWDR' in DelList:
+                        DelList = [item for item in TextList if item[:4] == 'PWDR']
+                    elif 'All IMG' in DelList:
+                        DelList = [item for item in TextList if item[:3] == 'IMG']
+                    elif 'All HKLF' in DelList:
+                        DelList = [item for item in TextList if item[:4] == 'HKLF']
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item:
                         if self.PatternTree.GetItemText(item) in DelList: DelItemList.append(item)
@@ -1023,109 +1044,128 @@ class GSASII(wx.Frame):
         self.Close()
         
     def OnImportPattern(self,event):
-            dlg = wx.FileDialog(self, 'Choose nonGSAS powder file', '.', '', 
-                '(*.*)|*.*',wx.OPEN)
-            if self.dirname:
-                dlg.SetDirectory(self.dirname)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    self.powderfile = dlg.GetPath()
-                    self.dirname = dlg.GetDirectory()
-            finally:
-                dlg.Destroy()
-                
-    def OnImportHKL(self,event):
-            dlg = wx.FileDialog(self, 'Choose structure factor file', '.', '', 
-                '(*.*)|*.*',wx.OPEN)
-            if self.dirname:
-                dlg.SetDirectory(self.dirname)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    self.HKLfile = dlg.GetPath()
-                    self.dirname = dlg.GetDirectory()
-            finally:
-                dlg.Destroy()
-        
-    def OnImportPhase(self,event):
-            dlg = wx.FileDialog(self, 'Choose GSAS EXP file', '.', '', 
-                'EXP file (*.EXP)|*.EXP',wx.OPEN)
-            if self.dirname:
-                dlg.SetDirectory(self.dirname)
-            try:
-                Phase = {}
-                if dlg.ShowModal() == wx.ID_OK:
-                    EXPfile = dlg.GetPath()
-                    self.dirname = dlg.GetDirectory()
-                    Phase = G2IO.ReadEXPPhase(self,EXPfile)
-            finally:
-                dlg.Destroy()
-            if Phase:
-                PhaseName = Phase['General']['Name']
-                if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
-                    sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
-                else:
-                    sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
-                sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-                self.PatternTree.SetItemPyData(sub,Phase)
-                
-    def OnImportPDB(self,event):
-            dlg = wx.FileDialog(self, 'Choose PDB file', '.', '', 
-                'PDB file (*.pdb,*.ent)|*.pdb;*.ent|All files (*.*)|*.*',wx.OPEN)
-            if self.dirname:
-                dlg.SetDirectory(self.dirname)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    PDBfile = dlg.GetPath()
-                    self.dirname = dlg.GetDirectory()
-                    Phase = G2IO.ReadPDBPhase(PDBfile)
-            finally:
-                dlg.Destroy()
-            if Phase:
-                PhaseName = Phase['General']['Name']
-                if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
-                    sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
-                else:
-                    sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
-                sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-                self.PatternTree.SetItemPyData(sub,Phase)        
-        
-    def OnImportCIF(self,event):
-            dlg = wx.FileDialog(self, 'Choose CIF file', '.', '', 
-                'CIF file (*.cif)|*.cif',wx.OPEN)
-            if self.dirname:
-                dlg.SetDirectory(self.dirname)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    CIFfile = dlg.GetPath()
-                    self.dirname = dlg.GetDirectory()
-                    Phase = G2IO.ReadCIFPhase(CIFfile)
-            finally:
-                dlg.Destroy()
-            if Phase:
-                PhaseName = Phase['General']['Name']
-                if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
-                    sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
-                else:
-                    sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
-                sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-                self.PatternTree.SetItemPyData(sub,Phase)        
-        
-    def OnExportPattern(self,event):
-        dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
-            'GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye',
-            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(self, 'Choose nonGSAS powder file', '.', '', 
+            '(*.*)|*.*',wx.OPEN)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                powderfile = dlg.GetPath()
-                if 'fxye' in powderfile:
-                    G2IO.powderFxyeSave(self,powderfile)
-                else:       #just xye
-                    G2IO.powderXyeSave(self,powderfile)
+                self.powderfile = dlg.GetPath()
                 self.dirname = dlg.GetDirectory()
         finally:
             dlg.Destroy()
+            
+    def OnImportHKL(self,event):
+        dlg = wx.FileDialog(self, 'Choose structure factor file', '.', '', 
+            '(*.*)|*.*',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.HKLfile = dlg.GetPath()
+                self.dirname = dlg.GetDirectory()
+        finally:
+            dlg.Destroy()
+        
+    def OnImportPhase(self,event):
+        dlg = wx.FileDialog(self, 'Choose GSAS EXP file', '.', '', 
+            'EXP file (*.EXP)|*.EXP',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            Phase = {}
+            if dlg.ShowModal() == wx.ID_OK:
+                EXPfile = dlg.GetPath()
+                self.dirname = dlg.GetDirectory()
+                Phase = G2IO.ReadEXPPhase(self,EXPfile)
+        finally:
+            dlg.Destroy()
+        if Phase:
+            PhaseName = Phase['General']['Name']
+            if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+                sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+            else:
+                sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+            sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+            self.PatternTree.SetItemPyData(sub,Phase)
+            
+    def OnImportPDB(self,event):
+        dlg = wx.FileDialog(self, 'Choose PDB file', '.', '', 
+            'PDB file (*.pdb,*.ent)|*.pdb;*.ent|All files (*.*)|*.*',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                PDBfile = dlg.GetPath()
+                self.dirname = dlg.GetDirectory()
+                Phase = G2IO.ReadPDBPhase(PDBfile)
+        finally:
+            dlg.Destroy()
+        if Phase:
+            PhaseName = Phase['General']['Name']
+            if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+                sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+            else:
+                sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+            sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+            self.PatternTree.SetItemPyData(sub,Phase)        
+        
+    def OnImportCIF(self,event):
+        dlg = wx.FileDialog(self, 'Choose CIF file', '.', '', 
+            'CIF file (*.cif)|*.cif',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                CIFfile = dlg.GetPath()
+                self.dirname = dlg.GetDirectory()
+                Phase = G2IO.ReadCIFPhase(CIFfile)
+        finally:
+            dlg.Destroy()
+        if Phase:
+            PhaseName = Phase['General']['Name']
+            if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+                sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+            else:
+                sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+            sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+            self.PatternTree.SetItemPyData(sub,Phase)        
+        
+    def OnExportPatterns(self,event):
+        names = ['All']
+        exports = []
+        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        while item:
+            name = self.PatternTree.GetItemText(item)
+            if 'PWDR' in name:
+                names.append(name)
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        if names:
+            dlg = wx.MultiChoiceDialog(self,'Select','Powder patterns to export',names)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelections()
+                if sel[0] == 0:
+                    exports = names[1:]
+                else:
+                    for x in sel:
+                        exports.append(names[x])
+            dlg.Destroy()
+        if exports:
+            dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
+                'GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye',
+                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            if self.dirname:
+                dlg.SetDirectory(self.dirname)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    powderfile = dlg.GetPath()
+                    if 'fxye' in powderfile:
+                        G2IO.powderFxyeSave(self,exports,powderfile)
+                    else:       #just xye
+                        G2IO.powderXyeSave(self,exports,powderfile)
+                    self.dirname = dlg.GetDirectory()
+            finally:
+                dlg.Destroy()
         
     def OnExportPeakList(self,event):
         dlg = wx.FileDialog(self, 'Choose output peak list file name', '.', '', 

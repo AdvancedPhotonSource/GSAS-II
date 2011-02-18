@@ -801,7 +801,7 @@ def SaveIntegration(self,PickId,data):
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         parms[10] = azm
         Y = self.Integrate[0][i]
-        W = np.sqrt(Y)
+        W = 1./Y                    #probably not true
         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
             'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0}
         if Id:
@@ -827,63 +827,69 @@ def SaveIntegration(self,PickId,data):
     self.PatternTree.Expand(Id)
     self.PatternId = Id
             
-def powderFxyeSave(self,powderfile):
-    file = open(powderfile,'w')
-    prm = open(powderfile.strip('fxye')+'prm','w')      #old style GSAS parm file
-    print 'save powder pattern to file: ',powderfile
+def powderFxyeSave(self,exports,powderfile):
+    head,tail = ospath.split(powderfile)
+    name,ext = tail.split('.')
     wx.BeginBusyCursor()
-    Inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
-                    self.PickId, 'Instrument Parameters'))[1]
-    if len(Inst) == 11:             #single wavelength
-        lam1 = Inst[1]
-        lam2 = 0.0
-        GU,GV,GW = Inst[4:7]
-        LX,LY = Inst[7:9]
-        SL = HL = Inst[9]/2.0   
-    else:                           #Ka1 & Ka2
-        lam1 = Inst[1]
-        lam2 = Inst[2]
-        GU,GV,GW = Inst[6:9]
-        LX,LY = Inst[9:11]
-        SL = HL = Inst[11]/2.0   
-    prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
-    prm.write( 'INS   BANK      1                                                               '+'\n')
-    prm.write( 'INS   HTYPE   PXCR                                                              '+'\n')
-    prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(lam1,lam2))
-    prm.write( 'INS  1 IRAD     0                                                               '+'\n')
-    prm.write( 'INS  1I HEAD                                                                    '+'\n')
-    prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
-    prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
-    prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(GU,GV,GW,0.0))
-    prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(LX,LY,SL,HL))
-    prm.close()
-    try:
-        x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(self.PickId)[1]
-        file.write(powderfile+'\n')
-        file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
-            100.*x[0],100.*(x[1]-x[0])))
-        s = list(np.sqrt(1./np.array(w)))        
-        XYW = zip(x,y,s)
-        for X,Y,S in XYW:
-            file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,S))
-        file.close()
-    finally:
-        wx.EndBusyCursor()
-    print 'powder pattern file written'
+    for i,export in enumerate(exports):
+        filename = ospath.join(head,name+'-%03d.'%(i)+ext)
+        prmname = filename.strip(ext)+'prm'
+        prm = open(prmname,'w')      #old style GSAS parm file
+        PickId = G2gd.GetPatternTreeItemId(self, self.root, export)
+        Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
+            PickId, 'Instrument Parameters'))[1::2]     #get values & names
+        Inst = dict(zip(Names,Values))
+        print Inst['Type']
+        prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
+        prm.write( 'INS   BANK      1                                                               '+'\n')
+        prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type']))
+        if 'Lam1' in Inst:              #Ka1 & Ka2
+            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'],Inst['Lam2']))
+        elif 'Lam' in Inst:             #single wavelength
+            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'],0.0))
+        prm.write( 'INS  1 IRAD     0                                                               '+'\n')
+        prm.write( 'INS  1I HEAD                                                                    '+'\n')
+        prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
+        prm.write(('INS  1DETAZM%10.3f                                                          '+'\n')%(Inst['Azimuth']))
+        prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
+        prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'],Inst['V'],Inst['W'],0.0))
+        prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'],Inst['Y'],Inst['SH/L']/2.,Inst['SH/L']/2.))
+        prm.close()
+        file = open(filename,'w')
+        print 'save powder pattern to file: ',filename
+        try:
+            x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(PickId)[1]
+            file.write(powderfile+'\n')
+            file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
+                100.*x[0],100.*(x[1]-x[0])))
+            s = list(np.sqrt(1./np.array(w)))        
+            XYW = zip(x,y,s)
+            for X,Y,S in XYW:
+                file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,max(S,1.0)))
+            file.close()
+        finally:
+            wx.EndBusyCursor()
+        print 'powder pattern file written'
         
-def powderXyeSave(self,powderfile):
-    file = open(powderfile,'w')
-    print 'save powder pattern to file: ',powderfile
-    wx.BeginBusyCursor()
-    try:
-        x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(self.PickId)[1]
-        XYW = zip(x,y,w)
-        for X,Y,W in XYW:
-            file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
-        file.close()
-    finally:
-        wx.EndBusyCursor()
-    print 'powder pattern file written'
+def powderXyeSave(self,exports,powderfile):
+    head,tail = ospath.split(powderfile)
+    name,ext = tail.split('.')
+    for i,export in enumerate(exports):
+        filename = ospath.join(head,name+'-%03d.'%(i)+ext)
+        PickId = G2gd.GetPatternTreeItemId(self, self.root, export)
+        file = open(filename,'w')
+        file.write('#%s\n'%(export))
+        print 'save powder pattern to file: ',filename
+        wx.BeginBusyCursor()
+        try:
+            x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(PickId)[1]
+            XYW = zip(x,y,w)
+            for X,Y,W in XYW:
+                file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
+            file.close()
+        finally:
+            wx.EndBusyCursor()
+        print 'powder pattern file written'
     
 def PeakListSave(self,file,peaks):
     print 'save peak list to file: ',self.peaklistfile

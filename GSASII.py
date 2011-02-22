@@ -257,6 +257,7 @@ class GSASII(wx.Frame):
         self.Interpolate = 'nearest'
         self.ContourColor = 'Paired'
         self.logPlot = False
+        self.qPlot = False
         self.Contour = False
         self.SinglePlot = False
         self.plotView = 0

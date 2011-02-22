@@ -553,7 +553,10 @@ def UpdateComments(self,data):
     self.dataDisplay = wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
         style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
     for line in data:
-        self.dataDisplay.AppendText(line+"\n")
+        if line[-1] == '\n':
+            self.dataDisplay.AppendText(line)
+        else:
+            self.dataDisplay.AppendText(line+'\n')
              
 def UpdateHKLControls(self,data):
     

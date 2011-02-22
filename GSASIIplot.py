@@ -281,24 +281,31 @@ def PlotPatterns(self,newPlot=False):
     def OnPick(event):
         if self.itemPicked is not None: return
         PatternId = self.PatternId
+        try:
+            Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
+        except TypeError:
+            return
+        Parms = dict(zip(Names,Values))
+        try:
+            wave = Parms['Lam']
+        except KeyError:
+            wave = Parms['Lam1']
         PickId = self.PickId
         pick = event.artist
-        mouse = event.mouseevent
+        mouse = event.mouseevent       
         xpos = pick.get_xdata()
         ypos = pick.get_ydata()
         ind = event.ind
-        xy = zip(np.take(xpos,ind),np.take(ypos,ind))[0]
+        xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
         if self.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
-                inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-                if len(inst[1]) == 11:
-                    ins = inst[1][4:10]
-                else:
-                    ins = inst[1][6:12]    
+                ins = [Parms[x] for x in ['U','V','W','X','Y','SH/L']]
+                if self.qPlot:                              #qplot - convert back to 2-theta
+                    xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                 sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
                 gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
                 data = self.PatternTree.GetItemPyData(self.PickId)
-                XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st   
+                XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(self,data)
                 PlotPatterns(self)
@@ -308,6 +315,8 @@ def PlotPatterns(self,newPlot=False):
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
                 data = self.PatternTree.GetItemPyData(LimitId)
+                if self.qPlot:                              #qplot - convert back to 2-theta
+                    xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                 if mouse.button==1:
                     data[1][0] = min(xy[0],data[1][1])
                 if mouse.button==3:
@@ -357,6 +366,12 @@ def PlotPatterns(self,newPlot=False):
                 self.Contour = True
                 self.SinglePlot = False
                 self.Offset = 0
+        elif event.key == 'q':
+            newPlot = True
+            if self.qPlot:
+                self.qPlot = False
+            else:
+                self.qPlot = True
         elif event.key == 's':
             if self.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -375,7 +390,7 @@ def PlotPatterns(self,newPlot=False):
         elif event.key == '+':
             if self.PickId:
                 self.PickId = False
-        elif event.key == 'i':
+        elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
                'mitchell','sinc','lanczos']
@@ -401,8 +416,14 @@ def PlotPatterns(self,newPlot=False):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                wave = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
-                    self.PatternId, 'Instrument Parameters'))[0][1]
+                Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
+                Parms = dict(zip(Names,Values))
+                try:
+                    wave = Parms['Lam']
+                except KeyError:
+                    wave = Parms['Lam1']
+                if self.qPlot:
+                    xpos = 2.0*asind(xpos*wave/(4*math.pi))
                 dsp = 0.0
                 if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                     dsp = wave/(2.*sind(abs(xpos)/2.0))
@@ -429,6 +450,12 @@ def PlotPatterns(self,newPlot=False):
                                                    
     def OnRelease(event):
         if self.itemPicked is None: return
+        Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
+        Parms = dict(zip(Names,Values))
+        try:
+            wave = Parms['Lam']
+        except KeyError:
+            wave = Parms['Lam1']
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             lines = []
@@ -438,7 +465,10 @@ def PlotPatterns(self,newPlot=False):
                 LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
                 data = self.PatternTree.GetItemPyData(LimitId)
 #                print 'limits',xpos
-                data[1][lineNo] = xpos
+                if self.qPlot:
+                    data[1][lineNo] = 2.0*asind(wave*xpos/(4*math.pi))
+                else:
+                    data[1][lineNo] = xpos
                 self.PatternTree.SetItemPyData(LimitId,data)
                 if self.PatternTree.GetItemText(self.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(self,data)
@@ -446,7 +476,10 @@ def PlotPatterns(self,newPlot=False):
                 PeakId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List')
                 data = self.PatternTree.GetItemPyData(PeakId)
 #                print 'peaks',xpos
-                data[lineNo-2][0] = xpos
+                if self.qPlot:
+                    data[lineNo-2][0] = 2.0*asind(wave*xpos/(4*math.pi))
+                else:
+                    data[lineNo-2][0] = xpos
                 self.PatternTree.SetItemPyData(PeakId,data)
                 G2pdG.UpdatePeakGrid(self,data)
         PlotPatterns(self)
@@ -479,10 +512,10 @@ def PlotPatterns(self,newPlot=False):
     else:
         if self.logPlot:
             Choice = (' key press','l: log(I) off',
-                'c: contour on','s: toggle single plot','+: no selection')
+                'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
             Choice = (' key press','d: offset down','u: offset up','l: log(I) on',
-                'c: contour on','s: toggle single plot','+: no selection')
+                'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -493,11 +526,14 @@ def PlotPatterns(self,newPlot=False):
     colors=['b','g','r','c','m','k']
     Lines = []
     if self.SinglePlot:
-        Pattern = self.PatternTree.GetItemPyData(self.PatternId)
-        Pattern.append(self.PatternTree.GetItemText(self.PatternId))
+        Pattern = self.PatternTree.GetItemPyData(PatternId)
+        Pattern.append(self.PatternTree.GetItemText(PatternId))
         PlotList = [Pattern,]
+        ParmList = [self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,
+            self.PatternId, 'Instrument Parameters'))[1],]
     else:        
         PlotList = []
+        ParmList = []
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         while item:
             if 'PWDR' in self.PatternTree.GetItemText(item):
@@ -505,6 +541,8 @@ def PlotPatterns(self,newPlot=False):
                 if len(Pattern) < 3:                    # put name on end if needed
                     Pattern.append(self.PatternTree.GetItemText(item))
                 PlotList.append(Pattern)
+                ParmList.append(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,
+                    item,'Instrument Parameters'))[1])
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
     Ymax = 1.0
     lenX = 0
@@ -513,26 +551,39 @@ def PlotPatterns(self,newPlot=False):
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
     offset = self.Offset*Ymax/100.0
-    Plot.set_title('Powder Patterns: '+os.path.split(self.GSASprojectfile)[1])
-    Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    Title = 'Powder Patterns: '+os.path.split(self.GSASprojectfile)[1]
+    if self.logPlot:
+        Title = 'log('+Title+')'
+    Plot.set_title(Title)
+    if self.qPlot:
+        Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
+    else:        
+        Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
     Plot.set_ylabel('Intensity',fontsize=12)
     if self.Contour:
         ContourZ = []
         ContourY = []
         Nseq = 0
     for N,Pattern in enumerate(PlotList):
+        Parms = ParmList[N]
         ifpicked = False
         LimitId = 0
         xye = np.array(Pattern[1])
         if PickId:
             ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
-        X = xye[0]
+        if self.qPlot:
+            Id = G2gd.GetPatternTreeItemId(self,self.root, Pattern[2])
+            X = 4*np.pi*npsind(xye[0]/2.0)/Parms[1]
+        else:
+            X = xye[0]
         if not lenX:
             lenX = len(X)           
         Y = xye[1]+offset*N
         if LimitId:
-            limits = self.PatternTree.GetItemPyData(LimitId)
+            limits = np.array(self.PatternTree.GetItemPyData(LimitId))
+            if self.qPlot:
+                limits = 4*np.pi*npsind(limits/2.0)/Parms[1]
             Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
         if self.Contour:
@@ -567,7 +618,10 @@ def PlotPatterns(self,newPlot=False):
                     Page.canvas.SetToolTipString(tip)
                     data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
                     for item in data:
-                        Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
+                        if self.qPlot:
+                            Lines.append(Plot.axvline(4*math.pi*sind(item[0]/2.)/Parms[1],color=colors[N%6],picker=2.))
+                        else:
+                            Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
                 if self.PatternTree.GetItemText(PickId) == 'Limits':
                     tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                     Page.canvas.SetToolTipString(tip)
@@ -578,11 +632,23 @@ def PlotPatterns(self,newPlot=False):
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
     if PickId and self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
+        Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1::2]
+        Parms = dict(zip(Names,Values))
+        try:
+            wave = Parms['Lam']
+        except KeyError:
+            wave = Parms['Lam1']
         peaks = np.array((self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))))
         for peak in peaks:
-            Plot.axvline(peak[0],color='b')
+            if self.qPlot:
+                Plot.axvline(4*np.pi*sind(peak[0]/2.0)/wave,color='b')
+            else:
+                Plot.axvline(peak[0],color='b')
         for hkl in self.HKL:
-            Plot.axvline(hkl[5],color='r',dashes=(5,5))
+            if self.qPlot:
+                Plot.axvline(4*np.pi*sind(hkl[5]/2.0)/wave,color='r',dashes=(5,5))
+            else:
+                Plot.axvline(hkl[5],color='r',dashes=(5,5))
     if self.Contour:
         acolor = mpl.cm.get_cmap(self.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation=self.Interpolate, 
@@ -875,7 +941,11 @@ def PlotImage(self,newPlot=False,event=None):
                         ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
-        if self.PatternTree.GetItemText(self.PickId) == 'Masks':
+        try:
+            PickName = self.PatternTree.GetItemText(self.PickId)
+        except TypeError:
+            return
+        if PickName == 'Masks':
             Xpos = event.xdata
             if not Xpos:            #got point out of frame
                 return
@@ -897,17 +967,35 @@ def PlotImage(self,newPlot=False,event=None):
                 Masks['Polygons'].append([])
                 self.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
             G2imG.UpdateMasks(self,Masks)
-        else:
-            Xpos = event.xdata
-            if not Xpos:            #got point out of frame
-                return
-            Ypos = event.ydata
+        elif PickName == 'Image Controls':
             if event.key == 'c':
-                print 'move center to: ',Xpos,Ypos
-                Data['center'] = [Xpos,Ypos]
-                G2imG.UpdateImageControls(self,Data,Masks)
+                Xpos = event.xdata
+                if not Xpos:            #got point out of frame
+                    return
+                Ypos = event.ydata
+                dlg = wx.MessageDialog(self,'Are you sure you want to change the center?',
+                    'Center change',style=wx.OK|wx.CANCEL)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        print 'move center to: ',Xpos,Ypos
+                        Data['center'] = [Xpos,Ypos]
+                        G2imG.UpdateImageControls(self,Data,Masks)
+                finally:
+                    dlg.Destroy()
+            elif event.key == 'l':
+                if self.logPlot:
+                    self.logPlot = False
+                else:
+                    self.logPlot = True
         PlotImage(self)
             
+    def OnKeyBox(event):
+        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('2D Powder Image'):
+            event.key = cb.GetValue()[0]
+            cb.SetValue(' key press')
+            if event.key in 'l':
+                OnImPlotKeyPress(event)
+                        
     def OnImPick(event):
         if self.PatternTree.GetItemText(self.PickId) not in ['Image Controls','Masks']:
             return
@@ -930,7 +1018,10 @@ def PlotImage(self,newPlot=False,event=None):
             self.mousePicked = event.mouseevent
         
     def OnImRelease(event):
-        PickName = self.PatternTree.GetItemText(self.PickId)
+        try:
+            PickName = self.PatternTree.GetItemText(self.PickId)
+        except TypeError:
+            return
         if PickName not in ['Image Controls','Masks']:
             return
         pixelSize = Data['pixelSize']
@@ -1053,7 +1144,23 @@ def PlotImage(self,newPlot=False,event=None):
         xylim = []
     if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
         Page.SetFocus()
-    Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
+    Title = self.PatternTree.GetItemText(self.Image)[4:]
+    self.G2plotNB.status.DestroyChildren()
+    if self.logPlot:
+        Title = 'log('+Title+')'
+    Plot.set_title(Title)
+    try:
+        if self.PatternTree.GetItemText(self.PickId) in ['Image Controls',]:
+            if self.logPlot:
+                Choice = (' key press','l: log(I) off')
+            else:
+                Choice = (' key press','l: log(I) on')
+            cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
+                choices=Choice)
+            cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
+            cb.SetValue(' key press')
+    except TypeError:
+        pass
     size,imagefile = self.PatternTree.GetItemPyData(self.Image)
     if imagefile != self.oldImagefile:
         imagefile = G2IO.CheckImageFile(self,imagefile)
@@ -1089,7 +1196,11 @@ def PlotImage(self,newPlot=False,event=None):
         MaskA = ma.getmaskarray(MA)
         A = G2img.ImageCompress(MA,imScale)
         AM = G2img.ImageCompress(MaskA,imScale)
-        
+        if self.logPlot:
+            A = np.log(A)
+            AM = np.log(AM)
+            Imin,Imax = [np.amin(A),np.amax(A)]
+                    
         ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
             interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
         Img = Plot.imshow(A,aspect='equal',cmap=acolor,

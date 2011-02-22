@@ -274,7 +274,6 @@ def UpdatePeakGrid(self, data):
         
 def UpdateBackgroundGrid(self,data):
     if self.dataDisplay:
-        print 'clearing background'
         self.dataFrame.Clear()
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
     maxTerm = 9
@@ -331,7 +330,6 @@ def UpdateBackgroundGrid(self,data):
         
 def UpdateLimitsGrid(self, data):
     if self.dataDisplay:
-        print 'clearing limits'
         self.dataFrame.Clear()
         
     def RefreshLimitsGrid(event):

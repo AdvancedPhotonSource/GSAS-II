@@ -503,9 +503,10 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     polygons = masks['Polygons']
     tam = ma.make_mask_none((iLim[1]-iLim[0],jLim[1]-jLim[0]))
     for polygon in polygons:
-        tamp = ma.make_mask_none((nI*nJ))
-        tam = ma.mask_or(tam.flatten(),ma.make_mask(pm.polymask(nI*nJ,
-            tax.flatten(),tay.flatten(),len(polygon),polygon,tamp)))
+        if polygon:
+            tamp = ma.make_mask_none((nI*nJ))
+            tam = ma.mask_or(tam.flatten(),ma.make_mask(pm.polymask(nI*nJ,
+                tax.flatten(),tay.flatten(),len(polygon),polygon,tamp)))
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
     for X,Y,diam in spots:
         tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))

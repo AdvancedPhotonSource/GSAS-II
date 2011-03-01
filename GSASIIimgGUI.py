@@ -301,7 +301,7 @@ def UpdateImageControls(self,data,masks):
                             Data['ring'] = []
                             Data['rings'] = []
                             Data['ellipses'] = []
-                            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'),Data)
+                            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Image Controls'),copy.deepcopy(Data))
             finally:
                 dlg.Destroy()
                 
@@ -315,7 +315,7 @@ def UpdateImageControls(self,data,masks):
                 filename = dlg.GetPath()
                 File = open(filename,'w')
                 save = {}
-                keys = ['type','wavelength','calibrant','distance','center','tilt','rotation']
+                keys = ['type','wavelength','calibrant','distance','center','tilt','rotation','azmthOff']
                 for key in keys:
                     File.write(key+':'+str(data[key])+'\n')
                 File.close()
@@ -661,6 +661,7 @@ def UpdateMasks(self,data):
         G2plt.PlotExposedImage(self,event=event)
 
     def OnCopyMask(event):
+        import copy
         TextList = []
         Names = []
         if self.PatternTree.GetCount():
@@ -671,7 +672,8 @@ def UpdateMasks(self,data):
                 if 'IMG' in name:
                     if id == self.Image:
                         Source = name
-                        mask = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks'))
+                        Mask = copy.copy(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks')))
+                        del Mask['Thresholds']
                     else:
                         TextList.append([False,name,id])
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
@@ -684,7 +686,9 @@ def UpdateMasks(self,data):
                     result = dlg.GetData()
                     for i,item in enumerate(result):
                         ifcopy,name,id = item
-                        if ifcopy:                                
+                        if ifcopy:
+                            mask = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks'))
+                            mask.update(Mask)                                
                             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks'),mask)
             finally:
                 dlg.Destroy()

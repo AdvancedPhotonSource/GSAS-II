@@ -1,6 +1,10 @@
-# build the compiled fortran codes needed by GSAS-II
+# build the compiled fortran codes needed by GSAS-II with f2py
+# This is a work in progress. The idea is that files built here are placed in 
+# the bin directory, which is empty in the svn distribution. If these files will 
+# be distributed, they should be moved to a directory named bin<os><ver> where 
+# <os> is linux, mac or win and 
 
-BIN = ..\\bin
+BIN = ../bin
 LIBS = $(BIN)/pack_f.$(SUFFIX) $(BIN)/pyspg.$(SUFFIX) $(BIN)/polymask.$(SUFFIX) $(BIN)/histogram2d.$(SUFFIX) $(BIN)/pypowder.$(SUFFIX)
 SYMLIB := $(wildcard spsubs/*.for)
 POWLIB := $(wildcard powsubs/*.for)
@@ -8,7 +12,6 @@ MACFIX = #
 MACCOPY = #
 #----------------------------------------------------------------------
 # linux (gfortran)
-#GSASlib = ./libgsas.a
 #COMPILER=--fcompiler=gnu95 
 #PACKCOPTS=--f77flags="-fno-range-check"
 #SUFFIX=so
@@ -17,13 +20,13 @@ MACCOPY = #
 #DEL= \#
 #----------------------------------------------------------------------
 # mac (gfortran)
-#GSASlib = /Users/toby/software/work/gsas/2009Aug31/libgsas.a
-#COMPILER=--fcompiler=gnu95 --f90exec=/usr/local/bin/gfortran
-#PACKCOPTS=--f77flags="-fno-range-check"
-#SUFFIX=so
-#F2PY=f2py
-#MOVE=mv
-#DEL=\#
+COMPILER=--fcompiler=gnu95 --f77exec=/sw/bin/gfortran
+PACKCOPTS=--f77flags="-fno-range-check" # -static-libgfortran -static-libgcc
+SUFFIX=so
+F2PY=f2py
+MOVE=mv
+DEL=\#
+RM=rm -f
 #MACFIX = install_name_tool -change 
 #MACCOPY = cp
 #----------------------------------------------------------------------
@@ -36,12 +39,12 @@ MACCOPY = #
 #DEL=del
 #----------------------------------------------------------------------
 # Windows gfortran-32
-COMPILER=--compiler=mingw32
-PACKCOPTS=--f77flags="-fno-range-check"
-SUFFIX=pyd
-F2PY=f2py
-MOVE=copy
-DEL=del
+#COMPILER=--compiler=mingw32
+#PACKCOPTS=--f77flags="-fno-range-check"
+#SUFFIX=pyd
+#F2PY=f2py
+#MOVE=copy
+#DEL=del
 
 
 
@@ -117,6 +120,8 @@ $(BIN)/histogram2d.$(SUFFIX): histogram2d.for $(SYMLIB) $(BIN)
 # 	$(MOVE) ?????.$(SUFFIX) $(BIN)
 # 	$(DEL) ?????.$(SUFFIX)
 
+clean:
+	$(RM) $(LIBS)
 
 # no longer in use
 #$(BIN)/fitellipse.$(SUFFIX): fitellipse.for

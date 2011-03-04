@@ -193,8 +193,8 @@ def UpdateImageControls(self,data,masks):
         setRings.SetValue(data['setRings'])
         msg = \
         '''Select > 4 points on 1st used ring of image pattern. 
-        Click right mouse button to select point.
-          Use left mouse button to delete point. 
+        Click left mouse button to select point.
+          Use right mouse button to delete point. 
                  Press OK when done'''
         dlg = wx.MessageDialog(self,msg,'Pick inner ring',wx.OK)
         self.ifGetRing = True

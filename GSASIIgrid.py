@@ -29,9 +29,9 @@ import GSASIIphsGUI as G2phG
     wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD,
 ] = [wx.NewId() for _init_coll_DrawAtom_Items in range(10)]
 
-[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB, wxID_SAVEINTG, 
+[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(8)]
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(7)]
 
 [ wxID_MASKCOPY,
 ] = [wx.NewId() for _init_coll_MASK_Items in range(1)]
@@ -156,8 +156,6 @@ class DataFrame(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Integrate')
         parent.Append(help='Integrate all images selected from list',id=wxID_INTEGRATEALL,
             kind=wx.ITEM_NORMAL,text='Integrate all')
-        parent.Append(help='Save integration results as a series of 1-D powder patterns', 
-            id=wxID_SAVEINTG, kind=wx.ITEM_NORMAL,text='Save Integration')
         parent.Append(help='Copy image controls to other images', 
             id=wxID_IMCOPYCONTROLS, kind=wx.ITEM_NORMAL,text='Copy Controls')
         parent.Append(help='Save image controls to file', 

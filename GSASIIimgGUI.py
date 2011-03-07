@@ -26,6 +26,7 @@ tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
 
+                    
 def UpdateImageControls(self,data,masks):
     import ImageCalibrants as calFile
     
@@ -52,6 +53,14 @@ def UpdateImageControls(self,data,masks):
     def OnCalibSkip(event):
         data['calibskip'] = int(calibSkip.GetValue())
         
+    def OnSetRings(event):
+        if data['setRings']:
+            data['setRings'] = False
+        else:
+            data['setRings'] = True
+        showCalib.SetValue(data['setRings'])
+        G2plt.PlotExposedImage(self,event=event)
+
     def OnCalibDmin(event):
         try:
             dmin = float(calibDmin.GetValue())
@@ -103,7 +112,6 @@ def UpdateImageControls(self,data,masks):
             data['outChannels'] = numChans
         except ValueError:
             pass
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
         outChan.SetValue(str(data['outChannels']))          #reset in case of error        
         
     def OnNumOutAzms(event):
@@ -114,7 +122,6 @@ def UpdateImageControls(self,data,masks):
             data['outAzimuths'] = numAzms            
         except ValueError:
             pass
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
         outAzim.SetValue(str(data['outAzimuths']))          #reset in case of error        
         
     def OnWavelength(event):
@@ -143,7 +150,6 @@ def UpdateImageControls(self,data,masks):
             data['fullIntegrate'] = True
             self.Lazim.SetEditable(False)            
             self.Razim.SetEditable(False)            
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
         G2plt.PlotExposedImage(self,event=event)
         
     def OnSetDefault(event):
@@ -163,23 +169,14 @@ def UpdateImageControls(self,data,masks):
         data['IOtth'] = [Ltth,Utth]
         self.InnerTth.SetValue("%8.3f" % (Ltth))
         self.OuterTth.SetValue("%8.2f" % (Utth))
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)
         G2plt.PlotExposedImage(self,event=event)
         
     def OnLRazim(event):
         Lazm = int(self.Lazim.GetValue())
         Razm = int(self.Razim.GetValue())
         data['LRazimuth'] = [Lazm,Razm]
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)
         G2plt.PlotExposedImage(self,event=event)
             
-    def OnSetRings(event):
-        if data['setRings']:
-            data['setRings'] = False
-        else:
-            data['setRings'] = True
-        setRings.SetValue(data['setRings'])
-        G2plt.PlotExposedImage(self,event=event)
             
     def OnClearCalib(event):
         data['ring'] = []
@@ -200,22 +197,12 @@ def UpdateImageControls(self,data,masks):
         self.ifGetRing = True
         dlg.ShowModal()
         self.ifGetRing = False
+        Calibrate(self)
         
-        if G2img.ImageCalibrate(self,data):
-            Status.SetStatusText('Calibration successful')
-            cent = data['center']
-            centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
-            distSel.SetValue("%8.3f"%(data['distance']))
-            tiltSel.SetValue("%9.3f"%(data['tilt']))            
-            rotSel.SetValue("%9.3f"%(data['rotation']))
-            self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=True)    
-        else:
-            Status.SetStatusText('Calibration failed')
-                    
     def OnIntegrate(event):
         self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
         G2plt.PlotIntegration(self,newPlot=True)
-        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=True)
+        G2IO.SaveIntegration(self,self.PickId,data)
         
     def OnIntegrateAll(event):
         print 'integrate all'
@@ -255,15 +242,10 @@ def UpdateImageControls(self,data,masks):
                                     G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'),Masks)                                
                             self.Integrate = G2img.ImageIntegrate(image,Data,Masks)
 #                            G2plt.PlotIntegration(self,newPlot=True,event=event)
-                            self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=True)
                             G2IO.SaveIntegration(self,Id,Data)
             finally:
                 dlg.Destroy()
         
-    def OnSaveIntegrate(event):
-        print 'save integration'
-        G2IO.SaveIntegration(self,self.PickId,data)
-            
     def OnCopyControls(event):
         import copy
         TextList = []
@@ -358,6 +340,11 @@ def UpdateImageControls(self,data,masks):
         finally:
             dlg.Destroy()
                                         
+    #fix for old files:
+    if 'azmthOff' not in data:
+        data['azmthOff'] = 0.0        
+    #end fix
+    
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
     calList = [m for m in calFile.Calibrants.keys()]
     typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',
@@ -376,24 +363,36 @@ def UpdateImageControls(self,data,masks):
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=False)    
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=G2gd.wxID_IMINTEGRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrateAll, id=G2gd.wxID_INTEGRATEALL)
-    self.dataFrame.Bind(wx.EVT_MENU, OnSaveIntegrate, id=G2gd.wxID_SAVEINTG)
     self.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)
     self.dataFrame.Bind(wx.EVT_MENU, OnSaveControls, id=G2gd.wxID_IMSAVECONTROLS)
     self.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
-    self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_SAVEINTG,enable=False)    
     self.dataDisplay = wx.Panel(self.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
     
-    typeSizer = wx.BoxSizer(wx.HORIZONTAL)
-    typeSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Type of image data: '),0,
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Type of image data: '),0,
         wx.ALIGN_CENTER_VERTICAL)
     typeSel = wx.ComboBox(parent=self.dataDisplay,value=typeDict[data['type']],choices=typeList,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     typeSel.SetValue(data['type'])
     typeSel.Bind(wx.EVT_COMBOBOX, OnDataType)
-    typeSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
-    mainSizer.Add(typeSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
+    comboSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Color bar '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    colSel = wx.ComboBox(parent=self.dataDisplay,value=data['color'],choices=colorList,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
+    colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
+    comboSizer.Add(colSel,0,wx.ALIGN_CENTER_VERTICAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Azimuth offset '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    azmthOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (data['azmthOff'])),
+        style=wx.TE_PROCESS_ENTER)
+    azmthOff.Bind(wx.EVT_TEXT_ENTER,OnAzmthOff)
+    azmthOff.Bind(wx.EVT_KILL_FOCUS,OnAzmthOff)
+    comboSizer.Add(azmthOff,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(comboSizer,0,wx.ALIGN_LEFT)
+    mainSizer.Add((5,5),0)
             
     maxSizer = wx.FlexGridSizer(2,2,0,5)
     maxSizer.AddGrowableCol(1,1)
@@ -412,70 +411,9 @@ def UpdateImageControls(self,data,masks):
         value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
     maxSizer.Add(minSel,1,wx.EXPAND|wx.RIGHT)
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
-    mainSizer.Add(maxSizer,1,wx.EXPAND|wx.RIGHT)
+    mainSizer.Add(maxSizer,1,wx.ALIGN_LEFT|wx.EXPAND|wx.RIGHT)
     
-    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
-    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Color bar '),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    colSel = wx.ComboBox(parent=self.dataDisplay,value=data['color'],choices=colorList,
-        style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
-    colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
-    comboSizer.Add(colSel,0,wx.ALIGN_CENTER_VERTICAL)
-    
-    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calibrant '),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    calSel = wx.ComboBox(parent=self.dataDisplay,value=data['calibrant'],choices=calList,
-        style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
-    calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)
-    comboSizer.Add(calSel,0,wx.ALIGN_CENTER_VERTICAL)
-    
-    #fix for old files:
-    if 'azmthOff' not in data:
-        data['azmthOff'] = 0.0        
-    #end fix
-    
-    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Azimuth offset '),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    azmthOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (data['azmthOff'])),
-        style=wx.TE_PROCESS_ENTER)
-    azmthOff.Bind(wx.EVT_TEXT_ENTER,OnAzmthOff)
-    azmthOff.Bind(wx.EVT_KILL_FOCUS,OnAzmthOff)
-    comboSizer.Add(azmthOff,0,wx.ALIGN_CENTER_VERTICAL)
-    
-    mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
-    mainSizer.Add((10,10),0)
-        
-    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
-    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Pixel search range '),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    pixLimit = wx.ComboBox(parent=self.dataDisplay,value=str(data['pixLimit']),choices=['1','2','5','10','15','20'],
-        style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
-    comboSizer.Add(pixLimit,0,wx.ALIGN_CENTER_VERTICAL)
-    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min ring I/Ib '),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    cutOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['cutoff'])),
-        style=wx.TE_PROCESS_ENTER)
-    cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
-    cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
-    comboSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
-    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calib lines to skip '),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    calibSkip  = wx.ComboBox(parent=self.dataDisplay,value=str(data['calibskip']),choices=['0','1','2','3','4','5','6','7','8','9','10'],
-        style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    calibSkip.Bind(wx.EVT_COMBOBOX, OnCalibSkip)
-    comboSizer.Add(calibSkip,0,wx.ALIGN_CENTER_VERTICAL)
-    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min calib d-spacing '),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    calibDmin = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['calibdmin'])),
-        style=wx.TE_PROCESS_ENTER)
-    calibDmin.Bind(wx.EVT_TEXT_ENTER,OnCalibDmin)
-    calibDmin.Bind(wx.EVT_KILL_FOCUS,OnCalibDmin)
-    comboSizer.Add(calibDmin,0,wx.ALIGN_CENTER_VERTICAL)
-
-    mainSizer.Add(comboSizer,0,wx.ALIGN_CENTER_HORIZONTAL)
-    mainSizer.Add((5,5),0)
-         
+#    mainSizer.Add((5,5),0)         
     dataSizer = wx.FlexGridSizer(6,4,5,5)
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calibration coefficients'),0,
         wx.ALIGN_CENTER_VERTICAL)    
@@ -574,18 +512,87 @@ def UpdateImageControls(self,data,masks):
     dataSizer.Add(setDefault,0)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
     setDefault.SetValue(data['setDefault'])
+
+    mainSizer.Add((5,5),0)        
+    mainSizer.Add(dataSizer,0)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calibration controls:'),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
+    calibSizer = wx.FlexGridSizer(2,3,5,5)
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calibrant '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    calSel = wx.ComboBox(parent=self.dataDisplay,value=data['calibrant'],choices=calList,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
+    calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)
+    comboSizer.Add(calSel,0,wx.ALIGN_CENTER_VERTICAL)
+    calibSizer.Add(comboSizer,0)
+    
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calib lines to skip   '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    calibSkip  = wx.ComboBox(parent=self.dataDisplay,value=str(data['calibskip']),choices=['0','1','2','3','4','5','6','7','8','9','10'],
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    calibSkip.Bind(wx.EVT_COMBOBOX, OnCalibSkip)
+    comboSizer.Add(calibSkip,0,wx.ALIGN_CENTER_VERTICAL)
+    calibSizer.Add(comboSizer,0)
+    
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)        
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min calib d-spacing '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    calibDmin = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['calibdmin'])),
+        style=wx.TE_PROCESS_ENTER)
+    calibDmin.Bind(wx.EVT_TEXT_ENTER,OnCalibDmin)
+    calibDmin.Bind(wx.EVT_KILL_FOCUS,OnCalibDmin)
+    comboSizer.Add(calibDmin,0,wx.ALIGN_CENTER_VERTICAL)
+    calibSizer.Add(comboSizer,0)
+    
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min ring I/Ib '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    cutOff = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['cutoff'])),
+        style=wx.TE_PROCESS_ENTER)
+    cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
+    cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
+    comboSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+    calibSizer.Add(comboSizer,0)
+    
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
+    comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Pixel search range '),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    pixLimit = wx.ComboBox(parent=self.dataDisplay,value=str(data['pixLimit']),choices=['1','2','5','10','15','20'],
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
+    comboSizer.Add(pixLimit,0,wx.ALIGN_CENTER_VERTICAL)
+    calibSizer.Add(comboSizer,0)
+    
+    comboSizer = wx.BoxSizer(wx.HORIZONTAL)
     setRings = wx.CheckBox(parent=self.dataDisplay,label='Show ring picks?')
-    dataSizer.Add(setRings,0)
+    comboSizer.Add(setRings,0)
     setRings.Bind(wx.EVT_CHECKBOX, OnSetRings)
     setRings.SetValue(data['setRings'])
-        
-    mainSizer.Add(dataSizer,0)
+    calibSizer.Add(comboSizer,0)
+    
+    mainSizer.Add(calibSizer,0,wx.ALIGN_CENTER_VERTICAL)
+    
     
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
     
+    def Calibrate(self):        
+        if G2img.ImageCalibrate(self,data):
+            Status.SetStatusText('Calibration successful')
+            cent = data['center']
+            centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
+            distSel.SetValue("%8.3f"%(data['distance']))
+            tiltSel.SetValue("%9.3f"%(data['tilt']))            
+            rotSel.SetValue("%9.3f"%(data['rotation']))
+            self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=True)    
+        else:
+            Status.SetStatusText('Calibration failed')
+        
 def UpdateMasks(self,data):
     
     def OnTextMsg(event):

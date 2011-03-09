@@ -313,6 +313,7 @@ def ImageCalibrate(self,data):
     import copy
     import ImageCalibrants as calFile
     print 'image calibrate'
+    time0 = time.time()
     ring = data['ring']
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
@@ -344,7 +345,7 @@ def ImageCalibrate(self,data):
     print 'inner ring:',ellipse
     data['center'] = copy.copy(ellipse[0])           #not right!! (but useful for now)
     data['ellipses'].append(ellipse[:]+('r',))
-    G2plt.PlotImage(self)
+    G2plt.PlotImage(self,newImage=False)
     
     #setup for calibration
     data['rings'] = []
@@ -439,9 +440,9 @@ def ImageCalibrate(self,data):
             print ('for ring # %2i dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' 
                 %(i,dist,phi,Tilt,cent[0],cent[1],numZ))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
-            G2plt.PlotImage(self)
         else:
             break
+    G2plt.PlotImage(self,newImage=True)
     fullSize = len(self.ImageZ)/scalex
     if 2*radii[1] < .9*fullSize:
         print 'Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib'
@@ -482,7 +483,8 @@ def ImageCalibrate(self,data):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
-    G2plt.PlotImage(self)        
+    print 'calibration time = ',time.time()-time0
+    G2plt.PlotImage(self,newImage=True)        
     return True
     
 def Make2ThetaAzimuthMap(data,masks,iLim,jLim):

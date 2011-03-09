@@ -892,11 +892,11 @@ def PlotStrain(self,data):
 def PlotExposedImage(self,newPlot=False,event=None):
     plotNo = self.G2plotNB.nb.GetSelection()
     if self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
-        PlotImage(self,newPlot,event)
+        PlotImage(self,newPlot,event,newImage=True)
     elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
         PlotIntegration(self,newPlot,event)
 
-def PlotImage(self,newPlot=False,event=None):
+def PlotImage(self,newPlot=False,event=None,newImage=True):
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
@@ -954,16 +954,13 @@ def PlotImage(self,newPlot=False,event=None):
                 return
             Ypos = event.ydata
             if event.key == 's':
-                print 'spot mask @ ',Xpos,Ypos
                 Masks['Points'].append([Xpos,Ypos,1.])
             elif event.key == 'r':
                 tth = G2img.GetTth(Xpos,Ypos,Data)
-                print 'ring mask @ ',Xpos,Ypos,tth
                 Masks['Rings'].append([tth,0.1])
             elif event.key == 'a':
                 tth,azm = G2img.GetTthAzm(Xpos,Ypos,Data)
                 azm = int(azm)                
-                print 'arc mask @ ', Xpos,Ypos
                 Masks['Arcs'].append([tth,[azm-5,azm+5],0.1])
             elif event.key == 'p':
                 self.setPoly = True
@@ -990,7 +987,7 @@ def PlotImage(self,newPlot=False,event=None):
                     self.logPlot = False
                 else:
                     self.logPlot = True
-        PlotImage(self)
+        PlotImage(self,newImage=True)
             
     def OnKeyBox(event):
         if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('2D Powder Image'):
@@ -1060,7 +1057,7 @@ def PlotImage(self,newPlot=False,event=None):
                         xpos /= scalex                          #convert to mm
                         ypos /= scaley
                         Data['ring'].append([xpos,ypos])
-                PlotImage(self)
+                PlotImage(self,newImage=False)
             return
         else:
             xpos = event.xdata
@@ -1136,7 +1133,7 @@ def PlotImage(self,newPlot=False,event=None):
                         G2imG.UpdateMasks(self,Masks)
 #                    else:                  #keep for future debugging
 #                        print str(self.itemPicked),event.xdata,event.ydata,event.button
-                PlotImage(self)
+                PlotImage(self,newImage=True)
             self.itemPicked = None
             
     try:
@@ -1145,8 +1142,9 @@ def PlotImage(self,newPlot=False,event=None):
         if not newPlot:
             Plot = Page.figure.gca()          #get previous powder plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
-        Page.figure.clf()
-        Plot = Page.figure.gca()          #get a fresh plot after clf()
+        if newImage:
+            Page.figure.clf()
+            Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError,error:
         Plot = self.G2plotNB.addMpl('2D Powder Image').gca()
@@ -1207,21 +1205,22 @@ def PlotImage(self,newPlot=False,event=None):
     Zlim = Masks['Thresholds'][1]
     wx.BeginBusyCursor()
     try:
-        MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
-        MaskA = ma.getmaskarray(MA)
-        A = G2img.ImageCompress(MA,imScale)
-        AM = G2img.ImageCompress(MaskA,imScale)
-        if self.logPlot:
-            A = np.log(A)
-            AM = np.log(AM)
-            Imin,Imax = [np.amin(A),np.amax(A)]
-                    
-        ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
-            interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
-        Img = Plot.imshow(A,aspect='equal',cmap=acolor,
-            interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
-        if self.setPoly:
-            Img.set_picker(True)
+            
+        if newImage:                    
+            MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
+            MaskA = ma.getmaskarray(MA)
+            A = G2img.ImageCompress(MA,imScale)
+            AM = G2img.ImageCompress(MaskA,imScale)
+            if self.logPlot:
+                A = np.log(A)
+                AM = np.log(AM)
+                Imin,Imax = [np.amin(A),np.amax(A)]
+            ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
+                interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
+            Img = Plot.imshow(A,aspect='equal',cmap=acolor,
+                interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
+            if self.setPoly:
+                Img.set_picker(True)
     
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']:
@@ -1292,7 +1291,8 @@ def PlotImage(self,newPlot=False,event=None):
             x,y = np.hsplit(np.array(polygon),2)
             self.polyList.append([Plot.plot(x,y,'r+',picker=10),ipoly])
             Plot.plot(x,y,'r')            
-        colorBar = Page.figure.colorbar(Img)
+        if newImage:
+            colorBar = Page.figure.colorbar(Img)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)
         if not newPlot and xylim:

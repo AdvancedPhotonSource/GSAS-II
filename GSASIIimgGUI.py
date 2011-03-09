@@ -186,6 +186,7 @@ def UpdateImageControls(self,data,masks):
         G2plt.PlotExposedImage(self,event=event)
             
     def OnCalibrate(event):        
+        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=True)    
         data['setRings'] = False
         setRings.SetValue(data['setRings'])
         self.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB to delete; shift LB to finish')

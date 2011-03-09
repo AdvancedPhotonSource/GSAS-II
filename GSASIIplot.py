@@ -476,10 +476,13 @@ def PlotPatterns(self,newPlot=False):
                 PeakId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List')
                 data = self.PatternTree.GetItemPyData(PeakId)
 #                print 'peaks',xpos
-                if self.qPlot:
-                    data[lineNo-2][0] = 2.0*asind(wave*xpos/(4*math.pi))
+                if event.button == 3:
+                    del data[lineNo-2]
                 else:
-                    data[lineNo-2][0] = xpos
+                    if self.qPlot:
+                        data[lineNo-2][0] = 2.0*asind(wave*xpos/(4*math.pi))
+                    else:
+                        data[lineNo-2][0] = xpos
                 self.PatternTree.SetItemPyData(PeakId,data)
                 G2pdG.UpdatePeakGrid(self,data)
         PlotPatterns(self)
@@ -614,7 +617,7 @@ def PlotPatterns(self,newPlot=False):
                     Plot.axhline(0.,color=wx.BLACK)
                 Page.canvas.SetToolTipString('')
                 if self.PatternTree.GetItemText(PickId) == 'Peak List':
-                    tip = 'On data point: Pick peak - L or R MB.On line: MB down to move'
+                    tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                     Page.canvas.SetToolTipString(tip)
                     data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
                     for item in data:
@@ -1036,6 +1039,18 @@ def PlotImage(self,newPlot=False,event=None):
             Ypos = event.ydata
             if Ypos and not Page.toolbar._active:         #make sure zoom/pan not selected
                 if event.button == 1:
+                    if event.key == 'shift':                #terminate picking?
+                        print 'LB shift'
+                        self.dataFrame.GetStatusBar().SetStatusText('Calibrating...')
+                        if G2img.ImageCalibrate(self,Data):
+                            self.dataFrame.GetStatusBar().SetStatusText('Calibration successful')
+                            print 'Calibration successful'
+                        else:
+                            self.dataFrame.GetStatusBar().SetStatusText('Calibration failed')
+                            print 'Calibration failed'
+                        self.ifGetRing = False
+                        G2imG.UpdateImageControls(self,Data,Masks)
+                        return
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
                     xpos,ypos,I,J = G2img.ImageLocalMax(self.ImageZ,pixLimit,Xpix,Ypix)
@@ -1051,7 +1066,7 @@ def PlotImage(self,newPlot=False,event=None):
             xpos = event.xdata
             if xpos:                                        #avoid out of frame mouse position
                 ypos = event.ydata
-                if self.ifGetRing:
+                if self.ifGetRing:                          #delete a calibration ring pick
                     xypos = [xpos,ypos]
                     rings = Data['ring']
                     for ring in rings:

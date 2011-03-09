@@ -188,16 +188,8 @@ def UpdateImageControls(self,data,masks):
     def OnCalibrate(event):        
         data['setRings'] = False
         setRings.SetValue(data['setRings'])
-        msg = \
-        '''Select > 4 points on 1st used ring of image pattern. 
-        Click left mouse button to select point.
-          Use right mouse button to delete point. 
-                 Press OK when done'''
-        dlg = wx.MessageDialog(self,msg,'Pick inner ring',wx.OK)
+        self.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB to delete; shift LB to finish')
         self.ifGetRing = True
-        dlg.ShowModal()
-        self.ifGetRing = False
-        Calibrate(self)
         
     def OnIntegrate(event):
         self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
@@ -356,7 +348,7 @@ def UpdateImageControls(self,data,masks):
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.ImageMenu)
     if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
+        self.dataFrame.CreateStatusBar()
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=G2gd.wxID_IMCALIBRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=G2gd.wxID_IMCLEARCALIB)
     if not data['rings']:
@@ -396,24 +388,24 @@ def UpdateImageControls(self,data,masks):
             
     maxSizer = wx.FlexGridSizer(2,2,0,5)
     maxSizer.AddGrowableCol(1,1)
+    maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
     sqrtDeltZero = math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0]))
     DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
     sqrtDeltOne = math.sqrt(DeltOne)
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max intensity'),0,
-        wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        wx.ALIGN_CENTER_VERTICAL)
     maxSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
         value=int(100*sqrtDeltOne/sqrtDeltZero))
-    maxSizer.Add(maxSel,1,wx.EXPAND|wx.RIGHT)
+    maxSizer.Add(maxSel,1,wx.EXPAND)
     maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)    
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min intensity'),0,
-        wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        wx.ALIGN_CENTER_VERTICAL)
     minSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
         value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
-    maxSizer.Add(minSel,1,wx.EXPAND|wx.RIGHT)
+    maxSizer.Add(minSel,1,wx.EXPAND)
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
-    mainSizer.Add(maxSizer,1,wx.ALIGN_LEFT|wx.EXPAND|wx.RIGHT)
+    mainSizer.Add(maxSizer,0,wx.ALIGN_LEFT|wx.EXPAND)
     
-#    mainSizer.Add((5,5),0)         
     dataSizer = wx.FlexGridSizer(6,4,5,5)
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calibration coefficients'),0,
         wx.ALIGN_CENTER_VERTICAL)    
@@ -574,25 +566,13 @@ def UpdateImageControls(self,data,masks):
     calibSizer.Add(comboSizer,0)
     
     mainSizer.Add(calibSizer,0,wx.ALIGN_CENTER_VERTICAL)
-    
-    
+        
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
-    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    fitSize = mainSizer.Fit(self.dataFrame)
+    self.dataFrame.setSizePosLeft(fitSize)
+    self.dataDisplay.SetSize(fitSize)
     
-    def Calibrate(self):        
-        if G2img.ImageCalibrate(self,data):
-            Status.SetStatusText('Calibration successful')
-            cent = data['center']
-            centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
-            distSel.SetValue("%8.3f"%(data['distance']))
-            tiltSel.SetValue("%9.3f"%(data['tilt']))            
-            rotSel.SetValue("%9.3f"%(data['rotation']))
-            self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=True)    
-        else:
-            Status.SetStatusText('Calibration failed')
-        
 def UpdateMasks(self,data):
     
     def OnTextMsg(event):

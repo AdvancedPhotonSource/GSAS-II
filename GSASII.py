@@ -295,7 +295,7 @@ class GSASII(wx.Frame):
         event.Skip()
 
     def OnPatternTreeItemExpanded(self, event):
-        self.PatternTree.ScrollTo(self.PatternTree.GetLastChild(event.GetItem()))
+        event.Skip()
         
     def OnPatternTreeDeleteItem(self, event):
         event.Skip()

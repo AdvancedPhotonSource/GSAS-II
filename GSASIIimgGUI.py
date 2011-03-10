@@ -58,7 +58,6 @@ def UpdateImageControls(self,data,masks):
             data['setRings'] = False
         else:
             data['setRings'] = True
-        showCalib.SetValue(data['setRings'])
         G2plt.PlotExposedImage(self,event=event)
 
     def OnCalibDmin(event):

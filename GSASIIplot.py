@@ -901,6 +901,8 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
     global Data,Masks
+    newImage = True
+    colors=['b','g','r','c','m','k']
     Data = self.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
     Masks = self.PatternTree.GetItemPyData(
@@ -1256,9 +1258,12 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
         for xring,yring in Data['ring']:
             Plot.plot(xring,yring,'r+',picker=3)
         if Data['setRings']:
-            rings = np.concatenate((Data['rings']),axis=0)
-            for xring,yring,dsp in rings:
-                Plot.plot(xring,yring,'r+')            
+#            rings = np.concatenate((Data['rings']),axis=0)
+            N = 0
+            for ring in Data['rings']:
+                xring,yring = np.array(ring).T[:2]
+                Plot.plot(xring,yring,'+',color=colors[N%6])
+                N += 1            
         for ellipse in Data['ellipses']:
             cent,phi,[width,height],col = ellipse
             Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))

@@ -55,11 +55,13 @@ def makeMat(Angle,Axis):
     M = np.array(([1.,0.,0.],[0.,cs,-ss],[0.,ss,cs]),dtype=np.float32)
     return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
                     
-def FitRing(ring):
-    err,parms = FitEllipse(ring)
+def FitRing(ring,delta):
+    parms = []
+    if delta:
+        err,parms = FitEllipse(ring)
     errc,parmsc = FitCircle(ring)
     errc = errc[0]/(len(ring)*parmsc[2][0]**2)
-#    print 'Ellipse?',err,parms
+#    print 'Ellipse?',err,parms,len(ring)
 #    print 'Circle? ',errc,parmsc
     if not parms or errc < .1:
         parms = parmsc
@@ -154,10 +156,10 @@ def FitDetector(rings,p0,wave):
             
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
-    size = len(image)
+    sizey,sizex = image.shape
     xpix = int(Xpix)            #get reference corner of pixel chosen
     ypix = int(Ypix)
-    if (w < xpix < size-w) and (w < ypix < size-w) and image[ypix,xpix]:
+    if (w < xpix < sizex-w) and (w < ypix < sizey-w) and image[ypix,xpix]:
         Z = image[ypix-w:ypix+w,xpix-w:xpix+w]
         Zmax = np.argmax(Z)
         Zmin = np.argmin(Z)
@@ -172,6 +174,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     cphi = cosd(phi)
     sphi = sind(phi)
     ring = []
+    amin = 180
+    amax = -180
     for a in range(-180,180,1):
         x = radii[0]*cosd(a)
         y = radii[1]*sind(a)
@@ -183,10 +187,12 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             Y += .5
             X /= scalex                         #convert to mm
             Y /= scaley
+            amin = min(amin,a)
+            amax = max(amax,a)
             ring.append([X,Y,dsp])
     if len(ring) < 20:             #want more than 20 deg
-        return []
-    return ring
+        return [],amax-amin
+    return ring,amax-amin > 90
     
 def makeIdealRing(ellipse,azm=None):
     cent,phi,radii = ellipse
@@ -327,7 +333,7 @@ def ImageCalibrate(self,data):
         
     #fit start points on inner ring
     data['ellipses'] = []
-    outE = FitRing(ring)
+    outE = FitRing(ring,True)
     if outE:
         print 'start ellipse:',outE
         ellipse = outE
@@ -335,11 +341,11 @@ def ImageCalibrate(self,data):
         return False
         
     #setup 360 points on that ring for "good" fit
-    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+    Ring,delt = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
-        ellipse = FitRing(Ring)
-        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)    #do again
-        ellipse = FitRing(Ring)
+        ellipse = FitRing(Ring,delt)
+        Ring,delt = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)    #do again
+        ellipse = FitRing(Ring,delt)
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
@@ -395,19 +401,17 @@ def ImageCalibrate(self,data):
         cent = data['center']
         elcent = [cent[0]+zsinp,cent[1]-zcosp]
         ratio = radii[1]/radii[0]
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+        Ring,delt = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
             numZ = len(Ring)
             data['rings'].append(np.array(Ring))
-            newellipse = FitRing(Ring)
+            newellipse = FitRing(Ring,delt)
             elcent,phi,radii = newellipse                
             if abs(phi) > 45. and phi < 0.:
                 phi += 180.
             dist = calcDist(radii,tth)
             distR = 1.-dist/data['distance']
             if abs(distR) > 0.01:
-#                print distR,dist,data['distance']
-#                del data['rings'][-1]
                 continue
             if distR > 0.001:
                 print 'Wavelength too large?'

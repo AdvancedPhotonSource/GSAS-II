@@ -14,6 +14,7 @@ import numpy.linalg as nl
 import GSASIIpath
 import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
+import fellipse as fel
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -55,13 +56,13 @@ def makeMat(Angle,Axis):
     return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
                     
 def FitRing(ring):
-    Err,parms = FitCircle(ring)
-    Err /= len(ring)
-#    print 'circle error:','%8f'%(Err)
-    if Err > 20000.:
-        eparms = FitEllipse(ring)
-        if eparms:
-            parms = eparms
+    err,parms = FitEllipse(ring)
+    errc,parmsc = FitCircle(ring)
+    errc = errc[0]/(len(ring)*parmsc[2][0]**2)
+#    print 'Ellipse?',err,parms
+#    print 'Circle? ',errc,parmsc
+    if not parms or errc < .1:
+        parms = parmsc
     return parms
         
 def FitCircle(ring):
@@ -114,8 +115,8 @@ def FitEllipse(ring):
     y = np.asarray(ring.T[1])
     M = np.array((x**2-y**2,x*y,x,y,np.ones_like(x)))
     B = np.array(-(x**2+y**2))
-    result = nl.lstsq(M.T,B)
-    return makeParmsEllipse(result[0])
+    bb,err = fel.fellipse(len(x),x,y,1.E-7)
+    return err,makeParmsEllipse(bb)
     
 def FitDetector(rings,p0,wave):
     from scipy.optimize import leastsq
@@ -171,7 +172,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     cphi = cosd(phi)
     sphi = sind(phi)
     ring = []
-    for a in range(-180,180,2):
+    for a in range(-180,180,1):
         x = radii[0]*cosd(a)
         y = radii[1]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
@@ -183,7 +184,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             X /= scalex                         #convert to mm
             Y /= scaley
             ring.append([X,Y,dsp])
-    if len(ring) < 10:             #want more than 20deg
+    if len(ring) < 20:             #want more than 20 deg
         return []
     return ring
     
@@ -333,7 +334,7 @@ def ImageCalibrate(self,data):
     else:
         return False
         
-    #setup 180 points on that ring for "good" fit
+    #setup 360 points on that ring for "good" fit
     Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
         ellipse = FitRing(Ring)
@@ -404,9 +405,9 @@ def ImageCalibrate(self,data):
                 phi += 180.
             dist = calcDist(radii,tth)
             distR = 1.-dist/data['distance']
-            if abs(distR) > 0.1:
-                print distR,dist,data['distance']
-                del data['rings'][-1]
+            if abs(distR) > 0.01:
+#                print distR,dist,data['distance']
+#                del data['rings'][-1]
                 continue
             if distR > 0.001:
                 print 'Wavelength too large?'
@@ -414,7 +415,7 @@ def ImageCalibrate(self,data):
                 print 'Wavelength too small?'
             else:
                 ellipse = newellipse
-                if abs((radii[1]/radii[0]-ratio)/ratio) > 0.01:
+                if abs((radii[1]/radii[0]-ratio)/ratio) > 0.1:
                     print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i)
                     return False
             zdis,cosB = calcZdisCosB(radius,tth,radii)

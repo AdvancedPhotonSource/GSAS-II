@@ -68,7 +68,7 @@ def UpdateImageControls(self,data,masks):
             data['calibdmin'] = dmin
         except ValueError:
             pass
-        calibDmin.SetValue("%.1f"%(data['calibdmin']))          #reset in case of error  
+        calibDmin.SetValue("%.2f"%(data['calibdmin']))          #reset in case of error  
                 
     def OnAzmthOff(event):
         try:
@@ -188,7 +188,7 @@ def UpdateImageControls(self,data,masks):
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=True)    
         data['setRings'] = False
         setRings.SetValue(data['setRings'])
-        self.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB to delete; shift LB to finish')
+        self.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB on point to delete else RB to finish')
         self.ifGetRing = True
         
     def OnIntegrate(event):
@@ -532,7 +532,7 @@ def UpdateImageControls(self,data,masks):
     comboSizer = wx.BoxSizer(wx.HORIZONTAL)        
     comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min calib d-spacing '),0,
         wx.ALIGN_CENTER_VERTICAL)
-    calibDmin = wx.TextCtrl(parent=self.dataDisplay,value=("%.1f" % (data['calibdmin'])),
+    calibDmin = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (data['calibdmin'])),
         style=wx.TE_PROCESS_ENTER)
     calibDmin.Bind(wx.EVT_TEXT_ENTER,OnCalibDmin)
     calibDmin.Bind(wx.EVT_KILL_FOCUS,OnCalibDmin)

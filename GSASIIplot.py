@@ -1038,18 +1038,6 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             Ypos = event.ydata
             if Ypos and not Page.toolbar._active:         #make sure zoom/pan not selected
                 if event.button == 1:
-                    if event.key == 'shift':                #terminate picking?
-                        print 'LB shift'
-                        self.dataFrame.GetStatusBar().SetStatusText('Calibrating...')
-                        if G2img.ImageCalibrate(self,Data):
-                            self.dataFrame.GetStatusBar().SetStatusText('Calibration successful')
-                            print 'Calibration successful'
-                        else:
-                            self.dataFrame.GetStatusBar().SetStatusText('Calibration failed')
-                            print 'Calibration failed'
-                        self.ifGetRing = False
-                        G2imG.UpdateImageControls(self,Data,Masks)
-                        return
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
                     xpos,ypos,I,J = G2img.ImageLocalMax(self.ImageZ,pixLimit,Xpix,Ypix)
@@ -1059,6 +1047,18 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                         xpos /= scalex                          #convert to mm
                         ypos /= scaley
                         Data['ring'].append([xpos,ypos])
+                elif event.button == 3:
+                    print 'LB shift'
+                    self.dataFrame.GetStatusBar().SetStatusText('Calibrating...')
+                    if G2img.ImageCalibrate(self,Data):
+                        self.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check')
+                        print 'Calibration successful'
+                    else:
+                        self.dataFrame.GetStatusBar().SetStatusText('Calibration failed - Show ring picks to diagnose')
+                        print 'Calibration failed'
+                    self.ifGetRing = False
+                    G2imG.UpdateImageControls(self,Data,Masks)
+                    return
                 PlotImage(self,newImage=False)
             return
         else:

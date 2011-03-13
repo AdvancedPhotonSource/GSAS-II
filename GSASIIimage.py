@@ -59,12 +59,12 @@ def FitRing(ring,delta):
     parms = []
     if delta:
         err,parms = FitEllipse(ring)
-    errc,parmsc = FitCircle(ring)
-    errc = errc[0]/(len(ring)*parmsc[2][0]**2)
-#    print 'Ellipse?',err,parms,len(ring)
-#    print 'Circle? ',errc,parmsc
-    if not parms or errc < .1:
-        parms = parmsc
+        errc,parmsc = FitCircle(ring)
+        errc = errc[0]/(len(ring)*parmsc[2][0]**2)
+        if not parms or errc < .1:
+            parms = parmsc
+    else:
+        err,parms = FitCircle(ring)
     return parms
         
 def FitCircle(ring):
@@ -181,7 +181,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         y = radii[1]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
-        X,Y,I,J = ImageLocalMax(image,pix,X,Y)      
+        X,Y,I,J = ImageLocalMax(image,pix,X,Y)
         if I and J and I/J > reject:
             X += .5                             #set to center of pixel
             Y += .5
@@ -190,9 +190,10 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             amin = min(amin,a)
             amax = max(amax,a)
             ring.append([X,Y,dsp])
+    delt = amax-amin
     if len(ring) < 20:             #want more than 20 deg
-        return [],amax-amin
-    return ring,amax-amin > 90
+        return [],delt > 90
+    return ring,delt > 90
     
 def makeIdealRing(ellipse,azm=None):
     cent,phi,radii = ellipse
@@ -316,6 +317,12 @@ def ImageCompress(image,scale):
     else:
         return image[::scale,::scale]
         
+def checkEllipse(Zsum,distSum,xSum,ySum,dist,x,y):
+    avg = np.array([distSum/Zsum,xSum/Zsum,ySum/Zsum])
+    curr = np.array([dist,x,y])
+    return abs(avg-curr)/avg < .02
+
+        
 def ImageCalibrate(self,data):
     import copy
     import ImageCalibrants as calFile
@@ -411,17 +418,18 @@ def ImageCalibrate(self,data):
                 phi += 180.
             dist = calcDist(radii,tth)
             distR = 1.-dist/data['distance']
-            if abs(distR) > 0.01:
-                continue
+            if abs(distR) > 0.1:
+                print dsp,dist,data['distance'],distR,len(Ring),delt
+                break
             if distR > 0.001:
                 print 'Wavelength too large?'
             elif distR < -0.001:
                 print 'Wavelength too small?'
             else:
                 ellipse = newellipse
-                if abs((radii[1]/radii[0]-ratio)/ratio) > 0.1:
-                    print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i)
-                    return False
+#                if abs((radii[1]/radii[0]-ratio)/ratio) > 0.1:
+#                    print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i)
+#                    return False
             zdis,cosB = calcZdisCosB(radius,tth,radii)
             Tilt = acosd(cosB)          # 0 <= tilt <= 90
             zsinp = zdis*sind(ellipse[1])
@@ -441,9 +449,11 @@ def ImageCalibrate(self,data):
                 xSum += numZ*data['center'][0]
                 ySum += numZ*data['center'][1]
                 tiltSum += numZ*abs(Tilt)
+                if not np.all(checkEllipse(Zsum,distSum,xSum,ySum,dist,data['center'][0],data['center'][1])):
+                    print 'Bad ellipse. Try reducing Pixel search range' 
             cent = data['center']
-            print ('for ring # %2i dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' 
-                %(i,dist,phi,Tilt,cent[0],cent[1],numZ))
+            print ('for ring # %2i @ d-space %.4f: dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' 
+                %(i,dsp,dist,phi,Tilt,cent[0],cent[1],numZ))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
         else:
             break

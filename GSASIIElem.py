@@ -13,7 +13,7 @@ import wx
 import math
 import sys
 import os.path
-import  wx.lib.colourselect as wscs
+import wx.lib.colourselect as wscs
 import GSASIIpath
 import numpy as np
 
@@ -223,6 +223,17 @@ def ScatFac(FormFac, SQ):
     fb = np.array(FormFac['fb'])
     t = -fb*SQ
     return np.sum(fa*np.exp(t))+FormFac['fc']
+    
+def ComptonFac(ComptonCoeff,SQ):
+    """compute Compton scattering factor
+    @param ComptonCoeff: list [Z, a1:a5, b1:b5]
+    @param SQ: (sin-theta/lambda)**2
+    @return: comp: compton scattering factor
+    """    
+    ca = np.array(ComptonCoeff[1:6])
+    cb = np.array(ComptonCoeff[6:11])
+    t = -cb*SQ
+    return ComptonCoeff[0]-np.sum(ca*np.exp(t)) 
             
 def FPcalc(Orbs, KEv):
     """Compute real & imaginary resonant X-ray scattering factors
@@ -313,7 +324,7 @@ def FPcalc(Orbs, KEv):
 class PickElement(wx.Dialog):
     "Makes periodic table widget for picking element - caller maintains element list"
     Elem=None
-    def _init_ctrls(self, prnt):
+    def _init_ctrls(self, prnt,oneOnly):
         wx.Dialog.__init__(self, id=-1, name='PickElement',
               parent=prnt, pos=wx.DefaultPosition, 
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
@@ -322,25 +333,35 @@ class PickElement(wx.Dialog):
         
         i=0
         for E in ET.ElTable:
+            if oneOnly:
+                color=E[4]
+            else:
+                color=E[6]
             PickElement.ElButton(self,name=E[0],
-#            pos=wx.Point(E[1]*40+25,E[2]*24+24),tip=E[3],color=E[4])
-            pos=wx.Point(E[1]*40+25,E[2]*24+24),tip=E[3],color=E[6])
+               pos=wx.Point(E[1]*40+25,E[2]*24+24),tip=E[3],color=color,oneOnly=oneOnly)
             i+=1
 
-    def __init__(self, parent):
-        self._init_ctrls(parent)
+    def __init__(self, parent,oneOnly=False):
+        self._init_ctrls(parent,oneOnly)
         
-    def ElButton(self, name, pos, tip, color):
+    def ElButton(self, name, pos, tip, color, oneOnly):
         Black = wx.Colour(0,0,0)
-        El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(40,23),
-            style=wx.CB_READONLY, value=name[0])
+        if oneOnly:
+            El = wscs.ColourSelect(label=name[0], parent=self,colour=color,
+                pos=pos, size=wx.Size(40,23), style=wx.RAISED_BORDER)
+#            El.SetLabel(name)
+            El.Bind(wx.EVT_BUTTON, self.OnElButton)
+        else:
+            El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(40,23),
+                style=wx.CB_READONLY, value=name[0])
+            El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
+        
         El.SetBackgroundColour(color)
         El.SetToolTipString(tip)
-        El.Bind(wx.EVT_COMBOBOX, self.OnElButton)
 
     def OnElButton(self, event):
         El = event.GetEventObject().GetLabel()
-        self.Elem = (El)
+        self.Elem = El
         self.EndModal(wx.ID_OK)        
         
 class DeleteElement(wx.Dialog):

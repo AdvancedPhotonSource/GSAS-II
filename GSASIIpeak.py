@@ -1,4 +1,4 @@
-#GSASII peak fitting module
+#GSASII powder calculation module
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -74,6 +74,83 @@ def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
         if max(factorize(p).keys()) < thresh:
             plist.append(p)
     return plist
+
+def Transmission(Geometry,Abs,Diam):
+#Calculate sample transmission
+#   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting Flat Plate in transmission','Fixed flat plate'
+#   Abs: absorption coeff in cm-1
+#   Diam: sample thickness/diameter in mm
+    if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
+        MuR = Abs*Diam/5.0
+        if MuR <= 3.0:
+            T0 = 16/(3.*math.pi)
+            T1 = -0.045780
+            T2 = -0.02489
+            T3 = 0.003045
+            T = -T0*MuR-T1*MuR**2-T2*MuR**3-T3*MuR**4
+            if T < -20.:
+                return 2.06e-9
+            else:
+                return math.exp(T)
+        else:
+            T1 = 1.433902
+            T2 = 0.013869+0.337894
+            T3 = 1.933433+1.163198
+            T4 = 0.044365-0.04259
+            T = (T1-T4)/(1.0+T2*(MuR-3.0))**T3+T4
+            return T/100.
+
+def Absorb(Geometry,Abs,Diam,Tth,Phi=0,Psi=0):
+#Calculate sample absorption
+#   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting Flat Plate in transmission','Fixed flat plate'
+#   Abs: absorption coeff in cm-1
+#   Diam: sample thickness/diameter in mm
+#   Tth: 2-theta scattering angle - can be numpy array
+#   Phi: flat plate tilt angle - future
+#   Psi: flat plate tilt axis - future
+    MuR = Abs*Diam/5.0
+    Sth2 = npsind(Tth/2.0)**2
+    Cth2 = 1.-Sth2
+    if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
+        if MuR < 3.0:
+            T0 = 16.0/(3*np.pi)
+            T1 = (25.99978-0.01911*Sth2**0.25)*np.exp(-0.024551*Sth2)+ \
+                0.109561*np.sqrt(Sth2)-26.04556
+            T2 = -0.02489-0.39499*Sth2+1.219077*Sth2**1.5- \
+                1.31268*Sth2**2+0.871081*Sth2**2.5-0.2327*Sth2**3
+            T3 = 0.003045+0.018167*Sth2-0.03305*Sth2**2
+            Trns = -T0*MuR-T1*MuR**2-T2*MuR**3-T3*MuR**4
+            return np.exp(Trns)
+        else:
+            T1 = 1.433902+11.07504*Sth2-8.77629*Sth2*Sth2+ \
+                10.02088*Sth2**3-3.36778*Sth2**4
+            T2 = (0.013869-0.01249*Sth2)*np.exp(3.27094*Sth2)+ \
+                (0.337894+13.77317*Sth2)/(1.0+11.53544*Sth2)**1.555039
+            T3 = 1.933433/(1.0+23.12967*Sth2)**1.686715- \
+                0.13576*np.sqrt(Sth2)+1.163198
+            T4 = 0.044365-0.04259/(1.0+0.41051*Sth2)**148.4202
+            Trns = (T1-T4)/(1.0+T2*(MuR-3.0))**T3+T4
+            return Trns/100.
+    elif 'Bragg' in Geometry:
+        return 1.0
+    elif 'Fixed' in Geometry: #assumes sample plane is perpendicular to incident beam
+        # and only defined for 2theta < 90
+        T1 = np.exp(-MuR)
+        T2 = np.exp(-MuR/(1.-2.*Sth2))
+        Tb = -2.*Abs*Sth2
+        return (T1-T2)/Tb
+    elif 'Tilting' in Geometry: #assumes symmetric tilt so sample plane is parallel to diffraction vector
+        cth = npcosd(Tth/2.0)
+        return (Diam/cth)*np.exp(-MuR/cth)
+        
+def Polarization(Pola,Azm,Tth):
+#   Calculate x-ray polarization correction
+#   Pola: polarization coefficient e.g 1.0 fully polarized, 0.5 unpolarized
+#   Azm: azimuthal angle e.g. 0.0 in plane of polarization(?)
+#   Tth: 2-theta scattering angle - can be numpy array
+    pass
+    
+        
 
 def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
     # returns value(esd) string; nTZ=True for no trailing zeros
@@ -327,6 +404,23 @@ def DoPeakFit(peaks,background,limits,inst,data):
     runtime = time.time()-begin    
     data = [x,y,w,yc,yb,yd]
     return True,smin,Rwp,runtime,GoOn
+
+def ComputePDF(data,xydata):
+    for key in data:
+        print key,data[key]
+    #subtract backgrounds - if any
+    xydata['Sample corrected'] = xydata['Sample']
+    if 'Sample Bkg.' in xydata:
+        xydata['Sample corrected'][1][1] -= (xydata['Sample Bkg.'][1][1]+
+            data['Sample Bkg.']['Add'])*data['Sample Bkg.']['Mult']
+    if 'Container' in xydata:    
+        xydata['Sample corrected'][1][1] -= (xydata['Container'][1][1]+
+            data['Container']['Add'])*data['Container']['Mult']
+    if 'Container Bkg.' in xydata:
+        xydata['Sample corrected'][1][1] += (xydata['Container Bkg.'][1][1]+
+            data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
     
            
+        
+    return xydata['Sample corrected'],[]
         

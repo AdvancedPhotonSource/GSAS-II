@@ -199,6 +199,74 @@ def CellBlock(nCells):
         return cellArray
     else:
         return [0,0,0]
+        
+def CellAbsorption(ElList,Volume):
+# ElList = dictionary of element contents including mu
+    muT = 0
+    for El in ElList:
+        muT += ElList[El]['mu']*ElList[El]['FormulaNo']
+    return muT/Volume
+    
+def qRebin(x,y,nQbins):
+#Rebin data from x to qx
+#   input:
+#   X - array of q-values in increasing order
+#   y - array of intensities for the x array
+#   nQbins - number of q-bins desired
+#   returns:
+#   qx - array of q-values
+#   qy - array of rebinned intensities
+    dQ = (x[-1]-x[0])/nQbins
+    dQ2 = dQ/2.
+    Qmin = x[0]
+    yf = y[0]
+    frac = 0.0
+    jch = 0
+    kch = 0
+    qy = []
+    for i in range(nQbins):
+        Q = Qmin+dQ*i
+        rom = Q
+        rop = rom+dQ
+        sdq = (1.-frac)*dQ
+        qy.append(1-frac)*yf*dQ
+        
+#      DELQ = (XT(NCHANS)-XT(1))/FLOAT(MCHANS)
+#      DELQ2 = DELQ/2.0
+#      QMIN = XT(1)
+#      JCH = 1
+#      KCH = 0
+#      YF = YT(1)
+#      FRAC = 0.0
+#      DQ = XT(2)-QMIN
+#      DO ICH = 1,MCHANS
+#        Q = QMIN+DELQ*FLOAT(ICH-1) !Front end interpolation
+#        ROM = Q
+#        ROP = ROM+DELQ
+#        SDQ = (1.0-FRAC)*DQ
+#        RY(ICH) = (1.0-FRAC)*YF*DQ !Sum intervening channels
+#        DO WHILE ( ROP.GT.XT(KCH+1) .AND. KCH.NE.NCHANS-1 )
+#          KCH = MIN(KCH+1,NCHANS-1)
+#        END DO
+#        DO LCH=JCH+1,KCH
+#          DQ = XT(LCH+1)-XT(LCH)
+#          SDQ = SDQ+DQ
+#          RY(ICH) = RY(ICH)+DQ*YT(LCH)
+#        END DO !Tail end interpolation
+#        XF = XT(MAX(1,KCH))
+#        YF = YT(MAX(1,KCH))
+#        DQ = XT(KCH+1)-XF
+#        DY = YT(KCH+1)-YF
+#        FRAC = (ROP-XF)/DQ
+#        SDQ = SDQ+DQ*FRAC
+#        RY(ICH) = RY(ICH)+YF*FRAC*DQ !Reset lower limit
+#        JCH = KCH
+#        RY(ICH) = RY(ICH)/SDQ
+#      END DO
+#      RETURN
+#      END
+
+    
 
 #Permutations and Combinations
 # Four routines: combinations,uniqueCombinations, selections & permutations

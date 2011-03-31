@@ -264,6 +264,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     cell[4] = cell[5] = cell[6] = value
                     Obj.SetValue("%.5f"%(cell[4]))
             elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:                    
+                cell[4] = cell[5] = 90.
+                cell[6] = 120.
                 if ObjId == 0:
                     cell[1] = cell[2] = value
                     Obj.SetValue("%.5f"%(cell[1]))
@@ -272,8 +274,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     Obj.SetValue("%.5f"%(cell[3]))
             elif laue in ['mmm']:
                 cell[ObjId+1] = value
+                cell[4] = cell[5] = cell[6] = 90.
                 Obj.SetValue("%.5f"%(cell[ObjId+1]))
             elif laue in ['2/m'+'a']:
+                cell[5] = cell[6] = 90.
                 if ObjId != 3:
                     cell[ObjId+1] = value
                     Obj.SetValue("%.5f"%(cell[ObjId+1]))
@@ -281,6 +285,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     cell[4] = value
                     Obj.SetValue("%.3f"%(cell[4]))
             elif laue in ['2/m'+'b']:
+                cell[4] = cell[6] = 90.
                 if ObjId != 3:
                     cell[ObjId+1] = value
                     Obj.SetValue("%.5f"%(cell[ObjId+1]))
@@ -288,6 +293,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     cell[5] = value
                     Obj.SetValue("%.3f"%(cell[5]))
             elif laue in ['2/m'+'c']:
+                cell[5] = cell[6] = 90.
                 if ObjId != 3:
                     cell[ObjId+1] = value
                     Obj.SetValue("%.5f"%(cell[ObjId+1]))

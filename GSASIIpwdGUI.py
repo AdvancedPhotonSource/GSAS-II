@@ -8,6 +8,7 @@
 ########### SVN repository information ###################
 import wx
 import wx.grid as wg
+import numpy as np
 import math
 import time
 import cPickle
@@ -18,6 +19,7 @@ import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
+import GSASIIElem as G2elem
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
@@ -734,6 +736,31 @@ def UpdateUnitCellsGrid(self, data):
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         volVal.SetValue("%.3f"%(controls[12]))
         
+    def OnHklShow(event):
+        hklShow.SetValue(False)
+        PatternId = self.PatternId
+        PickId = self.PickId    
+        limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
+        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
+        cell = controls[6:12]
+        A = G2lat.cell2A(cell)
+        ibrav = bravaisSymb.index(controls[5])
+        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
+        inst = dict(zip(inst[3],inst[1]))
+        if 'Lam' in inst:
+            wave = inst['Lam']
+        else:
+            wave = inst['Lam1']
+        dmin = wave/(2.0*sind(limits[1]/2.0))
+        self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+        for hkl in self.HKL:
+            hkl.append(2.0*asind(wave/(2.*hkl[3])))             
+        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
+            G2plt.PlotPowderLines(self)
+        else:
+            G2plt.PlotPatterns(self)
+        
+        
     def RefineCell(event):
         def cellPrint(ibrav,A):
             cell = G2lat.A2cell(A)
@@ -954,24 +981,26 @@ def UpdateUnitCellsGrid(self, data):
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(1,3,5,5)
     littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
-    zero = wx.TextCtrl(self.dataDisplay,value=str(controls[1]),style=wx.TE_PROCESS_ENTER)
+    zero = wx.TextCtrl(self.dataDisplay,value="%.2f"%(controls[1]),style=wx.TE_PROCESS_ENTER)
     zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
     zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
     littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
     zeroVar = wx.CheckBox(self.dataDisplay,label="Vary? (not implemented)")
-    zero.SetValue("%.2f"%(controls[1]))
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Cell Refinement: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(1,2,5,5)
-    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Bravais lattice"),0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer = wx.FlexGridSizer(1,3,5,5)
+    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Bravais lattice "),0,wx.ALIGN_CENTER_VERTICAL)
     bravSel = wx.Choice(self.dataDisplay,choices=bravaisSymb)
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,wx.ALIGN_CENTER_VERTICAL)
+    hklShow = wx.CheckBox(self.dataDisplay,label="Show starting hkl positions")
+    hklShow.Bind(wx.EVT_CHECKBOX,OnHklShow)
+    littleSizer.Add(hklShow,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     ibrav = SetLattice(controls)
@@ -1045,3 +1074,296 @@ def UpdateUnitCellsGrid(self, data):
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         gridDisplay.SetSize(bottomSize)
+
+def UpdatePDFGrid(self,data):
+    dataFile = self.PatternTree.GetItemText(self.PatternId)
+    powName = 'PWDR'+dataFile[4:]
+    powId = G2gd.GetPatternTreeItemId(self,self.root, powName)
+    limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,powId, 'Limits'))[1]
+    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,powId, 'Instrument Parameters'))
+    inst = dict(zip(inst[3],inst[1]))
+    if 'Lam' in inst:
+        keV = 12.397639/inst['Lam']
+    else:
+        keV = 12.397639/inst['Lam1']
+    wave = 12.397639/keV
+    polariz = inst['Polariz.']
+    itemDict = {}
+    
+    def FillFileSizer(fileSizer,key):
+        #fileSizer is a FlexGridSizer(3,6)
+        
+        def OnSelectFile(event):
+            Obj = event.GetEventObject()
+            fileKey,itemKey,fmt = itemDict[Obj.GetId()]
+            if itemKey == 'Name':
+                value = Obj.GetValue()
+            Obj.SetValue(fmt%(value))
+            data[fileKey][itemKey] = value
+        
+        def OnValueChange(event):
+            Obj = event.GetEventObject()
+            fileKey,itemKey,fmt = itemDict[Obj.GetId()]
+            try:
+                value = float(Obj.GetValue())
+            except ValueError:
+                value = -1.0
+            Obj.SetValue(fmt%(value))
+            data[fileKey][itemKey] = value
+            UpdatePDFGrid(self,data)
+            
+        item = data[key]
+        fileList = np.array(GetFileList('PWDR')).T[1]
+        fileSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' '+key+' file:'),0,wx.ALIGN_CENTER_VERTICAL)
+        fileName = wx.ComboBox(self.dataDisplay,value=item['Name'],choices=fileList,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        itemDict[fileName.GetId()] = [key,'Name','%s']
+        fileName.Bind(wx.EVT_COMBOBOX,OnSelectFile)        
+        fileSizer.Add(fileName,0,)
+        fileSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Multiplier:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mult = wx.TextCtrl(self.dataDisplay,value='%.3f'%(item['Mult']),style=wx.TE_PROCESS_ENTER)
+        itemDict[mult.GetId()] = [key,'Mult','%.3f']
+        mult.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
+        mult.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
+        fileSizer.Add(mult,0,)
+        fileSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Add:'),0,wx.ALIGN_CENTER_VERTICAL)
+        add = wx.TextCtrl(self.dataDisplay,value='%.0f'%(item['Add']),style=wx.TE_PROCESS_ENTER)
+        itemDict[add.GetId()] = [key,'Add','%.0f']
+        add.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
+        add.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
+        fileSizer.Add(add,0,)
+        
+    def SumElementVolumes():
+        sumVol = 0.
+        ElList = data['ElList']
+        for El in ElList:
+            Avol = (4.*math.pi/3.)*ElList[El]['Drad']**3
+            sumVol += Avol*ElList[El]['FormulaNo']
+        return sumVol
+        
+    def FillElemSizer(elemSizer,ElData):
+        
+        def OnFractionChange(event):
+            try:
+                value = max(0.0,float(num.GetValue()))
+            except ValueError:
+                value = 0.0
+            num.SetValue('%.3f'%(value))
+            ElData['FormulaNo'] = value
+            data['Form Vol'] = max(10.0,SumElementVolumes())
+            formVol.SetValue('%.2f'%(data['Form Vol']))
+            UpdatePDFGrid(self,data)
+        
+        elemSizer.Add(wx.StaticText(parent=self.dataDisplay,
+            label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,wx.ALIGN_CENTER_VERTICAL)
+        num = wx.TextCtrl(self.dataDisplay,value='%.3f'%(ElData['FormulaNo']),style=wx.TE_PROCESS_ENTER)
+        num.Bind(wx.EVT_TEXT_ENTER,OnFractionChange)        
+        num.Bind(wx.EVT_KILL_FOCUS,OnFractionChange)
+        elemSizer.Add(num,0,wx.ALIGN_CENTER_VERTICAL)
+        elemSizer.Add(wx.StaticText(parent=self.dataDisplay,
+            label="f': %.3f"%(ElData['fp'])+' f": %.3f'%(ElData['fpp'])+' mu: %.2f barns'%(ElData['mu']) ),
+            0,wx.ALIGN_CENTER_VERTICAL)
+            
+    def OnGeometry(event):
+        data['Geometry'] = geometry.GetValue()
+        UpdatePDFGrid(self,data)
+        
+    def OnFormVol(event):
+        try:
+            value = float(formVol.GetValue())
+            if value <= 0.0:
+                raise ValueError
+        except ValueError:
+            value = data['Form Vol']
+        data['Form Vol'] = value
+        UpdatePDFGrid(self,data)
+        
+    def OnDiameter(event):
+        try:
+            value = float(diam.GetValue())
+            if value <= 0.0:
+                raise ValueError
+        except ValueError:
+            value = data['Diam']
+        data['Diam'] = value
+        UpdatePDFGrid(self,data)
+        
+    def OnPacking(event):
+        try:
+            value = float(pack.GetValue())
+            if value <= 0.0:
+                raise ValueError
+        except ValueError:
+            value = data['Pack']
+        data['Pack'] = value
+        UpdatePDFGrid(self,data)
+                
+
+    def GetFileList(fileType,skip=None):
+        fileList = [] #[[False,'',0]]
+        Source = ''
+        id, cookie = self.PatternTree.GetFirstChild(self.root)
+        while id:
+            name = self.PatternTree.GetItemText(id)
+            if fileType in name:
+                if id == skip:
+                    Source = name
+                else:
+                    fileList.append([False,name,id])
+            id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        if skip:
+            return fileList,Source
+        else:
+            return fileList
+        
+    def OnCopyPDFControls(event):
+        import copy
+        TextList,Source = GetFileList('PDF',skip=self.PatternId)
+        if not len(TextList):
+            self.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
+            return
+        dlg = self.CopyDialog(self,'Copy PDF controls','Copy controls from '+Source+' to:',TextList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetData()
+                for i,item in enumerate(result):
+                    ifcopy,name,id = item
+                    if ifcopy:
+                        olddata = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'PDF Controls'))
+                        sample = olddata['Sample']
+                        olddata.update(data)
+                        olddata['Sample'] = sample
+                        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'PDF Controls'),olddata)
+        finally:
+            dlg.Destroy()
+                
+    def OnSavePDFControls(event):
+        print 'save PDF controls?'
+        
+    def OnLoadPDFControls(event):
+        print 'Load PDF controls?'
+        
+    def OnAddElement(event):
+        ElList = data['ElList']
+        PE = G2elem.PickElement(self,oneOnly=True)
+        if PE.ShowModal() == wx.ID_OK:
+            El = PE.Elem
+            if El not in ElList:
+                ElemSym = El.strip().upper()                
+                FpMu = G2elem.FPcalc(G2elem.GetXsectionCoeff(ElemSym), keV)
+                ElData = G2elem.GetFormFactorCoeff(ElemSym)[0]
+                ElData['FormulaNo'] = 0.0
+                ElData.update(G2elem.GetAtomInfo(ElemSym))
+                ElData.update(dict(zip(['fp','fpp','mu'],FpMu)))
+                data['ElList'][El] = ElData
+            data['Form Vol'] = max(10.0,SumElementVolumes())
+        PE.Destroy()
+        UpdatePDFGrid(self,data)
+        
+    def OnDeleteElement(event):
+        print 'Delete element'
+        
+    def OnComputePDF(event):
+        xydata = {}
+        for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
+            name = data[key]['Name']
+            if name:
+                xydata[key] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root,name))
+        SofQ,GofR = G2pk.ComputePDF(data,xydata)
+        if SofQ:
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId,'S(Q)'+dataFile[4:]),SofQ)
+            G2plt.PlotSofQ(self,newPlot=True)
+        if GofR:
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId,'G(R)'+dataFile[4:]),GofR)
+            G2plt.PlotGofR(self,newPlot=True)
+        
+    def OnComputeAllPDF(event):
+        print 'doing all PDFs here'
+        
+    def OnShowTip(self,tip):
+        print tip
+    
+                
+    if self.dataDisplay:
+        self.dataFrame.Clear()
+    self.dataFrame.SetMenuBar(self.dataFrame.PDFMenu)
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()    
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    self.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
+    self.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
+    self.dataFrame.Bind(wx.EVT_MENU, OnLoadPDFControls, id=G2gd.wxID_PDFLOADCONTROLS)
+    self.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_PDFADDELEMENT)
+    self.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
+    self.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
+    self.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' PDF data files: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
+    str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=str),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
+    fileSizer = wx.FlexGridSizer(3,6,5,1)
+    for key in ['Sample Bkg.','Container','Container Bkg.']:
+        FillFileSizer(fileSizer,key)
+    mainSizer.Add(fileSizer,0)
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Sample information: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)    
+
+    ElList = data['ElList']
+    Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
+    Trans = G2pk.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
+    elemSizer = wx.FlexGridSizer(3,3,5,1)
+    for El in ElList:
+        FillElemSizer(elemSizer,ElList[El])
+    mainSizer.Add(elemSizer,0)
+    mainSizer.Add((5,5),0)    
+    midSizer = wx.BoxSizer(wx.HORIZONTAL)
+    midSizer.Add(wx.StaticText(self.dataDisplay,label=' Formula volume: '),0,wx.ALIGN_CENTER_VERTICAL)
+    formVol = wx.TextCtrl(self.dataDisplay,value='%.2f'%(data['Form Vol']))
+    formVol.Bind(wx.EVT_TEXT_ENTER,OnFormVol)        
+    formVol.Bind(wx.EVT_KILL_FOCUS,OnFormVol)
+    midSizer.Add(formVol,0)
+    midSizer.Add(wx.StaticText(self.dataDisplay,
+        label=' Theoretical absorption: %.4f cm-1 Sample absorption: %.4f cm-1'%(Abs,Abs*data['Pack'])),
+        0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(midSizer,0)
+    mainSizer.Add((5,5),0)    
+
+    geoBox = wx.BoxSizer(wx.HORIZONTAL)
+    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Sample geometry: '),0,wx.ALIGN_CENTER_VERTICAL)
+    choice = ['Cylinder','Bragg-Brentano','Tilting Flat Plate in transmission','Fixed flat plate']
+    geometry = wx.ComboBox(self.dataDisplay,value=data['Geometry'],choices=choice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    geometry.Bind(wx.EVT_COMBOBOX, OnGeometry)
+    geoBox.Add(geometry,0)
+    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Sample diameter/thickness, mm: '),0,wx.ALIGN_CENTER_VERTICAL)
+    diam = wx.TextCtrl(self.dataDisplay,value='%.2f'%(data['Diam']))
+    diam.Bind(wx.EVT_TEXT_ENTER,OnDiameter)        
+    diam.Bind(wx.EVT_KILL_FOCUS,OnDiameter)
+#    diam.Bind(wx.EVT_SET_FOCUS,OnShowTip(self,'tip')) #this doesn't work - what would????
+    geoBox.Add(diam,0)
+    mainSizer.Add(geoBox,0)
+    mainSizer.Add((5,5),0)    
+    geoBox = wx.BoxSizer(wx.HORIZONTAL)
+    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Packing: '),0,wx.ALIGN_CENTER_VERTICAL)
+    pack = wx.TextCtrl(self.dataDisplay,value='%.2f'%(data['Pack']))
+    pack.Bind(wx.EVT_TEXT_ENTER,OnPacking)        
+    pack.Bind(wx.EVT_KILL_FOCUS,OnPacking)
+    geoBox.Add(pack,0)
+    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,wx.ALIGN_CENTER_VERTICAL)    
+    mainSizer.Add(geoBox,0)
+    mainSizer.Add((5,5),0)    
+        
+    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' S(Q) corrections: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
+    
+    
+    
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    Size = mainSizer.Fit(self.dataFrame)
+    self.dataDisplay.SetSize(Size)
+    self.dataFrame.setSizePosLeft(Size)
+    

@@ -88,6 +88,33 @@ def UpdateImageControls(self,data,masks):
             pass
         cutOff.SetValue("%.1f"%(data['cutoff']))          #reset in case of error  
         
+    def OnMaxVal(event):
+        try:
+            value = min(data['range'][0][1],int(maxVal.GetValue()))
+            if value < data['range'][1][0]+1:
+                raise ValueError
+            data['range'][1][1] = value
+        except ValueError:
+            pass
+        maxVal.SetValue('%.0f'%(data['range'][1][1]))
+        DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
+        sqrtDeltOne = math.sqrt(DeltOne)
+        maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
+        minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
+        G2plt.PlotExposedImage(self,event=event)
+        
+    def OnMinVal(event):
+        try:
+            value = int(minVal.GetValue())
+            if value > data['range'][1][1]-1:
+                raise ValueError
+            data['range'][1][0] = value
+        except ValueError:
+            pass
+        minVal.SetValue('%.0f'%(data['range'][1][0]))
+        minSel.SetValue(int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
+        G2plt.PlotExposedImage(self,event=event)
+        
     def OnMaxSlider(event):
         sqrtDeltZero = math.sqrt(data['range'][0][1])
         imax = int(maxSel.GetValue())*sqrtDeltZero/100.
@@ -95,12 +122,14 @@ def UpdateImageControls(self,data,masks):
         data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,data['range'][1][0]))
         DeltOne = max(1.0,data['range'][1][1]-data['range'][1][0])
         minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
+        maxVal.SetValue('%.0f'%(data['range'][1][1]))
         G2plt.PlotExposedImage(self,event=event)
         
     def OnMinSlider(event):
         DeltOne = data['range'][1][1]-data['range'][1][0]
         imin = int(minSel.GetValue())*DeltOne/100.
         data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,imin))
+        minVal.SetValue('%.0f'%(data['range'][1][0]))
         G2plt.PlotExposedImage(self,event=event)
         
     def OnNumOutChans(event):
@@ -171,11 +200,10 @@ def UpdateImageControls(self,data,masks):
         G2plt.PlotExposedImage(self,event=event)
         
     def OnLRazim(event):
-        Lazm = int(self.Lazim.GetValue())
-        Razm = int(self.Razim.GetValue())
+        Lazm = min(180,int(self.Lazim.GetValue()))
+        Razm = max(-180,int(self.Razim.GetValue()))
         data['LRazimuth'] = [Lazm,Razm]
         G2plt.PlotExposedImage(self,event=event)
-            
             
     def OnClearCalib(event):
         data['ring'] = []
@@ -186,8 +214,6 @@ def UpdateImageControls(self,data,masks):
             
     def OnCalibrate(event):        
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=True)    
-        data['setRings'] = False
-        setRings.SetValue(data['setRings'])
         self.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB on point to delete else RB to finish')
         self.ifGetRing = True
         
@@ -195,6 +221,7 @@ def UpdateImageControls(self,data,masks):
         self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
         G2plt.PlotIntegration(self,newPlot=True)
         G2IO.SaveIntegration(self,self.PickId,data)
+        self.MakePDF.Enable(True)
         
     def OnIntegrateAll(event):
         print 'integrate all'
@@ -386,7 +413,7 @@ def UpdateImageControls(self,data,masks):
     mainSizer.Add(comboSizer,0,wx.ALIGN_LEFT)
     mainSizer.Add((5,5),0)
             
-    maxSizer = wx.FlexGridSizer(2,2,0,5)
+    maxSizer = wx.FlexGridSizer(2,3,0,5)
     maxSizer.AddGrowableCol(1,1)
     maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
     sqrtDeltZero = math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0]))
@@ -397,13 +424,21 @@ def UpdateImageControls(self,data,masks):
     maxSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
         value=int(100*sqrtDeltOne/sqrtDeltZero))
     maxSizer.Add(maxSel,1,wx.EXPAND)
-    maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)    
+    maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
+    maxVal = wx.TextCtrl(parent=self.dataDisplay,value='%.0f'%(data['range'][1][1]))
+    maxVal.Bind(wx.EVT_TEXT_ENTER,OnMaxVal)    
+    maxVal.Bind(wx.EVT_KILL_FOCUS,OnMaxVal)
+    maxSizer.Add(maxVal,0,wx.ALIGN_CENTER_VERTICAL)    
     maxSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Min intensity'),0,
         wx.ALIGN_CENTER_VERTICAL)
     minSel = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
         value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
     maxSizer.Add(minSel,1,wx.EXPAND)
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
+    minVal = wx.TextCtrl(parent=self.dataDisplay,value='%.0f'%(data['range'][1][0]))
+    minVal.Bind(wx.EVT_TEXT_ENTER,OnMinVal)    
+    minVal.Bind(wx.EVT_KILL_FOCUS,OnMinVal)
+    maxSizer.Add(minVal,0,wx.ALIGN_CENTER_VERTICAL)    
     mainSizer.Add(maxSizer,0,wx.ALIGN_LEFT|wx.EXPAND)
     
     dataSizer = wx.FlexGridSizer(6,4,5,5)
@@ -497,7 +532,7 @@ def UpdateImageControls(self,data,masks):
     
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt rotation'),0,
         wx.ALIGN_CENTER_VERTICAL)
-    rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
+    rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation']-90.)),style=wx.TE_READONLY)
     rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault = wx.CheckBox(parent=self.dataDisplay,label='Use as default for all images?')

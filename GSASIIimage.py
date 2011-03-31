@@ -118,6 +118,8 @@ def FitEllipse(ring):
     M = np.array((x**2-y**2,x*y,x,y,np.ones_like(x)))
     B = np.array(-(x**2+y**2))
     bb,err = fel.fellipse(len(x),x,y,1.E-7)
+#    print nl.lstsq(M.T,B)[0]
+#    print bb
     return err,makeParmsEllipse(bb)
     
 def FitDetector(rings,p0,wave):
@@ -201,7 +203,7 @@ def makeIdealRing(ellipse,azm=None):
     sphi = sind(phi)
     ring = []
     if azm:
-        aR = azm[0],azm[1],1
+        aR = azm[0]-90,azm[1]-90,1
         if azm[1]-azm[0] > 180:
             aR[2] = 2
     else:
@@ -296,7 +298,7 @@ def GetTthAzmDsp(x,y,data):
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dsp = wave/(2.*npsind(tth/2.))
-    azm = npatan2d(dy,dx)+azmthoff
+    azm = npatan2d(dx,-dy)+azmthoff
     return tth,azm,dsp
     
 def GetTth(x,y,data):
@@ -359,7 +361,7 @@ def ImageCalibrate(self,data):
     print 'inner ring:',ellipse
     data['center'] = copy.copy(ellipse[0])           #not right!! (but useful for now)
     data['ellipses'].append(ellipse[:]+('r',))
-    G2plt.PlotImage(self,newImage=False)
+    G2plt.PlotImage(self,newImage=True)
     
     #setup for calibration
     data['rings'] = []
@@ -427,9 +429,6 @@ def ImageCalibrate(self,data):
                 print 'Wavelength too small?'
             else:
                 ellipse = newellipse
-#                if abs((radii[1]/radii[0]-ratio)/ratio) > 0.1:
-#                    print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i)
-#                    return False
             zdis,cosB = calcZdisCosB(radius,tth,radii)
             Tilt = acosd(cosB)          # 0 <= tilt <= 90
             zsinp = zdis*sind(ellipse[1])
@@ -450,10 +449,10 @@ def ImageCalibrate(self,data):
                 ySum += numZ*data['center'][1]
                 tiltSum += numZ*abs(Tilt)
                 if not np.all(checkEllipse(Zsum,distSum,xSum,ySum,dist,data['center'][0],data['center'][1])):
-                    print 'Bad ellipse. Try reducing Pixel search range' 
+                    print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i) 
             cent = data['center']
             print ('for ring # %2i @ d-space %.4f: dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' 
-                %(i,dsp,dist,phi,Tilt,cent[0],cent[1],numZ))
+                %(i,dsp,dist,phi-90.,Tilt,cent[0],cent[1],numZ))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
         else:
             break

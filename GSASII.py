@@ -53,9 +53,9 @@ def create(parent):
 [wxID_PATTERNTREE, 
 ] = [wx.NewId() for _init_ctrls in range(1)]
 
-[wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN, 
- wxID_FILESAVE, wxID_FILESAVEAS, wxID_REFINE, wxID_SOLVE,
-] = [wx.NewId() for _init_coll_File_Items in range(7)]
+[wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN,  wxID_FILESAVE, wxID_FILESAVEAS, 
+wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS,
+] = [wx.NewId() for _init_coll_File_Items in range(8)]
 
 [wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
  wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
@@ -67,8 +67,8 @@ wxID_IMPORTCIF, wxID_IMPORTPDB,
 ] = [wx.NewId() for _init_coll_Import_Items in range(6)]
 
 [wxID_EXPORT, wxID_EXPORTPATTERN, wxID_EXPORTHKL, wxID_EXPORTPHASE,
-wxID_EXPORTCIF, wxID_EXPORTPEAKLIST
-] = [wx.NewId() for _init_coll_Export_Items in range(6)]
+wxID_EXPORTCIF, wxID_EXPORTPEAKLIST, wxID_EXPORTPDF,
+] = [wx.NewId() for _init_coll_Export_Items in range(7)]
 
 [wxID_HELPABOUT, wxID_HELPHELP, 
 ] = [wx.NewId() for _init_coll_Help_Items in range(2)]
@@ -86,7 +86,7 @@ class GSASII(wx.Frame):
     def _init_coll_File_Items(self, parent):
         parent.Append(help='Open a gsasii project file (*.gpx)', id=wxID_FILEOPEN,
              kind=wx.ITEM_NORMAL,text='Open project...')
-        parent.Append(help='SAve project to old file', id=wxID_FILESAVE, 
+        parent.Append(help='Save project to old file', id=wxID_FILESAVE, 
             kind=wx.ITEM_NORMAL,text='Save project')
         parent.Append(help='Save project to new file', id=wxID_FILESAVEAS, 
             kind=wx.ITEM_NORMAL,text='Save As...')
@@ -133,6 +133,9 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=wxID_DATADELETE)
                 
     def _init_coll_Calculate_Items(self,parent):
+        self.MakePDF = parent.Append(help='Make new PDFs from selected powder patterns', 
+            id=wxID_MAKEPDFS, kind=wx.ITEM_NORMAL,text='Make new PDFs')
+        self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=wxID_MAKEPDFS)
         self.Refine = parent.Append(help='', id=wxID_REFINE, kind=wx.ITEM_NORMAL,
             text='Refine')
         self.Refine.Enable(False)
@@ -166,6 +169,8 @@ class GSASII(wx.Frame):
             text='Export All Peak Lists...')
         self.ExportHKL = parent.Append(help='',id=wxID_EXPORTHKL, kind=wx.ITEM_NORMAL,
             text='Export HKLs...')
+        self.ExportPDF = parent.Append(help='Select PDF item to enable',id=wxID_EXPORTPDF, kind=wx.ITEM_NORMAL,
+            text='Export PDF...')
         self.ExportPhase = parent.Append(help='',id=wxID_EXPORTPHASE, kind=wx.ITEM_NORMAL,
             text='Export Phase...')
         self.ExportCIF = parent.Append(help='',id=wxID_EXPORTCIF, kind=wx.ITEM_NORMAL,
@@ -173,11 +178,13 @@ class GSASII(wx.Frame):
         self.ExportPattern.Enable(False)
         self.ExportPeakList.Enable(True)
         self.ExportHKL.Enable(False)
+        self.ExportPDF.Enable(False)
         self.ExportPhase.Enable(False)
         self.ExportCIF.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=wxID_EXPORTPATTERN)
         self.Bind(wx.EVT_MENU, self.OnExportPeakList, id=wxID_EXPORTPEAKLIST)
         self.Bind(wx.EVT_MENU, self.OnExportHKL, id=wxID_EXPORTHKL)
+        self.Bind(wx.EVT_MENU, self.OnExportPDF, id=wxID_EXPORTPDF)
         self.Bind(wx.EVT_MENU, self.OnExportPhase, id=wxID_EXPORTPHASE)
         self.Bind(wx.EVT_MENU, self.OnExportCIF, id=wxID_EXPORTCIF)
                
@@ -716,10 +723,10 @@ class GSASII(wx.Frame):
                         try:
                             if dlg2.ShowModal() == wx.ID_OK:
                                 Id = G2gd.GetPatternTreeItemId(self,self.root,name)
+                                self.PatternTree.Delete(Id)
                         finally:
                             dlg2.Destroy()
-                    else:
-                        Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
+                    Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
                             'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0}
@@ -903,6 +910,23 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
         
+    def GetFileList(fileType,skip=None):        #potentially useful?
+        fileList = []
+        Source = ''
+        id, cookie = self.PatternTree.GetFirstChild(self.root)
+        while id:
+            name = self.PatternTree.GetItemText(id)
+            if fileType in name:
+                if id == skip:
+                    Source = name
+                else:
+                    fileList.append([False,name,id])
+            id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        if skip:
+            return fileList,Source
+        else:
+            return fileList
+            
     def OnDataDelete(self, event):
         TextList = ['All Data']
         DelList = []
@@ -910,19 +934,22 @@ class GSASII(wx.Frame):
         ifPWDR = False
         ifIMG = False
         ifHKLF = False
+        ifPDF = False
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
                 name = self.PatternTree.GetItemText(item)
-                if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
+                if 'PWDR' in name or 'HKLF' in name or 'IMG' or 'PDF' in name:
                     if 'PWDR' in name: ifPWDR = True
                     if 'IMG' in name: ifIMG = True
                     if 'HKLF' in name: ifHKLF = True
+                    if 'PDF' in name: ifPDF = True
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             if ifPWDR: TextList.insert(1,'All PWDR')
             if ifIMG: TextList.insert(1,'All IMG')
-            if ifHKLF: TextList.insert(1,'All HKLF')                
+            if ifHKLF: TextList.insert(1,'All HKLF')
+            if ifPDF: TextList.insert(1,'All PDF')                
             dlg = wx.MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -936,6 +963,8 @@ class GSASII(wx.Frame):
                         DelList = [item for item in TextList if item[:3] == 'IMG']
                     elif 'All HKLF' in DelList:
                         DelList = [item for item in TextList if item[:4] == 'HKLF']
+                    elif 'All PDF' in DelList:
+                        DelList = [item for item in TextList if item[:3] == 'PDF']
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item:
                         if self.PatternTree.GetItemText(item) in DelList: DelItemList.append(item)
@@ -980,7 +1009,7 @@ class GSASII(wx.Frame):
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item and not Id:
                         name = self.PatternTree.GetItemText(item)
-                        if name[:4] in ['PWDR','HKLF','IMG']:
+                        if name[:4] in ['PWDR','HKLF','IMG','PDF']:
                             Id = item
                         elif name == 'Controls':
                             data = self.PatternTree.GetItemPyData(item)
@@ -1200,12 +1229,50 @@ class GSASII(wx.Frame):
     def OnExportHKL(self,event):
         event.Skip()
         
+    def OnExportPDF(self,event):
+        event.Skip()
+        
     def OnExportPhase(self,event):
         event.Skip()
         
     def OnExportCIF(self,event):
         event.Skip()
-        
+
+    def OnMakePDFs(self,event):
+        TextList = []
+        Names = []
+        if self.PatternTree.GetCount():
+            id, cookie = self.PatternTree.GetFirstChild(self.root)
+            while id:
+                name = self.PatternTree.GetItemText(id)
+                Names.append(name)
+                if 'PWDR' in name:
+                    TextList.append([False,name,id])
+                id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            if not len(TextList):
+                self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')
+                return
+            dlg = self.CopyDialog(self,'Make PDF controls','Make PDF controls for:',TextList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetData()
+                    for i,item in enumerate(result):
+                        ifmake,name,id = item
+                        if ifmake:
+                            PWDRname = name[4:]
+                            Id = self.PatternTree.AppendItem(parent=self.root,text='PDF '+PWDRname)
+                            Data = {
+                                'Sample':{'Name':name,'Mult':1.0,'Add':0.0},
+                                'Sample Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},
+                                'Container':{'Name':'','Mult':-1.0,'Add':0.0},
+                                'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':{},
+                                'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0}
+                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
+                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        
+                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='G(R)'+PWDRname),[])        
+            finally:
+                dlg.Destroy()
+       
     def OnRefine(self,event):
         #works - but it'd be better if it could restore plots
         G2str.Refine(self.GSASprojectfile)

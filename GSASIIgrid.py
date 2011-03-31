@@ -51,6 +51,10 @@ import GSASIIphsGUI as G2phG
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
 
+[ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
+    wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
+] = [wx.NewId() for _init_coll_PDF_Items in range(7)]
+
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class DataFrame(wx.Frame):
@@ -87,6 +91,9 @@ class DataFrame(wx.Frame):
     def _init_coll_IndexMenu(self,parent):
         parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         
+    def _init_coll_PDFMenu(self,parent):
+        parent.Append(menu=self.PDFEdit, title='PDF Controls')
+
     def _init_coll_Atom_Items(self,parent):
         parent.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
             help='Inserted as an H atom')
@@ -189,6 +196,23 @@ class DataFrame(wx.Frame):
             text='Refine Cell',help='Refine unit cell parameters from indexed peaks')
         self.MakeNewPhase = parent.Append( id=wxID_MAKENEWPHASE, kind=wx.ITEM_NORMAL,
             text='Make new phase',help='Make new phase from selected unit cell')
+            
+    def _init_coll_PDF_Items(self,parent):
+        parent.Append(help='Copy PDF controls', id=wxID_PDFCOPYCONTROLS, kind=wx.ITEM_NORMAL,
+            text='Copy controls')
+        parent.Append(help='Save PDF controls to file', id=wxID_PDFSAVECONTROLS, kind=wx.ITEM_NORMAL,
+            text='Save controls')
+        parent.Append(help='Load PDF controls from file',id=wxID_PDFLOADCONTROLS, kind=wx.ITEM_NORMAL,
+            text='Load Controls')
+        parent.Append(help='Add element to sample composition',id=wxID_PDFADDELEMENT, kind=wx.ITEM_NORMAL,
+            text='Add element')
+        parent.Append(help='Delete element from sample composition',id=wxID_PDFDELELEMENT, kind=wx.ITEM_NORMAL,
+            text='Delete element')
+        self.PDFCompute = parent.Append(help='Compute PDF', id=wxID_PDFCOMPUTE, kind=wx.ITEM_NORMAL,
+            text='Compute PDF')
+        self.PDFCompute = parent.Append(help='Compute all PDFs', id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
+            text='Compute all PDFs')
+        
 
     def _init_utils(self):
         self.BlankMenu = wx.MenuBar()
@@ -203,6 +227,7 @@ class DataFrame(wx.Frame):
         self.PeakMenu = wx.MenuBar()
         self.IndPeaksMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
+        self.PDFMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.DataEdit = wx.Menu(title='')
         self.DrawAtomEdit = wx.Menu(title='')
@@ -213,6 +238,7 @@ class DataFrame(wx.Frame):
         self.PeakEdit = wx.Menu(title='')
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndexEdit = wx.Menu(title='')
+        self.PDFEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
         self._init_coll_DataMenu(self.DataMenu)
@@ -233,6 +259,8 @@ class DataFrame(wx.Frame):
         self._init_coll_IndPeaks_Items(self.IndPeaksEdit)
         self._init_coll_IndexMenu(self.IndexMenu)
         self._init_coll_Index_Items(self.IndexEdit)
+        self._init_coll_PDFMenu(self.PDFMenu)
+        self._init_coll_PDF_Items(self.PDFEdit)
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)
         self.AutoPeakFit.Enable(False)
@@ -654,6 +682,8 @@ def GetPatternTreeItemId(self, parentId, itemText):
 
 def MovePatternTreeToGrid(self,item):
     
+#    print self.PatternTree.GetItemText(item)
+    
     oldPage = 0
     if self.dataFrame:
         self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
@@ -673,7 +703,7 @@ def MovePatternTreeToGrid(self,item):
         self.dataFrame.Clear()
         self.dataFrame.SetLabel('')
     else:
-       self.dataFrame = DataFrame(parent=self.mainPanel)
+        self.dataFrame = DataFrame(parent=self.mainPanel)
 
     self.dataFrame.Raise()            
     self.PickId = 0
@@ -711,13 +741,25 @@ def MovePatternTreeToGrid(self,item):
             G2plt.PlotImage(self,newPlot=True)
         elif 'PKS' in self.PatternTree.GetItemText(item):
             G2plt.PlotPowderLines(self)
-        elif 'PWDR' in self.PatternTree.GetItemText(item):            
+        elif 'PWDR' in self.PatternTree.GetItemText(item):
             self.ExportPattern.Enable(True)
             G2plt.PlotPatterns(self,newPlot=True)
         elif 'HKLF' in self.PatternTree.GetItemText(item):
             self.Sngl = item
             G2plt.PlotSngl(self,newPlot=True)
+        elif 'PDF' in self.PatternTree.GetItemText(item):
+            self.PatternId = item
+            G2plt.PlotSofQ(self)
+            G2plt.PlotGofR(self)
             
+    elif 'S(Q)' in self.PatternTree.GetItemText(item):
+        self.PickId = item
+        self.PatternId = self.PatternTree.GetItemParent(item)
+        G2plt.PlotSofQ(self)
+    elif 'G(R)' in self.PatternTree.GetItemText(item):
+        self.PickId = item
+        self.PatternId = self.PatternTree.GetItemParent(item)
+        G2plt.PlotGofR(self)            
     elif self.PatternTree.GetItemText(parentID) == 'Phases':
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)            
@@ -748,7 +790,15 @@ def MovePatternTreeToGrid(self,item):
         self.Sngl = self.PatternTree.GetItemParent(item)
         data = self.PatternTree.GetItemPyData(item)
         UpdateHKLControls(self,data)
-        G2plt.PlotSngl(self)               
+        G2plt.PlotSngl(self)
+    elif self.PatternTree.GetItemText(item) == 'PDF Controls':
+        self.PatternId = self.PatternTree.GetItemParent(item)
+        self.ExportPDF.Enable(True)
+        self.PickId = item
+        data = self.PatternTree.GetItemPyData(item)
+        G2pdG.UpdatePDFGrid(self,data)
+        G2plt.PlotSofQ(self)
+        G2plt.PlotGofR(self)
     elif self.PatternTree.GetItemText(item) == 'Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.ExportPeakList.Enable(True)
@@ -811,3 +861,4 @@ def MovePatternTreeToGrid(self,item):
             G2plt.PlotPowderLines(self)
         else:
             G2plt.PlotPatterns(self)
+     

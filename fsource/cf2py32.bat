@@ -10,5 +10,5 @@ if [%2] == [] goto ONE
 :ONE
 f2py -c -m %1 %1.for --compiler=mingw32 --fcompiler=gnu95
 :TWO
-move %1.pyd ..\binwin2.6
+move %1.pyd ..\binwin2.7
 

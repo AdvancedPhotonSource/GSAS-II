@@ -15,6 +15,7 @@ import cPickle
 import time
 import copy
 import numpy as np
+import scipy as sp
 import wx
 import matplotlib as mpl
 
@@ -35,6 +36,7 @@ print "python:     ",sys.version[:5]
 print "wxpython:   ",wx.__version__
 print "matplotlib: ",mpl.__version__
 print "numpy:      ",np.__version__
+print "scipy:      ",sp.__version__
 print "OpenGL:     ",ogl.__version__
 
 __version__ = '0.1.5'
@@ -266,6 +268,7 @@ class GSASII(wx.Frame):
         self.logPlot = False
         self.qPlot = False
         self.Contour = False
+        self.Legend = False
         self.SinglePlot = False
         self.plotView = 0
         self.Image = 0
@@ -470,6 +473,7 @@ class GSASII(wx.Frame):
                             Data['azmthOff'] = 0.0
                             Data['outChannels'] = 2500
                             Data['outAzimuths'] = 1
+                            Data['azmthRotate'] = 0.0
                             Data['fullIntegrate'] = False
                             Data['setRings'] = False
                         Data['setDefault'] = False
@@ -1239,7 +1243,9 @@ class GSASII(wx.Frame):
         event.Skip()
 
     def OnMakePDFs(self,event):
-        TextList = []
+        tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
+        TextList = ['All PWDR']
+        PDFlist = []
         Names = []
         if self.PatternTree.GetCount():
             id, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -1247,29 +1253,34 @@ class GSASII(wx.Frame):
                 name = self.PatternTree.GetItemText(id)
                 Names.append(name)
                 if 'PWDR' in name:
-                    TextList.append([False,name,id])
+                    TextList.append(name)
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-            if not len(TextList):
+            if len(TextList) == 1:
                 self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')
                 return
-            dlg = self.CopyDialog(self,'Make PDF controls','Make PDF controls for:',TextList)
+            dlg = wx.MultiChoiceDialog(self,'Make PDF controls','Make PDF controls for:',TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()
-                    for i,item in enumerate(result):
-                        ifmake,name,id = item
-                        if ifmake:
-                            PWDRname = name[4:]
-                            Id = self.PatternTree.AppendItem(parent=self.root,text='PDF '+PWDRname)
-                            Data = {
-                                'Sample':{'Name':name,'Mult':1.0,'Add':0.0},
-                                'Sample Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},
-                                'Container':{'Name':'','Mult':-1.0,'Add':0.0},
-                                'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':{},
-                                'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0}
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='G(R)'+PWDRname),[])        
+                    result = dlg.GetSelections()
+                    for i in result: PDFlist.append(TextList[i])
+                    if 0 in result:
+                        PDFlist = [item for item in TextList if item[:4] == 'PWDR']                        
+                    for item in PDFlist:
+                        PWDRname = item[4:]
+                        Id = self.PatternTree.AppendItem(parent=self.root,text='PDF '+PWDRname)
+                        Data = {
+                            'Sample':{'Name':item,'Mult':1.0,'Add':0.0},
+                            'Sample Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},
+                            'Container':{'Name':'','Mult':-1.0,'Add':0.0},
+                            'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':{},
+                            'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
+                            'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.003,'QScaleLim':[0,100],
+                            'Lorch':True,}
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='I(Q)'+PWDRname),[])        
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='F(Q)'+PWDRname),[])        
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='G(R)'+PWDRname),[])        
             finally:
                 dlg.Destroy()
        

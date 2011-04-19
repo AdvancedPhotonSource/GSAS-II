@@ -53,6 +53,23 @@ def GetFormFactorCoeff(El):
     FFdata.close()
     return FormFactors
     
+def GetFFC5(ElSym):
+    '''Get 5 term form factor and Compton scattering data
+    @param ElSym: str(1-2 character element symbol with proper case);
+    @return El: dictionary with 5 term form factor & compton coefficients
+    '''
+    import FormFactors as FF
+    El = {}
+    FF5 = FF.FFac5term[ElSym]
+    El['fa'] = FF5[:5]
+    El['fc'] = FF5[5]
+    El['fb'] = FF5[6:]
+    Cmp5 = FF.Compton[ElSym]
+    El['cmpz'] = Cmp5[0]
+    El['cmpa'] = Cmp5[1:6]
+    El['cmpb'] = Cmp5[6:]
+    return El
+    
 def GetAtomInfo(El):
     
     import ElementTable as ET
@@ -213,27 +230,27 @@ def GetMagFormFacCoeff(El):
     FFdata.close()
     return MagFormFactors
 
-def ScatFac(FormFac, SQ):
+def ScatFac(El, SQ):
     """compute value of form factor
-    @param FormFac: dictionary  defined in GetFormFactorCoeff 
+    @param El: element dictionary  defined in GetFormFactorCoeff 
     @param SQ: (sin-theta/lambda)**2
-    @return: f: real part of form factor
+    @return: real part of form factor
     """
-    fa = np.array(FormFac['fa'])
-    fb = np.array(FormFac['fb'])
-    t = -fb*SQ
-    return np.sum(fa*np.exp(t))+FormFac['fc']
+    fa = np.array(El['fa'])
+    fb = np.array(El['fb'])
+    t = -fb[:,np.newaxis]*SQ
+    return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
     
-def ComptonFac(ComptonCoeff,SQ):
+def ComptonFac(El,SQ):
     """compute Compton scattering factor
-    @param ComptonCoeff: list [Z, a1:a5, b1:b5]
+    @param El: element dictionary 
     @param SQ: (sin-theta/lambda)**2
-    @return: comp: compton scattering factor
+    @return: compton scattering factor
     """    
-    ca = np.array(ComptonCoeff[1:6])
-    cb = np.array(ComptonCoeff[6:11])
-    t = -cb*SQ
-    return ComptonCoeff[0]-np.sum(ca*np.exp(t)) 
+    ca = np.array(El['cmpa'])
+    cb = np.array(El['cmpb'])
+    t = -cb[:,np.newaxis]*SQ       
+    return El['cmpz']-np.sum(ca[:,np.newaxis]*np.exp(t),axis=0) 
             
 def FPcalc(Orbs, KEv):
     """Compute real & imaginary resonant X-ray scattering factors
@@ -366,9 +383,9 @@ class PickElement(wx.Dialog):
         
 class DeleteElement(wx.Dialog):
     "Delete element from selected set widget"
-    def _init_ctrls(self, parent):
-        l = len(DeleteElement.Elems)-1
-        wx.Dialog.__init__(self, id=-1, name='Delete', parent=parent,
+    def _init_ctrls(self, parent,choice):
+        l = len(choice)-1
+        wx.Dialog.__init__(self, id=-1, name='Delete', parent=parent, 
               pos=wx.DefaultPosition, size=wx.Size(max(128,64+l*24), 87),
               style=wx.DEFAULT_DIALOG_STYLE, title='Delete Element')
         self.Show(True)
@@ -378,15 +395,13 @@ class DeleteElement(wx.Dialog):
 
         i = 0
         Elem = []
-        for Elem in DeleteElement.Elems:
-            name = Elem[0].lower().capitalize()
-            self.ElButton(id=-1,name=name,pos=wx.Point(16+i*24, 16))
+        for Elem in choice:
+            self.ElButton(id=-1,name=Elem,pos=wx.Point(16+i*24, 16))
             i+=1
               
-    def __init__(self, parent):
-        DeleteElement.Elems = parent.Elems
+    def __init__(self, parent,choice):
         DeleteElement.El = ' '
-        self._init_ctrls(parent)
+        self._init_ctrls(parent,choice)
 
     def ElButton(self, id, name, pos):
         White = wx.Colour(255, 255, 255)

@@ -437,7 +437,7 @@ def CheckImageFile(self,imagefile):
 def GetImageData(self,imagefile,imageOnly=False):        
     ext = ospath.splitext(imagefile)[1]
     Comments = []
-    if ext == '.tif':
+    if ext == '.tif' or ext == '.tiff':
         Comments,Data,Npix,Image = GetTifData(imagefile)
     elif ext == '.img':
         Comments,Data,Npix,Image = GetImgData(imagefile)
@@ -647,7 +647,8 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 2:
             Value = st.unpack(byteOrd+'i',File.read(4))
         elif Type == 3:
-            Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
+            Value = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
+            x = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
         elif Type == 4:
             Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
         elif Type == 5:
@@ -655,6 +656,8 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
+#    for key in IFD:
+#        print key,IFD[key]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny
@@ -789,8 +792,9 @@ def SaveIntegration(self,PickId,data):
     Comments = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'))
     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
     codes = [0 for i in range(11)]
-    parms = ['PXC',data['wavelength'],0.0,0.0,1.0,-1.0,0.3,0.0,1.0,0.0,0.0]
     Azms = [(azms[i+1]+azms[i])/2. for i in range(len(azms)-1)]
+    if data['fullIntegrate'] and data['outAzimuths'] == 1:
+        Azms = [0.0,]
     for i,azm in enumerate(Azms):
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         Id = 0
@@ -799,7 +803,7 @@ def SaveIntegration(self,PickId,data):
             if name == Name:
                 Id = item
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-        parms[10] = azm
+        parms = ['PXC',data['wavelength'],0.0,0.95,1.0,-1.0,0.3,0.0,1.0,0.0,azm]    #set polarization for synchrotron radiation!
         Y = self.Integrate[0][i]
         W = 1./Y                    #probably not true
         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
@@ -808,7 +812,7 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'),[tuple(parms),parms,codes,names])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'),[tuple(parms),parms[:],codes,names])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
@@ -817,11 +821,11 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms,codes,names])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms[:],codes,names])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
         self.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     self.PatternTree.SelectItem(Id)
     self.PatternTree.Expand(Id)

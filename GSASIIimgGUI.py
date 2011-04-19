@@ -151,6 +151,7 @@ def UpdateImageControls(self,data,masks):
         except ValueError:
             pass
         outAzim.SetValue(str(data['outAzimuths']))          #reset in case of error        
+        G2plt.PlotExposedImage(self,event=event)
         
     def OnWavelength(event):
         try:
@@ -180,6 +181,15 @@ def UpdateImageControls(self,data,masks):
             self.Razim.SetEditable(False)            
         G2plt.PlotExposedImage(self,event=event)
         
+    def OnAzmRot(event):
+        try:
+            azmrot = float(azmRot.GetValue())
+            data['azmthRotate'] = azmrot
+        except ValueError:
+            pass
+        azmRot.SetValue("%.2f" % (data['azmthRotate']))          #reset in case of error          
+        G2plt.PlotExposedImage(self,event=event)
+               
     def OnSetDefault(event):
         import copy
         if data['setDefault']:
@@ -361,7 +371,9 @@ def UpdateImageControls(self,data,masks):
                                         
     #fix for old files:
     if 'azmthOff' not in data:
-        data['azmthOff'] = 0.0        
+        data['azmthOff'] = 0.0
+    if 'azmthRotate' not in data:
+        data['azmthRotate'] = 0.0       
     #end fix
     
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -522,11 +534,11 @@ def UpdateImageControls(self,data,masks):
     tiltSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(tiltSel,0,wx.ALIGN_CENTER_VERTICAL)
     showLines = wx.CheckBox(parent=self.dataDisplay,label='Show integration limits?')
-    dataSizer.Add(showLines,0)
+    dataSizer.Add(showLines,0,wx.ALIGN_CENTER_VERTICAL)
     showLines.Bind(wx.EVT_CHECKBOX, OnShowLines)
     showLines.SetValue(data['showLines'])
     fullIntegrate = wx.CheckBox(parent=self.dataDisplay,label='Do full integration?')
-    dataSizer.Add(fullIntegrate,0)
+    dataSizer.Add(fullIntegrate,0,wx.ALIGN_CENTER_VERTICAL)
     fullIntegrate.Bind(wx.EVT_CHECKBOX, OnFullIntegrate)
     fullIntegrate.SetValue(data['fullIntegrate'])
     
@@ -535,8 +547,14 @@ def UpdateImageControls(self,data,masks):
     rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation']-90.)),style=wx.TE_READONLY)
     rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
+    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Bin offset'),0,
+        wx.ALIGN_CENTER_VERTICAL)
+    azmRot = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (data['azmthRotate'])),style=wx.TE_PROCESS_ENTER)
+    azmRot.Bind(wx.EVT_TEXT_ENTER,OnAzmRot)
+    azmRot.Bind(wx.EVT_KILL_FOCUS,OnAzmRot)
+    dataSizer.Add(azmRot,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault = wx.CheckBox(parent=self.dataDisplay,label='Use as default for all images?')
-    dataSizer.Add(setDefault,0)
+    dataSizer.Add(setDefault,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
     setDefault.SetValue(data['setDefault'])
 

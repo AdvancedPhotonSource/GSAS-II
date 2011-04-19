@@ -198,16 +198,16 @@ class DataFrame(wx.Frame):
             text='Make new phase',help='Make new phase from selected unit cell')
             
     def _init_coll_PDF_Items(self,parent):
-        parent.Append(help='Copy PDF controls', id=wxID_PDFCOPYCONTROLS, kind=wx.ITEM_NORMAL,
-            text='Copy controls')
-        parent.Append(help='Save PDF controls to file', id=wxID_PDFSAVECONTROLS, kind=wx.ITEM_NORMAL,
-            text='Save controls')
-        parent.Append(help='Load PDF controls from file',id=wxID_PDFLOADCONTROLS, kind=wx.ITEM_NORMAL,
-            text='Load Controls')
         parent.Append(help='Add element to sample composition',id=wxID_PDFADDELEMENT, kind=wx.ITEM_NORMAL,
             text='Add element')
         parent.Append(help='Delete element from sample composition',id=wxID_PDFDELELEMENT, kind=wx.ITEM_NORMAL,
             text='Delete element')
+        parent.Append(help='Copy PDF controls', id=wxID_PDFCOPYCONTROLS, kind=wx.ITEM_NORMAL,
+            text='Copy controls')
+        parent.Append(help='Load PDF controls from file',id=wxID_PDFLOADCONTROLS, kind=wx.ITEM_NORMAL,
+            text='Load Controls')
+        parent.Append(help='Save PDF controls to file', id=wxID_PDFSAVECONTROLS, kind=wx.ITEM_NORMAL,
+            text='Save controls')
         self.PDFCompute = parent.Append(help='Compute PDF', id=wxID_PDFCOMPUTE, kind=wx.ITEM_NORMAL,
             text='Compute PDF')
         self.PDFCompute = parent.Append(help='Compute all PDFs', id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
@@ -749,17 +749,24 @@ def MovePatternTreeToGrid(self,item):
             G2plt.PlotSngl(self,newPlot=True)
         elif 'PDF' in self.PatternTree.GetItemText(item):
             self.PatternId = item
-            G2plt.PlotSofQ(self)
-            G2plt.PlotGofR(self)
+            G2plt.PlotISFG(self,type='S(Q)')
             
+    elif 'I(Q)' in self.PatternTree.GetItemText(item):
+        self.PickId = item
+        self.PatternId = self.PatternTree.GetItemParent(item)
+        G2plt.PlotISFG(self,type='I(Q)',newPlot=True)
     elif 'S(Q)' in self.PatternTree.GetItemText(item):
         self.PickId = item
         self.PatternId = self.PatternTree.GetItemParent(item)
-        G2plt.PlotSofQ(self)
+        G2plt.PlotISFG(self,type='S(Q)',newPlot=True)
+    elif 'F(Q)' in self.PatternTree.GetItemText(item):
+        self.PickId = item
+        self.PatternId = self.PatternTree.GetItemParent(item)
+        G2plt.PlotISFG(self,type='F(Q)',newPlot=True)
     elif 'G(R)' in self.PatternTree.GetItemText(item):
         self.PickId = item
         self.PatternId = self.PatternTree.GetItemParent(item)
-        G2plt.PlotGofR(self)            
+        G2plt.PlotISFG(self,type='G(R)',newPlot=True)            
     elif self.PatternTree.GetItemText(parentID) == 'Phases':
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)            
@@ -797,8 +804,7 @@ def MovePatternTreeToGrid(self,item):
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(self,data)
-        G2plt.PlotSofQ(self)
-        G2plt.PlotGofR(self)
+        G2plt.PlotISFG(self,type='S(Q)')
     elif self.PatternTree.GetItemText(item) == 'Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.ExportPeakList.Enable(True)

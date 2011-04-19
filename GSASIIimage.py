@@ -290,7 +290,10 @@ def GetTthAzmDsp(x,y,data):
     cent = data['center']
     tilt = data['tilt']
     phi = data['rotation']
+    LRazim = data['LRazimuth']
     azmthoff = data['azmthOff']
+    azmRot = data['azmthRotate']
+    Full = data['fullIntegrate']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)
     X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
@@ -298,7 +301,11 @@ def GetTthAzmDsp(x,y,data):
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dsp = wave/(2.*npsind(tth/2.))
-    azm = npatan2d(dx,-dy)+azmthoff
+    azm = (npatan2d(dx,-dy)+azmthoff+720.)%360.
+    if Full:
+        azm = (azm+azmRot+720.)%360.
+    else:
+        azm = np.where(azm<LRazim[0],azm+360.,azm)
     return tth,azm,dsp
     
 def GetTth(x,y,data):
@@ -324,7 +331,6 @@ def checkEllipse(Zsum,distSum,xSum,ySum,dist,x,y):
     curr = np.array([dist,x,y])
     return abs(avg-curr)/avg < .02
 
-        
 def ImageCalibrate(self,data):
     import copy
     import ImageCalibrants as calFile
@@ -553,11 +559,13 @@ def ImageIntegrate(image,data,masks):
     print 'Begin image integration'
     LUtth = data['IOtth']
     if data['fullIntegrate']:
-        LRazm = [-180,180]
+        LRazm = [0,360]
     else:
         LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
+    azmRot = data['azmthRotate']
+    Full = data['fullIntegrate']
     Dtth = (LUtth[1]-LUtth[0])/numChans
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
@@ -601,7 +609,9 @@ def ImageIntegrate(image,data,masks):
         else:
             H2 = LUtth
         if Dazm:        
-            H1 = [azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)]
+            H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
+            if Full:
+                H1 = H1+azmRot
         else:
             H1 = LRazm
         Nup += 1

@@ -49,6 +49,7 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 class G2PlotMpl(wx.Panel):    
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
+        mpl.rcParams['legend.fontsize'] = 8
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,7))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = Toolbar(self.canvas)
@@ -598,6 +599,7 @@ def PlotPatterns(self,newPlot=False):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
+            X += self.Offset*.01*N
             if ifpicked:
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
@@ -670,7 +672,11 @@ def PlotPatterns(self,newPlot=False):
         Page.canvas.draw()
     self.Pwdr = True
     
-def PlotSofQ(self,newPlot=False):
+def PlotISFG(self,newPlot=False,type=''):
+    if not type:
+        type = self.G2plotNB.plotList[self.G2plotNB.nb.GetSelection()]
+    if type not in ['I(Q)','S(Q)','F(Q)','G(R)']:
+        return
     superMinusOne = unichr(0xaf)+unichr(0xb9)
     
     def OnPlotKeyPress(event):
@@ -719,11 +725,17 @@ def PlotSofQ(self,newPlot=False):
             else:
                 self.Interpolate = 'nearest'
             dlg.Destroy()
+        elif event.key == 't' and not self.Contour:
+            if self.Legend:
+                self.Legend = False
+            else:
+                self.Legend = True
             
-        PlotSofQ(self,newPlot=newPlot)
+            
+        PlotISFG(self,newPlot=newPlot,type=type)
         
     def OnKeyBox(event):
-        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('S(Q)'):
+        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index(type):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
             OnPlotKeyPress(event)
@@ -735,16 +747,15 @@ def PlotSofQ(self,newPlot=False):
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
                 if self.Contour:
-                    self.G2plotNB.status.SetStatusText('Q =%9.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
+                    self.G2plotNB.status.SetStatusText('R =%.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
                 else:
-                    self.G2plotNB.status.SetStatusText('Q =%9.3fA S(q) =%9.1f'%(xpos,ypos),1)
-
+                    self.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,type,ypos),1)                   
             except TypeError:
-                self.G2plotNB.status.SetStatusText('Select S(Q) pattern first',1)
+                self.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
     
     xylim = []
     try:
-        plotNum = self.G2plotNB.plotList.index('S(Q)')
+        plotNum = self.G2plotNB.plotList.index(type)
         Page = self.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()          #get previous S(Q) plot & get limits
@@ -754,8 +765,8 @@ def PlotSofQ(self,newPlot=False):
     except ValueError,error:
         newPlot = True
         self.Cmax = 1.0
-        Plot = self.G2plotNB.addMpl('S(Q)').gca()
-        plotNum = self.G2plotNB.plotList.index('S(Q)')
+        Plot = self.G2plotNB.addMpl(type).gca()
+        plotNum = self.G2plotNB.plotList.index(type)
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -766,35 +777,38 @@ def PlotSofQ(self,newPlot=False):
         Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        Choice = (' key press','d: offset down','u: offset up',
-            'c: contour on','s: toggle single plot','+: no selection')
+        Choice = (' key press','d: offset down','u: offset up','t: toggle legend',
+            'c: contour on','s: toggle single plot')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' key press')
     PatternId = self.PatternId
     PickId = self.PickId
-    Plot.set_title('S(Q)')
-    Plot.set_xlabel(r'$Q,\AA$'+superMinusOne,fontsize=14)
-    Plot.set_ylabel(r'S(Q)',fontsize=14)
+    Plot.set_title(type)
+    if type == 'G(R)':
+        Plot.set_xlabel(r'$R,\AA$',fontsize=14)
+    else:
+        Plot.set_xlabel(r'$Q,\AA$'+superMinusOne,fontsize=14)
+    Plot.set_ylabel(r''+type,fontsize=14)
     colors=['b','g','r','c','m','k']
     name = self.PatternTree.GetItemText(PatternId)[4:]
     G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters')
     Pattern = []    
     if self.SinglePlot:
-        name = 'S(Q)'+self.PatternTree.GetItemText(PatternId)[4:]
+        name = self.PatternTree.GetItemText(PatternId)
+        name = type+name[4:]
         Id = G2gd.GetPatternTreeItemId(self,PatternId,name)
+        Pattern = self.PatternTree.GetItemPyData(Id)
         if Pattern:
-            Pattern = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,name))
             Pattern.append(name)
         PlotList = [Pattern,]
-    else:        
+    else:
         PlotList = []
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         while item:
             if 'PDF' in self.PatternTree.GetItemText(item):
-                name = 'S(Q)'+self.PatternTree.GetItemText(item)[4:]
-                print name
+                name = type+self.PatternTree.GetItemText(item)[4:]
                 Id = G2gd.GetPatternTreeItemId(self,item,name)
                 Pattern = self.PatternTree.GetItemPyData(Id)
                 if Pattern:
@@ -812,7 +826,7 @@ def PlotSofQ(self,newPlot=False):
         ContourY = []
         Nseq = 0
     for N,Pattern in enumerate(PlotList):
-        xye = np.array(Pattern[1])
+        xye = Pattern[1]
         if PickId:
             ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
         X = xye[0]
@@ -827,16 +841,28 @@ def PlotSofQ(self,newPlot=False):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
+            X = xye[0]+self.Offset*.1*N
             if ifpicked:
                 Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                 Page.canvas.SetToolTipString('')
             else:
-                Plot.plot(X,Y,colors[N%6],picker=False)
+                if self.Legend:
+                    Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
+                else:
+                    Plot.plot(X,Y,colors[N%6],picker=False)
+            if type == 'G(R)':
+                Plot.axhline(0.,color=wx.BLACK)
+            elif type == 'F(Q)':
+                Plot.axhline(0.,color=wx.BLACK)
+            elif type == 'S(Q)':
+                Plot.axhline(1.,color=wx.BLACK)
     if self.Contour:
         acolor = mpl.cm.get_cmap(self.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation=self.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
+    elif self.Legend:
+        Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -846,127 +872,55 @@ def PlotSofQ(self,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-
-def PlotGofR(self,newPlot=False):
-    
-    def OnPlotKeyPress(event):
-        newPlot = False
-        if event.key == 'u':
-            if self.Contour:
-                self.Cmax = min(1.0,self.Cmax*1.2)
-            elif self.Offset < 100.:
-                self.Offset += 1.
-        elif event.key == 'd':
-            if self.Contour:
-                self.Cmax = max(0.0,self.Cmax*0.8)
-            elif self.Offset > 0.:
-                self.Offset -= 1.
-        elif event.key == 'c':
-            newPlot = True
-            if self.Contour:
-                self.Contour = False
-            else:
-                self.Contour = True
-                self.SinglePlot = False
-                self.Offset = 0
-        elif event.key == 's':
-            if self.Contour:
-                choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
-                dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    self.ContourColor = choice[sel]
-                else:
-                    self.ContourColor = 'Paired'
-                dlg.Destroy()
-            else:                
-                if self.SinglePlot:
-                    self.SinglePlot = False
-                else:
-                    self.SinglePlot = True
-        elif event.key == 'i':                  #for smoothing contour plot
-            choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
-               'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
-               'mitchell','sinc','lanczos']
-            dlg = wx.SingleChoiceDialog(self,'Select','Interpolation',choice)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelection()
-                self.Interpolate = choice[sel]
-            else:
-                self.Interpolate = 'nearest'
-            dlg.Destroy()
-            
-        PlotGofR(self,newPlot=newPlot)
         
-    def OnKeyBox(event):
-        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('G(R)'):
-            event.key = cb.GetValue()[0]
-            cb.SetValue(' key press')
-            OnPlotKeyPress(event)
-                        
+def PlotXY(self,XY,newPlot=False,type=''):
+    #simple plot of xy data
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                if self.Contour:
-                    self.G2plotNB.status.SetStatusText('r =%9.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
-                else:
-                    self.G2plotNB.status.SetStatusText('r =%9.3fA G(r) =%9.1f'%(xpos,ypos),1)
-
+                self.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,type,ypos),1)                   
             except TypeError:
-                self.G2plotNB.status.SetStatusText('Select G(R) pattern first',1)
-    
-    xylim = []
+                self.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
+
     try:
-        plotNum = self.G2plotNB.plotList.index('G(r)')
+        plotNum = self.G2plotNB.plotList.index(type)
         Page = self.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
-            Plot = Page.figure.gca()          #get previous G(R) plot & get limits
+            Plot = Page.figure.gca()
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
     except ValueError,error:
         newPlot = True
-        self.Cmax = 1.0
-        Plot = self.G2plotNB.addMpl('G(r)').gca()
-        plotNum = self.G2plotNB.plotList.index('G(r)')
+        Plot = self.G2plotNB.addMpl(type).gca()
+        plotNum = self.G2plotNB.plotList.index(type)
         Page = self.G2plotNB.nb.GetPage(plotNum)
-        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        
+    
     Page.SetFocus()
     self.G2plotNB.status.DestroyChildren()
-    if self.Contour:
-        Choice = (' key press','d: lower contour max','u: raise contour max',
-            'i: interpolation method','s: color scheme','c: contour off')
+    Plot.set_title(type)
+    Plot.set_xlabel(r'X',fontsize=14)
+    Plot.set_ylabel(r''+type,fontsize=14)
+    colors=['b','g','r','c','m','k']
+    Ymax = 1.0
+    lenX = 0
+    X,Y = XY[:2]
+    Ymax = max(Ymax,max(Y))
+    Plot.plot(X,Y,'k',picker=False)
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
     else:
-        Choice = (' key press','d: offset down','u: offset up',
-            'c: contour on','s: toggle single plot','+: no selection')
-    cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
-        choices=Choice)
-    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
-    cb.SetValue(' key press')
-    PatternId = self.PatternId
-    Pattern = []    
-    if self.SinglePlot:
-        Pattern = self.PatternTree.GetItemPyData(PatternId)
-        Pattern.append(self.PatternTree.GetItemText(PatternId))
-        PlotList = [Pattern,]
-    else:        
-        PlotList = []
-        item, cookie = self.PatternTree.GetFirstChild(self.root)
-        while item:
-            if 'PDF' in self.PatternTree.GetItemText(item):
-                Pattern = self.PatternTree.GetItemPyData(item)
-                PlotList.append(Pattern)
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
-    Plot.set_title('G(r)')
-    Plot.set_xlabel(r'$r,\AA$',fontsize=14)
-    Plot.set_ylabel(r'G(r)',fontsize=14)
-    PatternId = self.PatternId
-    Page.canvas.draw()
+        Page.canvas.draw()
 
 def PlotPowderLines(self):
     global HKL
@@ -1141,7 +1095,7 @@ def PlotStrain(self,data):
             Y = np.outer(npcosd(PHI),npsind(PSI))
             Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
             if muStrain[0] == 'isotropic':
-                muiso = muStrain[1][0]*math.pi/0.018
+                muiso = muStrain[1][0]*math.pi/0.018      #centidegrees to radians!
                 X *= muiso
                 Y *= muiso
                 Z *= muiso                
@@ -1150,7 +1104,7 @@ def PlotStrain(self,data):
                 def uniaxMustrain(xyz,muiso,muaniso,axes):
                     cp = abs(np.dot(xyz,axes))
                     S = muiso+muaniso*cp
-                    return S*xyz*math.pi/0.018
+                    return S*xyz*math.pi/0.018      #centidegrees to radians!
                 muiso,muaniso = muStrain[1][:2]
                 axes = np.inner(A,np.array(muStrain[3]))
                 axes /= nl.norm(axes)
@@ -1167,7 +1121,7 @@ def PlotStrain(self,data):
                 def genMustrain(xyz,SGData,A,Shkl):
                     uvw = np.inner(A.T,xyz)
                     Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
-                    sum = np.sqrt(np.sum(np.multiply(Shkl,Strm)))*math.pi/0.018
+                    sum = np.sqrt(np.sum(np.multiply(Shkl,Strm)))*math.pi/0.018      #centidegrees to radians!
                     return sum*xyz
                 Shkl = np.array(muStrain[4])
                 if np.any(Shkl):
@@ -1208,6 +1162,9 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
+        azmRot = 0.
+        if Data['fullIntegrate']:
+            azmRot = Data['azmthRotate']
         if event.xdata and event.ydata:                 #avoid out of frame errors
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             item = self.itemPicked
@@ -1223,7 +1180,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                     ypos = event.ydata-ycent
                     tth,azm = G2img.GetTthAzm(event.xdata,event.ydata,Data)
                     if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
-                        Page.canvas.SetToolTipString('%6d deg'%(azm))
+                        Page.canvas.SetToolTipString('%6d deg'%(azm-azmRot))
                     elif 'line1' in  str(item) or 'line2' in str(item):
                         Page.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
             else:
@@ -1240,7 +1197,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                     self.G2plotNB.status.SetFields(['','Polygon mask pick - LB next point, RB close polygon'])
                 else:
                     self.G2plotNB.status.SetFields(\
-                        ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
+                        ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm-azmRot,Int)])
 
     def OnImPlotKeyPress(event):
         try:
@@ -1524,6 +1481,9 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']:
             LRAzim = Data['LRazimuth']                  #NB: integers
+            if Data['fullIntegrate']: LRAzim = [0,360]
+            Nazm = Data['outAzimuths']
+            delAzm = float(LRAzim[1]-LRAzim[0])/Nazm
             AzmthOff = Data['azmthOff']
             IOtth = Data['IOtth']
             wave = Data['wavelength']
@@ -1533,8 +1493,10 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
             if Data['fullIntegrate']:
                 Azm = np.array(range(0,361))
+                AzmRot = Data['azmthRotate']
             else:
                 Azm = np.array(range(LRAzim[0],LRAzim[1]+1))-AzmthOff
+                AzmRot = 0.0
             if ellI:
                 xyI = []
                 for azm in Azm:
@@ -1552,6 +1514,12 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             if ellO and ellI and not Data['fullIntegrate']:
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
+            if Nazm > 1:
+                for i in range(Nazm):
+                    cake = (LRAzim[0]+i*delAzm+AzmRot+720)%360
+                    ind = np.searchsorted(Azm,cake)
+                    Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
+                    
         for xring,yring in Data['ring']:
             Plot.plot(xring,yring,'r+',picker=3)
         if Data['setRings']:
@@ -1652,7 +1620,7 @@ def PlotIntegration(self,newPlot=False,event=None):
     Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
     colorBar = Page.figure.colorbar(Img)
-    if Data['setRings']:
+    if Data['setRings'] and Data['rings']:
         rings = np.concatenate((Data['rings']),axis=0)
         for xring,yring,dsp in rings:
             x,y = G2img.GetTthAzm(xring,yring,Data)

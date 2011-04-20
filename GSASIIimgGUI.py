@@ -178,18 +178,10 @@ def UpdateImageControls(self,data,masks):
         else:
             data['fullIntegrate'] = True
             self.Lazim.SetEditable(False)            
-            self.Razim.SetEditable(False)            
+            self.Razim.SetEditable(False)
+        UpdateImageControls(self,data,masks)            
         G2plt.PlotExposedImage(self,event=event)
         
-    def OnAzmRot(event):
-        try:
-            azmrot = float(azmRot.GetValue())
-            data['azmthRotate'] = azmrot
-        except ValueError:
-            pass
-        azmRot.SetValue("%.2f" % (data['azmthRotate']))          #reset in case of error          
-        G2plt.PlotExposedImage(self,event=event)
-               
     def OnSetDefault(event):
         import copy
         if data['setDefault']:
@@ -257,7 +249,6 @@ def UpdateImageControls(self,data,masks):
                         if ifintegrate:
                             id = G2gd.GetPatternTreeItemId(self, self.root, name)
                             Npix,imagefile = self.PatternTree.GetItemPyData(id)
-                            print imagefile
                             image = G2IO.GetImageData(self,imagefile,True)
                             Id = G2gd.GetPatternTreeItemId(self,id, 'Image Controls')
                             Data = self.PatternTree.GetItemPyData(Id)
@@ -372,8 +363,6 @@ def UpdateImageControls(self,data,masks):
     #fix for old files:
     if 'azmthOff' not in data:
         data['azmthOff'] = 0.0
-    if 'azmthRotate' not in data:
-        data['azmthRotate'] = 0.0       
     #end fix
     
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -547,12 +536,6 @@ def UpdateImageControls(self,data,masks):
     rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation']-90.)),style=wx.TE_READONLY)
     rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
-    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Bin offset'),0,
-        wx.ALIGN_CENTER_VERTICAL)
-    azmRot = wx.TextCtrl(parent=self.dataDisplay,value=("%.2f" % (data['azmthRotate'])),style=wx.TE_PROCESS_ENTER)
-    azmRot.Bind(wx.EVT_TEXT_ENTER,OnAzmRot)
-    azmRot.Bind(wx.EVT_KILL_FOCUS,OnAzmRot)
-    dataSizer.Add(azmRot,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault = wx.CheckBox(parent=self.dataDisplay,label='Use as default for all images?')
     dataSizer.Add(setDefault,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)

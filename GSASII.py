@@ -473,7 +473,6 @@ class GSASII(wx.Frame):
                             Data['azmthOff'] = 0.0
                             Data['outChannels'] = 2500
                             Data['outAzimuths'] = 1
-                            Data['azmthRotate'] = 0.0
                             Data['fullIntegrate'] = False
                             Data['setRings'] = False
                         Data['setDefault'] = False
@@ -544,7 +543,7 @@ class GSASII(wx.Frame):
             mainSizer.Add((10,10),1)
             mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
             mainSizer.Add((10,10),1)
-            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=1,hgap=2,vgap=2)
+            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=2,hgap=2,vgap=2)
             for id,item in enumerate(self.data):
                 ckbox = wx.CheckBox(panel,id,item[1])
                 ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)                    
@@ -1274,7 +1273,7 @@ class GSASII(wx.Frame):
                             'Container':{'Name':'','Mult':-1.0,'Add':0.0},
                             'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':{},
                             'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
-                            'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.003,'QScaleLim':[0,100],
+                            'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':[0,100],
                             'Lorch':True,}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='I(Q)'+PWDRname),[])        

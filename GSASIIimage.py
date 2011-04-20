@@ -292,8 +292,6 @@ def GetTthAzmDsp(x,y,data):
     phi = data['rotation']
     LRazim = data['LRazimuth']
     azmthoff = data['azmthOff']
-    azmRot = data['azmthRotate']
-    Full = data['fullIntegrate']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)
     X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
@@ -302,10 +300,7 @@ def GetTthAzmDsp(x,y,data):
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dx,-dy)+azmthoff+720.)%360.
-    if Full:
-        azm = (azm+azmRot+720.)%360.
-    else:
-        azm = np.where(azm<LRazim[0],azm+360.,azm)
+    azm = np.where(azm<LRazim[0],azm+360.,azm)
     return tth,azm,dsp
     
 def GetTth(x,y,data):
@@ -564,8 +559,6 @@ def ImageIntegrate(image,data,masks):
         LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
-    azmRot = data['azmthRotate']
-    Full = data['fullIntegrate']
     Dtth = (LUtth[1]-LUtth[0])/numChans
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
@@ -610,8 +603,6 @@ def ImageIntegrate(image,data,masks):
             H2 = LUtth
         if Dazm:        
             H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
-            if Full:
-                H1 = H1+azmRot
         else:
             H1 = LRazm
         Nup += 1

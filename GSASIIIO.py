@@ -803,7 +803,7 @@ def SaveIntegration(self,PickId,data):
             if name == Name:
                 Id = item
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-        parms = ['PXC',data['wavelength'],0.0,0.95,1.0,-1.0,0.3,0.0,1.0,0.0,azm]    #set polarization for synchrotron radiation!
+        parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-1.0,0.3,0.0,1.0,0.0,azm]    #set polarization for synchrotron radiation!
         Y = self.Integrate[0][i]
         W = 1./Y                    #probably not true
         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],

@@ -165,9 +165,8 @@ def Polarization(Pola,Tth,Azm=0.0):
 #       which (if either) of these is "right"?
 #    return (Pola*npcosd(Azm)**2+(1.-Pola)*npsind(Azm)**2)*npcosd(Tth)**2+ \
 #        Pola*npsind(Azm)**2+(1.-Pola)*npcosd(Azm)**2
-#    return (Pola*npcosd(Azm)**2+npsind(Azm)**2)*npcosd(Tth)**2+   \
-#        Pola*npsind(Azm)**2+npcosd(Azm)**2
-    return Pola*npcosd(Tth)**2+1.0
+    return ((1.0-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
+        (1.0-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
     
 def Oblique(ObCoeff,Tth):
     if ObCoeff:
@@ -671,9 +670,7 @@ def CalcPDF(data,inst,xydata):
     Tth = xydata['Sample'][1][0]
     dt = (Tth[1]-Tth[0])
     xydata['IofQ'][1][1] /= Absorb(data['Geometry'],Abs,data['Diam'],Tth)
-    pola = Polarization(inst['Polariz.'],Tth,Azm=inst['Azimuth'])
-    auxPlot.append([Tth,pola,'Pola'])      
-    xydata['IofQ'][1][1] /= pola
+    xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'],Tth,Azm=inst['Azimuth'])
     xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
     XY = xydata['IofQ'][1]    
     #convert to Q
@@ -705,13 +702,14 @@ def CalcPDF(data,inst,xydata):
     FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
     Q = xydata['SofQ'][1][0]
     ruland = Ruland(data['Ruland'],wave,Q,CF)
-    auxPlot.append([Q,ruland,'Ruland'])      
+#    auxPlot.append([Q,ruland,'Ruland'])      
     CF *= ruland
-    auxPlot.append([Q,CF,'Compton*Ruland'])
-    scale =       np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
+#    auxPlot.append([Q,CF,'Compton*Ruland'])
+    scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
     xydata['SofQ'][1][1] *= scale
     xydata['SofQ'][1][1] -= CF
     xydata['SofQ'][1][1] = xydata['SofQ'][1][1]/SqFF
+    
 
     xydata['FofQ'] = copy.deepcopy(xydata['SofQ'])
     xydata['FofQ'][1][1] = xydata['FofQ'][1][0]*(xydata['SofQ'][1][1]-1.0)

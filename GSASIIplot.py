@@ -1162,9 +1162,6 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
-        azmRot = 0.
-        if Data['fullIntegrate']:
-            azmRot = Data['azmthRotate']
         if event.xdata and event.ydata:                 #avoid out of frame errors
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             item = self.itemPicked
@@ -1180,7 +1177,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                     ypos = event.ydata-ycent
                     tth,azm = G2img.GetTthAzm(event.xdata,event.ydata,Data)
                     if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
-                        Page.canvas.SetToolTipString('%6d deg'%(azm-azmRot))
+                        Page.canvas.SetToolTipString('%6d deg'%(azm))
                     elif 'line1' in  str(item) or 'line2' in str(item):
                         Page.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
             else:
@@ -1197,7 +1194,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                     self.G2plotNB.status.SetFields(['','Polygon mask pick - LB next point, RB close polygon'])
                 else:
                     self.G2plotNB.status.SetFields(\
-                        ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm-azmRot,Int)])
+                        ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
         try:
@@ -1493,10 +1490,8 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
             if Data['fullIntegrate']:
                 Azm = np.array(range(0,361))
-                AzmRot = Data['azmthRotate']
             else:
                 Azm = np.array(range(LRAzim[0],LRAzim[1]+1))-AzmthOff
-                AzmRot = 0.0
             if ellI:
                 xyI = []
                 for azm in Azm:
@@ -1516,7 +1511,10 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
             if Nazm > 1:
                 for i in range(Nazm):
-                    cake = (LRAzim[0]+i*delAzm+AzmRot+720)%360
+                    if Data['fullIntegrate']:
+                        cake = (LRAzim[0]+i*delAzm+720)%360
+                    else:
+                        cake = LRAzim[0]+i*delAzm
                     ind = np.searchsorted(Azm,cake)
                     Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
                     

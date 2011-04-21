@@ -13,7 +13,7 @@ import math
 import time
 import cPickle
 import GSASIIpath
-import GSASIIpeak as G2pk
+import GSASIIpwd as G2pwd
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIindex as G2indx
@@ -75,7 +75,7 @@ def UpdatePeakGrid(self, data):
         limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
         inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
         data = self.PatternTree.GetItemPyData(PatternId)[1]
-        OK,smin,Rwp,runtime,GoOn = G2pk.DoPeakFit(peaks,background,limits,inst,data)
+        OK,smin,Rwp,runtime,GoOn = G2pwd.DoPeakFit(peaks,background,limits,inst,data)
         UpdatePeakGrid(self,peaks)
         G2plt.PlotPatterns(self)
         if not OK:
@@ -111,7 +111,7 @@ def UpdatePeakGrid(self, data):
         GoOn = True
         while GoOn:
             osmin = smin
-            OK,smin,Rwp,runtime,GoOn = G2pk.DoPeakFit(peaks,background,limits,inst,data)
+            OK,smin,Rwp,runtime,GoOn = G2pwd.DoPeakFit(peaks,background,limits,inst,data)
             UpdatePeakGrid(self,peaks)
             if not OK:
                 break
@@ -1361,7 +1361,7 @@ def UpdatePDFGrid(self,data):
         powId = G2gd.GetPatternTreeItemId(self,self.root,powName)
         inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,powId,'Instrument Parameters'))
         inst = dict(zip(inst[3],inst[1]))
-        auxPlot = G2pk.CalcPDF(data,inst,xydata)
+        auxPlot = G2pwd.CalcPDF(data,inst,xydata)
         PDFId = G2gd.GetPatternTreeItemId(self,self.root,'PDF '+powName[4:])
         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'I(Q)'+powName[4:]),xydata['IofQ'])
         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'S(Q)'+powName[4:]),xydata['SofQ'])
@@ -1428,7 +1428,7 @@ def UpdatePDFGrid(self,data):
 
     ElList = data['ElList']
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
-    Trans = G2pk.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
+    Trans = G2pwd.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
     elemSizer = wx.FlexGridSizer(3,3,5,1)
     for El in ElList:
         FillElemSizer(elemSizer,ElList[El])

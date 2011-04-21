@@ -170,18 +170,6 @@ def UpdateImageControls(self,data,masks):
             data['showLines'] = True
         G2plt.PlotExposedImage(self,event=event)
         
-    def OnFullIntegrate(event):
-        if data['fullIntegrate']:
-            data['fullIntegrate'] = False
-            self.Lazim.SetEditable(True)            
-            self.Razim.SetEditable(True)            
-        else:
-            data['fullIntegrate'] = True
-            self.Lazim.SetEditable(False)            
-            self.Razim.SetEditable(False)
-        UpdateImageControls(self,data,masks)            
-        G2plt.PlotExposedImage(self,event=event)
-        
     def OnSetDefault(event):
         import copy
         if data['setDefault']:
@@ -201,9 +189,24 @@ def UpdateImageControls(self,data,masks):
         self.OuterTth.SetValue("%8.2f" % (Utth))
         G2plt.PlotExposedImage(self,event=event)
         
+    def OnFullIntegrate(event):
+        Lazm =int(self.Lazim.GetValue())
+        if data['fullIntegrate']:
+            data['fullIntegrate'] = False
+            data['LRazimuth'] = [Lazm,Lazm+20]
+        else:
+            data['fullIntegrate'] = True
+            data['LRazimuth'] = [Lazm,Lazm+360]
+        UpdateImageControls(self,data,masks)            
+        G2plt.PlotExposedImage(self,event=event)
+        
     def OnLRazim(event):
-        Lazm = min(180,int(self.Lazim.GetValue()))
-        Razm = max(-180,int(self.Razim.GetValue()))
+        Lazm =int(self.Lazim.GetValue())
+        if data['fullIntegrate']:
+           self.Razim.SetValue("%6d" % (Lazm+360))
+        Razm = int(self.Razim.GetValue())
+        if Lazm > Razm:
+            Lazm -= 360
         data['LRazimuth'] = [Lazm,Razm]
         G2plt.PlotExposedImage(self,event=event)
             
@@ -495,6 +498,10 @@ def UpdateImageControls(self,data,masks):
         value=("%6d" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
     self.Razim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
     self.Razim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
+    if data['fullIntegrate']:
+        self.Razim.Enable(False)
+        self.Razim.SetBackgroundColour(VERY_LIGHT_GREY)
+        self.Razim.SetValue("%6d" % (LRazim[0]+360))
     littleSizer.Add(self.Razim,0,wx.ALIGN_CENTER_VERTICAL)
     dataSizer.Add(littleSizer,0,)
        

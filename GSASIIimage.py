@@ -300,7 +300,7 @@ def GetTthAzmDsp(x,y,data):
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dx,-dy)+azmthoff+720.)%360.
-    azm = np.where(azm<LRazim[0],azm+360.,azm)
+    azm = np.where(azm>180,azm-360.,azm)
     return tth,azm,dsp
     
 def GetTth(x,y,data):
@@ -589,6 +589,8 @@ def ImageIntegrate(image,data,masks):
                 del TA,tam
                 Nup += 1
                 dlg.Update(Nup)
+                tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
+                tax = np.where(tax < LRazm[0],tax+360.,tax)
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
                 del tax,tay,taz
                 Nup += 1

@@ -1330,13 +1330,21 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                             Data['IOtth'][0] = max(tth,0.001)
                         elif 'line2' in itemPicked:
                             Data['IOtth'][1] = tth
-                        elif 'line3' in itemPicked and not Data['fullIntegrate']:
+                        elif 'line3' in itemPicked:
                             Data['LRazimuth'][0] = int(azm)
+                            if Data['fullIntegrate']:
+                                Data['LRazimuth'][1] = Data['LRazimuth'][0]+360
                         elif 'line4' in itemPicked and not Data['fullIntegrate']:
                             Data['LRazimuth'][1] = int(azm)
                             
-                        if Data['LRazimuth'][1] < Data['LRazimuth'][0]:
-                            Data['LRazimuth'][1] += 360
+                        if Data['LRazimuth'][0] > Data['LRazimuth'][1]:
+                            Data['LRazimuth'][0] -= 360
+                            
+                        azLim = np.array(Data['LRazimuth'])    
+                        if np.any(azLim>360):
+                            azLim -= 360
+                            Data['LRazimuth'] = list(azLim)
+                            
                         if  Data['IOtth'][0] > Data['IOtth'][1]:
                             Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
                             
@@ -1478,7 +1486,6 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']:
             LRAzim = Data['LRazimuth']                  #NB: integers
-            if Data['fullIntegrate']: LRAzim = [0,360]
             Nazm = Data['outAzimuths']
             delAzm = float(LRAzim[1]-LRAzim[0])/Nazm
             AzmthOff = Data['azmthOff']
@@ -1488,10 +1495,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
             ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
-            if Data['fullIntegrate']:
-                Azm = np.array(range(0,361))
-            else:
-                Azm = np.array(range(LRAzim[0],LRAzim[1]+1))-AzmthOff
+            Azm = np.array(range(LRAzim[0],LRAzim[1]+1))-AzmthOff
             if ellI:
                 xyI = []
                 for azm in Azm:
@@ -1506,17 +1510,13 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                 xyO = np.array(xyO)
                 arcxO,arcyO = xyO.T
                 Plot.plot(arcxO,arcyO,picker=3)
-            if ellO and ellI and not Data['fullIntegrate']:
+            if ellO and ellI:
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
-            if Nazm > 1:
-                for i in range(Nazm):
-                    if Data['fullIntegrate']:
-                        cake = (LRAzim[0]+i*delAzm+720)%360
-                    else:
-                        cake = LRAzim[0]+i*delAzm
-                    ind = np.searchsorted(Azm,cake)
-                    Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
+            for i in range(Nazm):
+                cake = LRAzim[0]+i*delAzm
+                ind = np.searchsorted(Azm,cake)
+                Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
                     
         for xring,yring in Data['ring']:
             Plot.plot(xring,yring,'r+',picker=3)

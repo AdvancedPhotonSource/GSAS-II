@@ -230,7 +230,7 @@ def UpdateImageControls(self,data,masks):
         
     def OnIntegrateAll(event):
         print 'integrate all'
-        TextList = []
+        TextList = [[False,'All IMG',0]]
         Names = []
         if self.PatternTree.GetCount():
             id, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -240,13 +240,16 @@ def UpdateImageControls(self,data,masks):
                 if 'IMG' in name:
                     TextList.append([False,name,id])
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-            if not len(TextList):
+            if len(TextList) == 1:
                 self.ErrorDialog('Nothing to integrate','There must some "IMG" patterns')
                 return
             dlg = self.CopyDialog(self,'Image integration controls','Select images to integrate:',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetData()
+                    if result[0][0]:                    #the 'All IMG' is True
+                        result = TextList[1:]
+                        for item in result: item[0] = True
                     for item in result:
                         ifintegrate,name,id = item
                         if ifintegrate:
@@ -271,7 +274,7 @@ def UpdateImageControls(self,data,masks):
         
     def OnCopyControls(event):
         import copy
-        TextList = []
+        TextList = [[False,'All IMG',0]]
         Names = []
         if self.PatternTree.GetCount():
             id, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -290,13 +293,16 @@ def UpdateImageControls(self,data,masks):
                     else:
                         TextList.append([False,name,id])
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-            if not len(TextList):
+            if len(TextList) == 1:
                 self.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
                 return
             dlg = self.CopyDialog(self,'Copy image controls','Copy controls from '+Source+' to:',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetData()
+                    if result[0][0]:
+                        result = TextList[1:]
+                        for item in result: item[0] = True
                     for i,item in enumerate(result):
                         ifcopy,name,id = item
                         if ifcopy:
@@ -320,7 +326,9 @@ def UpdateImageControls(self,data,masks):
                 filename = dlg.GetPath()
                 File = open(filename,'w')
                 save = {}
-                keys = ['type','wavelength','calibrant','distance','center','tilt','rotation','azmthOff']
+                keys = ['type','wavelength','calibrant','distance','center',
+                    'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
+                    'IOtth','outAzimuths']
                 for key in keys:
                     File.write(key+':'+str(data[key])+'\n')
                 File.close()
@@ -347,18 +355,27 @@ def UpdateImageControls(self,data,masks):
                         save[key] = val
                     elif key in ['wavelength','distance','tilt','rotation']:
                         save[key] = float(val)
-                    elif key in ['center',]:
-                        vals = val.strip('[] ').split()
+                    elif key in ['fullIntegrate',]:
+                        save[key] = bool(val)
+                    elif key in ['outAzimuths',]:
+                        save[key] = int(val)
+                    elif key in ['LRazimuth',]:
+                        if ',' in val:
+                            vals = val.strip('[] ').split(',')
+                        else:
+                            vals = val.strip('[] ').split()
+                        save[key] = [int(vals[0]),int(vals[1])]                    
+                    elif key in ['center','IOtth']:
+                        if ',' in val:
+                            vals = val.strip('[] ').split(',')
+                        else:
+                            vals = val.strip('[] ').split()
                         save[key] = [float(vals[0]),float(vals[1])]                    
                     S = File.readline()
                 data.update(save)
-                calSel.SetValue(data['calibrant']) 
-                waveSel.SetValue("%6.5f" % (data['wavelength']))
-                cent = data['center']
-                centText.SetValue(("%8.3f,%8.3f" % (cent[0],cent[1])))
-                distSel.SetValue("%8.3f"%(data['distance']))
-                tiltSel.SetValue("%9.3f"%(data['tilt']))            
-                rotSel.SetValue("%9.3f"%(data['rotation']))
+                UpdateImageControls(self,data,masks)            
+                G2plt.PlotExposedImage(self,event=event)
+                
                 File.close()
         finally:
             dlg.Destroy()

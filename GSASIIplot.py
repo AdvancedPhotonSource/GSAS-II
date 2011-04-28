@@ -20,6 +20,7 @@ import mpl_toolkits.mplot3d.axes3d as mp3d
 import GSASIIpath
 import GSASIIgrid as G2gd
 import GSASIIimage as G2img
+import GSASIIpwd as G2pwd
 import GSASIIIO as G2IO
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
@@ -95,7 +96,7 @@ class G2PlotNoteBook(wx.Panel):
         self.SetSizer(sizer)
         self.status = parent.CreateStatusBar()
         self.status.SetFieldsCount(2)
-        self.status.SetStatusWidths([125,-1])
+        self.status.SetStatusWidths([150,-1])
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         
         self.plotList = []
@@ -200,7 +201,7 @@ def PlotSngl(self,newPlot=False):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-    except ValueError,error:
+    except ValueError:
         Plot = self.G2plotNB.addMpl('Structure Factors').gca()
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -336,29 +337,33 @@ def PlotPatterns(self,newPlot=False):
             else:
                 self.Weight = True
             print 'plot weighting:',self.Weight
-        elif event.key == 'l':
+        elif event.key == 'n':
             if self.Contour:
                 pass
             else:
                 if self.logPlot:
                     self.logPlot = False
                 else:
-                    self.Offset = 0
+                    self.Offset[0] = 0
                     self.logPlot = True
         elif event.key == 'u':
             if self.Contour:
                 self.Cmax = min(1.0,self.Cmax*1.2)
             elif self.logPlot:
                 pass
-            elif self.Offset < 100.:
-                self.Offset += 1.
+            elif self.Offset[0] < 100.:
+                self.Offset[0] += 1.
         elif event.key == 'd':
             if self.Contour:
                 self.Cmax = max(0.0,self.Cmax*0.8)
             elif self.logPlot:
                 pass
-            elif self.Offset > 0.:
-                self.Offset -= 1.
+            elif self.Offset[0] > 0.:
+                self.Offset[0] -= 1.
+        elif event.key == 'l':
+            self.Offset[1] -= 1.
+        elif event.key == 'r':
+            self.Offset[1] += 1.
         elif event.key == 'c':
             newPlot = True
             if self.Contour:
@@ -366,7 +371,7 @@ def PlotPatterns(self,newPlot=False):
             else:
                 self.Contour = True
                 self.SinglePlot = False
-                self.Offset = 0
+                self.Offset = [0.,0.]
         elif event.key == 'q':
             newPlot = True
             if self.qPlot:
@@ -498,7 +503,7 @@ def PlotPatterns(self,newPlot=False):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-    except ValueError,error:
+    except ValueError:
         newPlot = True
         self.Cmax = 1.0
         Plot = self.G2plotNB.addMpl('Powder Patterns').gca()
@@ -515,11 +520,12 @@ def PlotPatterns(self,newPlot=False):
             'i: interpolation method','s: color scheme','c: contour off')
     else:
         if self.logPlot:
-            Choice = (' key press','l: log(I) off',
+            Choice = (' key press','n: log(I) off','l: offset left','r: offset right',
                 'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
-            Choice = (' key press','d: offset down','u: offset up','l: log(I) on',
-                'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
+            Choice = (' key press','l: offset left','r: offset right','d: offset down',
+                'u: offset up','n: log(I) on','c: contour on','q: toggle q plot',
+                's: toggle single plot','+: no selection')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -554,7 +560,7 @@ def PlotPatterns(self,newPlot=False):
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
-    offset = self.Offset*Ymax/100.0
+    offset = self.Offset[0]*Ymax/100.0
     Title = 'Powder Patterns: '+os.path.split(self.GSASprojectfile)[1]
     if self.logPlot:
         Title = 'log('+Title+')'
@@ -599,7 +605,7 @@ def PlotPatterns(self,newPlot=False):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X += self.Offset*.01*N
+            X += self.Offset[1]*.005*N
             if ifpicked:
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
@@ -684,13 +690,17 @@ def PlotISFG(self,newPlot=False,type=''):
         if event.key == 'u':
             if self.Contour:
                 self.Cmax = min(1.0,self.Cmax*1.2)
-            elif self.Offset < 100.:
-                self.Offset += 1.
+            elif self.Offset[0] < 100.:
+                self.Offset[0] += 1.
         elif event.key == 'd':
             if self.Contour:
                 self.Cmax = max(0.0,self.Cmax*0.8)
-            elif self.Offset > 0.:
-                self.Offset -= 1.
+            elif self.Offset[0] > 0.:
+                self.Offset[0] -= 1.
+        elif event.key == 'l':
+            self.Offset[1] -= 1.
+        elif event.key == 'r':
+            self.Offset[1] += 1.
         elif event.key == 'c':
             newPlot = True
             if self.Contour:
@@ -698,7 +708,7 @@ def PlotISFG(self,newPlot=False,type=''):
             else:
                 self.Contour = True
                 self.SinglePlot = False
-                self.Offset = 0
+                self.Offset = [0.,0.]
         elif event.key == 's':
             if self.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -762,7 +772,7 @@ def PlotISFG(self,newPlot=False,type=''):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
-    except ValueError,error:
+    except ValueError:
         newPlot = True
         self.Cmax = 1.0
         Plot = self.G2plotNB.addMpl(type).gca()
@@ -777,8 +787,8 @@ def PlotISFG(self,newPlot=False,type=''):
         Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        Choice = (' key press','d: offset down','u: offset up','t: toggle legend',
-            'c: contour on','s: toggle single plot')
+        Choice = (' key press','l: offset left','r: offset right','d: offset down',
+            'u: offset up','t: toggle legend','c: contour on','s: toggle single plot')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -793,7 +803,6 @@ def PlotISFG(self,newPlot=False,type=''):
     Plot.set_ylabel(r''+type,fontsize=14)
     colors=['b','g','r','c','m','k']
     name = self.PatternTree.GetItemText(PatternId)[4:]
-    G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters')
     Pattern = []    
     if self.SinglePlot:
         name = self.PatternTree.GetItemText(PatternId)
@@ -815,12 +824,16 @@ def PlotISFG(self,newPlot=False,type=''):
                     Pattern.append(name)
                     PlotList.append(Pattern)
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+    PDFdata = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'PDF Controls'))
+    numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
+    Xb = [0.,10.]
+    Yb = [0.,-40.*np.pi*numbDen]
     Ymax = 1.0
     lenX = 0
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
-    offset = self.Offset*Ymax/100.0
+    offset = self.Offset[0]*Ymax/100.0
     if self.Contour:
         ContourZ = []
         ContourY = []
@@ -841,7 +854,7 @@ def PlotISFG(self,newPlot=False,type=''):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X = xye[0]+self.Offset*.1*N
+            X = xye[0]+self.Offset[1]*.005*N
             if ifpicked:
                 Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                 Page.canvas.SetToolTipString('')
@@ -851,7 +864,7 @@ def PlotISFG(self,newPlot=False,type=''):
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
             if type == 'G(R)':
-                Plot.axhline(0.,color=wx.BLACK)
+                Plot.plot(Xb,Yb,color='k',dashes=(5,5))
             elif type == 'F(Q)':
                 Plot.axhline(0.,color=wx.BLACK)
             elif type == 'S(Q)':
@@ -894,7 +907,7 @@ def PlotXY(self,XY,newPlot=False,type=''):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
-    except ValueError,error:
+    except ValueError:
         newPlot = True
         Plot = self.G2plotNB.addMpl(type).gca()
         plotNum = self.G2plotNB.plotList.index(type)
@@ -947,7 +960,7 @@ def PlotPowderLines(self):
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
-    except ValueError,error:
+    except ValueError:
         Plot = self.G2plotNB.addMpl('Powder Lines').gca()
         plotNum = self.G2plotNB.plotList.index('Powder Lines')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -997,7 +1010,7 @@ def PlotPeakWidths(self):
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
-    except ValueError,error:
+    except ValueError:
         Plot = self.G2plotNB.addMpl('Peak Widths').gca()
         plotNum = self.G2plotNB.plotList.index('Peak Widths')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1079,7 +1092,7 @@ def PlotStrain(self,data):
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = mp3d.Axes3D(Page.figure)
-    except ValueError,error:
+    except ValueError:
         Plot = mp3d.Axes3D(self.G2plotNB.add3D('Microstrain'))
         plotNum = self.G2plotNB.plotList.index('Microstrain')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1407,7 +1420,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             Page.figure.clf()
             Plot = Page.figure.gca()          #get a fresh plot after clf()
         
-    except ValueError,error:
+    except ValueError:
         Plot = self.G2plotNB.addMpl('2D Powder Image').gca()
         plotNum = self.G2plotNB.plotList.index('2D Powder Image')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1595,7 +1608,7 @@ def PlotIntegration(self,newPlot=False,event=None):
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         
-    except ValueError,error:
+    except ValueError:
         Plot = self.G2plotNB.addMpl('2D Integration').gca()
         plotNum = self.G2plotNB.plotList.index('2D Integration')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1660,7 +1673,7 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         
-    except ValueError,error:
+    except ValueError:
         Plot = self.G2plotNB.addMpl('2D Transformed Powder Image').gca()
         plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1807,9 +1820,15 @@ def PlotStructure(self,data):
                 panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
                 panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
         Draw()
+        
+    def getSelection():
+        if self.dataDisplay:
+            return self.dataDisplay.GetSelection()
+        else:
+            return 0
             
     def SetViewPointText(VP):
-        page = self.dataDisplay.GetSelection()
+        page = getSelection()
         if page:
             if self.dataDisplay.GetPageText(page) == 'Draw Options':
                 panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
@@ -1817,7 +1836,7 @@ def PlotStructure(self,data):
                 panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
             
     def ClearSelectedAtoms():
-        page = self.dataDisplay.GetSelection()
+        page = getSelection()
         if page:
             if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
                 self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
@@ -1825,7 +1844,7 @@ def PlotStructure(self,data):
                 self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
                     
     def SetSelectedAtoms(ind):
-        page = self.dataDisplay.GetSelection()
+        page = getSelection()
         if page:
             if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
                 self.dataDisplay.GetPage(page).SelectRow(ind)      #this is the Atoms grid in Draw Atoms
@@ -1836,7 +1855,7 @@ def PlotStructure(self,data):
                         self.dataDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms
                   
     def GetSelectedAtoms():
-        page = self.dataDisplay.GetSelection()
+        page = getSelection()
         Ind = []
         if page:
             if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
@@ -2256,7 +2275,7 @@ def PlotStructure(self,data):
     try:
         plotNum = self.G2plotNB.plotList.index(generalData['Name'])
         Page = self.G2plotNB.nb.GetPage(plotNum)        
-    except (ValueError,error):
+    except ValueError:
         Plot = self.G2plotNB.addOgl(generalData['Name'])
         plotNum = self.G2plotNB.plotList.index(generalData['Name'])
         Page = self.G2plotNB.nb.GetPage(plotNum)

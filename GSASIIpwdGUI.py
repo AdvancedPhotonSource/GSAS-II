@@ -1076,6 +1076,7 @@ def UpdateUnitCellsGrid(self, data):
         gridDisplay.SetSize(bottomSize)
 
 def UpdatePDFGrid(self,data):
+    global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
     dataFile = self.PatternTree.GetItemText(self.PatternId)
     powName = 'PWDR'+dataFile[4:]
@@ -1147,6 +1148,8 @@ def UpdatePDFGrid(self,data):
             Avol = (4.*math.pi/3.)*ElList[El]['Drad']**3
             sumVol += Avol*ElList[El]['FormulaNo']
         return sumVol
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(self,newPlot=False)        
         
     def FillElemSizer(elemSizer,ElData):
         
@@ -1160,6 +1163,8 @@ def UpdatePDFGrid(self,data):
             data['Form Vol'] = max(10.0,SumElementVolumes())
             formVol.SetValue('%.2f'%(data['Form Vol']))
             UpdatePDFGrid(self,data)
+            auxPlot = ComputePDF(data)
+            G2plt.PlotISFG(self,newPlot=False)        
         
         elemSizer.Add(wx.StaticText(parent=self.dataDisplay,
             label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1174,10 +1179,14 @@ def UpdatePDFGrid(self,data):
     def OnGeometry(event):
         data['Geometry'] = geometry.GetValue()
         UpdatePDFGrid(self,data)
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(self,newPlot=False)        
         
     def OnDetType(event):
         data['DetType'] = detType.GetValue()
         UpdatePDFGrid(self,data)
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(self,newPlot=False)        
         
     def OnFormVol(event):
         try:
@@ -1189,7 +1198,7 @@ def UpdatePDFGrid(self,data):
         data['Form Vol'] = value
         UpdatePDFGrid(self,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(self,newPlot=False)        
         
     def OnDiameter(event):
         try:
@@ -1201,8 +1210,34 @@ def UpdatePDFGrid(self,data):
         data['Diam'] = value
         UpdatePDFGrid(self,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(self,newPlot=False)
         
+    def OnPolaVal(event):
+        try:
+            value = float(polaVal.GetValue())
+            if not (0.0 <= value <= 1.0):
+                raise ValueError
+        except ValueError:
+            value = inst['Polariz.']
+        inst['Polariz.'] = value
+        polaVal.SetValue('%.2f'%(inst['Polariz.']))
+        UpdatePDFGrid(self,data)
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(self,newPlot=False)
+                
+    def OnAzimVal(event):
+        try:
+            value = float(azimVal.GetValue())
+            if not (0. <= value <= 360.):
+                raise ValueError
+        except ValueError:
+            value = inst['Azimuth']
+        inst['Azimuth'] = value
+        azimVal.SetValue('%.1f'%(inst['Azimuth']))
+        UpdatePDFGrid(self,data)
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(self,newPlot=False)
+                        
     def OnObliqCoeff(event):
         try:
             value = float(obliqCoeff.GetValue())
@@ -1215,7 +1250,7 @@ def UpdatePDFGrid(self,data):
         data['ObliqCoeff'] = value
         obliqCoeff.SetValue('%.3f'%(value))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)
+        G2plt.PlotISFG(self,newPlot=False)
         
     def OnRulandWdt(event):
         try:
@@ -1229,14 +1264,13 @@ def UpdatePDFGrid(self,data):
         data['Ruland'] = value
         rulandWdt.SetValue('%.3f'%(value))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)
+        G2plt.PlotISFG(self,newPlot=False)
         
     def OnLorch(event):
         data['Lorch'] = lorch.GetValue()
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
-                
-        
+        G2plt.PlotISFG(self,newPlot=False)        
+                        
     def OnPacking(event):
         try:
             value = float(pack.GetValue())
@@ -1246,7 +1280,7 @@ def UpdatePDFGrid(self,data):
             value = data['Pack']
         data['Pack'] = value
         UpdatePDFGrid(self,data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(self,newPlot=False)        
                 
     def OnSQmin(event):
         try:
@@ -1258,6 +1292,7 @@ def UpdatePDFGrid(self,data):
         data['QScaleLim'][0] = value
         SQmin.SetValue('%.1f'%(value))
         auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(self,newPlot=True)        
         
     def OnSQmax(event):
         try:
@@ -1267,6 +1302,9 @@ def UpdatePDFGrid(self,data):
         except ValueError:
             value = min(qLimits[1],data['QScaleLim'][1])
         data['QScaleLim'][1] = value
+        if value < data['QScaleLim'][0]:
+            data['QScaleLim'][0] = 0.90*value
+            SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
         SQmax.SetValue('%.1f'%(value))
         auxPlot = ComputePDF(data)
         G2plt.PlotISFG(self,newPlot=True)
@@ -1299,13 +1337,17 @@ def UpdatePDFGrid(self,data):
     def OnCopyPDFControls(event):
         import copy
         TextList,Source = GetFileList('PDF',skip=self.PatternId)
+        TextList[0] = [False,'All PDF',0]
         if len(TextList) == 1:
             self.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
             return
-        dlg = self.CopyDialog(self,'Copy PDF controls','Copy controls from '+Source+' to:',TextList[1:])
+        dlg = self.CopyDialog(self,'Copy PDF controls','Copy controls from '+Source+' to:',TextList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetData()
+                if result[0][0]:
+                    result = TextList[1:]
+                    for item in result: item[0] = True
                 for i,item in enumerate(result):
                     ifcopy,name,id = item
                     if ifcopy:
@@ -1314,6 +1356,7 @@ def UpdatePDFGrid(self,data):
                         olddata.update(data)
                         olddata['Sample'] = sample
                         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'PDF Controls'),olddata)
+                Status.SetStatusText('PDF controls copied')
         finally:
             dlg.Destroy()
                 
@@ -1372,6 +1415,7 @@ def UpdatePDFGrid(self,data):
     def OnComputePDF(event):
         print 'Calculating PDF:'
         auxPlot = ComputePDF(data)
+        Status.SetStatusText('PDF computed')
         for plot in auxPlot:
             G2plt.PlotXY(self,plot[:2],type=plot[2])
         
@@ -1390,11 +1434,11 @@ def UpdatePDFGrid(self,data):
                     Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'PDF Controls'))
                     auxPlot = ComputePDF(Data)                    
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            Status.SetStatusText('All PDFs computed')
             G2plt.PlotISFG(self,newPlot=True,type='G(R)')
         
     def OnShowTip(self,tip):
-        print tip
-    
+        print tip    
                 
     if self.dataDisplay:
         self.dataFrame.Clear()
@@ -1414,6 +1458,18 @@ def UpdatePDFGrid(self,data):
     mainSizer.Add((5,5),0)
     str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
     mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=str),0,wx.ALIGN_CENTER_VERTICAL)
+#    dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+#    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Azimuth'),0,wx.ALIGN_CENTER_VERTICAL)
+#    azimVal = wx.TextCtrl(self.dataDisplay,value='%.2f'%(inst['Azimuth']))
+#    azimVal.Bind(wx.EVT_TEXT_ENTER,OnAzimVal)        
+#    azimVal.Bind(wx.EVT_KILL_FOCUS,OnAzimVal)
+#    dataSizer.Add(azimVal,0)    
+#    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Polarization'),0,wx.ALIGN_CENTER_VERTICAL)
+#    polaVal = wx.TextCtrl(self.dataDisplay,value='%.2f'%(inst['Polariz.']))
+#    polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)        
+#    polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
+#    dataSizer.Add(polaVal,0)    
+#    mainSizer.Add(dataSizer,0)
     mainSizer.Add((5,5),0)
     fileSizer = wx.FlexGridSizer(3,6,5,1)
     select = ['Sample Bkg.','Container']

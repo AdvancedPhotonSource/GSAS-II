@@ -251,7 +251,7 @@ class GSASII(wx.Frame):
         self.GSASprojectfile = ''
         self.dirname = ''
         self.undofile = ''
-        self.Offset = 0.0
+        self.Offset = [0.0,0.0]
         self.Weight = False
         self.IparmName = ''
         self.IfPlot = False
@@ -543,7 +543,8 @@ class GSASII(wx.Frame):
             mainSizer.Add((10,10),1)
             mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
             mainSizer.Add((10,10),1)
-            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=2,hgap=2,vgap=2)
+            ncols = len(data)/40+1
+            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=ncols,hgap=2,vgap=2)
             for id,item in enumerate(self.data):
                 ckbox = wx.CheckBox(panel,id,item[1])
                 ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)                    
@@ -582,7 +583,7 @@ class GSASII(wx.Frame):
             self.Destroy()
             
         def GetData(self):
-                return self.data
+            return self.data
         
     class SumDialog(wx.Dialog):
         def __init__(self,parent,title,text,dataType,data):
@@ -1012,7 +1013,7 @@ class GSASII(wx.Frame):
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item and not Id:
                         name = self.PatternTree.GetItemText(item)
-                        if name[:4] in ['PWDR','HKLF','IMG','PDF']:
+                        if name[:4] in ['PWDR','HKLF','IMG ','PDF ']:
                             Id = item
                         elif name == 'Controls':
                             data = self.PatternTree.GetItemPyData(item)
@@ -1233,6 +1234,7 @@ class GSASII(wx.Frame):
         event.Skip()
         
     def OnExportPDF(self,event):
+        #need S(Q) and G(R) to be saved here - probably best from selection?
         event.Skip()
         
     def OnExportPhase(self,event):
@@ -1280,6 +1282,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='F(Q)'+PWDRname),[])        
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='G(R)'+PWDRname),[])        
+                self.ExportPDF.Enable(True)
             finally:
                 dlg.Destroy()
        

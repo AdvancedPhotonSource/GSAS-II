@@ -749,6 +749,7 @@ def MovePatternTreeToGrid(self,item):
             G2plt.PlotSngl(self,newPlot=True)
         elif 'PDF' in self.PatternTree.GetItemText(item):
             self.PatternId = item
+            self.ExportPDF.Enable(True)
             G2plt.PlotISFG(self,type='S(Q)')
             
     elif 'I(Q)' in self.PatternTree.GetItemText(item):

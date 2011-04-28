@@ -3,8 +3,8 @@
 # $Date: 2011-04-20 13:09:53 -0500 (Wed, 20 Apr 2011) $
 # $Author: vondreele $
 # $Revision: 267 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIpeak.py $
-# $Id: GSASIIpeak.py 267 2011-04-20 18:09:53Z vondreele $
+# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIpwd.py $
+# $Id: GSASIIpwd.py 267 2011-04-20 18:09:53Z vondreele $
 ########### SVN repository information ###################
 import sys
 import math
@@ -183,6 +183,9 @@ def Ruland(RulCoff,wave,Q,Compton):
     dlam_c = 2.0*hmc*sinth2-D*wave**2
     return 1.0/((1.0+dlam/RulCoff)*(1.0+(np.pi*dlam_c/(dlam+RulCoff))**2))
     
+def LorchWeight(Q):
+    return np.sin(np.pi*(Q[-1]-Q)/(2.0*Q[-1]))
+    
 def lambdaCompton(DetType,wave,Q):
     hmc = 0.024262734687
     if 'Image' in DetType:        
@@ -209,6 +212,12 @@ def GetAsfMean(ElList,Sthl2):
         FF2 += ff2*el['FormulaNo']/sumNoAtoms
         CF += cf*el['FormulaNo']/sumNoAtoms
     return FF2,FF**2,CF
+    
+def GetNumDensity(ElList,Vol):
+    sumNoAtoms = 0.0
+    for El in ElList:
+        sumNoAtoms += ElList[El]['FormulaNo']
+    return sumNoAtoms/Vol
            
 def MultGetQ(Tth,MuT,Geometry,b=88.0,a=0.01):
     NS = 500
@@ -709,11 +718,13 @@ def CalcPDF(data,inst,xydata):
     xydata['SofQ'][1][1] *= scale
     xydata['SofQ'][1][1] -= CF
     xydata['SofQ'][1][1] = xydata['SofQ'][1][1]/SqFF
+    scale = len(xydata['SofQ'][1][1][minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
+    xydata['SofQ'][1][1] *= scale
     
-
     xydata['FofQ'] = copy.deepcopy(xydata['SofQ'])
     xydata['FofQ'][1][1] = xydata['FofQ'][1][0]*(xydata['SofQ'][1][1]-1.0)
-    xydata['FofQ'][1][1] *= np.sin(np.pi*(qLimits[1]-Q)/(2.0*qLimits[1]))
+    if data['Lorch']:
+        xydata['FofQ'][1][1] *= LorchWeight(Q)
     
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])

@@ -364,6 +364,8 @@ def PlotPatterns(self,newPlot=False):
             self.Offset[1] -= 1.
         elif event.key == 'r':
             self.Offset[1] += 1.
+        elif event.key == 'o':
+            self.Offset = [0,0]
         elif event.key == 'c':
             newPlot = True
             if self.Contour:
@@ -524,8 +526,8 @@ def PlotPatterns(self,newPlot=False):
                 'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
             Choice = (' key press','l: offset left','r: offset right','d: offset down',
-                'u: offset up','n: log(I) on','c: contour on','q: toggle q plot',
-                's: toggle single plot','+: no selection')
+                'u: offset up','0: reset offset','n: log(I) on','c: contour on',
+                'q: toggle q plot','s: toggle single plot','+: no selection')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -701,6 +703,8 @@ def PlotISFG(self,newPlot=False,type=''):
             self.Offset[1] -= 1.
         elif event.key == 'r':
             self.Offset[1] += 1.
+        elif event.key == 'o':
+            self.Offset = [0,0]
         elif event.key == 'c':
             newPlot = True
             if self.Contour:
@@ -768,7 +772,7 @@ def PlotISFG(self,newPlot=False,type=''):
         plotNum = self.G2plotNB.plotList.index(type)
         Page = self.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
-            Plot = Page.figure.gca()          #get previous S(Q) plot & get limits
+            Plot = Page.figure.gca()          #get previous plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
@@ -787,8 +791,8 @@ def PlotISFG(self,newPlot=False,type=''):
         Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        Choice = (' key press','l: offset left','r: offset right','d: offset down',
-            'u: offset up','t: toggle legend','c: contour on','s: toggle single plot')
+        Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
+            'o: reset offset','t: toggle legend','c: contour on','s: toggle single plot')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)

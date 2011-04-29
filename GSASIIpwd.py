@@ -173,7 +173,7 @@ def Oblique(ObCoeff,Tth):
         return (1.-ObCoeff)/(1.0-np.exp(np.log(ObCoeff)/npcosd(Tth)))
     else:
         return 1.0
-        
+                
 def Ruland(RulCoff,wave,Q,Compton):
     C = 2.9978e8
     D = 1.5e-3
@@ -185,14 +185,7 @@ def Ruland(RulCoff,wave,Q,Compton):
     
 def LorchWeight(Q):
     return np.sin(np.pi*(Q[-1]-Q)/(2.0*Q[-1]))
-    
-def lambdaCompton(DetType,wave,Q):
-    hmc = 0.024262734687
-    if 'Image' in DetType:        
-        return wave*(1.0+2.0*hmc*wave*(Q/(4.0*np.pi))**2)**3
-    else:  
-        return wave*(1.0+2.0*hmc*wave*(Q/(4.0*np.pi))**2)**2
-        
+            
 def GetAsfMean(ElList,Sthl2):
 #   Calculate various scattering factor terms for PDF calcs
 #   ElList: element dictionary contains scattering factor coefficients, etc.
@@ -680,7 +673,8 @@ def CalcPDF(data,inst,xydata):
     dt = (Tth[1]-Tth[0])
     xydata['IofQ'][1][1] /= Absorb(data['Geometry'],Abs,data['Diam'],Tth)
     xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'],Tth,Azm=inst['Azimuth'])
-    xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
+    if data['DetType'] == 'Image plate':
+        xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
     XY = xydata['IofQ'][1]    
     #convert to Q
     hc = 12.397639
@@ -713,7 +707,7 @@ def CalcPDF(data,inst,xydata):
     ruland = Ruland(data['Ruland'],wave,Q,CF)
 #    auxPlot.append([Q,ruland,'Ruland'])      
     CF *= ruland
-#    auxPlot.append([Q,CF,'Compton*Ruland'])
+#    auxPlot.append([Q,CF,'CF-Corr'])
     scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
     xydata['SofQ'][1][1] *= scale
     xydata['SofQ'][1][1] -= CF

@@ -805,7 +805,10 @@ def MovePatternTreeToGrid(self,item):
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(self,data)
+        G2plt.PlotISFG(self,type='I(Q)')
         G2plt.PlotISFG(self,type='S(Q)')
+        G2plt.PlotISFG(self,type='F(Q)')
+        G2plt.PlotISFG(self,type='G(R)')
     elif self.PatternTree.GetItemText(item) == 'Peak List':
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.ExportPeakList.Enable(True)

@@ -1149,7 +1149,7 @@ def UpdatePDFGrid(self,data):
             sumVol += Avol*ElList[El]['FormulaNo']
         return sumVol
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)        
+        G2plt.PlotISFG(self,newPlot=True)        
         
     def FillElemSizer(elemSizer,ElData):
         
@@ -1164,7 +1164,7 @@ def UpdatePDFGrid(self,data):
             formVol.SetValue('%.2f'%(data['Form Vol']))
             UpdatePDFGrid(self,data)
             auxPlot = ComputePDF(data)
-            G2plt.PlotISFG(self,newPlot=False)        
+            G2plt.PlotISFG(self,newPlot=True)        
         
         elemSizer.Add(wx.StaticText(parent=self.dataDisplay,
             label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1180,13 +1180,13 @@ def UpdatePDFGrid(self,data):
         data['Geometry'] = geometry.GetValue()
         UpdatePDFGrid(self,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)        
+        G2plt.PlotISFG(self,newPlot=True)        
         
     def OnDetType(event):
         data['DetType'] = detType.GetValue()
         UpdatePDFGrid(self,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)        
+        G2plt.PlotISFG(self,newPlot=True)        
         
     def OnFormVol(event):
         try:
@@ -1266,6 +1266,13 @@ def UpdatePDFGrid(self,data):
         auxPlot = ComputePDF(data)
         G2plt.PlotISFG(self,newPlot=False)
         
+    def OnRulSlider(event):
+        value = int(rulandSldr.GetValue())/1000.
+        data['Ruland'] = max(0.001,value)
+        rulandWdt.SetValue('%.3f'%(data['Ruland']))
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(self,newPlot=False)
+        
     def OnLorch(event):
         data['Lorch'] = lorch.GetValue()
         auxPlot = ComputePDF(data)
@@ -1280,6 +1287,7 @@ def UpdatePDFGrid(self,data):
             value = data['Pack']
         data['Pack'] = value
         UpdatePDFGrid(self,data)
+        auxPlot = ComputePDF(data)
         G2plt.PlotISFG(self,newPlot=False)        
                 
     def OnSQmin(event):
@@ -1310,6 +1318,7 @@ def UpdatePDFGrid(self,data):
         G2plt.PlotISFG(self,newPlot=True)
         
     def OnResetQ(event):
+        resetQ.SetValue(False)
         data['QScaleLim'][1] = qLimits[1]
         SQmax.SetValue('%.1f'%(data['QScaleLim'][1]))
         data['QScaleLim'][0] = 0.9*qLimits[1]
@@ -1542,12 +1551,19 @@ def UpdatePDFGrid(self,data):
         obliqCoeff.Bind(wx.EVT_TEXT_ENTER,OnObliqCoeff)        
         obliqCoeff.Bind(wx.EVT_KILL_FOCUS,OnObliqCoeff)
         sqBox.Add(obliqCoeff,0)
-    sqBox.Add(wx.StaticText(self.dataDisplay,label=' Ruland width: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(sqBox,0)
+        
+    sqBox = wx.BoxSizer(wx.HORIZONTAL)
+    sqBox.Add(wx.StaticText(self.dataDisplay,label=' Ruland width: '),0,wx.ALIGN_CENTER_VERTICAL)    
+    rulandSldr = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
+        value=int(1000*data['Ruland']))
+    sqBox.Add(rulandSldr,1,wx.EXPAND)
+    rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
     rulandWdt = wx.TextCtrl(self.dataDisplay,value='%.3f'%(data['Ruland']))
     rulandWdt.Bind(wx.EVT_TEXT_ENTER,OnRulandWdt)        
     rulandWdt.Bind(wx.EVT_KILL_FOCUS,OnRulandWdt)
-    sqBox.Add(rulandWdt,0)    
-    mainSizer.Add(sqBox,0)
+    sqBox.Add(rulandWdt,0,wx.ALIGN_CENTER_VERTICAL)    
+    mainSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
     
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
     lorch = wx.CheckBox(parent=self.dataDisplay,label='Lorch damping?')

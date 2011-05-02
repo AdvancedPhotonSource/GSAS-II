@@ -1794,29 +1794,38 @@ def PlotStructure(self,data):
         
     def OnMouseMove(event):
         newxy = event.GetPosition()
+        page = getSelection()
         if event.ControlDown() and drawingData['showABC']:
             if event.LeftIsDown():
-                ctrlDown = True
                 SetTestRot(newxy)
             elif event.RightIsDown():
                 SetTestPos(newxy)
             elif event.MiddleIsDown():
                 SetTestRotZ(newxy)
+            x,y,z = drawingData['testPos'][0]
+            self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
                 
                 
         if event.Dragging() and not event.ControlDown():
             if event.LeftIsDown():
                 SetRotation(newxy)
+                angX,angY,angZ = drawingData['Rotation'][:3]
+                self.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f ,%.2f'%(angX,angY,angZ),1)
             elif event.RightIsDown():
                 SetTranslation(newxy)
+                Tx,Ty,Tz = drawingData['viewPoint'][0]
+                self.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
+                angX,angY,angZ = drawingData['Rotation'][:3]
+                self.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f, %.2f'%(angX,angY,angZ),1)
         Draw()
         
     def OnMouseWheel(event):
         drawingData['cameraPos'] += event.GetWheelRotation()/24
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
-        page = self.dataDisplay.GetSelection()
+        self.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(drawingData['cameraPos']),1)
+        page = getSelection()
         if page:
             if self.dataDisplay.GetPageText(page) == 'Draw Options':
                 panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
@@ -1826,9 +1835,11 @@ def PlotStructure(self,data):
         Draw()
         
     def getSelection():
-        if self.dataDisplay:
+        try:
             return self.dataDisplay.GetSelection()
-        else:
+        except AttributeError:
+            print self.dataDisplay.GetLabel()
+            self.G2plotNB.status.SetStatusText('Select this from Phase data window!')
             return 0
             
     def SetViewPointText(VP):
@@ -2171,15 +2182,11 @@ def PlotStructure(self,data):
         if drawingData['unitCellBox']:
             RenderBox()
         if drawingData['showABC']:
-#            try:            #temporary fix - not needed further?
-#                x,y,z = drawingData['testPos'][0]
-#            except TypeError:
-#                x,y,z = drawingData['testPos']
             x,y,z = drawingData['testPos'][0]
-            if altDown:
-                self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
-            else:
-                self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
+#            if altDown:
+#                self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
+#            else:
+#                self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
             RenderUnitVectors(x,y,z)
         Backbone = []
         BackboneColor = []

@@ -1235,7 +1235,26 @@ class GSASII(wx.Frame):
         
     def OnExportPDF(self,event):
         #need S(Q) and G(R) to be saved here - probably best from selection?
-        event.Skip()
+        names = ['All']
+        exports = []
+        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        while item:
+            name = self.PatternTree.GetItemText(item)
+            if 'PDF' in name:
+                names.append(name)
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        if names:
+            dlg = wx.MultiChoiceDialog(self,'Select','PDF patterns to export',names)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelections()
+                if sel[0] == 0:
+                    exports = names[1:]
+                else:
+                    for x in sel:
+                        exports.append(names[x])
+            dlg.Destroy()
+        if exports:
+            G2IO.PDFSave(self,exports)
         
     def OnExportPhase(self,event):
         event.Skip()

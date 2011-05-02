@@ -894,6 +894,30 @@ def powderXyeSave(self,exports,powderfile):
         finally:
             wx.EndBusyCursor()
         print 'powder pattern file written'
+        
+def PDFSave(self,exports):    
+    for export in exports:
+        PickId = G2gd.GetPatternTreeItemId(self, self.root, export)
+        SQname = 'S(Q)'+export[4:]
+        GRname = 'G(R)'+export[4:]
+        sqfilename = ospath.join(self.dirname,export.replace(' ','_')[5:]+'.sq')
+        grfilename = ospath.join(self.dirname,export.replace(' ','_')[5:]+'.gr')
+        sqId = G2gd.GetPatternTreeItemId(self, PickId, SQname)
+        grId = G2gd.GetPatternTreeItemId(self, PickId, GRname)
+        sqdata = np.array(self.PatternTree.GetItemPyData(sqId)[1][:2]).T
+        grdata = np.array(self.PatternTree.GetItemPyData(grId)[1][:2]).T
+        sqfile = open(sqfilename,'w')
+        grfile = open(grfilename,'w')
+        sqfile.write('#T S(Q) %s\n'%(export))
+        grfile.write('#T G(R) %s\n'%(export))
+        sqfile.write('#L Q     S(Q)\n')
+        grfile.write('#L R     G(R)\n')
+        for q,sq in sqdata:
+            sqfile.write("%15.6g %15.6g\n" % (q,sq))
+        sqfile.close()
+        for r,gr in grdata:
+            grfile.write("%15.6g %15.6g\n" % (r,gr))
+        grfile.close()
     
 def PeakListSave(self,file,peaks):
     print 'save peak list to file: ',self.peaklistfile

@@ -1090,8 +1090,11 @@ def UpdatePDFGrid(self,data):
         keV = 12.397639/inst['Lam1']
     wave = 12.397639/keV
     qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
-    data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
     data['QScaleLim'][1] = min(qLimits[1],data['QScaleLim'][1])
+    if data['QScaleLim'][0]:
+        data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
+    else:                                #initial setting at 90% of max Q
+        data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
     polariz = inst['Polariz.']
     azimuth = inst['Azimuth']
     itemDict = {}

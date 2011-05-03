@@ -13,7 +13,10 @@ if sys.platform == "win32":
 elif sys.platform == "darwin":
     bindir = 'binmac%d.%d' % sys.version_info[0:2]
 elif sys.platform == "linux2":
-    bindir = 'binlinux%d.%d' % sys.version_info[0:2]
+    if platform.architecture()[0] == '64bit':
+        bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
+    else:
+        bindir = 'binlinux%d.%d' % sys.version_info[0:2]
 for loc in sys.path[0],ospath.split(__file__)[0]:
     if bindir:
         if ospath.exists(ospath.join(loc,bindir)) and ospath.join(loc,bindir) not in sys.path: 

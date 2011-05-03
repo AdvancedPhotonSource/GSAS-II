@@ -29,17 +29,13 @@ Cf2py depend(nxbins,nybins) hst
 
       INTEGER*4   I,J,K
       REAL*8      DX,DY
-
       DO K=0,N-1
-        IF ( ( X(K) .GE. XLIM(0) .AND. X(K) .LE. XLIM(1)) .AND.
-     1    (Y(K) .GE. YLIM(0) .AND. Y(K). LE. YLIM(1)) ) THEN
-          I = NINT((X(K)-XLIM(0))/DX)
-          J = NINT((Y(K)-YLIM(0))/DY)
-          IF ( (I .GE. 0 .AND. I .LT. NXBINS) .AND.
-     1       (J .GE. 0 .AND. J .LT. NYBINS) ) THEN
-            NST(I,J) = NST(I,J)+1.0
-            HST(I,J) = HST(I,J)+Z(K)
-          END IF
+        I = INT((X(K)-XLIM(0))/DX)
+        J = INT((Y(K)-YLIM(0))/DY)
+        IF ( (I .GE. 0 .AND. I .LT. NXBINS) .AND.
+     1     (J .GE. 0 .AND. J .LT. NYBINS) ) THEN
+          NST(I,J) = NST(I,J)+1.0
+          HST(I,J) = HST(I,J)+Z(K)
         END IF
       END DO
       RETURN

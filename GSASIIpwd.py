@@ -687,8 +687,10 @@ def CalcPDF(data,inst,xydata):
     maxQ = npT2q(Tth[-1],wave)    
     Qpoints = np.linspace(0.,maxQ,len(XY[0]),endpoint=True)
     dq = Qpoints[1]-Qpoints[0]
-    XY[0] = npT2q(XY[0],wave)
-    Qdata = np.nan_to_num(si.griddata(XY[0],XY[1],Qpoints,method='linear'))
+    XY[0] = npT2q(XY[0],wave)    
+#    Qdata = np.nan_to_num(si.griddata(XY[0],XY[1],Qpoints,method='linear')) #only OK for scipy 0.9!
+    T = si.interp1d(XY[0],XY[1],bounds_error=False,fill_value=0.0)      #OK for scipy 0.8
+    Qdata = T(Qpoints)
     
     qLimits = data['QScaleLim']
     minQ = np.searchsorted(Qpoints,qLimits[0])

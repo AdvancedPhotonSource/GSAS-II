@@ -1416,7 +1416,7 @@ def UpdatePDFGrid(self,data):
         powId = G2gd.GetPatternTreeItemId(self,self.root,powName)
         inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,powId,'Instrument Parameters'))
         inst = dict(zip(inst[3],inst[1]))
-        auxPlot = G2pwd.CalcPDF(data,inst,xydata)
+        auxPlot = G2pwd.CalcPDF(Data,inst,xydata)
         PDFId = G2gd.GetPatternTreeItemId(self,self.root,'PDF '+powName[4:])
         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'I(Q)'+powName[4:]),xydata['IofQ'])
         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'S(Q)'+powName[4:]),xydata['SofQ'])
@@ -1427,6 +1427,7 @@ def UpdatePDFGrid(self,data):
     def OnComputePDF(event):
         print 'Calculating PDF:'
         auxPlot = ComputePDF(data)
+        print 'Done calculating PDF:'
         Status.SetStatusText('PDF computed')
         for plot in auxPlot:
             G2plt.PlotXY(self,plot[:2],type=plot[2])
@@ -1448,6 +1449,7 @@ def UpdatePDFGrid(self,data):
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             Status.SetStatusText('All PDFs computed')
             G2plt.PlotISFG(self,newPlot=True,type='G(R)')
+            print ' Done calculating PDFs:'
         
     def OnShowTip(self,tip):
         print tip    

@@ -447,23 +447,23 @@ def GetImageData(self,imagefile,imageOnly=False):
     elif ext in ['.sum','.avg','']:
         Comments,Data,Npix,Image = GetGEsumData(imagefile)
     elif ext == '.G2img':
-        return GetG2Image(imagefile)
+        Comments,Data,Npix,Image = GetG2Image(imagefile)
     if imageOnly:
         return Image
     else:
         return Comments,Data,Npix,Image
         
-def PutG2Image(filename,image):
+def PutG2Image(filename,Comments,Data,Npix,image):
     File = open(filename,'wb')
-    cPickle.dump(image,File,1)
+    cPickle.dump([Comments,Data,Npix,image],File,1)
     File.close()
     return
     
 def GetG2Image(filename):
     File = open(filename,'rb')
-    image = cPickle.load(File)
+    Comments,Data,Npix,image = cPickle.load(File)
     File.close()
-    return image
+    return Comments,Data,Npix,image
     
 def GetGEsumData(filename,imageOnly=False):
     import struct as st
@@ -782,7 +782,7 @@ def ProjFileSave(self):
         print 'project save successful'
         
 def SaveIntegration(self,PickId,data):
-    azms = self.Integrate[1]
+    azms = self.Integrate[1][:-1]
     X = self.Integrate[2][:-1]
     Xminmax = [X[0],X[-1]]
     N = len(X)
@@ -792,10 +792,10 @@ def SaveIntegration(self,PickId,data):
     Comments = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'))
     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
     codes = [0 for i in range(11)]
-    Azms = [(azms[i+1]+azms[i])/2. for i in range(len(azms)-1)]
+    LRazm = data['LRazimuth']
     if data['fullIntegrate'] and data['outAzimuths'] == 1:
-        Azms = [0.0,]
-    for i,azm in enumerate(Azms):
+        Azms = [45.0,]                              #a poor man's average?
+    for i,azm in enumerate(azms):
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         Id = 0
         while item:

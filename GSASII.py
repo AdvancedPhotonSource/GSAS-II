@@ -421,12 +421,13 @@ class GSASII(wx.Frame):
     def OnImageRead(self,event):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose image files', '.', '',\
-        'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
-        |*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|\
+        'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img)\
+        |*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img|\
         Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
         MAR file (*.mar*)|*.mar*|\
         GE Image (*.avg;*.sum)|*.avg;*.sum|\
         ADSC Image (*.img)|*.img|\
+        GSAS-II Image (*.G2img)|*.G2img|\
         All files (*.*)|*.*',
         wx.OPEN | wx.MULTIPLE)
         if self.dirname:
@@ -601,13 +602,15 @@ class GSASII(wx.Frame):
                 name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(200,20))
                 name.SetEditable(False)
                 scale = wx.TextCtrl(panel,id,str(item[0]),style=wx.TE_PROCESS_ENTER)
-                scale.Bind(wx.EVT_TEXT,self.OnScaleChange)                    
+                scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
+                scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
                 dataGridSizer.Add(scale,0,wx.LEFT,10)
                 dataGridSizer.Add(name,0,wx.RIGHT,10)
             dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
                 wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
             self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(200,20),style=wx.TE_PROCESS_ENTER)
-            self.name.Bind(wx.EVT_TEXT,self.OnNameChange)
+            self.name.Bind(wx.EVT_TEXT_ENTER,self.OnNameChange)
+            self.name.Bind(wx.EVT_KILL_FOCUS,self.OnNameChange)
             dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
             mainSizer.Add(dataGridSizer,0,wx.EXPAND)
             OkBtn = wx.Button(panel,-1,"Ok")
@@ -824,7 +827,7 @@ class GSASII(wx.Frame):
                         if dlg.ShowModal() == wx.ID_OK:
                             self.dirname = dlg.GetDirectory()
                             newimagefile = dlg.GetPath()
-                            G2IO.PutG2Image(newimagefile,newImage)
+                            G2IO.PutG2Image(newimagefile,Comments,Data,Npix,newImage)
                             Imax = np.amax(newImage)
                             Imin = np.amin(newImage)
                             newImage = []

@@ -383,6 +383,7 @@ def PlotPatterns(self,newPlot=False):
         elif event.key == 's':
             if self.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+                choice.sort()
                 dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelection()
@@ -716,6 +717,7 @@ def PlotISFG(self,newPlot=False,type=''):
         elif event.key == 's':
             if self.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+                choice.sort()
                 dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelection()

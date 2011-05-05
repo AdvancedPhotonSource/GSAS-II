@@ -63,7 +63,7 @@ def UpdateImageControls(self,data,masks):
     def OnCalibDmin(event):
         try:
             dmin = float(calibDmin.GetValue())
-            if dmin < 0.5:
+            if dmin < 0.25:
                 raise ValueError
             data['calibdmin'] = dmin
         except ValueError:

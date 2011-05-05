@@ -15,7 +15,7 @@ Cf2py depend(N) MASK
       INTEGER*4    N,M
       REAL*4       X(0:N-1),Y(0:N-1)
       REAL*8       POLY(0:M-1,0:1)
-      LOGICAL*1    MASK(N)
+      LOGICAL*1    MASK(0:N-1)
 
       INTEGER*4    I,K
       REAL*4       P1X,P1Y,P2X,P2Y,XINTERS

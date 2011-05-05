@@ -201,21 +201,20 @@ def makeIdealRing(ellipse,azm=None):
     cent,phi,radii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
-    ring = []
     if azm:
-        aR = azm[0]-90,azm[1]-90,1
+        aR = azm[0]-90,azm[1]-90,azm[1]-azm[0]
         if azm[1]-azm[0] > 180:
-            aR[2] = 2
+            aR[2] /= 2
     else:
-        aR = 0,362,2
-    for a in range(aR[0],aR[1],aR[2]):
-        x = radii[0]*cosd(a-phi)
-        y = radii[1]*sind(a-phi)
-        X = (cphi*x-sphi*y+cent[0])
-        Y = (sphi*x+cphi*y+cent[1])
-        ring.append([X,Y])
-    return ring
-    
+        aR = 0,362,181
+        
+    a = np.linspace(aR[0],aR[1],aR[2])
+    x = radii[0]*npcosd(a-phi)
+    y = radii[1]*npsind(a-phi)
+    X = (cphi*x-sphi*y+cent[0])
+    Y = (sphi*x+cphi*y+cent[1])
+    return zip(X,Y)
+                
 def calcDist(radii,tth):
     stth = sind(tth)
     ctth = cosd(tth)
@@ -510,7 +509,8 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
     
-    tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
+#    tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
+    tay,tax = np.mgrid[iLim[0]:iLim[1],jLim[0]:jLim[1]]         #bin corners
     tax = np.asfarray(tax*scalex,dtype=np.float32)
     tay = np.asfarray(tay*scaley,dtype=np.float32)
     nI = iLim[1]-iLim[0]
@@ -518,16 +518,20 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     #make position masks here
     spots = masks['Points']
     polygons = masks['Polygons']
-    tam = ma.make_mask_none((iLim[1]-iLim[0],jLim[1]-jLim[0]))
+    tam = ma.make_mask_none((nI,nJ))
     for polygon in polygons:
         if polygon:
             tamp = ma.make_mask_none((nI*nJ))
-            tam = ma.mask_or(tam.flatten(),ma.make_mask(pm.polymask(nI*nJ,
-                tax.flatten(),tay.flatten(),len(polygon),polygon,tamp)))
+            tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
+                tay.flatten(),len(polygon),polygon,tamp))
+            tam = ma.mask_or(tam.flatten(),tamp)
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
     for X,Y,diam in spots:
-        tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2)))
-    return np.array(GetTthAzm(tax,tay,data)),tam           #2-theta & azimuth arrays & position mask
+        tamp = ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2))
+        tam = ma.mask_or(tam,tamp)
+    TA = np.array(GetTthAzm(tax,tay,data))
+    TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
+    return np.array(TA),tam           #2-theta & azimuth arrays & position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     import numpy.ma as ma
@@ -539,8 +543,9 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     for tth,thick in rings:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
     for tth,azm,thick in arcs:
-        tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))* \
-            ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1])))
+        tamt = ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.))
+        tama = ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1]))
+        tam = ma.mask_or(tam.flatten(),tamt*tama)
     taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
     tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
@@ -553,10 +558,7 @@ def ImageIntegrate(image,data,masks):
     import histogram2d as h2d
     print 'Begin image integration'
     LUtth = data['IOtth']
-    if data['fullIntegrate']:
-        LRazm = [0,360]
-    else:
-        LRazm = data['LRazimuth']
+    LRazm = data['LRazimuth']
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
     Dtth = (LUtth[1]-LUtth[0])/numChans
@@ -582,6 +584,7 @@ def ImageIntegrate(image,data,masks):
                 jFin = min(jBeg+1024,Nx)                
                 print 'Process map block:',iBlk,jBlk,' limits:',iBeg,iFin,jBeg,jFin
                 TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+                
                 Nup += 1
                 dlg.Update(Nup)
                 Block = image[iBeg:iFin,jBeg:jFin]

@@ -135,6 +135,8 @@ def UpdatePeakGrid(self, data):
         return        
 
     def RefreshPeakGrid(event):
+        r,c =  event.GetRow(),event.GetCol()
+        
         event.StopPropagation()
         data = self.PeakTable.GetData()
         T = []
@@ -160,6 +162,15 @@ def UpdatePeakGrid(self, data):
         r,c =  event.GetRow(),event.GetCol()
         if r < 0 and self.dataDisplay.GetColLabelValue(c) == 'refine':
             self.dataDisplay.SelectCol(c,False)
+            
+    def OnRefine(event):
+        r,c =  event.GetRow(),event.GetCol()
+        if self.dataDisplay.GetColLabelValue(c) == 'refine':
+            if self.PeakTable.GetValue(r,c):
+                data[r][c] = False
+            else:
+                data[r][c] = True
+            print r,c,data[r][c]
         
                        
     def RowSelect(event):
@@ -270,6 +281,7 @@ def UpdatePeakGrid(self, data):
     self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
     self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)                 
     self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefineSelect)
+    self.dataDisplay.Bind(wg.EVT_GRID_CELL_RIGHT_CLICK,OnRefine)
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
     self.dataFrame.setSizePosLeft([535,350])
@@ -378,7 +390,7 @@ def UpdateInstrumentGrid(self, data):
                     else:
                         peak[4] = ins[4]*tand(peak[0]/2.0)**2+ins[5]*tand(peak[0]/2.0)+ins[6]
                         peak[6] = ins[7]/cosd(peak[0]/2.0)+ins[8]*tand(peak[0]/2.0)
-                        
+                                                
     def OnReset(event):
         if Ka2:
             data[1][6:12] = data[0][6:12]
@@ -562,9 +574,17 @@ def UpdateIndexPeaksGrid(self, data):
     IndexId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List')
     
     def RefreshIndexPeaksGrid(event):
+        r,c =  event.GetRow(),event.GetCol()
         data = self.IndexPeaksTable.GetData()
-        self.PatternTree.SetItemPyData(IndexId,data)
-        
+        if c == 2:
+            if data[r][c]:
+                data[r][c] = False
+            else:
+                data[r][c] = True
+            self.IndexPeaksTable.SetData(data)
+            self.PatternTree.SetItemPyData(IndexId,data)
+            self.dataDisplay.ForceRefresh()
+            
     def OnReload(event):
         data = []
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
@@ -596,10 +616,11 @@ def UpdateIndexPeaksGrid(self, data):
             
     if self.dataDisplay:
         self.dataFrame.Clear()
-    self.dataFrame.SetMenuBar(self.dataFrame.IndPeaksMenu)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
-    self.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
+    if 'PWD' in self.PatternTree.GetItemText(self.PatternId):
+        self.dataFrame.SetMenuBar(self.dataFrame.IndPeaksMenu)
+        self.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
     inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
     self.dataFrame.IndexPeaks.Enable(False)
     self.IndexPeaksTable = []
@@ -629,7 +650,13 @@ def UpdateIndexPeaksGrid(self, data):
     self.dataFrame.SetLabel('Index Peak List')
     self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)                
     self.dataDisplay.SetTable(self.IndexPeaksTable, True)
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshIndexPeaksGrid)
+    for r in range(self.dataDisplay.GetNumberRows()):
+        for c in range(self.dataDisplay.GetNumberCols()):
+            if c == 2:
+                self.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
+            else:
+                self.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
+    self.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
     self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
@@ -892,6 +919,7 @@ def UpdateUnitCellsGrid(self, data):
                     cells[i][-1] = False
                     UnitCellsTable.SetValue(i,c,False)
                 UnitCellsTable.SetValue(r,c,True)
+                gridDisplay.ForceRefresh()
                 cells[r][-1] = True
                 ibrav = cells[r][2]
                 A = G2lat.cell2A(cells[r][3:9])
@@ -1063,7 +1091,8 @@ def UpdateUnitCellsGrid(self, data):
         gridDisplay.SetPosition(wx.Point(0,20))                
         gridDisplay.SetTable(UnitCellsTable, True)
         self.dataFrame.CopyCell.Enable(True)
-        gridDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshUnitCellsGrid)
+#        gridDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshUnitCellsGrid)
+        gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
         gridDisplay.SetMargins(0,0)
         gridDisplay.SetRowLabelSize(0)
         gridDisplay.AutoSizeColumns(False)

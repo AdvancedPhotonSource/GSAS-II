@@ -989,6 +989,7 @@ def PlotPowderLines(self):
     xlim = [max(0,xmin-delt/20.),min(180.,xmax+delt/20.)]
     Plot.set_xlim(xlim)
     Page.canvas.draw()
+    Page.toolbar.push_current()
 
 def PlotPeakWidths(self):
     PatternId = self.PatternId

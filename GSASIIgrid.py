@@ -454,7 +454,7 @@ class Table(wg.PyGridTableBase):
                 print self.data
                 self.data[row][col] = value
         innerSetValue(row, col, value)
-        
+                
 def UpdateNotebook(self,data):        
     if data:
         self.dataFrame.SetLabel('Notebook')

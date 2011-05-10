@@ -14,6 +14,7 @@ import numpy as np
 import scipy as sp
 import numpy.linalg as nl
 import scipy.interpolate as si
+import scipy.stats as st
 import GSASIIpath
 import pypowder as pyp              #assumes path has been amended to include correctr bin directory
 import GSASIIplot as G2plt
@@ -34,12 +35,135 @@ rdsq2d = lambda x,p: round(1.0/math.sqrt(x),p)
 npsind = lambda x: np.sin(x*np.pi/180.)
 npasind = lambda x: 180.*np.arcsin(x)/math.pi
 npcosd = lambda x: np.cos(x*math.pi/180.)
+npacosd = lambda x: 180.*np.arccos(x)/math.pi
 nptand = lambda x: np.tan(x*math.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
+    
+np.seterr(divide='ignore')      #this is for the FCJ functions
 
+#Peak shape definitions
+# Finger-Cox_Jephcoat D(2phi,2th) function for S/L = H/L
+
+class fcjde_gen(st.rv_continuous):
+    
+    """
+    Finger-Cox-Jephcoat D(2phi,2th) function for S/L = H/L
+    Ref: J. Appl. Cryst. (1994) 27, 892-900.
+    Parameters
+    -----------------------------------------
+    x: array like 2-theta positions
+    t: 2-theta position of peak
+    s: sum(S/L,H/L); S: sample height, H: detector opening, 
+        L: sample to detector opening distance
+    Result for fcj.pdf
+    -----------------------------------------
+    if x < t & s = S/L+H/L: 
+        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/s]/cos(x)    
+    if x >= t:
+        fcj.pdf = 0    
+    """
+    def _pdf(self,x,t,s):
+        ax = npcosd(x)**2
+        bx = npcosd(t)**2
+        bx = np.where(ax>bx,bx,ax)
+        fx = np.where(ax>bx,(1./np.sqrt((ax/bx)-1.)-1./s)/npcosd(x),0.0)
+        return np.where(((x < t) & (fx > 0)),fx,0.0)
+#    def _cdf(self, x):
+#    def _ppf(self, q):
+#    def _sf(self, x):
+#    def _isf(self, q):
+#    def _stats(self):
+#    def _entropy(self):
+        
+fcjde = fcjde_gen(name='fcjde')
+                
+        
+# Finger-Cox_Jephcoat D(2phi,2th) function for S/L != H/L
+
+class fcjd_gen(st.rv_continuous):
+    """
+    Finger-Cox-Jephcoat D(2phi,2th) function for S/L != H/L
+    Ref: J. Appl. Cryst. (1994) 27, 892-900.
+    Parameters
+    -----------------------------------------
+    x: array like 2-theta positions
+    t: 2-theta position of peak
+    h: detector opening height/sample to detector opening distance
+    s: sample height/sample to detector opening distance
+    Result for fcj2.pdf
+    -----------------------------------------
+    infl = acos(cos(t)*sqrt((h-s)**2+1))
+    if x < infl:    
+        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/shl]/cos(2phi)
+    
+    for 2phi < 2tth & shl = S/L+H/L
+    
+    fcj.pdf(x,tth,shl) = 0
+    
+    for 2phi >= 2th
+    """
+    def _pdf(self,x,t,h,s):
+        a = npcosd(t)*(np.sqrt((h-s)**2+1.))
+        infl = np.where((a <= 1.),npacosd(a),t)
+        ax = npcosd(x)**2
+        bx = npcosd(t)**2
+        bx = np.where(ax>bx,bx,ax)
+        H = np.where(ax>bx,np.sqrt((ax/bx)-1.),0.0)
+        W1 = h+s-H
+        W2 = np.where ((h > s),2.*s,2.*h)
+        fx = 2.*h*np.sqrt((ax/bx)-1.)*npcosd(x)
+        fx = np.where(fx>0.0,1./fx,0.0)
+        fx = np.where((x < infl),fx*W1,fx*W2)
+        return np.where((fx > 0.),fx,0.0)
+#    def _cdf(self, x):
+#    def _ppf(self, q):
+#    def _sf(self, x):
+#    def _isf(self, q):
+#    def _stats(self):
+#    def _entropy(self):
+        
+fcjd = fcjd_gen(name='fcjd')
+                
+# Finger-Cox_Jephcoat D(2phi,2th) function for S/L != H/L using sum & difference
+
+class fcjdsd_gen(st.rv_continuous):
+    """
+    Finger-Cox-Jephcoat D(2phi,2th) function for S/L != H/L using sum & difference
+    
+    fcj.pdf(x,tth,shl) = [1/sqrt({cos(2phi)**2/cos(2th)**2}-1) - 1/shl]/cos(2phi)
+    
+    for 2phi < 2tth & shl = S/L+H/L
+    
+    fcj.pdf(x,tth,shl) = 0
+    
+    for 2phi >= 2th
+    """
+    def _argcheck(self,t,s,d):
+        return (t > 0)&(s > 0)&(abs(d) < s)
+    def _pdf(self,x,t,s,d):
+        a = npcosd(t)*np.sqrt(d**2+1.)
+        infl = np.where((a < 1.),npacosd(a),t)
+        ax = npcosd(x)**2
+        bx = npcosd(t)**2
+        bx = np.where(ax>bx,bx,ax)
+        H = np.where(ax>bx,np.sqrt((ax/bx)-1.),0.0)
+        W1 = s-H
+        W2 = np.where ((d > 0),s-d,s+d)
+        fx = np.where(ax>bx,1./((s+d)*np.sqrt((ax/bx)-1.)*npcosd(x)),0.0)
+        fx = np.where((x < infl),fx*W1,fx*W2)
+        return np.where((fx > 0.),fx,0.0)
+#    def _cdf(self, x):
+#    def _ppf(self, q):
+#    def _sf(self, x):
+#    def _isf(self, q):
+#    def _stats(self):
+#    def _entropy(self):
+        
+fcjdsd = fcjdsd_gen(name='fcjdsd')
+                
 def factorize(num):
     ''' Provide prime number factors for integer num
     Returns dictionary of prime factors (keys) & power for each (data)

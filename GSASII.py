@@ -917,7 +917,7 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
         
-    def GetFileList(fileType,skip=None):        #potentially useful?
+    def GetFileList(self,fileType,skip=None):        #potentially useful?
         fileList = []
         Source = ''
         id, cookie = self.PatternTree.GetFirstChild(self.root)

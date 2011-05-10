@@ -18,15 +18,18 @@ import GSASIIpath
 import numpy as np
 
 def GetFormFactorCoeff(El):
-    """Read form factor coefficients from atomdata.asc file
-    @param El: element 1-2 character symbol case irrevelant
-    @return: FormFactors: list of form factor dictionaries
-    each dictionary is:
-    'Symbol':4 character element symbol with valence (e.g. 'NI+2')
-    'Z': atomic number
-    'fa': 4 A coefficients
-    'fb':4 B coefficients
-    'fc': C coefficient 
+    """Read form factor coefficients from `atomdata.asc` file
+
+    :param El: element 1-2 character symbol case irrevelant
+    :return: `FormFactors`: list of form factor dictionaries
+    
+    Each form factor dictionary is:
+    
+    * `Symbol`: 4 character element symbol with valence (e.g. 'NI+2')
+    * `Z`: atomic number
+    * `fa`: 4 A coefficients
+    * `fb`: 4 B coefficients
+    * `fc`: C coefficient 
     """
     ElS = El.upper()
     ElS = ElS.rjust(2)

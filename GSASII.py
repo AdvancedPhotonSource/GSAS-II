@@ -451,6 +451,7 @@ class GSASII(wx.Frame):
                             Data['rings'] = []
                             Data['cutoff'] = 10
                             Data['pixLimit'] = 20
+                            Data['edgemin'] = 100000000
                             Data['calibdmin'] = 0.5
                             Data['calibskip'] = 0
                             Data['ellipses'] = []
@@ -467,6 +468,7 @@ class GSASII(wx.Frame):
                             Data['pixLimit'] = 20
                             Data['calibdmin'] = 0.5
                             Data['calibskip'] = 0
+                            Data['edgemin'] = 100000000
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
                             Data['IOtth'] = [2.0,5.0]

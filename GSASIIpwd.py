@@ -54,23 +54,30 @@ class fcjde_gen(st.rv_continuous):
     Ref: J. Appl. Cryst. (1994) 27, 892-900.
     Parameters
     -----------------------------------------
-    x: array like 2-theta positions
+    x: array like 2-theta steps (-1 to 1)
     t: 2-theta position of peak
     s: sum(S/L,H/L); S: sample height, H: detector opening, 
         L: sample to detector opening distance
+    dx: 2-theta step size in deg
     Result for fcj.pdf
     -----------------------------------------
-    if x < t & s = S/L+H/L: 
-        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/s]/cos(x)    
-    if x >= t:
+    if t < 90:
+        X = dx*x+t
+    else:
+        X = 180.-dx*x-t
+    if X < t & s = S/L+H/L: 
+        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/s]/|cos(X)|    
+    if X >= t:
         fcj.pdf = 0    
     """
-    def _pdf(self,x,t,s):
-        ax = npcosd(x)**2
+    def _pdf(self,x,t,s,dx):
+        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
+        ax = npcosd(T)**2
         bx = npcosd(t)**2
         bx = np.where(ax>bx,bx,ax)
-        fx = np.where(ax>bx,(1./np.sqrt((ax/bx)-1.)-1./s)/npcosd(x),0.0)
-        return np.where(((x < t) & (fx > 0)),fx,0.0)
+        fx = np.where(ax>bx,(np.sqrt(bx/(ax-bx))-1./s)/np.sqrt(ax),0.0)
+        fx = np.where(fx > 0,fx,0.0)
+        return fx
 #    def _cdf(self, x):
 #    def _ppf(self, q):
 #    def _sf(self, x):
@@ -89,34 +96,37 @@ class fcjd_gen(st.rv_continuous):
     Ref: J. Appl. Cryst. (1994) 27, 892-900.
     Parameters
     -----------------------------------------
-    x: array like 2-theta positions
+    x: array like 2-theta step numbers (-1 to 1)
     t: 2-theta position of peak
     h: detector opening height/sample to detector opening distance
     s: sample height/sample to detector opening distance
+    dx: 2-theta step size in deg
     Result for fcj2.pdf
     -----------------------------------------
+    if t < 90:
+        X = dx*x+t
+    else:
+        X = 180.-dx*x-t
     infl = acos(cos(t)*sqrt((h-s)**2+1))
-    if x < infl:    
-        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/shl]/cos(2phi)
-    
-    for 2phi < 2tth & shl = S/L+H/L
-    
-    fcj.pdf(x,tth,shl) = 0
-    
+    if X < infl:    
+        fcj.pdf = [1/sqrt({cos(X)**2/cos(t)**2}-1) - 1/shl]/cos(X)    
+    for X < t & s = S/L+H/L    
+    fcj.pdf(x,t,s) = 0    
     for 2phi >= 2th
     """
-    def _pdf(self,x,t,h,s):
-        a = npcosd(t)*(np.sqrt((h-s)**2+1.))
-        infl = np.where((a <= 1.),npacosd(a),t)
-        ax = npcosd(x)**2
+    def _pdf(self,x,t,h,s,dx):
+        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
+        a = np.abs(npcosd(t))*(np.sqrt((h-s)**2+1.))
+        infl = np.where((a <= 1.),np.abs(npacosd(a)),T)
+        ax = npcosd(T)**2
         bx = npcosd(t)**2
         bx = np.where(ax>bx,bx,ax)
         H = np.where(ax>bx,np.sqrt((ax/bx)-1.),0.0)
         W1 = h+s-H
         W2 = np.where ((h > s),2.*s,2.*h)
-        fx = 2.*h*np.sqrt((ax/bx)-1.)*npcosd(x)
+        fx = 2.*h*np.sqrt((ax/bx)-1.)*np.sqrt(ax)
         fx = np.where(fx>0.0,1./fx,0.0)
-        fx = np.where((x < infl),fx*W1,fx*W2)
+        fx = np.where((T < infl),fx*W1,fx*W2)
         return np.where((fx > 0.),fx,0.0)
 #    def _cdf(self, x):
 #    def _ppf(self, q):
@@ -132,8 +142,23 @@ fcjd = fcjd_gen(name='fcjd')
 class fcjdsd_gen(st.rv_continuous):
     """
     Finger-Cox-Jephcoat D(2phi,2th) function for S/L != H/L using sum & difference
+    Ref: J. Appl. Cryst. (1994) 27, 892-900.
+    Parameters
+    -----------------------------------------
+    x: array like 2-theta positions
+    t: 2-theta position of peak
+    s: sum(S/L,H/L); S: sample height, H: detector opening, 
+        L: sample to detector opening distance
+    d: difference(S/L,H/L)
+    dx: 2-theta step size in deg
+    Result for fcj2.pdf
+    -----------------------------------------
+    if t < 90:
+        X = dx*x+t
+    else:
+        X = 180.-dx*x-t
     
-    fcj.pdf(x,tth,shl) = [1/sqrt({cos(2phi)**2/cos(2th)**2}-1) - 1/shl]/cos(2phi)
+    fcj.pdf(x,t,s,d) = [1/sqrt({cos(X)**2/cos(t)**2}-1) - 1/shl]/cos(2phi)
     
     for 2phi < 2tth & shl = S/L+H/L
     
@@ -141,19 +166,20 @@ class fcjdsd_gen(st.rv_continuous):
     
     for 2phi >= 2th
     """
-    def _argcheck(self,t,s,d):
+    def _argcheck(self,t,s,d,dx):
         return (t > 0)&(s > 0)&(abs(d) < s)
-    def _pdf(self,x,t,s,d):
-        a = npcosd(t)*np.sqrt(d**2+1.)
-        infl = np.where((a < 1.),npacosd(a),t)
-        ax = npcosd(x)**2
+    def _pdf(self,x,t,s,d,dx):
+        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
+        a = np.abs(npcosd(t))*np.sqrt(d**2+1.)
+        infl = np.where((a < 1.),np.abs(npacosd(a)),T)
+        ax = npcosd(T)**2
         bx = npcosd(t)**2
         bx = np.where(ax>bx,bx,ax)
         H = np.where(ax>bx,np.sqrt((ax/bx)-1.),0.0)
         W1 = s-H
         W2 = np.where ((d > 0),s-d,s+d)
-        fx = np.where(ax>bx,1./((s+d)*np.sqrt((ax/bx)-1.)*npcosd(x)),0.0)
-        fx = np.where((x < infl),fx*W1,fx*W2)
+        fx = np.where(ax>bx,1./((s+d)*np.sqrt((ax/bx)-1.)*np.sqrt(ax)),0.0)
+        fx = np.where((T < infl),fx*W1,fx*W2)
         return np.where((fx > 0.),fx,0.0)
 #    def _cdf(self, x):
 #    def _ppf(self, q):

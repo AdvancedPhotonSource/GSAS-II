@@ -169,7 +169,7 @@ def ImageLocalMax(image,w,Xpix,Ypix):
         ypix += Zmax/w2-w
         return xpix,ypix,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
     else:
-        return 0,0,0,0
+        return 0,0,0,0      
     
 def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     cent,phi,radii = ellipse
@@ -325,6 +325,21 @@ def checkEllipse(Zsum,distSum,xSum,ySum,dist,x,y):
     curr = np.array([dist,x,y])
     return abs(avg-curr)/avg < .02
 
+def EdgeFinder(image,data):          #this makes list of all x,y where I>edgeMin suitable for an ellipse search?
+    import numpy.ma as ma
+    Nx,Ny = data['size']
+    pixelSize = data['pixelSize']
+    edgemin = data['edgemin']
+    scalex = pixelSize[0]/1000.
+    scaley = pixelSize[1]/1000.    
+    tay,tax = np.mgrid[0:Nx,0:Ny]
+    tax = np.asfarray(tax*scalex,dtype=np.float32)
+    tay = np.asfarray(tay*scaley,dtype=np.float32)
+    tam = ma.getmask(ma.masked_less(image.flatten(),edgemin))
+    tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
+    tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
+    return zip(tax,tay)
+            
 def ImageCalibrate(self,data):
     import copy
     import ImageCalibrants as calFile
@@ -372,12 +387,16 @@ def ImageCalibrate(self,data):
     
     skip = data['calibskip']
     dmin = data['calibdmin']
-    Bravais,cell = calFile.Calibrants[data['calibrant']][:2]
-    A = G2lat.cell2A(cell)
+    Bravais,Cells = calFile.Calibrants[data['calibrant']][:2]
+    HKL = []
+    for bravais,cell in zip(Bravais,Cells):
+        A = G2lat.cell2A(cell)
+        hkl = G2lat.GenHBravais(dmin,bravais,A)[skip:]
+        HKL += hkl
+    HKL = G2lat.sortHKLd(HKL,True,False)
     wave = data['wavelength']
     cent = data['center']
     elcent,phi,radii = ellipse
-    HKL = G2lat.GenHBravais(dmin,Bravais,A)[skip:]
     dsp = HKL[0][3]
     tth = 2.0*asind(wave/(2.*dsp))
     ttth = tand(tth)

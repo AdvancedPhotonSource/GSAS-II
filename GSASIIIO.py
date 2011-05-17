@@ -79,8 +79,8 @@ First line of this file:
                     Pos.append(File.tell())
             else:
                 Comments.append(S[:-1])
-                if 'Temp' in S:
-                    Temperature = float(S[:-1].split()[-1])
+                if 'Temp' in S.split('=')[0]:
+                    Temperature = float(S.split('=')[1])
         File.close()
     finally:
         wx.EndBusyCursor()

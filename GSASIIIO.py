@@ -887,7 +887,8 @@ def powderXyeSave(self,exports,powderfile):
         wx.BeginBusyCursor()
         try:
             x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(PickId)[1]
-            XYW = zip(x,y,w)
+            s = list(np.sqrt(1./np.array(w)))        
+            XYW = zip(x,y,s)
             for X,Y,W in XYW:
                 file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
             file.close()

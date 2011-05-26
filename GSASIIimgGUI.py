@@ -336,6 +336,8 @@ def UpdateImageControls(self,data,masks):
             dlg.Destroy()
         
     def OnLoadControls(event):
+        cntlList = ['wavelength','distance','tilt','rotation',
+            'fullIntegrate','outAzimuths','LRazimuth','IOtth']
         dlg = wx.FileDialog(self, 'Choose image controls file', '.', '', 
             'image control files (*.imctrl)|*.imctrl',wx.OPEN)
         if self.dirname:
@@ -351,26 +353,16 @@ def UpdateImageControls(self,data,masks):
                         S = File.readline()
                         continue
                     [key,val] = S[:-1].split(':')
-                    if key in ['type','calibrant']:
+                    if key in ['type','calibrant',]:
                         save[key] = val
-                    elif key in ['wavelength','distance','tilt','rotation']:
-                        save[key] = float(val)
-                    elif key in ['fullIntegrate',]:
-                        save[key] = bool(val)
-                    elif key in ['outAzimuths',]:
-                        save[key] = int(val)
-                    elif key in ['LRazimuth',]:
+                    elif key in ['center',]:
                         if ',' in val:
-                            vals = val.strip('[] ').split(',')
+                            save[key] = eval(val)
                         else:
                             vals = val.strip('[] ').split()
-                        save[key] = [int(vals[0]),int(vals[1])]                    
-                    elif key in ['center','IOtth']:
-                        if ',' in val:
-                            vals = val.strip('[] ').split(',')
-                        else:
-                            vals = val.strip('[] ').split()
-                        save[key] = [float(vals[0]),float(vals[1])]                    
+                            save[key] = [float(vals[0]),float(vals[1])] 
+                    elif key in cntlList:
+                        save[key] = eval(val)
                     S = File.readline()
                 data.update(save)
                 UpdateImageControls(self,data,masks)            
@@ -709,7 +701,7 @@ def UpdateMasks(self,data):
 
     def OnCopyMask(event):
         import copy
-        TextList = []
+        TextList = [[False,'All IMG',0]]
         Names = []
         if self.PatternTree.GetCount():
             id, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -719,31 +711,80 @@ def UpdateMasks(self,data):
                 if 'IMG' in name:
                     if id == self.Image:
                         Source = name
-                        Mask = copy.copy(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks')))
+                        Mask = copy.deepcopy(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks')))
                         del Mask['Thresholds']
                     else:
                         TextList.append([False,name,id])
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-            if not len(TextList):
+            if len(TextList) == 1:
                 self.ErrorDialog('Nothing to copy mask to','There must be more than one "IMG" pattern')
                 return
             dlg = self.CopyDialog(self,'Copy mask information','Copy mask from '+Source+' to:',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetData()
+                    if result[0][0]:
+                        result = TextList[1:]
+                        for item in result: item[0] = True
                     for i,item in enumerate(result):
                         ifcopy,name,id = item
                         if ifcopy:
                             mask = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks'))
                             mask.update(Mask)                                
-                            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks'),mask)
+                            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'Masks'),copy.deepcopy(mask))
             finally:
                 dlg.Destroy()
+                
+    def OnSaveMask(event):
+        dlg = wx.FileDialog(self, 'Choose image mask file', '.', '', 
+            'image mask files (*.immask)|*.immask',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'w')
+                save = {}
+                keys = ['Points','Rings','Arcs','Polygons','Thresholds']
+                for key in keys:
+                    File.write(key+':'+str(data[key])+'\n')
+                File.close()
+        finally:
+            dlg.Destroy()
+        
+    def OnLoadMask(event):
+        dlg = wx.FileDialog(self, 'Choose image mask file', '.', '', 
+            'image mask files (*.immask)|*.immask',wx.OPEN)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                save = {}
+                S = File.readline()
+                while S:
+                    if S[0] == '#':
+                        S = File.readline()
+                        continue
+                    [key,val] = S[:-1].split(':')
+                    if key in ['Points','Rings','Arcs','Polygons','Thresholds']:
+                        save[key] = eval(val)
+                    S = File.readline()
+                data.update(save)
+                UpdateMasks(self,data)            
+                G2plt.PlotExposedImage(self,event=event)
+                
+                File.close()
+        finally:
+            dlg.Destroy()
         
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.MaskMenu)
     self.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=G2gd.wxID_MASKCOPY)
+    self.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOAD)
+    self.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)    
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
         Status.SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon")

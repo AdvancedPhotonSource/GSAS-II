@@ -33,8 +33,8 @@ import GSASIIphsGUI as G2phG
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
 ] = [wx.NewId() for _init_coll_IMAGE_Items in range(7)]
 
-[ wxID_MASKCOPY,
-] = [wx.NewId() for _init_coll_MASK_Items in range(1)]
+[ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
+] = [wx.NewId() for _init_coll_MASK_Items in range(3)]
 
 [ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT,
 ] = [wx.NewId() for _init_coll_PAWLEY_Items in range(2)]
@@ -174,6 +174,10 @@ class DataFrame(wx.Frame):
     def _init_coll_Mask_Items(self,parent):
         parent.Append(help='Copy mask to other images', 
             id=wxID_MASKCOPY, kind=wx.ITEM_NORMAL,text='Copy mask')
+        parent.Append(help='Save mask to file', 
+            id=wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
+        parent.Append(help='Load mask from file', 
+            id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
 
     def _init_coll_Inst_Items(self,parent):
         parent.Append(help='Reset instrument profile parameters to default', 

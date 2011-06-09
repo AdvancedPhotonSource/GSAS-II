@@ -125,6 +125,25 @@ def FitEllipse(ring):
 def FitDetector(rings,p0,wave):
     from scipy.optimize import leastsq
         
+    def CalibPrint(ValSig):
+        print 'Image Parameters:'
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        for name,fmt,value,sig in ValSig:
+            ptlbls += "%s" % (name.rjust(12))
+            if name == 'rotate':
+                ptstr += fmt % (value-90.)      #kluge to get rotation from vertical - see GSASIIimgGUI
+            else:
+                ptstr += fmt % (value)
+            if sig:
+                sigstr += fmt % (sig)
+            else:
+                sigstr += 12*' '
+        print ptlbls
+        print ptstr
+        print sigstr        
+        
     def ellipseCalcD(B,xyd,wave):
         x = xyd[0]
         y = xyd[1]
@@ -143,15 +162,32 @@ def FitDetector(rings,p0,wave):
         XR = X*npcosd(phi)-Y*npsind(phi)
         YR = X*npsind(phi)+Y*npcosd(phi)
         return (XR/R0)**2+(YR/R1)**2-1
+        
     def ellipseCalcW(C,xyd):
         dist,x0,y0,phi,tilt,wave = C
         B = dist,x0,y0,phi,tilt
         return ellipseCalcD(B,xyd,wave)
-    result = leastsq(ellipseCalcD,p0,args=(rings.T,wave))
+        
+    names = ['distance','det-X0','det-Y0','rotate','tilt','wavelength']
+    fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.5f']   
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,wave),full_output=True)
+    result[0][3] = np.mod(result[0][3],360.0)               #remove random full circles
+    vals = list(result[0])
+    vals.append(wave)
+    chi = np.sqrt(np.sum(ellipseCalcD(result[0],rings.T,wave)**2))
+    sig = list(chi*np.sqrt(np.diag(result[1])))
+    sig.append(0.)
+    ValSig = zip(names,fmt,vals,sig)
+    CalibPrint(ValSig)
     if len(rings) > 1:
+        print 'Trial refinement of wavelength - not used for calibration'
         p0 = result[0]
         p0 = np.append(p0,wave)
-        resultW = leastsq(ellipseCalcW,p0,args=(rings.T,))
+        resultW = leastsq(ellipseCalcW,p0,args=(rings.T,),full_output=True)
+        resultW[0][3] = np.mod(result[0][3],360.0)          #remove random full circles
+        sig = np.sqrt(np.sum(ellipseCalcW(resultW[0],rings.T)**2))
+        ValSig = zip(names,fmt,resultW[0],sig*np.sqrt(np.diag(resultW[1])))
+        CalibPrint(ValSig)
         return result[0],resultW[0][-1]
     else:
         return result[0],wave
@@ -343,7 +379,7 @@ def EdgeFinder(image,data):          #this makes list of all x,y where I>edgeMin
 def ImageCalibrate(self,data):
     import copy
     import ImageCalibrants as calFile
-    print 'image calibrate'
+    print 'Image calibration:'
     time0 = time.time()
     ring = data['ring']
     pixelSize = data['pixelSize']
@@ -359,7 +395,7 @@ def ImageCalibrate(self,data):
     data['ellipses'] = []
     outE = FitRing(ring,True)
     if outE:
-        print 'start ellipse:',outE
+#        print 'start ellipse:',outE
         ellipse = outE
     else:
         return False
@@ -373,7 +409,7 @@ def ImageCalibrate(self,data):
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
-    print 'inner ring:',ellipse
+#    print 'inner ring:',ellipse
     data['center'] = copy.copy(ellipse[0])           #not right!! (but useful for now)
     data['ellipses'].append(ellipse[:]+('r',))
     G2plt.PlotImage(self,newImage=True)
@@ -440,7 +476,7 @@ def ImageCalibrate(self,data):
             dist = calcDist(radii,tth)
             distR = 1.-dist/data['distance']
             if abs(distR) > 0.1:
-                print dsp,dist,data['distance'],distR,len(Ring),delt
+#                print dsp,dist,data['distance'],distR,len(Ring),delt
                 break
             if distR > 0.001:
                 print 'Wavelength too large?'
@@ -470,8 +506,8 @@ def ImageCalibrate(self,data):
                 if not np.all(checkEllipse(Zsum,distSum,xSum,ySum,dist,data['center'][0],data['center'][1])):
                     print 'Bad fit for ring # %i. Try reducing Pixel search range'%(i) 
             cent = data['center']
-            print ('for ring # %2i @ d-space %.4f: dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' 
-                %(i,dsp,dist,phi-90.,Tilt,cent[0],cent[1],numZ))
+#            print ('for ring # %2i @ d-space %.4f: dist %.3f rotate %6.2f tilt %6.2f Xcent %.3f Ycent %.3f Npts %d' 
+#                %(i,dsp,dist,phi-90.,Tilt,cent[0],cent[1],numZ))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
         else:
             break
@@ -506,7 +542,7 @@ def ImageCalibrate(self,data):
     rings = np.concatenate((data['rings']),axis=0)
     p0 = [dist,cent[0],cent[1],phi,tilt]
     result,newWave = FitDetector(rings,p0,wave)
-    print 'Suggested new wavelength = ',('%.5f')%(newWave),' (not reliable if distance > 2m)'
+#    print 'Suggested new wavelength = ',('%.5f')%(newWave),' (not reliable if distance > 2m)'
     data['distance'] = result[0]
     data['center'] = result[1:3]
     data['rotation'] = np.mod(result[3],360.0)

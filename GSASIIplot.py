@@ -1319,7 +1319,6 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                         ypos /= scaley
                         Data['ring'].append([xpos,ypos])
                 elif event.button == 3:
-                    print 'LB shift'
                     self.dataFrame.GetStatusBar().SetStatusText('Calibrating...')
                     if G2img.ImageCalibrate(self,Data):
                         self.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check')

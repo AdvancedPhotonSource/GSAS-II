@@ -1,3 +1,5 @@
+#/usr/bin/env python
+# -*- coding: utf-8 -*-
 #GSASII powder calculation module
 ########### SVN repository information ###################
 # $Date: 2011-04-20 13:09:53 -0500 (Wed, 20 Apr 2011) $
@@ -10,17 +12,22 @@ import sys
 import math
 import wx
 import time
+
 import numpy as np
 import scipy as sp
 import numpy.linalg as nl
+from numpy.fft import ifft, fft, fftshift
 import scipy.interpolate as si
 import scipy.stats as st
+import scipy.optimize as so
+
 import GSASIIpath
-import pypowder as pyp              #assumes path has been amended to include correctr bin directory
+#import pypowder as pyp
 import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIElem as G2elem
 import GSASIIgrid as G2gd
+import GSASIIIO as G2IO
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -42,154 +49,7 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
     
-np.seterr(divide='ignore')      #this is for the FCJ functions
-
-#Peak shape definitions
-# Finger-Cox_Jephcoat D(2phi,2th) function for S/L = H/L
-
-class fcjde_gen(st.rv_continuous):
-    
-    """
-    Finger-Cox-Jephcoat D(2phi,2th) function for S/L = H/L
-    Ref: J. Appl. Cryst. (1994) 27, 892-900.
-    Parameters
-    -----------------------------------------
-    x: array like 2-theta steps (-1 to 1)
-    t: 2-theta position of peak
-    s: sum(S/L,H/L); S: sample height, H: detector opening, 
-        L: sample to detector opening distance
-    dx: 2-theta step size in deg
-    Result for fcj.pdf
-    -----------------------------------------
-    if t < 90:
-        X = dx*x+t
-    else:
-        X = 180.-dx*x-t
-    if X < t & s = S/L+H/L: 
-        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/s]/|cos(X)|    
-    if X >= t:
-        fcj.pdf = 0    
-    """
-    def _pdf(self,x,t,s,dx):
-        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
-        ax = npcosd(T)**2
-        bx = npcosd(t)**2
-        bx = np.where(ax>bx,bx,ax)
-        fx = np.where(ax>bx,(np.sqrt(bx/(ax-bx))-1./s)/np.sqrt(ax),0.0)
-        fx = np.where(fx > 0,fx,0.0)
-        return fx
-#    def _cdf(self, x):
-#    def _ppf(self, q):
-#    def _sf(self, x):
-#    def _isf(self, q):
-#    def _stats(self):
-#    def _entropy(self):
         
-fcjde = fcjde_gen(name='fcjde')
-                
-        
-# Finger-Cox_Jephcoat D(2phi,2th) function for S/L != H/L
-
-class fcjd_gen(st.rv_continuous):
-    """
-    Finger-Cox-Jephcoat D(2phi,2th) function for S/L != H/L
-    Ref: J. Appl. Cryst. (1994) 27, 892-900.
-    Parameters
-    -----------------------------------------
-    x: array like 2-theta step numbers (-1 to 1)
-    t: 2-theta position of peak
-    h: detector opening height/sample to detector opening distance
-    s: sample height/sample to detector opening distance
-    dx: 2-theta step size in deg
-    Result for fcj2.pdf
-    -----------------------------------------
-    if t < 90:
-        X = dx*x+t
-    else:
-        X = 180.-dx*x-t
-    infl = acos(cos(t)*sqrt((h-s)**2+1))
-    if X < infl:    
-        fcj.pdf = [1/sqrt({cos(X)**2/cos(t)**2}-1) - 1/shl]/cos(X)    
-    for X < t & s = S/L+H/L    
-    fcj.pdf(x,t,s) = 0    
-    for 2phi >= 2th
-    """
-    def _pdf(self,x,t,h,s,dx):
-        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
-        a = np.abs(npcosd(t))*(np.sqrt((h-s)**2+1.))
-        infl = np.where((a <= 1.),np.abs(npacosd(a)),T)
-        ax = npcosd(T)**2
-        bx = npcosd(t)**2
-        bx = np.where(ax>bx,bx,ax)
-        H = np.where(ax>bx,np.sqrt((ax/bx)-1.),0.0)
-        W1 = h+s-H
-        W2 = np.where ((h > s),2.*s,2.*h)
-        fx = 2.*h*np.sqrt((ax/bx)-1.)*np.sqrt(ax)
-        fx = np.where(fx>0.0,1./fx,0.0)
-        fx = np.where((T < infl),fx*W1,fx*W2)
-        return np.where((fx > 0.),fx,0.0)
-#    def _cdf(self, x):
-#    def _ppf(self, q):
-#    def _sf(self, x):
-#    def _isf(self, q):
-#    def _stats(self):
-#    def _entropy(self):
-        
-fcjd = fcjd_gen(name='fcjd')
-                
-# Finger-Cox_Jephcoat D(2phi,2th) function for S/L != H/L using sum & difference
-
-class fcjdsd_gen(st.rv_continuous):
-    """
-    Finger-Cox-Jephcoat D(2phi,2th) function for S/L != H/L using sum & difference
-    Ref: J. Appl. Cryst. (1994) 27, 892-900.
-    Parameters
-    -----------------------------------------
-    x: array like 2-theta positions
-    t: 2-theta position of peak
-    s: sum(S/L,H/L); S: sample height, H: detector opening, 
-        L: sample to detector opening distance
-    d: difference(S/L,H/L)
-    dx: 2-theta step size in deg
-    Result for fcj2.pdf
-    -----------------------------------------
-    if t < 90:
-        X = dx*x+t
-    else:
-        X = 180.-dx*x-t
-    
-    fcj.pdf(x,t,s,d) = [1/sqrt({cos(X)**2/cos(t)**2}-1) - 1/shl]/cos(2phi)
-    
-    for 2phi < 2tth & shl = S/L+H/L
-    
-    fcj.pdf(x,tth,shl) = 0
-    
-    for 2phi >= 2th
-    """
-    def _argcheck(self,t,s,d,dx):
-        return (t > 0)&(s > 0)&(abs(d) < s)
-    def _pdf(self,x,t,s,d,dx):
-        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
-        a = np.abs(npcosd(t))*np.sqrt(d**2+1.)
-        infl = np.where((a < 1.),np.abs(npacosd(a)),T)
-        ax = npcosd(T)**2
-        bx = npcosd(t)**2
-        bx = np.where(ax>bx,bx,ax)
-        H = np.where(ax>bx,np.sqrt((ax/bx)-1.),0.0)
-        W1 = s-H
-        W2 = np.where ((d > 0),s-d,s+d)
-        fx = np.where(ax>bx,1./((s+d)*np.sqrt((ax/bx)-1.)*np.sqrt(ax)),0.0)
-        fx = np.where((T < infl),fx*W1,fx*W2)
-        return np.where((fx > 0.),fx,0.0)
-#    def _cdf(self, x):
-#    def _ppf(self, q):
-#    def _sf(self, x):
-#    def _isf(self, q):
-#    def _stats(self):
-#    def _entropy(self):
-        
-fcjdsd = fcjdsd_gen(name='fcjdsd')
-                
 def factorize(num):
     ''' Provide prime number factors for integer num
     Returns dictionary of prime factors (keys) & power for each (data)
@@ -232,6 +92,16 @@ def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
             plist.append(p)
     return plist
 
+def ValuesOut(parmdict, varylist):
+    '''Use before call to leastsq to setup list of values for the parameters 
+    in parmdict, as selected by key in varylist'''
+    return [parmdict[key] for key in varylist] 
+    
+def ValuesIn(parmdict, varylist, values):
+    ''' Use after call to leastsq to update the parameter dictionary with 
+    values corresponding to keys in varylist'''
+    parmdict.update(zip(varylist,values))
+    
 def Transmission(Geometry,Abs,Diam):
 #Calculate sample transmission
 #   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate'
@@ -546,260 +416,368 @@ def MultiScattering(Geometry,ElList,Tth):
         BD += el['FormulaNo']
         Amu += el['FormulaNo']*el['mu']
         
+#GSASII peak fitting routine: Finger, Cox & Jephcoat model        
 
-def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
-    # returns value(esd) string; nTZ=True for no trailing zeros
-    # use esd < 0 for level of precision shown e.g. esd=-0.01 gives 2 places beyond decimal
-    #get the 2 significant digits in the esd 
-    edig = lambda esd: int(round(10**(math.log10(esd) % 1+1)))
-    #get the number of digits to represent them 
-    epl = lambda esd: 2+int(1.545-math.log10(10*edig(esd)))
-    
-    mdec = lambda esd: -int(math.log10(abs(esd)))
-    ndec = lambda esd: int(1.545-math.log10(abs(esd)))
-    if esd > 0:
-        fmt = '"%.'+str(ndec(esd))+'f(%d)"'
-        print fmt,ndec(esd),esd*10**(mdec(esd)+1)
-        return fmt%(value,int(esd*10**(mdec(esd)+1)))
-    elif esd < 0:
-         return str(round(value,mdec(esd)))
-    else:
-        text = "%F"%(value)
-        if nTZ:
-            return text.rstrip('0')
-        else:
-            return text
+np.seterr(divide='ignore')
 
+# Voigt function = convolution (norm,cauchy)
+
+class voigt_gen(st.rv_continuous):
+    '''
+    Voigt function
+    Parameters
+    -----------------------------------------
+    '''
+    def _pdf(self,x,s,g):
+        z = np.empty([2,len(x)])
+        z[0] = st.norm.pdf(x,scale=s)
+        z[1] = st.cauchy.pdf(x,scale=g)
+        Z = fft(z)
+        return fftshift(ifft(Z.prod(axis=0))).real
+#    def _cdf(self, x):
+#    def _ppf(self, q):
+#    def _sf(self, x):
+#    def _isf(self, q):
+#    def _stats(self):
+#    def _entropy(self):
+
+voigt = voigt_gen(name='voigt',shapes='ts,g')
+       
+# Finger-Cox_Jephcoat D(2phi,2th) function for S/L = H/L
+
+class fcjde_gen(st.rv_continuous):
+    """
+    Finger-Cox-Jephcoat D(2phi,2th) function for S/L = H/L
+    Ref: J. Appl. Cryst. (1994) 27, 892-900.
+    Parameters
+    -----------------------------------------
+    x: array -1 to 1
+    t: 2-theta position of peak
+    s: sum(S/L,H/L); S: sample height, H: detector opening, 
+        L: sample to detector opening distance
+    dx: 2-theta step size in deg
+    Result for fcj.pdf
+    -----------------------------------------
+    if x < t & s = S/L+H/L: 
+        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/s]/cos(x)    
+    if x >= t:
+        fcj.pdf = 0    
+    """
+    def _pdf(self,x,t,s,dx):
+#        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
+        T = dx*x+t
+        ax = npcosd(T)**2
+        bx = npcosd(t)**2
+        bx = np.where(ax>bx,bx,ax)
+        fx = np.where(ax>bx,(np.sqrt(bx/(ax-bx))-1./s)/np.sqrt(ax),0.0)
+        fx = np.where(fx > 0.,fx,0.0)
+        return fx
+#    def _cdf(self, x):
+#    def _ppf(self, q):
+#    def _sf(self, x):
+#    def _isf(self, q):
+#    def _stats(self):
+#    def _entropy(self):
         
-#GSASII peak fitting routine: Thompson, Cox & Hastings; Finger, Cox & Jephcoat model        
-
-def DoPeakFit(peaks,background,limits,inst,data):
+fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
+                
+def getBackground(parmDict,bakType,xdata):
+    if bakType == 'chebyschev':
+        yb = np.zeros_like(xdata)
+        iBak = 0
+        while True:
+            key = 'Back'+str(iBak)
+            try:
+                yb += parmDict[key]*(xdata-xdata[0])**iBak
+                iBak += 1
+            except KeyError:
+                return yb
+                
+def getPeakProfile(parmDict,xdata,varyList,bakType):
     
-    def backgroundPrint(background,sigback):
-        if background[1]:
-            print 'Background coefficients for',background[0],'function'
+    def calcPeakFFT(x,fxns,widths,pos,args):
+        dx = x[1]-x[0]
+        z = np.empty([len(fxns),len(x)])
+        for i,(fxn,width,arg) in enumerate(zip(fxns,widths,args)):
+            z[i] = fxn.pdf(x,loc=pos,scale=width,*arg)*dx
+        Z = fft(z)
+        if len(fxns)%2:
+            return ifft(Z.prod(axis=0)).real
+        else:
+            return fftshift(ifft(Z.prod(axis=0))).real
+                        
+    def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
+        
+        DX = xdata[1]-xdata[0]
+        widths,fmin,fmax = getWidths(pos,sig,gam,shl)
+        x = np.linspace(pos-fmin,pos+fmin,1024)
+        if pos > 90:
+            fmin,fmax = [fmax,fmin]          
+        dx = x[1]-x[0]
+        arg = [pos,shl/10.,dx,]
+        Df = fcjde.pdf(x,*arg,loc=pos,scale=1.0)
+        if len(np.nonzero(Df)[0])>5:
+            fxns = [st.norm,st.cauchy,fcjde]
+            args = [[],[],arg]
+        else:
+            fxns = [st.norm,st.cauchy]
+            args = [[],[]]
+        Df = calcPeakFFT(x,fxns,widths,pos,args)
+        Df /= np.sum(Df)
+        Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
+        return intens*Df(xdata)*DX/dx       #*10 to get close to old fxn???
+                    
+    yb = getBackground(parmDict,bakType,xdata)
+    yc = np.zeros_like(yb)
+    U = parmDict['U']
+    V = parmDict['V']
+    W = parmDict['W']
+    X = parmDict['X']
+    Y = parmDict['Y']
+    shl = max(parmDict['SH/L'],0.001)
+    Ka2 = False
+    if 'Lam1' in parmDict.keys():
+        Ka2 = True
+        lamRatio = parmDict['Lam2']/parmDict['Lam1']
+        kRatio = parmDict['I(L2)/I(L1)']
+    iPeak = 0
+    while True:
+        try:
+            pos = parmDict['pos'+str(iPeak)]
+            intens = parmDict['int'+str(iPeak)]
+            sigName = 'sig'+str(iPeak)
+            if sigName in varyList:
+                sig = parmDict[sigName]
+            else:
+                sig = U*tand(pos/2.0)**2+V*tand(pos/2.0)+W
+            sig = max(sig,0.001)          #avoid neg sigma
+            gamName = 'gam'+str(iPeak)
+            if gamName in varyList:
+                gam = parmDict[gamName]
+            else:
+                gam = X/cosd(pos/2.0)+Y*tand(pos/2.0)
+            gam = max(gam,0.01)             #avoid neg gamma
+            Wd,fmin,fmax = getWidths(pos,sig,gam,shl)
+            if pos > 90:
+                fmin,fmax = [fmax,fmin]          
+            iBeg = np.searchsorted(xdata,pos-fmin)
+            iFin = np.searchsorted(xdata,pos+fmax)
+            if not iBeg+iFin:       #peak below low limit
+                iPeak += 1
+                continue
+            elif not iBeg-iFin:     #peak above high limit
+                return yb+yc
+            yc[iBeg:iFin] += getFCJVoigt(pos,intens,sig,gam,shl,xdata[iBeg:iFin])
+            if Ka2:
+                pos2 = 2.0*asind(lamRatio*sind(pos/2.0))
+                Wd,fmin,fmax = getWidths(pos2,sig,gam,shl)
+                if pos > 90:
+                    fmin,fmax = [fmax,fmin]          
+                iBeg = np.searchsorted(xdata,pos2-fmin)
+                iFin = np.searchsorted(xdata,pos2+fmax)
+                yc[iBeg:iFin] += getFCJVoigt(pos2,intens*kRatio,sig,gam,shl,xdata[iBeg:iFin])
+            iPeak += 1
+        except KeyError:        #no more peaks to process
+            return yb+yc
+        
+def getWidths(pos,sig,gam,shl):
+    if shl:
+        widths = [np.sqrt(sig)/100.,gam/200.,.1]
+    else:
+        widths = [np.sqrt(sig)/100.,gam/200.]
+    fwhm = 2.355*widths[0]+2.*widths[1]
+    fmin = 10.*(fwhm+shl*abs(npcosd(pos)))
+    fmax = 15.0*fwhm
+    return widths,fmin,fmax
+                
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
+    
+    def SetBackgroundParms(Background):
+        bakType,bakFlag = Background[:2]
+        backVals = Background[3:]
+        backNames = ['Back'+str(i) for i in range(len(backVals))]
+        if bakFlag: #returns backNames as varyList = backNames
+            return bakType,dict(zip(backNames,backVals)),backNames
+        else:       #no background varied; varyList = []
+            return bakType,dict(zip(backNames,backVals)),[]
+        
+    def GetBackgroundParms(parmList,Background):
+        iBak = 0
+        while True:
+            try:
+                bakName = 'Back'+str(iBak)
+                Background[iBak+3] = parmList[bakName]
+                iBak += 1
+            except KeyError:
+                break
+                
+    def BackgroundPrint(Background,sigDict):
+        if Background[1]:
+            print 'Background coefficients for',Background[0],'function'
             ptfmt = "%12.5f"
             ptstr =  'values:'
             sigstr = 'esds  :'
-            for i,back in enumerate(background[3:]):
+            for i,back in enumerate(Background[3:]):
                 ptstr += ptfmt % (back)
-                sigstr += ptfmt % (sigback[i+3])
+                sigstr += ptfmt % (sigDict['Back'+str(i)])
             print ptstr
             print sigstr
         else:
             print 'Background not refined'
-    
-    def instPrint(instVal,siginst,insLabels):
+            
+    def SetInstParms(Inst):
+        insVals,insFlags,insNames = Inst[1:4]
+        dataType = insVals[0]
+        insVary = []
+        for i,flag in enumerate(insFlags):
+            if flag:
+                insVary.append(insNames[i])
+        instDict = dict(zip(insNames,insVals))
+        instDict['X'] = max(instDict['X'],0.1)
+        instDict['Y'] = max(instDict['Y'],0.1)
+        instDict['SH/L'] = max(instDict['SH/L'],0.001)
+        return dataType,instDict,insVary
+        
+    def GetInstParms(parmDict,Inst,varyList,Peaks):
+        instNames = Inst[3]
+        for i,name in enumerate(instNames):
+            Inst[1][i] = parmDict[name]
+        iPeak = 0
+        while True:
+            try:
+                sigName = 'sig'+str(iPeak)
+                pos = parmDict['pos'+str(iPeak)]
+                if sigName not in varyList:
+                    parmDict[sigName] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
+                gamName = 'gam'+str(iPeak)
+                if gamName not in varyList:
+                    parmDict[gamName] = parmDict['X']/cosd(pos/2.0)+parmDict['Y']*tand(pos/2.0)
+                iPeak += 1
+            except KeyError:
+                break
+        
+    def InstPrint(Inst,sigDict):
         print 'Instrument Parameters:'
         ptfmt = "%12.6f"
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
-        for i,value in enumerate(instVal):
-            ptlbls += "%s" % (insLabels[i].center(12))
-            ptstr += ptfmt % (value)
-            if siginst[i]:
-                sigstr += ptfmt % (siginst[i])
+        instNames = Inst[3][1:]
+        for i,name in enumerate(instNames):
+            ptlbls += "%s" % (name.center(12))
+            ptstr += ptfmt % (Inst[1][i+1])
+            if name in sigDict:
+                sigstr += ptfmt % (sigDict[name])
             else:
                 sigstr += 12*' '
         print ptlbls
         print ptstr
         print sigstr
-    
-    def peaksPrint(peaks,sigpeaks):
-        print 'Peak list='
 
-    begin = time.time()
-    Np = len(peaks[0])
-    DataType = inst[1][0]
-    instVal = inst[1][1:]
-    Insref = inst[2][1:]
-    insLabels = inst[3][1:]
-    Ka2 = False
-    Ioff = 3
-    if len(instVal) == 12:
-        lamratio = instVal[1]/instVal[0]
-        Ka2 = True
-        Ioff = 5
-    insref = Insref[len(Insref)-7:-1]               #just U,V,W,X,Y,SH/L
-    for peak in peaks:
-        dip = []
-        dip.append(tand(peak[0]/2.0)**2)
-        dip.append(tand(peak[0]/2.0))
-        dip.append(1.0/cosd(peak[0]/2.0))
-        dip.append(tand(peak[0]/2.0))
-        peak.append(dip)
-    B = background[2]
-    bcof = background[3:3+B]
-    Bv = 0
-    if background[1]:
-        Bv = B
+    def setPeaksParms(Peaks):
+        peakNames = []
+        peakVary = []
+        peakVals = []
+        names = ['pos','int','sig','gam']
+        for i,peak in enumerate(Peaks):
+            for j in range(4):
+                peakVals.append(peak[2*j])
+                parName = names[j]+str(i)
+                peakNames.append(parName)
+                if peak[2*j+1]:
+                    peakVary.append(parName)
+        return dict(zip(peakNames,peakVals)),peakVary
+                
+    def GetPeaksParms(parmDict,Peaks,varyList):
+        names = ['pos','int','sig','gam']
+        for i,peak in enumerate(Peaks):
+            for j in range(4):
+                pos = parmDict['pos'+str(i)]
+                parName = names[j]+str(i)
+                if parName in varyList:
+                    peak[2*j] = parmDict[parName]
+                elif 'sig' in parName:
+                    peak[2*j] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
+                elif 'gam' in parName:
+                    peak[2*j] = parmDict['X']/cosd(pos/2.0)+parmDict['Y']*tand(pos/2.0)
+                        
+    def PeaksPrint(parmDict,sigDict,varyList):
+        print 'Peak coefficients:'
+        names = ['pos','int','sig','gam']
+        head = 15*' '
+        for name in names:
+            head += name.center(12)+'esd'.center(12)
+        print head
+        ptfmt = {'pos':"%12.5f",'int':"%12.1f",'sig':"%12.3f",'gam':"%12.3f"}
+        for i,peak in enumerate(Peaks):
+            ptstr =  ':'
+            for j in range(4):
+                name = names[j]
+                parName = name+str(i)
+                ptstr += ptfmt[name] % (parmDict[parName])
+                if parName in varyList:
+#                    ptstr += G2IO.ValEsd(parmDict[parName],sigDict[parName])
+                    ptstr += ptfmt[name] % (sigDict[parName])
+                else:
+#                    ptstr += G2IO.ValEsd(parmDict[parName],0.0)
+                    ptstr += 12*' '
+            print '%s'%(('Peak'+str(i+1)).center(8)),ptstr
+            
+    def errPeakProfile(values, xdata, ydata, weights, parmdict, varylist,bakType):        
+        parmdict.update(zip(varylist,values))
+        return np.sqrt(weights)*(ydata-getPeakProfile(parmdict,xdata,varylist,bakType))
+        
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
-    V = []
-    A = []
-    swobs = 0.0
-    smin = 0.0
-    first = True
-    GoOn = True
-    Go = True
-    dlg = wx.ProgressDialog("Elapsed time","Fitting peaks to pattern",len(x), \
-        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-    screenSize = wx.DisplaySize()
-    Size = dlg.GetSize()
-    dlg.SetPosition(wx.Point(screenSize[0]-Size[0]-300,0))
-    try:
-        i = 0
-        for xi in x :
-            Go = dlg.Update(i)[0]
-            if GoOn:
-                GoOn = Go
-            if limits[0] <= xi <= limits[1]:
-                yb[i] = 0.0
-                dp = []
-                for j in range(B):
-                    t = (xi-limits[0])**j
-                    yb[i] += t*bcof[j]
-                    if background[1]:
-                        dp.append(t)
-                yc[i] = yb[i]
-                Iv = 0
-                for j in range(6):
-                    if insref[j]:
-                        dp.append(0.0)
-                        Iv += 1
-                for peak in peaks:
-                    dip = peak[-1]
-                    f = pyp.pypsvfcj(peak[2],xi-peak[0],peak[0],peak[4],peak[6],instVal[-2],0.0)
-                    yc[i] += f[0]*peak[2]
-                    if f[0] > 0.0:
-                        j = 0
-                        if insref[0]:              #U
-                            dp[Bv+j] += f[3]*dip[0]
-                            j += 1
-                        if insref[1]:              #V
-                            dp[Bv+j] += f[3]*dip[1]
-                            j += 1
-                        if insref[2]:              #W
-                            dp[Bv+j] += f[3]
-                            j += 1
-                        if insref[3]:              #X
-                            dp[Bv+j] += f[4]*dip[2]
-                            j += 1
-                        if insref[4]:              #Y
-                            dp[Bv+j] += f[4]*dip[3]
-                            j += 1
-                        if insref[5]:              #SH/L
-                            dp[Bv+j] += f[5]
-                    if Ka2:
-                       pos2 = 2.0*asind(lamratio*sind(peak[0]/2.0))
-                       f2 = pyp.pypsvfcj(peak[2],xi-pos2,peak[0],peak[4],peak[6],instVal[-2],0.0)
-                       yc[i] += f2[0]*peak[2]*instVal[3]
-                       if f[0] > 0.0:
-                           j = 0
-                           if insref[0]:              #U
-                               dp[Bv+j] += f2[3]*dip[0]*instVal[3]
-                               j += 1
-                           if insref[1]:              #V
-                               dp[Bv+j] += f2[3]*dip[1]*instVal[3]
-                               j += 1
-                           if insref[2]:              #W
-                               dp[Bv+j] += f2[3]*instVal[3]
-                               j += 1
-                           if insref[3]:              #X
-                               dp[Bv+j] += f2[4]*dip[2]*instVal[3]
-                               j += 1
-                           if insref[4]:              #Y
-                               dp[Bv+j] += f2[4]*dip[3]*instVal[3]
-                               j += 1
-                           if insref[5]:              #SH/L
-                               dp[Bv+j] += f2[5]*instVal[3]                       
-                    for j in range(0,Np,2):
-                        if peak[j+1]: dp.append(f[j/2+1])
-                yd[i] = y[i]-yc[i]
-                swobs += w[i]*y[i]**2
-                t2 = w[i]*yd[i]
-                smin += t2*yd[i]
-                if first:
-                    first = False
-                    M = len(dp)
-                    A = np.zeros(shape=(M,M))
-                    V = np.zeros(shape=(M))
-                A,V = pyp.buildmv(t2,w[i],M,dp,A,V)
-            i += 1
-    finally:
-        dlg.Destroy()
-    Rwp = smin/swobs
-    Rwp = math.sqrt(Rwp)*100.0
-    norm = np.diag(A)
-    for i,elm in enumerate(norm):
-        if elm <= 0.0:
-            print norm
-            return False,0,0,0,False
-    for i in xrange(len(V)):
-        norm[i] = 1.0/math.sqrt(norm[i])
-        V[i] *= norm[i]
-        a = A[i]
-        for j in xrange(len(V)):
-            a[j] *= norm[i]
-    A = np.transpose(A)
-    for i in xrange(len(V)):
-        a = A[i]
-        for j in xrange(len(V)):
-            a[j] *= norm[i]
-    b = nl.solve(A,V)
-    A = nl.inv(A)
-    sig = np.diag(A)
-    for i in xrange(len(V)):
-        b[i] *= norm[i]
-        sig[i] *= norm[i]*norm[i]
-        sig[i] = math.sqrt(abs(sig[i]))
-    sigback = [0,0,0]
-    for j in range(Bv):
-        background[j+3] += b[j]
-        sigback.append(sig[j])
-    backgroundPrint(background,sigback)
-    k = 0
-    delt = []
-    if Ka2:
-        siginst = [0,0,0,0,0]
-    else:
-        siginst = [0,0,0]
-    for j in range(6):
-        if insref[j]:
-            instVal[j+Ioff] += b[Bv+k]
-            siginst.append(sig[Bv+k])
-            delt.append(b[Bv+k])
-            k += 1
-        else:
-            delt.append(0.0)
-            siginst.append(0.0)
-    delt.append(0.0)                    #dummies for azm
-    siginst.append(0.0)
-    instPrint(instVal,siginst,insLabels)
-    inst[1] = [DataType,]
-    for val in instVal:
-        inst[1].append(val)
-    B = Bv+Iv
-    for peak in peaks:
-        del peak[-1]                        # remove dip from end
-        delsig = delt[0]*tand(peak[0]/2.0)**2+delt[1]*tand(peak[0]/2.0)+delt[2]
-        delgam = delt[3]/cosd(peak[0]/2.0)+delt[4]*tand(peak[0]/2.0)
-        for j in range(0,len(peak[:-1]),2):
-            if peak[j+1]: 
-                peak[j] += b[B]
-                B += 1
-        peak[4] += delsig
-        if peak[4] < 0.0:
-            print 'ERROR - negative sigma'
-            return False,0,0,0,False            
-        peak[6] += delgam
-        if peak[6] < 0.0:
-            print 'ERROR - negative gamma'
-            return False,0,0,0,False
-    runtime = time.time()-begin    
-    data = [x,y,w,yc,yb,yd]
-    return True,smin,Rwp,runtime,GoOn
-
+    xBeg = np.searchsorted(x,Limits[0])
+    xFin = np.searchsorted(x,Limits[1])
+    bakType,bakDict,bakVary = SetBackgroundParms(Background)
+    dataType,insDict,insVary = SetInstParms(Inst)
+    peakDict,peakVary = setPeaksParms(Peaks)
+    parmDict = {}
+    parmDict.update(bakDict)
+    parmDict.update(insDict)
+    parmDict.update(peakDict)
+    varyList = bakVary+insVary+peakVary
+    while True:
+        begin = time.time()
+        values =  np.array(ValuesOut(parmDict, varyList))
+        if FitPgm == 'LSQ':
+            result = so.leastsq(errPeakProfile,values,
+                args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType),full_output=True)
+            runtime = time.time()-begin    
+            print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
+            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s')
+            ValuesIn(parmDict, varyList, result[0])
+            chisq = np.sum(errPeakProfile(result[0],x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType)**2)
+            Rwp = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
+            GOF = chisq/(xFin-xBeg-len(varyList))
+            print "%s%7.2f%s%12.6g%s%6.2f" % ('Rwp = ',Rwp,'%, chi**2 = ',chisq,' reduced chi**2 = ',GOF)
+            try:
+                sig = np.sqrt(np.diag(result[1])*chisq)
+                break                   #refinement succeeded - finish up!
+            except ValueError:          #result[1] is None on singular matrix
+                print 'Refinement failed - singular matrix'
+                Ipvt = result[2]['ipvt']
+                for i,ipvt in enumerate(Ipvt):
+                    if not np.sum(result[2]['fjac'],axis=1)[i]:
+                        print 'Removing parameter: ',varyList[ipvt-1]
+                        del(varyList[ipvt-1])
+                        break
+        elif FitPgm == 'BFGS':
+            print 'Other program here'
+            return
+        
+    sigDict = dict(zip(varyList,sig))
+    yb[xBeg:xFin] = getBackground(parmDict,bakType,x[xBeg:xFin])
+    yc[xBeg:xFin] = getPeakProfile(parmDict,x[xBeg:xFin],varyList,bakType)
+    yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
+    GetBackgroundParms(parmDict,Background)
+    BackgroundPrint(Background,sigDict)
+    GetInstParms(parmDict,Inst,varyList,Peaks)
+    InstPrint(Inst,sigDict)
+    GetPeaksParms(parmDict,Peaks,varyList)    
+    PeaksPrint(parmDict,sigDict,varyList)
+    
 def CalcPDF(data,inst,xydata):
     auxPlot = []
     import copy
@@ -880,3 +858,58 @@ def CalcPDF(data,inst,xydata):
         
     return auxPlot
         
+#testing data
+import plot
+NeedTestData = True
+def TestData():
+#    global NeedTestData
+    NeedTestData = False
+    global bakType
+    bakType = 'chebyschev'
+    global xdata
+    xdata = np.linspace(4.0,40.0,36000)
+    global parmDict0
+    parmDict0 = {
+        'pos0':5.6964,'int0':8835.8,'sig0':1.0,'gam0':1.0,
+        'pos1':11.4074,'int1':3922.3,'sig1':1.0,'gam1':1.0,
+        'pos2':20.6426,'int2':1573.7,'sig2':1.0,'gam2':1.0,
+        'pos3':26.9568,'int3':925.1,'sig3':1.0,'gam3':1.0,
+        'U':1.163,'V':-0.605,'W':0.093,'X':0.0,'Y':2.183,'SH/L':0.002,
+        'Back0':5.384,'Back1':-0.015,'Back2':.004,
+        }
+    global parmDict1
+    parmDict1 = {
+        'pos0':13.4924,'int0':48697.6,'sig0':1.0,'gam0':1.0,
+        'pos1':23.4360,'int1':43685.5,'sig1':1.0,'gam1':1.0,
+        'pos2':27.1152,'int2':123712.6,'sig2':1.0,'gam2':1.0,
+        'pos3':33.7196,'int3':65349.4,'sig3':1.0,'gam3':1.0,
+        'pos4':36.1119,'int4':115829.8,'sig4':1.0,'gam4':1.0,
+        'pos5':39.0122,'int5':6916.9,'sig5':1.0,'gam5':1.0,
+        'U':22.75,'V':-17.596,'W':10.594,'X':1.577,'Y':5.778,'SH/L':0.002,
+        'Back0':36.897,'Back1':-0.508,'Back2':.006,
+        'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
+        }
+    global varyList
+    varyList = []
+
+def test0():
+    if NeedTestData: TestData()
+    msg = 'test '
+    gplot = plotter.add('FCJ-Voigt, 11BM').gca()
+    gplot.plot(xdata,getBackground(parmDict0,bakType,xdata))   
+    gplot.plot(xdata,getPeakProfile(parmDict0,xdata,varyList,bakType))
+    fplot = plotter.add('FCJ-Voigt, Ka1+2').gca()
+    fplot.plot(xdata,getBackground(parmDict1,bakType,xdata))   
+    fplot.plot(xdata,getPeakProfile(parmDict1,xdata,varyList,bakType))
+    time0 = time.time()
+    for i in range(100):
+        y = getPeakProfile(parmDict1,xdata,varyList,bakType)
+    print '100+6*Ka1-2 peaks=3600 peaks',time.time()-time0
+    
+
+if __name__ == '__main__':
+    global plotter
+    plotter = plot.PlotNotebook()
+    test0()
+    print "OK"
+    plotter.StartEventLoop()

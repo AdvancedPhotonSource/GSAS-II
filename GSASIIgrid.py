@@ -45,8 +45,8 @@ import GSASIIphsGUI as G2phG
 [ wxID_INDXRELOAD,
 ] = [wx.NewId() for _init_coll_IndPeaks_Items in range(1)]
 
-[ wxID_UNDO,wxID_PEAKFIT,wxID_AUTOPEAKFIT,
-] = [wx.NewId() for _init_coll_PEAK_Items in range(3)]
+[ wxID_UNDO,wxID_LSQPEAKFIT,wxID_BFGSPEAKFIT,wxID_RESETSIGGAM,
+] = [wx.NewId() for _init_coll_PEAK_Items in range(4)]
 
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
@@ -186,10 +186,12 @@ class DataFrame(wx.Frame):
     def _init_coll_Peak_Items(self,parent):
         self.UnDo = parent.Append(help='Undo last least squares refinement', 
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
-        self.PeakFit = parent.Append(id=wxID_PEAKFIT, kind=wx.ITEM_NORMAL,text='PeakFit', 
-            help='Do single cycle of peak fitting least-squares refinement' )
-        self.AutoPeakFit = parent.Append(id=wxID_AUTOPEAKFIT, kind=wx.ITEM_NORMAL, 
-            text='AutoPeakFit',help='Do peak fitting least-squares to convergence' )
+        self.PeakFit = parent.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='LSQ PeakFit', 
+            help='Peak fitting via least-squares' )
+        self.PeakFit = parent.Append(id=wxID_BFGSPEAKFIT, kind=wx.ITEM_NORMAL,text='BFGS PeakFit', 
+            help='Peak fitting via BFGS algorithm' )
+        self.ResetSigGam = parent.Append(id=wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
+            text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
             
     def _init_coll_Index_Items(self,parent):
         self.IndexPeaks = parent.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
@@ -267,7 +269,6 @@ class DataFrame(wx.Frame):
         self._init_coll_PDF_Items(self.PDFEdit)
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)
-        self.AutoPeakFit.Enable(False)
         self.IndexPeaks.Enable(False)
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)

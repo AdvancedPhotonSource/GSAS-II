@@ -549,7 +549,7 @@ def UpdateImageControls(self,data,masks):
     
     dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Tilt rotation'),0,
         wx.ALIGN_CENTER_VERTICAL)
-    rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation']-90.)),style=wx.TE_READONLY)
+    rotSel = wx.TextCtrl(parent=self.dataDisplay,value=("%9.3f"%(data['rotation']-90.)),style=wx.TE_READONLY) #kluge to get rotation from vertical - see GSASIIimage
     rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
     dataSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault = wx.CheckBox(parent=self.dataDisplay,label='Use as default for all images?')

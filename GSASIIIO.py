@@ -803,7 +803,7 @@ def SaveIntegration(self,PickId,data):
             if name == Name:
                 Id = item
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-        parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-1.0,0.3,0.0,1.0,0.0,azm]    #set polarization for synchrotron radiation!
+        parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,azm]    #set polarization for synchrotron radiation!
         Y = self.Integrate[0][i]
         W = 1./Y                    #probably not true
         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
@@ -1231,3 +1231,82 @@ def ReadCIFPhase(filename):
     Phase['Histograms'] = {}
     
     return Phase
+
+def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
+    # returns value(esd) string; nTZ=True for no trailing zeros
+    # use esd < 0 for level of precision shown e.g. esd=-0.01 gives 2 places beyond decimal
+    #get the 2 significant digits in the esd 
+    edig = lambda esd: int(round(10**(math.log10(esd) % 1+1)))
+    #get the number of digits to represent them 
+    epl = lambda esd: 2+int(1.545-math.log10(10*edig(esd)))
+    
+    mdec = lambda esd: -int(math.log10(abs(esd)))
+    ndec = lambda esd: int(1.545-math.log10(abs(esd)))
+    if esd > 0:
+        fmt = '"%.'+str(ndec(esd))+'f(%d)"'
+        print fmt,ndec(esd),esd*10**(mdec(esd)+1)
+        return fmt%(value,int(esd*10**(mdec(esd)+1)))
+    elif esd < 0:
+         return str(round(value,mdec(esd)))
+    else:
+        text = "%F"%(value)
+        if nTZ:
+            return text.rstrip('0')
+        else:
+            return text
+
+def Fesd(value,esd=0,nTZ=False):
+#pythonized version of fortran routine in GSAS cifsubs directory - doesn't work correctly
+    nint = lambda x: int(round(x))
+    iExp = 0
+    if value == 0. and esd == 0.:
+        iDec = 1
+        iFld = 5
+    elif value == 0.:
+        iDec = max(0.,1.545-math.log10(abs(esd)))
+        iFld = 4+iDec
+    elif esd == 0.:
+        iDec = 5
+        iFld = max(1.,math.log10(abs(value)))+3+iDec
+    else:
+        iFld = math.log10(max(abs(esd),abs(value)))
+        if iFld < -4:
+            iExp = 1-iFld
+            iFld -= iExp
+        elif iFld > 8:
+            iExp = -iFld
+            iFld += iExp
+        if iExp:
+            value *= 10.**iExp
+            esd *= 10.**iExp
+        iDec = min(7,int(max(0.,1.545-math.log10(max(0.000001*abs(value),abs(esd))))))
+        iFld = max(1,iFld)+3+iDec
+    if esd <= 0.:
+        iSigw = 0
+    else:
+        iSig = nint(esd*(10.**iDec))
+        iSigw = 1
+        if iSig > 0:
+            iSigw = int(1.+math.log10(1.*iSig))
+    if iSigw > 2:
+        xmult = 10.**(iSigw-2)
+        value = xmult*nint(value/xmult)
+        iSig = xmult*nint(iSig/xmult)            
+        iSigw = int(1.+math.log10(1.*iSig))
+    if iSigw == 0:
+        fmt = '%.'+str(iDec)+'f'
+        string = fmt%(value) 
+    elif iDec > 0:
+        fmt = '%.'+str(iDec)+'f(%d)'
+        string = fmt%(value,iSig)
+    else:
+        fmt = '%'+str(iFld)+'d(%d)'
+        string = fmt%(nint(value),iSig)
+    if iExp:
+        iDig = 1+math.log10(abs(1.*iExp))
+        if iExp > 0:
+            iDig += 1
+            string += str(-iExp)
+    return string
+    
+

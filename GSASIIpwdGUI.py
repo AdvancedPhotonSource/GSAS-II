@@ -61,10 +61,16 @@ def UpdatePeakGrid(self, data):
             cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)
         file.close()
         self.dataFrame.UnDo.Enable(True)
+        
+    def OnLSQPeakFit(event):
+        OnPeakFit('LSQ')
+        
+    def OnBGFSPeakFit(event):
+        OnPeakFit('BFGS')
                 
-    def OnPeakFit(event):
+    def OnPeakFit(FitPgm):
         SaveState()
-        print 'Peak Fitting - Do one cycle of peak fitting'
+        print 'Peak Fitting:'
         PatternId = self.PatternId
         PickId = self.PickId
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
@@ -75,65 +81,32 @@ def UpdatePeakGrid(self, data):
         limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
         inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
         data = self.PatternTree.GetItemPyData(PatternId)[1]
-        OK,smin,Rwp,runtime,GoOn = G2pwd.DoPeakFit(peaks,background,limits,inst,data)
+        wx.BeginBusyCursor()
+        try:
+            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data)
+        finally:
+            wx.EndBusyCursor()    
         UpdatePeakGrid(self,peaks)
         G2plt.PlotPatterns(self)
-        if not OK:
-            print 'Refinement failed'
-            dlg = wx.MessageDialog(self, 'Do you want to reload now?', 'Refinement failed',  wx.YES_NO)
-            try:
-                if dlg.ShowModal() == wx.ID_YES:
-                    DoUnDo()
-                    self.dataFrame.UnDo.Enable(False)
-            finally:
-                dlg.Destroy()
-        else:
-            self.dataFrame.UnDo.Enable(True)
-            print "%s%7.2f%s%12.6g" % ('Rwp = ',Rwp,'%, Smin = ',smin)
-            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s')
-            print 'finished'
+        print 'finished'
         return
         
-    def OnAutoPeakFit(event):
-        SaveState()
-        print 'AutoPeak Fitting - run until minimized'
+    def OnResetSigGam(event):
         PatternId = self.PatternId
         PickId = self.PickId
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
         if not peaks:
-            self.ErrorDialog('No peaks!','Nothing to fit!')
+            self.ErrorDialog('No peaks!','Nothing to do!')
             return
-        background = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Background'))[0]
-        limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
         inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-        data = self.PatternTree.GetItemPyData(PatternId)[1]
-        smin = 1.0e15
-        GoOn = True
-        while GoOn:
-            osmin = smin
-            OK,smin,Rwp,runtime,GoOn = G2pwd.DoPeakFit(peaks,background,limits,inst,data)
-            UpdatePeakGrid(self,peaks)
-            if not OK:
-                break
-            G2plt.PlotPatterns(self)
-            print "%s%7.2f%s%12.6g" % ('Rwp = ',Rwp,'%, Smin = ',smin)
-            rat = (osmin-smin)/smin
-            if rat < 1.0e-4: GoOn = False
-        if not OK:
-            print 'Refinement failed'
-            dlg = wx.MessageDialog(self, 'Do you want to reload now?', 'Refinement failed',  wx.YES_NO)
-            try:
-                if dlg.ShowModal() == wx.ID_YES:
-                    DoUnDo()
-                    self.dataFrame.UnDo.Enable(False)
-            finally:
-                dlg.Destroy()
-        else:
-            self.dataFrame.UnDo.Enable(True)
-            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s per cycle')
-            print 'finished'
-        return        
-
+        Inst = dict(zip(inst[3],inst[1]))
+        print len(Inst['Type'])
+        for peak in peaks:
+            if Inst['Type'] in ['PXC','PNC']:
+                peak[4] = Inst['U']*tand(peak[0]/2.0)**2+Inst['V']*tand(peak[0]/2.0)+Inst['W']
+                peak[6] = Inst['X']/cosd(peak[0]/2.0)+Inst['Y']*tand(peak[0]/2.0)
+        UpdatePeakGrid(self,peaks)
+                
     def RefreshPeakGrid(event):
         r,c =  event.GetRow(),event.GetCol()
         
@@ -222,7 +195,6 @@ def UpdatePeakGrid(self, data):
                 setBackgroundColors()
                 if not len(self.PatternTree.GetItemPyData(self.PickId)): 
                     self.dataFrame.PeakFit.Enable(False)
-                    self.dataFrame.AutoPeakFit.Enable(False)
                         
         elif colList:
             self.dataDisplay.ClearSelection()
@@ -248,13 +220,12 @@ def UpdatePeakGrid(self, data):
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
-    self.Bind(wx.EVT_MENU, OnPeakFit, id=G2gd.wxID_PEAKFIT)
-    self.Bind(wx.EVT_MENU, OnAutoPeakFit, id=G2gd.wxID_AUTOPEAKFIT)
+    self.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
+    self.Bind(wx.EVT_MENU, OnBGFSPeakFit, id=G2gd.wxID_BFGSPEAKFIT)
+    self.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
     self.dataFrame.PeakFit.Enable(False)
-    self.dataFrame.AutoPeakFit.Enable(False)
     if data:
         self.dataFrame.PeakFit.Enable(True)
-        self.dataFrame.AutoPeakFit.Enable(True)
     self.PickTable = []
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))

@@ -188,8 +188,8 @@ class DataFrame(wx.Frame):
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
         self.PeakFit = parent.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='LSQ PeakFit', 
             help='Peak fitting via least-squares' )
-        self.PeakFit = parent.Append(id=wxID_BFGSPEAKFIT, kind=wx.ITEM_NORMAL,text='BFGS PeakFit', 
-            help='Peak fitting via BFGS algorithm' )
+#        self.PeakFit = parent.Append(id=wxID_BFGSPEAKFIT, kind=wx.ITEM_NORMAL,text='BFGS PeakFit', 
+#            help='Peak fitting via BFGS algorithm' )
         self.ResetSigGam = parent.Append(id=wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
             text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
             

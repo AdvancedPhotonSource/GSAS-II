@@ -221,7 +221,7 @@ def UpdatePeakGrid(self, data):
         Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
     self.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
-    self.Bind(wx.EVT_MENU, OnBGFSPeakFit, id=G2gd.wxID_BFGSPEAKFIT)
+#    self.Bind(wx.EVT_MENU, OnBGFSPeakFit, id=G2gd.wxID_BFGSPEAKFIT)
     self.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
     self.dataFrame.PeakFit.Enable(False)
     if data:

@@ -723,9 +723,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
                     ptstr += 12*' '
             print '%s'%(('Peak'+str(i+1)).center(8)),ptstr
             
-    def errPeakProfile(values, xdata, ydata, weights, parmdict, varylist,bakType):        
+    def errPeakProfile(values, xdata, ydata, weights, parmdict, varylist,bakType,dlg):        
         parmdict.update(zip(varylist,values))
-        return np.sqrt(weights)*(ydata-getPeakProfile(parmdict,xdata,varylist,bakType))
+        M = np.sqrt(weights)*(ydata-getPeakProfile(parmdict,xdata,varylist,bakType))
+        Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
+        if dlg:
+            dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Peak fit Rwp =',Rwp,'%'))
+        return M
         
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
     xBeg = np.searchsorted(x,Limits[0])
@@ -742,13 +746,21 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
         begin = time.time()
         values =  np.array(ValuesOut(parmDict, varyList))
         if FitPgm == 'LSQ':
-            result = so.leastsq(errPeakProfile,values,
-                args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType),full_output=True)
+            dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
+            screenSize = wx.ClientDisplayRect()
+            Size = dlg.GetSize()
+            dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+            try:
+                result = so.leastsq(errPeakProfile,values,
+                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg),full_output=True)
+            finally:
+                dlg.Destroy()
             runtime = time.time()-begin    
             print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
             print "%s%8.3f%s " % ('fitpeak time =',runtime,'s')
             ValuesIn(parmDict, varyList, result[0])
-            chisq = np.sum(errPeakProfile(result[0],x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType)**2)
+            chisq = np.sum(errPeakProfile(result[0],x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,0)**2)
             Rwp = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
             GOF = chisq/(xFin-xBeg-len(varyList))
             print "%s%7.2f%s%12.6g%s%6.2f" % ('Rwp = ',Rwp,'%, chi**2 = ',chisq,' reduced chi**2 = ',GOF)

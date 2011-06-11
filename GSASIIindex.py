@@ -530,9 +530,9 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
             while cycle < 5:
                 dlg = wx.ProgressDialog("Generated reflections",tries[cycle]+" cell search for "+bravaisNames[ibrav],ncMax, 
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-                screenSize = wx.DisplaySize()
+                screenSize = wx.ClientDisplayRect()
                 Size = dlg.GetSize()
-                dlg.SetPosition(wx.Point(screenSize[0]-Size[0]-300,0))
+                dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
                 try:
                     GoOn = True
                     while GoOn:                                                 #Loop over increment of volume

@@ -458,13 +458,14 @@ class fcjde_gen(st.rv_continuous):
     dx: 2-theta step size in deg
     Result for fcj.pdf
     -----------------------------------------
-    if x < t & s = S/L+H/L: 
-        fcj.pdf = [1/sqrt({cos(x)**2/cos(t)**2}-1) - 1/s]/cos(x)    
-    if x >= t:
+    T = x*dx+t
+    s = S/L+H/L
+    if x < 0: 
+        fcj.pdf = [1/sqrt({cos(T)**2/cos(t)**2}-1) - 1/s]/|cos(T)|    
+    if x >= 0:
         fcj.pdf = 0    
     """
     def _pdf(self,x,t,s,dx):
-#        T = np.where(t<=90.,dx*x+t,180.-dx*x-t)
         T = dx*x+t
         ax = npcosd(T)**2
         bx = npcosd(t)**2
@@ -728,7 +729,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
         M = np.sqrt(weights)*(ydata-getPeakProfile(parmdict,xdata,varylist,bakType))
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
         if dlg:
-            dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Peak fit Rwp =',Rwp,'%'))
+            GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Peak fit Rwp =',Rwp,'%'))[0]
+            if not GoOn:
+                return -M           #abort!!
         return M
         
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
@@ -747,7 +750,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
         values =  np.array(ValuesOut(parmDict, varyList))
         if FitPgm == 'LSQ':
             dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
             screenSize = wx.ClientDisplayRect()
             Size = dlg.GetSize()
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
@@ -766,6 +769,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
             print "%s%7.2f%s%12.6g%s%6.2f" % ('Rwp = ',Rwp,'%, chi**2 = ',chisq,' reduced chi**2 = ',GOF)
             try:
                 sig = np.sqrt(np.diag(result[1])*chisq)
+                if np.any(np.isnan(sig)):
+                    print '*** Least squares aborted - some invalid esds possible ***'
                 break                   #refinement succeeded - finish up!
             except ValueError:          #result[1] is None on singular matrix
                 print 'Refinement failed - singular matrix'

@@ -789,7 +789,7 @@ def UpdateUnitCellsGrid(self, data):
         print controls[5]
         ibrav = bravaisSymb.index(controls[5])
         dmin = G2indx.getDmin(peaks)-0.005
-        Lhkl,M20,X20 = G2indx.refinePeaks(peaks,ibrav,A)
+        Lhkl,M20,X20,A = G2indx.refinePeaks(peaks,ibrav,A)
         controls[6:12] = G2lat.A2cell(A)
         controls[12] = G2lat.calc_V(A)
         data = [controls,bravais,cells,dmin]
@@ -824,6 +824,7 @@ def UpdateUnitCellsGrid(self, data):
             self.ErrorDialog('Error','No Bravais lattices selected')
             return
         self.dataFrame.CopyCell.Enable(False)
+        self.dataFrame.RefineCell.Enable(False)
         OK,dmin,cells = G2indx.DoIndexPeaks(peaks,inst,controls,bravais)
         if OK:
             data = [controls,bravais,cells,dmin]
@@ -838,10 +839,10 @@ def UpdateUnitCellsGrid(self, data):
                     G2plt.PlotPowderLines(self)
                 else:
                     G2plt.PlotPatterns(self)
-        self.dataFrame.CopyCell.Enable(True)
-        self.dataFrame.IndexPeaks.Enable(True)
-        self.dataFrame.MakeNewPhase.Enable(True)
-        UpdateUnitCellsGrid(self,data)
+            self.dataFrame.CopyCell.Enable(True)
+            self.dataFrame.IndexPeaks.Enable(True)
+            self.dataFrame.MakeNewPhase.Enable(True)
+            UpdateUnitCellsGrid(self,data)
                 
     def CopyUnitCell(event):
         controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)

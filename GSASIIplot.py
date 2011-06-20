@@ -27,6 +27,7 @@ import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
+import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
@@ -153,6 +154,9 @@ class G2PlotNoteBook(wx.Panel):
         self.status.DestroyChildren()                           #get rid of special stuff on status bar
         
 def PlotSngl(self,newPlot=False):
+    '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional
+        to F, F**2, etc. as requested
+    '''
     from matplotlib.patches import Circle
     global HKL,HKLF
 
@@ -278,6 +282,10 @@ def PlotSngl(self,newPlot=False):
         Page.canvas.draw()
        
 def PlotPatterns(self,newPlot=False):
+    '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
+    2-theta or q (future TOF). Can display multiple patterns as "waterfall plots" or contour plots. Log I 
+    plotting available.
+    '''
     global HKL
     
     def OnPick(event):
@@ -301,13 +309,14 @@ def PlotPatterns(self,newPlot=False):
         xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
         if self.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
-                ins = [Parms[x] for x in ['U','V','W','X','Y','SH/L']]
-                if self.qPlot:                              #qplot - convert back to 2-theta
-                    xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
-                sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
-                gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
-                data = self.PatternTree.GetItemPyData(self.PickId)
-                XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
+                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
+                    ins = [Parms[x] for x in ['U','V','W','X','Y']]
+                    if self.qPlot:                              #qplot - convert back to 2-theta
+                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
+                    sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
+                    gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
+                    data = self.PatternTree.GetItemPyData(self.PickId)
+                    XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(self,data)
                 PlotPatterns(self)
@@ -317,8 +326,9 @@ def PlotPatterns(self,newPlot=False):
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
                 data = self.PatternTree.GetItemPyData(LimitId)
-                if self.qPlot:                              #qplot - convert back to 2-theta
-                    xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
+                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
+                    if self.qPlot:                              #qplot - convert back to 2-theta
+                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                 if mouse.button==1:
                     data[1][0] = min(xy[0],data[1][1])
                 if mouse.button==3:
@@ -527,7 +537,7 @@ def PlotPatterns(self,newPlot=False):
                 'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
             Choice = (' key press','l: offset left','r: offset right','d: offset down',
-                'u: offset up','0: reset offset','n: log(I) on','c: contour on',
+                'u: offset up','o: reset offset','n: log(I) on','c: contour on',
                 'q: toggle q plot','s: toggle single plot','+: no selection')
     cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
@@ -682,6 +692,9 @@ def PlotPatterns(self,newPlot=False):
     self.Pwdr = True
     
 def PlotISFG(self,newPlot=False,type=''):
+    ''' PLotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
+    or multiple plots with waterfall and contour plots as options
+    '''
     if not type:
         type = self.G2plotNB.plotList[self.G2plotNB.nb.GetSelection()]
     if type not in ['I(Q)','S(Q)','F(Q)','G(R)']:
@@ -893,8 +906,8 @@ def PlotISFG(self,newPlot=False,type=''):
         Page.canvas.draw()
         
 def PlotXY(self,XY,newPlot=False,type=''):
-    #simple plot of xy data
-
+    '''simple plot of xy data, used for diagnostic purposes
+    '''
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -942,6 +955,8 @@ def PlotXY(self,XY,newPlot=False,type=''):
         Page.canvas.draw()
 
 def PlotPowderLines(self):
+    ''' plotting of powder lines (i.e. no powder pattern) as sticks
+    '''
     global HKL
 
     def OnMotion(event):
@@ -992,6 +1007,9 @@ def PlotPowderLines(self):
     Page.toolbar.push_current()
 
 def PlotPeakWidths(self):
+    ''' Plotting of instrument broadening terms as function of 2-theta (future TOF)
+    Seen when "Instrument Parameters" chosen from powder pattern data tree
+    '''
     PatternId = self.PatternId
     limitID = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
     if limitID:
@@ -1083,7 +1101,8 @@ def PlotPeakWidths(self):
     Page.canvas.draw()
     
 def PlotStrain(self,data):
-    # in this instance data is for a phase
+    '''Plot 3D microstrain figure. In this instance data is for a phase
+    '''
     PatternId = self.PatternId
     generalData = data['General']
     SGData = generalData['SGData']
@@ -1160,8 +1179,30 @@ def PlotStrain(self,data):
             Plot.set_ylabel('Y')
             Plot.set_zlabel('Z')
     Page.canvas.draw()
+    
+def PlotSphHarmTexture(self,generalData):
+    '''Pole figure, inverse pole figure(?), 3D pole distribution and 3D inverse pole distribution(?)
+    plotting; Need way to select  
+    pole figure or pole distribution to be displayed - do in key enter menu
+    dict generalData contains all phase info needed
+    '''
+    shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+    SGData = generalData['SGData']
+    textureData = generalData['SH Texture']
+    print 'Texture plot'
+    SHData = generalData['SH Texture']
+    SHCoef = SHData['SH Coeff'][1]
+    cell = generalData['Cell'][1:7]
+    PH = np.array(SHData['PFhkl']) 
+    phi,beta = G2lat.CrsAng(PH,cell,SGData)
+    Start = True
+    ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+
             
 def PlotExposedImage(self,newPlot=False,event=None):
+    '''General access module for 2D image plotting
+    '''
     plotNo = self.G2plotNB.nb.GetSelection()
     if self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
         PlotImage(self,newPlot,event,newImage=True)
@@ -1169,6 +1210,9 @@ def PlotExposedImage(self,newPlot=False,event=None):
         PlotIntegration(self,newPlot,event)
 
 def PlotImage(self,newPlot=False,event=None,newImage=True):
+    '''Plot of 2D detector images as contoured plot. Also plot calibration ellipses,
+    masks, etc.
+    '''
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
@@ -1595,6 +1639,8 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
         wx.EndBusyCursor()
         
 def PlotIntegration(self,newPlot=False,event=None):
+    '''Plot of 2D image after image integration with 2-theta and azimuth as coordinates
+    '''
             
     def OnMotion(event):
         Page.canvas.SetToolTipString('')
@@ -1660,7 +1706,8 @@ def PlotIntegration(self,newPlot=False,event=None):
         Page.canvas.draw()
                 
 def PlotTRImage(self,tax,tay,taz,newPlot=False):
-    #a test plot routine - not normally used 
+    '''a test plot routine - not normally used
+    ''' 
             
     def OnMotion(event):
         Page.canvas.SetToolTipString('')
@@ -1732,6 +1779,9 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         Page.canvas.draw()
         
 def PlotStructure(self,data):
+    '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
+    thermal motion ellipsoids and polyhedra
+    '''
     generalData = data['General']
     cell = generalData['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse

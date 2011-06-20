@@ -22,7 +22,6 @@ import scipy.stats as st
 import scipy.optimize as so
 
 import GSASIIpath
-#import pypowder as pyp
 import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIElem as G2elem

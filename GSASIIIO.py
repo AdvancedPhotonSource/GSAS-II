@@ -46,24 +46,51 @@ def SelectPowderData(self, filename):
 First line of this file:
 '''+File.readline()
     dlg = wx.MessageDialog(self, Title, 'Is this the file you want?', 
-    wx.YES_NO | wx.ICON_QUESTION)
+        wx.YES_NO | wx.ICON_QUESTION)
     try:
         result = dlg.ShowModal()
     finally:
         dlg.Destroy()
     if result == wx.ID_NO: return (0,0)
     Temperature = 300
+    
+    if '.xye' in filename:      #Topas style xye file (e.g. 2-th, I, sig) - no iparm file/no BANK record
+        dlg = wx.MessageDialog(self,'''Is this laboratory Cu Ka1/Ka2 data? 
+(No = 0.6A wavelength synchrotron data)
+Change wavelength in Instrument Parameters if needed''','Data type?',
+            wx.YES_NO | wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        print result
+        if result == wx.ID_YES:
+            Iparm = {}                                               #Assume CuKa lab data
+            Iparm['INS   HTYPE '] = 'PXC '
+            Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
+            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
+            Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
+            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        '
+        else:
+            Iparm = {}                                               #Assume 0.6A synchrotron data
+            Iparm['INS   HTYPE '] = 'PXC '
+            Iparm['INS  1 ICONS'] = '  0.600000  0.000000       0.0         0      0.99    0       0.5   '
+            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
+            Iparm['INS  1PRCF11'] = '   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        '
+            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
+                        
         
-    self.IparmName = GetInstrumentFile(self,filename)
-    if self.IparmName:
-        Iparm = GetInstrumentData(self.IparmName)
-    else:
-        Iparm = {}                                               #Assume CuKa lab data if no iparm file
-        Iparm['INS   HTYPE '] = 'PXC '
-        Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
-        Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
-        Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
-        Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        '
+    else:                       #GSAS style fxye or fxy file (e.g. 100*2-th, I, sig)
+        self.IparmName = GetInstrumentFile(self,filename)
+        if self.IparmName:
+            Iparm = GetInstrumentData(self.IparmName)
+        else:
+            Iparm = {}                                               #Assume CuKa lab data if no iparm file
+            Iparm['INS   HTYPE '] = 'PXC '
+            Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
+            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
+            Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
+            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        '
     S = 1
     Banks = []
     Pos = []
@@ -77,6 +104,10 @@ First line of this file:
                 if S[:4] == 'BANK':
                     Banks.append(S)
                     Pos.append(File.tell())
+                elif '.xye' in filename:    #No BANK in a xye file
+                    Banks.append('BANK 1 XYE')
+                    Pos.append(File.tell())
+                    break
             else:
                 Comments.append(S[:-1])
                 if 'Temp' in S.split('=')[0]:
@@ -282,6 +313,8 @@ def GetPowderData(filename,Pos,Bank,DataType):
     print 'Bank:    '+Bank[:-1]
     if 'FXYE' in Bank:
         return GetFXYEdata(filename,Pos,Bank,DataType)
+    elif ' XYE' in Bank:
+        return GetXYEdata(filename,Pos,Bank,DataType)
     elif 'FXY' in Bank:
         return GetFXYdata(filename,Pos,Bank,DataType)
     elif 'ESD' in Bank:
@@ -316,6 +349,32 @@ def GetFXYEdata(filename,Pos,Bank,DataType):
     File.close()
     N = len(x)
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+    
+def GetXYEdata(filename,Pos,Bank,DataType):
+    File = open(filename,'Ur')
+    File.seek(Pos)
+    x = []
+    y = []
+    w = []
+    S = File.readline()
+    while S:
+        vals = S.split()
+        try:
+            x.append(float(vals[0]))
+            f = float(vals[1])
+            if f <= 0.0:
+                y.append(0.0)
+                w.append(1.0)
+            else:
+                y.append(float(vals[1]))
+                w.append(1.0/float(vals[2])**2)
+            S = File.readline()
+        except ValueError:
+            break
+    File.close()
+    N = len(x)
+    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+    
     
 def GetFXYdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
@@ -954,6 +1013,11 @@ def IndexPeakListSave(self,peaks):
     print 'index peak list saved'
     
 def ReadEXPPhase(self,filename):
+    shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+    textureData = {'Order':0,'Model':'cylindrical','Sample omega':[False,0.0],
+        'Sample chi':[False,0.0],'Sample phi':[False,0.0],'SH Coeff':[False,{}],
+        'SHShow':False,'PFhkl':[0,0,1]}
+    shNcof = 0
     file = open(filename, 'Ur')
     Phase = {}
     S = 1
@@ -1002,6 +1066,14 @@ def ReadEXPPhase(self,filename):
         elif 'SG SYM' in key:
             SpGrp = EXPphase[key][:15].strip()
             E,SGData = G2spc.SpcGroup(SpGrp)
+        elif 'OD    ' in key:
+            SHdata = EXPphase[key].split()
+            textureData['Order'] = int(SHdata[0])
+            textureData['Model'] = shModels[int(SHdata[2])]
+            textureData['Sample omega'] = [False,float(SHdata[6])]
+            textureData['Sample chi'] = [False,float(SHdata[7])]
+            textureData['Sample phi'] = [False,float(SHdata[8])]
+            shNcof = int(SHdata[1])
     Atoms = []
     if Ptype == 'nuclear':
         for key in keyList:
@@ -1036,8 +1108,21 @@ def ReadEXPPhase(self,filename):
                 Atom.append(ran.randint(0,sys.maxint))
                 Atoms.append(Atom)
     Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
+    if shNcof:
+        shCoef = {}
+        nRec = [i+1 for i in range((shNcof-1)/6+1)]
+        for irec in nRec:
+            ODkey = keyList[0][:6]+'OD'+'%3dA'%(irec)
+            indx = EXPphase[ODkey].split()
+            ODkey = ODkey[:-1]+'B'
+            vals = EXPphase[ODkey].split()
+            for i,val in enumerate(vals):
+                key = 'C(%s,%s,%s)'%(indx[3*i],indx[3*i+1],indx[3*i+2])
+                shCoef[key] = float(val)
+        textureData['SH Coeff'] = [False,shCoef]
+            
     Phase['General'] = {'Name':PhaseName,'Type':Ptype,'SGData':SGData,
-        'Cell':[False,]+abc+angles+[Volume,]}
+        'Cell':[False,]+abc+angles+[Volume,],'Pawley ref':[],'Models':{},'SH Texture':textureData}
     Phase['Atoms'] = Atoms
     Phase['Drawing'] = {}
     Phase['Histograms'] = {}

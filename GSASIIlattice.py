@@ -16,7 +16,7 @@ sind = lambda x: np.sin(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 tand = lambda x: np.tan(x*np.pi/180.)
 atand = lambda x: 180.*np.arctan(x)/np.pi
-atan2d = lambda y,x: 180.*np.atan2(y,x)/np.pi
+atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 cosd = lambda x: np.cos(x*np.pi/180.)
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 rdsq2d = lambda x,p: round(1.0/np.sqrt(x),p)
@@ -596,6 +596,245 @@ def GenHLaue(dmin,SGLaue,SGLatt,SGUniq,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
     return sortHKLd(HKL,True,True)
+
+#Spherical harmonics routines
+def OdfChk(SGLaue,L,M):
+    if not L%2 and abs(M) <= L:
+        if SGLaue == '0':                      #cylindrical symmetry
+            if M == 0: return True
+        elif SGLaue == '-1':
+            return True
+        elif SGLaue == '2/m':
+            if not abs(M)%2: return True
+        elif SGLaue == 'mmm':
+            if not abs(M)%2 and M >= 0: return True
+        elif SGLaue == '4/m':
+            if not abs(M)%4: return True
+        elif SGLaue == '4/mmm':
+            if not abs(M)%4 and M >= 0: return True
+        elif SGLaue in ['3R','3']:
+            if not abs(M)%3: return True
+        elif SGLaue in ['3mR','3m1','31m']:
+            if not abs(M)%3 and M >= 0: return True
+        elif SGLaue == '6/m':
+            if not abs(M)%6: return True
+        elif SGLaue == '6/mmm':
+            if not abs(M)%6 and M >= 0: return True
+        elif SGLaue == 'm3':
+            if M > 0:
+                if L%12 == 2:
+                    if M <= L/12: return True
+                else:
+                    if M <= L/12+1: return True
+        elif SGLaue == 'm3m':
+            if M > 0:
+                if L%12 == 2:
+                    if M <= L/12: return True
+                else:
+                    if M <= L/12+1: return True
+    return False
+        
+def GenSHCoeff(SGLaue,SamSym,L):
+    coeffNames = []
+    for iord in [2*i+2 for i in range(L/2)]:
+        for m in [i-iord for i in range(2*iord+1)]:
+            if OdfChk(SamSym,iord,m):
+                for n in [i-iord for i in range(2*iord+1)]:
+                    if OdfChk(SGLaue,iord,n):
+                        coeffNames.append('C(%d,%d,%d)'%(iord,m,n))
+    return coeffNames
+
+def CrsAng(H,cell,SGData):
+    a,b,c,al,be,ga = cell
+    SQ3 = 1.732050807569
+    H1 = np.array([1,0,0])
+    H2 = np.array([0,1,0])
+    H3 = np.array([0,0,1])
+    H4 = np.array([1,1,1])
+    G,g = cell2Gmat(cell)
+    Laue = SGData['SGLaue']
+    Naxis = SGData['SGUniq']
+    DH = np.inner(H,np.inner(G,H))
+    if Laue == '2/m':
+        if Naxis == 'a':
+            DR = np.inner(H1,np.inner(G,H1))
+            DHR = np.inner(H,np.inner(G,H1))
+        elif Naxis == 'b':
+            DR = np.inner(H2,np.inner(G,H2))
+            DHR = np.inner(H,np.inner(G,H2))
+        else:
+            DR = np.inner(H3,np.inner(G,H3))
+            DHR = np.inner(H,np.inner(G,H3))
+    elif Laue in ['R3','R3m']:
+        DR = np.inner(H4,np.inner(G,H4))
+        DRH = np.inner(H,np.inner(G,H4))
+        
+    else:
+        DR = np.inner(H3,np.inner(G,H3))
+        DHR = np.inner(H,np.inner(G,H3))
+    DHR /= np.sqrt(DR*DH)
+    phi = acosd(DHR)
+    if Laue == '-1':
+        BA = H[1]*a/(b-H[0]*cosd(ga))
+        BB = H[0]*sind(ga)**2
+    elif Laue == '2/m':
+        if Naxis == 'a':
+            BA = H[2]*b/(c-H[1]*cods(al))
+            BB = H[1]*sind(al)**2
+        elif Naxis == 'b':
+            BA = H[0]*c/(a-H[2]*cosd(be))
+            BB = H[2]*sind(be)**2
+        else:
+            BA = H[1]*a/(b-H[0]*cosd(ga))
+            BB = H[0]*sind(ga)**2
+    elif Laue in ['mmm','4/m','4/mmm']:
+        BA = H[1]*a
+        BB = H[0]*b
+    
+    elif Laue in ['3R','3mR']:
+        BA = H[0]+H[1]-2.0*H[2]
+        BB = SQ3*(H[0]-H[1])
+    elif Laue in ['m3','m3m']:
+        BA = H[1]
+        BB = H[0]
+    else:
+        BA = H[0]+2.0*H[1]
+        BB = SQ3*H[0]
+    beta = atan2d(BA,BB)
+    return phi,beta
+    
+def SamAng(Tth,Gangls,Sangl,IFCoup):
+    if IFCoup:
+        GSomeg = sind(Gangls[2]+Tth)
+        GComeg = cosd(Gangls[2]+Tth)
+    else:
+        GSomeg = sind(Gangls[2])
+        GComeg = cosd(Gangls[2])
+    GSTth = sind(Tth)
+    GCTth = cosd(Tth)      
+    GSazm = sind(Gangls[3])
+    GCazm = cosd(Gangls[3])
+    GSchi = sind(Gangls[1])
+    GCchi = cosd(Gangls[1])
+    GSphi = sind(Gangls[0]+Sangl[2])
+    GCphi = cosd(Gangls[0]+Sangl[2])
+    SSomeg = sind(Sangl[0])
+    SComeg = cosd(Sangl[0])
+    SSchi = sind(Sangl[1])
+    SCchi = cosd(Sangl[1])
+    AT = -GSTth*GComeg+GCTth*GCazm*GSomeg
+    BT = GSTth*GSomeg+GCTth*GCazm*GComeg
+    CT = -GCTth*GSazm*GSchi
+    DT = -GCTth*GSazm*GCchi
+    
+    BC1 = -AT*GSphi+(CT+BT*GCchi)*GCphi
+    BC2 = DT-BT*GSchi
+    BC3 = AT*GCphi+(CT+BT*GCchi)*GSphi
+      
+    BC = BC1*SComeg*SCchi+BC2*SComeg*SSchi-BC3*SSomeg      
+    psi = acosd(BC)
+      
+    BA = -BC1*SSchi+BC2*SCchi
+    BB = BC1*SSomeg*SCchi+BC2*SSomeg*SSchi+BC3*SComeg
+    gam = atand2(BB,BA)
+        
+    return psi,gam
+   
+def Flnh(Start,SHCoef,phi,beta,SGData):
+    import pytexture as ptx
+    BOH = {
+    'L=2':[[],[],[]],
+    'L=4':[[0.30469720,0.36418281],[],[]],
+    'L=6':[[-0.14104740,0.52775103],[],[]],
+    'L=8':[[0.28646862,0.21545346,0.32826995],[],[]],
+    'L=10':[[-0.16413497,0.33078546,0.39371345],[],[]],
+    'L=12':[[0.26141975,0.27266871,0.03277460,0.32589402],
+        [0.09298802,-0.23773812,0.49446631],[]],
+    'L=14':[[-0.17557309,0.25821932,0.27709173,0.33645360],[],[]],
+    'L=16':[[0.24370673,0.29873515,0.06447688,0.00377,0.32574495],
+        [0.12039646,-0.25330128,0.23950998,0.40962508],[]],
+    'L=18':[[-0.16914245,0.17017340,0.34598142,0.07433932,0.32696037],
+        [-0.06901768,0.16006562,-0.24743528,0.47110273],[]],
+    'L=20':[[0.23067026,0.31151832,0.09287682,0.01089683,0.00037564,0.32573563],
+        [0.13615420,-0.25048007,0.12882081,0.28642879,0.34620433],[]],
+    'L=22':[[-0.16109560,0.10244188,0.36285175,0.13377513,0.01314399,0.32585583],
+        [-0.09620055,0.20244115,-0.22389483,0.17928946,0.42017231],[]],
+    'L=24':[[0.22050742,0.31770654,0.11661736,0.02049853,0.00150861,0.00003426,0.32573505],
+        [0.13651722,-0.21386648,0.00522051,0.33939435,0.10837396,0.32914497],
+        [0.05378596,-0.11945819,0.16272298,-0.26449730,0.44923956]],
+    'L=26':[[-0.15435003,0.05261630,0.35524646,0.18578869,0.03259103,0.00186197,0.32574594],
+        [-0.11306511,0.22072681,-0.18706142,0.05439948,0.28122966,0.35634355],[]],
+    'L=28':[[0.21225019,0.32031716,0.13604702,0.03132468,0.00362703,0.00018294,0.00000294,0.32573501],
+        [0.13219496,-0.17206256,-0.08742608,0.32671661,0.17973107,0.02567515,0.32619598],
+        [0.07989184,-0.16735346,0.18839770,-0.20705337,0.12926808,0.42715602]],
+    'L=30':[[-0.14878368,0.01524973,0.33628434,0.22632587,0.05790047,0.00609812,0.00022898,0.32573594],
+        [-0.11721726,0.20915005,-0.11723436,-0.07815329,0.31318947,0.13655742,0.33241385],
+        [-0.04297703,0.09317876,-0.11831248,0.17355132,-0.28164031,0.42719361]],
+    'L=32':[[0.20533892,0.32087437,0.15187897,0.04249238,0.00670516,0.00054977,0.00002018,0.00000024,0.32573501],
+        [0.12775091,-0.13523423,-0.14935701,0.28227378,0.23670434,0.05661270,0.00469819,0.32578978],
+        [0.09703829,-0.19373733,0.18610682,-0.14407046,0.00220535,0.26897090,0.36633402]],
+    'L=34':[[-0.14409234,-0.01343681,0.31248977,0.25557722,0.08571889,0.01351208,0.00095792,0.00002550,0.32573508],
+        [-0.11527834,0.18472133,-0.04403280,-0.16908618,0.27227021,0.21086614,0.04041752,0.32688152],
+        [-0.06773139,0.14120811,-0.15835721,0.18357456,-0.19364673,0.08377174,0.43116318]]
+    }
+    
+    FORPI = 12.5663706143592
+    RSQPI = 0.5641895835478
+    SQ2 = 1.414213562373
+
+    if Start:
+        ptx.pyqlmninit()
+        Start = False
+    Fln = np.zeros(len(SHCoef))
+    for i,term in enumerate(SHCoef):
+        if abs(SHCoef[term]) > 1e-6:
+            l,m,n = eval(term.strip('C'))
+            lNorm = 4.*np.pi*(2.*l+1.)
+            if SGData['SGLaue'] in ['m3','m3m']:
+                L = [i*4 for i in range(l/4)]
+                Kcl = 0.0
+                for i in L:
+                    im = i/4
+                    pcrs = ptx.pyplmpsi(l,i,phi)
+                    Kcl += BOH['L='+str(l)][n-1][l/2-1]*pcrs*cosd(i*beta)        
+            else:                #all but cubic
+                pcrs = ptx.pyplmpsi(l,n,phi)*RSQPI
+                if not n:
+                    pcrs /= SQ2
+                if SGData['SGLaue'] in ['mmm','4/mmm','6/mmm']:
+                    if n%6 == 3:
+                        Kcl = pcrs*sind(n*beta)
+                    else:
+                        Kcl = pcrs*cosd(n*beta)
+                elif SGData['SGLaue'] in ['3mR','3m1','31m']:
+                    Kcl = pcrs*cosd(n*beta)
+                else:
+                    Kcl = pcrs*(cosd(n*beta)+sind(n*beta))
+                                   
+            Fln[i] = SHCoef[term]*Kcl*lNorm
+    ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
+    return ODFln 
+    
+def polfcal(ODFln,SamSym,psi,gam):
+    RSQPI = 0.5641895835478
+    SQ2 = 1.414213562373
+    PolVal = 1.0
+    for term in ODFln:
+        if ODFln[term][1] > 1.e-3:
+            l,m,n = eval(term.strip('C'))
+            psrs = ptx.pyplmpsi(l,m,psi)
+            if SamSym in ['-1','2/m']:
+                if m:
+                    Ksl = RSQPI*psrs*(cosd(m*gam)+sind(m*gam))
+                else:
+                    ksl = RSQPI*psrs/SQ2
+            else:
+                if m:
+                    Ksl = RSQPI*psrs*cosd(m*gam)
+                else:
+                    Ksl = RSQPI*psrs/SQ2
+        PolVal += ODFln[term][1]*Ksl 
+    return PolVal
     
 # output from uctbx computed on platform darwin on 2010-05-28
 NeedTestData = True

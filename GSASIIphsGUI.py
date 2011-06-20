@@ -1733,9 +1733,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
             radFactor.SetValue("%.2f"%(value))
             FindBonds()
             G2plt.PlotStructure(self,data)
-            
-        
-
 
         dataDisplay = wx.Panel(drawOptions)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1849,17 +1846,85 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
         else:
             self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)            
-        generalData = data['General']
+        generalData = data['General']        
         SGData = generalData['SGData']
+        try:
+            textureData = generalData['SH Texture']
+        except KeyError:            #fix old files!
+            textureData = generalData['SH Texture'] = {'Order':0,'Model':'cylindrical',
+                'Sample omega':[False,0.0],'Sample chi':[False,0.0],'Sample phi':[False,0.0],
+                'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1]}
+        shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+        
+        shAngles = ['omega','chi','phi']
         keyList = UseList.keys()
         keyList.sort()
         Indx = {}
+        
+        def SetSHCoef():
+            cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
+            newSHCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
+            SHCoeff = textureData['SH Coeff'][1]
+            for cofName in SHCoeff:
+                if cofName in  cofNames:
+                    newSHCoef[cofName] = SHCoeff[cofName]
+            return newSHCoef
         
         def OnShowData(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Show'] = Obj.GetValue()
             UpdateDData()
+            
+        def OnShOrder(event):
+            textureData['Order'] = int(shOrder.GetValue())
+            textureData['SH Coeff'][1] = SetSHCoef()
+            UpdateDData()
+                        
+        def OnShModel(event):
+            textureData['Model'] = shModel.GetValue()
+            textureData['SH Coeff'][1] = SetSHCoef()
+            UpdateDData()
+            
+        def OnSHRefine(event):
+            textureData['SH Coeff'][0] = shRef.GetValue()
+            
+        def OnSHShow(event):
+            textureData['SHShow'] = shShow.GetValue()
+            UpdateDData()
+            
+        def OnAngRef(event):
+            Obj = event.GetEventObject()
+            textureData[angIndx[Obj.GetId()]][0] = Obj.GetValue()
+            
+        def OnAngValue(event):
+            Obj = event.GetEventObject()
+            try:
+                value =  float(Obj.GetValue())
+            except ValueError:
+                value = textureData[valIndx[Obj.GetId()]][1]
+            Obj.SetValue('%8.2f'%(value))
+            textureData[valIndx[Obj.GetId()]][1] = value
+            
+        def OnODFValue(event): 
+            Obj = event.GetEventObject()
+            try:
+                value =  float(Obj.GetValue())
+            except ValueError:
+                value = textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]]
+            Obj.SetValue('%8.3f'%(value))
+            textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]] = value
+            
+        def OnPFValue(event):
+            Obj = event.GetEventObject()
+            try:
+                value =  int(Obj.GetValue())
+            except ValueError:
+                value = textureData['PFhkl'][pfIndx[Obj.GetId()]]
+            Obj.SetValue('%3d'%(value))
+            textureData['PFhkl'][pfIndx[Obj.GetId()]] = value
+            G2plt.PlotSphHarmTexture(self,generalData)            
         
         def OnScaleRef(event):
             Obj = event.GetEventObject()
@@ -1875,16 +1940,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 pass
             Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Scale'][0]))          #reset in case of error
             
-        def OnCutoffVal(event):
-            Obj = event.GetEventObject()
-            try:
-                cutoff = float(Obj.GetValue())
-                if cutoff > 0:
-                    UseList[Indx[Obj.GetId()]]['Cutoff'] = cutoff
-            except ValueError:
-                pass
-            Obj.SetValue("%.3f"%(UseList[Indx[Obj.GetId()]]['Cutoff']))          #reset in case of error
-
         def OnSizeType(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -1928,8 +1983,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Mustrain'][0] = Obj.GetValue()
-            G2plt.PlotStrain(self,data)
             UpdateDData()
+            G2plt.PlotStrain(self,data)
             
         def OnStrainRef(event):
             Obj = event.GetEventObject()
@@ -2030,10 +2085,78 @@ def UpdatePhaseData(self,Item,data,oldPage):
         DData.DestroyChildren()
         dataDisplay = wx.Panel(DData)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((0,5),0)
+        shSizer = wx.BoxSizer(wx.HORIZONTAL)
+        shSizer.Add(wx.StaticText(dataDisplay,-1,'Texture model: '),0,wx.ALIGN_CENTER_VERTICAL)
+        shModel = wx.ComboBox(dataDisplay,-1,value=textureData['Model'],choices=shModels,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        shModel.Bind(wx.EVT_COMBOBOX,OnShModel)
+        shSizer.Add(shModel,0,wx.ALIGN_CENTER_VERTICAL)
+        shSizer.Add(wx.StaticText(dataDisplay,-1,'  Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
+        shOrder = wx.ComboBox(dataDisplay,-1,value=str(textureData['Order']),choices=[str(2*i) for i in range(18)],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        shOrder.Bind(wx.EVT_COMBOBOX,OnShOrder)
+        shSizer.Add(shOrder,0,wx.ALIGN_CENTER_VERTICAL)
+        shSizer.Add((5,0),0)
+        shRef = wx.CheckBox(dataDisplay,label=' Refine texture?')
+        shRef.SetValue(textureData['SH Coeff'][0])
+        shRef.Bind(wx.EVT_CHECKBOX, OnSHRefine)
+        shSizer.Add(shRef,0,wx.ALIGN_CENTER_VERTICAL)
+        shShow = wx.CheckBox(dataDisplay,label=' Show coeff.?')
+        shShow.SetValue(textureData['SHShow'])
+        shShow.Bind(wx.EVT_CHECKBOX, OnSHShow)
+        shSizer.Add(shShow,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(shSizer,0,0)
+        mainSizer.Add((0,5),0)
+        if textureData['SHShow']:
+            mainSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((0,5),0)
+            ODFSizer = wx.FlexGridSizer(2,8,2,2)
+            ODFIndx = {}
+            ODFkeys = textureData['SH Coeff'][1].keys()
+            ODFkeys.sort()
+            for item in ODFkeys:
+                ODFSizer.Add(wx.StaticText(dataDisplay,-1,item),0,wx.ALIGN_CENTER_VERTICAL)
+                ODFval = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%8.3f'%(textureData['SH Coeff'][1][item]),style=wx.TE_PROCESS_ENTER)
+                ODFIndx[ODFval.GetId()] = item
+                ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
+                ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
+                ODFSizer.Add(ODFval,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(ODFSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((0,5),0)
+        PFSizer = wx.BoxSizer(wx.HORIZONTAL)
+        PFSizer.Add(wx.StaticText(dataDisplay,-1,'Display pole figure for HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
+        pfIndx = {}
+        for i in range(3):
+            pfVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%3d'%(textureData['PFhkl'][i]),size=(40,20),style=wx.TE_PROCESS_ENTER)
+            pfIndx[pfVal.GetId()] = i
+            pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
+            pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
+            PFSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)            
+        mainSizer.Add(PFSizer,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((0,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Sample orientation angles: '),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((0,5),0)
+        angSizer = wx.BoxSizer(wx.HORIZONTAL)
+        angIndx = {}
+        valIndx = {}
+        for item in ['Sample omega','Sample chi','Sample phi']:
+            angRef = wx.CheckBox(dataDisplay,label=item+': ')
+            angRef.SetValue(textureData[item][0])
+            angIndx[angRef.GetId()] = item
+            angRef.Bind(wx.EVT_CHECKBOX, OnAngRef)
+            angSizer.Add(angRef,0,wx.ALIGN_CENTER_VERTICAL)
+            angVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%8.2f'%(textureData[item][1]),style=wx.TE_PROCESS_ENTER)
+            valIndx[angVal.GetId()] = item
+            angVal.Bind(wx.EVT_TEXT_ENTER,OnAngValue)
+            angVal.Bind(wx.EVT_KILL_FOCUS,OnAngValue)
+            angSizer.Add(angVal,0,wx.ALIGN_CENTER_VERTICAL)
+            angSizer.Add((5,0),0)
+        mainSizer.Add(angSizer,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
         for item in keyList:
             histData = UseList[item]
-            mainSizer.Add(wx.StaticText(dataDisplay,-1,50*'_'))                
             mainSizer.Add((5,5),0)
             showData = wx.CheckBox(dataDisplay,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
@@ -2058,15 +2181,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 mainSizer.Add((0,5),0)
                 
             if item[:4] == 'PWDR' and UseList[item]['Show']:
-                cutoffSizer = wx.BoxSizer(wx.HORIZONTAL)
-                cutoffSizer.Add(wx.StaticText(dataDisplay,label=' Peak cutoff ratio: '),0,wx.ALIGN_CENTER_VERTICAL)
-                cutoffVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(UseList[item]['Cutoff']),
-                    style=wx.TE_PROCESS_ENTER)                
-                Indx[cutoffVal.GetId()] = item
-                cutoffVal.Bind(wx.EVT_TEXT_ENTER,OnCutoffVal)
-                cutoffVal.Bind(wx.EVT_KILL_FOCUS,OnCutoffVal)
-                cutoffSizer.Add(cutoffVal,0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(cutoffSizer)
                 mainSizer.Add((0,5),0)
                 sizeSizer = wx.BoxSizer(wx.HORIZONTAL)
                 choices = ['isotropic','uniaxial',]
@@ -2233,9 +2347,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
         mainSizer.Add((5,5),0)
 
         dataDisplay.SetSizer(mainSizer)
+        mainSizer.FitInside(self.dataFrame)
         Size = mainSizer.Fit(self.dataFrame)
         Size[0] = max(Size[0],300)+20
-        Size[1] += 30                           #compensate for status bar
+        Size[1] += 30                        #compensate for status bar
         DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-10)
         dataDisplay.SetSize(Size)
         self.dataFrame.setSizePosLeft(Size)
@@ -2289,7 +2404,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             'Size':['isotropic',[10000.,0,],[False,False],[0,0,1]],
                             'Mustrain':['isotropic',[1.0,0.0],[False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],                            
-                            'Extinction':[0.0,False],'Cutoff':0.01}
+                            'Extinction':[0.0,False]}
                     data['Histograms'] = UseList
                     UpdateDData()
             finally:

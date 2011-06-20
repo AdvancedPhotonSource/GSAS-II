@@ -15,6 +15,7 @@ import numpy.linalg as nl
 import GSASIIpath
 import pypowder as pyp              #assumes path has been amended to include correctr bin directory
 import GSASIIlattice as G2lat
+import scipy.optimize as so
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -193,12 +194,9 @@ def sortM20(cells):
                 
 def IndexPeaks(peaks,HKL):
     import bisect
-    hklds = [1000.0]                                    #make bounded list of available d-spacings
     N = len(HKL)
     if N == 0: return False
-    for hkl in HKL:
-        hklds.append(hkl[3])
-    hklds.append(0.0)
+    hklds = list(np.array(HKL).T[3])+[1000.0,0.0,]
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0]
     for ipk,peak in enumerate(peaks):
@@ -214,14 +212,12 @@ def IndexPeaks(peaks,HKL):
                 dold = abs(opeak[7]-hkl[3])
                 dnew = min(dm,dp)
                 if dold > dnew:                             # new better - zero out old
-                    for j in range(3):
-                        opeak[j+4] = 0
+                    opeak[4:7] = [0,0,0]
                     opeak[8] = 0.
                 else:                                       # old better - do nothing
                     continue                
             hkl[4] = ipk
-            for j in range(3):
-                peak[j+4] = hkl[j]
+            peak[4:7] = hkl[:3]
             peak[8] = hkl[3]                                # fill in d-calc
     for peak in peaks:
         peak[3] = False
@@ -234,102 +230,47 @@ def IndexPeaks(peaks,HKL):
         return True
     else:
         return False
+
+def FitHKL(ibrav,peaks,A,Pwr):
     
-def FitHKL(ibrav,peaks,A,wtP):
-    def ShiftTest(a,b):
-        if b < -0.1*a: 
-            b = -0.0001*a
-        return b
-    smin = 0.
-    first = True
-    for peak in peaks:
-        if peak[2] and peak[3]:
-            h,k,l = H = peak[4:7]
-            Qo = 1./peak[7]**2
-            Qc = G2lat.calc_rDsq(H,A)
-            try:
-                peak[8] = 1./math.sqrt(Qc)
-            except:
-                print G2lat.A2invcell(A)
-            delt = Qo-Qc
-            smin += delt**2
-            dp = []
-            if ibrav in [0,1,2]:            #m3m
-                dp.append(h*h+k*k+l*l)
-            elif ibrav in [3,4]:            #R3H, P3/m & P6/mmm
-                dp.append(h*h+k*k+h*k)
-                dp.append(l*l)
-            elif ibrav in [5,6]:            #4/mmm
-                dp.append(h*h+k*k)
-                dp.append(l*l)
-            elif ibrav in [7,8,9,10]:       #mmm
-                dp.append(h*h)
-                dp.append(k*k)
-                dp.append(l*l)
-            elif ibrav in [11,12]:          #2/m
-                dp.append(h*h)
-                dp.append(k*k)
-                dp.append(l*l)
-                dp.append(h*l)
-            else:                           #1
-#    derivatives for a0*h^2+a1*k^2+a2*l^2+a3*h*k+a4*h*l+a5*k*l
-                dp.append(h*h)
-                dp.append(k*k)
-                dp.append(l*l)
-                dp.append(h*k)
-                dp.append(h*l)
-                dp.append(k*l)
-            if first:
-                first = False
-                M = len(dp)
-                B = np.zeros(shape=(M,M))
-                V = np.zeros(shape=(M))
-            dwt = peak[7]**wtP
-            B,V = pyp.buildmv(delt*dwt,dwt,M,dp,B,V)
-    if nl.det(B) > 0.0:
-        try:
-            b = nl.solve(B,V)
-            B = nl.inv(B)
-            sig = np.diag(B)
-        except SingularMatrix:
-            return False,0
-        if ibrav in [0,1,2]:            #m3m
-            A[0] += ShiftTest(A[0],b[0])
-            A[1] = A[2] = A[0]
-        elif ibrav in [3,4]:            #R3H, P3/m & P6/mmm
-            A[0] += ShiftTest(A[0],b[0])
-            A[1] = A[3] = A[0]
-            A[2] += ShiftTest(A[2],b[1])
-        elif ibrav in [5,6]:            #4/mmm
-            A[0] += ShiftTest(A[0],b[0])
-            A[1] = A[0]
-            A[2] += ShiftTest(A[2],b[1])
-        elif ibrav in [7,8,9,10]:       #mmm
-            for i in range(3):
-                A[i] += ShiftTest(A[i],b[i])
-        elif ibrav in [11,12]:          #2/m
-            for i in range(3):
-                A[i] += ShiftTest(A[i],b[i])
-            A[4] += ShiftTest(A[4],b[3])
-            A[4] = min(1.4*math.sqrt(A[0]*A[2]),A[4])   #min beta star = 45
-        else:                           #1
-            oldV = math.sqrt(1./G2lat.calc_rVsq(A))
-            oldA = A[:]
-            for i in range(6):
-                A[i] += b[i]*0.2
-            A[3] = min(1.1*math.sqrt(max(0,A[1]*A[2])),A[3])
-            A[4] = min(1.1*math.sqrt(max(0,A[0]*A[2])),A[4])
-            A[5] = min(1.1*math.sqrt(max(0,A[0]*A[1])),A[5])
-            ratio = math.sqrt(1./G2lat.calc_rVsq(A))/oldV
-            if 0.9 > ratio or ratio > 1.1:
-                A = oldA
-#    else:
-#        print B
-#        print V
-#        for peak in peaks:
-#            print peak
-    return True,smin
-       
+    def Values2A(ibrav,values):
+        if ibrav in [0,1,2]:
+            return [values[0],values[0],values[0],0,0,0]
+        elif ibrav in [3,4]:
+            return [values[0],values[0],values[1],values[0],0,0]
+        elif ibrav in [5,6]:
+            return [values[0],values[0],values[1],0,0,0]
+        elif ibrav in [7,8,9,10]:
+            return [values[0],values[1],values[2],0,0,0]
+        elif ibrav in [11,12]:
+            return [values[0],values[1],values[2],0,values[3],0]
+        else:
+            return values
+            
+    def A2values(ibrav,A):
+        if ibrav in [0,1,2]:
+            return [A[0],]
+        elif ibrav in [3,4,5,6]:
+            return [A[0],A[2]]
+        elif ibrav in [7,8,9,10]:
+            return [A[0],A[1],A[2]]
+        elif ibrav in [11,12]:
+            return [A[0],A[1],A[2],A[4]]
+        else:
+            return A
+    
+    def errFit(values,ibrav,d,H,Pwr):
+        A = Values2A(ibrav,values)
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsq(H,A)
+        return (Qo-Qc)*d**Pwr
+    
+    Peaks = np.array(peaks).T
+    values = A2values(ibrav,A)    
+    result = so.leastsq(errFit,values,args=(ibrav,Peaks[7],Peaks[4:7],Pwr),full_output=True)
+    A = Values2A(ibrav,result[0])
+    return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A
+           
 def FitHKLZ(ibrav,peaks,Z,A):
     return A,Z
     
@@ -376,7 +317,7 @@ def getDmax(peaks):
 def refinePeaks(peaks,ibrav,A):
     dmin = getDmin(peaks)
     smin = 1.0e10
-    pwr = 6
+    pwr = 3
     maxTries = 10
     if ibrav == 13:
         pwr = 4
@@ -385,17 +326,16 @@ def refinePeaks(peaks,ibrav,A):
     tries = 0
     HKL = G2lat.GenHBravais(dmin,ibrav,A)
     while IndexPeaks(peaks,HKL):
-        Pwr = pwr - 2*(tries % 2)
+        Pwr = pwr - (tries % 2)
         HKL = []
         tries += 1
         osmin = smin
         oldA = A
-        OK,smin = FitHKL(ibrav,peaks,A,Pwr)
-        for a in A[:3]:
-            if a < 0:
-                A = oldA
-                OK = False
-                break
+        OK,smin,A = FitHKL(ibrav,peaks,A,Pwr)
+        if min(A[:3]) <= 0:
+            A = oldA
+            OK = False
+            break
         if OK:
             HKL = G2lat.GenHBravais(dmin,ibrav,A)
         if len(HKL) == 0: break                         #absurd cell obtained!
@@ -403,9 +343,14 @@ def refinePeaks(peaks,ibrav,A):
         if abs(rat) < 1.0e-5 or not OK: break
         if tries > maxTries: break
     if OK:
-        OK,smin = FitHKL(ibrav,peaks,A,4)
+        OK,smin,A = FitHKL(ibrav,peaks,A,2)
+        Peaks = np.array(peaks).T
+        H = Peaks[4:7]
+        Peaks[8] = 1./np.sqrt(G2lat.calc_rDsq(H,A))
+        peaks = Peaks.T
+        
     M20,X20 = calc_M20(peaks,HKL)
-    return len(HKL),M20,X20
+    return len(HKL),M20,X20,A
         
 def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
 # dlg & ncMax are used for wx progress bar 
@@ -432,19 +377,20 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         else:
             Anew = ranAbyV(ibrav,amin,amax,V1)
         HKL = G2lat.GenHBravais(dmin,ibrav,Anew)
-        if len(HKL) > mHKL[ibrav] and IndexPeaks(peaks,HKL):
-            Lhkl,M20,X20 = refinePeaks(peaks,ibrav,Anew)
+        
+        if IndexPeaks(peaks,HKL) and len(HKL) > mHKL[ibrav]:
+            Lhkl,M20,X20,Anew = refinePeaks(peaks,ibrav,Anew)
             Asave.append([calc_M20(peaks,HKL),Anew[:]])
             if ibrav == 9:                          #C-centered orthorhombic
                 for i in range(2):
                     Anew = rotOrthoA(Anew[:])
-                    Lhkl,M20,X20 = refinePeaks(peaks,ibrav,Anew)
+                    Lhkl,M20,X20,Anew = refinePeaks(peaks,ibrav,Anew)
                     HKL = G2lat.GenHBravais(dmin,ibrav,Anew)
                     IndexPeaks(peaks,HKL)
                     Asave.append([calc_M20(peaks,HKL),Anew[:]])
             elif ibrav == 11:                      #C-centered monoclinic
                 Anew = swapMonoA(Anew[:])
-                Lhkl,M20,X20 = refinePeaks(peaks,ibrav,Anew)
+                Lhkl,M20,X20,Anew = refinePeaks(peaks,ibrav,Anew)
                 HKL = G2lat.GenHBravais(dmin,ibrav,Anew)
                 IndexPeaks(peaks,HKL)
                 Asave.append([calc_M20(peaks,HKL),Anew[:]])
@@ -460,10 +406,10 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         tries += 1    
     X = sortM20(Asave)
     if X:
-        Lhkl,M20,X20 = refinePeaks(peaks,ibrav,X[0][1])
+        Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1])
         return GoOn,Lhkl,M20,X20,X[0][1]
     else:
-        return GoOn,0,0,0,0
+        return GoOn,0,0,0,Anew
         
 def monoCellReduce(ibrav,A):
     a,b,c,alp,bet,gam = G2lat.A2cell(A)
@@ -488,13 +434,6 @@ def monoCellReduce(ibrav,A):
 
 def DoIndexPeaks(peaks,inst,controls,bravais):
     
-    def peakDspace(peaks,A):
-        for peak in peaks:
-            if peak[3]:
-                dsq = calc_rDsq(peak[4:7],A)
-                if dsq > 0:
-                    peak[8] = 1./math.sqrt(dsq)
-        return
     delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
     amin = 2.5
     amax = 5.0*getDmax(peaks)
@@ -540,7 +479,8 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
                         while N2 < N2s[ibrav]:                                  #Table 2 step (iii)               
                             if ibrav > 2:
                                 if not N2:
-                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1)
+                                    A = []
+                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1)
                                 if A:
                                     GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A[:],N1s[ibrav],ibrav,peaks,0)
                             else:

@@ -318,7 +318,7 @@ class GSASII(wx.Frame):
     def OnPwdrRead(self, event):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose files', '.', '', 
-            'GSAS fxye files (*.fxye)|*.fxye|GSAS fxy files (*.fxy)|*.fxy|All files (*.*)|*.*', 
+            'GSAS fxye files (*.fxye)|*.fxye|GSAS fxy files (*.fxy)|*.fxy|Topas xye files (*.xye)|*.xye|All files (*.*)|*.*', 
             wx.OPEN | wx.MULTIPLE)
         if self.dirname: dlg.SetDirectory(self.dirname)
         try:
@@ -874,7 +874,10 @@ class GSASII(wx.Frame):
         self.PatternTree.SetItemPyData(sub, \
             {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,
             'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
-            'Pawley dmin':1.0},'Atoms':[],'Drawing':{},'Histograms':{},'Pawley ref':[],'Models':{}})
+            'Pawley dmin':1.0},'Atoms':[],'Drawing':{},'Histograms':{},'Pawley ref':[],
+            'Models':{},'SH Texture':{'Order':0,'Model':'cylindrical','Sample omega':[False,0.0],
+            'Sample chi':[False,0.0],'Sample phi':[False,0.0],'SH Coeff':[False,{}],
+            'SHShow':False,'PFhkl':[0,0,1]}})
         
     def OnDeletePhase(self,event):
         if self.dataFrame:

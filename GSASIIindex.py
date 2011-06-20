@@ -13,7 +13,6 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
-import pypowder as pyp              #assumes path has been amended to include correctr bin directory
 import GSASIIlattice as G2lat
 import scipy.optimize as so
 

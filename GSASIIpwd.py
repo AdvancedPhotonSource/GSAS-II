@@ -875,7 +875,7 @@ def CalcPDF(data,inst,xydata):
     return auxPlot
         
 #testing data
-import plot
+import GSASIItestplot as plot
 NeedTestData = True
 def TestData():
 #    global NeedTestData

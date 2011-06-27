@@ -29,7 +29,7 @@
       QT(1) = 1.0      
       DO L=2,34,2
         DO M=0,L
-          DO N=0,M,2                    
+          DO N=0,M,2
             J = J+1
             LMN = L-M-N
             TEMP = 0.5D0*(FACTLN(L+N)+FACTLN(L+M)+

@@ -208,8 +208,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Options'))
                         self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Atoms'))
                         self.dataDisplay.AdvanceSelection()
-                    if not self.dataDisplay.FindPage('Pawley reflections'):      
-                        self.dataDisplay.AddPage(G2gd.GSGrid(self.dataDisplay),'Pawley reflections')
+                    if not self.dataDisplay.FindPage('Pawley/Lebail reflections'):      
+                        self.dataDisplay.AddPage(G2gd.GSGrid(self.dataDisplay),'Pawley/LeBail reflections')
             else:
                 TypeTxt.SetValue(generalData['Type'])
                 
@@ -1887,13 +1887,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             textureData['Order'] = int(shOrder.GetValue())
             textureData['SH Coeff'][1] = SetSHCoef()
             UpdateDData()
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(self,data,newPlot=False)
                         
         def OnShModel(event):
             textureData['Model'] = shModel.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
             UpdateDData()
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(self,data,newPlot=False)
             
         def OnSHRefine(event):
             textureData['SH Coeff'][0] = shRef.GetValue()
@@ -1914,7 +1914,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 value = textureData[valIndx[Obj.GetId()]][1]
             Obj.SetValue('%8.2f'%(value))
             textureData[valIndx[Obj.GetId()]][1] = value
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(self,data,newPlot=False)
             
         def OnODFValue(event): 
             Obj = event.GetEventObject()
@@ -1924,27 +1924,23 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 value = textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]]
             Obj.SetValue('%8.3f'%(value))
             textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]] = value
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(self,data,newPlot=False)
             
         def OnPfType(event):
             textureData['PlotType'] = pfType.GetValue()
             UpdateDData()
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(self,data,newPlot=False)
             
         def OnPFValue(event):
             Obj = event.GetEventObject()
             if textureData['PlotType'] in ['Pole figure','Pole distribution','Axial pole distribution']:
                 try:
-#                    value =  int(Obj.GetValue())
                     value = '['+Obj.GetValue()+']'
                     hkl = eval(value)
                 except:
                     value = str(textureData['PFhkl'])
                     hkl = eval(value)
-#                    value = textureData['PFhkl'][pfIndx[Obj.GetId()]]
                 Obj.SetValue('%d,%d,%d'%(hkl[0],hkl[1],hkl[2]))
-#                Obj.SetValue('%3d'%(value))
-#                textureData['PFhkl'][pfIndx[Obj.GetId()]] = value
                 textureData['PFhkl'] = hkl
             else:
                 try:
@@ -1953,7 +1949,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     value = textureData['PFxyz'][pfIndx[Obj.GetId()]]
                 Obj.SetValue('%3.1f'%(value))
                 textureData['PFxyz'][pfIndx[Obj.GetId()]] = value
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(self,data,newPlot=True)
         
         def OnScaleRef(event):
             Obj = event.GetEventObject()
@@ -2614,9 +2610,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
             self.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
             self.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
-            UpdateDData()            
+            UpdateDData()
             G2plt.PlotStrain(self,data)
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(self,data,newPlot=True)
         elif text == 'Draw Options':
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
             UpdateDrawOptions()
@@ -2635,7 +2631,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
             UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
-        elif text == 'Pawley reflections':
+        elif text == 'Pawley/LeBail reflections':
             self.dataFrame.SetMenuBar(self.dataFrame.PawleyMenu)
             self.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
             self.dataFrame.Bind(wx.EVT_MENU, OnPawleyImport, id=G2gd.wxID_PAWLEYIMPORT)
@@ -2654,7 +2650,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         DData = wx.ScrolledWindow(self.dataDisplay)
         self.dataDisplay.AddPage(DData,'Data')
         PawleyRefl = G2gd.GSGrid(self.dataDisplay)
-        self.dataDisplay.AddPage(PawleyRefl,'Pawley reflections')
+        self.dataDisplay.AddPage(PawleyRefl,'Pawley/LeBail reflections')
     else:
         DData = wx.ScrolledWindow(self.dataDisplay)
         self.dataDisplay.AddPage(DData,'Data')

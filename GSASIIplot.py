@@ -1182,7 +1182,7 @@ def PlotStrain(self,data):
             Plot.set_zlabel('Z')
     Page.canvas.draw()
     
-def PlotTexture(self,data):
+def PlotTexture(self,data,newPlot=False):
     '''Pole figure, inverse pole figure(?), 3D pole distribution and 3D inverse pole distribution(?)
     plotting; Need way to select  
     pole figure or pole distribution to be displayed - do in key enter menu
@@ -1198,18 +1198,19 @@ def PlotTexture(self,data):
     SHCoef = SHData['SH Coeff'][1]
     cell = generalData['Cell'][1:7]
     Start = True
-        
-        
+               
     try:
         plotNum = self.G2plotNB.plotList.index('Texture')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
     except ValueError:
         Plot = self.G2plotNB.addMpl('Texture').gca()
         plotNum = self.G2plotNB.plotList.index('Texture')
         Page = self.G2plotNB.nb.GetPage(plotNum)
-    Page.SetFocus()
+        Page.SetFocus()
     
     if 'Axial' in SHData['PlotType']:
         PH = np.array(SHData['PFhkl'])
@@ -1227,25 +1228,28 @@ def PlotTexture(self,data):
         
         
     else:       
-        self.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
+#        self.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
         if 'inverse' in SHData['PlotType']:
             PX = np.array(SHData['PFxyz'])
             
         else:
             PH = np.array(SHData['PFhkl'])
             phi,beta = G2lat.CrsAng(PH,cell,SGData)
+            npts = 201
             ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
-            X,Y = np.meshgrid(np.linspace(1.,-1.,51),np.linspace(-1.,1.,51))
+            X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
             R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
             Z = np.zeros_like(R)
-            for i,r in enumerate(R):
-                Z[i] = G2lat.polfcal(ODFln,SamSym[textureData['Model']],r,P[i])
-            Z = np.reshape(Z,(51,51))
-            Plot.imshow(Z.T,aspect='equal',cmap='binary')
-    
-                
+            Z = G2lat.polfcal(ODFln,SamSym[textureData['Model']],R,P)
+            Z = np.reshape(Z,(npts,npts))
+            Img = Plot.imshow(Z.T,aspect='equal',cmap='binary')
+            if newPlot:
+                Page.figure.colorbar(Img)
+                newPlot = False
+            Plot.set_title('Pole figure for HKL='+str(SHData['PFhkl']))
     Page.canvas.draw()
+    return
 
             
 def PlotExposedImage(self,newPlot=False,event=None):

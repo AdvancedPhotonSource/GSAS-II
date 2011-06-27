@@ -795,10 +795,10 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
              Kcl = 0.0
              for j in range(0,l+1,4):
                  im = j/4+1
-                 pcrs = ptx.pyplmpsi(l,j,phi)
+                 pcrs = ptx.pyplmpsi(l,j,1,phi)
                  Kcl += BOH['L='+str(l)][n-1][im-1]*pcrs*cosd(j*beta)        
          else:                #all but cubic
-             pcrs = ptx.pyplmpsi(l,n,phi)*RSQPI
+             pcrs = ptx.pyplmpsi(l,n,1,phi)*RSQPI
              if n == 0:
                  pcrs /= SQ2
              if SGData['SGLaue'] in ['mmm','4/mmm','6/mmm']:
@@ -830,7 +830,7 @@ def polfcal(ODFln,SamSym,psi,gam):
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.e-3:
             l,m,n = eval(term.strip('C'))
-            psrs = ptx.pyplmpsi(l,m,psi)
+            psrs = ptx.pyplmpsi(l,m,len(psi),psi)
             if SamSym in ['-1','2/m']:
                 if m != 0:
                     Ksl = RSQPI*psrs*(cosd(m*gam)+sind(m*gam))

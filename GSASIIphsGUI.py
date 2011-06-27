@@ -1853,7 +1853,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
         except KeyError:            #fix old files!
             textureData = generalData['SH Texture'] = {'Order':0,'Model':'cylindrical',
                 'Sample omega':[False,0.0],'Sample chi':[False,0.0],'Sample phi':[False,0.0],
-                'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1]}
+                'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1],
+                'PFxyz':[0,0,1.],'PlotType':'Pole figure'}
+        try:                        #another fix!
+            x = textureData['PlotType']
+        except KeyError:
+            textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
         
@@ -1876,16 +1881,19 @@ def UpdatePhaseData(self,Item,data,oldPage):
             hist = Indx[Obj.GetId()]
             UseList[hist]['Show'] = Obj.GetValue()
             UpdateDData()
+            G2plt.PlotStrain(self,data)
             
         def OnShOrder(event):
             textureData['Order'] = int(shOrder.GetValue())
             textureData['SH Coeff'][1] = SetSHCoef()
             UpdateDData()
+            G2plt.PlotTexture(self,data)
                         
         def OnShModel(event):
             textureData['Model'] = shModel.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
             UpdateDData()
+            G2plt.PlotTexture(self,data)
             
         def OnSHRefine(event):
             textureData['SH Coeff'][0] = shRef.GetValue()
@@ -1906,6 +1914,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 value = textureData[valIndx[Obj.GetId()]][1]
             Obj.SetValue('%8.2f'%(value))
             textureData[valIndx[Obj.GetId()]][1] = value
+            G2plt.PlotTexture(self,data)
             
         def OnODFValue(event): 
             Obj = event.GetEventObject()
@@ -1915,16 +1924,36 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 value = textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]]
             Obj.SetValue('%8.3f'%(value))
             textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]] = value
+            G2plt.PlotTexture(self,data)
+            
+        def OnPfType(event):
+            textureData['PlotType'] = pfType.GetValue()
+            UpdateDData()
+            G2plt.PlotTexture(self,data)
             
         def OnPFValue(event):
             Obj = event.GetEventObject()
-            try:
-                value =  int(Obj.GetValue())
-            except ValueError:
-                value = textureData['PFhkl'][pfIndx[Obj.GetId()]]
-            Obj.SetValue('%3d'%(value))
-            textureData['PFhkl'][pfIndx[Obj.GetId()]] = value
-            G2plt.PlotSphHarmTexture(self,generalData)            
+            if textureData['PlotType'] in ['Pole figure','Pole distribution','Axial pole distribution']:
+                try:
+#                    value =  int(Obj.GetValue())
+                    value = '['+Obj.GetValue()+']'
+                    hkl = eval(value)
+                except:
+                    value = str(textureData['PFhkl'])
+                    hkl = eval(value)
+#                    value = textureData['PFhkl'][pfIndx[Obj.GetId()]]
+                Obj.SetValue('%d,%d,%d'%(hkl[0],hkl[1],hkl[2]))
+#                Obj.SetValue('%3d'%(value))
+#                textureData['PFhkl'][pfIndx[Obj.GetId()]] = value
+                textureData['PFhkl'] = hkl
+            else:
+                try:
+                    value =  float(Obj.GetValue())
+                except ValueError:
+                    value = textureData['PFxyz'][pfIndx[Obj.GetId()]]
+                Obj.SetValue('%3.1f'%(value))
+                textureData['PFxyz'][pfIndx[Obj.GetId()]] = value
+            G2plt.PlotTexture(self,data)
         
         def OnScaleRef(event):
             Obj = event.GetEventObject()
@@ -2109,6 +2138,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
         shSizer.Add(shShow,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(shSizer,0,0)
         mainSizer.Add((0,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,
+            'Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
+            0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((0,5),0)
         if textureData['SHShow']:
             mainSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
@@ -2126,15 +2159,36 @@ def UpdatePhaseData(self,Item,data,oldPage):
             mainSizer.Add(ODFSizer,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
         PFSizer = wx.BoxSizer(wx.HORIZONTAL)
-        PFSizer.Add(wx.StaticText(dataDisplay,-1,'Display pole figure for HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
-        pfIndx = {}
-        for i in range(3):
-            pfVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%3d'%(textureData['PFhkl'][i]),size=(40,20),style=wx.TE_PROCESS_ENTER)
-            pfIndx[pfVal.GetId()] = i
+        PFSizer.Add(wx.StaticText(dataDisplay,-1,'Texture plot type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        choices = ['Pole figure','Pole distribution','Axial pole distribution','Inverse pole figure','Inverse distribution']            
+        pfType = wx.ComboBox(dataDisplay,-1,value=str(textureData['PlotType']),choices=choices,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        pfType.Bind(wx.EVT_COMBOBOX,OnPfType)
+        PFSizer.Add(pfType,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(PFSizer,0,wx.ALIGN_CENTER_VERTICAL)
+        if textureData['PlotType'] in ['Pole figure','Pole distribution','Axial pole distribution']:
+            PFSizer.Add(wx.StaticText(dataDisplay,-1,'  Display pole figure for HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
+#            pfIndx = {}
+#            for i in range(3):
+#                pfVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%3d'%(textureData['PFhkl'][i]),size=(40,20),style=wx.TE_PROCESS_ENTER)
+#                pfIndx[pfVal.GetId()] = i
+#                pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
+#                pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
+#                PFSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
+            PH = textureData['PFhkl']
+            pfVal = wx.TextCtrl(dataDisplay,-1,'%d,%d,%d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
             pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
             pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
-            PFSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)            
-        mainSizer.Add(PFSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            PFSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
+        else:
+            PFSizer.Add(wx.StaticText(dataDisplay,-1,'  Display inverse pole figure for XYZ: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pfIndx = {}
+            for i in range(3):
+                pfVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%3.1f'%(textureData['PFxyz'][i]),size=(40,20),style=wx.TE_PROCESS_ENTER)
+                pfIndx[pfVal.GetId()] = i
+                pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
+                pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
+                PFSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((0,5),0)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Sample orientation angles: '),0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((0,5),0)
@@ -2347,12 +2401,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
         mainSizer.Add((5,5),0)
 
         dataDisplay.SetSizer(mainSizer)
-        mainSizer.FitInside(self.dataFrame)
-        Size = mainSizer.Fit(self.dataFrame)
-        Size[0] = max(Size[0],300)+20
-        Size[1] += 30                        #compensate for status bar
-        DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-10)
+        mainSizer.Fit(self.dataFrame)
+        Size = mainSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
         dataDisplay.SetSize(Size)
+        DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],450)
         self.dataFrame.setSizePosLeft(Size)
         
     def OnHklfAdd(event):
@@ -2561,6 +2616,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
             UpdateDData()            
             G2plt.PlotStrain(self,data)
+            G2plt.PlotTexture(self,data)
         elif text == 'Draw Options':
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
             UpdateDrawOptions()

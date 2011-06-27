@@ -47,6 +47,8 @@ atand = lambda x: 180.*math.atan(x)/math.pi
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 npacosd = lambda x: 180.*np.arccos(x)/np.pi
+npasind = lambda x: 180.*np.arcsin(x)/np.pi
+npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
     
 class G2PlotMpl(wx.Panel):    
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -1180,24 +1182,70 @@ def PlotStrain(self,data):
             Plot.set_zlabel('Z')
     Page.canvas.draw()
     
-def PlotSphHarmTexture(self,generalData):
+def PlotTexture(self,data):
     '''Pole figure, inverse pole figure(?), 3D pole distribution and 3D inverse pole distribution(?)
     plotting; Need way to select  
     pole figure or pole distribution to be displayed - do in key enter menu
-    dict generalData contains all phase info needed
+    dict generalData contains all phase info needed which is in data
     '''
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+    PatternId = self.PatternId
+    generalData = data['General']
     SGData = generalData['SGData']
     textureData = generalData['SH Texture']
-    print 'Texture plot'
     SHData = generalData['SH Texture']
     SHCoef = SHData['SH Coeff'][1]
     cell = generalData['Cell'][1:7]
-    PH = np.array(SHData['PFhkl']) 
-    phi,beta = G2lat.CrsAng(PH,cell,SGData)
     Start = True
-    ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+        
+        
+    try:
+        plotNum = self.G2plotNB.plotList.index('Texture')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+    except ValueError:
+        Plot = self.G2plotNB.addMpl('Texture').gca()
+        plotNum = self.G2plotNB.plotList.index('Texture')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+    Page.SetFocus()
+    
+    if 'Axial' in SHData['PlotType']:
+        PH = np.array(SHData['PFhkl'])
+        phi,beta = G2lat.CrsAng(PH,cell,SGData)
+        ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+        X = np.linspace(0,90.0,26)
+        Y = np.zeros_like(X)
+        for i,a in enumerate(X):
+            Y[i] = G2lat.polfcal(ODFln,SamSym[textureData['Model']],a,0.0)
+        Plot.plot(X,Y,color='k',label=str(SHData['PFhkl']))
+        Plot.legend(loc='best')
+        Plot.set_title('Axial distribution for HKL='+str(SHData['PFhkl']))
+        Plot.set_xlabel(r'$\psi$',fontsize=16)
+        Plot.set_ylabel('MRD',fontsize=14)
+        
+        
+    else:       
+        self.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
+        if 'inverse' in SHData['PlotType']:
+            PX = np.array(SHData['PFxyz'])
+            
+        else:
+            PH = np.array(SHData['PFhkl'])
+            phi,beta = G2lat.CrsAng(PH,cell,SGData)
+            ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+            X,Y = np.meshgrid(np.linspace(1.,-1.,51),np.linspace(-1.,1.,51))
+            R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
+            R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
+            Z = np.zeros_like(R)
+            for i,r in enumerate(R):
+                Z[i] = G2lat.polfcal(ODFln,SamSym[textureData['Model']],r,P[i])
+            Z = np.reshape(Z,(51,51))
+            Plot.imshow(Z.T,aspect='equal',cmap='binary')
+    
+                
+    Page.canvas.draw()
 
             
 def PlotExposedImage(self,newPlot=False,event=None):

@@ -767,7 +767,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
             GOF = chisq/(xFin-xBeg-len(varyList))
             print "%s%7.2f%s%12.6g%s%6.2f" % ('Rwp = ',Rwp,'%, chi**2 = ',chisq,' reduced chi**2 = ',GOF)
             try:
-                sig = np.sqrt(np.diag(result[1])*chisq)
+                sig = np.sqrt(np.diag(result[1])*GOF)
                 if np.any(np.isnan(sig)):
                     print '*** Least squares aborted - some invalid esds possible ***'
                 break                   #refinement succeeded - finish up!

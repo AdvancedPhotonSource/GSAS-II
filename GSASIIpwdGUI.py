@@ -663,7 +663,9 @@ def UpdateUnitCellsGrid(self, data):
         
     def OnStartVol(event):
         try:
-            stVol = int(startVol.GetValue())
+            stVol = int(float(startVol.GetValue()))
+            if stVol < 25:
+                raise ValueError
         except ValueError:
             stVol = 25
         controls[3] = stVol
@@ -677,9 +679,9 @@ def UpdateUnitCellsGrid(self, data):
         try:
             Zero = min(0.1,max(-0.1,float(zero.GetValue())))
         except ValueError:
-            Zero = 0.1
+            Zero = 0.0
         controls[1] = Zero
-        zero.SetValue("%.2f"%(Zero))
+        zero.SetValue("%.4f"%(Zero))
         
     def OnZeroVar(event):
         controls[0] = zeroVar.GetValue()
@@ -789,16 +791,17 @@ def UpdateUnitCellsGrid(self, data):
         print controls[5]
         ibrav = bravaisSymb.index(controls[5])
         dmin = G2indx.getDmin(peaks)-0.005
-        Lhkl,M20,X20,A = G2indx.refinePeaks(peaks,ibrav,A)
-        controls[6:12] = G2lat.A2cell(A)
-        controls[12] = G2lat.calc_V(A)
+        Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaks(peaks,ibrav,A,controls[:2])
+        controls[:2] = Zero
+        controls[6:12] = G2lat.A2cell(Aref)
+        controls[12] = G2lat.calc_V(Aref)
         data = [controls,bravais,cells,dmin]
         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
-        self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+        self.HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
         UpdateUnitCellsGrid(self,data)
         print "%s%10.3f" % ('refinement M20 = ',M20)
         print 'unindexed lines = ',X20
-        cellPrint(ibrav,A)
+        cellPrint(ibrav,Aref)
         for hkl in self.HKL:
             hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
         if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
@@ -959,7 +962,7 @@ def UpdateUnitCellsGrid(self, data):
     NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
     littleSizer.Add(NcNo,0,wx.ALIGN_CENTER_VERTICAL)
     littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start Volume '),0,wx.ALIGN_CENTER_VERTICAL)
-    startVol = wx.TextCtrl(self.dataDisplay,value=str(controls[3]),style=wx.TE_PROCESS_ENTER)
+    startVol = wx.TextCtrl(self.dataDisplay,value=str('%d'%(controls[3])),style=wx.TE_PROCESS_ENTER)
     startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
     startVol.Bind(wx.EVT_KILL_FOCUS,OnStartVol)
     littleSizer.Add(startVol,0,wx.ALIGN_CENTER_VERTICAL)
@@ -979,29 +982,28 @@ def UpdateUnitCellsGrid(self, data):
         littleSizer.Add(bravCk,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(1,3,5,5)
-    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
-    zero = wx.TextCtrl(self.dataDisplay,value="%.2f"%(controls[1]),style=wx.TE_PROCESS_ENTER)
-    zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
-    zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
-    littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
-    zeroVar = wx.CheckBox(self.dataDisplay,label="Vary? (not implemented)")
-    zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
-    littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
-    mainSizer.Add(littleSizer,0)
-    mainSizer.Add((5,5),0)
+    
     mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Cell Refinement: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(1,3,5,5)
+    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Bravais lattice "),0,wx.ALIGN_CENTER_VERTICAL)
     bravSel = wx.Choice(self.dataDisplay,choices=bravaisSymb)
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,wx.ALIGN_CENTER_VERTICAL)
-    hklShow = wx.CheckBox(self.dataDisplay,label="Show starting hkl positions")
+    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
+    zero = wx.TextCtrl(self.dataDisplay,value="%.4f"%(controls[1]),style=wx.TE_PROCESS_ENTER)
+    zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
+    zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
+    littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
+    zeroVar = wx.CheckBox(self.dataDisplay,label="Refine? (not implemented)")
+    zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
+    littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
+    hklShow = wx.CheckBox(self.dataDisplay,label="  Show starting hkl positions")
     hklShow.Bind(wx.EVT_CHECKBOX,OnHklShow)
     littleSizer.Add(hklShow,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
+    
     mainSizer.Add((5,5),0)
     ibrav = SetLattice(controls)
     for cellGUI in cellGUIlist:
@@ -1022,6 +1024,7 @@ def UpdateUnitCellsGrid(self, data):
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
+        
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     topSize = mainSizer.Fit(self.dataFrame)

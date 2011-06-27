@@ -866,7 +866,7 @@ def MovePatternTreeToGrid(self,item):
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
         if not data:
-            data.append([0,0.1,4,25.0,0,'P1',1,1,1,90,90,90]) #zero error flag, max zero error, max Nc/No, start volume
+            data.append([0,0.0,4,25.0,0,'P1',1,1,1,90,90,90]) #zero error flag, zero value, max Nc/No, start volume
             data.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0])      #Bravais lattice flags
             data.append([])                                 #empty cell list
             data.append([])                                 #empty dmin

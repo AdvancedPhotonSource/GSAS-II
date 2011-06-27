@@ -877,7 +877,7 @@ class GSASII(wx.Frame):
             'Pawley dmin':1.0},'Atoms':[],'Drawing':{},'Histograms':{},'Pawley ref':[],
             'Models':{},'SH Texture':{'Order':0,'Model':'cylindrical','Sample omega':[False,0.0],
             'Sample chi':[False,0.0],'Sample phi':[False,0.0],'SH Coeff':[False,{}],
-            'SHShow':False,'PFhkl':[0,0,1]}})
+            'SHShow':False,'PFhkl':[0,0,1],'PFxyz':[0,0,1],'PlotType':'Pole figure'}})
         
     def OnDeletePhase(self,event):
         if self.dataFrame:

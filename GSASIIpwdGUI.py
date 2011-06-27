@@ -791,8 +791,11 @@ def UpdateUnitCellsGrid(self, data):
         print controls[5]
         ibrav = bravaisSymb.index(controls[5])
         dmin = G2indx.getDmin(peaks)-0.005
-        Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaks(peaks,ibrav,A,controls[:2])
-        controls[:2] = Zero
+        if controls[0]:
+            Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,inst[1],ibrav,A,controls[1])            
+            controls[1] = Zero
+        else:
+            Lhkl,M20,X20,Aref = G2indx.refinePeaks(peaks,ibrav,A)
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
         data = [controls,bravais,cells,dmin]
@@ -996,7 +999,8 @@ def UpdateUnitCellsGrid(self, data):
     zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
     zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
     littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
-    zeroVar = wx.CheckBox(self.dataDisplay,label="Refine? (not implemented)")
+    zeroVar = wx.CheckBox(self.dataDisplay,label="Refine?")
+    zeroVar.SetValue(controls[0])
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
     hklShow = wx.CheckBox(self.dataDisplay,label="  Show starting hkl positions")

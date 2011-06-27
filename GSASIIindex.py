@@ -229,50 +229,35 @@ def IndexPeaks(peaks,HKL):
         return True
     else:
         return False
+        
+def Values2A(ibrav,values):
+    if ibrav in [0,1,2]:
+        return [values[0],values[0],values[0],0,0,0]
+    elif ibrav in [3,4]:
+        return [values[0],values[0],values[1],values[0],0,0]
+    elif ibrav in [5,6]:
+        return [values[0],values[0],values[1],0,0,0]
+    elif ibrav in [7,8,9,10]:
+        return [values[0],values[1],values[2],0,0,0]
+    elif ibrav in [11,12]:
+        return [values[0],values[1],values[2],0,values[3],0]
+    else:
+        return list(values)
+        
+def A2values(ibrav,A):
+    if ibrav in [0,1,2]:
+        return [A[0],]
+    elif ibrav in [3,4,5,6]:
+        return [A[0],A[2]]
+    elif ibrav in [7,8,9,10]:
+        return [A[0],A[1],A[2]]
+    elif ibrav in [11,12]:
+        return [A[0],A[1],A[2],A[4]]
+    else:
+        return A
 
 def FitHKL(ibrav,peaks,A,Pwr):
-    
-    def Values2A(ibrav,values):
-        if ibrav in [0,1,2]:
-            return [values[0],values[0],values[0],0,0,0]
-        elif ibrav in [3,4]:
-            return [values[0],values[0],values[1],values[0],0,0]
-        elif ibrav in [5,6]:
-            return [values[0],values[0],values[1],0,0,0]
-        elif ibrav in [7,8,9,10]:
-            return [values[0],values[1],values[2],0,0,0]
-        elif ibrav in [11,12]:
-            return [values[0],values[1],values[2],0,values[3],0]
-        else:
-            return list(values)
-            
-    def A2values(ibrav,A):
-        if ibrav in [0,1,2]:
-            return [A[0],]
-        elif ibrav in [3,4,5,6]:
-            return [A[0],A[2]]
-        elif ibrav in [7,8,9,10]:
-            return [A[0],A[1],A[2]]
-        elif ibrav in [11,12]:
-            return [A[0],A[1],A[2],A[4]]
-        else:
-            return A
-            
-    def Jacobian(values,ibrav,d,H,Pwr):
-# derivatives of rdsq = H[0]*H[0]*A[0]+H[1]*H[1]*A[1]+H[2]*H[2]*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]
-        if ibrav in [0,1,2]:            #m3m
-            return [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]*d**Pwr
-        elif ibrav in [3,4]:            #R3H, P3/m & P6/mmm
-            return [H[0]*H[0]+H[1]*H[0]+H[1]*H[1],H[2]*H[2]]*d**Pwr
-        elif ibrav in [5,6]:            #4/mmm
-            return [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]*d**Pwr
-        elif ibrav in [7,8,9,10]:       #mmm
-            return [H[0]*H[0],H[1]*H[1],H[2]*H[2]]*d**Pwr
-        elif ibrav in [11,12]:          #2/m
-            return [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]*d**Pwr
-        else:                           #-1
-            return [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[1]*H[0],H[0]*H[2],H[1]*H[2]]*d**Pwr
-    
+                
     def errFit(values,ibrav,d,H,Pwr):
         A = Values2A(ibrav,values)
         Qo = 1./d**2
@@ -282,16 +267,31 @@ def FitHKL(ibrav,peaks,A,Pwr):
     Peaks = np.array(peaks).T
     
     values = A2values(ibrav,A)
-#    result = so.leastsq(errFit,values,args=(ibrav,Peaks[7],Peaks[4:7],Pwr),
-#        Dfun=Jacobian,col_deriv=True,full_output=True)
     result = so.leastsq(errFit,values,args=(ibrav,Peaks[7],Peaks[4:7],Pwr),
         full_output=True,factor=0.1)
     A = Values2A(ibrav,result[0])
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result
            
-def FitHKLZ(ibrav,peaks,Z,A):
-    return A,Z
+def FitHKLZ(wave,ibrav,peaks,A,Z,Pwr):
     
+    def errFit(values,ibrav,d,H,tth,wave,Pwr):
+        A = Values2A(ibrav,values[:-1])
+        Z = values[-1]
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsqZ(H,A,Z,tth,wave)
+        return (Qo-Qc)*d**Pwr
+    
+    Peaks = np.array(peaks).T
+    
+    values = A2values(ibrav,A)
+    values.append(Z)
+    result = so.leastsq(errFit,values,args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Pwr),
+        full_output=True)
+    A = Values2A(ibrav,result[0][:-1])
+    Z = result[0][-1]
+    
+    return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Pwr)**2),A,Z,result
+               
 def rotOrthoA(A):
     return [A[1],A[2],A[0],0,0,0]
     
@@ -332,15 +332,23 @@ def getDmin(peaks):
 def getDmax(peaks):
     return peaks[0][7]
     
-def refinePeaks(peaks,ibrav,A,Zero):
-    #Zero is list(zero value, flag)
+def refinePeaksZ(peaks,wave,ibrav,A,Zero):
+    dmin = getDmin(peaks)
+    OK,smin,Aref,Z,result = FitHKLZ(wave,ibrav,peaks,A,Zero,2)
+    Peaks = np.array(peaks).T
+    H = Peaks[4:7]
+    Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqZ(H,Aref,Z,Peaks[0],wave))
+    peaks = Peaks.T
+    
+    HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
+    M20,X20 = calc_M20(peaks,HKL)
+    return len(HKL),M20,X20,Aref,Z
+    
+def refinePeaks(peaks,ibrav,A):
     dmin = getDmin(peaks)
     smin = 1.0e10
     pwr = 4
     maxTries = 10
-    if ibrav == 13: #-1 - triclinic
-        pwr = 4
-        maxTries = 10
     OK = False
     tries = 0
     HKL = G2lat.GenHBravais(dmin,ibrav,A)
@@ -375,7 +383,7 @@ def refinePeaks(peaks,ibrav,A,Zero):
         peaks = Peaks.T
         
     M20,X20 = calc_M20(peaks,HKL)
-    return len(HKL),M20,X20,A,Zero
+    return len(HKL),M20,X20,A
         
 def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
 # dlg & ncMax are used for wx progress bar 
@@ -404,18 +412,18 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         HKL = G2lat.GenHBravais(dmin,ibrav,Abeg)
         
         if IndexPeaks(peaks,HKL) and len(HKL) > mHKL[ibrav]:
-            Lhkl,M20,X20,Aref,Zero = refinePeaks(peaks,ibrav,Abeg,[0,False])
+            Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
             Asave.append([calc_M20(peaks,HKL),Aref[:]])
             if ibrav == 9:                          #C-centered orthorhombic
                 for i in range(2):
                     Abeg = rotOrthoA(Abeg[:])
-                    Lhkl,M20,X20,Aref,Zero = refinePeaks(peaks,ibrav,Abeg,[0,False])
+                    Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
                     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
                     IndexPeaks(peaks,HKL)
                     Asave.append([calc_M20(peaks,HKL),Aref[:]])
             elif ibrav == 11:                      #C-centered monoclinic
                 Abeg = swapMonoA(Abeg[:])
-                Lhkl,M20,X20,Aref,Zero = refinePeaks(peaks,ibrav,Abeg,[0,False])
+                Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
                 HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
                 IndexPeaks(peaks,HKL)
                 Asave.append([calc_M20(peaks,HKL),Aref[:]])
@@ -431,7 +439,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         tries += 1    
     X = sortM20(Asave)
     if X:
-        Lhkl,M20,X20,A,Zero = refinePeaks(peaks,ibrav,X[0][1],[0,False])
+        Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1])
         return GoOn,Lhkl,M20,X20,A
         
     else:
@@ -651,8 +659,8 @@ def test0():
         print item,result[2][item]
     print 'msg:',result[3]
     print 'ier:',result[4]
-    result = refinePeaks(peaks,ibrav,A,[0,False])
-    N,M20,X20,A,Zero = result
+    result = refinePeaks(peaks,ibrav,A)
+    N,M20,X20,A = result
     print 'refinePeaks:',N,M20,X20,G2lat.A2cell(A)
     print 'compare bestcell:',bestcell
 #
@@ -663,8 +671,8 @@ def test1():
     print 'bad cell:',G2lat.A2cell(A)
     print 'FitHKL'
     OK,smin,A,result = FitHKL(ibrav,peaks,A,Pwr)
-    result = refinePeaks(peaks,ibrav,A,[0,False])
-    N,M20,X20,A,Zero = result
+    result = refinePeaks(peaks,ibrav,A)
+    N,M20,X20,A = result
     print 'refinePeaks:',N,M20,X20,A
 #    Peaks = np.array(peaks)
 #    HKL = Peaks[4:7]

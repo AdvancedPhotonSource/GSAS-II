@@ -253,8 +253,8 @@ def calc_rDsq2(H,G):
     return np.inner(H,np.inner(G,H))
     
 def calc_rDsqZ(H,A,Z,tth,lam):
-    rpd = math.pi/180.
-    rdsq = calc_rDsq(H,A)+Z*math.sin(tth*rpd)*2.0*rpd/(lam*lam)
+    rpd = np.pi/180.
+    rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def MaxIndex(dmin,A):

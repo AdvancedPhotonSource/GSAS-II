@@ -27,13 +27,16 @@ F2PYflags = '' # compiler options for f2py command
 F2PYpath = which_path('f2py')       # default path to f2py & python
 FORTpath = which_path('gfortran')   # default path to compiler
 ENVvars = {}
+SCONSvars = {}
 liblist = []
 #==========================================================================================
 # configure platform dependent options here: 
 if sys.platform == "win32":
     F2PYsuffix = '.pyd'
     FORTpath = which_path('g77')   # default path to compiler
-if sys.platform == "darwin":
+    F2PYflags = '--compiler=mingw32 --fcompiler=gnu'
+    SCONSvars['FORTRANFLAGS'] = ' -w -O2 -fno-automatic -finit-local-zero -malign-double -mwindows'
+elif sys.platform == "darwin":
     ENVvars['LDFLAGS'] = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
     F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
     #F2PYpath = '/Library/Frameworks/Python.framework/Versions/6.2/bin/'     # path to f2py (python 6.2)
@@ -55,10 +58,12 @@ for var in ['F2PYflags','F2PYpath','FORTpath','F2PYsuffix']:
         exec(var + "= ARGUMENTS.get('" + var +"')")
 var = 'LDFLAGS'
 if ARGUMENTS.get(var, None) is not None:
-    print 'Setting LDFLAGS environment vafiable to',ARGUMENTS.get(var),'based on command line'
+    print 'Setting '+var+' environment variable to',ARGUMENTS.get(var),'based on command line'
     ENVvars[var] = ARGUMENTS.get(var)
-           
-
+var = 'FORTRANFLAGS'
+if ARGUMENTS.get(var, None) is not None:
+    print 'Setting '+var+' internal variable to',ARGUMENTS.get(var),'based on command line'
+    SCONSvars[var] = ARGUMENTS.get(var)
 #==========================================================================================
 
 # get the python version number from the python image in the f2py directory
@@ -87,7 +92,7 @@ elif 'install' in COMMAND_LINE_TARGETS:
         prefix = 'binlinux'
     InstallLoc = '../' + prefix + bits + version
     Alias('install',InstallLoc)
-elif 'help' in COMMAND_LINE_TARGETS:
+if 'help' in COMMAND_LINE_TARGETS:
     print """
 Building Fortran routines for use with GSAS-II
 ----------------------------------------------
@@ -126,6 +131,9 @@ F2PYsuffix='.xxx'  -- extension for output module files (default: win: '.pyd',
 
 LDFLAGS='string'   -- string of options to be used for f2py during link step
 
+FORTRANFLAGS='string'  -- string of options to be used for Fortran
+   during library build step
+
 Note that at present, only 32-bit python is supported and python 3.x is
 not supported.
 
@@ -138,8 +146,6 @@ examples:
        (builds with a non-default [e.g. older] version of python)
     """
     sys.exit()
-#else:
-#    raise Exception, 'Unknown scons option(s): ' + str(COMMAND_LINE_TARGETS)
 
 # commands needed to run f2py 
 def generate_f2py(source, target, env, for_signature):
@@ -154,9 +160,12 @@ env = Environment(BUILDERS = {'f2py' : f2py},)
 if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
 #for path in PATH: 
 #    env.PrependENVPath('PATH', path)
-for envvar in ENVvars:
-    env['ENV'][envvar] = ENVvars[envvar]
+for var in ENVvars:
+    env['ENV'][var] = ENVvars[var]
+for var in SCONSvars:
+    env[var] = ENVvars[var]
 
+# for testing
 #out = env.f2py('fellipse.for')
 #filename = str(out[0])
 #print filename

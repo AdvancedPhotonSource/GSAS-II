@@ -875,7 +875,6 @@ def CalcPDF(data,inst,xydata):
     return auxPlot
         
 #testing data
-import GSASIItestplot as plot
 NeedTestData = True
 def TestData():
 #    global NeedTestData
@@ -924,6 +923,7 @@ def test0():
     
 
 if __name__ == '__main__':
+    import GSASIItestplot as plot
     global plotter
     plotter = plot.PlotNotebook()
     test0()

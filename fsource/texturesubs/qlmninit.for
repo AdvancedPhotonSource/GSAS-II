@@ -44,7 +44,7 @@
                 SUM = SUM+TEMP1
               END IF
             END DO
-            QT(J) = SUM/2.0**L
+            QT(J) = SUM/2.**(1.*L)
             IF ( MOD(LMN,2).NE.0 ) QT(J) = -QT(J)
 !            PRINT '(A,3I4,F12.8)',' l,m,n,Q(lmn)',L,M,N,QT(J)
           END DO

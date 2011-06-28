@@ -61,7 +61,7 @@
             SUM = SUM+TEMP1
           END IF
         END DO
-        Q = SUM/2.0**L
+        Q = SUM/2.**(1.*L)
         IF ( MOD(LMN,2).NE.0 ) Q = -Q
 !       PRINT '(A,3I4,F12.8)',' l,m,n,Q(lmn)',L,M,N,Q      
       END IF

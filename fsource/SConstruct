@@ -4,11 +4,11 @@ import os
 import glob
 import subprocess
 #==========================================================================================
+def is_exe(fpath):
+    return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 def which_path(program):
     "emulates Unix which: finds a program in path, but returns the path"
     import os, sys
-    def is_exe(fpath):
-        return os.path.exists(fpath) and os.access(fpath, os.X_OK)
     if sys.platform == "win32" and os.path.splitext(program)[1].lower() != '.exe':
         program = program + '.exe'
     fpath, fname = os.path.split(program)
@@ -23,78 +23,37 @@ def which_path(program):
     return ""
 #==========================================================================================
 # misc initializations
+# need command-line options for fortran command and fortran options
 F2PYflags = '' # compiler options for f2py command
-F2PYpath = which_path('f2py')       # default path to f2py & python
-FORTpath = which_path('gfortran')   # default path to compiler
-ENVvars = {}
-SCONSvars = {}
+F2PYpath = which_path('f2py')       # default path to f2py
+GFORTpath = which_path('gfortran')   # path to compiler
+FCompiler='gfortran'
+G77path = which_path('g77')     # path to compiler
+FORTpath = ""
+FORTflags = ""
 liblist = []
 #==========================================================================================
 # configure platform dependent options here: 
 if sys.platform == "win32":
     F2PYsuffix = '.pyd'
-    FORTpath = which_path('g77')   # default path to compiler
-    F2PYflags = '--compiler=mingw32 --fcompiler=gnu'
-    SCONSvars['FORTRANFLAGS'] = ' -w -O2 -fno-automatic -finit-local-zero -malign-double -mwindows'
+    FCompiler='g77'
 elif sys.platform == "darwin":
-    ENVvars['LDFLAGS'] = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
-    F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+    LDFLAGS = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
     #F2PYpath = '/Library/Frameworks/Python.framework/Versions/6.2/bin/'     # path to f2py (python 6.2)
     #F2PYpath = '/Library/Frameworks/Python.framework/Versions/current/bin/' # path to f2py
     #FORTpath = '/sw/bin'                                                    # path to compilier
     F2PYsuffix = '.so'
 elif sys.platform == "linux2":
-    #ENVvars['LDFLAGS'] = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
+    #LDFLAGS = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
     #F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
     F2PYsuffix = '.so'
 else:
     print "Sorry, parameters for platform "+sys.platform+" are not yet defined"
     sys.exit()
 #==========================================================================================
-# override from command-line options
-for var in ['F2PYflags','F2PYpath','FORTpath','F2PYsuffix']:
-    if ARGUMENTS.get(var, None) is not None:
-        print 'Setting',var,'to',ARGUMENTS.get(var),'based on command line'
-        exec(var + "= ARGUMENTS.get('" + var +"')")
-var = 'LDFLAGS'
-if ARGUMENTS.get(var, None) is not None:
-    print 'Setting '+var+' environment variable to',ARGUMENTS.get(var),'based on command line'
-    ENVvars[var] = ARGUMENTS.get(var)
-var = 'FORTRANFLAGS'
-if ARGUMENTS.get(var, None) is not None:
-    print 'Setting '+var+' internal variable to',ARGUMENTS.get(var),'based on command line'
-    SCONSvars[var] = ARGUMENTS.get(var)
-#==========================================================================================
-
-# get the python version number from the python image in the f2py directory
-p = subprocess.Popen([os.path.join(F2PYpath,'python')], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-p.stdin.write("import sys;print str(sys.version_info[0]);print str(sys.version_info[1]);sys.exit()")
-p.stdin.close()
-p.wait()
-versions = p.stdout.readlines()
-version = str(int(versions[0])) + '.' + str(int(versions[1]))
-#
-
-# Install location
-InstallLoc = '../bin'
-if len(COMMAND_LINE_TARGETS) == 0:
-    Default(InstallLoc)
-elif 'install' in COMMAND_LINE_TARGETS:
-    if platform.architecture()[0] == '64bit':
-        bits = '64'
-    else:
-        bits = ''
-    if sys.platform == "win32":
-        prefix = 'binwin'
-    elif sys.platform == "darwin":
-        prefix = 'binmac'
-    elif sys.platform == "linux2":
-        prefix = 'binlinux'
-    InstallLoc = '../' + prefix + bits + version
-    Alias('install',InstallLoc)
+# help
 if 'help' in COMMAND_LINE_TARGETS:
-    print """
-Building Fortran routines for use with GSAS-II
+    print """Building Fortran routines for use with GSAS-II
 ----------------------------------------------
 
 To build the compiled modules files needed to run GSAS-II, invoke this script:
@@ -117,22 +76,26 @@ install -- causes the module files to be placed in an installation directory
 
 The following options override defaults set in the scons script:
 
-F2PYflags='string' -- defines optional flags to be supplied to f2py:
-   Typically these option define which fortran compiler to use.
+FCompiler=<path>   -- define the name of the fortran compiler; default is to use
+   g77 on Windows and gfortran elsewhere. If you use something other than g77 or
+   gfortran, you must also specify F2PYflags
+
+FORTpath=<path>    -- define a path to the fortran program; default is to use
+   first gfortran (g77 for Windows) found in path
+
+FORTflags='string' -- string of options to be used for Fortran
+   during library build step
 
 F2PYpath=<path>    -- define a path to the f2py program; default is to use
    first f2py found in path
 
-FORTpath=<path>    -- define a path to the f2py program; default is to use
-   first gfortran (g77 for Windows) found in path
+F2PYflags='string' -- defines optional flags to be supplied to f2py:
+   Typically these option define which fortran compiler to use.
 
 F2PYsuffix='.xxx'  -- extension for output module files (default: win: '.pyd',
    mac/linux: '.so')
 
 LDFLAGS='string'   -- string of options to be used for f2py during link step
-
-FORTRANFLAGS='string'  -- string of options to be used for Fortran
-   during library build step
 
 Note that at present, only 32-bit python is supported and python 3.x is
 not supported.
@@ -146,8 +109,71 @@ examples:
        (builds with a non-default [e.g. older] version of python)
     """
     sys.exit()
+#==========================================================================================
+# override from command-line options
+for var in ['F2PYflags','F2PYpath','F2PYsuffix','FCompiler','FORTpath','FORTflags','LDFLAGS']:
+    if ARGUMENTS.get(var, None) is not None:
+        print 'Setting',var,'to',ARGUMENTS.get(var),'based on command line'
+        exec(var + "= ARGUMENTS.get('" + var +"')")
+#==========================================================================================
+# use the compiler choice to set compiler options, but don't change anything
+# specified on the command line
+if FCompiler == 'gfortran':
+    if FORTpath == "": FORTpath = GFORTpath
+    if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+elif FCompiler == 'g77':
+    if FORTpath == "": FORTpath = G77path
+    if F2PYflags == "": F2PYflags = '--fcompiler=gnu --f77exec=g77 --f77flags="-fno-range-check"'
+    if sys.platform == "win32":
+        if FORTflags == "": FORTflags = ' -w -O2 -fno-automatic -finit-local-zero -malign-double -mwindows'
+else:
+    if FORTpath == "": print 'Likely error, FORTpath is not specified'
+    if F2PYflags == "":
+        print 'Error: specify a F2PYflags value'
+        sys.exit()
 
-# commands needed to run f2py 
+#==========================================================================================
+# get the python version number from the python image in the f2py directory
+#  find the python location. Note that on Windows it may be in the parent of the f2py location
+# then run it to get info about the verision and the number of bits
+for program in ['python','../python']:
+    if sys.platform == "win32" and os.path.splitext(program)[1].lower() != '.exe':
+        program = program + '.exe'
+    pythonprogram = os.path.normpath(os.path.join(F2PYpath,program))
+    if is_exe(pythonprogram): break
+else:
+    print 'python not found'
+    sys.exit()
+p = subprocess.Popen(pythonprogram, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+p.stdin.write("import sys,platform;print str(sys.version_info[0]);print str(sys.version_info[1]);print platform.architecture()[0];sys.exit()")
+p.stdin.close()
+p.wait()
+versions = p.stdout.readlines()
+version = str(int(versions[0])) + '.' + str(int(versions[1]))
+PlatformBits = versions[2][:-1]
+#
+
+# Install location
+InstallLoc = '../bin'
+if len(COMMAND_LINE_TARGETS) == 0:
+    Default(InstallLoc)
+elif 'install' in COMMAND_LINE_TARGETS:
+    if PlatformBits == '64bit':
+        bits = '64'
+    else:
+        bits = ''
+    if sys.platform == "win32":
+        prefix = 'binwin'
+    elif sys.platform == "darwin":
+        prefix = 'binmac'
+    elif sys.platform == "linux2":
+        prefix = 'binlinux'
+    InstallLoc = '../' + prefix + bits + version
+    Alias('install',InstallLoc)
+
+# Setup build Environment
+env = Environment()
+# Define a builder to run f2py 
 def generate_f2py(source, target, env, for_signature):
     module = os.path.splitext(str(source[0]))[0]
     if len(liblist) > 0:
@@ -155,40 +181,52 @@ def generate_f2py(source, target, env, for_signature):
             module = module + ' ' + str(lib)
     return os.path.join(F2PYpath,'f2py')  + ' -c $SOURCE -m ' + module + ' ' + F2PYflags
 f2py = Builder(generator = generate_f2py)
-env = Environment(BUILDERS = {'f2py' : f2py},)
+env.Append(BUILDERS = {'f2py' : f2py},)
+
+if ARGUMENTS.get('FCompiler', None) is not None or env.get('FORTRAN') is None:
+    # create a builder for the fortran compiler for library compilation, if needed
+    def generate_obj(source, target, env, for_signature):
+        dir = os.path.split(str(source[0]))[0]
+        obj = os.path.splitext(str(source[0]))[0]+'.o'
+        return os.path.join(FORTpath,FCompiler)  + ' -c $SOURCE ' + FORTflags + ' -I' + dir + ' -o' + obj
+    fort = Builder(generator = generate_obj, suffix = '.o',
+                   src_suffix = '.for')
+    env.Append(BUILDERS = {'fort' : fort},)
+    FortranCompile = env.fort
+    print 'Defining a FORTRAN builder'
+else:
+    FortranCompile = Object
+    env['FORTRANFLAGS'] = FORTflags
+
 # Setup build Environment
 if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
-#for path in PATH: 
-#    env.PrependENVPath('PATH', path)
-for var in ENVvars:
-    env['ENV'][var] = ENVvars[var]
-for var in SCONSvars:
-    env[var] = ENVvars[var]
-
-# for testing
-#out = env.f2py('fellipse.for')
-#filename = str(out[0])
-#print filename
-#print os.path.join(InstallLoc,filename)
-#Command(os.path.join(InstallLoc,filename),filename,Copy("$TARGET","$SOURCE"))
-
+var = 'LDFLAGS'
+env['ENV'][var] = eval(var)
 
 # find libraries to build (subdirectories named *subs)
 for sub in glob.glob('*subs'):
-    lib = Library(sub, Glob(os.path.join(sub,'*.for'))) # register library to be created
+    filelist = []
+    for file in glob.glob(os.path.join(sub,'*.for')):
+        #target = os.path.splitext(file)[0]+'.o'
+        target = FortranCompile(file) # connect .o files to .for files
+        #print 'Compile: ',file, target
+        filelist.append(target)
+    #lib = Library(sub, Glob(os.path.join(sub,'*.for'))) # register library to be created
+    lib = Library(sub, filelist) # register library to be created
     liblist.append(lib[0].name)
     filename = str(lib[0])
     #Install(InstallLoc,filename)
 # find modules that need to be built
 modlist = []
 for src in glob.glob('*.for'):
-    target = os.path.splitext(src)[0] + '.so'
+    target = os.path.splitext(src)[0] + F2PYsuffix
     out = env.f2py(target,src)
     Depends(target, liblist) # make sure libraries are rebuilt if old
     modlist.append(out[0].name)
     env.Install(InstallLoc, out[0].name)
+    break # bail out early for testing
 print 80*'='
-for var in ['F2PYflags','F2PYpath','FORTpath','F2PYsuffix']:
+for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
     print 'Variable ',var,'is',eval(var)
 print 'Required fortran libraries:',
 for lib in liblist: print " " + lib,
@@ -196,6 +234,8 @@ print ""
 print 'f2py modules:',
 for mod in modlist: print " " + mod,
 print ""
-print 'Python/f2py version =',version
+print 'Using python at', pythonprogram
+print 'Python/f2py version =',version,PlatformBits
 print 'Install directory is',InstallLoc
 print 80*'='
+#print env.Dump()

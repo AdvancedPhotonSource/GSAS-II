@@ -1113,6 +1113,13 @@ def PlotStrain(self,data):
     A,B = G2lat.cell2AB(cell[:6])
     Vol = cell[6]
     useList = data['Histograms']
+    for item in useList:
+        if useList[item]['Show']:
+            break
+    else:
+        self.G2plotNB.Delete('Microstrain')
+        return            #nothing to show!!
+    
     numPlots = len(useList)
     
     try:
@@ -1120,6 +1127,8 @@ def PlotStrain(self,data):
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = mp3d.Axes3D(Page.figure)
+        if not Page.IsShown():
+            Page.Show()
     except ValueError:
         Plot = mp3d.Axes3D(self.G2plotNB.add3D('Microstrain'))
         plotNum = self.G2plotNB.plotList.index('Microstrain')
@@ -1188,17 +1197,33 @@ def PlotTexture(self,data,newPlot=False):
     pole figure or pole distribution to be displayed - do in key enter menu
     dict generalData contains all phase info needed which is in data
     '''
+
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
     PatternId = self.PatternId
     generalData = data['General']
     SGData = generalData['SGData']
     textureData = generalData['SH Texture']
+    if not textureData['Order']:
+        self.G2plotNB.Delete('Texture')
+        return                  #no plot!!
     SHData = generalData['SH Texture']
     SHCoef = SHData['SH Coeff'][1]
     cell = generalData['Cell'][1:7]
     Start = True
-               
+    
+    def OnMotion(event):
+        Page.canvas.SetToolTipString('')
+        if event.xdata and event.ydata:                 #avoid out of frame errors
+            if 'Pole figure' in SHData['PlotType']:
+                xpos = event.xdata
+                ypos = event.ydata
+                Int = 0
+                if xpos**2+ypos**2 < 1.0:
+                    r,p = 2.*npasind(np.sqrt(xpos**2+ypos**2)*0.707106782),npatan2d(ypos,xpos)
+                    pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
+                    self.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
+    
     try:
         plotNum = self.G2plotNB.plotList.index('Texture')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1210,6 +1235,7 @@ def PlotTexture(self,data,newPlot=False):
         Plot = self.G2plotNB.addMpl('Texture').gca()
         plotNum = self.G2plotNB.plotList.index('Texture')
         Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.SetFocus()
     
     if 'Axial' in SHData['PlotType']:
@@ -1217,21 +1243,39 @@ def PlotTexture(self,data,newPlot=False):
         phi,beta = G2lat.CrsAng(PH,cell,SGData)
         ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
         X = np.linspace(0,90.0,26)
-        Y = np.zeros_like(X)
-        for i,a in enumerate(X):
-            Y[i] = G2lat.polfcal(ODFln,SamSym[textureData['Model']],a,0.0)
+        Y = G2lat.polfcal(ODFln,SamSym[textureData['Model']],X,0.0)
         Plot.plot(X,Y,color='k',label=str(SHData['PFhkl']))
         Plot.legend(loc='best')
         Plot.set_title('Axial distribution for HKL='+str(SHData['PFhkl']))
         Plot.set_xlabel(r'$\psi$',fontsize=16)
         Plot.set_ylabel('MRD',fontsize=14)
         
-        
     else:       
-#        self.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
-        if 'inverse' in SHData['PlotType']:
+        if 'Inverse' in SHData['PlotType']:
             PX = np.array(SHData['PFxyz'])
-            
+            gam = atan2d(PX[0],PX[1])
+            xy = math.sqrt(PX[0]**2+PX[1]**2)
+            xyz = math.sqrt(PX[0]**2+PX[1]**2+PX[2]**2)
+            psi = asind(xy/xyz)
+            npts = 201
+            ODFln = G2lat.Glnh(Start,SHCoef,psi,gam,SamSym[textureData['Model']])
+            X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
+            R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
+            R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
+            Z = np.zeros_like(R)
+            time0 = time.time()
+            Z = G2lat.invpolfcal(ODFln,SGData,R,P)
+            print 'inverse time:',time.time()-time0
+            Z = np.reshape(Z,(npts,npts))
+            CS = Plot.contour(Y,X,Z,aspect='equal')
+            Plot.clabel(CS,fontsize=9,inline=1)
+            Img = Plot.imshow(Z.T,aspect='equal',cmap='binary',extent=[-1,1,-1,1])
+            if newPlot:
+                Page.figure.colorbar(Img)
+                newPlot = False
+            Plot.set_title('Inverse pole figure for XYZ='+str(SHData['PFxyz']))
+            print 'inverse pole figure',Img
+                        
         else:
             PH = np.array(SHData['PFhkl'])
             phi,beta = G2lat.CrsAng(PH,cell,SGData)
@@ -1241,16 +1285,19 @@ def PlotTexture(self,data,newPlot=False):
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
             R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
             Z = np.zeros_like(R)
+            time0 = time.time()
             Z = G2lat.polfcal(ODFln,SamSym[textureData['Model']],R,P)
+            print 'polfig time:',time.time()-time0
             Z = np.reshape(Z,(npts,npts))
-            Img = Plot.imshow(Z.T,aspect='equal',cmap='binary')
+            CS = Plot.contour(Y,X,Z,aspect='equal')
+            Plot.clabel(CS,fontsize=9,inline=1)
+            Img = Plot.imshow(Z.T,aspect='equal',cmap='binary',extent=[-1,1,-1,1])
             if newPlot:
                 Page.figure.colorbar(Img)
                 newPlot = False
             Plot.set_title('Pole figure for HKL='+str(SHData['PFhkl']))
+            print 'pole figure',Img
     Page.canvas.draw()
-    return
-
             
 def PlotExposedImage(self,newPlot=False,event=None):
     '''General access module for 2D image plotting

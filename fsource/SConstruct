@@ -122,6 +122,8 @@ for var in ['F2PYflags','F2PYpath','F2PYsuffix','FCompiler','FORTpath','FORTflag
 if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
     if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+    if sys.platform == "linux2":
+        if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
 elif FCompiler == 'g77':
     if FORTpath == "": FORTpath = G77path
     if sys.platform == "win32":
@@ -187,7 +189,8 @@ def generate_f2py(source, target, env, for_signature):
 f2py = Builder(generator = generate_f2py)
 env.Append(BUILDERS = {'f2py' : f2py},)
 
-if ARGUMENTS.get('FCompiler', None) is not None or env.get('FORTRAN') is None:
+#if ARGUMENTS.get('FCompiler', None) is not None or env.get('FORTRAN') is None:
+if True:
     # create a builder for the fortran compiler for library compilation, if needed
     def generate_obj(source, target, env, for_signature):
         dir = os.path.split(str(source[0]))[0]
@@ -198,9 +201,9 @@ if ARGUMENTS.get('FCompiler', None) is not None or env.get('FORTRAN') is None:
     env.Append(BUILDERS = {'fort' : fort},)
     FortranCompile = env.fort
     print 'Defining a FORTRAN builder'
-else:
-    FortranCompile = Object
-    env['FORTRANFLAGS'] = FORTflags
+#else:
+#    FortranCompile = Object
+#    env['FORTRANFLAGS'] = FORTflags
 
 # Setup build Environment
 if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)

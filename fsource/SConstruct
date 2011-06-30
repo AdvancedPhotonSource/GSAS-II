@@ -46,13 +46,9 @@ if sys.platform == "win32":
     FCompiler='g77'
 elif sys.platform == "darwin":
     LDFLAGS = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
-    #F2PYpath = '/Library/Frameworks/Python.framework/Versions/6.2/bin/'     # path to f2py (python 6.2)
-    #F2PYpath = '/Library/Frameworks/Python.framework/Versions/current/bin/' # path to f2py
-    #FORTpath = '/sw/bin'                                                    # path to compilier
     F2PYsuffix = '.so'
 elif sys.platform == "linux2":
-    #LDFLAGS = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
-    #F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
+    #LDFLAGS = '-Wall -shared -static-libgfortran -static-libgcc' # does not work with gfortran 4.4.4 20100726 (Red Hat 4.4.4-13)
     F2PYsuffix = '.so'
 else:
     print "Sorry, parameters for platform "+sys.platform+" are not yet defined"

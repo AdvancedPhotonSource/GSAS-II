@@ -1,3 +1,9 @@
+# this is a build script that is intended to be run from scons (it will not work in python)
+# it compiles the Fortran files needed to be used as Python packages for GSAS-II
+#
+# if the default options need to be overridden for this to work on your system, please let me
+# know the details of what OS, compiler and python you are using as well as the command-line
+# options you need. 
 import platform
 import sys
 import os
@@ -98,8 +104,8 @@ F2PYsuffix='.xxx'  -- extension for output module files (default: win: '.pyd',
 
 LDFLAGS='string'   -- string of options to be used for f2py during link step
 
-Note that at present, only 32-bit python is supported and python 3.x is
-not supported.
+Note that at present, this has been tested with 32-bit python on windows and
+Mac & 64 bit on linux. Python 3.x is not supported in GSAS-II yet.
 
 examples:
     scons -Q
@@ -142,11 +148,14 @@ else:
 # get the python version number from the python image in the f2py directory
 #  find the python location. Note that on Windows it may be in the parent of the f2py location
 # then run it to get info about the verision and the number of bits
+pythonpath = ''
 for program in ['python','../python']:
     if sys.platform == "win32" and os.path.splitext(program)[1].lower() != '.exe':
         program = program + '.exe'
     pythonprogram = os.path.normpath(os.path.join(F2PYpath,program))
-    if is_exe(pythonprogram): break
+    if is_exe(pythonprogram):
+        pythonpath = os.path.split(program)[0]
+        break
 else:
     print 'python not found'
     sys.exit()
@@ -188,35 +197,33 @@ def generate_f2py(source, target, env, for_signature):
     return os.path.join(F2PYpath,'f2py')  + ' -c $SOURCE -m ' + module + ' ' + F2PYflags
 f2py = Builder(generator = generate_f2py)
 env.Append(BUILDERS = {'f2py' : f2py},)
+# create a builder for the fortran compiler for library compilation so we can control how it is done
+def generate_obj(source, target, env, for_signature):
+    dir = os.path.split(str(source[0]))[0]
+    obj = os.path.splitext(str(source[0]))[0]+'.o'
+    return os.path.join(FORTpath,FCompiler)  + ' -c $SOURCE ' + FORTflags + ' -I' + dir + ' -o' + obj
+fort = Builder(generator = generate_obj, suffix = '.o',
+               src_suffix = '.for')
+env.Append(BUILDERS = {'fort' : fort},)
 
-#if ARGUMENTS.get('FCompiler', None) is not None or env.get('FORTRAN') is None:
-if True:
-    # create a builder for the fortran compiler for library compilation, if needed
-    def generate_obj(source, target, env, for_signature):
-        dir = os.path.split(str(source[0]))[0]
-        obj = os.path.splitext(str(source[0]))[0]+'.o'
-        return os.path.join(FORTpath,FCompiler)  + ' -c $SOURCE ' + FORTflags + ' -I' + dir + ' -o' + obj
-    fort = Builder(generator = generate_obj, suffix = '.o',
-                   src_suffix = '.for')
-    env.Append(BUILDERS = {'fort' : fort},)
-    FortranCompile = env.fort
-    print 'Defining a FORTRAN builder'
-#else:
-#    FortranCompile = Object
-#    env['FORTRANFLAGS'] = FORTflags
-
+#==========================================================================================
 # Setup build Environment
+#    add compiler, f2py & python to path
 if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
 if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
-#var = 'LDFLAGS'
-#env['ENV'][var] = eval(var)
+if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
+#   add other needed environment variables
+var = 'LDFLAGS'
+if eval(var) != "": env['ENV'][var] = eval(var)
 
-# find libraries to build (subdirectories named *subs)
+#==========================================================================================
+# finally ready to build something!
+# locate libraries to be built (subdirectories named *subs)
 for sub in glob.glob('*subs'):
     filelist = []
     for file in glob.glob(os.path.join(sub,'*.for')):
         #target = os.path.splitext(file)[0]+'.o'
-        target = FortranCompile(file) # connect .o files to .for files
+        target = env.fort(file) # connect .o files to .for files
         #print 'Compile: ',file, target
         filelist.append(target)
     #lib = Library(sub, Glob(os.path.join(sub,'*.for'))) # register library to be created
@@ -233,6 +240,8 @@ for src in glob.glob('*.for'):
     modlist.append(out[0].name)
     env.Install(InstallLoc, out[0].name)
     #break # bail out early for testing
+#==========================================================================================
+# all done with setup, show the user the options and let scons do the work
 print 80*'='
 for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
     print 'Variable ',var,'is',eval(var)

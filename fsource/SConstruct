@@ -124,9 +124,12 @@ if FCompiler == 'gfortran':
     if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
 elif FCompiler == 'g77':
     if FORTpath == "": FORTpath = G77path
-    if F2PYflags == "": F2PYflags = '--fcompiler=gnu --f77exec=g77 --f77flags="-fno-range-check"'
     if sys.platform == "win32":
+        if F2PYflags == "": F2PYflags = '--compiler=mingw32 --fcompiler=gnu'
         if FORTflags == "": FORTflags = ' -w -O2 -fno-automatic -finit-local-zero -malign-double -mwindows'
+    else:
+        if F2PYflags == "": F2PYflags = '--fcompiler=gnu --f77exec=g77 --f77flags="-fno-range-check"'
+
 else:
     if FORTpath == "": print 'Likely error, FORTpath is not specified'
     if F2PYflags == "":
@@ -202,8 +205,8 @@ else:
 # Setup build Environment
 if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
 if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
-var = 'LDFLAGS'
-env['ENV'][var] = eval(var)
+#var = 'LDFLAGS'
+#env['ENV'][var] = eval(var)
 
 # find libraries to build (subdirectories named *subs)
 for sub in glob.glob('*subs'):
@@ -226,7 +229,7 @@ for src in glob.glob('*.for'):
     Depends(target, liblist) # make sure libraries are rebuilt if old
     modlist.append(out[0].name)
     env.Install(InstallLoc, out[0].name)
-    break # bail out early for testing
+    #break # bail out early for testing
 print 80*'='
 for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
     print 'Variable ',var,'is',eval(var)

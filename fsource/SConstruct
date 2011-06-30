@@ -71,7 +71,7 @@ where the following options are defined (all are optional):
 help    -- causes this message to be displayed (no compiling is done)
 
 install -- causes the module files to be placed in an installation directory
-   (../bin<X>NNv.v) rather than ../bin (<X> is mac, win or linux; NN is 64
+   (../bin<X>NNv.v) rather than ../bin (<X> is mac, win or linux; NN is 64-
    or blank; v.v is the python version (2.6 or 2.7,...). Normally used only
    by Brian or Bob for distribution of compiled software.
 
@@ -165,7 +165,7 @@ if len(COMMAND_LINE_TARGETS) == 0:
     Default(InstallLoc)
 elif 'install' in COMMAND_LINE_TARGETS:
     if PlatformBits == '64bit':
-        bits = '64'
+        bits = '64-'
     else:
         bits = ''
     if sys.platform == "win32":

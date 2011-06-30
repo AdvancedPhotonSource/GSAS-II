@@ -201,6 +201,7 @@ else:
 
 # Setup build Environment
 if FORTpath != "":  env.PrependENVPath('PATH', FORTpath)
+if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
 var = 'LDFLAGS'
 env['ENV'][var] = eval(var)
 

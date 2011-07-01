@@ -20,6 +20,7 @@ import numpy as np
 import scipy as sp
 import wx
 import matplotlib as mpl
+import mkl
 
 # load the GSAS routines
 import GSASIIpath
@@ -40,6 +41,7 @@ print "matplotlib: ",mpl.__version__
 print "numpy:      ",np.__version__
 print "scipy:      ",sp.__version__
 print "OpenGL:     ",ogl.__version__
+print "Max threads ",mkl.get_max_threads()
 
 __version__ = '0.1.5'
 

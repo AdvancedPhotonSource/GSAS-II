@@ -1920,10 +1920,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def OnPfType(event):
             textureData['PlotType'] = pfType.GetValue()
-            print 'before'
             UpdateDData()
-            print 'after'
-            G2plt.PlotTexture(self,data,newPlot=True)
+            G2plt.PlotTexture(self,data)
             
         def OnPFValue(event):
             Obj = event.GetEventObject()
@@ -1945,7 +1943,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     xyz = eval(value)
                 Obj.SetValue('%3.1f,%3.1f,%3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
-            G2plt.PlotTexture(self,data,newPlot=True)
+            G2plt.PlotTexture(self,data)
         
         def OnShowData(event):
             Obj = event.GetEventObject()
@@ -2606,7 +2604,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
             UpdateDData()
             G2plt.PlotStrain(self,data)
-            G2plt.PlotTexture(self,data,newPlot=True)
+            G2plt.PlotTexture(self,data,Start=True)
         elif text == 'Draw Options':
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
             UpdateDrawOptions()

@@ -1191,7 +1191,7 @@ def PlotStrain(self,data):
             Plot.set_zlabel('Z')
     Page.canvas.draw()
     
-def PlotTexture(self,data,newPlot=False):
+def PlotTexture(self,data,newPlot=False,Start=False):
     '''Pole figure, inverse pole figure(?), 3D pole distribution and 3D inverse pole distribution(?)
     plotting; Need way to select  
     pole figure or pole distribution to be displayed - do in key enter menu
@@ -1210,7 +1210,6 @@ def PlotTexture(self,data,newPlot=False):
     SHData = generalData['SH Texture']
     SHCoef = SHData['SH Coeff'][1]
     cell = generalData['Cell'][1:7]
-    Start = True
     
     def OnMotion(event):
         Page.canvas.SetToolTipString('')
@@ -1263,18 +1262,15 @@ def PlotTexture(self,data,newPlot=False):
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
             R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
             Z = np.zeros_like(R)
-            time0 = time.time()
             Z = G2lat.invpolfcal(ODFln,SGData,R,P)
-            print 'inverse time:',time.time()-time0
             Z = np.reshape(Z,(npts,npts))
             CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
             Img = Plot.imshow(Z.T,aspect='equal',cmap='binary',extent=[-1,1,-1,1])
             if newPlot:
-                Page.figure.colorbar(Img)
+#                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
                 newPlot = False
             Plot.set_title('Inverse pole figure for XYZ='+str(SHData['PFxyz']))
-            print 'inverse pole figure',Img
                         
         else:
             PH = np.array(SHData['PFhkl'])
@@ -1285,19 +1281,17 @@ def PlotTexture(self,data,newPlot=False):
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
             R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
             Z = np.zeros_like(R)
-            time0 = time.time()
             Z = G2lat.polfcal(ODFln,SamSym[textureData['Model']],R,P)
-            print 'polfig time:',time.time()-time0
             Z = np.reshape(Z,(npts,npts))
             CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
             Img = Plot.imshow(Z.T,aspect='equal',cmap='binary',extent=[-1,1,-1,1])
             if newPlot:
-                Page.figure.colorbar(Img)
+#                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
                 newPlot = False
             Plot.set_title('Pole figure for HKL='+str(SHData['PFhkl']))
-            print 'pole figure',Img
     Page.canvas.draw()
+
             
 def PlotExposedImage(self,newPlot=False,event=None):
     '''General access module for 2D image plotting

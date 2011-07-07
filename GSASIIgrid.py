@@ -36,8 +36,8 @@ import GSASIIphsGUI as G2phG
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
 ] = [wx.NewId() for _init_coll_MASK_Items in range(3)]
 
-[ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT,
-] = [wx.NewId() for _init_coll_PAWLEY_Items in range(2)]
+[ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT, wxID_PAWLEYDELETE,
+] = [wx.NewId() for _init_coll_PAWLEY_Items in range(3)]
 
 [ wxID_INSTPRMRESET,
 ] = [wx.NewId() for _init_coll_INST_Items in range(1)]
@@ -149,6 +149,8 @@ class DataFrame(wx.Frame):
             help='Initialize Pawley reflection list')
         parent.Append(id=wxID_PAWLEYIMPORT, kind=wx.ITEM_NORMAL,text='Pawley import',
             help='Import Pawley reflection list')
+        parent.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
+            help='Delete Pawley reflection list')
 
     def _init_coll_IndPeaks_Items(self,parent):
         parent.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 

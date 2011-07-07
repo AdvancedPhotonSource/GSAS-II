@@ -28,6 +28,21 @@ sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
+    
+def IsHistogramInAnyPhase(self,histoName):
+    phases = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+    if phases:
+        item, cookie = self.PatternTree.GetFirstChild(phases)
+        while item:
+            data = self.PatternTree.GetItemPyData(item)
+            histoList = data['Histograms'].keys()
+            if histoName in histoList:
+                return True
+            item, cookie = self.PatternTree.GetNextChild(phases, cookie)
+        return False
+    else:
+        return False
+    
        
 def UpdatePeakGrid(self, data):
     if self.dataDisplay:
@@ -341,85 +356,236 @@ def UpdateLimitsGrid(self, data):
     self.dataDisplay.AutoSizeColumns(False)
     self.dataFrame.setSizePosLeft([230,120])
     
-def UpdateInstrumentGrid(self, data):
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    Ka2 = False
-    if len(data[0]) == 13: 
-        Ka2 = True
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+def UpdateInstrumentGrid(self,data):
+    if len(data) > 3:                   #powder data
+        insVal = dict(zip(data[3],data[1]))
+        insDef = dict(zip(data[3],data[0]))
+        insRef = dict(zip(data[3],data[2]))
+        if 'N' in insDef['Type']:
+            del(insDef['Polariz.'])
+            del(insVal['Polariz.'])
+            del(insRef['Polariz.'])
+    else:                               #single crystal data
+        insVal = dict(zip(data[2],data[1]))
+        insDef = dict(zip(data[2],data[0]))
+        insRef = {}
+    ValObj = {}
+    RefObj = {}
+    waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
+        'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
+        'AgKa':[0.559363,0.563775]}
+        
+    def inst2data(inst,ref,data):
+        if len(data) > 3:
+            for i,item in enumerate(data[3]):
+                try:
+                    data[1][i] = inst[item]
+                    data[2][i] = ref[item]
+                except KeyError:
+                    data[1][i] = 0
+                    data[2][i] = 0                    
+        else:
+            for i,item in enumerate(data[2]):
+                data[1][i] = inst[item]            
+        return data
+        
+    def updateData(inst,ref):
+        return inst2data(inst,ref,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,
+            self.PatternId,'Instrument Parameters')))        
     
     def RefreshInstrumentGrid(event,doAnyway=False):
         if doAnyway or event.GetRow() == 1:
             peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
-            ins = data[1]
-            if 'P' in ins[0]:                                       #update powder peak parameters
+            if 'P' in insVal['Type']:                                       #update powder peak parameters
                 for peak in peaks:
-                    if Ka2:
-                        peak[4] = ins[6]*tand(peak[0]/2.0)**2+ins[7]*tand(peak[0]/2.0)+ins[8]
-                        peak[6] = ins[9]/cosd(peak[0]/2.0)+ins[10]*tand(peak[0]/2.0)
-                    else:
-                        peak[4] = ins[4]*tand(peak[0]/2.0)**2+ins[5]*tand(peak[0]/2.0)+ins[6]
-                        peak[6] = ins[7]/cosd(peak[0]/2.0)+ins[8]*tand(peak[0]/2.0)
+                    peak[4] = insVal['U']*tand(peak[0]/2.0)**2+insVal['V']*tand(peak[0]/2.0)+insVal['W']
+                    peak[6] = insVal['X']/cosd(peak[0]/2.0)+insVal['Y']*tand(peak[0]/2.0)
                                                 
     def OnReset(event):
-        if Ka2:
-            data[1][6:12] = data[0][6:12]
-        else:
-            data[1][4:10] = data[0][4:10]
+        insVal.update(insDef)
+        data = updateData(insVal,insRef)
         RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
-        UpdateInstrumentGrid(self, data)
+        UpdateInstrumentGrid(self,data)
         
-    self.InstrumentTable = []
-    if 'P' in data[1][0]:                   #powder data
+    def OnNewType(event):
+        insVal['Type'] = typePick.GetValue()
+        data = updateData(insVal,insRef)
+        UpdateInstrumentGrid(self,data)
+        
+    def OnLamPick(event):
+        lamType = lamPick.GetValue()
+        insVal['Lam1'] = waves[lamType][0]
+        insVal['Lam2'] = waves[lamType][1]
+        data = updateData(insVal,insRef)
+        UpdateInstrumentGrid(self,data)
+         
+        
+    def OnRatValue(event):
+        try:
+            value = float(ratVal.GetValue())
+            if value < 0:
+                raise ValueError
+        except ValueError:
+            value = insVal['I(L2)/I(L1)']
+        insVal['I(L2)/I(L1)'] = value
+        ratVal.SetValue('%10.4f'%(value))
+        data = updateData(insVal,insRef)
+        
+    def OnRatRef(event):
+        insRef['I(L2)/I(L1)'] = ratRef.GetValue()
+        data = updateData(insVal,insRef)
+        
+    def OnWaveValue(event):
+        try:
+            value = float(waveVal.GetValue())
+            if value < 0:
+                raise ValueError
+        except ValueError:
+            value = insVal['Lam']
+        insVal['Lam'] = value
+        waveVal.SetValue('%10.6f'%(value))
+        data = updateData(insVal,insRef)
+        
+    def OnWaveRef(event):
+        insRef['Lam'] = waveRef.GetValue()
+        data = updateData(insVal,insRef)
+        
+    def OnItemValue(event):
+        Obj = event.GetEventObject()
+        item,fmt = ValObj[Obj.GetId()]
+        try:
+            value = float(Obj.GetValue())
+            if value < 0:
+                raise ValueError
+        except ValueError:
+            value = insVal[item]
+        insVal[item] = value
+        Obj.SetValue(fmt%(value))
+        data = updateData(insVal,insRef)
+        
+    def OnItemRef(event):
+        Obj = event.GetEventObject()
+        item = RefObj[Obj.GetId()]
+        insRef[item] = Obj.GetValue()
+        data = updateData(insVal,insRef)
+                
+    if self.dataDisplay:
+        self.dataFrame.Clear()
+    histoName = self.PatternTree.GetItemPyData(self.PatternId)[-1]
+    ifHisto = IsHistogramInAnyPhase(self,histoName)
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    instSizer = wx.FlexGridSizer(2,6,5,5)
+    instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Histogram Type:'),0,wx.ALIGN_CENTER_VERTICAL)
+    if 'P' in insVal['Type']:                   #powder data
         self.dataFrame.SetMenuBar(self.dataFrame.InstMenu)
         if not self.dataFrame.GetStatusBar():
             Status = self.dataFrame.CreateStatusBar()
         self.Bind(wx.EVT_MENU, OnReset, id=G2gd.wxID_INSTPRMRESET)
-        if Ka2:
-            Types = [wg.GRID_VALUE_CHOICE+":PXC,PNC,PNT",wg.GRID_VALUE_FLOAT+':10,6',wg.GRID_VALUE_FLOAT+':10,6',               #type, lam-1 & lam-2
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #zero, ratio, pola
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #u,v,w
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,2']
-        else:
-            Types = [wg.GRID_VALUE_CHOICE+":PXC,PNC,PNT",wg.GRID_VALUE_FLOAT+':10,6',               #type & lam-1 
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #zero, pola
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3', #u,v,w
-                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,2']
-        colLabels = data[3]
-        rowLabels = ['default','changed','refine']
-        self.InstrumentTable = G2gd.Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        self.dataFrame.SetLabel('Instrument Parameters')
-        gridPanel = wx.Panel(self.dataFrame)
-        self.dataDisplay = G2gd.GSGrid(gridPanel)                
-        self.dataDisplay.SetTable(self.InstrumentTable, True)
-        self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshInstrumentGrid)                
-        self.dataDisplay.SetMargins(0,0)
-        self.dataDisplay.AutoSizeColumns(False)
-        beg = 4
-        if Ka2: beg = 6
-        for i in range(len(data[2])):
-            if i < beg or i == beg+6:
-                self.dataDisplay.SetCellRenderer(2,i,wg.GridCellStringRenderer())
-                self.dataDisplay.SetCellValue(2,i,'')
-                self.dataDisplay.SetReadOnly(2,i,isReadOnly=True)
+        typePick = wx.ComboBox(self.dataDisplay,value=insVal['Type'],
+            choices=['PXC','PNC','PNT'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
+        instSizer.Add(typePick,0,wx.ALIGN_CENTER_VERTICAL)
+        if 'C' in insVal['Type']:               #constant wavelength
+            instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Azimuth: %7.2f'%(insVal['Azimuth'])),0,wx.ALIGN_CENTER_VERTICAL)
+            if 'Lam1' in insVal:
+                instSizer.Add((5,5),0)
+                instSizer.Add((5,5),0)
+                instSizer.Add((5,5),0)
+                instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Ka1/Ka2:'),
+                        0,wx.ALIGN_CENTER_VERTICAL)
+                instSizer.Add(wx.StaticText(self.dataDisplay,-1,'%8.6f/%8.6f'%(insVal['Lam1'],insVal['Lam2'])),
+                        0,wx.ALIGN_CENTER_VERTICAL)
+                waveSizer = wx.BoxSizer(wx.HORIZONTAL)
+                waveSizer.Add(wx.StaticText(self.dataDisplay,-1,'Select:'),0,wx.ALIGN_CENTER_VERTICAL)
+                choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
+                lamPick = wx.ComboBox(self.dataDisplay,value=' ',choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
+                waveSizer.Add(lamPick,0)
+                instSizer.Add(waveSizer,0)
+                instSizer.Add(wx.StaticText(self.dataDisplay,-1,' I(L2)/I(L1): (%10.4f)'%(insDef['I(L2)/I(L1)'])),
+                        0,wx.ALIGN_CENTER_VERTICAL)
+                ratVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.4f'%(insVal['I(L2)/I(L1)']),style=wx.TE_PROCESS_ENTER)
+                ratVal.Bind(wx.EVT_TEXT_ENTER,OnRatValue)
+                ratVal.Bind(wx.EVT_KILL_FOCUS,OnRatValue)
+                instSizer.Add(ratVal,0)
+                ratRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
+                ratRef.SetValue(bool(insRef['I(L2)/I(L1)']))
+                ratRef.Bind(wx.EVT_CHECKBOX, OnRatRef)
+                instSizer.Add(ratRef,0,wx.ALIGN_CENTER_VERTICAL)
+                
             else:
-                self.dataDisplay.SetCellRenderer(2,i,wg.GridCellBoolRenderer())
-                self.dataDisplay.SetCellEditor(2,i,wg.GridCellBoolEditor())
+                instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Lam: (%10.6f)'%(insDef['Lam'])),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+                waveVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
+                waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)
+                waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveValue)
+                instSizer.Add(waveVal,0,wx.ALIGN_CENTER_VERTICAL)
+                if ifHisto:
+                    waveRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
+                    waveRef.SetValue(bool(insRef['Lam']))
+                    waveRef.Bind(wx.EVT_CHECKBOX, OnWaveRef)
+                    instSizer.Add(waveRef,0,wx.ALIGN_CENTER_VERTICAL)
+                else:
+                    instSizer.Add((5,5),0)
+            for item in ['Zero','Polariz.']:
+                fmt = '%10.3f'
+                Fmt = ' %s: ('+fmt+')'
+                if item in insDef:
+                    instSizer.Add(wx.StaticText(self.dataDisplay,-1,Fmt%(item,insDef[item])),
+                            0,wx.ALIGN_CENTER_VERTICAL)
+                    itemVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
+                    ValObj[itemVal.GetId()] = [item,fmt]
+                    itemVal.Bind(wx.EVT_TEXT_ENTER,OnItemValue)
+                    itemVal.Bind(wx.EVT_KILL_FOCUS,OnItemValue)
+                    instSizer.Add(itemVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    if ifHisto:
+                        itemRef = wx.CheckBox(self.dataDisplay,wx.ID_ANY,label=' Refine?')
+                        itemRef.SetValue(bool(insRef[item]))
+                        RefObj[itemRef.GetId()] = item
+                        itemRef.Bind(wx.EVT_CHECKBOX, OnItemRef)
+                        instSizer.Add(itemRef,0,wx.ALIGN_CENTER_VERTICAL)
+                    else:
+                        instSizer.Add((5,5),0)
+                else:                           #skip Polariz. for neutrons
+                    instSizer.Add((5,5),0)
+                    instSizer.Add((5,5),0)
+                    instSizer.Add((5,5),0)
+            for item in ['U','V','W','X','Y','SH/L']:
+                fmt = '%10.3f'
+                if item == 'SH/L':
+                    fmt = '%10.5f'
+                Fmt = ' %s: ('+fmt+')'
+                instSizer.Add(wx.StaticText(self.dataDisplay,-1,Fmt%(item,insDef[item])),
+                        0,wx.ALIGN_CENTER_VERTICAL)
+                itemVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
+                ValObj[itemVal.GetId()] = [item,fmt]
+                itemVal.Bind(wx.EVT_TEXT_ENTER,OnItemValue)
+                itemVal.Bind(wx.EVT_KILL_FOCUS,OnItemValue)
+                instSizer.Add(itemVal,0,wx.ALIGN_CENTER_VERTICAL)
+                itemRef = wx.CheckBox(self.dataDisplay,wx.ID_ANY,label=' Refine?')
+                itemRef.SetValue(bool(insRef[item]))
+                RefObj[itemRef.GetId()] = item
+                itemRef.Bind(wx.EVT_CHECKBOX, OnItemRef)
+                instSizer.Add(itemRef,0,wx.ALIGN_CENTER_VERTICAL)
+        else:                                   #time of flight (neutrons)
+            pass                                #for now
+        
+        
+
     else:                       #single crystal data
-        Types = [wg.GRID_VALUE_CHOICE+":SXC,SNC,SNT",wg.GRID_VALUE_FLOAT+':10,6']
-        colLabels = data[2]
-        rowLabels = ['original','changed']
-        self.InstrumentTable = G2gd.Table(data[:-1],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        self.dataFrame.SetLabel('Instrument Parameters')
-        gridPanel = wx.Panel(self.dataFrame)
-        self.dataDisplay = G2gd.GSGrid(gridPanel)                
-        self.dataDisplay.SetTable(self.InstrumentTable, True)
-        self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshInstrumentGrid)                
-        self.dataDisplay.SetMargins(0,0)
-        self.dataDisplay.AutoSizeColumns(False)
+        typePick = wx.ComboBox(self.dataDisplay,value=insVal['Type'],
+            choices=['SXC','SNC','SNT'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
+        instSizer.Add(typePick,0,wx.ALIGN_CENTER_VERTICAL)
+        if 'C' in insVal['Type']:               #constant wavelength
+            instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Lam: %10.6f'%(insDef['Lam'])),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+        else:                                   #time of flight (neutrons)
+            pass                                #for now
+        
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(self.dataDisplay,0)
+    mainSizer.Add(instSizer,0)
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
@@ -754,7 +920,7 @@ def UpdateUnitCellsGrid(self, data):
         dmin = wave/(2.0*sind(limits[1]/2.0))
         self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
         for hkl in self.HKL:
-            hkl.append(2.0*asind(wave/(2.*hkl[3])))             
+            hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1])             
         if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
             G2plt.PlotPowderLines(self)
         else:
@@ -806,7 +972,7 @@ def UpdateUnitCellsGrid(self, data):
         print 'unindexed lines = ',X20
         cellPrint(ibrav,Aref)
         for hkl in self.HKL:
-            hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
+            hkl.append(2.0*asind(inst[1]/(2.*hkl[3]))+controls[1])             
         if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
             G2plt.PlotPowderLines(self)
         else:

@@ -208,8 +208,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Options'))
                         self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Atoms'))
                         self.dataDisplay.AdvanceSelection()
-                    if not self.dataDisplay.FindPage('Pawley/Lebail reflections'):      
-                        self.dataDisplay.AddPage(G2gd.GSGrid(self.dataDisplay),'Pawley/LeBail reflections')
+                    if not self.dataDisplay.FindPage('Pawley reflections'):      
+                        self.dataDisplay.AddPage(G2gd.GSGrid(self.dataDisplay),'Pawley reflections')
             else:
                 TypeTxt.SetValue(generalData['Type'])
                 
@@ -349,7 +349,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
         NameTxt.Bind(wx.EVT_KILL_FOCUS,OnPhaseName)
         nameSizer.Add(NameTxt,0,wx.ALIGN_CENTER_VERTICAL)
         nameSizer.Add(wx.StaticText(dataDisplay,-1,'  Phase type: '),0,wx.ALIGN_CENTER_VERTICAL)
-        TypeTxt = wx.ComboBox(dataDisplay,-1,value=generalData['Type'],choices=phaseTypes,
+        if len(data['Atoms']):
+            choices = phaseTypes[:-1]
+        else:
+            choices = phaseTypes            
+        TypeTxt = wx.ComboBox(dataDisplay,-1,value=generalData['Type'],choices=choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         TypeTxt.Bind(wx.EVT_COMBOBOX, OnPhaseType)
         nameSizer.Add(TypeTxt,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1855,6 +1859,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 'Sample omega':[False,0.0],'Sample chi':[False,0.0],'Sample phi':[False,0.0],
                 'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1],
                 'PFxyz':[0,0,1.],'PlotType':'Pole figure'}
+        if 'SHShow' not in textureData:     #another fix
+            textureData.update({'SHShow':False,'PFhkl':[0,0,1],'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         try:                        #another fix!
             x = textureData['PlotType']
         except KeyError:
@@ -1894,6 +1900,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnSHShow(event):
             textureData['SHShow'] = shShow.GetValue()
             UpdateDData()
+            
+        def OnProjSel(event):
+            self.Projection = projSel.GetValue()
+            G2plt.PlotTexture(self,data,newPlot=False)
+            
+        def OnColorSel(event):
+            self.ContourColor = colorSel.GetValue()
+            G2plt.PlotTexture(self,data,newPlot=False)
             
         def OnAngRef(event):
             Obj = event.GetEventObject()
@@ -2111,7 +2125,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
         DData.DestroyChildren()
         dataDisplay = wx.Panel(DData)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        titleSizer = wx.BoxSizer(wx.HORIZONTAL)
+        titleSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        titleSizer.Add(wx.StaticText(dataDisplay,-1,
+            ' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
+            0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(titleSizer,0)
         mainSizer.Add((0,5),0)
         shSizer = wx.BoxSizer(wx.HORIZONTAL)
         shSizer.Add(wx.StaticText(dataDisplay,-1,'Texture model: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -2135,9 +2154,38 @@ def UpdatePhaseData(self,Item,data,oldPage):
         shSizer.Add(shShow,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(shSizer,0,0)
         mainSizer.Add((0,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,
-            'Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
-            0,wx.ALIGN_CENTER_VERTICAL)
+        PTSizer = wx.FlexGridSizer(2,4,5,5)
+        PTSizer.Add(wx.StaticText(dataDisplay,-1,' Texture plot type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        choices = ['Axial pole distribution','Pole figure','Inverse pole figure']            
+        pfType = wx.ComboBox(dataDisplay,-1,value=str(textureData['PlotType']),choices=choices,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        pfType.Bind(wx.EVT_COMBOBOX,OnPfType)
+        PTSizer.Add(pfType,0,wx.ALIGN_CENTER_VERTICAL)
+        PTSizer.Add(wx.StaticText(dataDisplay,-1,' Projection type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        projSel = wx.ComboBox(dataDisplay,-1,value=self.Projection,choices=['equal area','stereographic'],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
+        PTSizer.Add(projSel,0,wx.ALIGN_CENTER_VERTICAL)
+        if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
+            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Pole figure HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
+            PH = textureData['PFhkl']
+            pfVal = wx.TextCtrl(dataDisplay,-1,'%d,%d,%d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
+        else:
+            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Inverse pole figure XYZ: '),0,wx.ALIGN_CENTER_VERTICAL)
+            PX = textureData['PFxyz']
+            pfVal = wx.TextCtrl(dataDisplay,-1,'%3.1f,%3.1f,%3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
+        pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
+        pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
+        PTSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
+        PTSizer.Add(wx.StaticText(dataDisplay,-1,' Color scheme'),0,wx.ALIGN_CENTER_VERTICAL)
+        choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+        choice.sort()
+        colorSel = wx.ComboBox(dataDisplay,-1,value=self.ContourColor,choices=choice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
+        PTSizer.Add(colorSel,0,wx.ALIGN_CENTER_VERTICAL)        
+        mainSizer.Add(PTSizer,0,wx.ALIGN_CENTER_VERTICAL)
+        
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:
             mainSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -2155,28 +2203,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 ODFSizer.Add(ODFval,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(ODFSizer,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
-        PFSizer = wx.BoxSizer(wx.HORIZONTAL)
-        PFSizer.Add(wx.StaticText(dataDisplay,-1,'Texture plot type: '),0,wx.ALIGN_CENTER_VERTICAL)
-        choices = ['Axial pole distribution','Pole figure','Inverse pole figure']            
-        pfType = wx.ComboBox(dataDisplay,-1,value=str(textureData['PlotType']),choices=choices,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        pfType.Bind(wx.EVT_COMBOBOX,OnPfType)
-        PFSizer.Add(pfType,0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(PFSizer,0,wx.ALIGN_CENTER_VERTICAL)
-        if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
-            PFSizer.Add(wx.StaticText(dataDisplay,-1,'  Display pole figure for HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
-            PH = textureData['PFhkl']
-            pfVal = wx.TextCtrl(dataDisplay,-1,'%d,%d,%d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
-            pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
-            pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
-            PFSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
-        else:
-            PFSizer.Add(wx.StaticText(dataDisplay,-1,'  Display inverse pole figure for XYZ: '),0,wx.ALIGN_CENTER_VERTICAL)
-            PX = textureData['PFxyz']
-            pfVal = wx.TextCtrl(dataDisplay,-1,'%3.1f,%3.1f,%3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
-            pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
-            pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
-            PFSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((0,5),0)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Sample orientation angles: '),0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((0,5),0)
@@ -2546,12 +2572,16 @@ def UpdatePhaseData(self,Item,data,oldPage):
         SGUniq = SGData['SGUniq']        
         HKLd = G2lat.GenHLaue(dmin,Laue,SGLatt,SGUniq,A)
         PawleyPeaks = []
-        for h,k,l,d in HKLd:
-            ext,mul = G2spc.GenHKL([h,k,l],SGData)[:2]
-            if not ext:
-                th = asind(lam/(2.0*d))
-                H = gamFW(sig(th,GU,GV,GW),gam(th,LX,LY))/2.35482
-                PawleyPeaks.append([h,k,l,mul,2*th,H,False,0,0])
+        wx.BeginBusyCursor()
+        try:
+            for h,k,l,d in HKLd:
+                ext,mul = G2spc.GenHKL([h,k,l],SGData)[:2]
+                if not ext:
+                    th = asind(lam/(2.0*d))
+                    H = gamFW(sig(th,GU,GV,GW),gam(th,LX,LY))/2.35482
+                    PawleyPeaks.append([h,k,l,mul,2*th,H,False,0,0])
+        finally:
+            wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks
         FillPawleyReflectionsGrid()
                 
@@ -2578,6 +2608,17 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 FillPawleyReflectionsGrid()
         finally:
             dlg.Destroy()
+            
+    def OnPawleyDelete(event):
+        dlg = wx.MessageDialog(self,'Do you really want to delete Pawley reflections?','Delete', 
+            wx.YES_NO | wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result == wx.ID_YES: 
+            data['Pawley ref'] = []
+            FillPawleyReflectionsGrid()
 
     def OnPageChanged(event):
         page = event.GetSelection()
@@ -2623,10 +2664,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
             UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
-        elif text == 'Pawley/LeBail reflections':
+        elif text == 'Pawley reflections':
             self.dataFrame.SetMenuBar(self.dataFrame.PawleyMenu)
             self.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
             self.dataFrame.Bind(wx.EVT_MENU, OnPawleyImport, id=G2gd.wxID_PAWLEYIMPORT)
+            self.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
             FillPawleyReflectionsGrid()            
         else:
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
@@ -2642,7 +2684,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         DData = wx.ScrolledWindow(self.dataDisplay)
         self.dataDisplay.AddPage(DData,'Data')
         PawleyRefl = G2gd.GSGrid(self.dataDisplay)
-        self.dataDisplay.AddPage(PawleyRefl,'Pawley/LeBail reflections')
+        self.dataDisplay.AddPage(PawleyRefl,'Pawley reflections')
     else:
         DData = wx.ScrolledWindow(self.dataDisplay)
         self.dataDisplay.AddPage(DData,'Data')

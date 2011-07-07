@@ -759,20 +759,21 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
             finally:
                 dlg.Destroy()
             runtime = time.time()-begin    
-            print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
-            print "%s%8.3f%s " % ('fitpeak time =',runtime,'s')
+            chisq = np.sum(result[2]['fvec']**2)
+            ncyc = int(result[2]['nfev']/len(varyList))
             ValuesIn(parmDict, varyList, result[0])
-            chisq = np.sum(errPeakProfile(result[0],x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,0)**2)
             Rwp = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
             GOF = chisq/(xFin-xBeg-len(varyList))
-            print "%s%7.2f%s%12.6g%s%6.2f" % ('Rwp = ',Rwp,'%, chi**2 = ',chisq,' reduced chi**2 = ',GOF)
+            print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
+            print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+            print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
             try:
                 sig = np.sqrt(np.diag(result[1])*GOF)
                 if np.any(np.isnan(sig)):
                     print '*** Least squares aborted - some invalid esds possible ***'
                 break                   #refinement succeeded - finish up!
             except ValueError:          #result[1] is None on singular matrix
-                print 'Refinement failed - singular matrix'
+                print '**** Refinement failed - singular matrix ****'
                 Ipvt = result[2]['ipvt']
                 for i,ipvt in enumerate(Ipvt):
                     if not np.sum(result[2]['fjac'],axis=1)[i]:

@@ -252,6 +252,7 @@ class GSASII(wx.Frame):
     def __init__(self, parent):
         self._init_ctrls(parent)
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
+        # various defaults
         self.GSASprojectfile = ''
         self.dirname = ''
         self.undofile = ''
@@ -269,6 +270,7 @@ class GSASII(wx.Frame):
         self.dataFrame = None
         self.Interpolate = 'nearest'
         self.ContourColor = 'Paired'
+        self.Projection = 'equal area'
         self.logPlot = False
         self.qPlot = False
         self.Contour = False

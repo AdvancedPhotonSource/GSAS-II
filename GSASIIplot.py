@@ -48,6 +48,7 @@ npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
+npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
     
 class G2PlotMpl(wx.Panel):    
@@ -1020,7 +1021,7 @@ def PlotPeakWidths(self):
         return
     instParms = self.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-    if instParms[0][0] == 'PXC':
+    if instParms[0][0] in ['PXC','PNC']:
         lam = instParms[1][1]
         if len(instParms[1]) == 13:
             GU,GV,GW,LX,LY = instParms[0][6:11]
@@ -1087,7 +1088,10 @@ def PlotPeakWidths(self):
     V = []
     for peak in peaks:
         X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
-        s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
+        try:
+            s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
+        except ValueError:
+            s = 0.01
         g = peak[6]*math.pi/18000.
         G = gamFW(g,s)
         H = gamFW2(g,s)
@@ -1210,19 +1214,47 @@ def PlotTexture(self,data,newPlot=False,Start=False):
     SHData = generalData['SH Texture']
     SHCoef = SHData['SH Coeff'][1]
     cell = generalData['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(cell)
+    sq2 = 1.0/math.sqrt(2.0)
     
+    def rp2xyz(r,p):
+        z = npcosd(r)
+        xy = np.sqrt(1.-z**2)
+        return xy*npsind(p),xy*npcosd(p),z
+            
     def OnMotion(event):
-        Page.canvas.SetToolTipString('')
+        SHData = data['General']['SH Texture']
         if event.xdata and event.ydata:                 #avoid out of frame errors
-            if 'Pole figure' in SHData['PlotType']:
-                xpos = event.xdata
-                ypos = event.ydata
-                Int = 0
-                if xpos**2+ypos**2 < 1.0:
-                    r,p = 2.*npasind(np.sqrt(xpos**2+ypos**2)*0.707106782),npatan2d(ypos,xpos)
+            xpos = event.xdata
+            ypos = event.ydata
+            if 'Inverse' in SHData['PlotType']:
+                r = xpos**2+ypos**2
+                if r <= 1.0:
+                    if 'equal' in self.Projection: 
+                        r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(ypos,xpos)
+                    else:
+                        r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)
+                    ipf = G2lat.invpolfcal(IODFln,SGData,np.array([r,]),np.array([p,]))
+                    xyz = np.inner(Amat.T,np.array([rp2xyz(r,p)]))
+                    y,x,z = list(xyz/np.max(np.abs(xyz)))
+                    
+                    self.G2plotNB.status.SetFields(['',
+                        'psi =%9.3f, beta =%9.3f, MRD =%9.3f xyz=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z)])
+                                    
+            elif 'Axial' in SHData['PlotType']:
+                pass
+                
+            else:                       #ordinary pole figure
+                z = xpos**2+ypos**2
+                if z <= 1.0:
+                    z = np.sqrt(z)
+                    if 'equal' in self.Projection: 
+                        r,p = 2.*npasind(z*sq2),npatan2d(ypos,xpos)
+                    else:
+                        r,p = 2.*npatand(z),npatan2d(ypos,xpos)
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     self.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
-    
+                    
     try:
         plotNum = self.G2plotNB.plotList.index('Texture')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1235,12 +1267,19 @@ def PlotTexture(self,data,newPlot=False,Start=False):
         plotNum = self.G2plotNB.plotList.index('Texture')
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        Page.SetFocus()
-    
+
+    Page.SetFocus()
+    self.G2plotNB.status.SetFields(['',''])    
+    PH = np.array(SHData['PFhkl'])
+    phi,beta = G2lat.CrsAng(PH,cell,SGData)
+    ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+    PX = np.array(SHData['PFxyz'])
+    gam = atan2d(PX[0],PX[1])
+    xy = math.sqrt(PX[0]**2+PX[1]**2)
+    xyz = math.sqrt(PX[0]**2+PX[1]**2+PX[2]**2)
+    psi = asind(xy/xyz)
+    IODFln = G2lat.Glnh(Start,SHCoef,psi,gam,SamSym[textureData['Model']])
     if 'Axial' in SHData['PlotType']:
-        PH = np.array(SHData['PFhkl'])
-        phi,beta = G2lat.CrsAng(PH,cell,SGData)
-        ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
         X = np.linspace(0,90.0,26)
         Y = G2lat.polfcal(ODFln,SamSym[textureData['Model']],X,0.0)
         Plot.plot(X,Y,color='k',label=str(SHData['PFhkl']))
@@ -1250,46 +1289,44 @@ def PlotTexture(self,data,newPlot=False,Start=False):
         Plot.set_ylabel('MRD',fontsize=14)
         
     else:       
+        npts = 201
         if 'Inverse' in SHData['PlotType']:
-            PX = np.array(SHData['PFxyz'])
-            gam = atan2d(PX[0],PX[1])
-            xy = math.sqrt(PX[0]**2+PX[1]**2)
-            xyz = math.sqrt(PX[0]**2+PX[1]**2+PX[2]**2)
-            psi = asind(xy/xyz)
-            npts = 201
-            ODFln = G2lat.Glnh(Start,SHCoef,psi,gam,SamSym[textureData['Model']])
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
-            R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
+            if 'equal' in self.Projection:
+                R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
+            else:
+                R = np.where(R <= 1.,2.*npatand(R),0.0)
             Z = np.zeros_like(R)
-            Z = G2lat.invpolfcal(ODFln,SGData,R,P)
+            Z = G2lat.invpolfcal(IODFln,SGData,R,P)
             Z = np.reshape(Z,(npts,npts))
             CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
-            Img = Plot.imshow(Z.T,aspect='equal',cmap='binary',extent=[-1,1,-1,1])
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=self.ContourColor,extent=[-1,1,-1,1])
             if newPlot:
 #                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
                 newPlot = False
             Plot.set_title('Inverse pole figure for XYZ='+str(SHData['PFxyz']))
+            Plot.set_xlabel(self.Projection.capitalize()+' projection')
                         
         else:
-            PH = np.array(SHData['PFhkl'])
-            phi,beta = G2lat.CrsAng(PH,cell,SGData)
-            npts = 201
-            ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
-            R = np.where(R <= 1.,2.*npasind(R*0.70710678),0.0)
+            if 'equal' in self.Projection:
+                R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
+            else:
+                R = np.where(R <= 1.,2.*npatand(R),0.0)
             Z = np.zeros_like(R)
             Z = G2lat.polfcal(ODFln,SamSym[textureData['Model']],R,P)
             Z = np.reshape(Z,(npts,npts))
             CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
-            Img = Plot.imshow(Z.T,aspect='equal',cmap='binary',extent=[-1,1,-1,1])
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=self.ContourColor,extent=[-1,1,-1,1])
             if newPlot:
 #                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
                 newPlot = False
             Plot.set_title('Pole figure for HKL='+str(SHData['PFhkl']))
+            Plot.set_xlabel(self.Projection.capitalize()+' projection')
     Page.canvas.draw()
 
             

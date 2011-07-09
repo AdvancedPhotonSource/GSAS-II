@@ -56,7 +56,9 @@ else:
 #==========================================================================================
 # help
 if 'help' in COMMAND_LINE_TARGETS:
-    print """Building Fortran routines for use with GSAS-II
+    print """
+----------------------------------------------
+Building Fortran routines for use with GSAS-II
 ----------------------------------------------
 
 To build the compiled modules files needed to run GSAS-II, invoke this script:
@@ -79,9 +81,9 @@ install -- causes the module files to be placed in an installation directory
 
 The following options override defaults set in the scons script:
 
-FCompiler=<path>   -- define the name of the fortran compiler; default is to use
-   g77 on Windows and gfortran elsewhere. If you use something other than g77 or
-   gfortran, you must also specify F2PYflags
+FCompiler=<name>  -- define the name of the fortran compiler, typically g77
+   or gfortran; default is to use g77 on Windows and gfortran elsewhere. If
+   you use something other than these, you must also specify F2PYflags.
 
 FORTpath=<path>    -- define a path to the fortran program; default is to use
    first gfortran (g77 for Windows) found in path
@@ -111,7 +113,7 @@ examples:
     scons -Q install F2PYpath=/Library/Frameworks/Python.framework/Versions/6.2/bin/
        (builds with a non-default [e.g. older] version of python)
     """
-    sys.exit()
+    #sys.exit()
 #==========================================================================================
 # override from command-line options
 for var in ['F2PYflags','F2PYpath','F2PYsuffix','FCompiler','FORTpath','FORTflags','LDFLAGS']:
@@ -240,15 +242,16 @@ for src in glob.glob('*.for'):
 # all done with setup, show the user the options and let scons do the work
 print 80*'='
 for var in ['FCompiler','FORTpath','FORTflags','F2PYflags','F2PYpath','F2PYsuffix','LDFLAGS']:
-    print 'Variable ',var,'is',eval(var)
-print 'Required fortran libraries:',
-for lib in liblist: print " " + lib,
-print ""
-print 'f2py modules:',
-for mod in modlist: print " " + mod,
-print ""
+    print 'Variable',var,'is',eval(var)
 print 'Using python at', pythonprogram
 print 'Python/f2py version =',version,PlatformBits
 print 'Install directory is',InstallLoc
+print 'Will build object libraries:',
+for lib in liblist: print " " + lib,
+print ""
+print 'f2py will build these modules:',
+for mod in modlist: print " " + mod,
+print ""
 print 80*'='
 #print env.Dump()
+if 'help' in COMMAND_LINE_TARGETS: sys.exit()

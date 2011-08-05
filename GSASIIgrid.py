@@ -45,11 +45,14 @@ import GSASIIphsGUI as G2phG
 [ wxID_INDXRELOAD,
 ] = [wx.NewId() for _init_coll_IndPeaks_Items in range(1)]
 
-[ wxID_UNDO,wxID_LSQPEAKFIT,wxID_BFGSPEAKFIT,wxID_RESETSIGGAM,
-] = [wx.NewId() for _init_coll_PEAK_Items in range(4)]
+[ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_BFGSPEAKFIT,wxID_RESETSIGGAM,
+] = [wx.NewId() for _init_coll_PEAK_Items in range(5)]
 
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
+
+[ wxID_SELECTPHASE,
+] = [wx.NewId() for _init_coll_Refl_Items in range(1)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -91,6 +94,9 @@ class DataFrame(wx.Frame):
     def _init_coll_IndexMenu(self,parent):
         parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         
+    def _init_coll_ReflMenu(self,parent):
+        parent.Append(menu=self.ReflEdit, title='Reflection List')
+
     def _init_coll_PDFMenu(self,parent):
         parent.Append(menu=self.PDFEdit, title='PDF Controls')
 
@@ -147,14 +153,18 @@ class DataFrame(wx.Frame):
     def _init_coll_Pawley_Items(self,parent):
         parent.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
             help='Initialize Pawley reflection list')
-        parent.Append(id=wxID_PAWLEYIMPORT, kind=wx.ITEM_NORMAL,text='Pawley import',
-            help='Import Pawley reflection list')
+#        parent.Append(id=wxID_PAWLEYIMPORT, kind=wx.ITEM_NORMAL,text='Pawley import',
+#            help='Import Pawley reflection list')
         parent.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
             help='Delete Pawley reflection list')
 
     def _init_coll_IndPeaks_Items(self,parent):
         parent.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
             kind=wx.ITEM_NORMAL,text='Load/Reload')
+            
+    def _init_coll_Refl_Items(self,parent):
+        self.SelectPhase = parent.Append(help='Select phase for reflection list',id=wxID_SELECTPHASE, 
+            kind=wx.ITEM_NORMAL,text='Select phase')
             
     def _init_coll_Image_Items(self,parent):
         parent.Append(help='Calibrate detector by fitting to calibrant lines', 
@@ -190,6 +200,8 @@ class DataFrame(wx.Frame):
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
         self.PeakFit = parent.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='LSQ PeakFit', 
             help='Peak fitting via least-squares' )
+        self.PFOneCycle = parent.Append(id=wxID_LSQONECYCLE, kind=wx.ITEM_NORMAL,text='LSQ one cycle', 
+            help='One cycle of Peak fitting via least-squares' )
 #        self.PeakFit = parent.Append(id=wxID_BFGSPEAKFIT, kind=wx.ITEM_NORMAL,text='BFGS PeakFit', 
 #            help='Peak fitting via BFGS algorithm' )
         self.ResetSigGam = parent.Append(id=wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
@@ -235,6 +247,7 @@ class DataFrame(wx.Frame):
         self.PeakMenu = wx.MenuBar()
         self.IndPeaksMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
+        self.ReflMenu = wx.MenuBar()
         self.PDFMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.DataEdit = wx.Menu(title='')
@@ -246,6 +259,7 @@ class DataFrame(wx.Frame):
         self.PeakEdit = wx.Menu(title='')
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndexEdit = wx.Menu(title='')
+        self.ReflEdit = wx.Menu(title='')
         self.PDFEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
@@ -267,10 +281,13 @@ class DataFrame(wx.Frame):
         self._init_coll_IndPeaks_Items(self.IndPeaksEdit)
         self._init_coll_IndexMenu(self.IndexMenu)
         self._init_coll_Index_Items(self.IndexEdit)
+        self._init_coll_ReflMenu(self.ReflMenu)
+        self._init_coll_Refl_Items(self.ReflEdit)
         self._init_coll_PDFMenu(self.PDFMenu)
         self._init_coll_PDF_Items(self.PDFEdit)
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)
+        self.PFOneCycle.Enable(False)
         self.IndexPeaks.Enable(False)
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)
@@ -878,4 +895,13 @@ def MovePatternTreeToGrid(self,item):
             G2plt.PlotPowderLines(self)
         else:
             G2plt.PlotPatterns(self)
+    elif self.PatternTree.GetItemText(item) == 'Reflection Lists':
+        self.PatternId = self.PatternTree.GetItemParent(item)
+        self.PickId = item
+        data = self.PatternTree.GetItemPyData(item)
+        self.RefList = ''
+        if len(data):
+            self.RefList = data.keys()[0]
+        G2pdG.UpdateReflectionGrid(self,data)
+        G2plt.PlotPatterns(self)
      

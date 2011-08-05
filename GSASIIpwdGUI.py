@@ -80,10 +80,13 @@ def UpdatePeakGrid(self, data):
     def OnLSQPeakFit(event):
         OnPeakFit('LSQ')
         
+    def OnOneCycle(event):
+        OnPeakFit('LSQ',oneCycle=True)
+        
     def OnBGFSPeakFit(event):
         OnPeakFit('BFGS')
                 
-    def OnPeakFit(FitPgm):
+    def OnPeakFit(FitPgm,oneCycle=False):
         SaveState()
         print 'Peak Fitting:'
         PatternId = self.PatternId
@@ -98,7 +101,7 @@ def UpdatePeakGrid(self, data):
         data = self.PatternTree.GetItemPyData(PatternId)[1]
         wx.BeginBusyCursor()
         try:
-            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data)
+            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data,oneCycle)
         finally:
             wx.EndBusyCursor()    
         UpdatePeakGrid(self,peaks)
@@ -236,11 +239,13 @@ def UpdatePeakGrid(self, data):
         Status = self.dataFrame.CreateStatusBar()
     self.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
     self.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
+    self.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
 #    self.Bind(wx.EVT_MENU, OnBGFSPeakFit, id=G2gd.wxID_BFGSPEAKFIT)
     self.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
     self.dataFrame.PeakFit.Enable(False)
     if data:
         self.dataFrame.PeakFit.Enable(True)
+        self.dataFrame.PFOneCycle.Enable(True)
     self.PickTable = []
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
@@ -345,7 +350,7 @@ def UpdateLimitsGrid(self, data):
     self.LimitsTable = []
     colLabels = ['Tmin','Tmax']
     rowLabels = ['original','changed']
-    Types = [wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3']
+    Types = 2*[wg.GRID_VALUE_FLOAT+':10,3',]
     self.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Limits')
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
@@ -597,19 +602,25 @@ def UpdateSampleGrid(self,data):
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()    
     self.dataDisplay = wx.Panel(self.dataFrame)
+
+#patch
+    if not 'Gonio. radius' in data:
+        data['Gonio. radius'] = 200.0
+#patch end
     
+    parms = [['Gonio. radius',' Goniometer radius(mm): ','%.2f',]]
     if data['Type'] == 'Debye-Scherrer':
-        parms = [['DisplaceX',' Sample X displacement: ','%.4f',],
-            ['DisplaceY',' Sample Y displacement: ','%.4f',],
-            ['Absorption',' Sample absorption: ','%.4f',],]
+        parms += [['DisplaceX',' Sample X displacement(\xb5m): ','%.2f',],
+            ['DisplaceY',' Sample Y displacement(\xb5m): ','%.2f',],
+            ['Absorption',' Sample absorption(\xb5r): ','%.4f',],]
     elif data['Type'] == 'Bragg-Brentano':
-        parms = [['Shift',' Sample displacement: ','%.4f',],
-            ['Transparency',' Sample transparency: ','%.4f'],]
-    parms.append(['Temperature',' Sample temperature: ','%.2f'])
-    parms.append(['Pressure',' Sample pressure: ','%.3f'])
-    parms.append(['Humidity',' Sample humidity: ','%.1f'])
-    parms.append(['Voltage',' Sample voltage: ','%.3f'])
-    parms.append(['Force',' Applied load: ','%.3f'])
+        parms += [['Shift',' Sample displacement(\xb5m): ','%.2f',],
+            ['Transparency',' Sample transparency(1/\xb5eff,\xc5): ','%.4f'],]
+    parms.append(['Temperature',' Sample temperature(K): ','%.2f'])
+    parms.append(['Pressure',' Sample pressure(MPa): ','%.3f'])
+    parms.append(['Humidity',' Sample humidity(%): ','%.1f'])
+    parms.append(['Voltage',' Sample voltage(V): ','%.3f'])
+    parms.append(['Force',' Applied load(MN): ','%.3f'])
     objList = {}
 
     def OnScaleRef(event):
@@ -656,31 +667,27 @@ def UpdateSampleGrid(self,data):
             Obj.SetValue(parm[2]%(data[parm[0]]))          #reset in case of error
                 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Sample parameters: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Sample parameters: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
-    scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
+    parmSizer = wx.FlexGridSizer(9,2,5,0)
     scaleRef = wx.CheckBox(self.dataDisplay,label=' Histogram scale factor: ')
     scaleRef.SetValue(data['Scale'][1])
     scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
-    scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
+    parmSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
     scaleVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
         '%.4f'%(data['Scale'][0]),style=wx.TE_PROCESS_ENTER)
     scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
     scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
-    scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
-    mainSizer.Add(scaleSizer)
-    mainSizer.Add((0,5),0)
+    parmSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
     typeSizer = wx.BoxSizer(wx.HORIZONTAL)
     choices = ['Debye-Scherrer','Bragg-Brentano',]
     histoType = wx.ComboBox(self.dataDisplay,wx.ID_ANY,value=data['Type'],choices=choices,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     histoType.Bind(wx.EVT_COMBOBOX, OnHistoType)
-    typeSizer.Add(histoType)
-    mainSizer.Add(typeSizer)
-    mainSizer.Add((0,5),0)
+    parmSizer.Add(histoType)
+    parmSizer.Add((5,5),0)
     
     for parm in parms:
-        parmSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'list' in str(type(data[parm[0]])):
             parmRef = wx.CheckBox(self.dataDisplay,label=parm[1])
             objList[parmRef.GetId()] = parm[0]
@@ -697,9 +704,9 @@ def UpdateSampleGrid(self,data):
         objList[parmVal.GetId()] = parm
         parmVal.Bind(wx.EVT_TEXT_ENTER,OnParmVal)
         parmVal.Bind(wx.EVT_KILL_FOCUS,OnParmVal)
-        parmSizer.Add(parmVal,0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(parmSizer)
-        mainSizer.Add((0,5),0)    
+        parmSizer.Add(parmVal,1,wx.EXPAND)
+    mainSizer.Add(parmSizer)
+    mainSizer.Add((0,5),0)    
     
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
@@ -926,7 +933,21 @@ def UpdateUnitCellsGrid(self, data):
         else:
             G2plt.PlotPatterns(self)
         
+    def CopyUnitCell(event):
+        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
+        for Cell in cells:
+            if Cell[-1]:
+                break
+        cell = Cell[2:9]
+        controls[4] = 1
+        controls[5] = bravaisSymb[cell[0]]
+        controls[6:12] = cell[1:8]
+        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
+        self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
+        UpdateUnitCellsGrid(self,data)
         
+        self.dataFrame.RefineCell.Enable(True)
+                
     def RefineCell(event):
         def cellPrint(ibrav,A):
             cell = G2lat.A2cell(A)
@@ -954,9 +975,10 @@ def UpdateUnitCellsGrid(self, data):
         controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
-        print controls[5]
         ibrav = bravaisSymb.index(controls[5])
         dmin = G2indx.getDmin(peaks)-0.005
+        self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+        G2indx.IndexPeaks(peaks,self.HKL)
         if controls[0]:
             Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,inst[1],ibrav,A,controls[1])            
             controls[1] = Zero
@@ -1016,44 +1038,6 @@ def UpdateUnitCellsGrid(self, data):
             self.dataFrame.MakeNewPhase.Enable(True)
             UpdateUnitCellsGrid(self,data)
                 
-    def CopyUnitCell(event):
-        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
-        for Cell in cells:
-            if Cell[-1]:
-                break
-        cell = Cell[2:9]
-        controls[4] = 1
-        controls[5] = bravaisSymb[cell[0]]
-        controls[6:12] = cell[1:8]
-        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
-        self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
-        UpdateUnitCellsGrid(self,data)
-        self.dataFrame.RefineCell.Enable(True)
-        
-    def MakeNewPhase(event):
-        if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
-        else:
-            sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
-        PhaseName = ''
-        dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
-            style=wx.OK)
-        if dlg.ShowModal() == wx.ID_OK:
-            PhaseName = dlg.GetValue()
-        dlg.Destroy()
-        cells = self.PatternTree.GetItemPyData(UnitCellsId)[2]
-        for Cell in cells:
-            if Cell[-1]:
-                break
-        cell = Cell[2:10]        
-        sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-        E,SGData = G2spc.SpcGroup(spaceGroups[cell[0]])
-        self.PatternTree.SetItemPyData(sub, \
-            {'General':{'Name':'phase name','Type':'nuclear','SGData':SGData,
-            'Cell':[False,]+cell[1:],
-            'Pawley dmin':0.25},'Atoms':[],'Drawing':{},'Histograms':{}})
-        Status.SetStatusText('Change space group if needed')
-            
     def RefreshUnitCellsGrid(event):
         cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)[2:]
         r,c =  event.GetRow(),event.GetCol()
@@ -1075,6 +1059,32 @@ def UpdateUnitCellsGrid(self, data):
                 else:
                     G2plt.PlotPatterns(self)
         
+    def MakeNewPhase(event):
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+        else:
+            sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        PhaseName = ''
+        dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
+            style=wx.OK)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                PhaseName = dlg.GetValue()
+                cells = self.PatternTree.GetItemPyData(UnitCellsId)[2]
+                for Cell in cells:
+                    if Cell[-1]:
+                        break
+                cell = Cell[2:10]        
+                sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+                E,SGData = G2spc.SpcGroup(spaceGroups[cell[0]])
+                self.PatternTree.SetItemPyData(sub, \
+                    {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,
+                    'Cell':[False,]+cell[1:],
+                    'Pawley dmin':1.00},'Atoms':[],'Drawing':{},'Histograms':{}})
+                Status.SetStatusText('Change space group if needed')
+        finally:
+            dlg.Destroy()
+            
     if self.dataDisplay:
         self.dataFrame.Clear()
     self.dataFrame.SetMenuBar(self.dataFrame.IndexMenu)
@@ -1169,7 +1179,7 @@ def UpdateUnitCellsGrid(self, data):
     zeroVar.SetValue(controls[0])
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
-    hklShow = wx.CheckBox(self.dataDisplay,label="  Show starting hkl positions")
+    hklShow = wx.CheckBox(self.dataDisplay,label="  Show hkl positions")
     hklShow.Bind(wx.EVT_CHECKBOX,OnHklShow)
     littleSizer.Add(hklShow,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
@@ -1216,10 +1226,9 @@ def UpdateUnitCellsGrid(self, data):
         wx.StaticText(parent=self.bottom,label=' Indexing Result ')
         rowLabels = []
         colLabels = ['M20','X20','use','Bravais','a','b','c','alpha','beta','gamma','Volume']
-        Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5',
-            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',
-            wg.GRID_VALUE_FLOAT+':10,2']
+        Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]+ \
+            3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+ \
+            [wg.GRID_VALUE_FLOAT+':10,2']
         numRows = len(cells)
         table = []
         for cell in cells:
@@ -1236,7 +1245,6 @@ def UpdateUnitCellsGrid(self, data):
         gridDisplay.SetPosition(wx.Point(0,20))                
         gridDisplay.SetTable(UnitCellsTable, True)
         self.dataFrame.CopyCell.Enable(True)
-#        gridDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshUnitCellsGrid)
         gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
         gridDisplay.SetMargins(0,0)
         gridDisplay.SetRowLabelSize(0)
@@ -1248,6 +1256,49 @@ def UpdateUnitCellsGrid(self, data):
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         gridDisplay.SetSize(bottomSize)
+
+def UpdateReflectionGrid(self,data):
+    if not data:
+        print 'No phases, no reflections'
+        return
+    phases = data.keys()
+    
+    def OnSelectPhase(event):
+        dlg = wx.SingleChoiceDialog(self,'Select','Phase',phases)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                self.RefList = phases[sel]
+                UpdateReflectionGrid(self,data)
+        finally:
+            dlg.Destroy()
+        G2plt.PlotPatterns(self)
+        
+        
+    if self.dataDisplay:
+        self.dataFrame.Clear()
+    self.dataFrame.SetMenuBar(self.dataFrame.ReflMenu)
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()    
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    self.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
+    self.dataFrame.SelectPhase.Enable(False)
+    if len(data) > 1:
+        self.dataFrame.SelectPhase.Enable(True)
+    rowLabels = []
+    refList = []
+    for h,k,l,m,d,pos,sig,gam,fo,fc,x in data[self.RefList]:
+        refList.append([h,k,l,m,d,pos,sig,gam,fo,fc])
+    for i in range(len(refList)): rowLabels.append(str(i+1))
+    colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq',]
+    Types = 4*[wg.GRID_VALUE_LONG,]+6*[wg.GRID_VALUE_FLOAT+':10,4',]
+    self.PeakTable = G2gd.Table(refList,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    self.dataFrame.SetLabel('Reflection List for '+self.RefList)
+    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)
+    self.dataDisplay.SetTable(self.PeakTable, True)
+    self.dataDisplay.SetMargins(0,0)
+    self.dataDisplay.AutoSizeColumns(False)
+    self.dataFrame.setSizePosLeft([535,350])
 
 def UpdatePDFGrid(self,data):
     global inst

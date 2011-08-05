@@ -161,6 +161,17 @@ def cell2AB(cell):
     A[2][2] = 1/cellstar[2]         # 1/c*
     B = nl.inv(A)
     return A,B
+    
+def U6toUij(U6):
+    '''Fill matrix (Uij) from U6 = [U11,U22,U33,U12,U13,U23]
+    returns 
+    '''
+    U = np.zeros(shape=(3,3))
+    U = [
+        [U6[0],  U6[3],  U6[4]], 
+        [U6[3],  U6[1],  U6[5]], 
+        [U6[4],  U6[5],  U6[2]]]
+    return U
         
 def Uij2betaij(Uij,G):
     '''
@@ -172,6 +183,21 @@ def Uij2betaij(Uij,G):
     beta-ij - numpy array [beta-ij]
     '''
     pass
+    
+def CosSinAngle(U,V,G):
+    ''' calculate sin & cos of angle betwee U & V in generalized coordinates 
+    defined by metric tensor G
+    input:
+        U & V - 3-vectors assume numpy arrays
+        G - metric tensor for U & V defined space assume numpy array
+    return:
+        cos(phi) & sin(phi)
+    '''
+    u = U/nl.norm(U)
+    v = V/nl.norm(V)
+    cosP = np.inner(u,np.inner(G,v))
+    sinP = np.sqrt(1.0-cosP**2)
+    return cosP,sinP
     
 def criticalEllipse(prob):
     '''
@@ -484,19 +510,25 @@ def GenHBravais(dmin,Bravais,A):
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
     return sortHKLd(HKL,True,False)
     
-def GenHLaue(dmin,SGLaue,SGLatt,SGUniq,A):
+def GenHLaue(dmin,SGData,A):
     '''Generate the crystallographically unique powder diffraction reflections
     for a lattice and Bravais type
+    Input:
+        dmin - minimum d-spacing
+        SGData - space group dictionary with at least:
+            SGLaue - Laue group symbol = '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
+                     '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
+            SGLatt - lattice centering = 'P','A','B','C','I','F'
+            SGUniq - code for unique monoclinic axis = 'a','b','c'
+        A - 6 terms as defined in calc_rDsq
+    Return;
+        HKL = list of [h,k,l,d] sorted with largest d first and is unique 
+            part of reciprocal space ignoring anomalous dispersion
     '''
-# dmin - minimum d-spacing
-# SGLaue - Laue group symbol = '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
-#                            '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
-# SGLatt - lattice centering = 'P','A','B','C','I','F'
-# SGUniq - code for unique monoclinic axis = 'a','b','c'
-# A - 6 terms as defined in calc_rDsq
-# returns - HKL = list of [h,k,l,d] sorted with largest d first and is unique 
-# part of reciprocal space ignoring anomalous dispersion
     import math
+    SGLaue = SGData['SGLaue']
+    SGLatt = SGData['SGLatt']
+    SGUniq = SGData['SGUniq']
     #finds maximum allowed hkl for given A within dmin
     if SGLaue in ['3R','3mR']:        #Rhombohedral axes
         Hmax = [0,0,0]
@@ -644,6 +676,10 @@ def GenSHCoeff(SGLaue,SamSym,L):
                 for n in [i-iord for i in range(2*iord+1)]:
                     if OdfChk(SGLaue,iord,n):
                         coeffNames.append('C(%d,%d,%d)'%(iord,m,n))
+            else:
+                for n in [i-iord for i in range(2*iord+1)]:
+                    if OdfChk(SGLaue,iord,n):
+                        coeffNames.append('C(%d,%d)'%(iord,n))
     return coeffNames
 
 def CrsAng(H,cell,SGData):
@@ -1129,7 +1165,7 @@ def test8():
         Axis = spdict['SGUniq']
         system = spdict['SGSys']
 
-        g2list = GenHLaue(dmin,Laue,center,Axis,cell2A(cell))
+        g2list = GenHLaue(dmin,spdict,cell2A(cell))
         #if len(g2list) != len(sgtbxlattinp.sgtbx8[key][1]):
         #    print 'failed',key,':' ,len(g2list),'vs',len(sgtbxlattinp.sgtbx8[key][1])
         #    print 'GSAS-II:'

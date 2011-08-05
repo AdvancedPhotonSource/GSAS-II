@@ -217,7 +217,7 @@ def GetPawleyPeaks(filename):
         tth = float(item[5])
         sig = float(item[6])/rt2ln2x2
         Iobs = float(item[7])*mult
-        PawleyPeaks.append([h,k,l,mult,tth,sig,False,Iobs,0.0,[]])
+        PawleyPeaks.append([h,k,l,mult,tth,False,Iobs,0.0])
         S = File.readline()
         item = S.split()
         if item[3] == '-100.0000':       #find trailer
@@ -800,10 +800,8 @@ def ProjFileOpen(self):
                 self.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
                 print '    load: ',datus[0]
-                                
                 sub = self.PatternTree.AppendItem(Id,datus[0])
                 self.PatternTree.SetItemPyData(sub,datus[1])
-                                                
             if 'IMG' in datum[0]:                   #retreive image default flag & data if set
                 Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))
                 if Data['setDefault']:
@@ -1016,10 +1014,9 @@ def ReadEXPPhase(self,filename):
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     textureData = {'Order':0,'Model':'cylindrical','Sample omega':[False,0.0],
         'Sample chi':[False,0.0],'Sample phi':[False,0.0],'SH Coeff':[False,{}],
-        'SHShow':False,'PFhkl':[0,0,1]}
+        'SHShow':False,'PFhkl':[0,0,1],'PFxyz':[0,0,1],'PlotType':'Pole figure'}
     shNcof = 0
     file = open(filename, 'Ur')
-    Phase = {}
     S = 1
     Expr = [{},{},{},{},{},{},{},{},{}]
     while S:
@@ -1120,12 +1117,22 @@ def ReadEXPPhase(self,filename):
                 key = 'C(%s,%s,%s)'%(indx[3*i],indx[3*i+1],indx[3*i+2])
                 shCoef[key] = float(val)
         textureData['SH Coeff'] = [False,shCoef]
+        
+    Phase = {
+            'General':{
+                'Name':PhaseName,
+                'Type':Ptype,
+                'SGData':SGData,
+                'Cell':[False,]+abc+angles+[Volume,],
+                'Pawley dmin':1.0},
+            'Atoms':Atoms,
+            'Drawing':{},
+            'Histograms':{},
+            'Pawley ref':[],
+            'Models':{},
+            'SH Texture':textureData
+            }
             
-    Phase['General'] = {'Name':PhaseName,'Type':Ptype,'SGData':SGData,
-        'Cell':[False,]+abc+angles+[Volume,],'Pawley ref':[],'Models':{},'SH Texture':textureData}
-    Phase['Atoms'] = Atoms
-    Phase['Drawing'] = {}
-    Phase['Histograms'] = {}
     return Phase
        
 def ReadPDBPhase(filename):

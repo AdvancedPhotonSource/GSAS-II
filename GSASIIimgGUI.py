@@ -7,7 +7,6 @@
 # $Id$
 ########### SVN repository information ###################
 import wx
-import wx.grid as wg
 import matplotlib as mpl
 import math
 import time

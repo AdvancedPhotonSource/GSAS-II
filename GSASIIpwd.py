@@ -91,16 +91,6 @@ def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
             plist.append(p)
     return plist
 
-def ValuesOut(parmdict, varylist):
-    '''Use before call to leastsq to setup list of values for the parameters 
-    in parmdict, as selected by key in varylist'''
-    return [parmdict[key] for key in varylist] 
-    
-def ValuesIn(parmdict, varylist, values):
-    ''' Use after call to leastsq to update the parameter dictionary with 
-    values corresponding to keys in varylist'''
-    parmdict.update(zip(varylist,values))
-    
 def Transmission(Geometry,Abs,Diam):
 #Calculate sample transmission
 #   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate'
@@ -481,53 +471,54 @@ class fcjde_gen(st.rv_continuous):
         
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
-def getBackground(parmDict,bakType,xdata):
+def getBackground(pfx,parmDict,bakType,xdata):
+    yb = np.zeros_like(xdata)
     if bakType == 'chebyschev':
-        yb = np.zeros_like(xdata)
         iBak = 0
         while True:
-            key = 'Back'+str(iBak)
+            key = pfx+'Back:'+str(iBak)
             try:
                 yb += parmDict[key]*(xdata-xdata[0])**iBak
                 iBak += 1
             except KeyError:
-                return yb
-                
+                break
+    return yb
+
+def calcPeakFFT(x,fxns,widths,pos,args):
+    dx = x[1]-x[0]
+    z = np.empty([len(fxns),len(x)])
+    for i,(fxn,width,arg) in enumerate(zip(fxns,widths,args)):
+        z[i] = fxn.pdf(x,loc=pos,scale=width,*arg)*dx
+    Z = fft(z)
+    if len(fxns)%2:
+        return ifft(Z.prod(axis=0)).real
+    else:
+        return fftshift(ifft(Z.prod(axis=0))).real
+                    
+def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
+    
+    DX = xdata[1]-xdata[0]
+    widths,fmin,fmax = getWidths(pos,sig,gam,shl)
+    x = np.linspace(pos-fmin,pos+fmin,1024)
+    if pos > 90:
+        fmin,fmax = [fmax,fmin]          
+    dx = x[1]-x[0]
+    arg = [pos,shl/10.,dx,]
+    Df = fcjde.pdf(x,*arg,loc=pos,scale=1.0)
+    if len(np.nonzero(Df)[0])>5:
+        fxns = [st.norm,st.cauchy,fcjde]
+        args = [[],[],arg]
+    else:
+        fxns = [st.norm,st.cauchy]
+        args = [[],[]]
+    Df = calcPeakFFT(x,fxns,widths,pos,args)
+    Df /= np.sum(Df)
+    Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
+    return intens*Df(xdata)*DX/dx       #*10 to get close to old fxn???
+                                    
 def getPeakProfile(parmDict,xdata,varyList,bakType):
     
-    def calcPeakFFT(x,fxns,widths,pos,args):
-        dx = x[1]-x[0]
-        z = np.empty([len(fxns),len(x)])
-        for i,(fxn,width,arg) in enumerate(zip(fxns,widths,args)):
-            z[i] = fxn.pdf(x,loc=pos,scale=width,*arg)*dx
-        Z = fft(z)
-        if len(fxns)%2:
-            return ifft(Z.prod(axis=0)).real
-        else:
-            return fftshift(ifft(Z.prod(axis=0))).real
-                        
-    def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
-        
-        DX = xdata[1]-xdata[0]
-        widths,fmin,fmax = getWidths(pos,sig,gam,shl)
-        x = np.linspace(pos-fmin,pos+fmin,1024)
-        if pos > 90:
-            fmin,fmax = [fmax,fmin]          
-        dx = x[1]-x[0]
-        arg = [pos,shl/10.,dx,]
-        Df = fcjde.pdf(x,*arg,loc=pos,scale=1.0)
-        if len(np.nonzero(Df)[0])>5:
-            fxns = [st.norm,st.cauchy,fcjde]
-            args = [[],[],arg]
-        else:
-            fxns = [st.norm,st.cauchy]
-            args = [[],[]]
-        Df = calcPeakFFT(x,fxns,widths,pos,args)
-        Df /= np.sum(Df)
-        Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
-        return intens*Df(xdata)*DX/dx       #*10 to get close to old fxn???
-                    
-    yb = getBackground(parmDict,bakType,xdata)
+    yb = getBackground('',parmDict,bakType,xdata)
     yc = np.zeros_like(yb)
     U = parmDict['U']
     V = parmDict['V']
@@ -590,12 +581,22 @@ def getWidths(pos,sig,gam,shl):
     fmax = 15.0*fwhm
     return widths,fmin,fmax
                 
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
+def Dict2Values(parmdict, varylist):
+    '''Use before call to leastsq to setup list of values for the parameters 
+    in parmdict, as selected by key in varylist'''
+    return [parmdict[key] for key in varylist] 
+    
+def Values2Dict(parmdict, varylist, values):
+    ''' Use after call to leastsq to update the parameter dictionary with 
+    values corresponding to keys in varylist'''
+    parmdict.update(zip(varylist,values))
+    
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
     
     def SetBackgroundParms(Background):
         bakType,bakFlag = Background[:2]
         backVals = Background[3:]
-        backNames = ['Back'+str(i) for i in range(len(backVals))]
+        backNames = ['Back:'+str(i) for i in range(len(backVals))]
         if bakFlag: #returns backNames as varyList = backNames
             return bakType,dict(zip(backNames,backVals)),backNames
         else:       #no background varied; varyList = []
@@ -605,7 +606,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
         iBak = 0
         while True:
             try:
-                bakName = 'Back'+str(iBak)
+                bakName = 'Back:'+str(iBak)
                 Background[iBak+3] = parmList[bakName]
                 iBak += 1
             except KeyError:
@@ -619,7 +620,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
             sigstr = 'esds  :'
             for i,back in enumerate(Background[3:]):
                 ptstr += ptfmt % (back)
-                sigstr += ptfmt % (sigDict['Back'+str(i)])
+                sigstr += ptfmt % (sigDict['Back:'+str(i)])
             print ptstr
             print sigstr
         else:
@@ -674,7 +675,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
         print ptstr
         print sigstr
 
-    def setPeaksParms(Peaks):
+    def SetPeaksParms(Peaks):
         peakNames = []
         peakVary = []
         peakVals = []
@@ -733,12 +734,15 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
                 return -M           #abort!!
         return M
         
+    Ftol = 0.01
+    if oneCycle:
+        Ftol = 1.0
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
     xBeg = np.searchsorted(x,Limits[0])
     xFin = np.searchsorted(x,Limits[1])
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
     dataType,insDict,insVary = SetInstParms(Inst)
-    peakDict,peakVary = setPeaksParms(Peaks)
+    peakDict,peakVary = SetPeaksParms(Peaks)
     parmDict = {}
     parmDict.update(bakDict)
     parmDict.update(insDict)
@@ -746,7 +750,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
     varyList = bakVary+insVary+peakVary
     while True:
         begin = time.time()
-        values =  np.array(ValuesOut(parmDict, varyList))
+        values =  np.array(Dict2Values(parmDict, varyList))
         if FitPgm == 'LSQ':
             dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
@@ -754,14 +758,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
             Size = dlg.GetSize()
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
             try:
-                result = so.leastsq(errPeakProfile,values,
-                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg),full_output=True)
+                result = so.leastsq(errPeakProfile,values,full_output=True,ftol=Ftol,
+                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
             finally:
                 dlg.Destroy()
             runtime = time.time()-begin    
             chisq = np.sum(result[2]['fvec']**2)
             ncyc = int(result[2]['nfev']/len(varyList))
-            ValuesIn(parmDict, varyList, result[0])
+            Values2Dict(parmDict, varyList, result[0])
             Rwp = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
             GOF = chisq/(xFin-xBeg-len(varyList))
             print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
@@ -785,7 +789,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data):
             return
         
     sigDict = dict(zip(varyList,sig))
-    yb[xBeg:xFin] = getBackground(parmDict,bakType,x[xBeg:xFin])
+    yb[xBeg:xFin] = getBackground('',parmDict,bakType,x[xBeg:xFin])
     yc[xBeg:xFin] = getPeakProfile(parmDict,x[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
@@ -912,15 +916,19 @@ def test0():
     if NeedTestData: TestData()
     msg = 'test '
     gplot = plotter.add('FCJ-Voigt, 11BM').gca()
-    gplot.plot(xdata,getBackground(parmDict0,bakType,xdata))   
+    gplot.plot(xdata,getBackground('',parmDict0,bakType,xdata))   
     gplot.plot(xdata,getPeakProfile(parmDict0,xdata,varyList,bakType))
     fplot = plotter.add('FCJ-Voigt, Ka1+2').gca()
-    fplot.plot(xdata,getBackground(parmDict1,bakType,xdata))   
+    fplot.plot(xdata,getBackground('',parmDict1,bakType,xdata))   
     fplot.plot(xdata,getPeakProfile(parmDict1,xdata,varyList,bakType))
+    
+def test1():
+    if NeedTestData: TestData()
     time0 = time.time()
     for i in range(100):
         y = getPeakProfile(parmDict1,xdata,varyList,bakType)
-    print '100+6*Ka1-2 peaks=3600 peaks',time.time()-time0
+    print '100+6*Ka1-2 peaks=1200 peaks',time.time()-time0
+    
     
 
 if __name__ == '__main__':

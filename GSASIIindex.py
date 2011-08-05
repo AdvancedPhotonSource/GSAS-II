@@ -267,8 +267,8 @@ def FitHKL(ibrav,peaks,A,Pwr):
     Peaks = np.array(peaks).T
     
     values = A2values(ibrav,A)
-    result = so.leastsq(errFit,values,args=(ibrav,Peaks[7],Peaks[4:7],Pwr),
-        full_output=True,factor=0.1)
+    result = so.leastsq(errFit,values,full_output=True,ftol=0.0001,
+        args=(ibrav,Peaks[7],Peaks[4:7],Pwr))
     A = Values2A(ibrav,result[0])
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result
            
@@ -285,8 +285,8 @@ def FitHKLZ(wave,ibrav,peaks,A,Z,Pwr):
     
     values = A2values(ibrav,A)
     values.append(Z)
-    result = so.leastsq(errFit,values,args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Pwr),
-        full_output=True)
+    result = so.leastsq(errFit,values,full_output=True,ftol=0.001,
+        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Pwr))
     A = Values2A(ibrav,result[0][:-1])
     Z = result[0][-1]
     
@@ -347,7 +347,7 @@ def refinePeaksZ(peaks,wave,ibrav,A,Zero):
 def refinePeaks(peaks,ibrav,A):
     dmin = getDmin(peaks)
     smin = 1.0e10
-    pwr = 4
+    pwr = 8
     maxTries = 10
     OK = False
     tries = 0
@@ -379,7 +379,11 @@ def refinePeaks(peaks,ibrav,A):
         OK,smin,A,result = FitHKL(ibrav,peaks,A,2)
         Peaks = np.array(peaks).T
         H = Peaks[4:7]
-        Peaks[8] = 1./np.sqrt(G2lat.calc_rDsq(H,A))
+        try:
+            Peaks[8] = 1./np.sqrt(G2lat.calc_rDsq(H,A))
+        except FloatingPointError:
+            print G2lat.calc_rDsq(H,A)
+            Peaks[8] = 1.0
         peaks = Peaks.T
         
     M20,X20 = calc_M20(peaks,HKL)

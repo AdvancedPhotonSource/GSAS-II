@@ -455,17 +455,18 @@ def PlotPatterns(self,newPlot=False):
                     self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
                 if self.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
-                if self.PickId and self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List']:
+                if self.PickId:
                     found = []
-                    if len(HKL):
-                        view = Page.toolbar._views.forward()[0][:2]
-                        wid = view[1]-view[0]
-                        found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.002*wid)]
-                    if len(found):
-                        h,k,l = found[0][:3] 
-                        Page.canvas.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
-                    else:
-                        Page.canvas.SetToolTipString('')
+                    if self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List','Reflection Lists']:
+                        if len(HKL):
+                            view = Page.toolbar._views.forward()[0][:2]
+                            wid = view[1]-view[0]
+                            found = HKL[np.where(np.fabs(HKL.T[5]-xpos) < 0.002*wid)]
+                        if len(found):
+                            h,k,l = found[0][:3] 
+                            Page.canvas.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
+                        else:
+                            Page.canvas.SetToolTipString('')
 
             except TypeError:
                 self.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',1)
@@ -572,7 +573,14 @@ def PlotPatterns(self,newPlot=False):
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
     Ymax = 1.0
     lenX = 0
-    HKL = np.array(self.HKL)
+    if self.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
+        Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
+        HKL = []
+        for peak in Phases[self.RefList]:
+            HKL.append(peak[:6])
+        HKL = np.array(HKL)
+    else:
+        HKL = np.array(self.HKL)
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
@@ -658,24 +666,36 @@ def PlotPatterns(self,newPlot=False):
                     Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='clip')
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
-    if PickId and self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
+    if PickId:
         Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1::2]
         Parms = dict(zip(Names,Values))
         try:
             wave = Parms['Lam']
         except KeyError:
             wave = Parms['Lam1']
-        peaks = np.array((self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))))
-        for peak in peaks:
-            if self.qPlot:
-                Plot.axvline(4*np.pi*sind(peak[0]/2.0)/wave,color='b')
-            else:
-                Plot.axvline(peak[0],color='b')
-        for hkl in self.HKL:
-            if self.qPlot:
-                Plot.axvline(4*np.pi*sind(hkl[5]/2.0)/wave,color='r',dashes=(5,5))
-            else:
-                Plot.axvline(hkl[5],color='r',dashes=(5,5))
+        if self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
+            peaks = np.array((self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))))
+            for peak in peaks:
+                if self.qPlot:
+                    Plot.axvline(4*np.pi*sind(peak[0]/2.0)/wave,color='b')
+                else:
+                    Plot.axvline(peak[0],color='b')
+            for hkl in self.HKL:
+                if self.qPlot:
+                    Plot.axvline(4*np.pi*sind(hkl[5]/2.0)/wave,color='r',dashes=(5,5))
+                else:
+                    Plot.axvline(hkl[5],color='r',dashes=(5,5))
+        elif self.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
+            Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
+            for pId,phase in enumerate(Phases):
+                pId += 1
+                peaks = Phases[phase]
+                for peak in peaks:
+                    if self.qPlot:
+                        Plot.plot(2*np.pi/peak[4],offset*N-pId*Ymax*.005,colors[pId%6]+'|',mew=1,ms=8,picker=2.)
+                    else:
+                        Plot.plot(peak[5],offset*N-pId*Ymax*.005,colors[pId%6]+'|',mew=1,ms=8,picker=2.)
+            
     if self.Contour:
         acolor = mpl.cm.get_cmap(self.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation=self.Interpolate, 
@@ -1156,9 +1176,12 @@ def PlotStrain(self,data):
                 
             elif muStrain[0] == 'uniaxial':
                 def uniaxMustrain(xyz,muiso,muaniso,axes):
-                    cp = abs(np.dot(xyz,axes))
-                    S = muiso+muaniso*cp
-                    return S*xyz*math.pi/0.018      #centidegrees to radians!
+                    Z = np.array(axes)
+                    cp = abs(np.dot(xyz,Z))
+                    sp = np.sqrt(1.-cp**2)
+                    R = muiso*muaniso/np.sqrt((muiso*cp)**2+(muaniso*sp)**2)
+#                    S = muiso+muaniso*cp           #old GSAS - wrong math!!
+                    return R*xyz*math.pi/0.018      #centidegrees to radians!
                 muiso,muaniso = muStrain[1][:2]
                 axes = np.inner(A,np.array(muStrain[3]))
                 axes /= nl.norm(axes)
@@ -1175,7 +1198,9 @@ def PlotStrain(self,data):
                 def genMustrain(xyz,SGData,A,Shkl):
                     uvw = np.inner(A.T,xyz)
                     Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
-                    sum = np.sqrt(np.sum(np.multiply(Shkl,Strm)))*math.pi/0.018      #centidegrees to radians!
+                    sum = np.sum(np.multiply(Shkl,Strm))
+                    sum = np.where(sum > 0.01,sum,0.01)
+                    sum = np.sqrt(sum)*math.pi/0.018      #centidegrees to radians!
                     return sum*xyz
                 Shkl = np.array(muStrain[4])
                 if np.any(Shkl):
@@ -1188,7 +1213,7 @@ def PlotStrain(self,data):
                     Z = Z[:,:,0]
                     
             if np.any(X) and np.any(Y) and np.any(Z):
-                Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g')
+                Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
                 
             Plot.set_xlabel('X')
             Plot.set_ylabel('Y')

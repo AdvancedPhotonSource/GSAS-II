@@ -514,7 +514,7 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     Df = calcPeakFFT(x,fxns,widths,pos,args)
     Df /= np.sum(Df)
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
-    return intens*Df(xdata)*DX/dx       #*10 to get close to old fxn???
+    return intens*Df(xdata)*DX/dx
                                     
 def getPeakProfile(parmDict,xdata,varyList,bakType):
     

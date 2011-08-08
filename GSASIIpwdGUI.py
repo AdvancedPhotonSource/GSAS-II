@@ -1280,7 +1280,6 @@ def UpdateReflectionGrid(self,data):
     self.dataFrame.SetMenuBar(self.dataFrame.ReflMenu)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()    
-    self.dataDisplay = wx.Panel(self.dataFrame)
     self.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
     self.dataFrame.SelectPhase.Enable(False)
     if len(data) > 1:
@@ -1298,7 +1297,7 @@ def UpdateReflectionGrid(self,data):
     self.dataDisplay.SetTable(self.PeakTable, True)
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([535,350])
+    self.dataFrame.setSizePosLeft([555,350])
 
 def UpdatePDFGrid(self,data):
     global inst

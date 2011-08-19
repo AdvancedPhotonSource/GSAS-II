@@ -39,13 +39,13 @@ import GSASIIphsGUI as G2phG
 [ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT, wxID_PAWLEYDELETE,
 ] = [wx.NewId() for _init_coll_PAWLEY_Items in range(3)]
 
-[ wxID_INSTPRMRESET,
-] = [wx.NewId() for _init_coll_INST_Items in range(1)]
+[ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,
+] = [wx.NewId() for _init_coll_INST_Items in range(2)]
 
 [ wxID_INDXRELOAD,
 ] = [wx.NewId() for _init_coll_IndPeaks_Items in range(1)]
 
-[ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_BFGSPEAKFIT,wxID_RESETSIGGAM,
+[ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,
 ] = [wx.NewId() for _init_coll_PEAK_Items in range(5)]
 
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
@@ -194,6 +194,8 @@ class DataFrame(wx.Frame):
     def _init_coll_Inst_Items(self,parent):
         parent.Append(help='Reset instrument profile parameters to default', 
             id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')
+        parent.Append(help='Change radiation type (Ka12 - synch)', 
+            id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
 
     def _init_coll_Peak_Items(self,parent):
         self.UnDo = parent.Append(help='Undo last least squares refinement', 
@@ -202,10 +204,10 @@ class DataFrame(wx.Frame):
             help='Peak fitting via least-squares' )
         self.PFOneCycle = parent.Append(id=wxID_LSQONECYCLE, kind=wx.ITEM_NORMAL,text='LSQ one cycle', 
             help='One cycle of Peak fitting via least-squares' )
-#        self.PeakFit = parent.Append(id=wxID_BFGSPEAKFIT, kind=wx.ITEM_NORMAL,text='BFGS PeakFit', 
-#            help='Peak fitting via BFGS algorithm' )
         self.ResetSigGam = parent.Append(id=wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
             text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
+        self.PeakFit = parent.Append(id=wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 
+            help='Clear the peak list' )
             
     def _init_coll_Index_Items(self,parent):
         self.IndexPeaks = parent.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,

@@ -1643,10 +1643,9 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
     Plot.set_title(Title)
     try:
         if self.PatternTree.GetItemText(self.PickId) in ['Image Controls',]:
+            Choice = (' key press','l: log(I) on',)
             if self.logPlot:
-                Choice = (' key press','l: log(I) off')
-            else:
-                Choice = (' key press','l: log(I) on')
+                Choice[1] = 'l: log(I) off'
             cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
                 choices=Choice)
             cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -1691,8 +1690,8 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             A = G2img.ImageCompress(MA,imScale)
             AM = G2img.ImageCompress(MaskA,imScale)
             if self.logPlot:
-                A = np.log(A)
-                AM = np.log(AM)
+                A = np.where(A>0,np.log(A),0)
+                AM = np.where(AM>0,np.log(AM),0)
                 Imin,Imax = [np.amin(A),np.amax(A)]
             ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])

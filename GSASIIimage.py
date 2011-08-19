@@ -551,7 +551,7 @@ def ImageCalibrate(self,data):
     data['rotation'] = np.mod(result[3],360.0)
     data['tilt'] = result[4]
     N = len(data['ellipses'])
-#    data['ellipses'] = []           #clear away individual ellipse fits
+    data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))

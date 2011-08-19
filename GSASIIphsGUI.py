@@ -319,7 +319,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     generalData['Pawley dmin'] = dmin
             except ValueError:
                 pass
-            pawlVal.SetValue("%.2f"%(generalData['Pawley dmin']))          #reset in case of error            
+            pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error            
                                     
         cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
         [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],
@@ -454,7 +454,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         elif generalData['Type'] == 'Pawley':
             pawlSizer = wx.BoxSizer(wx.HORIZONTAL)
             pawlSizer.Add(wx.StaticText(dataDisplay,label=' Pawley dmin: '),0,wx.ALIGN_CENTER_VERTICAL)
-            pawlVal = wx.TextCtrl(dataDisplay,value='%.2f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
+            pawlVal = wx.TextCtrl(dataDisplay,value='%.3f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
             pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
             pawlSizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)

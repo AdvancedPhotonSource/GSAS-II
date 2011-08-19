@@ -409,30 +409,50 @@ def MultiScattering(Geometry,ElList,Tth):
 
 np.seterr(divide='ignore')
 
-# Voigt function = convolution (norm,cauchy)
+# Normal distribution
 
-class voigt_gen(st.rv_continuous):
-    '''
-    Voigt function
-    Parameters
-    -----------------------------------------
-    '''
-    def _pdf(self,x,s,g):
-        z = np.empty([2,len(x)])
-        z[0] = st.norm.pdf(x,scale=s)
-        z[1] = st.cauchy.pdf(x,scale=g)
-        Z = fft(z)
-        return fftshift(ifft(Z.prod(axis=0))).real
-#    def _cdf(self, x):
-#    def _ppf(self, q):
-#    def _sf(self, x):
-#    def _isf(self, q):
-#    def _stats(self):
-#    def _entropy(self):
+# loc = mu, scale = std
+_norm_pdf_C = 1./math.sqrt(2*math.pi)
+class norm_gen(st.rv_continuous):
+        
+    def pdf(self,x,*args,**kwds):
+        loc,scale=kwds['loc'],kwds['scale']
+        x = (x-loc)/scale
+        return np.exp(-x**2/2.0) * _norm_pdf_C / scale
+        
+norm = norm_gen(name='norm',longname='A normal',extradoc="""
 
-voigt = voigt_gen(name='voigt',shapes='ts,g')
-       
-# Finger-Cox_Jephcoat D(2phi,2th) function for S/L = H/L
+Normal distribution
+
+The location (loc) keyword specifies the mean.
+The scale (scale) keyword specifies the standard deviation.
+
+normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
+""")
+
+## Cauchy
+
+# median = loc
+
+class cauchy_gen(st.rv_continuous):
+
+    def pdf(self,x,*args,**kwds):
+        loc,scale=kwds['loc'],kwds['scale']
+        x = (x-loc)/scale
+        return 1.0/np.pi/(1.0+x*x) / scale
+        
+cauchy = cauchy_gen(name='cauchy',longname='Cauchy',extradoc="""
+
+Cauchy distribution
+
+cauchy.pdf(x) = 1/(pi*(1+x**2))
+
+This is the t distribution with one degree of freedom.
+""")
+    
+    
+#GSASII peak fitting routine: Finger, Cox & Jephcoat model        
+
 
 class fcjde_gen(st.rv_continuous):
     """
@@ -456,18 +476,17 @@ class fcjde_gen(st.rv_continuous):
     """
     def _pdf(self,x,t,s,dx):
         T = dx*x+t
-        ax = npcosd(T)**2
+        ax2 = abs(npcosd(T))
+        ax = ax2**2
         bx = npcosd(t)**2
         bx = np.where(ax>bx,bx,ax)
-        fx = np.where(ax>bx,(np.sqrt(bx/(ax-bx))-1./s)/np.sqrt(ax),0.0)
+        fx = np.where(ax>bx,(np.sqrt(bx/(ax-bx))-1./s)/ax2,0.0)
         fx = np.where(fx > 0.,fx,0.0)
         return fx
-#    def _cdf(self, x):
-#    def _ppf(self, q):
-#    def _sf(self, x):
-#    def _isf(self, q):
-#    def _stats(self):
-#    def _entropy(self):
+             
+    def pdf(self,x,*args,**kwds):
+        loc=kwds['loc']
+        return self._pdf(x-loc,*args)
         
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
@@ -484,52 +503,51 @@ def getBackground(pfx,parmDict,bakType,xdata):
                 break
     return yb
 
-def calcPeakFFT(x,fxns,widths,pos,args):
-    dx = x[1]-x[0]
-    z = np.empty([len(fxns),len(x)])
-    for i,(fxn,width,arg) in enumerate(zip(fxns,widths,args)):
-        z[i] = fxn.pdf(x,loc=pos,scale=width,*arg)*dx
-    Z = fft(z)
-    if len(fxns)%2:
-        return ifft(Z.prod(axis=0)).real
-    else:
-        return fftshift(ifft(Z.prod(axis=0))).real
-                    
-def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
-    
-    DX = xdata[1]-xdata[0]
-    widths,fmin,fmax = getWidths(pos,sig,gam,shl)
-    x = np.linspace(pos-fmin,pos+fmin,1024)
+def getWidths(pos,sig,gam,shl):
+    widths = [np.sqrt(sig)/100.,gam/200.]
+    fwhm = 2.355*widths[0]+2.*widths[1]
+    fmin = 10.*(fwhm+shl*abs(npcosd(pos)))
+    fmax = 15.0*fwhm
     if pos > 90:
         fmin,fmax = [fmax,fmin]          
+    return widths,fmin,fmax
+                
+def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
+    DX = xdata[1]-xdata[0]
+    widths,fmin,fmax = getWidths(pos,sig,gam,shl)
+    x = np.linspace(pos-fmin,pos+fmin,256)
     dx = x[1]-x[0]
-    arg = [pos,shl/10.,dx,]
-    Df = fcjde.pdf(x,*arg,loc=pos,scale=1.0)
-    if len(np.nonzero(Df)[0])>5:
-        fxns = [st.norm,st.cauchy,fcjde]
-        args = [[],[],arg]
+    Norm = norm.pdf(x,loc=pos,scale=widths[0])
+    Cauchy = cauchy.pdf(x,loc=pos,scale=widths[1])
+    arg = [pos,shl/57.2958,dx,]
+    FCJ = fcjde.pdf(x,*arg,loc=pos)
+    if len(np.nonzero(FCJ)[0])>5:
+        z = np.column_stack([Norm,Cauchy,FCJ]).T
+        Z = fft(z)
+        Df = ifft(Z.prod(axis=0)).real
     else:
-        fxns = [st.norm,st.cauchy]
-        args = [[],[]]
-    Df = calcPeakFFT(x,fxns,widths,pos,args)
+        z = np.column_stack([Norm,Cauchy]).T
+        Z = fft(z)
+        Df = fftshift(ifft(Z.prod(axis=0))).real
     Df /= np.sum(Df)
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
-                                    
+
 def getPeakProfile(parmDict,xdata,varyList,bakType):
     
     yb = getBackground('',parmDict,bakType,xdata)
     yc = np.zeros_like(yb)
+    dx = xdata[1]-xdata[0]
     U = parmDict['U']
     V = parmDict['V']
     W = parmDict['W']
     X = parmDict['X']
     Y = parmDict['Y']
-    shl = max(parmDict['SH/L'],0.001)
+    shl = max(parmDict['SH/L'],0.0005)
     Ka2 = False
     if 'Lam1' in parmDict.keys():
         Ka2 = True
-        lamRatio = parmDict['Lam2']/parmDict['Lam1']
+        lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
         kRatio = parmDict['I(L2)/I(L1)']
     iPeak = 0
     while True:
@@ -547,12 +565,16 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
                 gam = parmDict[gamName]
             else:
                 gam = X/cosd(pos/2.0)+Y*tand(pos/2.0)
-            gam = max(gam,0.01)             #avoid neg gamma
+            gam = max(gam,0.001)             #avoid neg gamma
             Wd,fmin,fmax = getWidths(pos,sig,gam,shl)
-            if pos > 90:
-                fmin,fmax = [fmax,fmin]          
             iBeg = np.searchsorted(xdata,pos-fmin)
-            iFin = np.searchsorted(xdata,pos+fmax)
+            lenX = len(xdata)
+            if not iBeg:
+                iFin = np.searchsorted(xdata,pos+fmin)
+            elif iBeg == lenX:
+                iFin = iBeg
+            else:
+                iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
             if not iBeg+iFin:       #peak below low limit
                 iPeak += 1
                 continue
@@ -560,27 +582,16 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
                 return yb+yc
             yc[iBeg:iFin] += getFCJVoigt(pos,intens,sig,gam,shl,xdata[iBeg:iFin])
             if Ka2:
-                pos2 = 2.0*asind(lamRatio*sind(pos/2.0))
-                Wd,fmin,fmax = getWidths(pos2,sig,gam,shl)
-                if pos > 90:
-                    fmin,fmax = [fmax,fmin]          
-                iBeg = np.searchsorted(xdata,pos2-fmin)
-                iFin = np.searchsorted(xdata,pos2+fmax)
-                yc[iBeg:iFin] += getFCJVoigt(pos2,intens*kRatio,sig,gam,shl,xdata[iBeg:iFin])
+                pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                kdelt = int((pos2-pos)/dx)               
+                iBeg = min(lenX,iBeg+kdelt)
+                iFin = min(lenX,iFin+kdelt)
+                if iBeg-iFin:
+                    yc[iBeg:iFin] += getFCJVoigt(pos2,intens*kRatio,sig,gam,shl,xdata[iBeg:iFin])
             iPeak += 1
         except KeyError:        #no more peaks to process
             return yb+yc
-        
-def getWidths(pos,sig,gam,shl):
-    if shl:
-        widths = [np.sqrt(sig)/100.,gam/200.,.1]
-    else:
-        widths = [np.sqrt(sig)/100.,gam/200.]
-    fwhm = 2.355*widths[0]+2.*widths[1]
-    fmin = 10.*(fwhm+shl*abs(npcosd(pos)))
-    fmax = 15.0*fwhm
-    return widths,fmin,fmax
-                
+
 def Dict2Values(parmdict, varylist):
     '''Use before call to leastsq to setup list of values for the parameters 
     in parmdict, as selected by key in varylist'''
@@ -634,9 +645,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
             if flag:
                 insVary.append(insNames[i])
         instDict = dict(zip(insNames,insVals))
-        instDict['X'] = max(instDict['X'],0.1)
-        instDict['Y'] = max(instDict['Y'],0.1)
-        instDict['SH/L'] = max(instDict['SH/L'],0.001)
+        instDict['X'] = max(instDict['X'],0.01)
+        instDict['Y'] = max(instDict['Y'],0.01)
+        instDict['SH/L'] = max(instDict['SH/L'],0.0001)
         return dataType,instDict,insVary
         
     def GetInstParms(parmDict,Inst,varyList,Peaks):
@@ -734,7 +745,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
                 return -M           #abort!!
         return M
         
-    Ftol = 0.01
+    Ftol = 0.0001
     if oneCycle:
         Ftol = 1.0
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
@@ -758,7 +769,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
             Size = dlg.GetSize()
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
             try:
-                result = so.leastsq(errPeakProfile,values,full_output=True,ftol=Ftol,
+                result = so.leastsq(errPeakProfile,values,full_output=True,             #ftol=Ftol,
                     args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
             finally:
                 dlg.Destroy()

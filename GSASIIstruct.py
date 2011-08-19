@@ -299,10 +299,10 @@ def GetFFtable(General):
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
     if SGLaue in ['-1','2/m','mmm']:
         return                      #no Pawley symmetry required constraints
-    for varyI in pawleyVary:
+    for i,varyI in enumerate(pawleyVary):
         refI = int(varyI.split(':')[-1])
         ih,ik,il = PawleyRef[refI][:3]
-        for varyJ in pawleyVary[:refI]:
+        for varyJ in pawleyVary[0:i]:
             refJ = int(varyJ.split(':')[-1])
             jh,jk,jl = PawleyRef[refJ][:3]
             if SGLaue in ['4/m','4/mmm']:
@@ -490,9 +490,9 @@ def SetPhaseData(parmDict,sigDict,Phases):
             print sigstr
             cell[1:7] = G2lat.A2cell(A)
             cell[7] = G2lat.calc_V(A)
-            print ' New unit cell: a =%.5f'%(cell[1]),' b =%.5f'%(cell[2]), \
-                ' c =%.5f'%(cell[3]),' alpha =%.3f'%(cell[4]),' beta =%.3f'%(cell[5]), \
-                ' gamma =%.3f'%(cell[6]),' volume =%.3f'%(cell[7])
+            print ' New unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]), \
+                ' c = %.5f'%(cell[3]),' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]), \
+                ' gamma = %.3f'%(cell[6]),' volume = %.3f'%(cell[7])
         if 'Pawley' in Phase['General']['Type']:
             pawleyRef = Phase['Pawley ref']
             for i,refl in enumerate(pawleyRef):
@@ -707,24 +707,22 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
             hId = Histogram['hId']
             pfx = str(pId)+':'+str(hId)+':'
             
-# Add this stuff for Rietveld refinement!!!!            
-#            for item in ['Scale','Extinction']:
-#                hapDict[pfx+item] = hapData[item][0]
-#                if hapData[item][1]:
-#                    hapVary.append(pfx+item)
-#            controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
-#            if hapData['Pref.Ori.'][0] == 'MD':
-#                hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
-#                controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
-#                if hapData['Pref.Ori.'][2]:
-#                    hapVary.append(pfx+'MD')
-#            else:                           #'SH' spherical harmonics
-#                for item in hapData['Pref.Ori.'][5]:
-#                    hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-#                    if hapData['Pref.Ori.'][2]:
-#                        hapVary.append(pfx+item)
-#            print '\n Phase fraction  : %10.4f'%(hapData['Scale'][0])
-#            print ' Extinction coeff: %10.4f'%(hapData['Extinction'][0])
+            PhFrExtPOSig = {}
+            for item in ['Scale','Extinction']:
+                hapData[item][0] = parmDict[pfx+item]
+                if hapData[item][1]:
+                    PhFrExtPOSig[item] = sigDict[pfx+item]            
+            if hapData['Pref.Ori.'][0] == 'MD':
+                hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
+                if hapData['Pref.Ori.'][2]:
+                    PhFrExtPOSig[item] = sigDict[pfx+item]
+            else:                           #'SH' spherical harmonics
+                for item in hapData['Pref.Ori.'][5]:
+                    hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
+                    if hapData['Pref.Ori.'][2]:
+                        PhFrExtPOSig[item] = sigDict[pfx+item]
+#            print '\n Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
+#            print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
 #            if hapData['Pref.Ori.'][0] == 'MD':
 #                Ax = hapData['Pref.Ori.'][3]
 #                print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
@@ -773,9 +771,9 @@ def GetHistogramData(Histograms):
             instDict[insName] = insVals[i]
             if flag:
                 insVary.append(insName)
-        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.1)
-        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.1)
-        instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.001)
+        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.01)
+        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.01)
+        instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.0005)
         return dataType,instDict,insVary
         
     def GetSampleParms(hId,Sample):
@@ -1105,11 +1103,39 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             sum = 0
             for i,pwr in enumerate(pwrs):
                 sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-            gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum
-            
-        return gam  
+            gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum            
+        return gam
         
+    def GetIntensityCorr(refl,phfx,hfx,calcControls,parmDict):
+        Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
+        Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
         
+        return Icorr
+        
+    def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
+        h,k,l = refl[:3]
+        dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
+        d = np.sqrt(dsq)
+        pos = 2.0*asind(wave/(2.0*d))+parmDict[hfx+'Zero']
+        const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
+        if 'Bragg' in calcControls[hfx+'instType']:
+            pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+ \
+                1.e-7*parmDict[hfx+'Transparency']*sind(pos))            #trans(=1/mueff) in Angstroms
+        else:               #Debye-Scherrer - simple but maybe not right
+            pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+parmDict[hfx+'DisplaceY']*sind(pos))
+        return pos
+    
+    def GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse):
+        U = parmDict[hfx+'U']
+        V = parmDict[hfx+'V']
+        W = parmDict[hfx+'W']
+        X = parmDict[hfx+'X']
+        Y = parmDict[hfx+'Y']
+        tanPos = tand(refl[5]/2.0)
+        sig = U*tanPos**2+V*tanPos+W        #save peak sigma
+        gam = X/cosd(refl[5]/2.0)+Y*tanPos+GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse) #save peak gamma
+        return sig,gam
+                
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
@@ -1117,14 +1143,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     yc = np.zeros_like(yb)
         
     if 'C' in calcControls[hfx+'histType']:    
-        U = parmDict[hfx+'U']
-        V = parmDict[hfx+'V']
-        W = parmDict[hfx+'W']
-        X = parmDict[hfx+'X']
-        Y = parmDict[hfx+'Y']
-        shl = max(parmDict[hfx+'SH/L'],0.001)
-        Zero = parmDict[hfx+'Zero']
-        pola = parmDict[hfx+'Polariz.']
+        shl = max(parmDict[hfx+'SH/L'],0.0005)
         Ka2 = False
         if hfx+'Lam1' in parmDict.keys():
             wave = parmDict[hfx+'Lam1']
@@ -1149,46 +1168,32 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
         for refl in refList:
             if 'C' in calcControls[hfx+'histType']:
-                h,k,l,m = refl[:4]
-                dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
-                d = np.sqrt(dsq)
-                pos = 2.0*asind(wave/(2.0*d))+Zero
-                const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
-                if 'Bragg' in calcControls[hfx+'instType']:
-                    pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+ \
-                        1.e-7*parmDict[hfx+'Transparency']*sind(pos))            #trans(=1/mueff) in Angstroms
-                else:               #Debye-Scherrer - simple but maybe not right
-                    pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+parmDict[hfx+'DisplaceY']*sind(pos))
-                refl[5] = pos
-                tanPos = tand(pos/2.0)
-                refl[6] = U*tanPos**2+V*tanPos+W        #save peak sigma
-                refl[7] = X/cosd(pos/2.0)+Y*tanPos+GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse) #save peak gamma
+                h,k,l = refl[:3]
+                refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[6:8] = GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse)    #peak sig & gam
+                Icorr = GetIntensityCorr(refl,phfx,hfx,calcControls,parmDict)
                 if 'Pawley' in Phase['General']['Type']:
                     try:
-                        refl[8] = parmDict[hfx+'Scale']*m*parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])]
+                        refl[8] = parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])]
                     except KeyError:
                         print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
                 else:
                     raise ValueError       #wants strctrfacr calc here
-                Wd,fmin,fmax = G2pwd.getWidths(pos,refl[6],refl[7],shl)
-                if pos > 90:
-                    fmin,fmax = [fmax,fmin]          
-                iBeg = np.searchsorted(x,pos-fmin)
-                iFin = np.searchsorted(x,pos+fmax)
+                Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
+                iBeg = np.searchsorted(x,refl[5]-fmin)
+                iFin = np.searchsorted(x,refl[5]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     return yc,yb
-                yc[iBeg:iFin] += G2pwd.getFCJVoigt(pos,refl[8],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
+                yc[iBeg:iFin] += G2pwd.getFCJVoigt(refl[5],Icorr*refl[8],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                 if Ka2:
-                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                    pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
-                    if pos > 90:
-                        fmin,fmax = [fmax,fmin]          
                     iBeg = np.searchsorted(x,pos2-fmin)
                     iFin = np.searchsorted(x,pos2+fmax)
-                    yc[iBeg:iFin] += G2pwd.getFCJVoigt(pos2,refl[8]*kRatio,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
+                    yc[iBeg:iFin] += G2pwd.getFCJVoigt(pos2,Icorr*refl[8]*kRatio,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
             else:
                 raise ValueError
     return yc,yb    
@@ -1226,7 +1231,6 @@ def Refine(GPXfile):
                 yd[xB:xF] = y[xB:xF]-yc[xB:xF]
                 Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
                 M = np.concatenate((M,np.sqrt(w[xB:xF])*(yd[xB:xF])))
-#                print 'sum M^2,y,yb,yc',np.sum(M**2),np.sum(y[xB:xF]),np.sum(yb[xB:xF]),np.sum(yc[xB:xF])
         Histograms['sumwYo'] = sumwYo
         Histograms['Nobs'] = Nobs
         Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
@@ -1276,7 +1280,6 @@ def Refine(GPXfile):
         try:
             result = so.leastsq(errRefine,values,full_output=True,  #factor=1.,epsfcn=0.00001,ftol=0.0001,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-            print len(result)
         finally:
             dlg.Destroy()
         runtime = time.time()-begin    

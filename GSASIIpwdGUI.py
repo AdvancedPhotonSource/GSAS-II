@@ -83,9 +83,16 @@ def UpdatePeakGrid(self, data):
     def OnOneCycle(event):
         OnPeakFit('LSQ',oneCycle=True)
         
-    def OnBGFSPeakFit(event):
-        OnPeakFit('BFGS')
-                
+    def OnClearPeaks(event):
+        dlg = wx.MessageDialog(self,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                peaks = []
+        finally:
+            dlg.Destroy()
+        UpdatePeakGrid(self,peaks)
+        G2plt.PlotPatterns(self)
+        
     def OnPeakFit(FitPgm,oneCycle=False):
         SaveState()
         print 'Peak Fitting:'
@@ -137,7 +144,6 @@ def UpdatePeakGrid(self, data):
         X = []
         for key in T: X.append(D[key])
         data = X        
-        G2plt.PlotPatterns(self)
         
     def setBackgroundColors():
        for r in range(self.dataDisplay.GetNumberRows()):
@@ -147,42 +153,7 @@ def UpdatePeakGrid(self, data):
                        self.dataDisplay.SetCellBackgroundColour(r,c,wx.RED)
                    else:
                        self.dataDisplay.SetCellBackgroundColour(r,c,wx.WHITE)
-                       
-    def RefineSelect(event):
-        data = self.PatternTree.GetItemPyData(self.PickId)
-        r,c =  event.GetRow(),event.GetCol()
-        if r < 0 and self.dataDisplay.GetColLabelValue(c) == 'refine':
-            self.dataDisplay.SelectCol(c,False)
-            
-    def OnRefine(event):
-        r,c =  event.GetRow(),event.GetCol()
-        if self.dataDisplay.GetColLabelValue(c) == 'refine':
-            if self.PeakTable.GetValue(r,c):
-                data[r][c] = False
-            else:
-                data[r][c] = True
-            print r,c,data[r][c]
-        
-                       
-    def RowSelect(event):
-        r,c =  event.GetRow(),event.GetCol()
-        if r < 0 and c < 0:
-            if self.dataDisplay.IsSelection():
-                self.dataDisplay.ClearSelection()
-        elif c < 0:                   #only row clicks
-            if event.ControlDown():                    
-                if r in self.dataDisplay.GetSelectedRows():
-                    self.dataDisplay.DeselectRow(r)
-                else:
-                    self.dataDisplay.SelectRow(r,True)
-            elif event.ShiftDown():
-                for row in range(r+1):
-                    self.dataDisplay.SelectRow(row,True)
-            else:
-                self.dataDisplay.ClearSelection()
-                self.dataDisplay.SelectRow(r,True)                
-        
-                           
+                                                  
     def KeyEditPeakGrid(event):
         rowList = self.dataDisplay.GetSelectedRows()
         colList = self.dataDisplay.GetSelectedCols()
@@ -240,7 +211,7 @@ def UpdatePeakGrid(self, data):
     self.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
     self.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
     self.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
-#    self.Bind(wx.EVT_MENU, OnBGFSPeakFit, id=G2gd.wxID_BFGSPEAKFIT)
+    self.Bind(wx.EVT_MENU, OnClearPeaks, id=G2gd.wxID_CLEARPEAKS)
     self.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
     self.dataFrame.PeakFit.Enable(False)
     if data:
@@ -270,9 +241,6 @@ def UpdatePeakGrid(self, data):
     setBackgroundColors()                         
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
     self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
-    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)                 
-    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefineSelect)
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_RIGHT_CLICK,OnRefine)
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
     self.dataFrame.setSizePosLeft([535,350])
@@ -412,6 +380,19 @@ def UpdateInstrumentGrid(self,data):
         RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
         UpdateInstrumentGrid(self,data)
         
+    def OnWaveChange(event):
+        if 'Lam' in insVal:            
+            data[0] = data[0][:1]+tuple(waves['CuKa'])+(.5,)+data[0][2:]
+            data[1] = data[1][:1]+waves['CuKa']+[.5,]+data[1][2:]
+            data[2] = data[2][:1]+[0,0,0,]+data[2][2:]
+            data[3] = data[3][:1]+['Lam1','Lam2','I(L2)/I(L1)',]+data[3][2:]            
+        else:
+            data[0] = data[0][:2]+data[0][4:]
+            data[1] = data[1][:2]+data[1][4:]
+            data[2] = data[2][:2]+data[2][4:]
+            data[3] = data[3][:1]+['Lam',]+data[3][4:]            
+        UpdateInstrumentGrid(self,data)
+                
     def OnNewType(event):
         insVal['Type'] = typePick.GetValue()
         data = updateData(insVal,insRef)
@@ -423,8 +404,7 @@ def UpdateInstrumentGrid(self,data):
         insVal['Lam2'] = waves[lamType][1]
         data = updateData(insVal,insRef)
         UpdateInstrumentGrid(self,data)
-         
-        
+                 
     def OnRatValue(event):
         try:
             value = float(ratVal.GetValue())
@@ -460,8 +440,6 @@ def UpdateInstrumentGrid(self,data):
         item,fmt = ValObj[Obj.GetId()]
         try:
             value = float(Obj.GetValue())
-            if value < 0:
-                raise ValueError
         except ValueError:
             value = insVal[item]
         insVal[item] = value
@@ -486,7 +464,8 @@ def UpdateInstrumentGrid(self,data):
         self.dataFrame.SetMenuBar(self.dataFrame.InstMenu)
         if not self.dataFrame.GetStatusBar():
             Status = self.dataFrame.CreateStatusBar()
-        self.Bind(wx.EVT_MENU, OnReset, id=G2gd.wxID_INSTPRMRESET)
+        self.Bind(wx.EVT_MENU, OnReset,id=G2gd.wxID_INSTPRMRESET)
+        self.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)
         typePick = wx.ComboBox(self.dataDisplay,value=insVal['Type'],
             choices=['PXC','PNC','PNT'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
         typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
@@ -752,7 +731,7 @@ def UpdateIndexPeaksGrid(self, data):
             self.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for col in colList:
-                if self.IndexPeaksTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
+                if self.IndexPeaksTable.GetColLabelValue(col) in ['use','refine']:
                     if key == 89: #'Y'
                         for row in range(self.IndexPeaksTable.GetNumberRows()): data[row][col]=True
                     elif key == 78:  #'N'
@@ -1290,7 +1269,7 @@ def UpdateReflectionGrid(self,data):
         refList.append([h,k,l,m,d,pos,sig,gam,fo,fc])
     for i in range(len(refList)): rowLabels.append(str(i+1))
     colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq',]
-    Types = 4*[wg.GRID_VALUE_LONG,]+6*[wg.GRID_VALUE_FLOAT+':10,4',]
+    Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+2*[wg.GRID_VALUE_FLOAT+':10,2',]
     self.PeakTable = G2gd.Table(refList,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Reflection List for '+self.RefList)
     self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)

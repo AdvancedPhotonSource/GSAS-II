@@ -179,7 +179,7 @@ def FitDetector(rings,p0,wave):
     sig.append(0.)
     ValSig = zip(names,fmt,vals,sig)
     CalibPrint(ValSig)
-    if len(rings) > 1:
+    try:
         print 'Trial refinement of wavelength - not used for calibration'
         p0 = result[0]
         p0 = np.append(p0,wave)
@@ -188,8 +188,9 @@ def FitDetector(rings,p0,wave):
         sig = np.sqrt(np.sum(ellipseCalcW(resultW[0],rings.T)**2))
         ValSig = zip(names,fmt,resultW[0],sig*np.sqrt(np.diag(resultW[1])))
         CalibPrint(ValSig)
-        return result[0],resultW[0][-1]
-    else:
+        return result[0],resultW[0][-1]        
+    except ValueError:
+        print 'Bad wavelength refinement - no result'
         return result[0],wave
             
 def ImageLocalMax(image,w,Xpix,Ypix):
@@ -457,13 +458,15 @@ def ImageCalibrate(self,data):
         ttth = tand(tth)
         radius = dist*ttth
         elcent,phi,radii = ellipse
-        radii[1] = dist*stth*ctth*cosB/(cosB**2-stth**2)
-        radii[0] = math.sqrt(radii[1]*radius*cosB)
-        zdis,cosB = calcZdisCosB(radius,tth,radii)
-        zsinp = zdis*sind(phi)
-        zcosp = zdis*cosd(phi)
-        cent = data['center']
-        elcent = [cent[0]+zsinp,cent[1]-zcosp]
+        if i:
+            radii[1] = dist*stth*ctth*cosB/(cosB**2-stth**2)
+            radii[0] = math.sqrt(radii[1]*radius*cosB)
+            zdis,cosB = calcZdisCosB(radius,tth,radii)
+            zsinp = zdis*sind(phi)
+            zcosp = zdis*cosd(phi)
+            cent = data['center']
+            elcent = [cent[0]-zsinp,cent[1]+zcosp]
+            ellipse = (elcent,phi,radii)
         ratio = radii[1]/radii[0]
         Ring,delt = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
@@ -548,7 +551,7 @@ def ImageCalibrate(self,data):
     data['rotation'] = np.mod(result[3],360.0)
     data['tilt'] = result[4]
     N = len(data['ellipses'])
-    data['ellipses'] = []           #clear away individual ellipse fits
+#    data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))

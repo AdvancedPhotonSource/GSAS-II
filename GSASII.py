@@ -1350,11 +1350,20 @@ class GSASII(wx.Frame):
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
+                Id = 0
                 self.PatternTree.DeleteChildren(self.root)
                 if self.HKL: self.HKL = []
                 if self.G2plotNB.plotList:
                     self.G2plotNB.clear()
                 G2IO.ProjFileOpen(self)
+                item, cookie = self.PatternTree.GetFirstChild(self.root)
+                while item and not Id:
+                    name = self.PatternTree.GetItemText(item)
+                    if name[:4] in ['PWDR','HKLF']:
+                        Id = item
+                    item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+                if Id:
+                    self.PatternTree.SelectItem(Id)
         finally:
             dlg.Destroy()
         

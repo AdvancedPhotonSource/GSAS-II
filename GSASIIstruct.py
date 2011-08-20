@@ -1187,13 +1187,13 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     return yc,yb
-                yc[iBeg:iFin] += G2pwd.getFCJVoigt(refl[5],Icorr*refl[8],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
+                yc[iBeg:iFin] += G2pwd.getFCJVoigt3(refl[5],Icorr*refl[8],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
                     iBeg = np.searchsorted(x,pos2-fmin)
                     iFin = np.searchsorted(x,pos2+fmax)
-                    yc[iBeg:iFin] += G2pwd.getFCJVoigt(pos2,Icorr*refl[8]*kRatio,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
+                    yc[iBeg:iFin] += G2pwd.getFCJVoigt3(pos2,Icorr*refl[8]*kRatio,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
             else:
                 raise ValueError
     return yc,yb    
@@ -1278,7 +1278,7 @@ def Refine(GPXfile):
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            result = so.leastsq(errRefine,values,full_output=True,ftol=0.0001,  #factor=1.,epsfcn=0.00001,
+            result = so.leastsq(errRefine,values,full_output=True,ftol=0.0001,epsfcn=1.e-8,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
         finally:
             dlg.Destroy()

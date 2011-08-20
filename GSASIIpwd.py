@@ -27,6 +27,7 @@ import GSASIIlattice as G2lat
 import GSASIIElem as G2elem
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
+import pypowder as pyd
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -533,6 +534,13 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
 
+#use old fortran routine
+def getFCJVoigt3(pos,intens,sig,gam,shl,xdata):
+    
+    Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
+    Df /= np.sum(Df)
+    return intens*Df
+
 def getPeakProfile(parmDict,xdata,varyList,bakType):
     
     yb = getBackground('',parmDict,bakType,xdata)
@@ -580,14 +588,14 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
                 continue
             elif not iBeg-iFin:     #peak above high limit
                 return yb+yc
-            yc[iBeg:iFin] += getFCJVoigt(pos,intens,sig,gam,shl,xdata[iBeg:iFin])
+            yc[iBeg:iFin] += getFCJVoigt3(pos,intens,sig,gam,shl,xdata[iBeg:iFin])
             if Ka2:
                 pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
                 kdelt = int((pos2-pos)/dx)               
                 iBeg = min(lenX,iBeg+kdelt)
                 iFin = min(lenX,iFin+kdelt)
                 if iBeg-iFin:
-                    yc[iBeg:iFin] += getFCJVoigt(pos2,intens*kRatio,sig,gam,shl,xdata[iBeg:iFin])
+                    yc[iBeg:iFin] += getFCJVoigt3(pos2,intens*kRatio,sig,gam,shl,xdata[iBeg:iFin])
             iPeak += 1
         except KeyError:        #no more peaks to process
             return yb+yc
@@ -769,7 +777,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
             Size = dlg.GetSize()
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
             try:
-                result = so.leastsq(errPeakProfile,values,full_output=True,             #ftol=Ftol,
+                result = so.leastsq(errPeakProfile,values,full_output=True,epsfcn=1.e-8,ftol=Ftol,
                     args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
             finally:
                 dlg.Destroy()

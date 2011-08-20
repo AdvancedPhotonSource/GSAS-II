@@ -1083,7 +1083,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
-            cosP,sinP = G2lat.CosSinAngle(H,V,P)
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
             gam = (1.8*wave/np.pi)*parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']
             gam /= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)*cosd(refl[5]/2.)
         else:           #ellipsoidal crystallites
@@ -1094,7 +1094,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'MustrainAxis'])
-            cosP,sinP = G2lat.CosSinAngle(H,V,P)
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Mustrain:0']
             Sa = parmDict[phfx+'Mustrain:1']
             gam += 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
@@ -1174,7 +1174,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 Icorr = GetIntensityCorr(refl,phfx,hfx,calcControls,parmDict)
                 if 'Pawley' in Phase['General']['Type']:
                     try:
-                        refl[8] = parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])]
+                        refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
                     except KeyError:
                         print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
@@ -1248,7 +1248,7 @@ def Refine(GPXfile):
 #    ShowControls(Controls)            
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
-        print ' *** ERROR - you have no phases to refine! ***'
+        print ' *** ERROR - you have no histograms to refine! ***'
         print ' *** Refine aborted ***'
         raise Exception
     if not Histograms:
@@ -1278,7 +1278,7 @@ def Refine(GPXfile):
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            result = so.leastsq(errRefine,values,full_output=True,  #factor=1.,epsfcn=0.00001,ftol=0.0001,
+            result = so.leastsq(errRefine,values,full_output=True,ftol=0.0001,  #factor=1.,epsfcn=0.00001,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
         finally:
             dlg.Destroy()

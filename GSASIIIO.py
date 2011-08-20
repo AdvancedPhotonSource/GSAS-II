@@ -697,6 +697,7 @@ def GetTifData(filename,imageOnly=False):
         return lines,0,0,0
     File.seek(IFD)                                                  #get number of directory entries
     NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
+    print IFD,NED
     IFD = {}
     for ied in range(NED):
         Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))
@@ -766,7 +767,14 @@ def GetTifData(filename,imageOnly=False):
             if not imageOnly:
                 print 'Read MAR CCD tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-            
+#    elif sizexy == [960,960]:
+#        tiftype = 'PE-BE'
+#        pixy = (200,200)
+#        File.seek(8)
+#        if not imageOnly:
+#            print 'Read Gold tiff file:',filename
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+           
     else:
         lines = ['not a known detector tiff file',]
         return lines,0,0,0

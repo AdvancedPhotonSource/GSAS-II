@@ -95,7 +95,10 @@ def UpdatePeakGrid(self, data):
         
     def OnPeakFit(FitPgm,oneCycle=False):
         SaveState()
-        print 'Peak Fitting:'
+        controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
+        if not controls:
+            controls = {'deriv type':'analytic','min dM/M':0.0001,}     #fill in defaults if needed
+        print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
         PatternId = self.PatternId
         PickId = self.PickId
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
@@ -108,7 +111,7 @@ def UpdatePeakGrid(self, data):
         data = self.PatternTree.GetItemPyData(PatternId)[1]
         wx.BeginBusyCursor()
         try:
-            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data,oneCycle)
+            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data,oneCycle,controls)
         finally:
             wx.EndBusyCursor()    
         UpdatePeakGrid(self,peaks)

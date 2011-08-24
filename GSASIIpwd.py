@@ -491,19 +491,6 @@ class fcjde_gen(st.rv_continuous):
         
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
-def getBackground(pfx,parmDict,bakType,xdata):
-    yb = np.zeros_like(xdata)
-    if bakType == 'chebyschev':
-        iBak = 0
-        while True:
-            key = pfx+'Back:'+str(iBak)
-            try:
-                yb += parmDict[key]*(xdata-xdata[0])**iBak
-                iBak += 1
-            except KeyError:
-                break
-    return yb
-
 def getWidths(pos,sig,gam,shl):
     widths = [np.sqrt(sig)/100.,gam/200.]
     fwhm = 2.355*widths[0]+2.*widths[1]
@@ -534,12 +521,44 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
 
+def getBackground(pfx,parmDict,bakType,xdata):
+    yb = np.zeros_like(xdata)
+    if bakType == 'chebyschev':
+        iBak = 0
+        while True:
+            key = pfx+'Back:'+str(iBak)
+            try:
+                yb += parmDict[key]*(xdata-xdata[0])**iBak
+                iBak += 1
+            except KeyError:
+                break
+    return yb
+    
+def getBackgroundDerv(pfx,parmDict,bakType,xdata):
+    dydb = []
+    if bakType == 'chebyschev':
+        iBak = 0
+        while True:
+            if pfx+'Back:'+str(iBak) in parmDict:
+                dydb.append((xdata-xdata[0])**iBak)
+                iBak += 1
+            else:
+                break
+    return dydb
+
 #use old fortran routine
-def getFCJVoigt3(pos,intens,sig,gam,shl,xdata):
+def getFCJVoigt3(pos,sig,gam,shl,xdata):
     
     Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
     Df /= np.sum(Df)
-    return intens*Df
+    return Df
+
+def getdFCJVoigt3(pos,sig,gam,shl,xdata):
+    
+    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl) #might have to make these numpy arrays?
+    sumDf = np.sum(Df)
+    return Df/sumDf,dFdp,dFds,dFdg,dFdsh
+    
 
 def getPeakProfile(parmDict,xdata,varyList,bakType):
     
@@ -551,7 +570,7 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
     W = parmDict['W']
     X = parmDict['X']
     Y = parmDict['Y']
-    shl = max(parmDict['SH/L'],0.0005)
+    shl = max(parmDict['SH/L'],0.002)
     Ka2 = False
     if 'Lam1' in parmDict.keys():
         Ka2 = True
@@ -588,18 +607,118 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
                 continue
             elif not iBeg-iFin:     #peak above high limit
                 return yb+yc
-            yc[iBeg:iFin] += getFCJVoigt3(pos,intens,sig,gam,shl,xdata[iBeg:iFin])
+            yc[iBeg:iFin] += intens*getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
             if Ka2:
                 pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
                 kdelt = int((pos2-pos)/dx)               
                 iBeg = min(lenX,iBeg+kdelt)
                 iFin = min(lenX,iFin+kdelt)
                 if iBeg-iFin:
-                    yc[iBeg:iFin] += getFCJVoigt3(pos2,intens*kRatio,sig,gam,shl,xdata[iBeg:iFin])
+                    yc[iBeg:iFin] += intens*kRatio*getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
             iPeak += 1
         except KeyError:        #no more peaks to process
             return yb+yc
-
+            
+def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
+# needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
+    dMdv = np.zeros(shape=(len(varyList),len(xdata)))
+    if 'Back:0' in varyList:            #background derivs are in front if present
+        dMdb = getBackgroundDerv('',parmDict,bakType,xdata)
+        dMdv[0:len(dMdb)] = dMdb
+        
+    dx = xdata[1]-xdata[0]
+    U = parmDict['U']
+    V = parmDict['V']
+    W = parmDict['W']
+    X = parmDict['X']
+    Y = parmDict['Y']
+    shl = max(parmDict['SH/L'],0.002)
+    Ka2 = False
+    if 'Lam1' in parmDict.keys():
+        Ka2 = True
+        lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
+        kRatio = parmDict['I(L2)/I(L1)']
+    iPeak = 0
+    while True:
+        try:
+            pos = parmDict['pos'+str(iPeak)]
+            intens = parmDict['int'+str(iPeak)]
+            sigName = 'sig'+str(iPeak)
+            tanth = tand(pos/2.0)
+            costh = cosd(pos/2.0)
+            if sigName in varyList:
+                sig = parmDict[sigName]
+            else:
+                sig = U*tanth**2+V*tanth+W
+                dsdU = tanth**2
+                dsdV = tanth
+                dsdW = 1.0
+            sig = max(sig,0.001)          #avoid neg sigma
+            gamName = 'gam'+str(iPeak)
+            if gamName in varyList:
+                gam = parmDict[gamName]
+            else:
+                gam = X/costh+Y*tanth
+                dgdX = 1.0/costh
+                dgdY = tanth
+            gam = max(gam,0.001)             #avoid neg gamma
+            Wd,fmin,fmax = getWidths(pos,sig,gam,shl)
+            iBeg = np.searchsorted(xdata,pos-fmin)
+            lenX = len(xdata)
+            if not iBeg:
+                iFin = np.searchsorted(xdata,pos+fmin)
+            elif iBeg == lenX:
+                iFin = iBeg
+            else:
+                iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
+            if not iBeg+iFin:       #peak below low limit
+                iPeak += 1
+                continue
+            elif not iBeg-iFin:     #peak above high limit
+                break
+            dMdpk = np.zeros(shape=(6,len(xdata)))
+            dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
+            for i in range(5):
+                dMdpk[i][iBeg:iFin] = 100.*dx*intens*dMdipk[i]
+            dMdpk[0][iBeg:iFin] = dMdipk[0]
+            dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
+            if Ka2:
+                pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                kdelt = int((pos2-pos)/dx)               
+                iBeg = min(lenX,iBeg+kdelt)
+                iFin = min(lenX,iFin+kdelt)
+                if iBeg-iFin:
+                    dMdipk = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
+                    for i in range(5):
+                        dMdpk[i][iBeg:iFin] += 100.*dx*intens*kRatio*dMdipk[i]
+                    dMdpk[0][iBeg:iFin] += kRatio*dMdipk[0]
+                    dMdpk[5][iBeg:iFin] += dMdipk[0]
+                    dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
+            for parmName in ['pos','int','sig','gam']:
+                try:
+                    idx = varyList.index(parmName+str(iPeak))
+                    dMdv[idx] = dervDict[parmName]
+                except ValueError:
+                    pass
+            if 'U' in varyList:
+                dMdv[varyList.index('U')] += dsdU*dervDict['sig']
+            if 'V' in varyList:
+                dMdv[varyList.index('V')] += dsdV*dervDict['sig']
+            if 'W' in varyList:
+                dMdv[varyList.index('W')] += dsdW*dervDict['sig']
+            if 'X' in varyList:
+                dMdv[varyList.index('X')] += dgdX*dervDict['gam']
+            if 'Y' in varyList:
+                dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
+            if 'SH/L' in varyList:
+                dMdv[varyList.index('SH/L')] += dervDict['shl']         #problem here
+            if 'I(L2)/I(L1)' in varyList:
+                dMdv[varyList.index('I(L2)/I(L1)')] += dervDict['L1/L2']
+            iPeak += 1
+        except KeyError:        #no more peaks to process
+            break
+    return dMdv
+        
 def Dict2Values(parmdict, varylist):
     '''Use before call to leastsq to setup list of values for the parameters 
     in parmdict, as selected by key in varylist'''
@@ -610,7 +729,7 @@ def Values2Dict(parmdict, varylist, values):
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
     
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=None):
     
     def SetBackgroundParms(Background):
         bakType,bakFlag = Background[:2]
@@ -650,12 +769,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
         dataType = insVals[0]
         insVary = []
         for i,flag in enumerate(insFlags):
-            if flag:
+            if flag and insNames[i] in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
                 insVary.append(insNames[i])
         instDict = dict(zip(insNames,insVals))
         instDict['X'] = max(instDict['X'],0.01)
         instDict['Y'] = max(instDict['Y'],0.01)
-        instDict['SH/L'] = max(instDict['SH/L'],0.0001)
+        instDict['SH/L'] = max(instDict['SH/L'],0.002)
         return dataType,instDict,insVary
         
     def GetInstParms(parmDict,Inst,varyList,Peaks):
@@ -742,10 +861,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
 #                    ptstr += G2IO.ValEsd(parmDict[parName],0.0)
                     ptstr += 12*' '
             print '%s'%(('Peak'+str(i+1)).center(8)),ptstr
+                
+    def devPeakProfile(values, xdata, ydata, weights, parmdict, varylist,bakType,dlg):
+        parmdict.update(zip(varylist,values))
+        return np.sqrt(weights)*getPeakProfileDerv(parmdict,xdata,varylist,bakType)
             
     def errPeakProfile(values, xdata, ydata, weights, parmdict, varylist,bakType,dlg):        
         parmdict.update(zip(varylist,values))
-        M = np.sqrt(weights)*(ydata-getPeakProfile(parmdict,xdata,varylist,bakType))
+        M = np.sqrt(weights)*(getPeakProfile(parmdict,xdata,varylist,bakType)-ydata)
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
         if dlg:
             GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Peak fit Rwp =',Rwp,'%'))[0]
@@ -753,7 +876,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
                 return -M           #abort!!
         return M
         
-    Ftol = 0.0001
+    if controls:
+        Ftol = controls['min dM/M']
+        derivType = controls['deriv type']
+    else:
+        Ftol = 0.0001
+        derivType = 'analytic'
     if oneCycle:
         Ftol = 1.0
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
@@ -777,13 +905,18 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False):
             Size = dlg.GetSize()
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
             try:
-                result = so.leastsq(errPeakProfile,values,full_output=True,epsfcn=1.e-8,ftol=Ftol,
-                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
+                if derivType == 'analytic':
+                    result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
+                        args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
+                    ncyc = int(result[2]['nfev']/2)
+                else:
+                    result = so.leastsq(errPeakProfile,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,
+                        args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
+                    ncyc = int(result[2]['nfev']/len(varyList))
             finally:
                 dlg.Destroy()
             runtime = time.time()-begin    
             chisq = np.sum(result[2]['fvec']**2)
-            ncyc = int(result[2]['nfev']/len(varyList))
             Values2Dict(parmDict, varyList, result[0])
             Rwp = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
             GOF = chisq/(xFin-xBeg-len(varyList))
@@ -928,6 +1061,13 @@ def TestData():
         'Back0':36.897,'Back1':-0.508,'Back2':.006,
         'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
         }
+    global parmDict2
+    parmDict2 = {
+        'pos0':5.7,'int0':10.0,'sig0':0.5,'gam0':1.0,
+        'U':1.,'V':-1.,'W':0.1,'X':0.0,'Y':2.,'SH/L':0.004,
+        'Back0':5.,'Back1':-0.02,'Back2':.004,
+        'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
+        }
     global varyList
     varyList = []
 
@@ -948,12 +1088,24 @@ def test1():
         y = getPeakProfile(parmDict1,xdata,varyList,bakType)
     print '100+6*Ka1-2 peaks=1200 peaks',time.time()-time0
     
+def test2(name,delt):
+    if NeedTestData: TestData()
+    varyList = [name,]
+    xdata = np.linspace(5.6,5.8,800)
+    hplot = plotter.add('derivatives test for '+name).gca()
+    hplot.plot(xdata,getPeakProfileDerv(parmDict2,xdata,varyList,bakType)[0])
+    y0 = getPeakProfile(parmDict2,xdata,varyList,bakType)
+    parmDict2[name] += delt
+    y1 = getPeakProfile(parmDict2,xdata,varyList,bakType)
+    hplot.plot(xdata,(y1-y0)/delt,'r+')
+    
     
 
 if __name__ == '__main__':
     import GSASIItestplot as plot
     global plotter
     plotter = plot.PlotNotebook()
-    test0()
+#    test0()
+    test2('I(L2)/I(L1)',.0001)
     print "OK"
     plotter.StartEventLoop()

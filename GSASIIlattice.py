@@ -22,15 +22,25 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 rdsq2d = lambda x,p: round(1.0/np.sqrt(x),p)
 
 def sec2HMS(sec):
+    """Convert time in sec to H:M:S string
+    
+    :param sec: time in seconds
+    return: H:M:S string (to nearest 100th second)
+    
+    """
     H = int(sec/3600)
     M = int(sec/60-H*60)
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
     
 def rotdMat(angle,axis=0):
-    '''Prepare rotation matrix for angle in degrees about axis(=0,1,2)
-    Returns numpy 3,3 array
-    '''
+    """Prepare rotation matrix for angle in degrees about axis(=0,1,2)
+
+    :param angle: angle in degrees
+    :param axis:  axis (0,1,2 = x,y,z) about which for the rotation
+    :return: rotation matrix - 3x3 numpy array
+
+    """
     if axis == 2:
         return np.array([[cosd(angle),-sind(angle),0],[sind(angle),cosd(angle),0],[0,0,1]])
     elif axis == 1:
@@ -39,17 +49,23 @@ def rotdMat(angle,axis=0):
         return np.array([[1,0,0],[0,cosd(angle),-sind(angle)],[0,sind(angle),cosd(angle)]])
         
 def rotdMat4(angle,axis=0):
-    '''Prepare rotation matrix for angle in degrees about axis(=0,1,2) with scaling for OpenGL
-    Returns numpy 4,4 array
-    '''
+    """Prepare rotation matrix for angle in degrees about axis(=0,1,2) with scaling for OpenGL 
+
+    :param angle: angle in degrees
+    :param axis:  axis (0,1,2 = x,y,z) about which for the rotation
+    :return: rotation matrix - 4x4 numpy array (last row/column for openGL scaling)
+
+    """
     Mat = rotdMat(angle,axis)
     return np.concatenate((np.concatenate((Mat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     
 def fillgmat(cell):
-    '''Compute lattice metric tensor from unit cell constants
-    cell is tuple with a,b,c,alpha, beta, gamma (degrees)
-    returns 3x3 numpy array
-    '''
+    """Compute lattice metric tensor from unit cell constants
+
+    :param cell: tuple with a,b,c,alpha, beta, gamma (degrees)
+    :return: 3x3 numpy array
+
+    """
     a,b,c,alp,bet,gam = cell
     g = np.array([
         [a*a,  a*b*cosd(gam),  a*c*cosd(bet)],
@@ -58,18 +74,23 @@ def fillgmat(cell):
     return g
            
 def cell2Gmat(cell):
-    '''Compute real and reciprocal lattice metric tensor from unit cell constants
-    cell is tuple with a,b,c,alpha, beta, gamma (degrees)
-    returns reciprocal (G) & real (g) metric tensors (list of two 3x3 arrays)
-    '''
+    """Compute real and reciprocal lattice metric tensor from unit cell constants
+
+    :param cell: tuple with a,b,c,alpha, beta, gamma (degrees)
+    :return: reciprocal (G) & real (g) metric tensors (list of two numpy 3x3 arrays)
+
+    """
     g = fillgmat(cell)
     G = nl.inv(g)        
     return G,g
 
 def A2Gmat(A):
-    '''Fill reciprocal metric tensor (G) from A
-    returns reciprocal (G) & real (g) metric tensors (list of two 3x3 arrays)
-    '''
+    """Fill real & reciprocal metric tensor (G) from A
+
+    :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+    :return: reciprocal (G) & real (g) metric tensors (list of two numpy 3x3 arrays)
+
+    """
     G = np.zeros(shape=(3,3))
     G = [
         [A[0],  A[3]/2.,  A[4]/2.], 
@@ -79,26 +100,42 @@ def A2Gmat(A):
     return G,g
 
 def Gmat2A(G):
-    'Extract A from reciprocal metric tensor (G)'
+    """Extract A from reciprocal metric tensor (G)
+
+    :param G: reciprocal maetric tensor (3x3 numpy array
+    :return: A = [G11,G22,G33,2*G12,2*G13,2*G23]
+
+    """
     return [G[0][0],G[1][1],G[2][2],2.*G[0][1],2.*G[0][2],2.*G[1][2]]
     
 def cell2A(cell):
+    """Obtain A = [G11,G22,G33,2*G12,2*G13,2*G23] from lattice parameters
+
+    :param cell: [a,b,c,alpha,beta,gamma] (degrees)
+    :return: G reciprocal metric tensor as 3x3 numpy array
+
+    """
     G,g = cell2Gmat(cell)
     return Gmat2A(G)
 
 def A2cell(A):
-    '''Compute unit cell constants from A tensor
-    returns tuple with a,b,c,alpha, beta, gamma (degrees)
-    '''
+    """Compute unit cell constants from A
+
+    :param A: [G11,G22,G33,2*G12,2*G13,2*G23] G - reciprocal metric tensor
+    :return: a,b,c,alpha, beta, gamma (degrees) - lattice parameters
+
+    """
     G,g = A2Gmat(A)
     return Gmat2cell(g)
 
 def Gmat2cell(g):
-    '''Compute lattice parameters from real metric tensor (g)
-    returns tuple with a,b,c,alpha, beta, gamma (degrees)
-    Alternatively,compute reciprocal lattice parameters from inverse metric tensor (G)
-    returns tuple with a*,b*,c*,alpha*, beta*, gamma* (degrees)
-    '''
+    """Compute real/reciprocal lattice parameters from real/reciprocal metric tensor (g/G)
+    The math works the same either way.
+
+    :param g (or G): real (or reciprocal) metric tensor 3x3 array
+    :return: a,b,c,alpha, beta, gamma (degrees) (or a*,b*,c*,alpha*,beta*,gamma* degrees)
+
+    """
     oldset = np.seterr('raise')
     a = np.sqrt(max(0,g[0][0]))
     b = np.sqrt(max(0,g[1][1]))
@@ -110,17 +147,21 @@ def Gmat2cell(g):
     return a,b,c,alp,bet,gam
 
 def invcell2Gmat(invcell):
-    '''Compute real and reciprocal lattice metric tensor from reciprocal 
+    """Compute real and reciprocal lattice metric tensor from reciprocal 
        unit cell constants
-    invcell is tuple with a*,b*,c*,alpha*, beta*, gamma* (degrees)
-    returns reciprocal (G) & real (g) metric tensors (list of two 3x3 arrays)
-    '''
+       
+    :param invcell: [a*,b*,c*,alpha*, beta*, gamma*] (degrees)
+    :return: reciprocal (G) & real (g) metric tensors (list of two 3x3 arrays)
+
+    """
     G = fillgmat(invcell)
     g = nl.inv(G)
     return G,g
         
 def calc_rVsq(A):
-    'Compute the square of the reciprocal lattice volume (V* **2) from A'
+    """Compute the square of the reciprocal lattice volume (V* **2) from A'
+
+    """
     G,g = A2Gmat(A)
     rVsq = nl.det(G)
     if rVsq < 0:
@@ -128,27 +169,29 @@ def calc_rVsq(A):
     return rVsq
     
 def calc_rV(A):
-    'Compute the reciprocal lattice volume (V*) from A'
+    """Compute the reciprocal lattice volume (V*) from A
+    """
     return np.sqrt(calc_rVsq(A))
     
 def calc_V(A):
-    'Compute the real lattice volume (V) from A'
+    """Compute the real lattice volume (V) from A
+    """
     return 1./calc_rV(A)
 
 def A2invcell(A):
-    '''Compute reciprocal unit cell constants from A
+    """Compute reciprocal unit cell constants from A
     returns tuple with a*,b*,c*,alpha*, beta*, gamma* (degrees)
-    '''
+    """
     G,g = A2Gmat(A)
     return Gmat2cell(G)
 
 def cell2AB(cell):
-    '''Computes orthogonalization matrix from unit cell constants
+    """Computes orthogonalization matrix from unit cell constants
     cell is tuple with a,b,c,alpha, beta, gamma (degrees)
     returns tuple of two 3x3 numpy arrays (A,B)
        A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
        B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B*x) = x
-    '''
+    """
     G,g = cell2Gmat(cell) 
     cellstar = Gmat2cell(G)
     A = np.zeros(shape=(3,3))
@@ -163,9 +206,9 @@ def cell2AB(cell):
     return A,B
     
 def U6toUij(U6):
-    '''Fill matrix (Uij) from U6 = [U11,U22,U33,U12,U13,U23]
+    """Fill matrix (Uij) from U6 = [U11,U22,U33,U12,U13,U23]
     returns 
-    '''
+    """
     U = np.zeros(shape=(3,3))
     U = [
         [U6[0],  U6[3],  U6[4]], 
@@ -174,25 +217,25 @@ def U6toUij(U6):
     return U
         
 def Uij2betaij(Uij,G):
-    '''
+    """
     Convert Uij to beta-ij tensors
     input:
     Uij - numpy array [Uij]
     G - reciprocal metric tensor
     returns:
     beta-ij - numpy array [beta-ij]
-    '''
+    """
     pass
     
 def CosSinAngle(U,V,G):
-    ''' calculate sin & cos of angle betwee U & V in generalized coordinates 
+    """ calculate sin & cos of angle betwee U & V in generalized coordinates 
     defined by metric tensor G
     input:
         U & V - 3-vectors assume numpy arrays
         G - metric tensor for U & V defined space assume numpy array
     return:
         cos(phi) & sin(phi)
-    '''
+    """
     u = U/nl.norm(U)
     v = V/nl.norm(V)
     cosP = np.inner(u,np.inner(G,v))
@@ -200,9 +243,9 @@ def CosSinAngle(U,V,G):
     return cosP,sinP
     
 def criticalEllipse(prob):
-    '''
+    """
     Calculate critical values for probability ellipsoids from probability
-    '''
+    """
     if not ( 0.01 <= prob < 1.0):
         return 1.54 
     coeff = np.array([6.44988E-09,4.16479E-07,1.11172E-05,1.58767E-04,0.00130554,
@@ -211,10 +254,10 @@ def criticalEllipse(prob):
     return np.polyval(coeff,llpr)
     
 def CellBlock(nCells):
-    '''
+    """
     Generate block of unit cells n*n*n on a side; [0,0,0] centered, n = 2*nCells+1
     currently only works for nCells = 0 or 1 (not >1)
-    '''
+    """
     if nCells:
         N = 2*nCells+1
         N2 = N*N
@@ -240,7 +283,7 @@ def CellAbsorption(ElList,Volume):
 #These taken from Python Cookbook, 2nd Edition. 19.15 p724-726
 #    
 def _combinators(_handle, items, n):
-    ''' factored-out common structure of all following combinators '''
+    """ factored-out common structure of all following combinators """
     if n==0:
         yield [ ]
         return
@@ -249,22 +292,22 @@ def _combinators(_handle, items, n):
         for cc in _combinators(_handle, _handle(items, i), n-1):
             yield this_one + cc
 def combinations(items, n):
-    ''' take n distinct items, order matters '''
+    """ take n distinct items, order matters """
     def skipIthItem(items, i):
         return items[:i] + items[i+1:]
     return _combinators(skipIthItem, items, n)
 def uniqueCombinations(items, n):
-    ''' take n distinct items, order is irrelevant '''
+    """ take n distinct items, order is irrelevant """
     def afterIthItem(items, i):
         return items[i+1:]
     return _combinators(afterIthItem, items, n)
 def selections(items, n):
-    ''' take n (not necessarily distinct) items, order matters '''
+    """ take n (not necessarily distinct) items, order matters """
     def keepAllItems(items, i):
         return items
     return _combinators(keepAllItems, items, n)
 def permutations(items):
-    ''' take all items, order matters '''
+    """ take all items, order matters """
     return combinations(items, len(items))
 
 #reflection generation routines
@@ -360,13 +403,14 @@ def CentCheck(Cent,H):
         return True
                                     
 def GetBraviasNum(center,system):
-    '''Determine the Bravais lattice number, as used in GenHBravais
-         center = one of: P, C, I, F, R (see SGLatt from GSASIIspc.SpcGroup)
-         lattice = is cubic, hexagonal, tetragonal, orthorhombic, trigonal (R)
-             monoclinic, triclinic (see SGSys from GSASIIspc.SpcGroup)
-       Returns a number between 0 and 13 
-          or throws an exception if the setting is non-standard
-       '''
+    """Determine the Bravais lattice number, as used in GenHBravais
+    
+    :param center: one of: 'P', 'C', 'I', 'F', 'R' (see SGLatt from GSASIIspc.SpcGroup)
+    :param system: one of 'cubic', 'hexagonal', 'tetragonal', 'orthorhombic', 'trigonal' (for R)
+             'monoclinic', 'triclinic' (see SGSys from GSASIIspc.SpcGroup)
+    :return: a number between 0 and 13 
+          or throws a ValueError exception if the combination of center, system is not found (i.e. non-standard)
+    """
     if center.upper() == 'F' and system.lower() == 'cubic':
         return 0
     elif center.upper() == 'I' and system.lower() == 'cubic':
@@ -398,31 +442,29 @@ def GetBraviasNum(center,system):
     raise ValueError,'non-standard Bravais lattice center=%s, cell=%s' % (center,system)
 
 def GenHBravais(dmin,Bravais,A):
-    '''Generate the positionally unique powder diffraction reflections 
-    input:
-       dmin is minimum d-space
-       Bravais is 0-13 to indicate lattice type (see GetBraviasNum)
-       A is reciprocal cell tensor (see Gmat2A or cell2A)
-    returns:
-       a list of tuples containing: h,k,l,d-space,-1   
-    '''
-# Bravais in range(14) to indicate Bravais lattice:
-#   0 F cubic
-#   1 I cubic
-#   2 P cubic
-#   3 R hexagonal (trigonal not rhombohedral)
-#   4 P hexagonal
-#   5 I tetragonal
-#   6 P tetragonal
-#   7 F orthorhombic
-#   8 I orthorhombic
-#   9 C orthorhombic
-#  10 P orthorhombic
-#  11 C monoclinic
-#  12 P monoclinic
-#  13 P triclinic
-# A - as defined in calc_rDsq
-# returns HKL = [h,k,l,d,0] sorted so d largest first 
+    """Generate the positionally unique powder diffraction reflections
+     
+    :param dmin: minimum d-spacing in A
+    :param Bravais: lattice type (see GetBraviasNum)
+        Bravais is one of::
+             0 F cubic
+             1 I cubic
+             2 P cubic
+             3 R hexagonal (trigonal not rhombohedral)
+             4 P hexagonal
+             5 I tetragonal
+             6 P tetragonal
+             7 F orthorhombic
+             8 I orthorhombic
+             9 C orthorhombic
+            10 P orthorhombic
+            11 C monoclinic
+            12 P monoclinic
+            13 P triclinic
+    :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+    :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
+            
+    """
     import math
     if Bravais in [9,11]:
         Cent = 'C'
@@ -511,20 +553,23 @@ def GenHBravais(dmin,Bravais,A):
     return sortHKLd(HKL,True,False)
     
 def GenHLaue(dmin,SGData,A):
-    '''Generate the crystallographically unique powder diffraction reflections
+    """Generate the crystallographically unique powder diffraction reflections
     for a lattice and Bravais type
-    Input:
-        dmin - minimum d-spacing
-        SGData - space group dictionary with at least:
-            SGLaue - Laue group symbol = '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
-                     '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
-            SGLatt - lattice centering = 'P','A','B','C','I','F'
-            SGUniq - code for unique monoclinic axis = 'a','b','c'
-        A - 6 terms as defined in calc_rDsq
-    Return;
-        HKL = list of [h,k,l,d] sorted with largest d first and is unique 
+    
+    :param dmin: minimum d-spacing
+    :param SGData: space group dictionary with at least::
+    
+        'SGLaue': Laue group symbol: one of '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
+                 '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
+        'SGLatt': lattice centering: one of 'P','A','B','C','I','F'
+        'SGUniq': code for unique monoclinic axis one of 'a','b','c' (only if 'SGLaue' is '2/m')
+            otherwise ' '
+        
+    :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+    :return: HKL = list of [h,k,l,d] sorted with largest d first and is unique 
             part of reciprocal space ignoring anomalous dispersion
-    '''
+            
+    """
     import math
     SGLaue = SGData['SGLaue']
     SGLatt = SGData['SGLatt']

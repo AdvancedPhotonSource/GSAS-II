@@ -1,5 +1,5 @@
-      SUBROUTINE PSVFCJ(DTT,TTHETA,SL,HL,SIG,GAM,PRFUNC,DPRDT,SLPART,
-     1  HLPART,SIGPART,GAMPART)
+      SUBROUTINE PSVFCJ(DTT,TTHETA,SIG,GAM,SHL,PRFUNC,
+     1  DPRDT,SIGPART,GAMPART,SHLPART)
 
 !PURPOSE: Compute function & derivatives for Pseudovoigt profile
 !   [W.I.F.David (1986), J. Appl. Cryst. 19, 63-64 &
@@ -7,7 +7,7 @@
 ! Finger-Cox-Jephcoat (FCJ94) asymmetry correction 
 !   [L.W. Finger, D.E. Cox & A.P. Jephcoat (1994) J. Appl. Cryst.,27,892-900.]
 ! coded 11/95 by B. H. Toby (NIST). revised version
-! parameterized as asym1=S/L asym2=H/L
+! parameterized as asym=S/L+H/L
 
 
       INCLUDE       '../INCLDS/COPYRIGT.FOR' 
@@ -16,12 +16,12 @@
 
       REAL*4        DTT                 !delta 2-theta in centidegrees                 
       REAL*4        TTHETA              !2-theta in centidegrees              
-      REAL*4        SL,HL               !S/L & H/L               
       REAL*4        SIG,GAM             
+      REAL*4        SHL                 !S/L + H/L               
       REAL*4        PRFUNC              
       REAL*4        DPRDT               
-      REAL*4        SLPART,HLPART       
       REAL*4        SIGPART,GAMPART     
+      REAL*4        SHLPART      
 
 !INCLUDE STATEMENTS:
       real*4 sind,cosd,tand,acosd
@@ -36,9 +36,7 @@
       REAL*4        G                   
       REAL*4        DFDA                
       REAL*4        DGDA                
-      REAL*4        DGDB                
       REAL*4        DYDA                
-      REAL*4        DYDB                
       REAL*4        SIN2THETA2          ! sin(2theta)**2
       REAL*4        COS2THETA           ! cos(2theta)
       REAL*4        SIN2THETA           ! sin(2THETA)
@@ -48,9 +46,7 @@
       REAL*4        TANDELTA            ! tan(Delta)
       REAL*4        COSDELTA2           ! cos(Delta)**2
       REAL*4        A                   ! asym1 [coff(7)]
-      REAL*4        B                   ! asym2 [coff(8)]
       REAL*4        APB                 ! (A+B)
-      REAL*4        AMB                 ! (A-B)
       REAL*4        APB2                ! (A+B)**2
       REAL*4        TTHETAD             ! Two Theta in degrees
 
@@ -63,13 +59,10 @@
       REAL*4        SUMWRG              !      sum of w G
       REAL*4        SUMWDGDA            !      sum of w dGdA
       REAL*4        SUMWRDGDA           !      sum of w R dGdA
-      REAL*4        SUMWDGDB            !      sum of w dGdB
-      REAL*4        SUMWRDGDB           !      sum of w R dGdB
       REAL*4        SUMWGDRD2T          !      sum of w G dRd(2theta)
       REAL*4        SUMWGDRDSIG         !      sum of w G dRdp(n)
       REAL*4        SUMWGDRDGAM         !      sum of w G dRdp(n)
       REAL*4        SUMWGDRDA           
-      REAL*4        SUMWGDRDB           
       REAL*4        EMIN                ! 2phi minimum
       REAL*4        EINFL               ! 2phi of inflection point
       REAL*4        DEMINDA             ! Derivative of Emin wrt A
@@ -125,22 +118,20 @@ c
 c
 C Asymmetry terms
 c
-      A = SL            ! A = S/L in FCJ
-      B = HL            ! B = H/L in FCJ
-      ApB = A+B
-      AmB = A-B
+      A = SHL/2.            ! A = S/L in FCJ
+      ApB = SHL
       ApB2 = ApB*ApB
 c
 C handle the case where there is asymmetry
 c
-      IF (A .ne. 0.0 .or. B .ne. 0.0) then
-        Einfl = Acosd(SQRT(1.0 + AmB**2)*cos2THETA) ! 2phi(infl) FCJ eq 5 (degrees)
+      IF (A .ne. 0.0) then
+        Einfl = Acosd(cos2THETA) ! 2phi(infl) FCJ eq 5 (degrees)
         tmp2 = 1.0 + ApB2
         tmp = SQRT(tmp2)*cos2THETA
 c
-C Treat case where A or B is zero - Set Einfl = 2theta
+C Treat case where A is zero - Set Einfl = 2theta
 c
-        if (A.eq.0.0 .or. B .eq. 0.0)Einfl = Acosd(cos2THETA)
+        if (A.eq.0.0) Einfl = Acosd(cos2THETA)
         if (abs(tmp) .le. 1.0) then
           Emin = Acosd(tmp)      ! 2phi(min) FCJ eq 4 (degrees)
           tmp1 = tmp2*(1.0 - tmp2*(1.0-sin2THETA2))
@@ -153,7 +144,7 @@ c
           endif
         endif
         if (tmp1 .gt. 0 .and. abs(tmp) .le. 1.0) then
-          dEmindA = -ApB*cos2THETA/SQRT(tmp1) ! N. B. symm w/r A,B
+          dEmindA = -ApB*cos2THETA/SQRT(tmp1)
         ELSE
           dEmindA = 0.0
         ENDIF
@@ -202,8 +193,6 @@ c
         sumWRG = 0.
         sumWdGdA = 0.
         sumWRdGdA = 0.
-        sumWdGdB = 0.
-        sumWRdGdB = 0.
         sumWGdRd2t = 0.
         sumWGdRdsig = 0.
         sumWGdRdgam = 0.
@@ -240,23 +229,15 @@ c
 c Calculate G(Delta,2theta) [G = W /(h cos(delta) ] [ FCJ eq. 7(a) and 7(b) ]
 c       
           if(abs(delta-emin) .gt. abs(einfl-emin))then
-            if ( A.ge.B) then
 c
 C N.B. this is the only place where d()/dA <> d()/dB
 c
-              G = 2.0*B*F*RcosDELTA
-              dGdA = 2.0*B*RcosDELTA*(dFdA + F*tanDELTA*dDELTAdA)
-              dGdB = dGdA + 2.0*F*RcosDELTA
-            else
               G = 2.0*A*F*RcosDELTA
-              dGdB = 2.0*A*RcosDELTA*(dFdA + F*tanDELTA*dDELTAdA)
-              dGdA = dGdB + 2.0*F*RcosDELTA
-            endif
+              dGdA = 2.0*A*RcosDELTA*(dFdA + F*tanDELTA*dDELTAdA)
           else                                            ! delta .le. einfl .or. min(A,B) .eq. 0
             G = (-1.0 + ApB*F) * RcosDELTA
             dGdA = RcosDELTA*(F - tanDELTA*dDELTAdA
      1             + ApB*F*tanDELTA*dDELTAdA + ApB*dFdA)
-            dGdB = dGdA
           endif
 
           WG = wp(k+it) * G
@@ -264,8 +245,6 @@ c
           sumWRG = sumWRG + WG * R
           sumWdGdA = sumWdGdA + wp(k+it) * dGdA
           sumWRdGdA = sumWRdGdA + wp(k+it) * R * dGdA
-          sumWdGdB = sumWdGdB + wp(k+it) * dGdB
-          sumWRdGdB = sumWRdGdB + wp(k+it) * R * dGdB
           sumWGdRd2t = sumWGdRd2t + WG * dRdT ! N.B. 1/centidegrees
           sumWGdRdsig = sumWGdRdsig + WG * dRdS
           sumWGdRdgam = sumWGdRdgam + WG * dRdG
@@ -277,8 +256,6 @@ c
 
         dydA = (-(sumWRG*sumWdGdA) +
      1    sumWG*(sumWRdGdA- 100.0 * todeg * sumWGdRdA)) * RsumWG2
-        dydB = (-(sumWRG*sumWdGdB) +
-     1    sumWG*(sumWRdGdB- 100.0 * todeg * sumWGdRdA)) * RsumWG2
         sigpart = sumWGdRdsig * RsumWG
         gampart = sumWGdRdgam * RsumWG
         DPRDT = -SumWGdRd2T * RsumWG
@@ -288,14 +265,12 @@ C no asymmetry -- nice and simple!
 c
         CALL PSVOIGT(DTT,SIG,GAM,R,dRdT,dRdS,dRdG)
         PRFUNC = R
-        dydA = 0.002 * sign(1.0,TTHETA - DTT)
-        dydB = dydA
+        dydA = 0.004 * sign(1.0,TTHETA - DTT)
         sigpart = dRdS
         gampart = dRdG
         DPRDT = -dRdT
       END IF
-      SLPART = DYDA
-      HLPART = DYDB
+      SHLPART = DYDA
       
       RETURN
       END

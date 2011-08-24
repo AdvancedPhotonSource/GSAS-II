@@ -491,6 +491,11 @@ def UpdateNotebook(self,data):
             self.dataDisplay.AppendText('Notebook entry @ '+time.ctime()+"\n")
             
 def UpdateControls(self,data):
+    #patch
+    if 'deriv type' not in data:
+        data['deriv type'] = 'analytical'
+        data['min dM/M'] = 0.0001
+    #end patch
     '''
     #Fourier controls
     'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
@@ -500,51 +505,20 @@ def UpdateControls(self,data):
     '''
         
     def SetStatusLine(text):
-        Status.SetStatusText(text)
-                                      
-    def OnNumCycles(event):
-        try:
-            value = max(0,min(200,int(Ncyc.GetValue())))
-        except ValueError:
-            value = 3
-        data['Ncycles'] = value
-        Ncyc.SetValue('%d'%(value))
+        Status.SetStatusText(text)                                      
         
     def OnConvergence(event):
         try:
-            value = max(0.01,min(100.,float(Cnvrg.GetValue())))
+            value = max(1.e-9,min(1.0,float(Cnvrg.GetValue())))
         except ValueError:
-            value = 0.01
-        data['minSumShftESD'] = value
-        Cnvrg.SetValue('%.2f'%(value))
+            value = 0.0001
+        data['min dM/M'] = value
+        Cnvrg.SetValue('%.2g'%(value))
         
-    def OnAtomShift(event):
-        try:
-            value = max(0.1,min(5.,float(AtShft.GetValue())))
-        except ValueError:
-            value = 2.0
-        data['maxShift'] = value
-        AtShft.SetValue('%.1f'%(value))
+    def OnDerivType(event):
+        data['deriv type'] = derivSel.GetValue()
+        derivSel.SetValue(data['deriv type'])
         
-    def OnMarquardt(event):
-        try:
-            value = max(1.0,min(10.0,float(Marq.GetValue())))
-        except ValueError:
-            value = 1.0
-        data['Marquardt'] = value
-        Marq.SetValue('%.2f'%(value))
-        
-    def OnBandWidth(event):
-        try:
-            value = max(0,min(200,int(Band.GetValue())))
-        except ValueError:
-            value = 0
-        data['bandWidth'] = value
-        Band.SetValue('%d'%(value))
-        
-    def OnRestraint(event):
-        data['restraintWeight'] = Restraint.GetValue()
-
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     if not self.dataFrame.GetStatusBar():
@@ -557,35 +531,18 @@ def UpdateControls(self,data):
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
     LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
-    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Max cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
-    Ncyc = wx.TextCtrl(self.dataDisplay,-1,value='%d'%(data['Ncycles']),style=wx.TE_PROCESS_ENTER)
-    Ncyc.Bind(wx.EVT_TEXT_ENTER,OnNumCycles)
-    Ncyc.Bind(wx.EVT_KILL_FOCUS,OnNumCycles)
-    LSSizer.Add(Ncyc,0,wx.ALIGN_CENTER_VERTICAL)
-    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Min sum(shift/esd)^2: '),0,wx.ALIGN_CENTER_VERTICAL)
-    Cnvrg = wx.TextCtrl(self.dataDisplay,-1,value='%.2f'%(data['minSumShftESD']),style=wx.TE_PROCESS_ENTER)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label='Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
+    Choice=['analytic','numeric']
+    derivSel = wx.ComboBox(parent=self.dataDisplay,value=data['deriv type'],choices=Choice,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    derivSel.SetValue(data['deriv type'])
+    derivSel.Bind(wx.EVT_COMBOBOX, OnDerivType)    
+    LSSizer.Add(derivSel,0,wx.ALIGN_CENTER_VERTICAL)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Min delta-M/M: '),0,wx.ALIGN_CENTER_VERTICAL)
+    Cnvrg = wx.TextCtrl(self.dataDisplay,-1,value='%.2g'%(data['min dM/M']),style=wx.TE_PROCESS_ENTER)
     Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
     Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
     LSSizer.Add(Cnvrg,0,wx.ALIGN_CENTER_VERTICAL)
-    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Max atom shift: '),0,wx.ALIGN_CENTER_VERTICAL)
-    AtShft = wx.TextCtrl(self.dataDisplay,-1,value='%.1f'%(data['maxShift']),style=wx.TE_PROCESS_ENTER)
-    AtShft.Bind(wx.EVT_TEXT_ENTER,OnAtomShift)
-    AtShft.Bind(wx.EVT_KILL_FOCUS,OnAtomShift)
-    LSSizer.Add(AtShft,0,wx.ALIGN_CENTER_VERTICAL)
-    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Marquardt factor: '),0,wx.ALIGN_CENTER_VERTICAL)
-    Marq = wx.TextCtrl(self.dataDisplay,-1,value='%.2f'%(data['Marquardt']),style=wx.TE_PROCESS_ENTER)
-    Marq.Bind(wx.EVT_TEXT_ENTER,OnMarquardt)
-    Marq.Bind(wx.EVT_KILL_FOCUS,OnMarquardt)
-    LSSizer.Add(Marq,0,wx.ALIGN_CENTER_VERTICAL)
-    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Matrix band width: '),0,wx.ALIGN_CENTER_VERTICAL)
-    Band = wx.TextCtrl(self.dataDisplay,-1,value='%d'%(data['bandWidth']),style=wx.TE_PROCESS_ENTER)
-    Band.Bind(wx.EVT_TEXT_ENTER,OnBandWidth)
-    Band.Bind(wx.EVT_KILL_FOCUS,OnBandWidth)
-    LSSizer.Add(Band,0,wx.ALIGN_CENTER_VERTICAL)
-    Restraint = wx.CheckBox(self.dataDisplay,-1,label='Modify restraint weights?')
-    Restraint.Bind(wx.EVT_CHECKBOX, OnRestraint)
-    Restraint.SetValue(data['restraintWeight'])
-    LSSizer.Add(Restraint,0,wx.ALIGN_CENTER_VERTICAL)
     
     
     mainSizer.Add(LSSizer)
@@ -752,8 +709,7 @@ def MovePatternTreeToGrid(self,item):
             if data == [0] or data == {}:           #fill in defaults
                 data = {
                     #least squares controls
-                    'Ncycles':3,'maxShift':2.0,'bandWidth':0,'Marquardt':1.0,'restraintWeight':False,
-                    'minSumShftESD':0.01,
+                    'deriv type':'analytic','min dM/M':0.0001,
                     #Fourier controls
                     'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
                     'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],

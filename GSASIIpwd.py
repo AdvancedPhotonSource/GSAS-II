@@ -1063,10 +1063,10 @@ def TestData():
         }
     global parmDict2
     parmDict2 = {
-        'pos0':5.7,'int0':1000.0,'sig0':0.5,'gam0':1.0,
-        'U':2.,'V':-2.,'W':5.,'X':1.0,'Y':2.,'SH/L':0.01,
+        'pos0':5.7,'int0':1000.0,'sig0':0.5,'gam0':0.5,
+        'U':2.,'V':-2.,'W':5.,'X':0.5,'Y':0.5,'SH/L':0.02,
         'Back0':5.,'Back1':-0.02,'Back2':.004,
-        'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
+#        'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
         }
     global varyList
     varyList = []
@@ -1099,14 +1099,30 @@ def test2(name,delt):
     y1 = getPeakProfile(parmDict2,xdata,varyList,bakType)
     hplot.plot(xdata,(y1-y0)/delt,'r+')
     
-    
+def test3(name,delt):
+    if NeedTestData: TestData()
+    names = ['pos','sig','gam','shl']
+    idx = names.index(name)
+    myDict = {'pos':parmDict2['pos0'],'sig':parmDict2['sig0'],'gam':parmDict2['gam0'],'shl':parmDict2['SH/L']}
+    xdata = np.linspace(5.6,5.8,800)
+    dx = xdata[1]-xdata[0]
+    hplot = plotter.add('derivatives test for '+name).gca()
+    hplot.plot(xdata,100.*dx*getdFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)[idx+1])
+    y0 = getFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)
+    myDict[name] += delt
+    y1 = getFCJVoigt3(myDict['pos'],myDict['sig'],myDict['gam'],myDict['shl'],xdata)
+    hplot.plot(xdata,(y1-y0)/delt,'r+')
 
 if __name__ == '__main__':
     import GSASIItestplot as plot
     global plotter
     plotter = plot.PlotNotebook()
 #    test0()
-    for name in ['int0','pos0','sig0','gam0','U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
-        test2(name,.001)
+#    for name in ['int0','pos0','sig0','gam0','U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
+    for name,shft in [['int0',0.1],['pos0',0.0001],['sig0',0.01],['gam0',0.00001],
+        ['U',0.1],['V',0.01],['W',0.01],['X',0.0001],['Y',0.0001],['SH/L',0.00005]]:
+        test2(name,shft)
+    for name,shft in [['pos',0.0001],['sig',0.01],['gam',0.0001],['shl',0.00005]]:
+        test3(name,shft)
     print "OK"
     plotter.StartEventLoop()

@@ -557,7 +557,7 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl) #might have to make these numpy arrays?
     sumDf = np.sum(Df)
-    return Df/sumDf,dFdp,dFds,dFdg,dFdsh
+    return Df,dFdp,dFds,dFdg,dFdsh
     
 
 def getPeakProfile(parmDict,xdata,varyList,bakType):
@@ -678,9 +678,9 @@ def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
                 break
             dMdpk = np.zeros(shape=(6,len(xdata)))
             dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
-            for i in range(5):
-                dMdpk[i][iBeg:iFin] = 100.*dx*intens*dMdipk[i]
-            dMdpk[0][iBeg:iFin] = dMdipk[0]
+            for i in range(1,5):
+                dMdpk[i][iBeg:iFin] += 100.*dx*intens*dMdipk[i]
+            dMdpk[0][iBeg:iFin] += 100.*dx*dMdipk[0]
             dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
             if Ka2:
                 pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
@@ -688,11 +688,11 @@ def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
                 iBeg = min(lenX,iBeg+kdelt)
                 iFin = min(lenX,iFin+kdelt)
                 if iBeg-iFin:
-                    dMdipk = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
-                    for i in range(5):
-                        dMdpk[i][iBeg:iFin] += 100.*dx*intens*kRatio*dMdipk[i]
-                    dMdpk[0][iBeg:iFin] += kRatio*dMdipk[0]
-                    dMdpk[5][iBeg:iFin] += dMdipk[0]
+                    dMdipk2 = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
+                    for i in range(1,5):
+                        dMdpk[i][iBeg:iFin] += 100.*dx*intens*kRatio*dMdipk2[i]
+                    dMdpk[0][iBeg:iFin] += 100.*dx*kRatio*dMdipk2[0]
+                    dMdpk[5][iBeg:iFin] += 100.*dx*dMdipk2[0]
                     dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
             for parmName in ['pos','int','sig','gam']:
                 try:
@@ -1063,8 +1063,8 @@ def TestData():
         }
     global parmDict2
     parmDict2 = {
-        'pos0':5.7,'int0':10.0,'sig0':0.5,'gam0':1.0,
-        'U':1.,'V':-1.,'W':0.1,'X':0.0,'Y':2.,'SH/L':0.004,
+        'pos0':5.7,'int0':1000.0,'sig0':0.5,'gam0':1.0,
+        'U':2.,'V':-2.,'W':5.,'X':1.0,'Y':2.,'SH/L':0.01,
         'Back0':5.,'Back1':-0.02,'Back2':.004,
         'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
         }
@@ -1091,7 +1091,7 @@ def test1():
 def test2(name,delt):
     if NeedTestData: TestData()
     varyList = [name,]
-    xdata = np.linspace(5.6,5.8,800)
+    xdata = np.linspace(5.6,5.8,400)
     hplot = plotter.add('derivatives test for '+name).gca()
     hplot.plot(xdata,getPeakProfileDerv(parmDict2,xdata,varyList,bakType)[0])
     y0 = getPeakProfile(parmDict2,xdata,varyList,bakType)
@@ -1106,6 +1106,7 @@ if __name__ == '__main__':
     global plotter
     plotter = plot.PlotNotebook()
 #    test0()
-    test2('I(L2)/I(L1)',.0001)
+    for name in ['int0','pos0','sig0','gam0','U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
+        test2(name,.001)
     print "OK"
     plotter.StartEventLoop()

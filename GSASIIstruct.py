@@ -1126,7 +1126,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         Y = parmDict[hfx+'Y']
         tanPos = tand(refl[5]/2.0)
         sig = U*tanPos**2+V*tanPos+W        #save peak sigma
+        sig = max(0.001,sig)
         gam = X/cosd(refl[5]/2.0)+Y*tanPos+GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse) #save peak gamma
+        gam = max(0.01,gam)
         return sig,gam
                 
     hId = Histogram['hId']
@@ -1351,7 +1353,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     iBeg = min(lenX,iBeg+kdelt)
                     iFin = min(lenX,iFin+kdelt)
                     if iBeg-iFin:
-                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,xdata[iBeg:iFin])
+                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])
                         for i in range(1,5):
                             dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[i]
                         dMdpk[0][iBeg:iFin] += 100.*dx*kRatio*dMdipk2[0]

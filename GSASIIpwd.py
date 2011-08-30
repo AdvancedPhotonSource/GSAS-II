@@ -638,7 +638,7 @@ def getFCJVoigt3(pos,sig,gam,shl,xdata):
 
 def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     
-    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl) #might have to make these numpy arrays?
+    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
     sumDf = np.sum(Df)
     return Df,dFdp,dFds,dFdg,dFdsh
     

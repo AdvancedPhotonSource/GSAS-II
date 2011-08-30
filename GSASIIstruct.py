@@ -56,19 +56,9 @@ def GetControls(GPXfile):
     return Controls
     
 def ShowControls(Controls):
-    print ' Controls:'
-    if Controls['bandWidth']:
-        print ' Band approximated least squares matrix refinement, width: ',Controls['bandWidth']
-    else:
-        print ' Full matrix least squares refinement'
-    print ' Maximum number of refinement cycles: ',Controls['Ncycles']
-    print ' Minimum sum(shift/esd)^2 for convergence: ','%.2f'%(Controls['minSumShftESD'])
-    print ' The Marquardt damping factor: ','%.2f'%(Controls['Marquardt'])
-    print ' Maximum allowed atom shift: ','%.2f'%(Controls['maxShift']),'A'
-    if Controls['restraintWeight']:
-        print ' The weights of the restraint histograms will be modified to normalize their contribution','\n'
-    else:
-        print ' The restraint histogram weights are fixed','\n'
+    print ' Least squares controls:'
+    print ' Derivative type: ',Controls['deriv type']
+    print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
     
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -327,30 +317,30 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
                 jsum = jh**2+jk**2+jl**2
                 if isum == jsum:
                     G2mv.StoreEquivalence(varyJ,(varyI,))
+def cellVary(pfx,SGData): 
+    if SGData['SGLaue'] in ['-1',]:
+        return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
+    elif SGData['SGLaue'] in ['2/m',]:
+        if SGData['SGUniq'] == 'a':
+            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3']
+        elif SGData['SGUniq'] == 'b':
+            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A4']
+        else:
+            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A5']
+    elif SGData['SGLaue'] in ['mmm',]:
+        return [pfx+'A0',pfx+'A1',pfx+'A2']
+    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+        return [pfx+'A0',pfx+'A2']
+    elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        return [pfx+'A0',pfx+'A2']
+    elif SGData['SGLaue'] in ['3R', '3mR']:
+        return [pfx+'A0',pfx+'A3']                       
+    elif SGData['SGLaue'] in ['m3m','m3']:
+        return [pfx+'A0']
+    
         
 def GetPhaseData(PhaseData):
     
-    def cellVary(pfx,SGData): 
-        if SGData['SGLaue'] in ['-1',]:
-            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
-        elif SGData['SGLaue'] in ['2/m',]:
-            if SGData['SGUniq'] == 'a':
-                return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3']
-            elif SGData['SGUniq'] == 'b':
-                return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A4']
-            else:
-                return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A5']
-        elif SGData['SGLaue'] in ['mmm',]:
-            return [pfx+'A0',pfx+'A1',pfx+'A2']
-        elif SGData['SGLaue'] in ['4/m','4/mmm']:
-            return [pfx+'A0',pfx+'A2']
-        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
-            return [pfx+'A0',pfx+'A2']
-        elif SGData['SGLaue'] in ['3R', '3mR']:
-            return [pfx+'A0',pfx+'A3']                       
-        elif SGData['SGLaue'] in ['m3m','m3']:
-            return [pfx+'A0']
-        
         
     print ' Phases:'
     phaseVary = []
@@ -497,7 +487,7 @@ def SetPhaseData(parmDict,sigDict,Phases):
             pawleyRef = Phase['Pawley ref']
             for i,refl in enumerate(pawleyRef):
                 key = pfx+'PWLref:'+str(i)
-                refl[6] = parmDict[key]
+                refl[6] = abs(parmDict[key])        #suppress negative Fsq
                 if key in sigDict:
                     refl[7] = sigDict[key]
                 else:
@@ -691,7 +681,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
             for i,name in enumerate(Snames):
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.6f' % (hapData[4][i])
-                sigstr += '%12.6f' % (mustrainSig[1][i])
+                if mustrainSig[1][i]:
+                    sigstr += '%12.6f' % (mustrainSig[1][i])
+                else:
+                    sigstr += 12*' '
             print ptlbls
             print ptstr
             print sigstr
@@ -778,19 +771,19 @@ def GetHistogramData(Histograms):
         
     def GetSampleParms(hId,Sample):
         sampVary = []
-        pfx = ':'+str(hId)+':'        
-        sampDict = {pfx+'Gonio. radius':Sample['Gonio. radius']}
+        hfx = ':'+str(hId)+':'        
+        sampDict = {hfx+'Gonio. radius':Sample['Gonio. radius']}
         Type = Sample['Type']
         if 'Bragg' in Type:             #Bragg-Brentano
             for item in ['Scale','Shift','Transparency']:       #surface roughness?, diffuse scattering?
-                sampDict[pfx+item] = Sample[item][0]
+                sampDict[hfx+item] = Sample[item][0]
                 if Sample[item][1]:
-                    sampVary.append(pfx+item)
+                    sampVary.append(hfx+item)
         elif 'Debye' in Type:        #Debye-Scherrer
             for item in ['Scale','Absorption','DisplaceX','DisplaceY']:
-                sampDict[pfx+item] = Sample[item][0]
+                sampDict[hfx+item] = Sample[item][0]
                 if Sample[item][1]:
-                    sampVary.append(pfx+item)
+                    sampVary.append(hfx+item)
         return Type,sampDict,sampVary
         
     def PrintBackground(Background):
@@ -882,10 +875,10 @@ def GetHistogramData(Histograms):
 def SetHistogramData(parmDict,sigDict,Histograms):
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
-        backVals = Background[3:]
-        backSig = [0 for i in range(len(Background[3:]))]
-        for i in range(len(backVals)):
-            backVals[i] = parmDict[pfx+'Back:'+str(i)]
+        lenBack = len(Background[3:])
+        backSig = [0 for i in range(lenBack)]
+        for i in range(lenBack):
+            Background[3+i] = parmDict[pfx+'Back:'+str(i)]
             if Background[1]:
                 backSig[i] = sigDict[pfx+'Back:'+str(i)]
         return backSig
@@ -971,7 +964,6 @@ def SetHistogramData(parmDict,sigDict,Histograms):
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             pfx = ':'+str(hId)+':'
-            
             Background = Histogram['Background'][0]
             backSig = SetBackgroundParms(pfx,Background,parmDict,sigDict)
             
@@ -1078,17 +1070,18 @@ def Values2Dict(parmdict, varylist, values):
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
     def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
+        costh = cosd(refl[5]/2.)
         if calcControls[phfx+'SizeType'] == 'isotropic':
-            gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*cosd(refl[5]/2.))
+            gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
-            gam = (1.8*wave/np.pi)*parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']
-            gam /= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)*cosd(refl[5]/2.)
+            gam = (1.8*wave/np.pi)/parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']
+            gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)/costh
         else:           #ellipsoidal crystallites
             H = np.array(refl[:3])
-            gam += 1.8*wave/(np.pi*cosd(refl[5])*np.inner(H,np.inner(sizeEllipse,H)))            
+            gam += 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))            
         if calcControls[phfx+'MustrainType'] == 'isotropic':
             gam += 0.018*parmDict[phfx+'Mustrain:0']*tand(refl[5]/2.)/np.pi
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':
@@ -1108,7 +1101,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         
     def GetIntensityCorr(refl,phfx,hfx,calcControls,parmDict):
         Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
-        Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
+        Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
         
         return Icorr
         
@@ -1187,20 +1180,235 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     return yc,yb
-                yc[iBeg:iFin] += G2pwd.getFCJVoigt3(refl[5],Icorr*refl[8],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
+                yc[iBeg:iFin] += Icorr*refl[8]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
                     iBeg = np.searchsorted(x,pos2-fmin)
                     iFin = np.searchsorted(x,pos2+fmax)
-                    yc[iBeg:iFin] += G2pwd.getFCJVoigt3(pos2,Icorr*refl[8]*kRatio,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
+                    yc[iBeg:iFin] += Icorr*refl[8]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
             else:
                 raise ValueError
     return yc,yb    
             
-
+def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
+    def GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
+        gamDict = {}
+        costh = cosd(refl[5]/2.)
+        tanth = tand(refl[5]/2.)
+        if calcControls[phfx+'SizeType'] == 'isotropic':
+            gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
+            gamDict[phfx+'Size:0'] = -gam/parmDict[phfx+'Size:0']
+        elif calcControls[phfx+'SizeType'] == 'uniaxial':
+            H = np.array(refl[:3])
+            P = np.array(calcControls[phfx+'SizeAxis'])
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
+            Si = parmDict[phfx+'Size:0']
+            Sa = parmDict[phfx+'Size:1']
+            gami = (1.8*wave/np.pi)/(Si*Sa)
+            sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
+            gam = gami*sqtrm/costh            
+            gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
+            gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa          
+        else:           #ellipsoidal crystallites - do numerically?
+            H = np.array(refl[:3])
+            gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
+                        
+        if calcControls[phfx+'MustrainType'] == 'isotropic':
+            gamDict[phfx+'Mustrain:0'] =  0.018*tanth/np.pi            
+        elif calcControls[phfx+'MustrainType'] == 'uniaxial':
+            H = np.array(refl[:3])
+            P = np.array(calcControls[phfx+'MustrainAxis'])
+            cosP,sinP = G2lat.CosSinAngle(H,P,G)
+            Si = parmDict[phfx+'Mustrain:0']
+            Sa = parmDict[phfx+'Mustrain:1']
+            gami = 0.018*Si*Sa*tanth/np.pi
+            sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
+            gam = gami/sqtrm
+            gamDict[phfx+'Mustrain:0'] = gam/Si-gami*Si*cosP**2/sqtrm**3
+            gamDict[phfx+'Mustrain:1'] = gam/Sa-gami*Sa*sinP**2/sqtrm**3
+        else:       #generalized - P.W. Stephens model
+            pwrs = calcControls[phfx+'MuPwrs']
+            const = 0.018*refl[4]**2*tanth
+            for i,pwr in enumerate(pwrs):
+                gamDict[phfx+'Mustrain:'+str(i)] = const*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
+        return gamDict
+        
+    def GetIntensityDerv(refl,phfx,hfx,calcControls,parmDict):
+        Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
+        pola,dpdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
+        dIdpola = Icorr*dpdPola
+        Icorr *= pola
+        dIdsh = Icorr/parmDict[hfx+'Scale']
+        dIdsp = Icorr/parmDict[phfx+'Scale']
+        
+        return Icorr,dIdsh,dIdsp,dIdpola
+        
+    def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
+        dpr = 180./np.pi
+        h,k,l = refl[:3]
+        dstsq = G2lat.calc_rDsq(np.array([h,k,l]),A)
+        dst = np.sqrt(dstsq)
+        pos = refl[5]
+        const = dpr/np.sqrt(1.0-wave*dst/4.0)
+        dpdw = const*dst
+        dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])
+        dpdA *= const*wave/(2.0*dst)
+        dpdZ = 1.0
+        const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
+        if 'Bragg' in calcControls[hfx+'instType']:
+            dpdSh = -4.*const*cosd(pos/2.0)
+            dpdTr = -1.e-7*const*sind(pos)
+            return dpdA,dpdw,dpdZ,dpdSh,dpdTr,0.,0.
+        else:               #Debye-Scherrer - simple but maybe not right
+            dpdXd = -const*cosd(pos)
+            dpdYd = -const*sind(pos)
+            return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd
+            
+    def cellVaryDerv(pfx,SGData,dpdA): 
+        if SGData['SGLaue'] in ['-1',]:
+            return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],
+                [pfx+'A3',dpdA[3]],[pfx+'A4',dpdA[4]],[pfx+'A5',dpdA[5]]]
+        elif SGData['SGLaue'] in ['2/m',]:
+            if SGData['SGUniq'] == 'a':
+                return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],[pfx+'A3',dpdA[3]]]
+            elif SGData['SGUniq'] == 'b':
+                return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],[pfx+'A4',dpdA[4]]]
+            else:
+                return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],[pfx+'A5',dpdA[5]]]
+        elif SGData['SGLaue'] in ['mmm',]:
+            return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]]]
+        elif SGData['SGLaue'] in ['4/m','4/mmm']:
+            return [[pfx+'A0',dpdA[0]+dpdA[1]],[pfx+'A2',dpdA[2]]]
+        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[3]],[pfx+'A2',dpdA[2]]]
+        elif SGData['SGLaue'] in ['3R', '3mR']:
+            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]],[pfx+'A3',dpdA[3]+dpdA[4]+dpdA[5]]]                       
+        elif SGData['SGLaue'] in ['m3m','m3']:
+            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]]]
+    
+    lenX = len(x)                
+    hId = Histogram['hId']
+    hfx = ':%d:'%(hId)
+    bakType = calcControls[hfx+'bakType']
+    dMdv = np.zeros(shape=(len(varylist),len(x)))
+    if hfx+'Back:0' in varylist:
+        dMdb = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,x)
+        bBpos =varylist.index(hfx+'Back:0')
+        dMdv[bBpos:bBpos+len(dMdb)] = dMdb
+        
+    if 'C' in calcControls[hfx+'histType']:    
+        dx = x[1]-x[0]
+        shl = max(parmDict[hfx+'SH/L'],0.002)
+        Ka2 = False
+        if hfx+'Lam1' in parmDict.keys():
+            wave = parmDict[hfx+'Lam1']
+            Ka2 = True
+            lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
+            kRatio = parmDict[hfx+'I(L2)/I(L1)']
+        else:
+            wave = parmDict[hfx+'Lam']
+    else:
+        print 'TOF Undefined at present'
+        raise ValueError
+    for phase in Histogram['Reflection Lists']:
+        refList = Histogram['Reflection Lists'][phase]
+        Phase = Phases[phase]
+        SGData = Phase['General']['SGData']
+        pId = Phase['pId']
+        pfx = '%d::'%(pId)
+        phfx = '%d:%d:'%(pId,hId)
+        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
+        G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+        sizeEllipse = []
+        if calcControls[phfx+'SizeType'] == 'ellipsoidal':
+            sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
+        for iref,refl in enumerate(refList):
+            if 'C' in calcControls[hfx+'histType']:
+                Icorr,dIdsh,dIdsp,dIdpola = GetIntensityDerv(refl,phfx,hfx,calcControls,parmDict)
+                hkl = refl[:3]
+                pos = refl[5]
+                tanth = tand(pos/2.0)
+                costh = cosd(pos/2.0)
+                dsdU = tanth**2
+                dsdV = tanth
+                dsdW = 1.0
+                dgdX = 1.0/costh
+                dgdY = tanth
+                Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
+                iBeg = np.searchsorted(x,refl[5]-fmin)
+                iFin = np.searchsorted(x,refl[5]+fmax)
+                dMdpk = np.zeros(shape=(6,len(x)))
+                dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])
+                for i in range(1,5):
+                    dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += 100.*dx*Icorr*dMdipk[0]
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
+                if Ka2:
+                    pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                    kdelt = int((pos2-refl[5])/dx)               
+                    iBeg = min(lenX,iBeg+kdelt)
+                    iFin = min(lenX,iFin+kdelt)
+                    if iBeg-iFin:
+                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,xdata[iBeg:iFin])
+                        for i in range(1,5):
+                            dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[i]
+                        dMdpk[0][iBeg:iFin] += 100.*dx*kRatio*dMdipk2[0]
+                        dMdpk[5][iBeg:iFin] += 100.*dx*dMdipk2[0]
+                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*Icorr*refl[8]}
+                try:
+                    idx = varylist.index(pfx+'PWLref:'+str(iref))
+                    dMdv[idx] = dervDict['int']
+                except ValueError:
+                    pass
+                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict)
+                names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],
+                    hfx+'U':[dsdU,'sig'],hfx+'V':[dsdV,'sig'],hfx+'W':[dsdW,'sig'],
+                    hfx+'X':[dgdX,'gam'],hfx+'Y':[dgdY,'gam'],hfx+'SH/L':[1.0,'shl'],
+                    hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
+                    hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
+                    hfx+'DisplaceY':[dpdY,'pos'],}
+                for name in names:
+                    if name in varylist:
+                        item = names[name]
+                        dMdv[varylist.index(name)] += item[0]*dervDict[item[1]]
+                cellDervNames = cellVaryDerv(pfx,SGData,dpdA)
+                for name,dpdA in cellDervNames:
+                    if name in varylist:
+                        dMdv[varylist.index(name)] += dpdA*dervDict['pos']
+                gamDict = GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse)
+                for name in gamDict:
+                    if name in varylist:
+                        dMdv[varylist.index(name)] += gamDict[name]*dervDict['gam']                       
+            else:
+                raise ValueError
+            
+    return dMdv    
+                    
 def Refine(GPXfile):
+    
+    def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
+        parmdict.update(zip(varylist,values))
+        G2mv.Dict2Map(parmDict)
+        Histograms,Phases = HistoPhases
+        dMdv = np.empty(0)
+        for histogram in Histograms:
+            if 'PWDR' in histogram[:4]:
+                Histogram = Histograms[histogram]
+                hId = Histogram['hId']
+                hfx = ':%d:'%(hId)
+                Limits = calcControls[hfx+'Limits']
+                x,y,w,yc,yb,yd = Histogram['Data']
+                xB = np.searchsorted(x,Limits[0])
+                xF = np.searchsorted(x,Limits[1])
+                dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
+                    varylist,Histogram,Phases,calcControls,pawleyLookup)
+                if len(dMdv):
+                    dMdv = np.concatenate((dMdv,dMdvh))
+                else:
+                    dMdv = dMdvh
+        return dMdv
     
     def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
         parmdict.update(zip(varylist,values))
@@ -1228,7 +1436,7 @@ def Refine(GPXfile):
                     varylist,Histogram,Phases,calcControls,pawleyLookup)
                 yc[xB:xF] *= parmDict[hfx+'Scale']
                 yc[xB:xF] += yb[xB:xF]
-                yd[xB:xF] = y[xB:xF]-yc[xB:xF]
+                yd[xB:xF] = yc[xB:xF]-y[xB:xF]          #yc-yo then all dydv have no '-' needed
                 Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
                 M = np.concatenate((M,np.sqrt(w[xB:xF])*(yd[xB:xF])))
         Histograms['sumwYo'] = sumwYo
@@ -1244,8 +1452,8 @@ def Refine(GPXfile):
     varyList = []
     parmDict = {}
     calcControls = {}    
-#    Controls = GetControls(GPXfile)
-#    ShowControls(Controls)            
+    Controls = GetControls(GPXfile)
+    ShowControls(Controls)            
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -1277,14 +1485,20 @@ def Refine(GPXfile):
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        Ftol = Controls['min dM/M']
         try:
-            result = so.leastsq(errRefine,values,full_output=True,ftol=0.0001,epsfcn=1.e-8,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            if Controls['deriv type'] == 'analytic':
+                result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,ftol=Ftol,col_deriv=True,
+                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = int(result[2]['nfev']/2)                
+            else:           #'numeric'
+                result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,
+                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = int(result[2]['nfev']/len(varyList))
         finally:
             dlg.Destroy()
-        runtime = time.time()-begin    
+        runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
-        ncyc = int(result[2]['nfev']/len(varyList))
         Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict)
         Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
@@ -1315,6 +1529,19 @@ def Refine(GPXfile):
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases)
+#for testing purposes!!!
+#    import cPickle
+#    file = open('structTestdata.dat','wb')
+#    cPickle.dump(parmDict,file,1)
+#    cPickle.dump(varyList,file,1)
+#    for histogram in Histograms:
+#        if 'PWDR' in histogram[:4]:
+#            Histogram = Histograms[histogram]
+#    cPickle.dump(Histogram,file,1)
+#    cPickle.dump(Phases,file,1)
+#    cPickle.dump(calcControls,file,1)
+#    cPickle.dump(pawleyLookup,file,1)
+#    file.close()
 
 def main():
     arg = sys.argv

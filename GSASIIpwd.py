@@ -49,49 +49,8 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
     
+#GSASII pdf calculation routines
         
-def factorize(num):
-    ''' Provide prime number factors for integer num
-    Returns dictionary of prime factors (keys) & power for each (data)
-    '''
-    factors = {}
-    orig = num
-
-    # we take advantage of the fact that (i +1)**2 = i**2 + 2*i +1
-    i, sqi = 2, 4
-    while sqi <= num:
-        while not num%i:
-            num /= i
-            factors[i] = factors.get(i, 0) + 1
-
-        sqi += 2*i + 1
-        i += 1
-
-    if num != 1 and num != orig:
-        factors[num] = factors.get(num, 0) + 1
-
-    if factors:
-        return factors
-    else:
-        return {num:1}          #a prime number!
-            
-def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
-    ''' Provide list of optimal data sizes for FFT calculations
-    Input:
-        nmin: minimum data size >= 1
-        nmax: maximum data size > nmin
-        thresh: maximum prime factor allowed
-    Returns:
-        list of data sizes where the maximum prime factor is < thresh
-    ''' 
-    plist = []
-    nmin = max(1,nmin)
-    nmax = max(nmin+1,nmax)
-    for p in range(nmin,nmax):
-        if max(factorize(p).keys()) < thresh:
-            plist.append(p)
-    return plist
-
 def Transmission(Geometry,Abs,Diam):
 #Calculate sample transmission
 #   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate'
@@ -175,8 +134,10 @@ def Polarization(Pola,Tth,Azm=0.0):
 #       which (if either) of these is "right"?
 #    return (Pola*npcosd(Azm)**2+(1.-Pola)*npsind(Azm)**2)*npcosd(Tth)**2+ \
 #        Pola*npsind(Azm)**2+(1.-Pola)*npcosd(Azm)**2
-    return ((1.0-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
+    pola = ((1.0-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
         (1.0-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
+    dpdPola = npsind(Azm)**2*npsind(Tth)**2
+    return pola,dpdPola
     
 def Oblique(ObCoeff,Tth):
     if ObCoeff:
@@ -406,7 +367,129 @@ def MultiScattering(Geometry,ElList,Tth):
         BD += el['FormulaNo']
         Amu += el['FormulaNo']*el['mu']
         
-#GSASII peak fitting routine: Finger, Cox & Jephcoat model        
+def CalcPDF(data,inst,xydata):
+    auxPlot = []
+    import copy
+    import scipy.fftpack as ft
+    #subtract backgrounds - if any
+    xydata['IofQ'] = copy.deepcopy(xydata['Sample'])
+    if data['Sample Bkg.']['Name']:
+        xydata['IofQ'][1][1] += (xydata['Sample Bkg.'][1][1]+
+            data['Sample Bkg.']['Add'])*data['Sample Bkg.']['Mult']
+    if data['Container']['Name']:
+        xycontainer = (xydata['Container'][1][1]+data['Container']['Add'])*data['Container']['Mult']
+        if data['Container Bkg.']['Name']:
+            xycontainer += (xydata['Container Bkg.'][1][1]+
+                data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
+        xydata['IofQ'][1][1] += xycontainer
+    #get element data & absorption coeff.
+    ElList = data['ElList']
+    Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
+    #Apply angle dependent corrections
+    Tth = xydata['Sample'][1][0]
+    dt = (Tth[1]-Tth[0])
+    xydata['IofQ'][1][1] /= Absorb(data['Geometry'],Abs,data['Diam'],Tth)
+    xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'],Tth,Azm=inst['Azimuth'])[0]
+    if data['DetType'] == 'Image plate':
+        xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
+    XY = xydata['IofQ'][1]    
+    #convert to Q
+    hc = 12.397639
+    if 'Lam' in inst:
+        wave = inst['Lam']
+    else:
+        wave = inst['Lam1']
+    keV = hc/wave
+    minQ = npT2q(Tth[0],wave)
+    maxQ = npT2q(Tth[-1],wave)    
+    Qpoints = np.linspace(0.,maxQ,len(XY[0]),endpoint=True)
+    dq = Qpoints[1]-Qpoints[0]
+    XY[0] = npT2q(XY[0],wave)    
+#    Qdata = np.nan_to_num(si.griddata(XY[0],XY[1],Qpoints,method='linear')) #only OK for scipy 0.9!
+    T = si.interp1d(XY[0],XY[1],bounds_error=False,fill_value=0.0)      #OK for scipy 0.8
+    Qdata = T(Qpoints)
+    
+    qLimits = data['QScaleLim']
+    minQ = np.searchsorted(Qpoints,qLimits[0])
+    maxQ = np.searchsorted(Qpoints,qLimits[1])
+    newdata = []
+    xydata['IofQ'][1][0] = Qpoints
+    xydata['IofQ'][1][1] = Qdata
+    for item in xydata['IofQ'][1]:
+        newdata.append(item[:maxQ])
+    xydata['IofQ'][1] = newdata
+    
+
+    xydata['SofQ'] = copy.deepcopy(xydata['IofQ'])
+    FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
+    Q = xydata['SofQ'][1][0]
+    ruland = Ruland(data['Ruland'],wave,Q,CF)
+#    auxPlot.append([Q,ruland,'Ruland'])      
+    CF *= ruland
+#    auxPlot.append([Q,CF,'CF-Corr'])
+    scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
+    xydata['SofQ'][1][1] *= scale
+    xydata['SofQ'][1][1] -= CF
+    xydata['SofQ'][1][1] = xydata['SofQ'][1][1]/SqFF
+    scale = len(xydata['SofQ'][1][1][minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
+    xydata['SofQ'][1][1] *= scale
+    
+    xydata['FofQ'] = copy.deepcopy(xydata['SofQ'])
+    xydata['FofQ'][1][1] = xydata['FofQ'][1][0]*(xydata['SofQ'][1][1]-1.0)
+    if data['Lorch']:
+        xydata['FofQ'][1][1] *= LorchWeight(Q)
+    
+    xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
+    nR = len(xydata['GofR'][1][1])
+    xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],4*nR)[:nR])
+    xydata['GofR'][1][0] = 0.5*np.pi*np.linspace(0,nR,nR)/qLimits[1]
+    
+        
+    return auxPlot
+        
+#GSASII peak fitting routines: Finger, Cox & Jephcoat model        
+
+def factorize(num):
+    ''' Provide prime number factors for integer num
+    Returns dictionary of prime factors (keys) & power for each (data)
+    '''
+    factors = {}
+    orig = num
+
+    # we take advantage of the fact that (i +1)**2 = i**2 + 2*i +1
+    i, sqi = 2, 4
+    while sqi <= num:
+        while not num%i:
+            num /= i
+            factors[i] = factors.get(i, 0) + 1
+
+        sqi += 2*i + 1
+        i += 1
+
+    if num != 1 and num != orig:
+        factors[num] = factors.get(num, 0) + 1
+
+    if factors:
+        return factors
+    else:
+        return {num:1}          #a prime number!
+            
+def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
+    ''' Provide list of optimal data sizes for FFT calculations
+    Input:
+        nmin: minimum data size >= 1
+        nmax: maximum data size > nmin
+        thresh: maximum prime factor allowed
+    Returns:
+        list of data sizes where the maximum prime factor is < thresh
+    ''' 
+    plist = []
+    nmin = max(1,nmin)
+    nmax = max(nmin+1,nmax)
+    for p in range(nmin,nmax):
+        if max(factorize(p).keys()) < thresh:
+            plist.append(p)
+    return plist
 
 np.seterr(divide='ignore')
 
@@ -951,86 +1034,6 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
     GetPeaksParms(parmDict,Peaks,varyList)    
     PeaksPrint(parmDict,sigDict,varyList)
     
-def CalcPDF(data,inst,xydata):
-    auxPlot = []
-    import copy
-    import scipy.fftpack as ft
-    #subtract backgrounds - if any
-    xydata['IofQ'] = copy.deepcopy(xydata['Sample'])
-    if data['Sample Bkg.']['Name']:
-        xydata['IofQ'][1][1] += (xydata['Sample Bkg.'][1][1]+
-            data['Sample Bkg.']['Add'])*data['Sample Bkg.']['Mult']
-    if data['Container']['Name']:
-        xycontainer = (xydata['Container'][1][1]+data['Container']['Add'])*data['Container']['Mult']
-        if data['Container Bkg.']['Name']:
-            xycontainer += (xydata['Container Bkg.'][1][1]+
-                data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
-        xydata['IofQ'][1][1] += xycontainer
-    #get element data & absorption coeff.
-    ElList = data['ElList']
-    Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
-    #Apply angle dependent corrections
-    Tth = xydata['Sample'][1][0]
-    dt = (Tth[1]-Tth[0])
-    xydata['IofQ'][1][1] /= Absorb(data['Geometry'],Abs,data['Diam'],Tth)
-    xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'],Tth,Azm=inst['Azimuth'])
-    if data['DetType'] == 'Image plate':
-        xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
-    XY = xydata['IofQ'][1]    
-    #convert to Q
-    hc = 12.397639
-    if 'Lam' in inst:
-        wave = inst['Lam']
-    else:
-        wave = inst['Lam1']
-    keV = hc/wave
-    minQ = npT2q(Tth[0],wave)
-    maxQ = npT2q(Tth[-1],wave)    
-    Qpoints = np.linspace(0.,maxQ,len(XY[0]),endpoint=True)
-    dq = Qpoints[1]-Qpoints[0]
-    XY[0] = npT2q(XY[0],wave)    
-#    Qdata = np.nan_to_num(si.griddata(XY[0],XY[1],Qpoints,method='linear')) #only OK for scipy 0.9!
-    T = si.interp1d(XY[0],XY[1],bounds_error=False,fill_value=0.0)      #OK for scipy 0.8
-    Qdata = T(Qpoints)
-    
-    qLimits = data['QScaleLim']
-    minQ = np.searchsorted(Qpoints,qLimits[0])
-    maxQ = np.searchsorted(Qpoints,qLimits[1])
-    newdata = []
-    xydata['IofQ'][1][0] = Qpoints
-    xydata['IofQ'][1][1] = Qdata
-    for item in xydata['IofQ'][1]:
-        newdata.append(item[:maxQ])
-    xydata['IofQ'][1] = newdata
-    
-
-    xydata['SofQ'] = copy.deepcopy(xydata['IofQ'])
-    FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
-    Q = xydata['SofQ'][1][0]
-    ruland = Ruland(data['Ruland'],wave,Q,CF)
-#    auxPlot.append([Q,ruland,'Ruland'])      
-    CF *= ruland
-#    auxPlot.append([Q,CF,'CF-Corr'])
-    scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
-    xydata['SofQ'][1][1] *= scale
-    xydata['SofQ'][1][1] -= CF
-    xydata['SofQ'][1][1] = xydata['SofQ'][1][1]/SqFF
-    scale = len(xydata['SofQ'][1][1][minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
-    xydata['SofQ'][1][1] *= scale
-    
-    xydata['FofQ'] = copy.deepcopy(xydata['SofQ'])
-    xydata['FofQ'][1][1] = xydata['FofQ'][1][0]*(xydata['SofQ'][1][1]-1.0)
-    if data['Lorch']:
-        xydata['FofQ'][1][1] *= LorchWeight(Q)
-    
-    xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
-    nR = len(xydata['GofR'][1][1])
-    xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],4*nR)[:nR])
-    xydata['GofR'][1][0] = 0.5*np.pi*np.linspace(0,nR,nR)/qLimits[1]
-    
-        
-    return auxPlot
-        
 #testing data
 NeedTestData = True
 def TestData():

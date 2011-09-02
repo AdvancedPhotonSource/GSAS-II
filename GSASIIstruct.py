@@ -582,7 +582,7 @@ def GetHistogramPhaseData(Phases,Histograms):
                 for item in hapData['Pref.Ori.'][5]:
                     hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
                     if hapData['Pref.Ori.'][2]:
-                        hapVary.append(pfx+item)                    
+                        hapVary.append(pfx+item)
             for item in ['Mustrain','Size']:
                 controlDict[pfx+item+'Type'] = hapData[item][0]
                 if hapData[item][0] in ['isotropic','uniaxial']:
@@ -1212,7 +1212,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
             gam = gami*sqtrm/costh            
             gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
-            gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa          
+            gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa         
         else:           #ellipsoidal crystallites - do numerically?
             H = np.array(refl[:3])
             gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))

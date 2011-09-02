@@ -1327,7 +1327,10 @@ def PlotTexture(self,data,newPlot=False,Start=False):
             Z = np.reshape(Z,(npts,npts))
             CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
-            Img = Plot.imshow(Z.T,aspect='equal',cmap=self.ContourColor,extent=[-1,1,-1,1])
+            try:
+                Img = Plot.imshow(Z.T,aspect='equal',cmap=self.ContourColor,extent=[-1,1,-1,1])
+            except ValueError:
+                pass
             if newPlot:
 #                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
                 newPlot = False
@@ -1344,8 +1347,11 @@ def PlotTexture(self,data,newPlot=False,Start=False):
             Z = np.zeros_like(R)
             Z = G2lat.polfcal(ODFln,SamSym[textureData['Model']],R,P)
             Z = np.reshape(Z,(npts,npts))
-            CS = Plot.contour(Y,X,Z,aspect='equal')
-            Plot.clabel(CS,fontsize=9,inline=1)
+            try:
+                CS = Plot.contour(Y,X,Z,aspect='equal')
+                Plot.clabel(CS,fontsize=9,inline=1)
+            except ValueError:
+                pass
             Img = Plot.imshow(Z.T,aspect='equal',cmap=self.ContourColor,extent=[-1,1,-1,1])
             if newPlot:
 #                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii

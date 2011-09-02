@@ -54,6 +54,9 @@ import GSASIIphsGUI as G2phG
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for _init_coll_Refl_Items in range(1)]
 
+[ wxID_CLEARTEXTURE,
+] = [wx.NewId() for _init_coll_Texture_Items in range(1)]
+
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
 ] = [wx.NewId() for _init_coll_PDF_Items in range(7)]
@@ -97,6 +100,9 @@ class DataFrame(wx.Frame):
     def _init_coll_ReflMenu(self,parent):
         parent.Append(menu=self.ReflEdit, title='Reflection List')
 
+    def _init_coll_TextureMenu(self,parent):
+        parent.Append(menu=self.TextureEdit, title='Texture')
+
     def _init_coll_PDFMenu(self,parent):
         parent.Append(menu=self.PDFEdit, title='PDF Controls')
 
@@ -127,6 +133,10 @@ class DataFrame(wx.Frame):
             help='Select new single crystal histograms to be used for this phase')
         parent.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Delete histograms',
             help='Delete histograms from use for this phase')
+
+    def _init_coll_Texture_Items(self,parent):
+        self.ClearPeaks = parent.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
+            help='Clear the texture coefficients' )
             
     def _init_coll_DrawAtom_Items(self,parent):
         parent.Append(id=wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
@@ -206,7 +216,7 @@ class DataFrame(wx.Frame):
             help='One cycle of Peak fitting via least-squares' )
         self.ResetSigGam = parent.Append(id=wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
             text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
-        self.PeakFit = parent.Append(id=wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 
+        self.ClearPeaks = parent.Append(id=wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 
             help='Clear the peak list' )
             
     def _init_coll_Index_Items(self,parent):
@@ -241,6 +251,7 @@ class DataFrame(wx.Frame):
         
         self.AtomsMenu = wx.MenuBar()
         self.DataMenu = wx.MenuBar()
+        self.TextureMenu = wx.MenuBar()
         self.DrawAtomsMenu = wx.MenuBar()
         self.PawleyMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
@@ -253,6 +264,7 @@ class DataFrame(wx.Frame):
         self.PDFMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.DataEdit = wx.Menu(title='')
+        self.TextureEdit = wx.Menu(title='')
         self.DrawAtomEdit = wx.Menu(title='')
         self.PawleyEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
@@ -267,6 +279,8 @@ class DataFrame(wx.Frame):
         self._init_coll_Atom_Items(self.AtomEdit)
         self._init_coll_DataMenu(self.DataMenu)
         self._init_coll_Data_Items(self.DataEdit)
+        self._init_coll_TextureMenu(self.TextureMenu)
+        self._init_coll_Texture_Items(self.TextureEdit)
         self._init_coll_DrawAtomsMenu(self.DrawAtomsMenu)
         self._init_coll_DrawAtom_Items(self.DrawAtomEdit)
         self._init_coll_PawleyMenu(self.PawleyMenu)
@@ -317,6 +331,7 @@ class DataFrame(wx.Frame):
     def setSizePosLeft(self,Width):
         clientSize = wx.ClientDisplayRect()
         Width[1] = min(Width[1],clientSize[2]-300)
+        Width[0] = max(Width[0],300)
         self.SetSize(Width)
         self.SetPosition(wx.Point(clientSize[2]-Width[0],clientSize[1]+250))
         

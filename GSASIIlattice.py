@@ -721,10 +721,10 @@ def GenSHCoeff(SGLaue,SamSym,L):
                 for n in [i-iord for i in range(2*iord+1)]:
                     if OdfChk(SGLaue,iord,n):
                         coeffNames.append('C(%d,%d,%d)'%(iord,m,n))
-            else:
-                for n in [i-iord for i in range(2*iord+1)]:
-                    if OdfChk(SGLaue,iord,n):
-                        coeffNames.append('C(%d,%d)'%(iord,n))
+#            else:                  #what's this for?
+#                for n in [i-iord for i in range(2*iord+1)]:
+#                    if OdfChk(SGLaue,iord,n):
+#                        coeffNames.append('C(%d,%d)'%(iord,n))
     return coeffNames
 
 def CrsAng(H,cell,SGData):

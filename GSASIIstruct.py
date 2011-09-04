@@ -43,6 +43,7 @@ def GetControls(GPXfile):
     return:
         Controls = dictionary of control items
     '''
+    Controls = {'deriv type':'analytical','min dM/M':0.0001,'shift factor':1.}
     file = open(GPXfile,'rb')
     while True:
         try:
@@ -51,7 +52,7 @@ def GetControls(GPXfile):
             break
         datum = data[0]
         if datum[0] == 'Controls':
-            Controls = datum[1]
+            Controls.update(datum[1])
     file.close()
     return Controls
     
@@ -59,6 +60,7 @@ def ShowControls(Controls):
     print ' Least squares controls:'
     print ' Derivative type: ',Controls['deriv type']
     print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
+    print ' Initial shift factor: ','%.3f'%(Controls['shift factor'])
     
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -1200,19 +1202,19 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         costh = cosd(refl[5]/2.)
         tanth = tand(refl[5]/2.)
         if calcControls[phfx+'SizeType'] == 'isotropic':
-            gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
-            gamDict[phfx+'Size:0'] = -gam/parmDict[phfx+'Size:0']
+            gam = 180.*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
+            gamDict[phfx+'Size:0'] = gam/parmDict[phfx+'Size:0']
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Size:0']
             Sa = parmDict[phfx+'Size:1']
-            gami = (1.8*wave/np.pi)/(Si*Sa)
+            gami = (180.*wave/np.pi)/(Si*Sa)
             sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
             gam = gami*sqtrm/costh            
             gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
-            gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa         
+            gamDict[phfx+'Size:1'] = gam/Sa-gami*Sa*cosP**2/(sqtrm*costh)         
         else:           #ellipsoidal crystallites - do numerically?
             H = np.array(refl[:3])
             gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
@@ -1488,13 +1490,15 @@ def Refine(GPXfile):
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         Ftol = Controls['min dM/M']
+        Factor = Controls['shift factor']
         try:
             if Controls['deriv type'] == 'analytic':
-                result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,ftol=Ftol,col_deriv=True,
+                result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
+                    ftol=Ftol,col_deriv=True,factor=Factor,
                     args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/2)                
             else:           #'numeric'
-                result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,
+                result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                     args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/len(varyList))
         finally:

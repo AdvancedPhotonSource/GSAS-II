@@ -507,9 +507,12 @@ def UpdateNotebook(self,data):
             
 def UpdateControls(self,data):
     #patch
+    if 'shift factor' not in data:
+        data['shift factor'] = 1.        
     if 'deriv type' not in data:
         data['deriv type'] = 'analytical'
         data['min dM/M'] = 0.0001
+        data['shift factor'] = 1.
     #end patch
     '''
     #Fourier controls
@@ -523,16 +526,27 @@ def UpdateControls(self,data):
         Status.SetStatusText(text)                                      
         
     def OnConvergence(event):
+        Obj = event.GetObject()
         try:
-            value = max(1.e-9,min(1.0,float(Cnvrg.GetValue())))
+            value = max(1.e-9,min(1.0,float(Obj.GetValue())))
         except ValueError:
             value = 0.0001
         data['min dM/M'] = value
-        Cnvrg.SetValue('%.2g'%(value))
+        Obj.SetValue('%.2g'%(value))
         
     def OnDerivType(event):
-        data['deriv type'] = derivSel.GetValue()
+        Obj = event.GetObject()
+        data['deriv type'] = Obj.GetValue()
         derivSel.SetValue(data['deriv type'])
+        
+    def OnFactor(event):
+        Obj = event.GetObject()
+        try:
+            value = min(max(float(Obj.GetValue()),0.001),100.)
+        except ValueError:
+            value = 1.0
+        data['shift factor'] = value
+        Obj.SetValue('%.3f'%(value))
         
     if self.dataDisplay:
         self.dataDisplay.Destroy()
@@ -545,7 +559,7 @@ def UpdateControls(self,data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
-    LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
+    LSSizer = wx.FlexGridSizer(cols=6,vgap=5,hgap=5)
     LSSizer.Add(wx.StaticText(self.dataDisplay,label='Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
     Choice=['analytic','numeric']
     derivSel = wx.ComboBox(parent=self.dataDisplay,value=data['deriv type'],choices=Choice,
@@ -558,8 +572,12 @@ def UpdateControls(self,data):
     Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
     Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
     LSSizer.Add(Cnvrg,0,wx.ALIGN_CENTER_VERTICAL)
-    
-    
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Initial shift factor: '),0,wx.ALIGN_CENTER_VERTICAL)
+    Factr = wx.TextCtrl(self.dataDisplay,-1,value='%.3f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
+    Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
+    Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
+    LSSizer.Add(Factr,0,wx.ALIGN_CENTER_VERTICAL)
+        
     mainSizer.Add(LSSizer)
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Density Map Controls:'),0,wx.ALIGN_CENTER_VERTICAL)

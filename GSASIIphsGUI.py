@@ -2665,7 +2665,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             for h,k,l,d in HKLd:
                 ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
                 if not ext:
-                    PawleyPeaks.append([h,k,l,mul,d,False,10000.0,1.0])
+                    PawleyPeaks.append([h,k,l,mul,d,False,1000.0,1.0])
         finally:
             wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks

@@ -43,7 +43,13 @@ LDFLAGS = ''
 # configure platform dependent options here: 
 if sys.platform == "win32":
     F2PYsuffix = '.pyd'
-    FCompiler='g77'
+    if G77path != "":
+      FCompiler='g77'
+    elif GFORTpath != "":
+      FCompiler='gfortran'
+    else:
+      print 'No Fortran compiler in path'
+      sys.exit()
 elif sys.platform == "darwin":
     LDFLAGS = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
     F2PYsuffix = '.so'
@@ -202,7 +208,15 @@ def generate_obj(source, target, env, for_signature):
     return os.path.join(FORTpath,FCompiler)  + ' -c $SOURCE ' + FORTflags + ' -I' + dir + ' -o' + obj
 fort = Builder(generator = generate_obj, suffix = '.o',
                src_suffix = '.for')
-env.Append(BUILDERS = {'fort' : fort},)
+# create a library builder so we can control how it is done on windows
+def generate_lib(source, target, env, for_signature):
+    srclst = ""
+    for s in source:
+      srclst += str(s) + " "
+    return os.path.join(FORTpath,'ar.exe')  + ' -rs $TARGET ' + srclst
+lib = Builder(generator = generate_lib, suffix = '.a',
+               src_suffix = '.o')
+env.Append(BUILDERS = {'fort' : fort, 'lib' : lib},)
 
 #==========================================================================================
 # Setup build Environment
@@ -225,7 +239,10 @@ for sub in glob.glob('*subs'):
         #print 'Compile: ',file, target
         filelist.append(target)
     #lib = Library(sub, Glob(os.path.join(sub,'*.for'))) # register library to be created
-    lib = Library(sub, filelist) # register library to be created
+    if sys.platform == "win32":
+	 lib = env.lib(sub, filelist) 
+    else:
+       lib = Library(sub, filelist) # register library to be created
     liblist.append(lib[0].name)
     filename = str(lib[0])
     #Install(InstallLoc,filename)

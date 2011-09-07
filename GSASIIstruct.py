@@ -1536,18 +1536,18 @@ def Refine(GPXfile):
     SetHistogramData(parmDict,sigDict,Histograms)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases)
 #for testing purposes!!!
-    import cPickle
-    file = open('structTestdata.dat','wb')
-    cPickle.dump(parmDict,file,1)
-    cPickle.dump(varyList,file,1)
-    for histogram in Histograms:
-        if 'PWDR' in histogram[:4]:
-            Histogram = Histograms[histogram]
-    cPickle.dump(Histogram,file,1)
-    cPickle.dump(Phases,file,1)
-    cPickle.dump(calcControls,file,1)
-    cPickle.dump(pawleyLookup,file,1)
-    file.close()
+#    import cPickle
+#    file = open('structTestdata.dat','wb')
+#    cPickle.dump(parmDict,file,1)
+#    cPickle.dump(varyList,file,1)
+#    for histogram in Histograms:
+#        if 'PWDR' in histogram[:4]:
+#            Histogram = Histograms[histogram]
+#    cPickle.dump(Histogram,file,1)
+#    cPickle.dump(Phases,file,1)
+#    cPickle.dump(calcControls,file,1)
+#    cPickle.dump(pawleyLookup,file,1)
+#    file.close()
 
 def main():
     arg = sys.argv

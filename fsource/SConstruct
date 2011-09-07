@@ -150,6 +150,18 @@ else:
 
 #==========================================================================================
 # get the python version number from the python image in the f2py directory
+# first check if we have a working path to f2py:
+f2pyprogram = os.path.normpath(os.path.join(F2PYpath,'f2py'))
+if sys.platform == "win32" and os.path.splitext(f2pyprogram)[1].lower() != '.exe':
+    f2pyprogram = f2pyprogram + '.exe'
+if not is_exe(f2pyprogram):
+    print '''
+ERROR: The f2py program was not found. If this program is installed
+but not in your path, you should specify the path on the command line:
+   scons -Q F2PYpath=/Library/Frameworks/Python.framework/Versions/6.2/bin/
+   scons -Q F2PYpath=D:/Python27/Scripts
+'''
+    sys.exit()
 #  find the python location. Note that on Windows it may be in the parent of the f2py location
 # then run it to get info about the verision and the number of bits
 pythonpath = ''

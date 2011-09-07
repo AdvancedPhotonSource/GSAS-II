@@ -1081,7 +1081,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             gam = (1.8*wave/np.pi)/parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']
             gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)/costh
-        else:           #ellipsoidal crystallites
+        else:           #ellipsoidal crystallites - wrong not make sense
             H = np.array(refl[:3])
             gam += 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))            
         if calcControls[phfx+'MustrainType'] == 'isotropic':
@@ -1210,12 +1210,12 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Size:0']
             Sa = parmDict[phfx+'Size:1']
-            gami = (180.*wave/np.pi)/(Si*Sa)
+            gami = (1.80*wave/np.pi)/(Si*Sa)
             sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
             gam = gami*sqtrm/costh            
             gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
             gamDict[phfx+'Size:1'] = gam/Sa-gami*Sa*cosP**2/(sqtrm*costh)         
-        else:           #ellipsoidal crystallites - do numerically?
+        else:           #ellipsoidal crystallites - do numerically? - not right not make sense
             H = np.array(refl[:3])
             gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
                         
@@ -1536,18 +1536,18 @@ def Refine(GPXfile):
     SetHistogramData(parmDict,sigDict,Histograms)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases)
 #for testing purposes!!!
-#    import cPickle
-#    file = open('structTestdata.dat','wb')
-#    cPickle.dump(parmDict,file,1)
-#    cPickle.dump(varyList,file,1)
-#    for histogram in Histograms:
-#        if 'PWDR' in histogram[:4]:
-#            Histogram = Histograms[histogram]
-#    cPickle.dump(Histogram,file,1)
-#    cPickle.dump(Phases,file,1)
-#    cPickle.dump(calcControls,file,1)
-#    cPickle.dump(pawleyLookup,file,1)
-#    file.close()
+    import cPickle
+    file = open('structTestdata.dat','wb')
+    cPickle.dump(parmDict,file,1)
+    cPickle.dump(varyList,file,1)
+    for histogram in Histograms:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+    cPickle.dump(Histogram,file,1)
+    cPickle.dump(Phases,file,1)
+    cPickle.dump(calcControls,file,1)
+    cPickle.dump(pawleyLookup,file,1)
+    file.close()
 
 def main():
     arg = sys.argv

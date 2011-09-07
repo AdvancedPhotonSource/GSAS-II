@@ -2313,12 +2313,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 sizeSizer.Add((5,0),0)
                 if UseList[item]['Size'][0] == 'isotropic':
                     sizeRef = wx.CheckBox(dataDisplay,-1,label=' Cryst. size: ')
+                    sizeRef.thisown = False
                     sizeRef.SetValue(UseList[item]['Size'][2][0])
                     Indx[sizeRef.GetId()] = [item,0]
                     sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
                     sizeSizer.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
                     sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                        '%.1f'%(UseList[item]['Size'][1][0]),style=wx.TE_PROCESS_ENTER)
+                        '%.2f'%(UseList[item]['Size'][1][0]),style=wx.TE_PROCESS_ENTER)
                     Indx[sizeVal.GetId()] = [item,0]
                     sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
                     sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
@@ -2340,11 +2341,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         UseList[item]['Size'][1],UseList[item]['Size'][2],range(2))
                     for Pa,val,ref,id in parms:
                         sizeRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                        sizeRef.thisown = False
                         sizeRef.SetValue(ref)
                         Indx[sizeRef.GetId()] = [item,id]
                         sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
                         sizeSizer2.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.1f'%(val),style=wx.TE_PROCESS_ENTER)
+                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.2f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[sizeVal.GetId()] = [item,id]
                         sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
                         sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
@@ -2361,11 +2363,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     sizeSizer3 = wx.FlexGridSizer(2,6,5,5)
                     for Pa,val,ref,id in parms:
                         sizeRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                        sizeRef.thisown = False
                         sizeRef.SetValue(ref)
                         Indx[sizeRef.GetId()] = [item,id]
                         sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
                         sizeSizer3.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.1f'%(val),style=wx.TE_PROCESS_ENTER)
+                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.2f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[sizeVal.GetId()] = [item,id]
                         sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
                         sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
@@ -2410,6 +2413,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         UseList[item]['Mustrain'][1],UseList[item]['Mustrain'][2],range(2))
                     for Pa,val,ref,id in parms:
                         strainRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                        strainRef.thisown = False
                         strainRef.SetValue(ref)
                         Indx[strainRef.GetId()] = [item,id]
                         strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
@@ -2432,9 +2436,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         UseList[item]['Mustrain'][4] = numb*[0.0,]
                         UseList[item]['Mustrain'][5] = numb*[False,]
                     parms = zip(Snames,UseList[item]['Mustrain'][4],UseList[item]['Mustrain'][5],range(numb))
-                    strainSizer = wx.FlexGridSizer(numb%3+1,6,5,5)
+                    strainSizer = wx.FlexGridSizer(1,6,5,5)
                     for Pa,val,ref,id in parms:
                         strainRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                        strainRef.thisown = False
                         strainRef.SetValue(ref)
                         Indx[strainRef.GetId()] = [item,id]
                         strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)

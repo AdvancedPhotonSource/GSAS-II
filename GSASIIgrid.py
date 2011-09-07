@@ -526,27 +526,24 @@ def UpdateControls(self,data):
         Status.SetStatusText(text)                                      
         
     def OnConvergence(event):
-        Obj = event.GetObject()
         try:
-            value = max(1.e-9,min(1.0,float(Obj.GetValue())))
+            value = max(1.e-9,min(1.0,float(Cnvrg.GetValue())))
         except ValueError:
             value = 0.0001
         data['min dM/M'] = value
-        Obj.SetValue('%.2g'%(value))
+        Cnvrg.SetValue('%.2g'%(value))
         
     def OnDerivType(event):
-        Obj = event.GetObject()
-        data['deriv type'] = Obj.GetValue()
+        data['deriv type'] = derivSel.GetValue()
         derivSel.SetValue(data['deriv type'])
         
     def OnFactor(event):
-        Obj = event.GetObject()
         try:
-            value = min(max(float(Obj.GetValue()),0.001),100.)
+            value = min(max(float(Factr.GetValue()),0.001),100.)
         except ValueError:
             value = 1.0
         data['shift factor'] = value
-        Obj.SetValue('%.3f'%(value))
+        Factr.SetValue('%.3f'%(value))
         
     if self.dataDisplay:
         self.dataDisplay.Destroy()

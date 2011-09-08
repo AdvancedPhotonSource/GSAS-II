@@ -726,12 +726,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
             SizeMuStrSig = {'Mustrain':[[0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
                 'Size':[[0,0],[0 for i in range(len(hapData['Size'][4]))]]}                  
             for item in ['Mustrain','Size']:
-                if hapData[item][0] in ['isotropic','uniaxial']:
+                if hapData[item][0] in ['isotropic','uniaxial']:                    
                     hapData[item][1][0] = parmDict[pfx+item+':0']
+                    if item == 'Size':
+                        hapData[item][1][0] = min(10.,max(0.01,hapData[item][1][0]))
                     if hapData[item][2][0]: 
                         SizeMuStrSig[item][0][0] = sigDict[pfx+item+':0']
                     if hapData[item][0] == 'uniaxial':
                         hapData[item][1][1] = parmDict[pfx+item+':1']
+                        if item == 'Size':
+                            hapData[item][1][1] = min(10.,max(0.01,hapData[item][1][1]))                        
                         if hapData[item][2][1]:
                             SizeMuStrSig[item][0][1] = sigDict[pfx+item+':1']
                 else:       #generalized for mustrain or ellipsoidal for size
@@ -1073,17 +1077,19 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     
     def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
         costh = cosd(refl[5]/2.)
+        #crystallite size
         if calcControls[phfx+'SizeType'] == 'isotropic':
             gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
-            gam = (1.8*wave/np.pi)/parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']
-            gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)/costh
+            gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']*costh)
+            gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)
         else:           #ellipsoidal crystallites - wrong not make sense
             H = np.array(refl[:3])
-            gam += 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))            
+            gam += 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
+        #microstrain                
         if calcControls[phfx+'MustrainType'] == 'isotropic':
             gam += 0.018*parmDict[phfx+'Mustrain:0']*tand(refl[5]/2.)/np.pi
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':
@@ -1190,6 +1196,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
                     iBeg = np.searchsorted(x,pos2-fmin)
                     iFin = np.searchsorted(x,pos2+fmax)
+                    if not iBeg+iFin:       #peak below low limit - skip peak
+                        continue
+                    elif not iBeg-iFin:     #peak above high limit - done
+                        return yc,yb
                     yc[iBeg:iFin] += Icorr*refl[8]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
             else:
                 raise ValueError
@@ -1201,9 +1211,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         gamDict = {}
         costh = cosd(refl[5]/2.)
         tanth = tand(refl[5]/2.)
+        #crystallite size derivatives
         if calcControls[phfx+'SizeType'] == 'isotropic':
-            gam = 180.*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
-            gamDict[phfx+'Size:0'] = gam/parmDict[phfx+'Size:0']
+            gamDict[phfx+'Size:0'] = 1.80*wave/(np.pi*costh)
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
@@ -1214,11 +1224,11 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
             gam = gami*sqtrm/costh            
             gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
-            gamDict[phfx+'Size:1'] = gam/Sa-gami*Sa*cosP**2/(sqtrm*costh)         
+            gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa         
         else:           #ellipsoidal crystallites - do numerically? - not right not make sense
             H = np.array(refl[:3])
             gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
-                        
+        #microstrain derivatives                
         if calcControls[phfx+'MustrainType'] == 'isotropic':
             gamDict[phfx+'Mustrain:0'] =  0.018*tanth/np.pi            
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':

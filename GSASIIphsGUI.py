@@ -2646,7 +2646,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         if 'Pawley ref' in data:
             PawleyPeaks = data['Pawley ref']                        
             rowLabels = []
-            for i in range(len(PawleyPeaks)): rowLabels.append(str(i+1))
+            for i in range(len(PawleyPeaks)): rowLabels.append(str(i))
             colLabels = ['h','k','l','mul','d','refine','Fsq(hkl)','sig(Fsq)']
             Types = 4*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
                 2*[wg.GRID_VALUE_FLOAT+':10,2',]
@@ -2670,7 +2670,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             for h,k,l,d in HKLd:
                 ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
                 if not ext:
-                    PawleyPeaks.append([h,k,l,mul,d,False,1000.0,1.0])
+                    PawleyPeaks.append([h,k,l,mul,d,False,100.0,1.0])
         finally:
             wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks

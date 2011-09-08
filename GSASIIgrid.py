@@ -539,11 +539,11 @@ def UpdateControls(self,data):
         
     def OnFactor(event):
         try:
-            value = min(max(float(Factr.GetValue()),0.001),100.)
+            value = min(max(float(Factr.GetValue()),0.00001),100.)
         except ValueError:
             value = 1.0
         data['shift factor'] = value
-        Factr.SetValue('%.3f'%(value))
+        Factr.SetValue('%.5f'%(value))
         
     if self.dataDisplay:
         self.dataDisplay.Destroy()
@@ -570,7 +570,7 @@ def UpdateControls(self,data):
     Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
     LSSizer.Add(Cnvrg,0,wx.ALIGN_CENTER_VERTICAL)
     LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Initial shift factor: '),0,wx.ALIGN_CENTER_VERTICAL)
-    Factr = wx.TextCtrl(self.dataDisplay,-1,value='%.3f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
+    Factr = wx.TextCtrl(self.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
     Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
     Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
     LSSizer.Add(Factr,0,wx.ALIGN_CENTER_VERTICAL)

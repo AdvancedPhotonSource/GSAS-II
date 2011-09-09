@@ -2068,8 +2068,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
         UseList = data['Histograms']
         if UseList:
             self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
+            self.Refine.Enable(True)
         else:
-            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)            
+            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
+            self.Refine.Enable(False)            
         generalData = data['General']        
         SGData = generalData['SGData']
         keyList = UseList.keys()

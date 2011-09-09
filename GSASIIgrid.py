@@ -736,10 +736,10 @@ def MovePatternTreeToGrid(self,item):
             self.PatternId = 0
             self.ExportPattern.Enable(False)
             data = self.PatternTree.GetItemPyData(item)
-            if data == [0] or data == {}:           #fill in defaults
+            if not data:           #fill in defaults
                 data = {
                     #least squares controls
-                    'deriv type':'analytic','min dM/M':0.0001,
+                    'deriv type':'analytic','min dM/M':0.0001,'shift factor':1.0,
                     #Fourier controls
                     'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
                     'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],

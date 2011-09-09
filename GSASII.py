@@ -62,8 +62,8 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(1)]
 
 [wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN,  wxID_FILESAVE, wxID_FILESAVEAS, 
-wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS,
-] = [wx.NewId() for _init_coll_File_Items in range(8)]
+wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS, wxID_VIEWLSPARMS,
+] = [wx.NewId() for _init_coll_File_Items in range(9)]
 
 [wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
  wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
@@ -144,9 +144,12 @@ class GSASII(wx.Frame):
         self.MakePDF = parent.Append(help='Make new PDFs from selected powder patterns', 
             id=wxID_MAKEPDFS, kind=wx.ITEM_NORMAL,text='Make new PDFs')
         self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=wxID_MAKEPDFS)
+        self.ViewLSParms = parent.Append(help='View least squares parameters', 
+            id=wxID_VIEWLSPARMS, kind=wx.ITEM_NORMAL,text='View LS parms')
+        self.Bind(wx.EVT_MENU, self.OnViewLSParms, id=wxID_VIEWLSPARMS)
         self.Refine = parent.Append(help='', id=wxID_REFINE, kind=wx.ITEM_NORMAL,
             text='Refine')
-        self.Refine.Enable(True)
+        self.Refine.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=wxID_REFINE)
         self.Solve = parent.Append(help='', id=wxID_SOLVE, kind=wx.ITEM_NORMAL,
             text='Solve')
@@ -1055,7 +1058,7 @@ class GSASII(wx.Frame):
                             Id = item
                         elif name == 'Controls':
                             data = self.PatternTree.GetItemPyData(item)
-                            if data != [0] and data != {}:
+                            if data:
                                 self.Refine.Enable(True)
                                 self.Solve.Enable(True)         #not right but something needed here
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
@@ -1342,6 +1345,29 @@ class GSASII(wx.Frame):
                 self.ExportPDF.Enable(True)
             finally:
                 dlg.Destroy()
+
+    def OnViewLSParms(self,event):
+        parmDict = {}
+        self.OnFileSave(event)
+        Histograms,Phases = G2str.GetUsedHistogramsAndPhases(self.GSASprojectfile)
+        phaseVary,phaseDict,pawleyLookup = G2str.GetPhaseData(Phases,Print=False)
+        hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
+        histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
+        varyList = phaseVary+hapVary+histVary
+        parmDict.update(phaseDict)
+        parmDict.update(hapDict)
+        parmDict.update(histDict)
+        parmKeys = parmDict.keys()
+        parmKeys.sort()
+        for parm in parmKeys:
+            line = parm+str(parmDict[parm])
+            if parm in varyList:
+                line += ' True'
+            else:
+                line += ' False'
+            print line
+
+
        
     def OnRefine(self,event):
         self.OnFileSave(event)

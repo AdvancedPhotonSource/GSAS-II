@@ -341,10 +341,10 @@ def cellVary(pfx,SGData):
         return [pfx+'A0']
     
         
-def GetPhaseData(PhaseData):
+def GetPhaseData(PhaseData,Print=True):
     
         
-    print ' Phases:'
+    if Print: print ' Phases:'
     phaseVary = []
     phaseDict = {}
     phaseConstr = {}
@@ -358,29 +358,30 @@ def GetPhaseData(PhaseData):
             PawleyRef = PhaseData[name]['Pawley ref']
         except KeyError:
             PawleyRef = []
-        print '\n Phase name: ',General['Name']
+        if Print: print '\n Phase name: ',General['Name']
         SGData = General['SGData']
         SGtext = G2spc.SGPrint(SGData)
-        for line in SGtext: print line
+        if Print: 
+            for line in SGtext: print line
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5]})
         if cell[0]:
             phaseVary = cellVary(pfx,SGData)
-        print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
+        if Print: print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
             ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
             '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
         if Atoms:
-            print '\n Atoms:'
+            if Print: print '\n Atoms:'
             line = '   name    type  refine?   x         y         z    '+ \
                 '  frac site sym  mult I/A   Uiso     U11     U22     U33     U12     U13     U23'
             if General['Type'] == 'magnetic':
                 line += '   Mx     My     Mz'
             elif General['Type'] == 'macromolecular':
                 line = ' res no  residue  chain '+line
-            print line
+            if Print: print line
             if General['Type'] == 'nuclear':
-                print 135*'-'
+                if Print: print 135*'-'
                 for at in Atoms:
                     line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%10.5f'%(at[3])+'%10.5f'%(at[4])+ \
                         '%10.5f'%(at[5])+'%8.3f'%(at[6])+'%7s'%(at[7])+'%5d'%(at[8])+'%5s'%(at[9])
@@ -390,7 +391,7 @@ def GetPhaseData(PhaseData):
                         line += 8*' '
                         for i in range(6):
                             line += '%8.4f'%(at[11+i])
-                    print line
+                    if Print: print line
                     if 'X' in at[2]:
                         xId,xCoef = G2spc.GetCSxinel(at[7])
                     if 'U' in at[2]:
@@ -495,7 +496,7 @@ def SetPhaseData(parmDict,sigDict,Phases):
                 else:
                     refl[7] = 0
 
-def GetHistogramPhaseData(Phases,Histograms):
+def GetHistogramPhaseData(Phases,Histograms,Print=True):
     
     def PrintSize(hapData):
         line = '\n Size model    : '+hapData[0]
@@ -555,7 +556,6 @@ def GetHistogramPhaseData(Phases,Histograms):
         A = G2lat.cell2A(cell)
         pId = Phases[phase]['pId']
         for histogram in HistoPhase:
-            print '\n Phase: ',phase,' in histogram: ',histogram
             hapData = HistoPhase[histogram]
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
@@ -610,14 +610,16 @@ def GetHistogramPhaseData(Phases,Histograms):
                         if hapData[item][5][i]:
                             hapVary.append(pfx+item+sfx)
                             
-            print '\n Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-            print ' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
-            if hapData['Pref.Ori.'][0] == 'MD':
-                Ax = hapData['Pref.Ori.'][3]
-                print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
-                    ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])                
-            PrintSize(hapData['Size'])
-            PrintMuStrain(hapData['Mustrain'],SGData)
+            if Print: 
+                print '\n Phase: ',phase,' in histogram: ',histogram
+                print '\n Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+                print ' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
+                if hapData['Pref.Ori.'][0] == 'MD':
+                    Ax = hapData['Pref.Ori.'][3]
+                    print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
+                        ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])                
+                PrintSize(hapData['Size'])
+                PrintMuStrain(hapData['Mustrain'],SGData)
             HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
             refList = []
             for h,k,l,d in HKLd:
@@ -748,7 +750,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
             PrintSizeAndSig(hapData['Size'],SizeMuStrSig['Size'])
             PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
     
-def GetHistogramData(Histograms):
+def GetHistogramData(Histograms,Print=True):
     
     def GetBackgroundParms(hId,Background):
         bakType,bakFlag = Background[:2]
@@ -865,16 +867,17 @@ def GetHistogramData(Histograms):
         histDict.update(sampDict)
         histVary += sampVary
 
-        print '\n Histogram: ',histogram,' histogram Id: ',hId
-        print 135*'-'
-        Units = {'C':' deg','T':' msec'}
-        units = Units[controlDict[pfx+'histType'][2]]
-        Limits = controlDict[pfx+'Limits']
-        print ' Instrument type: ',Sample['Type']
-        print ' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)     
-        PrintSampleParms(Sample)
-        PrintInstParms(Inst)
-        PrintBackground(Background)
+        if Print: 
+            print '\n Histogram: ',histogram,' histogram Id: ',hId
+            print 135*'-'
+            Units = {'C':' deg','T':' msec'}
+            units = Units[controlDict[pfx+'histType'][2]]
+            Limits = controlDict[pfx+'Limits']
+            print ' Instrument type: ',Sample['Type']
+            print ' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)     
+            PrintSampleParms(Sample)
+            PrintInstParms(Inst)
+            PrintBackground(Background)
         
     return histVary,histDict,controlDict
     
@@ -1482,7 +1485,7 @@ def Refine(GPXfile):
     calcControls.update(controlDict)
     histVary,histDict,controlDict = GetHistogramData(Histograms)
     calcControls.update(controlDict)
-    varyList = phaseVary+histVary+hapVary
+    varyList = phaseVary+hapVary+histVary
     parmDict.update(phaseDict)
     parmDict.update(hapDict)
     parmDict.update(histDict)

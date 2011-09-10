@@ -1372,7 +1372,15 @@ class GSASII(wx.Frame):
     def OnRefine(self,event):
         self.OnFileSave(event)
         #works - but it'd be better if it could restore plots
-        G2str.Refine(self.GSASprojectfile)
+        dlg = wx.ProgressDialog('Residual','Powder profile Rwp =',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = dlg.GetSize()
+        dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        try:
+            G2str.Refine(self.GSASprojectfile,dlg)
+        finally:
+            dlg.Destroy()        
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:

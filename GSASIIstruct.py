@@ -13,7 +13,6 @@ import numpy as np
 import cPickle
 import time
 import math
-import wx
 import GSASIIpath
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
@@ -1403,7 +1402,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             
     return dMdv    
                     
-def Refine(GPXfile):
+def Refine(GPXfile,dlg):
     
     def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
         parmdict.update(zip(varylist,values))
@@ -1497,25 +1496,17 @@ def Refine(GPXfile):
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
-        dlg = wx.ProgressDialog('Residual','Powder profile Rwp =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-        screenSize = wx.ClientDisplayRect()
-        Size = dlg.GetSize()
-        dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
-        try:
-            if Controls['deriv type'] == 'analytic':
-                result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
-                    ftol=Ftol,col_deriv=True,factor=Factor,
-                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-                ncyc = int(result[2]['nfev']/2)                
-            else:           #'numeric'
-                result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-                ncyc = int(result[2]['nfev']/len(varyList))
-        finally:
-            dlg.Destroy()
+        if Controls['deriv type'] == 'analytic':
+            result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
+                ftol=Ftol,col_deriv=True,factor=Factor,
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            ncyc = int(result[2]['nfev']/2)                
+        else:           #'numeric'
+            result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            ncyc = int(result[2]['nfev']/len(varyList))
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])

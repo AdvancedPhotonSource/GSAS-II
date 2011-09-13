@@ -1345,27 +1345,125 @@ class GSASII(wx.Frame):
                 self.ExportPDF.Enable(True)
             finally:
                 dlg.Destroy()
+                
+    def GetPWDRdatafromTree(self,PWDRname):
+        ''' Returns powder data from GSASII tree
+        input: 
+            PWDRname = powder histogram name as obtained from GetHistogramNames
+        return: 
+            PWDRdata = powder data dictionary with:
+                Data - powder data arrays, Limits, Instrument Parameters, Sample Parameters            
+        '''
+        PWDRdata = {}
+        PWDRdata['Data'] = self.PatternTree.GetItemPyData(PWDRname)[1]          #powder data arrays
+        PWDRdata['Limits'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Limits'))
+        PWDRdata['Background'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Background'))
+        PWDRdata['Instrument Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Instrument Parameters'))
+        PWDRdata['Sample Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Sample Parameters'))
+        PWDRdata['Reflection Lists'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Reflection Lists'))
+        return PWDRdata
 
+    def GetHKLFdatafromTree(self,HKLFname):
+        ''' Returns single crystal data from GSASII tree
+        input: 
+            HKLFname = single crystal histogram name as obtained from GetHistogramNames
+        return: 
+            HKLFdata = single crystal data list of reflections: for each reflection:
+                HKLF = [np.array([h,k,l]),FoSq,sigFoSq,FcSq,Fcp,Fcpp,phase]
+        '''
+        HKLFdata = []
+        while True:
+            data = self.PatternTree.GetItemPyData(HKLFname)
+            datum = data[0]
+            if datum[0] == HKLFname:
+                HKLFdata = datum[1:][0]
+        return HKLFdata
+                    
+    def GetUsedHistogramsAndPhasesfromTree(self):
+        ''' Returns all histograms that are found in any phase
+        and any phase that uses a histogram
+        return:
+            Histograms = dictionary of histograms as {name:data,...}
+            Phases = dictionary of phases that use histograms
+        '''
+        phaseData = {}
+        if G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+            sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        else:
+            print 'no phases to be refined'
+            return
+        if sub:
+            item, cookie = self.PatternTree.GetFirstChild(sub)
+            while item:
+                phaseData[self.PatternTree.GetItemText(item)] =  self.PatternTree.GetItemPyData(item)                
+                item, cookie = self.PatternTree.GetNextChild(sub, cookie)                
+        Histograms = {}
+        Phases = {}
+        pId = 0
+        hId = 0
+        for phase in phaseData:
+            Phase = phaseData[phase]
+            if Phase['Histograms']:
+                if phase not in Phases:
+                    Phase['pId'] = pId
+                    pId += 1
+                    Phases[phase] = Phase
+                for hist in Phase['Histograms']:
+                    if hist not in Histograms:
+                        item = G2gd.GetPatternTreeItemId(self,self.root,hist)
+                        if 'PWDR' in hist[:4]: 
+                            Histograms[hist] = self.GetPWDRdatafromTree(item)
+                        elif 'HKLF' in hist[:4]:
+                            Histograms[hist] = self.GetHKLFdatafromTree(item)
+                        #future restraint, etc. histograms here            
+                        Histograms[hist]['hId'] = hId
+                        hId += 1
+        return Histograms,Phases
+        
+    class ViewParmDialog(wx.Dialog):
+        def __init__(self,parent,title,parmDict):
+            wx.Dialog.__init__(self,parent,-1,title,size=(250,430),
+                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            panel = wx.Panel(self,size=(250,430))
+            parmNames = parmDict.keys()
+            parmNames.sort()
+            parmText = ' p:h:Parameter       refine?              value\n'
+            for name in parmNames:
+                parmData = parmDict[name]
+                try:
+                    parmText += ' %s \t%12.4g \n'%(name.ljust(20)+'\t'+parmData[1],parmData[0])
+                except TypeError:
+                    pass
+            parmTable = wx.TextCtrl(panel,-1,parmText,
+                style=wx.TE_MULTILINE|wx.TE_READONLY,size=(240,400))
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            mainSizer.Add(parmTable)
+            panel.SetSizer(mainSizer)
+                
+            
     def OnViewLSParms(self,event):
         parmDict = {}
-        self.OnFileSave(event)
-        Histograms,Phases = G2str.GetUsedHistogramsAndPhases(self.GSASprojectfile)
-        phaseVary,phaseDict,pawleyLookup = G2str.GetPhaseData(Phases,Print=False)
+        Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        phaseVary,phaseDict,pawleyLookup = G2str.GetPhaseData(Phases,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
         varyList = phaseVary+hapVary+histVary
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
         parmDict.update(histDict)
-        parmKeys = parmDict.keys()
-        parmKeys.sort()
-        for parm in parmKeys:
-            line = parm+str(parmDict[parm])
-            if parm in varyList:
-                line += ' True'
+        for parm in parmDict:
+            if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2']:
+                parmDict[parm] = [parmDict[parm],' ']
+            elif parm in varyList:
+                parmDict[parm] = [parmDict[parm],'True']
             else:
-                line += ' False'
-            print line
+                parmDict[parm] = [parmDict[parm],'False']
+        dlg = self.ViewParmDialog(self,'Parameters for least squares',parmDict)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                print 'do something with changes??'
+        finally:
+            dlg.Destroy()
 
 
        

@@ -606,27 +606,73 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
 
 def getBackground(pfx,parmDict,bakType,xdata):
     yb = np.zeros_like(xdata)
-    if bakType == 'chebyschev':
-        iBak = 0
-        while True:
+    nBak = 0
+    while True:
+        key = pfx+'Back:'+str(nBak)
+        if key in parmDict:
+            nBak += 1
+        else:
+            break
+    if bakType in ['chebyschev','cosine']:
+        for iBak in range(nBak):    
             key = pfx+'Back:'+str(iBak)
-            try:
+            if bakType == 'chebyschev':
                 yb += parmDict[key]*(xdata-xdata[0])**iBak
-                iBak += 1
-            except KeyError:
-                break
+            elif bakType == 'cosine':
+                yb += parmDict[key]*npcosd(xdata*iBak)
+    elif bakType in ['interpolate',]:
+        if nBak == 1:
+            yb = np.ones_like(xdata)*parmDict[pfx+'Back:0']
+        elif nBak == 2:
+            dX = xdata[-1]-xdata[0]
+            T2 = (xdata-xdata[0])/dX
+            T1 = 1.0-T2
+            yb = parmDict[pfx+'Back:0']*T1+parmDict[pfx+'Back:1']*T2
+        else:
+            bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+            bakVals = np.zeros(nBak)
+            for i in range(nBak):
+                bakVals[i] = parmDict[pfx+'Back:'+str(i)]
+            bakInt = si.interp1d(bakPos,bakVals,'linear')
+            yb = bakInt(xdata)
     return yb
     
 def getBackgroundDerv(pfx,parmDict,bakType,xdata):
-    dydb = []
-    if bakType == 'chebyschev':
-        iBak = 0
-        while True:
-            if pfx+'Back:'+str(iBak) in parmDict:
-                dydb.append((xdata-xdata[0])**iBak)
-                iBak += 1
-            else:
-                break
+    nBak = 0
+    while True:
+        key = pfx+'Back:'+str(nBak)
+        if key in parmDict:
+            nBak += 1
+        else:
+            break
+    dydb = np.zeros(shape=(nBak,len(xdata)))
+
+    if bakType in ['chebyschev','cosine']:
+        for iBak in range(nBak):    
+            if bakType == 'chebyschev':
+                dydb[iBak] = (xdata-xdata[0])**iBak
+            elif bakType == 'cosine':
+                dydb[iBak] = npcosd(xdata*iBak)
+    elif bakType in ['interpolate',]:
+        if nBak == 1:
+            dydb[0] = np.ones_like(xdata)
+        elif nBak == 2:
+            dX = xdata[-1]-xdata[0]
+            T2 = (xdata-xdata[0])/dX
+            T1 = 1.0-T2
+            dydb = [T1,T2]
+        else:
+            bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+            dx = bakPos[1]-bakPos[0]
+            for i,pos in enumerate(bakPos):
+                if i == 0:
+                    dydb[0] = np.where(xdata<bakPos[1],(bakPos[1]-xdata)/dx,0.)
+                elif i == len(bakPos)-1:
+                    dydb[i] = np.where(xdata>bakPos[-2],(bakPos[-1]-xdata)/dx,0.)
+                else:
+                    dydb[i] = np.where(xdata>bakPos[i],
+                        np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/dx,0.),
+                        np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/dx,0.))
     return dydb
 
 #use old fortran routine

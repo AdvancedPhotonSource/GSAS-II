@@ -507,12 +507,13 @@ def UpdateNotebook(self,data):
             
 def UpdateControls(self,data):
     #patch
-    if 'shift factor' not in data:
-        data['shift factor'] = 1.        
     if 'deriv type' not in data:
+        data = {}
         data['deriv type'] = 'analytical'
         data['min dM/M'] = 0.0001
         data['shift factor'] = 1.
+    if 'shift factor' not in data:
+        data['shift factor'] = 1.        
     #end patch
     '''
     #Fourier controls
@@ -853,7 +854,8 @@ def MovePatternTreeToGrid(self,item):
 
         if 'Temperature' not in data:           #temp fix for old gpx files
             data = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
-                'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0}
+                'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,
+                'Force':0.0,'Gonio. radius':200.0}
             self.PatternTree.SetItemPyData(item,data)
     
         G2pdG.UpdateSampleGrid(self,data)

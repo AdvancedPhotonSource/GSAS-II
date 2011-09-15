@@ -315,7 +315,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnPawleyVal(event):
             try:
                 dmin = float(pawlVal.GetValue())
-                if 0.25 <= dmin <= 10.:
+                if 0.25 <= dmin <= 20.:
                     generalData['Pawley dmin'] = dmin
             except ValueError:
                 pass
@@ -2199,6 +2199,22 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
             G2plt.PlotStrain(self,data)
             
+        def OnHstrainRef(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            UseList[hist]['HStrain'][1][pid] = Obj.GetValue()
+            
+        def OnHstrainVal(event):
+            Snames = G2spc.HStrainNames(SGData)
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            try:
+                strain = float(Obj.GetValue())
+                UseList[hist]['HStrain'][0][pid] = strain
+            except ValueError:
+                pass
+            Obj.SetValue("%.5f"%(UseList[hist]['HStrain'][0][pid]))          #reset in case of error
+
         def OnPOType(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -2314,14 +2330,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 sizeSizer.Add(sizeType)
                 sizeSizer.Add((5,0),0)
                 if UseList[item]['Size'][0] == 'isotropic':
-                    sizeRef = wx.CheckBox(dataDisplay,-1,label=' Cryst. size: ')
+                    sizeRef = wx.CheckBox(dataDisplay,-1,label=' Cryst. size(\xb5m): ')
                     sizeRef.thisown = False
                     sizeRef.SetValue(UseList[item]['Size'][2][0])
                     Indx[sizeRef.GetId()] = [item,0]
                     sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
                     sizeSizer.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
                     sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                        '%.2f'%(UseList[item]['Size'][1][0]),style=wx.TE_PROCESS_ENTER)
+                        '%.3f'%(UseList[item]['Size'][1][0]),style=wx.TE_PROCESS_ENTER)
                     Indx[sizeVal.GetId()] = [item,0]
                     sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
                     sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
@@ -2339,7 +2355,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     mainSizer.Add(sizeSizer)
                     mainSizer.Add((0,5),0)
                     sizeSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-                    parms = zip([' Equatorial size: ',' Axial size: '],
+                    parms = zip([' Equatorial size(\xb5m): ',' Axial size(\xb5m): '],
                         UseList[item]['Size'][1],UseList[item]['Size'][2],range(2))
                     for Pa,val,ref,id in parms:
                         sizeRef = wx.CheckBox(dataDisplay,-1,label=Pa)
@@ -2348,7 +2364,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         Indx[sizeRef.GetId()] = [item,id]
                         sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
                         sizeSizer2.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.2f'%(val),style=wx.TE_PROCESS_ENTER)
+                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[sizeVal.GetId()] = [item,id]
                         sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
                         sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
@@ -2357,7 +2373,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     sizeSizer2.Add((5,0),0)                    
                     mainSizer.Add(sizeSizer2)
                 elif UseList[item]['Size'][0] == 'ellipsoidal':
-                    sizeSizer.Add(wx.StaticText(dataDisplay,-1,' Coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    sizeSizer.Add(wx.StaticText(dataDisplay,-1,' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(sizeSizer)
                     mainSizer.Add((0,5),0)
                     parms = zip(['S11','S22','S33','S12','S13','S23'],UseList[item]['Size'][4],
@@ -2370,7 +2386,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         Indx[sizeRef.GetId()] = [item,id]
                         sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
                         sizeSizer3.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.2f'%(val),style=wx.TE_PROCESS_ENTER)
+                        sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[sizeVal.GetId()] = [item,id]
                         sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
                         sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
@@ -2393,7 +2409,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
                     strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
                     strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                        '%.3f'%(UseList[item]['Mustrain'][1][0]),style=wx.TE_PROCESS_ENTER)
+                        '%.1f'%(UseList[item]['Mustrain'][1][0]),style=wx.TE_PROCESS_ENTER)
                     Indx[strainVal.GetId()] = [item,0]
                     strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
                     strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -2420,7 +2436,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         Indx[strainRef.GetId()] = [item,id]
                         strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
                         strainSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
-                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
+                        strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.1f'%(val),style=wx.TE_PROCESS_ENTER)
                         Indx[strainVal.GetId()] = [item,id]
                         strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
                         strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -2452,8 +2468,25 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
                         strainSizer.Add(strainVal,0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(strainSizer)
+                mainSizer.Add(wx.StaticText(dataDisplay,-1,' Hydrostatic strain:'))
+                hstrainSizer = wx.FlexGridSizer(1,6,5,5)
+                Hsnames = G2spc.HStrainNames(SGData)
+                parms = zip(Hsnames,UseList[item]['HStrain'][0],UseList[item]['HStrain'][1],range(len(Hsnames)))
+                for Pa,val,ref,id in parms:
+                    hstrainRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                    hstrainRef.thisown = False
+                    hstrainRef.SetValue(ref)
+                    Indx[hstrainRef.GetId()] = [item,id]
+                    hstrainRef.Bind(wx.EVT_CHECKBOX, OnHstrainRef)
+                    hstrainSizer.Add(hstrainRef,0,wx.ALIGN_CENTER_VERTICAL)
+                    hstrainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
+                    Indx[hstrainVal.GetId()] = [item,id]
+                    hstrainVal.Bind(wx.EVT_TEXT_ENTER,OnHstrainVal)
+                    hstrainVal.Bind(wx.EVT_KILL_FOCUS,OnHstrainVal)
+                    hstrainSizer.Add(hstrainVal,0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(hstrainSizer)
+                    
                 #texture  'Pref. Ori.':['MD',1.0,False,[0,0,1],0,[]] last two for 'SH' are SHorder & coeff
-#                poSizer = wx.BoxSizer(wx.HORIZONTAL)
                 poSizer = wx.FlexGridSizer(1,6,5,5)
                 POData = UseList[item]['Pref.Ori.']
                 choice = ['March-Dollase','Spherical harmonics']
@@ -2574,6 +2607,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         SGData = generalData['SGData']
         UseList = data['Histograms']
         NShkl = len(G2spc.MustrainNames(SGData))
+        NDij = len(G2spc.HStrainNames(SGData))
         keyList = UseList.keys()
         TextList = []
         if self.PatternTree.GetCount():
@@ -2594,7 +2628,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
                             'Size':['isotropic',[10.,10.,],[False,False],[0,0,1],6*[0.0,],6*[False,]],
                             'Mustrain':['isotropic',[1.0,1.0],[False,False],[0,0,1],
-                                NShkl*[0.01,],NShkl*[False,]],                            
+                                NShkl*[0.01,],NShkl*[False,]],
+                            'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False]}
                         refList = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,pId,'Reflection Lists'))
                         refList[generalData['Name']] = []                       

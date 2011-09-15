@@ -338,11 +338,9 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',pfx+'A3']                       
     elif SGData['SGLaue'] in ['m3m','m3']:
         return [pfx+'A0']
-    
-        
+            
 def GetPhaseData(PhaseData,Print=True):
-    
-        
+            
     if Print: print ' Phases:'
     phaseVary = []
     phaseDict = {}
@@ -538,6 +536,21 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             print ptlbls
             print ptstr
             print varstr
+
+    def PrintHStrain(hapData,SGData):
+        print '\n Hydrostatic strain: '
+        Hsnames = G2spc.HStrainNames(SGData)
+        ptlbls = ' names :'
+        ptstr =  ' values:'
+        varstr = ' refine:'
+        for i,name in enumerate(Hsnames):
+            ptlbls += '%12s' % (name)
+            ptstr += '%12.6f' % (hapData[0][i])
+            varstr += '%12s' % (str(hapData[1][i]))
+        print ptlbls
+        print ptstr
+        print varstr
+
         
     
     hapDict = {}
@@ -573,6 +586,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 hapDict[pfx+item] = hapData[item][0]
                 if hapData[item][1]:
                     hapVary.append(pfx+item)
+            names = G2spc.HStrainNames(SGData)
+            for i,name in enumerate(names):
+                hapDict[pfx+name] = hapData['HStrain'][0][i]
+                if hapData['HStrain'][1][i]:
+                    hapVary.append(pfx+name)
             controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
             if hapData['Pref.Ori.'][0] == 'MD':
                 hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
@@ -619,6 +637,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                         ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])                
                 PrintSize(hapData['Size'])
                 PrintMuStrain(hapData['Mustrain'],SGData)
+                PrintHStrain(hapData['HStrain'],SGData)
             HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
             refList = []
             for h,k,l,d in HKLd:
@@ -691,6 +710,23 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
             print ptlbls
             print ptstr
             print sigstr
+            
+    def PrintHStrainAndSig(hapData,strainSig,SGData):
+        print '\n Hydrostatic strain: '
+        Hsnames = G2spc.HStrainNames(SGData)
+        ptlbls = ' name  :'
+        ptstr =  ' value :'
+        sigstr = ' sig   :'
+        for i,name in enumerate(Hsnames):
+            ptlbls += '%12s' % (name)
+            ptstr += '%12.6g' % (hapData[0][i])
+            if name in strainSig:
+                sigstr += '%12.6g' % (strainSig[name])
+            else:
+                sigstr += 12*' '
+        print ptlbls
+        print ptstr
+        print sigstr
         
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
@@ -706,16 +742,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
             PhFrExtPOSig = {}
             for item in ['Scale','Extinction']:
                 hapData[item][0] = parmDict[pfx+item]
-                if hapData[item][1]:
+                if pfx+item in sigDict:
                     PhFrExtPOSig[item] = sigDict[pfx+item]            
             if hapData['Pref.Ori.'][0] == 'MD':
                 hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
-                if hapData['Pref.Ori.'][2]:
+                if pfx+item in sigDict:
                     PhFrExtPOSig[item] = sigDict[pfx+item]
             else:                           #'SH' spherical harmonics
                 for item in hapData['Pref.Ori.'][5]:
                     hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
-                    if hapData['Pref.Ori.'][2]:
+                    if pfx+item in sigDict:
                         PhFrExtPOSig[item] = sigDict[pfx+item]
 #            print '\n Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
 #            print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
@@ -725,29 +761,35 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
 #                    ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2]) 
                
             SizeMuStrSig = {'Mustrain':[[0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
-                'Size':[[0,0],[0 for i in range(len(hapData['Size'][4]))]]}                  
+                'Size':[[0,0],[0 for i in range(len(hapData['Size'][4]))]],
+                'HStrain':{}}                  
             for item in ['Mustrain','Size']:
                 if hapData[item][0] in ['isotropic','uniaxial']:                    
                     hapData[item][1][0] = parmDict[pfx+item+':0']
                     if item == 'Size':
                         hapData[item][1][0] = min(10.,max(0.01,hapData[item][1][0]))
-                    if hapData[item][2][0]: 
+                    if pfx+item+':0' in sigDict: 
                         SizeMuStrSig[item][0][0] = sigDict[pfx+item+':0']
                     if hapData[item][0] == 'uniaxial':
                         hapData[item][1][1] = parmDict[pfx+item+':1']
                         if item == 'Size':
                             hapData[item][1][1] = min(10.,max(0.01,hapData[item][1][1]))                        
-                        if hapData[item][2][1]:
+                        if pfx+item+':1' in sigDict:
                             SizeMuStrSig[item][0][1] = sigDict[pfx+item+':1']
                 else:       #generalized for mustrain or ellipsoidal for size
                     for i in range(len(hapData[item][4])):
                         sfx = ':'+str(i)
                         hapData[item][4][i] = parmDict[pfx+item+sfx]
-                        if hapData[item][5][i]:
+                        if pfx+item+sfx in sigDict:
                             SizeMuStrSig[item][1][i] = sigDict[pfx+item+sfx]
-                            
+            names = G2spc.HStrainNames(SGData)
+            for i,name in enumerate(names):
+                hapData['HStrain'][0][i] = parmDict[pfx+name]
+                if pfx+name in sigDict:
+                    SizeMuStrSig['HStrain'][name] = sigDict[pfx+name]
             PrintSizeAndSig(hapData['Size'],SizeMuStrSig['Size'])
             PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
+            PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig['HStrain'],SGData)
     
 def GetHistogramData(Histograms,Print=True):
     
@@ -887,7 +929,7 @@ def SetHistogramData(parmDict,sigDict,Histograms):
         backSig = [0 for i in range(lenBack)]
         for i in range(lenBack):
             Background[3+i] = parmDict[pfx+'Back:'+str(i)]
-            if Background[1]:
+            if pfx+'Back:'+str(i) in sigDict:
                 backSig[i] = sigDict[pfx+'Back:'+str(i)]
         return backSig
         
@@ -897,7 +939,7 @@ def SetHistogramData(parmDict,sigDict,Histograms):
         for i,flag in enumerate(insFlags):
             insName = pfx+insNames[i]
             insVals[i] = parmDict[insName]
-            if flag:
+            if insName in sigDict:
                 instSig[i] = sigDict[insName]
         return instSig
         
@@ -906,13 +948,13 @@ def SetHistogramData(parmDict,sigDict,Histograms):
             sampSig = [0 for i in range(3)]
             for i,item in enumerate(['Scale','Shift','Transparency']):       #surface roughness?, diffuse scattering?
                 Sample[item][0] = parmDict[pfx+item]
-                if Sample[item][1]:
+                if pfx+item in sigDict:
                     sampSig[i] = sigDict[pfx+item]
         elif 'Debye' in Sample['Type']:        #Debye-Scherrer
             sampSig = [0 for i in range(4)]
             for item in ['Scale','Absorption','DisplaceX','DisplaceY']:
                 Sample[item][0] = parmDict[pfx+item]
-                if Sample[item][1]:
+                if pfx+item in sigDict:
                     sampSig[i] = sigDict[pfx+item]
         return sampSig
         
@@ -1115,10 +1157,38 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         
         return Icorr
         
+    def GetHStrainShift(refl,SGData,phfx,parmDict):
+        laue = SGData['SGLaue']
+        uniq = SGData['SGUniq']
+        h,k,l = refl[:3]
+        if laue in ['m3','m3m']:
+            Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)
+        elif laue in ['6/m','6/mmm','3m1','31m','3']:
+            Dij = parmDict[phfx+'D11']*(h**2+k**2+h*k)+parmDict[phfx+'D33']*l**2
+        elif laue in ['3R','3mR']:
+            Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)+parmDict[phfx+'D12']*(h*k+h*l+k*l)
+        elif laue in ['4/m','4/mmm']:
+            Dij = parmDict[phfx+'D11']*(h**2+k**2)+parmDict[phfx+'D33']*l**2
+        elif laue in ['mmm']:
+            Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2
+        elif laue in ['2/m']:
+            Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2
+            if uniq == 'a':
+                Dij += parmDict[phfx+'D23']*k*l
+            elif uniq == 'b':
+                Dij += parmDict[phfx+'D13']*h*l
+            elif uniq == 'c':
+                Dij += parmDict[phfx+'D12']*h*k
+        else:
+            Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2+ \
+                parmDict[phfx+'D12']*h*k+parmDict[phfx+'D13']*h*l+parmDict[phfx+'D23']*k*l
+        return Dij*refl[4]**2*tand(refl[5]/2.0)
+                
     def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
         h,k,l = refl[:3]
         dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
         d = np.sqrt(dsq)
+        refl[4] = d
         pos = 2.0*asind(wave/(2.0*d))+parmDict[hfx+'Zero']
         const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
         if 'Bragg' in calcControls[hfx+'instType']:
@@ -1166,6 +1236,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
+        SGData = Phase['General']['SGData']
         A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         sizeEllipse = []
@@ -1175,13 +1246,14 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             if 'C' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse)    #peak sig & gam
                 Icorr = GetIntensityCorr(refl,phfx,hfx,calcControls,parmDict)
                 if 'Pawley' in Phase['General']['Type']:
                     try:
                         refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
                     except KeyError:
-                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
+#                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
                 else:
                     raise ValueError       #wants strctrfacr calc here
@@ -1282,6 +1354,36 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             dpdYd = -const*sind(pos)
             return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd
             
+    def GetHStrainShiftDerv(refl,SGData,phfx):
+        laue = SGData['SGLaue']
+        uniq = SGData['SGUniq']
+        h,k,l = refl[:3]
+        if laue in ['m3','m3m']:
+            dDijDict = {phfx+'D11':h**2+k**2+l**2,}
+        elif laue in ['6/m','6/mmm','3m1','31m','3']:
+            dDijDict = {phfx+'D11':h**2+k**2+h*k,phfx+'D33':l**2}
+        elif laue in ['3R','3mR']:
+            dDijDict = {phfx+'D11':h**2+k**2+l**2,phfx+'D12':h*k+h*l+k*l}
+        elif laue in ['4/m','4/mmm']:
+            dDijDict = {phfx+'D11':h**2+k**2,phfx+'D33':l**2}
+        elif laue in ['mmm']:
+            dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2}
+        elif laue in ['2/m']:
+            dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2}
+            if uniq == 'a':
+                dDijDict[phfx+'D23'] = k*l
+            elif uniq == 'b':
+                dDijDict[phfx+'D13'] = h*l
+            elif uniq == 'c':
+                dDijDict[phfx+'D12'] = h*k
+                names.append()
+        else:
+            dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2,
+                phfx+'D12':h*k,phfx+'D13':h*l,phfx+'D23':k*l}
+        for item in dDijDict:
+            dDijDict[item] *= refl[4]**2*tand(refl[5]/2.0)
+        return dDijDict
+                
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],
@@ -1393,6 +1495,10 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 for name,dpdA in cellDervNames:
                     if name in varylist:
                         dMdv[varylist.index(name)] += dpdA*dervDict['pos']
+                dDijDict = GetHStrainShiftDerv(refl,SGData,phfx)
+                for name in dDijDict:
+                    if name in varylist:
+                        dMdv[varylist.index(name)] += dDijDict[name]*dervDict['pos']
                 gamDict = GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse)
                 for name in gamDict:
                     if name in varylist:
@@ -1507,6 +1613,8 @@ def Refine(GPXfile,dlg):
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/len(varyList))
+#        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
+#        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
@@ -1522,7 +1630,7 @@ def Refine(GPXfile,dlg):
             sig = np.sqrt(np.diag(result[1])*GOF)
             if np.any(np.isnan(sig)):
                 print '*** Least squares aborted - some invalid esds possible ***'
-            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
+#            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
@@ -1540,18 +1648,18 @@ def Refine(GPXfile,dlg):
     SetHistogramData(parmDict,sigDict,Histograms)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases)
 #for testing purposes!!!
-#    import cPickle
-#    file = open('structTestdata.dat','wb')
-#    cPickle.dump(parmDict,file,1)
-#    cPickle.dump(varyList,file,1)
-#    for histogram in Histograms:
-#        if 'PWDR' in histogram[:4]:
-#            Histogram = Histograms[histogram]
-#    cPickle.dump(Histogram,file,1)
-#    cPickle.dump(Phases,file,1)
-#    cPickle.dump(calcControls,file,1)
-#    cPickle.dump(pawleyLookup,file,1)
-#    file.close()
+    import cPickle
+    file = open('structTestdata.dat','wb')
+    cPickle.dump(parmDict,file,1)
+    cPickle.dump(varyList,file,1)
+    for histogram in Histograms:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+    cPickle.dump(Histogram,file,1)
+    cPickle.dump(Phases,file,1)
+    cPickle.dump(calcControls,file,1)
+    cPickle.dump(pawleyLookup,file,1)
+    file.close()
 
 def main():
     arg = sys.argv

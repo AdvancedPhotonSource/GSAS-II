@@ -641,6 +641,32 @@ def MustrainNames(SGData):
         SHKL += ['S211','S121','S112']
         return SHKL
 
+def HStrainNames(SGData):
+    laue = SGData['SGLaue']
+    uniq = SGData['SGUniq']
+    if laue in ['m3','m3m']:
+        return ['D11']
+    elif laue in ['6/m','6/mmm','3m1','31m','3']:
+        return ['D11','D33']
+    elif laue in ['3R','3mR']:
+        return ['D11','D12']
+    elif laue in ['4/m','4/mmm']:
+        return ['D11','D33']
+    elif laue in ['mmm']:
+        return ['D11','D22','D33']
+    elif laue in ['2/m']:
+        Dij = ['D11','D22','D33']
+        if uniq == 'a':
+            Dij += ['D23']
+        elif uniq == 'b':
+            Dij += ['D13']
+        elif uniq == 'c':
+            Dij += ['D12']
+        return Dij
+    else:
+        Dij = ['D11','D22','D33','D12','D13','D23']
+        return Dij
+    
 def MustrainCoeff(HKL,SGData):
     #NB: order of terms is the same as returned by MustrainNames
     laue = SGData['SGLaue']

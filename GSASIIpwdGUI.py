@@ -249,57 +249,71 @@ def UpdatePeakGrid(self, data):
     self.dataFrame.setSizePosLeft([535,350])
         
 def UpdateBackgroundGrid(self,data):
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
-    maxTerm = 9
-    Types = [wg.GRID_VALUE_CHOICE+':chebyschev,another,more',
-        wg.GRID_VALUE_BOOL,
-        wg.GRID_VALUE_NUMBER+':1,'+str(maxTerm)]
-    for i in range(maxTerm):
-        Types.append(wg.GRID_VALUE_FLOAT+':10,3')
+    ValObj = {}
     
-    def RefreshBackgroundGrid(event):
-        data = self.BackTable.GetData()
+    def OnNewType(event):
+        data[0][0] = bakType.GetValue()
+        
+    def OnBakRef(event):
+        data[0][1] = bakRef.GetValue()
+        
+    def OnBakTerms(event):
+        data[0][2] = int(bakTerms.GetValue())
         M = len(data[0])
         N = data[0][2]+3
         item = data[0]
         if N > M:       #add terms
             for i in range(M,N): 
                 item.append(0.0)
-                self.BackTable.SetColLabelValue(i,str(i-2))
-            data = [item]
-            msg = wg.GridTableMessage(self.BackTable, 
-                wg.GRIDTABLE_NOTIFY_COLS_APPENDED,0,N-M)
-            self.dataDisplay.ProcessTableMessage(msg)                         
         elif N < M:     #delete terms
-            new = []
-            for i in range(N):
-                new.append(item[i])
-            data = [new]
-            msg = wg.GridTableMessage(self.BackTable, 
-                wg.GRIDTABLE_NOTIFY_COLS_DELETED,0,M-N)
-            self.dataDisplay.ProcessTableMessage(msg)
+            for i in range(N,M):
+                del(item[-1])
         self.PatternTree.SetItemPyData(BackId,data)
-        event.StopPropagation()
-                  
-    self.BackTable = []
-    N = len(data[0])
-    M = data[0][2]
-    colLabels = ['function','refine','Nterms']
-    rowLabels=['background']
-    for i in range(M): colLabels.append(str(i+1))
-    self.BackTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    self.dataFrame.SetLabel('Background')
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    gridPanel = wx.Panel(self.dataFrame)
-    self.dataDisplay = G2gd.GSGrid(gridPanel)                
-    self.dataDisplay.SetTable(self.BackTable, True)
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshBackgroundGrid)                
-    self.dataDisplay.SetMargins(0,0)
-    self.dataDisplay.AutoSizeColumns(False)
+        UpdateBackgroundGrid(self,data)
+        
+    def OnBakVal(event):
+        Obj = event.GetEventObject()
+        item = ValObj[Obj.GetId()][0]
+        try:
+            value = float(Obj.GetValue())
+        except ValueError:
+            value = data[0][item]
+        data[0][item] = value
+        Obj.SetValue('%10.4f'%(value))
+        
+    if self.dataDisplay:
+        self.dataFrame.Clear()
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
+    Choices = ['chebyschev','cosine','interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(self.dataDisplay,0)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background function: '),0,wx.ALIGN_CENTER_VERTICAL)
+    bakType = wx.ComboBox(self.dataDisplay,value=data[0][0],
+            choices=Choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    bakType.Bind(wx.EVT_COMBOBOX, OnNewType)
+    topSizer.Add(bakType)
+    topSizer.Add((5,0),0)
+    bakRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
+    bakRef.SetValue(bool(data[0][1]))
+    bakRef.Bind(wx.EVT_CHECKBOX, OnBakRef)
+    topSizer.Add(bakRef,0,wx.ALIGN_CENTER_VERTICAL)
+    topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
+    bakTerms = wx.ComboBox(self.dataDisplay,-1,value=str(data[0][2]),choices=[str(i+1) for i in range(36)],
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    bakTerms.Bind(wx.EVT_COMBOBOX,OnBakTerms)
+    topSizer.Add(bakTerms,0,wx.ALIGN_CENTER_VERTICAL)
+    topSizer.Add((5,0),0)
+    mainSizer.Add(topSizer)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
+    bakSizer = wx.FlexGridSizer(1,5,5,5)
+    for i,value in enumerate(data[0][3:]):
+        bakVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.4f'%(value),style=wx.TE_PROCESS_ENTER)
+        bakSizer.Add(bakVal,0,wx.ALIGN_CENTER_VERTICAL)
+        ValObj[bakVal.GetId()] = [i+3]
+        bakVal.Bind(wx.EVT_TEXT_ENTER,OnBakVal)
+        bakVal.Bind(wx.EVT_KILL_FOCUS,OnBakVal)        
+    mainSizer.Add(bakSizer)
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
@@ -474,6 +488,12 @@ def UpdateInstrumentGrid(self,data):
         typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
         instSizer.Add(typePick,0,wx.ALIGN_CENTER_VERTICAL)
         if 'C' in insVal['Type']:               #constant wavelength
+            #patch
+            if 'Azimuth' not in insVal:
+                insVal['Azimuth'] = 0.0
+                insDef['Azimuth'] = 0.0
+                insRef['Azimuth'] = False
+            #end of patch
             instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Azimuth: %7.2f'%(insVal['Azimuth'])),0,wx.ALIGN_CENTER_VERTICAL)
             if 'Lam1' in insVal:
                 instSizer.Add((5,5),0)
@@ -969,6 +989,10 @@ def UpdateUnitCellsGrid(self, data):
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
         data = [controls,bravais,cells,dmin]
+        cells = self.PatternTree.GetItemPyData(UnitCellsId)[2]
+        for cell in cells:
+            cell[-1] = False
+        cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,])
         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
         self.HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
         UpdateUnitCellsGrid(self,data)

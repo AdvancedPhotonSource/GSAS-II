@@ -345,7 +345,7 @@ class GSASII(wx.Frame):
                     Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
                         'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
                         'Temperature':Temperature,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,
-                        'Force':0.0}
+                        'Force':0.0,'Gonio. radius':200.0}
                     try:
                         for Item in Data:
                             vals = Item[2].split()          #split up the BANK record

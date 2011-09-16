@@ -204,7 +204,6 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
                     phaseName = data[iphase][0]
                     data[iphase][1] = Phases[phaseName]
         elif datum[0] == 'Covariance':
-            print data
             varyList,covMatrix = CovData
             data[0][1] = {'varyList':varyList,'covariance':covMatrix}
         try:

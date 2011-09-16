@@ -161,13 +161,14 @@ def GetUsedHistogramsAndPhases(GPXfile):
                     hId += 1
     return Histograms,Phases
     
-def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases):
+def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
     ''' Updates gpxfile from all histograms that are found in any phase
     and any phase that used a histogram
     input:
         GPXfile = .gpx full file name
         Histograms = dictionary of histograms as {name:data,...}
         Phases = dictionary of phases that use histograms
+        CovData = [varyList,covariance matrix]
     '''
                         
     def GPXBackup(GPXfile):
@@ -202,6 +203,10 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases):
                 if data[iphase][0] in Phases:
                     phaseName = data[iphase][0]
                     data[iphase][1] = Phases[phaseName]
+        elif datum[0] == 'Covariance':
+            print data
+            varyList,covMatrix = CovData
+            data[0][1] = {'varyList':varyList,'covariance':covMatrix}
         try:
             histogram = Histograms[datum[0]]
             print 'found ',datum[0]
@@ -838,8 +843,10 @@ def GetHistogramData(Histograms,Print=True):
     def PrintBackground(Background):
         print '\n Background function: ',Background[0],' Refine?',bool(Background[1])
         line = ' Coefficients: '
-        for back in Background[3:]:
+        for i,back in enumerate(Background[3:]):
             line += '%10.3f'%(back)
+            if i and not i%10:
+                line += '\n'+15*' '
         print line 
         
     def PrintInstParms(Inst):
@@ -1193,7 +1200,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
         if 'Bragg' in calcControls[hfx+'instType']:
             pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+ \
-                1.e-7*parmDict[hfx+'Transparency']*sind(pos))            #trans(=1/mueff) in Angstroms
+                parmDict[hfx+'Transparency']*sind(pos)*100.0)            #trans(=1/mueff) in cm
         else:               #Debye-Scherrer - simple but maybe not right
             pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+parmDict[hfx+'DisplaceY']*sind(pos))
         return pos
@@ -1347,7 +1354,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
         if 'Bragg' in calcControls[hfx+'instType']:
             dpdSh = -4.*const*cosd(pos/2.0)
-            dpdTr = -1.e-7*const*sind(pos)
+            dpdTr = -const*sind(pos)*100.0
             return dpdA,dpdw,dpdZ,dpdSh,dpdTr,0.,0.
         else:               #Debye-Scherrer - simple but maybe not right
             dpdXd = -const*cosd(pos)
@@ -1509,6 +1516,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
     return dMdv    
                     
 def Refine(GPXfile,dlg):
+    import cPickle
     
     def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
         parmdict.update(zip(varylist,values))
@@ -1627,7 +1635,10 @@ def Refine(GPXfile,dlg):
         print 'Refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
         print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
         try:
-            sig = np.sqrt(np.diag(result[1])*GOF)
+            covMatrix = result[1]*GOF
+            sig = np.sqrt(np.diag(covMatrix))
+            xvar = np.outer(sig,np.ones_like(sig))
+            cov = np.divide(np.divide(covMatrix,xvar),xvar.T)
             if np.any(np.isnan(sig)):
                 print '*** Least squares aborted - some invalid esds possible ***'
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
@@ -1642,24 +1653,34 @@ def Refine(GPXfile,dlg):
                     del(varyList[ipvt-1])
                     break
 
+#    print 'dependentParmList: ',G2mv.dependentParmList
+#    print 'arrayList: ',G2mv.arrayList
+#    print 'invarrayList: ',G2mv.invarrayList
+#    print 'indParmList: ',G2mv.indParmList
+#    print 'fixedDict: ',G2mv.fixedDict
+    covFile = ospath.splitext(GPXfile)[0]+'.gpxcov'
+    file = open(covFile,'wb')
+    cPickle.dump(varyList,file,1)
+    cPickle.dump(result[0],file,1)
+    cPickle.dump(covMatrix,file,1)
+    file.close()
     sigDict = dict(zip(varyList,sig))
     SetPhaseData(parmDict,sigDict,Phases)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
-    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases)
+    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,[varyList,cov])
 #for testing purposes!!!
-    import cPickle
-    file = open('structTestdata.dat','wb')
-    cPickle.dump(parmDict,file,1)
-    cPickle.dump(varyList,file,1)
-    for histogram in Histograms:
-        if 'PWDR' in histogram[:4]:
-            Histogram = Histograms[histogram]
-    cPickle.dump(Histogram,file,1)
-    cPickle.dump(Phases,file,1)
-    cPickle.dump(calcControls,file,1)
-    cPickle.dump(pawleyLookup,file,1)
-    file.close()
+#    file = open('structTestdata.dat','wb')
+#    cPickle.dump(parmDict,file,1)
+#    cPickle.dump(varyList,file,1)
+#    for histogram in Histograms:
+#        if 'PWDR' in histogram[:4]:
+#            Histogram = Histograms[histogram]
+#    cPickle.dump(Histogram,file,1)
+#    cPickle.dump(Phases,file,1)
+#    cPickle.dump(calcControls,file,1)
+#    cPickle.dump(pawleyLookup,file,1)
+#    file.close()
 
 def main():
     arg = sys.argv

@@ -620,7 +620,7 @@ def getBackground(pfx,parmDict,bakType,xdata):
                 yb += parmDict[key]*(xdata-xdata[0])**iBak
             elif bakType == 'cosine':
                 yb += parmDict[key]*npcosd(xdata*iBak)
-    elif bakType in ['interpolate',]:
+    elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:
         if nBak == 1:
             yb = np.ones_like(xdata)*parmDict[pfx+'Back:0']
         elif nBak == 2:
@@ -629,7 +629,14 @@ def getBackground(pfx,parmDict,bakType,xdata):
             T1 = 1.0-T2
             yb = parmDict[pfx+'Back:0']*T1+parmDict[pfx+'Back:1']*T2
         else:
-            bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+            if bakType == 'lin interpolate':
+                bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+            elif bakType == 'inv interpolate':
+                bakPos = 1./np.linspace(1./xdata[-1],1./xdata[0],nBak,True)
+            elif bakType == 'log interpolate':
+                bakPos = np.exp(np.linspace(np.log(xdata[0]),np.log(xdata[-1]),nBak,True))
+            bakPos[0] = xdata[0]
+            bakPos[-1] = xdata[-1]
             bakVals = np.zeros(nBak)
             for i in range(nBak):
                 bakVals[i] = parmDict[pfx+'Back:'+str(i)]
@@ -653,7 +660,7 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
                 dydb[iBak] = (xdata-xdata[0])**iBak
             elif bakType == 'cosine':
                 dydb[iBak] = npcosd(xdata*iBak)
-    elif bakType in ['interpolate',]:
+    elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:
         if nBak == 1:
             dydb[0] = np.ones_like(xdata)
         elif nBak == 2:
@@ -662,17 +669,24 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             T1 = 1.0-T2
             dydb = [T1,T2]
         else:
-            bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+            if bakType == 'lin interpolate':
+                bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+            elif bakType == 'inv interpolate':
+                bakPos = 1./np.linspace(1./xdata[-1],1./xdata[0],nBak,True)
+            elif bakType == 'log interpolate':
+                bakPos = np.exp(np.linspace(np.log(xdata[0]),np.log(xdata[-1]),nBak,True))
+            bakPos[0] = xdata[0]
+            bakPos[-1] = xdata[-1]
             dx = bakPos[1]-bakPos[0]
             for i,pos in enumerate(bakPos):
                 if i == 0:
-                    dydb[0] = np.where(xdata<bakPos[1],(bakPos[1]-xdata)/dx,0.)
+                    dydb[0] = np.where(xdata<bakPos[1],(bakPos[1]-xdata)/(bakPos[1]-bakPos[0]),0.)
                 elif i == len(bakPos)-1:
-                    dydb[i] = np.where(xdata>bakPos[-2],(bakPos[-1]-xdata)/dx,0.)
+                    dydb[i] = np.where(xdata>bakPos[-2],(bakPos[-1]-xdata)/(bakPos[-1]-bakPos[-2]),0.)
                 else:
                     dydb[i] = np.where(xdata>bakPos[i],
-                        np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/dx,0.),
-                        np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/dx,0.))
+                        np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/(bakPos[i+1]-bakPos[i]),0.),
+                        np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/(bakPos[i]-bakPos[i-1]),0.))
     return dydb
 
 #use old fortran routine

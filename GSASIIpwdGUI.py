@@ -285,7 +285,7 @@ def UpdateBackgroundGrid(self,data):
         self.dataFrame.Clear()
     self.dataDisplay = wx.Panel(self.dataFrame)
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
-    Choices = ['chebyschev','cosine','interpolate']
+    Choices = ['chebyschev','cosine','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background function: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -617,7 +617,7 @@ def UpdateSampleGrid(self,data):
             ['Absorption',' Sample absorption(\xb5r): ','%.4f',],]
     elif data['Type'] == 'Bragg-Brentano':
         parms += [['Shift',' Sample displacement(\xb5m): ','%.2f',],
-            ['Transparency',' Sample transparency(1/\xb5eff,\xc5): ','%.4f'],]
+            ['Transparency',' Sample transparency(1/\xb5eff,cm): ','%.4f'],]
     parms.append(['Temperature',' Sample temperature(K): ','%.2f'])
     parms.append(['Pressure',' Sample pressure(MPa): ','%.3f'])
     parms.append(['Humidity',' Sample humidity(%): ','%.1f'])

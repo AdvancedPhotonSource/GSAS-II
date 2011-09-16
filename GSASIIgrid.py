@@ -711,6 +711,11 @@ def MovePatternTreeToGrid(self,item):
             self.dataDisplay.Clear() 
             Id = GetPatternTreeItemId(self,self.root, 'Notebook')
             if Id: self.PatternTree.SetItemPyData(Id,data)
+        if self.dataFrame.GetLabel() == 'Covariance':
+            data = [self.dataDisplay.GetValue()]
+            self.dataDisplay.Clear() 
+            Id = GetPatternTreeItemId(self,self.root, 'Covariance')
+            if Id: self.PatternTree.SetItemPyData(Id,data)
         if 'Phase Data for' in self.dataFrame.GetLabel():
             if self.dataDisplay: 
                 oldPage = self.dataDisplay.GetSelection()
@@ -749,6 +754,9 @@ def MovePatternTreeToGrid(self,item):
                 self.PatternTree.SetItemPyData(item,data)                             
             self.Refine.Enable(True)
             UpdateControls(self,data)
+        elif self.PatternTree.GetItemText(item) == 'Covariance':
+            data = self.PatternTree.GetItemPyData(item)
+            G2plt.PlotCovariance(self)
         elif 'IMG' in self.PatternTree.GetItemText(item):
             self.Image = item
             G2plt.PlotImage(self,newPlot=True)

@@ -546,6 +546,9 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(sub,[''])
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
             self.PatternTree.SetItemPyData(sub,{})
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Covariance')
+            self.PatternTree.SetItemPyData(sub,{})
+            
                 
     class CopyDialog(wx.Dialog):
         def __init__(self,parent,title,text,data):
@@ -1048,6 +1051,11 @@ class GSASII(wx.Frame):
                     self.GSASprojectfile = dlg.GetPath()
                     self.dirname = dlg.GetDirectory()
                     G2IO.ProjFileOpen(self)
+                    #patch
+                    if not G2gd.GetPatternTreeItemId(self,self.root,'Covariance'):
+                        sub = self.PatternTree.AppendItem(parent=self.root,text='Covariance')
+                        self.PatternTree.SetItemPyData(sub,{})
+                    #end patch
                     self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
                     self.PatternTree.Expand(self.root)
                     self.HKL = []
@@ -1422,20 +1430,20 @@ class GSASII(wx.Frame):
         
     class ViewParmDialog(wx.Dialog):
         def __init__(self,parent,title,parmDict):
-            wx.Dialog.__init__(self,parent,-1,title,size=(250,430),
+            wx.Dialog.__init__(self,parent,-1,title,size=(260,430),
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-            panel = wx.Panel(self,size=(250,430))
+            panel = wx.Panel(self,size=(260,430))
             parmNames = parmDict.keys()
             parmNames.sort()
             parmText = ' p:h:Parameter       refine?              value\n'
             for name in parmNames:
                 parmData = parmDict[name]
                 try:
-                    parmText += ' %s \t%12.4g \n'%(name.ljust(20)+'\t'+parmData[1],parmData[0])
+                    parmText += ' %s \t%12.4g \n'%(name.ljust(19)+'\t'+parmData[1],parmData[0])
                 except TypeError:
                     pass
             parmTable = wx.TextCtrl(panel,-1,parmText,
-                style=wx.TE_MULTILINE|wx.TE_READONLY,size=(240,400))
+                style=wx.TE_MULTILINE|wx.TE_READONLY,size=(250,400))
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(parmTable)
             panel.SetSizer(mainSizer)

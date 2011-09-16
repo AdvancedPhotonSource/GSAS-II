@@ -1360,6 +1360,61 @@ def PlotTexture(self,data,newPlot=False,Start=False):
             Plot.set_xlabel(self.Projection.capitalize()+' projection')
     Page.canvas.draw()
 
+def PlotCovariance(self):
+    Data = self.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
+    if not Data:
+        print 'No covariance matrix available'
+        return
+    varyList = Data['varyList']
+    Xmax = len(varyList)
+    covArray = Data['covariance']
+
+    def OnPlotKeyPress(event):
+        newPlot = False
+        if event.key == 's':
+            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice.sort()
+            dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                self.ContourColor = choice[sel]
+            else:
+                self.ContourColor = 'Spectral'
+            dlg.Destroy()
+        PlotCovariance(self)
+
+    def OnMotion(event):
+        if event.xdata and event.ydata:                 #avoid out of frame errors
+            xpos = int(event.xdata+.5)
+            ypos = int(event.ydata+.5)
+            if -1 < xpos < len(varyList) and -1 < ypos < len(varyList):
+                self.G2plotNB.status.SetFields(['Key: s to change colors',
+                    '%s - %s: %5.3f'%(varyList[xpos].ljust(19),varyList[ypos].ljust(19),covArray[xpos][ypos])])
+    try:
+        plotNum = self.G2plotNB.plotList.index('Covariance')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
+        Plot = self.G2plotNB.addMpl('Covariance').gca()
+        plotNum = self.G2plotNB.plotList.index('Covariance')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+
+    Page.SetFocus()
+    self.G2plotNB.status.SetFields(['',''])    
+    acolor = mpl.cm.get_cmap(self.ContourColor)
+    Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower')
+    colorBar = Page.figure.colorbar(Img)
+    Plot.set_title('Variance-Covariance matrix from LS refinement')
+    Plot.set_xlabel('Variable number')
+    Plot.set_ylabel('Variable number')
+    Page.canvas.draw()
+
             
 def PlotExposedImage(self,newPlot=False,event=None):
     '''General access module for 2D image plotting

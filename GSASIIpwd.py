@@ -136,8 +136,8 @@ def Polarization(Pola,Tth,Azm=0.0):
 #        Pola*npsind(Azm)**2+(1.-Pola)*npcosd(Azm)**2
     pola = ((1.0-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
         (1.0-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
-    dpdPola = npsind(Azm)**2*npsind(Tth)**2
-    return pola,dpdPola
+    dpdPola = -npsind(Tth)**2*(npsind(Azm)**2-npcosd(Azm)**2)
+    return pola,dpdPola/pola
     
 def Oblique(ObCoeff,Tth):
     if ObCoeff:

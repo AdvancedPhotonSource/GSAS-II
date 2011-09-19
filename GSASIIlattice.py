@@ -236,10 +236,10 @@ def CosSinAngle(U,V,G):
     return:
         cos(phi) & sin(phi)
     """
-    u = U/nl.norm(U)
-    v = V/nl.norm(V)
+    u = U/np.sqrt(np.inner(U,np.inner(G,U)))
+    v = V/np.sqrt(np.inner(V,np.inner(G,V)))
     cosP = np.inner(u,np.inner(G,v))
-    sinP = np.sqrt(1.0-cosP**2)
+    sinP = np.sqrt(max(0.0,1.0-cosP**2))
     return cosP,sinP
     
 def criticalEllipse(prob):

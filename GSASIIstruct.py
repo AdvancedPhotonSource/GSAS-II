@@ -322,6 +322,7 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
                 jsum = jh**2+jk**2+jl**2
                 if isum == jsum:
                     G2mv.StoreEquivalence(varyJ,(varyI,))
+                    
 def cellVary(pfx,SGData): 
     if SGData['SGLaue'] in ['-1',]:
         return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
@@ -408,7 +409,7 @@ def GetPhaseData(PhaseData,Print=True):
                 if refl[5]:
                     pawleyVary.append(pfx+'PWLref:'+str(i))
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,pawleyVary)      #does G2mv.StoreEquivalence
-            phaseVary += pawleyVary    
+            phaseVary += pawleyVary
                 
     return phaseVary,phaseDict,pawleyLookup
     
@@ -1157,9 +1158,20 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum            
         return gam
         
-    def GetIntensityCorr(refl,phfx,hfx,calcControls,parmDict):
+    def GetMarchDollase(refl,G,phfx,calcControls,parmDict):
+        MD = parmDict[phfx+'MD']
+        MDAxis = calcControls[phfx+'MDAxis']
+        sumMD = 0
+        for H in refl[10]:            
+            cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
+            sumMD += 1/np.sqrt((MD*cosP)**2+sinP**2/MD)**3
+        return sumMD/len(refl[10])
+        
+    def GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict):
         Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
         Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
+        if calcControls[phfx+'poType'] == 'MD':
+            Icorr *= GetMarchDollase(refl,G,phfx,calcControls,parmDict)
         
         return Icorr
         
@@ -1254,7 +1266,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
                 refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse)    #peak sig & gam
-                Icorr = GetIntensityCorr(refl,phfx,hfx,calcControls,parmDict)
+                Icorr = GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict)
                 if 'Pawley' in Phase['General']['Type']:
                     try:
                         refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
@@ -1293,7 +1305,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         tanth = tand(refl[5]/2.)
         #crystallite size derivatives
         if calcControls[phfx+'SizeType'] == 'isotropic':
-            gamDict[phfx+'Size:0'] = 1.80*wave/(np.pi*costh)
+            gamDict[phfx+'Size:0'] = -1.80*wave/(np.pi*costh)
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
@@ -1329,15 +1341,29 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 gamDict[phfx+'Mustrain:'+str(i)] = const*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
         return gamDict
         
-    def GetIntensityDerv(refl,phfx,hfx,calcControls,parmDict):
+    def GetMarchDollaseDerv(refl,G,phfx,calcControls,parmDict):
+        MD = parmDict[phfx+'MD']
+        MDAxis = calcControls[phfx+'MDAxis']
+        sumMD = 0
+        sumdMD = 0
+        for H in refl[10]:            
+            cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
+            A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
+            sumMD += A**3
+            sumdMD -= (1.5*A**5)*(2.0*MD*cosP**2-(sinP/MD)**2)
+        return sumMD/len(refl[10]),refl[8]*sumdMD
+        
+    def GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict):
         Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
         pola,dpdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
-        dIdpola = Icorr*dpdPola
+        dIdpola = refl[8]*Icorr*dpdPola/refl[3]
         Icorr *= pola
+        MDcorr,dIdMD = GetMarchDollaseDerv(refl,G,phfx,calcControls,parmDict)
+        Icorr *= MDcorr
         dIdsh = Icorr/parmDict[hfx+'Scale']
         dIdsp = Icorr/parmDict[phfx+'Scale']
-        
-        return Icorr,dIdsh,dIdsp,dIdpola
+        dIdMD *= Icorr
+        return Icorr,dIdsh,dIdsp,dIdpola,dIdMD
         
     def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
         dpr = 180./np.pi
@@ -1448,9 +1474,11 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         sizeEllipse = []
         if calcControls[phfx+'SizeType'] == 'ellipsoidal':
             sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
-        for iref,refl in enumerate(refList):
+        for refl in refList:
             if 'C' in calcControls[hfx+'histType']:
-                Icorr,dIdsh,dIdsp,dIdpola = GetIntensityDerv(refl,phfx,hfx,calcControls,parmDict)
+                h,k,l = refl[:3]
+                iref = pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]
+                Icorr,dIdsh,dIdsp,dIdpola,dIdMD = GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict)
                 hkl = refl[:3]
                 pos = refl[5]
                 tanth = tand(pos/2.0)
@@ -1492,7 +1520,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     hfx+'X':[dgdX,'gam'],hfx+'Y':[dgdY,'gam'],hfx+'SH/L':[1.0,'shl'],
                     hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
-                    hfx+'DisplaceY':[dpdY,'pos'],}
+                    hfx+'DisplaceY':[dpdY,'pos'],phfx+'MD':[dIdMD,'int'],}
                 for name in names:
                     if name in varylist:
                         item = names[name]
@@ -1643,7 +1671,7 @@ def Refine(GPXfile,dlg):
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
             break                   #refinement succeeded - finish up!
-        except ValueError:          #result[1] is None on singular matrix
+        except TypeError:          #result[1] is None on singular matrix
             print '**** Refinement failed - singular matrix ****'
             Ipvt = result[2]['ipvt']
             for i,ipvt in enumerate(Ipvt):

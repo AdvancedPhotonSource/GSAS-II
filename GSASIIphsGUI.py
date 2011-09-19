@@ -2626,8 +2626,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         pId = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
-                            'Size':['isotropic',[10.,10.,],[False,False],[0,0,1],6*[0.0,],6*[False,]],
-                            'Mustrain':['isotropic',[1.0,1.0],[False,False],[0,0,1],
+                            'Size':['isotropic',[4.,4.,],[False,False],[0,0,1],6*[0.0,],6*[False,]],
+                            'Mustrain':['isotropic',[1000.0,1000.0],[False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False]}
@@ -2712,6 +2712,43 @@ def UpdatePhaseData(self,Item,data,oldPage):
             wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks
         FillPawleyReflectionsGrid()
+        
+    def OnPawleyEstimate(event):
+        try:
+            Refs = data['Pawley ref']
+            Histograms = data['Histograms']
+        except KeyError:
+            print '**** Error - no histograms defined for this phase ****'
+            return
+        HistoNames = Histograms.keys()
+        PatternId = G2gd.GetPatternTreeItemId(self,self.root,HistoNames[0])
+        xdata = self.PatternTree.GetItemPyData(PatternId)[1]
+        Inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Instrument Parameters'))
+        Inst = dict(zip(Inst[3],Inst[1]))
+        Sample = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Sample Parameters'))
+        if 'Lam' in Inst:
+            wave = Inst['Lam']
+        else:
+            wave = Inst['Lam1']
+        
+        posCorr = Inst['Zero']
+        print Sample
+        const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
+        
+        for ref in Refs:
+            pos = 2.0*asind(wave/(2.0*ref[4]))
+            if 'Bragg' in Sample['Type']:
+                pos -= const*(4.*Sample['Shift'][0]*cosd(pos/2.0)+ \
+                    Sample['Transparency'][0]*sind(pos)*100.0)            #trans(=1/mueff) in cm
+            else:               #Debye-Scherrer - simple but maybe not right
+                pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
+            indx = np.searchsorted(xdata[0],pos)
+            try:
+                ref[6] = xdata[1][indx]
+                print ref[:7],indx,pos
+            except IndexError:
+                pass
+        FillPawleyReflectionsGrid()
                             
     def OnPawleyDelete(event):
         dlg = wx.MessageDialog(self,'Do you really want to delete Pawley reflections?','Delete', 
@@ -2773,6 +2810,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         elif text == 'Pawley reflections':
             self.dataFrame.SetMenuBar(self.dataFrame.PawleyMenu)
             self.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
+            self.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
             self.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
             FillPawleyReflectionsGrid()
         elif text == 'Texture':

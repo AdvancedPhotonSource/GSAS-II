@@ -1165,87 +1165,180 @@ def GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict):
     Icorr = GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict)
     pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
     POcorr,dIdPO = GetPrefOriDerv(refl,G,phfx,calcControls,parmDict)
-    dIdPola *= refl[3]/pola
+    dIdPola /= pola
     for iPO in dIdPO:
-        dIdPO[iPO] *= refl[3]/POcorr
-    dIdsh = refl[3]/parmDict[hfx+'Scale']
-    dIdsp = refl[3]/parmDict[phfx+'Scale']
+        dIdPO[iPO] /= POcorr
+    dIdsh = 1./parmDict[hfx+'Scale']
+    dIdsp = 1./parmDict[phfx+'Scale']
     return Icorr,dIdsh,dIdsp,dIdPola,dIdPO
         
-def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
-    
-    def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
-        costh = cosd(refl[5]/2.)
-        #crystallite size
-        if calcControls[phfx+'SizeType'] == 'isotropic':
-            gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
-        elif calcControls[phfx+'SizeType'] == 'uniaxial':
-            H = np.array(refl[:3])
-            P = np.array(calcControls[phfx+'SizeAxis'])
-            cosP,sinP = G2lat.CosSinAngle(H,P,G)
-            gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']*costh)
-            gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)
-        else:           #ellipsoidal crystallites - wrong not make sense
-            H = np.array(refl[:3])
-            gam += 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
-        #microstrain                
-        if calcControls[phfx+'MustrainType'] == 'isotropic':
-            gam += 0.018*parmDict[phfx+'Mustrain:0']*tand(refl[5]/2.)/np.pi
-        elif calcControls[phfx+'MustrainType'] == 'uniaxial':
-            H = np.array(refl[:3])
-            P = np.array(calcControls[phfx+'MustrainAxis'])
-            cosP,sinP = G2lat.CosSinAngle(H,P,G)
-            Si = parmDict[phfx+'Mustrain:0']
-            Sa = parmDict[phfx+'Mustrain:1']
-            gam += 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
-        else:       #generalized - P.W. Stephens model
-            pwrs = calcControls[phfx+'MuPwrs']
-            sum = 0
-            for i,pwr in enumerate(pwrs):
-                sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-            gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum            
-        return gam
+def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
+    costh = cosd(refl[5]/2.)
+    #crystallite size
+    if calcControls[phfx+'SizeType'] == 'isotropic':
+        gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
+    elif calcControls[phfx+'SizeType'] == 'uniaxial':
+        H = np.array(refl[:3])
+        P = np.array(calcControls[phfx+'SizeAxis'])
+        cosP,sinP = G2lat.CosSinAngle(H,P,G)
+        gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']*costh)
+        gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)
+    else:           #ellipsoidal crystallites - wrong not make sense
+        H = np.array(refl[:3])
+        gam += 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
+    #microstrain                
+    if calcControls[phfx+'MustrainType'] == 'isotropic':
+        gam += 0.018*parmDict[phfx+'Mustrain:0']*tand(refl[5]/2.)/np.pi
+    elif calcControls[phfx+'MustrainType'] == 'uniaxial':
+        H = np.array(refl[:3])
+        P = np.array(calcControls[phfx+'MustrainAxis'])
+        cosP,sinP = G2lat.CosSinAngle(H,P,G)
+        Si = parmDict[phfx+'Mustrain:0']
+        Sa = parmDict[phfx+'Mustrain:1']
+        gam += 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
+    else:       #generalized - P.W. Stephens model
+        pwrs = calcControls[phfx+'MuPwrs']
+        sum = 0
+        for i,pwr in enumerate(pwrs):
+            sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
+        gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum            
+    return gam
         
-    def GetHStrainShift(refl,SGData,phfx,parmDict):
-        laue = SGData['SGLaue']
-        uniq = SGData['SGUniq']
-        h,k,l = refl[:3]
-        if laue in ['m3','m3m']:
-            Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)
-        elif laue in ['6/m','6/mmm','3m1','31m','3']:
-            Dij = parmDict[phfx+'D11']*(h**2+k**2+h*k)+parmDict[phfx+'D33']*l**2
-        elif laue in ['3R','3mR']:
-            Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)+parmDict[phfx+'D12']*(h*k+h*l+k*l)
-        elif laue in ['4/m','4/mmm']:
-            Dij = parmDict[phfx+'D11']*(h**2+k**2)+parmDict[phfx+'D33']*l**2
-        elif laue in ['mmm']:
-            Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2
-        elif laue in ['2/m']:
-            Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2
-            if uniq == 'a':
-                Dij += parmDict[phfx+'D23']*k*l
-            elif uniq == 'b':
-                Dij += parmDict[phfx+'D13']*h*l
-            elif uniq == 'c':
-                Dij += parmDict[phfx+'D12']*h*k
-        else:
-            Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2+ \
-                parmDict[phfx+'D12']*h*k+parmDict[phfx+'D13']*h*l+parmDict[phfx+'D23']*k*l
-        return Dij*refl[4]**2*tand(refl[5]/2.0)
-                
-    def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
-        h,k,l = refl[:3]
-        dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
-        d = np.sqrt(dsq)
-        refl[4] = d
-        pos = 2.0*asind(wave/(2.0*d))+parmDict[hfx+'Zero']
-        const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
-        if 'Bragg' in calcControls[hfx+'instType']:
-            pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+ \
-                parmDict[hfx+'Transparency']*sind(pos)*100.0)            #trans(=1/mueff) in cm
-        else:               #Debye-Scherrer - simple but maybe not right
-            pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+parmDict[hfx+'DisplaceY']*sind(pos))
-        return pos
+def GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
+    gamDict = {}
+    costh = cosd(refl[5]/2.)
+    tanth = tand(refl[5]/2.)
+    #crystallite size derivatives
+    if calcControls[phfx+'SizeType'] == 'isotropic':
+        gamDict[phfx+'Size:0'] = -1.80*wave/(np.pi*costh)
+    elif calcControls[phfx+'SizeType'] == 'uniaxial':
+        H = np.array(refl[:3])
+        P = np.array(calcControls[phfx+'SizeAxis'])
+        cosP,sinP = G2lat.CosSinAngle(H,P,G)
+        Si = parmDict[phfx+'Size:0']
+        Sa = parmDict[phfx+'Size:1']
+        gami = (1.80*wave/np.pi)/(Si*Sa)
+        sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
+        gam = gami*sqtrm/costh            
+        gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
+        gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa         
+    else:           #ellipsoidal crystallites - do numerically? - not right not make sense
+        H = np.array(refl[:3])
+        gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
+    #microstrain derivatives                
+    if calcControls[phfx+'MustrainType'] == 'isotropic':
+        gamDict[phfx+'Mustrain:0'] =  0.018*tanth/np.pi            
+    elif calcControls[phfx+'MustrainType'] == 'uniaxial':
+        H = np.array(refl[:3])
+        P = np.array(calcControls[phfx+'MustrainAxis'])
+        cosP,sinP = G2lat.CosSinAngle(H,P,G)
+        Si = parmDict[phfx+'Mustrain:0']
+        Sa = parmDict[phfx+'Mustrain:1']
+        gami = 0.018*Si*Sa*tanth/np.pi
+        sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
+        gam = gami/sqtrm
+        gamDict[phfx+'Mustrain:0'] = gam/Si-gami*Si*cosP**2/sqtrm**3
+        gamDict[phfx+'Mustrain:1'] = gam/Sa-gami*Sa*sinP**2/sqtrm**3
+    else:       #generalized - P.W. Stephens model
+        pwrs = calcControls[phfx+'MuPwrs']
+        const = 0.018*refl[4]**2*tanth
+        for i,pwr in enumerate(pwrs):
+            gamDict[phfx+'Mustrain:'+str(i)] = const*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
+    return gamDict
+        
+def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
+    h,k,l = refl[:3]
+    dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
+    d = np.sqrt(dsq)
+    refl[4] = d
+    pos = 2.0*asind(wave/(2.0*d))+parmDict[hfx+'Zero']
+    const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
+    if 'Bragg' in calcControls[hfx+'instType']:
+        pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+ \
+            parmDict[hfx+'Transparency']*sind(pos)*100.0)            #trans(=1/mueff) in cm
+    else:               #Debye-Scherrer - simple but maybe not right
+        pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+parmDict[hfx+'DisplaceY']*sind(pos))
+    return pos
+
+def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
+    dpr = 180./np.pi
+    h,k,l = refl[:3]
+    dstsq = G2lat.calc_rDsq(np.array([h,k,l]),A)
+    dst = np.sqrt(dstsq)
+    pos = refl[5]
+    const = dpr/np.sqrt(1.0-wave*dst/4.0)
+    dpdw = const*dst
+    dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])
+    dpdA *= const*wave/(2.0*dst)
+    dpdZ = 1.0
+    const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
+    if 'Bragg' in calcControls[hfx+'instType']:
+        dpdSh = -4.*const*cosd(pos/2.0)
+        dpdTr = -const*sind(pos)*100.0
+        return dpdA,dpdw,dpdZ,dpdSh,dpdTr,0.,0.
+    else:               #Debye-Scherrer - simple but maybe not right
+        dpdXd = -const*cosd(pos)
+        dpdYd = -const*sind(pos)
+        return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd
+            
+def GetHStrainShift(refl,SGData,phfx,parmDict):
+    laue = SGData['SGLaue']
+    uniq = SGData['SGUniq']
+    h,k,l = refl[:3]
+    if laue in ['m3','m3m']:
+        Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)
+    elif laue in ['6/m','6/mmm','3m1','31m','3']:
+        Dij = parmDict[phfx+'D11']*(h**2+k**2+h*k)+parmDict[phfx+'D33']*l**2
+    elif laue in ['3R','3mR']:
+        Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)+parmDict[phfx+'D12']*(h*k+h*l+k*l)
+    elif laue in ['4/m','4/mmm']:
+        Dij = parmDict[phfx+'D11']*(h**2+k**2)+parmDict[phfx+'D33']*l**2
+    elif laue in ['mmm']:
+        Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2
+    elif laue in ['2/m']:
+        Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2
+        if uniq == 'a':
+            Dij += parmDict[phfx+'D23']*k*l
+        elif uniq == 'b':
+            Dij += parmDict[phfx+'D13']*h*l
+        elif uniq == 'c':
+            Dij += parmDict[phfx+'D12']*h*k
+    else:
+        Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2+ \
+            parmDict[phfx+'D12']*h*k+parmDict[phfx+'D13']*h*l+parmDict[phfx+'D23']*k*l
+    return Dij*refl[4]**2*tand(refl[5]/2.0)
+            
+def GetHStrainShiftDerv(refl,SGData,phfx):
+    laue = SGData['SGLaue']
+    uniq = SGData['SGUniq']
+    h,k,l = refl[:3]
+    if laue in ['m3','m3m']:
+        dDijDict = {phfx+'D11':h**2+k**2+l**2,}
+    elif laue in ['6/m','6/mmm','3m1','31m','3']:
+        dDijDict = {phfx+'D11':h**2+k**2+h*k,phfx+'D33':l**2}
+    elif laue in ['3R','3mR']:
+        dDijDict = {phfx+'D11':h**2+k**2+l**2,phfx+'D12':h*k+h*l+k*l}
+    elif laue in ['4/m','4/mmm']:
+        dDijDict = {phfx+'D11':h**2+k**2,phfx+'D33':l**2}
+    elif laue in ['mmm']:
+        dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2}
+    elif laue in ['2/m']:
+        dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2}
+        if uniq == 'a':
+            dDijDict[phfx+'D23'] = k*l
+        elif uniq == 'b':
+            dDijDict[phfx+'D13'] = h*l
+        elif uniq == 'c':
+            dDijDict[phfx+'D12'] = h*k
+            names.append()
+    else:
+        dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2,
+            phfx+'D12':h*k,phfx+'D13':h*l,phfx+'D23':k*l}
+    for item in dDijDict:
+        dDijDict[item] *= refl[4]**2*tand(refl[5]/2.0)
+    return dDijDict
+            
+def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
     def GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse):
         U = parmDict[hfx+'U']
@@ -1331,99 +1424,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
-    def GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
-        gamDict = {}
-        costh = cosd(refl[5]/2.)
-        tanth = tand(refl[5]/2.)
-        #crystallite size derivatives
-        if calcControls[phfx+'SizeType'] == 'isotropic':
-            gamDict[phfx+'Size:0'] = -1.80*wave/(np.pi*costh)
-        elif calcControls[phfx+'SizeType'] == 'uniaxial':
-            H = np.array(refl[:3])
-            P = np.array(calcControls[phfx+'SizeAxis'])
-            cosP,sinP = G2lat.CosSinAngle(H,P,G)
-            Si = parmDict[phfx+'Size:0']
-            Sa = parmDict[phfx+'Size:1']
-            gami = (1.80*wave/np.pi)/(Si*Sa)
-            sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
-            gam = gami*sqtrm/costh            
-            gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
-            gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa         
-        else:           #ellipsoidal crystallites - do numerically? - not right not make sense
-            H = np.array(refl[:3])
-            gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
-        #microstrain derivatives                
-        if calcControls[phfx+'MustrainType'] == 'isotropic':
-            gamDict[phfx+'Mustrain:0'] =  0.018*tanth/np.pi            
-        elif calcControls[phfx+'MustrainType'] == 'uniaxial':
-            H = np.array(refl[:3])
-            P = np.array(calcControls[phfx+'MustrainAxis'])
-            cosP,sinP = G2lat.CosSinAngle(H,P,G)
-            Si = parmDict[phfx+'Mustrain:0']
-            Sa = parmDict[phfx+'Mustrain:1']
-            gami = 0.018*Si*Sa*tanth/np.pi
-            sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
-            gam = gami/sqtrm
-            gamDict[phfx+'Mustrain:0'] = gam/Si-gami*Si*cosP**2/sqtrm**3
-            gamDict[phfx+'Mustrain:1'] = gam/Sa-gami*Sa*sinP**2/sqtrm**3
-        else:       #generalized - P.W. Stephens model
-            pwrs = calcControls[phfx+'MuPwrs']
-            const = 0.018*refl[4]**2*tanth
-            for i,pwr in enumerate(pwrs):
-                gamDict[phfx+'Mustrain:'+str(i)] = const*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-        return gamDict
-        
-    def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
-        dpr = 180./np.pi
-        h,k,l = refl[:3]
-        dstsq = G2lat.calc_rDsq(np.array([h,k,l]),A)
-        dst = np.sqrt(dstsq)
-        pos = refl[5]
-        const = dpr/np.sqrt(1.0-wave*dst/4.0)
-        dpdw = const*dst
-        dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])
-        dpdA *= const*wave/(2.0*dst)
-        dpdZ = 1.0
-        const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
-        if 'Bragg' in calcControls[hfx+'instType']:
-            dpdSh = -4.*const*cosd(pos/2.0)
-            dpdTr = -const*sind(pos)*100.0
-            return dpdA,dpdw,dpdZ,dpdSh,dpdTr,0.,0.
-        else:               #Debye-Scherrer - simple but maybe not right
-            dpdXd = -const*cosd(pos)
-            dpdYd = -const*sind(pos)
-            return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd
-            
-    def GetHStrainShiftDerv(refl,SGData,phfx):
-        laue = SGData['SGLaue']
-        uniq = SGData['SGUniq']
-        h,k,l = refl[:3]
-        if laue in ['m3','m3m']:
-            dDijDict = {phfx+'D11':h**2+k**2+l**2,}
-        elif laue in ['6/m','6/mmm','3m1','31m','3']:
-            dDijDict = {phfx+'D11':h**2+k**2+h*k,phfx+'D33':l**2}
-        elif laue in ['3R','3mR']:
-            dDijDict = {phfx+'D11':h**2+k**2+l**2,phfx+'D12':h*k+h*l+k*l}
-        elif laue in ['4/m','4/mmm']:
-            dDijDict = {phfx+'D11':h**2+k**2,phfx+'D33':l**2}
-        elif laue in ['mmm']:
-            dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2}
-        elif laue in ['2/m']:
-            dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2}
-            if uniq == 'a':
-                dDijDict[phfx+'D23'] = k*l
-            elif uniq == 'b':
-                dDijDict[phfx+'D13'] = h*l
-            elif uniq == 'c':
-                dDijDict[phfx+'D12'] = h*k
-                names.append()
-        else:
-            dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2,
-                phfx+'D12':h*k,phfx+'D13':h*l,phfx+'D23':k*l}
-        for item in dDijDict:
-            dDijDict[item] *= refl[4]**2*tand(refl[5]/2.0)
-        return dDijDict
-                
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],
@@ -1509,7 +1509,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])
                 for i in range(1,5):
                     dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[0]/refl[3]
+                dMdpk[0][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tanth       # + 360/pi * Dlam/lam * tan(th)
@@ -1520,7 +1520,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])
                         for i in range(1,5):
                             dMdpk[i][iBeg2:iFin2] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[i]
-                        dMdpk[0][iBeg2:iFin2] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[0]/refl[3]
+                        dMdpk[0][iBeg2:iFin2] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[0]
                         dMdpk[5][iBeg2:iFin2] += 100.*dx*Icorr*dMdipk2[0]
                         dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*refl[8]}
                 try:

@@ -168,7 +168,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
         GPXfile = .gpx full file name
         Histograms = dictionary of histograms as {name:data,...}
         Phases = dictionary of phases that use histograms
-        CovData = [varyList,covariance matrix]
+        CovData = dictionary of refined variables, varyList, & covariance matrix
     '''
                         
     def GPXBackup(GPXfile):
@@ -204,8 +204,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
                     phaseName = data[iphase][0]
                     data[iphase][1] = Phases[phaseName]
         elif datum[0] == 'Covariance':
-            varyList,covMatrix = CovData
-            data[0][1] = {'varyList':varyList,'covariance':covMatrix}
+            data[0][1] = CovData
         try:
             histogram = Histograms[datum[0]]
             print 'found ',datum[0]
@@ -1124,6 +1123,55 @@ def Values2Dict(parmdict, varylist, values):
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
     
+def GetPrefOri(refl,G,phfx,calcControls,parmDict):
+    if calcControls[phfx+'poType'] == 'MD':
+        MD = parmDict[phfx+'MD']
+        MDAxis = calcControls[phfx+'MDAxis']
+        sumMD = 0
+        for H in refl[10]:            
+            cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
+            A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
+            sumMD += A**3
+        POcorr = sumMD/len(refl[10])
+    else:   #spherical harmonics
+        POcorr = 1.0
+    return POcorr
+    
+def GetPrefOriDerv(refl,G,phfx,calcControls,parmDict):
+    POderv = {}
+    if calcControls[phfx+'poType'] == 'MD':
+        MD = parmDict[phfx+'MD']
+        MDAxis = calcControls[phfx+'MDAxis']
+        sumMD = 0
+        sumdMD = 0
+        for H in refl[10]:            
+            cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
+            A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
+            sumMD += A**3
+            sumdMD -= (1.5*A**5)*(2.0*MD*cosP**2-(sinP/MD)**2)
+        POcorr = sumMD/len(refl[10])
+        POderv[phfx+'MD'] = sumdMD/len(refl[10])
+    else:   #spherical harmonics
+        POcorr = 1.0
+    return POcorr,POderv
+    
+def GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict):
+    Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
+    Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
+    Icorr *= GetPrefOri(refl,G,phfx,calcControls,parmDict)        
+    return Icorr
+    
+def GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict):
+    Icorr = GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict)
+    pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
+    POcorr,dIdPO = GetPrefOriDerv(refl,G,phfx,calcControls,parmDict)
+    dIdPola *= refl[3]/pola
+    for iPO in dIdPO:
+        dIdPO[iPO] *= refl[3]/POcorr
+    dIdsh = refl[3]/parmDict[hfx+'Scale']
+    dIdsp = refl[3]/parmDict[phfx+'Scale']
+    return Icorr,dIdsh,dIdsp,dIdPola,dIdPO
+        
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
     def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
@@ -1157,23 +1205,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
             gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum            
         return gam
-        
-    def GetMarchDollase(refl,G,phfx,calcControls,parmDict):
-        MD = parmDict[phfx+'MD']
-        MDAxis = calcControls[phfx+'MDAxis']
-        sumMD = 0
-        for H in refl[10]:            
-            cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
-            sumMD += 1/np.sqrt((MD*cosP)**2+sinP**2/MD)**3
-        return sumMD/len(refl[10])
-        
-    def GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict):
-        Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
-        Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
-        if calcControls[phfx+'poType'] == 'MD':
-            Icorr *= GetMarchDollase(refl,G,phfx,calcControls,parmDict)
-        
-        return Icorr
         
     def GetHStrainShift(refl,SGData,phfx,parmDict):
         laue = SGData['SGLaue']
@@ -1281,7 +1312,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if not iBeg+iFin:       #peak below low limit - skip peak
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
-                    return yc,yb
+                    break
                 yc[iBeg:iFin] += Icorr*refl[8]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
@@ -1293,8 +1324,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     elif not iBeg-iFin:     #peak above high limit - done
                         return yc,yb
                     yc[iBeg:iFin] += Icorr*refl[8]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
-            else:
-                raise ValueError
+            elif 'T' in calcControls[hfx+'histType']:
+                print 'TOF Undefined at present'
+                raise ValueError    #no TOF yet
     return yc,yb    
             
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
@@ -1340,30 +1372,6 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             for i,pwr in enumerate(pwrs):
                 gamDict[phfx+'Mustrain:'+str(i)] = const*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
         return gamDict
-        
-    def GetMarchDollaseDerv(refl,G,phfx,calcControls,parmDict):
-        MD = parmDict[phfx+'MD']
-        MDAxis = calcControls[phfx+'MDAxis']
-        sumMD = 0
-        sumdMD = 0
-        for H in refl[10]:            
-            cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
-            A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
-            sumMD += A**3
-            sumdMD -= (1.5*A**5)*(2.0*MD*cosP**2-(sinP/MD)**2)
-        return sumMD/len(refl[10]),refl[8]*sumdMD
-        
-    def GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict):
-        Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
-        pola,dpdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
-        dIdpola = refl[8]*Icorr*dpdPola/refl[3]
-        Icorr *= pola
-        MDcorr,dIdMD = GetMarchDollaseDerv(refl,G,phfx,calcControls,parmDict)
-        Icorr *= MDcorr
-        dIdsh = Icorr/parmDict[hfx+'Scale']
-        dIdsp = Icorr/parmDict[phfx+'Scale']
-        dIdMD *= Icorr
-        return Icorr,dIdsh,dIdsp,dIdpola,dIdMD
         
     def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
         dpr = 180./np.pi
@@ -1475,40 +1483,46 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         if calcControls[phfx+'SizeType'] == 'ellipsoidal':
             sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
         for refl in refList:
-            if 'C' in calcControls[hfx+'histType']:
+            if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
                 iref = pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]
-                Icorr,dIdsh,dIdsp,dIdpola,dIdMD = GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict)
-                hkl = refl[:3]
-                pos = refl[5]
-                tanth = tand(pos/2.0)
-                costh = cosd(pos/2.0)
-                dsdU = tanth**2
-                dsdV = tanth
-                dsdW = 1.0
-                dgdX = 1.0/costh
-                dgdY = tanth
+                Icorr,dIdsh,dIdsp,dIdpola,dIdPO = GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict)
+                if 'Pawley' in Phase['General']['Type']:
+                    try:
+                        refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
+                    except KeyError:
+#                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
+                        continue
+                else:
+                    raise ValueError       #wants strctrfacr deriv calc here
                 Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
                 iBeg = np.searchsorted(x,refl[5]-fmin)
                 iFin = np.searchsorted(x,refl[5]+fmax)
+                if not iBeg+iFin:       #peak below low limit - skip peak
+                    continue
+                elif not iBeg-iFin:     #peak above high limit - done
+                    break
+                pos = refl[5]
+                tanth = tand(pos/2.0)
+                costh = cosd(pos/2.0)
                 dMdpk = np.zeros(shape=(6,len(x)))
                 dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])
                 for i in range(1,5):
                     dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += 100.*dx*Icorr*dMdipk[0]
+                dMdpk[0][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[0]/refl[3]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
                 if Ka2:
-                    pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                    pos2 = refl[5]+lamRatio*tanth       # + 360/pi * Dlam/lam * tan(th)
                     kdelt = int((pos2-refl[5])/dx)               
-                    iBeg = min(lenX,iBeg+kdelt)
-                    iFin = min(lenX,iFin+kdelt)
-                    if iBeg-iFin:
-                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])
+                    iBeg2 = min(lenX,iBeg+kdelt)
+                    iFin2 = min(lenX,iFin+kdelt)
+                    if iBeg2-iFin2:
+                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])
                         for i in range(1,5):
-                            dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[i]
-                        dMdpk[0][iBeg:iFin] += 100.*dx*kRatio*dMdipk2[0]
-                        dMdpk[5][iBeg:iFin] += 100.*dx*dMdipk2[0]
-                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*Icorr*refl[8]}
+                            dMdpk[i][iBeg2:iFin2] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[i]
+                        dMdpk[0][iBeg2:iFin2] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[0]/refl[3]
+                        dMdpk[5][iBeg2:iFin2] += 100.*dx*Icorr*dMdipk2[0]
+                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*refl[8]}
                 try:
                     idx = varylist.index(pfx+'PWLref:'+str(iref))
                     dMdv[idx] = dervDict['int']
@@ -1516,15 +1530,18 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     pass
                 dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],
-                    hfx+'U':[dsdU,'sig'],hfx+'V':[dsdV,'sig'],hfx+'W':[dsdW,'sig'],
-                    hfx+'X':[dgdX,'gam'],hfx+'Y':[dgdY,'gam'],hfx+'SH/L':[1.0,'shl'],
+                    hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],
+                    hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'SH/L':[1.0,'shl'],
                     hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
-                    hfx+'DisplaceY':[dpdY,'pos'],phfx+'MD':[dIdMD,'int'],}
+                    hfx+'DisplaceY':[dpdY,'pos'],}
                 for name in names:
                     if name in varylist:
                         item = names[name]
                         dMdv[varylist.index(name)] += item[0]*dervDict[item[1]]
+                for iPO in dIdPO:
+                    if iPO in varylist:
+                        dMdv[varylist.index(iPO)] += dIdPO[iPO]*dervDict['int']
                 cellDervNames = cellVaryDerv(pfx,SGData,dpdA)
                 for name,dpdA in cellDervNames:
                     if name in varylist:
@@ -1537,8 +1554,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 for name in gamDict:
                     if name in varylist:
                         dMdv[varylist.index(name)] += gamDict[name]*dervDict['gam']                       
-            else:
-                raise ValueError
+            elif 'T' in calcControls[hfx+'histType']:
+                print 'TOF Undefined at present'
+                raise ValueError    #no TOF yet
             
     return dMdv    
                     
@@ -1685,17 +1703,12 @@ def Refine(GPXfile,dlg):
 #    print 'invarrayList: ',G2mv.invarrayList
 #    print 'indParmList: ',G2mv.indParmList
 #    print 'fixedDict: ',G2mv.fixedDict
-    covFile = ospath.splitext(GPXfile)[0]+'.gpxcov'
-    file = open(covFile,'wb')
-    cPickle.dump(varyList,file,1)
-    cPickle.dump(result[0],file,1)
-    cPickle.dump(covMatrix,file,1)
-    file.close()
     sigDict = dict(zip(varyList,sig))
     SetPhaseData(parmDict,sigDict,Phases)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
-    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,[varyList,cov])
+    covData = {'variables':result[0],'varyList':varyList,'covariance':cov}
+    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
 #for testing purposes!!!
 #    file = open('structTestdata.dat','wb')
 #    cPickle.dump(parmDict,file,1)

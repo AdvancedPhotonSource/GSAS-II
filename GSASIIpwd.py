@@ -127,17 +127,21 @@ def Absorb(Geometry,Abs,Diam,Tth,Phi=0,Psi=0):
         return np.exp(-MuR/cth)/cth
         
 def Polarization(Pola,Tth,Azm=0.0):
-#   Calculate angle dependent x-ray polarization correction (not scaled correctly!)
-#   Pola: polarization coefficient e.g 1.0 fully polarized, 0.5 unpolarized
-#   Azm: azimuthal angle e.g. 0.0 in plane of polarization
-#   Tth: 2-theta scattering angle - can be numpy array
-#       which (if either) of these is "right"?
-#    return (Pola*npcosd(Azm)**2+(1.-Pola)*npsind(Azm)**2)*npcosd(Tth)**2+ \
-#        Pola*npsind(Azm)**2+(1.-Pola)*npcosd(Azm)**2
+    """   Calculate angle dependent x-ray polarization correction (not scaled correctly!)
+    input:
+        Pola: polarization coefficient e.g 1.0 fully polarized, 0.5 unpolarized
+        Azm: azimuthal angle e.g. 0.0 in plane of polarization
+        Tth: 2-theta scattering angle - can be numpy array
+            which (if either) of these is "right"?
+    return:
+        pola = (Pola*npcosd(Azm)**2+(1.-Pola)*npsind(Azm)**2)*npcosd(Tth)**2+ \
+            Pola*npsind(Azm)**2+(1.-Pola)*npcosd(Azm)**2
+        dpdPola: derivative needed for least squares
+    """
     pola = ((1.0-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
         (1.0-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
     dpdPola = -npsind(Tth)**2*(npsind(Azm)**2-npcosd(Azm)**2)
-    return pola,dpdPola/pola
+    return pola,dpdPola
     
 def Oblique(ObCoeff,Tth):
     if ObCoeff:

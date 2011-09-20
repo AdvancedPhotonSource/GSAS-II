@@ -502,9 +502,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
     def PrintSize(hapData):
         line = '\n Size model    : '+hapData[0]
         if hapData[0] in ['isotropic','uniaxial']:
-            line += ' equatorial:'+'%12.2f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
+            line += ' equatorial:'+'%12.3f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
             if hapData[0] == 'uniaxial':
-                line += ' axial:'+'%12.2f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
+                line += ' axial:'+'%12.3f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             print line
         else:
             print line
@@ -523,9 +523,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
     def PrintMuStrain(hapData,SGData):
         line = '\n Mustrain model: '+hapData[0]
         if hapData[0] in ['isotropic','uniaxial']:
-            line += ' equatorial:'+'%12.4f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
+            line += ' equatorial:'+'%12.1f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
             if hapData[0] == 'uniaxial':
-                line += ' axial:'+'%12.4f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
+                line += ' axial:'+'%12.1f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             print line
         else:
             print line
@@ -660,15 +660,15 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
 def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
     
     def PrintSizeAndSig(hapData,sizeSig):
-        line = '\n Size model: '+hapData[0]
+        line = '\n Size model:     '+hapData[0]
         if hapData[0] in ['isotropic','uniaxial']:
-            line += ' equatorial:%12.2f'%(hapData[1][0])
+            line += ' equatorial:%12.3f'%(hapData[1][0])
             if sizeSig[0][0]:
-                line += ', sig: %8.2f'%(sizeSig[0][0])
+                line += ', sig: %8.3f'%(sizeSig[0][0])
             if hapData[0] == 'uniaxial':
-                line += ' axial:%12.2f'%(hapData[1][1])
+                line += ' axial:%12.3f'%(hapData[1][1])
                 if sizeSig[0][1]:
-                    line += ', sig: %8.2f'%(sizeSig[0][1])
+                    line += ', sig: %8.3f'%(sizeSig[0][1])
             print line
         else:
             print line
@@ -690,13 +690,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
     def PrintMuStrainAndSig(hapData,mustrainSig,SGData):
         line = '\n Mustrain model: '+hapData[0]
         if hapData[0] in ['isotropic','uniaxial']:
-            line += ' equatorial:%12.4f'%(hapData[1][0])
+            line += ' equatorial:%12.1f'%(hapData[1][0])
             if mustrainSig[0][0]:
-                line += ',sig: %12.4f'%(mustrainSig[0][0])
+                line += ', sig: %8.1f'%(mustrainSig[0][0])
             if hapData[0] == 'uniaxial':
-                line += ' axial:%12.4f'%(hapData[1][1])
+                line += ' axial:%12.1f'%(hapData[1][1])
                 if mustrainSig[0][1]:
-                     line += ',sig: %12.4f'%(mustrainSig[0][1])
+                     line += ', sig: %8.1f'%(mustrainSig[0][1])
             print line
         else:
             print line
@@ -747,23 +747,24 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
             for item in ['Scale','Extinction']:
                 hapData[item][0] = parmDict[pfx+item]
                 if pfx+item in sigDict:
-                    PhFrExtPOSig[item] = sigDict[pfx+item]            
+                    PhFrExtPOSig[item] = sigDict[pfx+item]
             if hapData['Pref.Ori.'][0] == 'MD':
                 hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
-                if pfx+item in sigDict:
-                    PhFrExtPOSig[item] = sigDict[pfx+item]
+                if pfx+'MD' in sigDict:
+                    PhFrExtPOSig['MD'] = sigDict[pfx+'MD']
             else:                           #'SH' spherical harmonics
                 for item in hapData['Pref.Ori.'][5]:
-                    hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
+                    hapData['Pref.Ori.'][5][item] = parmDict[pfx+'MD']
                     if pfx+item in sigDict:
                         PhFrExtPOSig[item] = sigDict[pfx+item]
-#            print '\n Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
-#            print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
-#            if hapData['Pref.Ori.'][0] == 'MD':
-#                Ax = hapData['Pref.Ori.'][3]
-#                print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
-#                    ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2]) 
-               
+            print '\n'
+            if 'Scale' in PhFrExtPOSig:
+                print ' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
+            if 'Extinction' in PhFrExtPOSig:
+                print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
+            if 'MD' in PhFrExtPOSig:
+                print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
+              
             SizeMuStrSig = {'Mustrain':[[0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
                 'Size':[[0,0],[0 for i in range(len(hapData['Size'][4]))]],
                 'HStrain':{}}                  
@@ -1525,7 +1526,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*refl[8]}
                 try:
                     idx = varylist.index(pfx+'PWLref:'+str(iref))
-                    dMdv[idx] = dervDict['int']
+                    dMdv[idx] = dervDict['int']/refl[8]
                 except ValueError:
                     pass
                 dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict)

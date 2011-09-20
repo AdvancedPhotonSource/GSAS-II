@@ -717,14 +717,14 @@ def GenSHCoeff(SGLaue,SamSym,L):
     coeffNames = []
     for iord in [2*i+2 for i in range(L/2)]:
         for m in [i-iord for i in range(2*iord+1)]:
-            if OdfChk(SamSym,iord,m):
+            if SamSym and OdfChk(SamSym,iord,m):
                 for n in [i-iord for i in range(2*iord+1)]:
                     if OdfChk(SGLaue,iord,n):
                         coeffNames.append('C(%d,%d,%d)'%(iord,m,n))
-#            else:                  #what's this for?
-#                for n in [i-iord for i in range(2*iord+1)]:
-#                    if OdfChk(SGLaue,iord,n):
-#                        coeffNames.append('C(%d,%d)'%(iord,n))
+            else:                  #use for powder sample PO when SamSym = None
+                for n in [i-iord for i in range(2*iord+1)]:
+                    if OdfChk(SGLaue,iord,n):
+                        coeffNames.append('C(%d,%d)'%(iord,n))
     return coeffNames
 
 def CrsAng(H,cell,SGData):

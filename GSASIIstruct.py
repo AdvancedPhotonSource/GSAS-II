@@ -555,7 +555,16 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
         print ptstr
         print varstr
 
-        
+    def PrintSHPO(hapData):
+        print '\n Spherical harmonics preferred orientation: Order:' + \
+            str(hapData[4])+' Refine? '+str(hapData[2])
+        ptlbls = ' names :'
+        ptstr =  ' values:'
+        for item in hapData[5]:
+            ptlbls += '%12s'%(item)
+            ptstr += '%12.4f'%(hapData[5][item]) 
+        print ptlbls
+        print ptstr
     
     hapDict = {}
     hapVary = []
@@ -602,6 +611,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 if hapData['Pref.Ori.'][2]:
                     hapVary.append(pfx+'MD')
             else:                           #'SH' spherical harmonics
+                controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
+                controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
                 for item in hapData['Pref.Ori.'][5]:
                     hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
                     if hapData['Pref.Ori.'][2]:
@@ -638,7 +649,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 if hapData['Pref.Ori.'][0] == 'MD':
                     Ax = hapData['Pref.Ori.'][3]
                     print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
-                        ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])                
+                        ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])
+                else: #'SH' for spherical harmonics
+                    PrintSHPO(hapData['Pref.Ori.'])
                 PrintSize(hapData['Size'])
                 PrintMuStrain(hapData['Mustrain'],SGData)
                 PrintHStrain(hapData['HStrain'],SGData)
@@ -732,6 +745,22 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
         print ptstr
         print sigstr
         
+    def PrintSHPOAndSig(hapData,POsig):
+        print '\n Spherical harmonics preferred orientation: Order:'+str(hapData[4])
+        ptlbls = ' names :'
+        ptstr =  ' values:'
+        sigstr = ' sig   :'
+        for item in hapData[5]:
+            ptlbls += '%12s'%(item)
+            ptstr += '%12.4f'%(hapData[5][item])
+            if item in POsig:
+                sigstr += '%12.4f'%(POsig[item])
+            else:
+                sigstr += 12*' ' 
+        print ptlbls
+        print ptstr
+        print sigstr
+    
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
         SGData = Phases[phase]['General']['SGData']
@@ -754,7 +783,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
                     PhFrExtPOSig['MD'] = sigDict[pfx+'MD']
             else:                           #'SH' spherical harmonics
                 for item in hapData['Pref.Ori.'][5]:
-                    hapData['Pref.Ori.'][5][item] = parmDict[pfx+'MD']
+                    hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
                     if pfx+item in sigDict:
                         PhFrExtPOSig[item] = sigDict[pfx+item]
             print '\n'
@@ -762,9 +791,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
                 print ' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
             if 'Extinction' in PhFrExtPOSig:
                 print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
-            if 'MD' in PhFrExtPOSig:
-                print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
-              
+            if hapData['Pref.Ori.'][0] == 'MD':
+                if 'MD' in PhFrExtPOSig:
+                    print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
+            else:
+                PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
             SizeMuStrSig = {'Mustrain':[[0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
                 'Size':[[0,0],[0 for i in range(len(hapData['Size'][4]))]],
                 'HStrain':{}}                  
@@ -1124,7 +1155,50 @@ def Values2Dict(parmdict, varylist, values):
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
     
-def GetPrefOri(refl,G,phfx,calcControls,parmDict):
+def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
+    odfCor = 1.0
+    H = refl[:3]
+    cell = G2lat.Gmat2cell(g)
+    Sangl = [0.,0.,0.]
+    if 'Bragg' in calcControls[hfx+'instType']:
+        Gangls = [0.,90.,0.,parmDict[hfx+'Azimuth']]
+        IFCoup = True
+    else:
+        Gangls = [0.,0.,0.,parmDict[hfx+'Azimuth']]
+        IFCoup = False
+    phi,beta = G2lat.CrsAng(H,cell,SGData)
+    psi,gam,x,x = G2lat.SamAng(refl[5]/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
+    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],None,calcControls[phfx+'SHord'])
+    for item in SHnames:
+        L,N = eval(item.strip('C'))
+        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
+        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
+    return odfCor
+    
+def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
+    FORPI = 12.5663706143592
+    odfCor = 1.0
+    dFdODF = {}
+    H = refl[:3]
+    cell = G2lat.Gmat2cell(g)
+    Sangl = [0.,0.,0.]
+    if 'Bragg' in calcControls[hfx+'instType']:
+        Gangls = [0.,90.,0.,parmDict[hfx+'Azimuth']]
+        IFCoup = True
+    else:
+        Gangls = [0.,0.,0.,parmDict[hfx+'Azimuth']]
+        IFCoup = False
+    phi,beta = G2lat.CrsAng(H,cell,SGData)
+    psi,gam,x,x = G2lat.SamAng(refl[5]/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
+    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],None,calcControls[phfx+'SHord'])
+    for item in SHnames:
+        L,N = eval(item.strip('C'))
+        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
+        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
+        dFdODF[phfx+item] = FORPI*Kcsl
+    return odfCor,dFdODF
+    
+def GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
     if calcControls[phfx+'poType'] == 'MD':
         MD = parmDict[phfx+'MD']
         MDAxis = calcControls[phfx+'MDAxis']
@@ -1135,10 +1209,10 @@ def GetPrefOri(refl,G,phfx,calcControls,parmDict):
             sumMD += A**3
         POcorr = sumMD/len(refl[10])
     else:   #spherical harmonics
-        POcorr = 1.0
+        POcorr = SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr
     
-def GetPrefOriDerv(refl,G,phfx,calcControls,parmDict):
+def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
     POderv = {}
     if calcControls[phfx+'poType'] == 'MD':
         MD = parmDict[phfx+'MD']
@@ -1153,19 +1227,19 @@ def GetPrefOriDerv(refl,G,phfx,calcControls,parmDict):
         POcorr = sumMD/len(refl[10])
         POderv[phfx+'MD'] = sumdMD/len(refl[10])
     else:   #spherical harmonics
-        POcorr = 1.0
+        POcorr,POderv = SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr,POderv
     
-def GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict):
+def GetIntensityCorr(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
     Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
-    Icorr *= GetPrefOri(refl,G,phfx,calcControls,parmDict)        
+    Icorr *= GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)        
     return Icorr
     
-def GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict):
-    Icorr = GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict)
+def GetIntensityDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
+    Icorr = GetIntensityCorr(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
     pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
-    POcorr,dIdPO = GetPrefOriDerv(refl,G,phfx,calcControls,parmDict)
+    POcorr,dIdPO = GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
     dIdPola /= pola
     for iPO in dIdPO:
         dIdPO[iPO] /= POcorr
@@ -1391,7 +1465,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
                 refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse)    #peak sig & gam
-                Icorr = GetIntensityCorr(refl,G,phfx,hfx,calcControls,parmDict)
+                Icorr = GetIntensityCorr(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
                 if 'Pawley' in Phase['General']['Type']:
                     try:
                         refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
@@ -1487,7 +1561,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
                 iref = pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]
-                Icorr,dIdsh,dIdsp,dIdpola,dIdPO = GetIntensityDerv(refl,G,phfx,hfx,calcControls,parmDict)
+                Icorr,dIdsh,dIdsp,dIdpola,dIdPO = GetIntensityDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
                 if 'Pawley' in Phase['General']['Type']:
                     try:
                         refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
@@ -1563,6 +1637,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     
 def Refine(GPXfile,dlg):
     import cPickle
+    import pytexture as ptx
+    ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
     def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
         parmdict.update(zip(varylist,values))
@@ -1677,9 +1753,9 @@ def Refine(GPXfile,dlg):
         GOF = chisq/(Histograms['Nobs']-len(varyList))
         print '\n Refinement results:'
         print 135*'-'
-        print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
-        print 'Refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
-        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+        print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
+        print ' Refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+        print ' Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
         try:
             covMatrix = result[1]*GOF
             sig = np.sqrt(np.diag(covMatrix))

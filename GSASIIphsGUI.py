@@ -1943,7 +1943,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 except:
                     value = str(textureData['PFhkl'])
                     hkl = eval(value)
-                Obj.SetValue('%d,%d,%d'%(hkl[0],hkl[1],hkl[2]))
+                Obj.SetValue('%d %d d'%(hkl[0],hkl[1],hkl[2]))
                 textureData['PFhkl'] = hkl
             else:
                 try:
@@ -1952,7 +1952,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 except:
                     value = str(textureData['PFhkl'])
                     xyz = eval(value)
-                Obj.SetValue('%3.1f,%3.1f,%3.1f'%(xyz[0],xyz[1],xyz[2]))
+                Obj.SetValue('%3.1f %3.1f %3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
             G2plt.PlotTexture(self,data)
                 
@@ -2002,11 +2002,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
             PTSizer.Add(wx.StaticText(dataDisplay,-1,' Pole figure HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
             PH = textureData['PFhkl']
-            pfVal = wx.TextCtrl(dataDisplay,-1,'%d,%d,%d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
+            pfVal = wx.TextCtrl(dataDisplay,-1,'%d %d %d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
         else:
             PTSizer.Add(wx.StaticText(dataDisplay,-1,' Inverse pole figure XYZ: '),0,wx.ALIGN_CENTER_VERTICAL)
             PX = textureData['PFxyz']
-            pfVal = wx.TextCtrl(dataDisplay,-1,'%3.1f,%3.1f,%3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
+            pfVal = wx.TextCtrl(dataDisplay,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
         PTSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
@@ -2533,7 +2533,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(poSizer)
                     if POData[4]:
-                        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+                        mainSizer.Add(wx.StaticText(dataDisplay,-1,' Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
                         mainSizer.Add((0,5),0)
                         ODFSizer = wx.FlexGridSizer(2,8,2,2)
                         ODFIndx = {}

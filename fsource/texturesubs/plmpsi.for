@@ -1,4 +1,4 @@
-      SUBROUTINE PLMPSI(L,M,PSI,P)
+      SUBROUTINE PLMPSI(L,M,PSI,P,DPDPS)
 
 !PURPOSE: Compute P(l,m,psi)
 
@@ -30,12 +30,14 @@
           CALL APLMS(L,M,S,APR)
           RS = S
           P = P+APR*COSD(RS*PSI)
+          DPDPS = DPDPS-RS*APR*SIND(RS*PSI)
         END DO
       ELSE                                            
         DO S=2,L,2        
           CALL APLMS(L,M,S,APR)      
           RS = S
           P = P+APR*SIND(RS*PSI)        
+          DPDPS = DPDPS+RS*APR*COSD(RS*PSI)
         END DO      
       END IF
       RETURN

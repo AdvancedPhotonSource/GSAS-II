@@ -787,6 +787,18 @@ def CrsAng(H,cell,SGData):
     return phi,beta
     
 def SamAng(Tth,Gangls,Sangl,IFCoup):
+    """Compute sample orientation angles vs laboratory coord. system
+    input:
+        Tth:        Signed theta                                   
+        Gangls:     Sample goniometer angles phi,chi,omega,azmuth  
+        Sangl:      Sample angle zeros om-0, chi-0, phi-0          
+        IFCoup:     =.TRUE. if omega & 2-theta coupled in CW scan
+    returns:  
+        psi,gam:    Sample odf angles                              
+        dPSdA,dGMdA:    Angle zero derivatives
+    """                         
+    
+    rpd = math.pi/180.
     if IFCoup:
         GSomeg = sind(Gangls[2]+Tth)
         GComeg = cosd(Gangls[2]+Tth)
@@ -816,12 +828,37 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
       
     BC = BC1*SComeg*SCchi+BC2*SComeg*SSchi-BC3*SSomeg      
     psi = acosd(BC)
+    
+    BD = 1.0-BC**2
+    if BD > 0.:
+        C = rpd/math.sqrt(BD)
+    else:
+        C = 0.
+    dPSdA = [-C*(-BC1*SSomeg*SCchi-BC2*SSomeg*SSchi-BC3*SComeg),
+        -C*(-BC1*SComeg*SSchi+BC2*SComeg*SCchi),
+        -C*(-BC1*SSomeg-BC3*SComeg*SCchi)]
       
     BA = -BC1*SSchi+BC2*SCchi
     BB = BC1*SSomeg*SCchi+BC2*SSomeg*SSchi+BC3*SComeg
-    gam = atand2(BB,BA)
+    gam = atan2d(BB,BA)
+
+    BD = (BA**2+BB**2)/rpd
+
+    dBAdO = 0
+    dBAdC = -BC1*SCchi-BC2*SSchi
+    dBAdF = BC3*SSchi
+    
+    dBBdO = BC1*SComeg*SCchi+BC2*SComeg*SSchi-BC3*SSomeg
+    dBBdC = -BC1*SSomeg*SSchi+BC2*SSomeg*SCchi
+    dBBdF = BC1*SComeg-BC3*SSomeg*SCchi
+    
+    if BD > 0.:
+        dGMdA = [(BA*dBBdO-BB*dBAdO)/BD,(BA*dBBdC-BB*dBAdC)/BD,(BA*dBBdF-BB*dBAdF)/BD]
+    else:
+        dGMdA = [0.0,0.0,0.0]
+
         
-    return psi,gam
+    return psi,gam,dPSdA,dGMdA
 
 BOH = {
 'L=2':[[],[],[]],
@@ -859,6 +896,37 @@ BOH = {
     [-0.06773139,0.14120811,-0.15835721,0.18357456,-0.19364673,0.08377174,0.43116318,0.0,0.0]]
 }
    
+def GetKclKsl(L,N,SGLaue,psi,phi,beta):
+    import pytexture as ptx
+    FORPI = 12.5663706143592
+    RSQ2PI = 0.3989422804014
+    SQ2 = 1.414213562373
+    Lnorm = FORPI/(2.0*L+1.)
+    Ksl,x = ptx.pyplmpsi(L,0,1,psi)
+    Ksl *= RSQ2PI
+    if SGLaue in ['m3','m3m']:
+        Kcl = 0.0
+        for j in range(0,L+1,4):
+            im = j/4+1
+            pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
+            Kcl += BOH['L='+str(l)][N-1][im-1]*pcrs*cosd(j*beta)        
+    else:
+        pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
+        pcrs *= RSQ2PI
+        if N:
+            pcrs *= SQ2
+        if SGLaue in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
+            if SGLaue in ['3mR','3m1','31m']: 
+                if n%6 == 3:
+                    Kcl = pcrs*sind(N*beta)
+                else:
+                    Kcl = pcrs*cosd(N*beta)
+            else:
+                Kcl = pcrs*cosd(N*beta)
+        else:
+            Kcl = pcrs*(cosd(N*beta)+sind(N*beta))
+    return Kcl*Ksl,Lnorm
+    
 def Glnh(Start,SHCoef,psi,gam,SamSym):
     import pytexture as ptx
     RSQPI = 0.5641895835478
@@ -869,16 +937,17 @@ def Glnh(Start,SHCoef,psi,gam,SamSym):
         Start = False
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
-         l,m,n = eval(term.strip('C'))
-         lNorm = 4.*np.pi/(2.*l+1.)
-         pcrs = ptx.pyplmpsi(l,m,1,psi)*RSQPI
-         if m == 0:
-             pcrs /= SQ2
-         if SamSym in ['mmm',]:
-             Ksl = pcrs*cosd(m*gam)
-         else:
-             Ksl = pcrs*(cosd(m*gam)+sind(m*gam))
-         Fln[i] = SHCoef[term]*Ksl*lNorm
+        l,m,n = eval(term.strip('C'))
+        lNorm = 4.*np.pi/(2.*l+1.)
+        pcrs,dum = ptx.pyplmpsi(l,m,1,psi)
+        pcrs *= RSQPI
+        if m == 0:
+            pcrs /= SQ2
+        if SamSym in ['mmm',]:
+            Ksl = pcrs*cosd(m*gam)
+        else:
+            Ksl = pcrs*(cosd(m*gam)+sind(m*gam))
+        Fln[i] = SHCoef[term]*Ksl*lNorm
     ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
     return ODFln
 
@@ -894,29 +963,30 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
         Start = False
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
-         l,m,n = eval(term.strip('C'))
-         lNorm = 4.*np.pi/(2.*l+1.)
-         if SGData['SGLaue'] in ['m3','m3m']:
-             Kcl = 0.0
-             for j in range(0,l+1,4):
-                 im = j/4+1
-                 pcrs = ptx.pyplmpsi(l,j,1,phi)
-                 Kcl += BOH['L='+str(l)][n-1][im-1]*pcrs*cosd(j*beta)        
-         else:                #all but cubic
-             pcrs = ptx.pyplmpsi(l,n,1,phi)*RSQPI
-             if n == 0:
-                 pcrs /= SQ2
-             if SGData['SGLaue'] in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
-                if SGData['SGLaue'] in ['3mR','3m1','31m']: 
-                    if n%6 == 3:
-                        Kcl = pcrs*sind(n*beta)
-                    else:
-                        Kcl = pcrs*cosd(n*beta)
-                else:
-                    Kcl = pcrs*cosd(n*beta)
-             else:
-                 Kcl = pcrs*(cosd(n*beta)+sind(n*beta))
-         Fln[i] = SHCoef[term]*Kcl*lNorm
+        l,m,n = eval(term.strip('C'))
+        lNorm = 4.*np.pi/(2.*l+1.)
+        if SGData['SGLaue'] in ['m3','m3m']:
+            Kcl = 0.0
+            for j in range(0,l+1,4):
+                im = j/4+1
+                pcrs,dum = ptx.pyplmpsi(l,j,1,phi)
+                Kcl += BOH['L='+str(l)][n-1][im-1]*pcrs*cosd(j*beta)        
+        else:                #all but cubic
+            pcrs,dum = ptx.pyplmpsi(l,n,1,phi)
+            pcrs *= RSQPI
+            if n == 0:
+                pcrs /= SQ2
+            if SGData['SGLaue'] in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
+               if SGData['SGLaue'] in ['3mR','3m1','31m']: 
+                   if n%6 == 3:
+                       Kcl = pcrs*sind(n*beta)
+                   else:
+                       Kcl = pcrs*cosd(n*beta)
+               else:
+                   Kcl = pcrs*cosd(n*beta)
+            else:
+                Kcl = pcrs*(cosd(n*beta)+sind(n*beta))
+        Fln[i] = SHCoef[term]*Kcl*lNorm
     ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
     return ODFln
     
@@ -928,7 +998,7 @@ def polfcal(ODFln,SamSym,psi,gam):
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.e-3:
             l,m,n = eval(term.strip('C'))
-            psrs = ptx.pyplmpsi(l,m,len(psi),psi)
+            psrs,dum = ptx.pyplmpsi(l,m,len(psi),psi)
             if SamSym in ['-1','2/m']:
                 if m != 0:
                     Ksl = RSQPI*psrs*(cosd(m*gam)+sind(m*gam))
@@ -957,10 +1027,11 @@ def invpolfcal(ODFln,SGData,phi,beta):
                 Kcl = 0.0
                 for j in range(0,l+1,4):
                     im = j/4+1
-                    pcrs = ptx.pyplmpsi(l,j,len(beta),phi)
+                    pcrs,dum = ptx.pyplmpsi(l,j,len(beta),phi)
                     Kcl += BOH['L='+str(l)][n-1][im-1]*pcrs*cosd(j*beta)        
             else:                #all but cubic
-                pcrs = ptx.pyplmpsi(l,n,len(beta),phi)*RSQPI
+                pcrs,dum = ptx.pyplmpsi(l,n,len(beta),phi)
+                pcrs *= RSQPI
                 if n == 0:
                     pcrs /= SQ2
                 if SGData['SGLaue'] in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:

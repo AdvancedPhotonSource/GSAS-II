@@ -1292,11 +1292,11 @@ def UpdateReflectionGrid(self,data):
         self.dataFrame.SelectPhase.Enable(True)
     rowLabels = []
     refList = []
-    for h,k,l,m,d,pos,sig,gam,fo,fc,x in data[self.RefList]:
-        refList.append([h,k,l,m,d,pos,sig,gam,fo,fc])
+    for h,k,l,m,d,pos,sig,gam,fo,fc,phi,x,x in data[self.RefList]:
+        refList.append([h,k,l,m,d,pos,sig,gam,fo,fc,phi])
     for i in range(len(refList)): rowLabels.append(str(i))
-    colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq',]
-    Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+2*[wg.GRID_VALUE_FLOAT+':10,2',]
+    colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase',]
+    Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]
     self.PeakTable = G2gd.Table(refList,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Reflection List for '+self.RefList)
     self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)

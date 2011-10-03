@@ -45,7 +45,7 @@ def GetFormFactorCoeff(El):
     while S:
         S = FFdata.readline()
         if S[3:5] == ElS:
-            if S[5:6] != '_':
+            if S[5:6] != '_' and S[8] not in ['N','M']:
                 Z=int(S[:2])
                 Symbol = S[3:7].strip()
                 S = S[12:]

@@ -484,7 +484,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
             wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",]
-        Types += 7*[wg.GRID_VALUE_FLOAT+':10,4',]
+        Types += 7*[wg.GRID_VALUE_FLOAT+':10,5',]
         colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
         if generalData['Type'] == 'magnetic':
             colLabels += ['Mx','My','Mz']
@@ -741,7 +741,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         rowLabels = []
         for i,atom in enumerate(atomData):
             table.append(atom)
-            rowLabels.append(str(i+1))
+            rowLabels.append(str(i))
         atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         Atoms.SetTable(atomTable, True)
         Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
@@ -1187,7 +1187,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         rowLabels = []
         for i,atom in enumerate(drawingData['Atoms']):
             table.append(atom[:colLabels.index('I/A')+1])
-            rowLabels.append(str(i+1))
+            rowLabels.append(str(i))
 
         atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         drawAtoms.SetTable(atomTable, True)

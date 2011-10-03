@@ -10,6 +10,7 @@ import sys
 import os
 import os.path as ospath
 import numpy as np
+import numpy.linalg as nl
 import cPickle
 import time
 import math
@@ -25,6 +26,7 @@ sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
+atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 
 def ShowBanner():
@@ -286,7 +288,7 @@ def GetFFtable(General):
     for El in atomTypes:
         FFs = G2el.GetFormFactorCoeff(El.split('+')[0].split('-')[0])
         for item in FFs:
-            if item['Symbol'] == El:
+            if item['Symbol'] == El.upper():
                 FFtable[El] = item
     return FFtable
     
@@ -342,18 +344,59 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',pfx+'A3']                       
     elif SGData['SGLaue'] in ['m3m','m3']:
         return [pfx+'A0']
+        
             
 def GetPhaseData(PhaseData,Print=True):
             
+    def PrintFFtable(FFtable):
+        print '\n Scattering factors:'
+        print '   Symbol     fa                                      fb                                      fc'
+        print 99*'-'
+        for Ename in FFtable:
+            ffdata = FFtable[Ename]
+            fa = ffdata['fa']
+            fb = ffdata['fb']
+            print ' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
+                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc'])
+                
+    def PrintAtoms(General,Atoms):
+        print '\n Atoms:'
+        line = '   name    type  refine?   x         y         z    '+ \
+            '  frac site sym  mult I/A   Uiso     U11     U22     U33     U12     U13     U23'
+        if General['Type'] == 'magnetic':
+            line += '   Mx     My     Mz'
+        elif General['Type'] == 'macromolecular':
+            line = ' res no  residue  chain '+line
+        print line
+        if General['Type'] == 'nuclear':
+            print 135*'-'
+            for i,at in enumerate(Atoms):
+                line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%10.5f'%(at[3])+'%10.5f'%(at[4])+ \
+                    '%10.5f'%(at[5])+'%8.3f'%(at[6])+'%7s'%(at[7])+'%5d'%(at[8])+'%5s'%(at[9])
+                if at[9] == 'I':
+                    line += '%8.4f'%(at[10])+48*' '
+                else:
+                    line += 8*' '
+                    for j in range(6):
+                        line += '%8.4f'%(at[11+j])
+                print line
+        
+        
     if Print: print ' Phases:'
     phaseVary = []
     phaseDict = {}
     phaseConstr = {}
     pawleyLookup = {}
+    FFtables = {}
+    Natoms = {}
+    AtMults = {}
+    AtIA = {}
     for name in PhaseData:
         General = PhaseData[name]['General']
         pId = PhaseData[name]['pId']
         pfx = str(pId)+'::'
+        FFtable = GetFFtable(General)
+        FFtables.update(FFtable)
         Atoms = PhaseData[name]['Atoms']
         try:
             PawleyRef = PhaseData[name]['Pawley ref']
@@ -372,34 +415,51 @@ def GetPhaseData(PhaseData,Print=True):
         if Print: print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
             ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
             '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
+        if Print and FFtable:
+            PrintFFtable(FFtable)
+        Natoms[pfx] = 0
         if Atoms:
-            if Print: print '\n Atoms:'
-            line = '   name    type  refine?   x         y         z    '+ \
-                '  frac site sym  mult I/A   Uiso     U11     U22     U33     U12     U13     U23'
-            if General['Type'] == 'magnetic':
-                line += '   Mx     My     Mz'
-            elif General['Type'] == 'macromolecular':
-                line = ' res no  residue  chain '+line
-            if Print: print line
             if General['Type'] == 'nuclear':
-                if Print: print 135*'-'
-                for at in Atoms:
-                    line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%10.5f'%(at[3])+'%10.5f'%(at[4])+ \
-                        '%10.5f'%(at[5])+'%8.3f'%(at[6])+'%7s'%(at[7])+'%5d'%(at[8])+'%5s'%(at[9])
+                Natoms[pfx] = len(Atoms)
+                for i,at in enumerate(Atoms):
+                    phaseDict.update({pfx+'Atype:'+str(i):at[1],pfx+'Afrac:'+str(i):at[6],pfx+'Amul:'+str(i):at[8],
+                        pfx+'Ax:'+str(i):at[3],pfx+'Ay:'+str(i):at[4],pfx+'Az:'+str(i):at[5],
+                        pfx+'dAx:'+str(i):0.,pfx+'dAy:'+str(i):0.,pfx+'dAz:'+str(i):0.,         #refined shifts for x,y,z
+                        pfx+'AI/A:'+str(i):at[9],})
                     if at[9] == 'I':
-                        line += '%8.4f'%(at[10])+48*' '
+                        phaseDict[pfx+'AUiso:'+str(i)] = at[10]
                     else:
-                        line += 8*' '
-                        for i in range(6):
-                            line += '%8.4f'%(at[11+i])
-                    if Print: print line
+                        phaseDict.update({pfx+'AU11:'+str(i):at[11],pfx+'AU22:'+str(i):at[12],pfx+'AU33:'+str(i):at[13],
+                            pfx+'AU12:'+str(i):at[14],pfx+'AU13:'+str(i):at[15],pfx+'AU23:'+str(i):at[16]})
+                    if 'F' in at[2]:
+                        phaseVary.append(pfx+'Afrac:'+str(i))
                     if 'X' in at[2]:
                         xId,xCoef = G2spc.GetCSxinel(at[7])
+                        delnames = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
+                        for j in range(3):
+                            if xId[j] > 0:                               
+                                phaseVary.append(delnames[j])
+                                for k in range(j):
+                                    if xId[j] == xId[k]:
+                                        G2mv.StoreEquivalence(delnames[k],((delnames[j],xCoef[j]),)) 
                     if 'U' in at[2]:
-                        uId,uCoef = G2spc.GetCSuinel(at[7])[:2]
+                        if at[9] == 'I':
+                            phaseVary.append(pfx+'AUiso:'+str(i))
+                        else:
+                            uId,uCoef = G2spc.GetCSuinel(at[7])[:2]
+                            names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
+                                pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
+                            for j in range(6):
+                                if uId[j] > 0:                               
+                                    phaseVary.append(names[j])
+                                    for k in range(j):
+                                        if uId[j] == uId[k]:
+                                            G2mv.StoreEquivalence(names[k],((names[j],uCoef[j]),))
+            if Print:
+                PrintAtoms(General,Atoms)
 #        elif General['Type'] == 'magnetic':
 #        elif General['Type'] == 'macromolecular':
-#       PWDR: harmonics texture, unit cell, atom parameters
+#       PWDR: harmonics texture
         elif PawleyRef:
             pawleyVary = []
             for i,refl in enumerate(PawleyRef):
@@ -410,7 +470,7 @@ def GetPhaseData(PhaseData,Print=True):
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
                 
-    return phaseVary,phaseDict,pawleyLookup
+    return Natoms,phaseVary,phaseDict,pawleyLookup,FFtables
     
 def SetPhaseData(parmDict,sigDict,Phases):
     
@@ -454,6 +514,50 @@ def SetPhaseData(parmDict,sigDict,Phases):
             A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],0,0,0]
             sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
         return A,sigA
+        
+    def PrintAtomsAndSig(General,Atoms,atomsSig):
+        print '\n Atoms:'
+        line = '   name      x         y         z      frac   Uiso     U11     U22     U33     U12     U13     U23'
+        if General['Type'] == 'magnetic':
+            line += '   Mx     My     Mz'
+        elif General['Type'] == 'macromolecular':
+            line = ' res no  residue  chain '+line
+        print line
+        if General['Type'] == 'nuclear':
+            print 135*'-'
+            fmt = {0:'%7s',1:'%7s',3:'%10.5f',4:'%10.5f',5:'%10.5f',6:'%8.3f',10:'%8.5f',
+                11:'%8.5f',12:'%8.5f',13:'%8.5f',14:'%8.5f',15:'%8.5f',16:'%8.5f'}
+            noFXsig = {3:[10*' ','%10s'],4:[10*' ','%10s'],5:[10*' ','%10s'],6:[8*' ','%8s']}
+            for i,at in enumerate(Atoms):
+                name = fmt[0]%(at[0])+fmt[1]%(at[1])+':'
+                valstr = ' values:'
+                sigstr = ' sig   :'
+                for ind in [3,4,5,6]:
+                    sigind = str(i)+':'+str(ind)
+                    valstr += fmt[ind]%(at[ind])                    
+                    if sigind in atomsSig:
+                        sigstr += fmt[ind]%(atomsSig[sigind])
+                    else:
+                        sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
+                if at[9] == 'I':
+                    valstr += fmt[10]%(at[10])
+                    if str(i)+':10' in atomsSig:
+                        sigstr += fmt[10]%(atomsSig[str(i)+':10'])
+                    else:
+                        sigstr += 8*' '
+                else:
+                    valstr += 8*' '
+                    sigstr += 8*' '
+                    for ind in [11,12,13,14,15,16]:
+                        sigind = str(i)+':'+str(ind)
+                        valstr += fmt[ind]%(at[ind])
+                        if sigind in atomsSig:                        
+                            sigstr += fmt[ind]%(atomsSig[sigind])
+                        else:
+                            sigstr += 8*' '
+                print name
+                print valstr
+                print sigstr
             
     print '\n Phases:'
     for phase in Phases:
@@ -461,6 +565,7 @@ def SetPhaseData(parmDict,sigDict,Phases):
         Phase = Phases[phase]
         General = Phase['General']
         SGData = General['SGData']
+        Atoms = Phase['Atoms']
         cell = General['Cell']
         pId = Phase['pId']
         pfx = str(pId)+'::'
@@ -496,6 +601,31 @@ def SetPhaseData(parmDict,sigDict,Phases):
                     refl[7] = sigDict[key]
                 else:
                     refl[7] = 0
+        else:
+            atomsSig = {}
+            if General['Type'] == 'nuclear':
+                for i,at in enumerate(Atoms):
+                    names = {3:pfx+'Ax:'+str(i),4:pfx+'Ay:'+str(i),5:pfx+'Az:'+str(i),6:pfx+'Afrac:'+str(i),
+                        10:pfx+'AUiso:'+str(i),11:pfx+'AU11:'+str(i),12:pfx+'AU22:'+str(i),13:pfx+'AU33:'+str(i),
+                        14:pfx+'AU12:'+str(i),15:pfx+'AU13:'+str(i),16:pfx+'AU23:'+str(i)}
+                    for ind in [3,4,5,6]:
+                        at[ind] = parmDict[names[ind]]
+                        if ind in [3,4,5]:
+                            name = names[ind].replace('A','dA')
+                        else:
+                            name = names[ind]
+                        if name in sigDict:
+                            atomsSig[str(i)+':'+str(ind)] = sigDict[name]
+                    if at[9] == 'I':
+                        at[10] = parmDict[names[10]]
+                        if names[10] in sigDict:
+                            atomsSig[str(i)+':10'] = sigDict[names[10]]
+                    else:
+                        for ind in [11,12,13,14,15,16]:
+                            at[ind] = parmDict[names[ind]]
+                            if names[ind] in sigDict:
+                                atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
+            PrintAtomsAndSig(General,Atoms,atomsSig)    
 
 def GetHistogramPhaseData(Phases,Histograms,Print=True):
     
@@ -658,13 +788,13 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
             refList = []
             for h,k,l,d in HKLd:
-                ext,mul,Uniq = G2spc.GenHKLf([h,k,l],SGData)
+                ext,mul,Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                 if ext:
                     continue
                 if 'C' in inst['Type']:
                     pos = 2.0*asind(wave/(2.0*d))
                     if limits[0] < pos < limits[1]:
-                        refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,Uniq])
+                        refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi])
                 else:
                     raise ValueError 
             Histogram['Reflection Lists'][phase] = refList
@@ -937,6 +1067,10 @@ def GetHistogramData(Histograms,Print=True):
         Inst = Histogram['Instrument Parameters']
         Type,instDict,insVary = GetInstParms(hId,Inst)
         controlDict[pfx+'histType'] = Type
+        if pfx+'Lam1' in instDict:
+            controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam1']
+        else:
+            controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam']            
         histDict.update(instDict)
         histVary += insVary
         
@@ -990,7 +1124,7 @@ def SetHistogramData(parmDict,sigDict,Histograms):
                     sampSig[i] = sigDict[pfx+item]
         elif 'Debye' in Sample['Type']:        #Debye-Scherrer
             sampSig = [0 for i in range(4)]
-            for item in ['Scale','Absorption','DisplaceX','DisplaceY']:
+            for i,item in enumerate(['Scale','Absorption','DisplaceX','DisplaceY']):
                 Sample[item][0] = parmDict[pfx+item]
                 if pfx+item in sigDict:
                     sampSig[i] = sigDict[pfx+item]
@@ -1035,13 +1169,19 @@ def SetHistogramData(parmDict,sigDict,Histograms):
             for i,item in enumerate(['Scale','Shift','Transparency']):
                 ptlbls += '%14s'%(item)
                 ptstr += '%14.4f'%(Sample[item][0])
-                sigstr += '%14.4f'%(sampleSig[i])
+                if sampleSig[i]:
+                    sigstr += '%14.4f'%(sampleSig[i])
+                else:
+                    sigstr += 14*' '
             
         elif 'Debye' in Sample['Type']:        #Debye-Scherrer
             for i,item in enumerate(['Scale','Absorption','DisplaceX','DisplaceY']):
                 ptlbls += '%14s'%(item)
                 ptstr += '%14.4f'%(Sample[item][0])
-                sigstr += '%14.4f'%(sampleSig[i])
+                if sampleSig[i]:
+                    sigstr += '%14.4f'%(sampleSig[i])
+                else:
+                    sigstr += 14*' '
 
         print ptlbls
         print ptstr
@@ -1068,82 +1208,156 @@ def SetHistogramData(parmDict,sigDict,Histograms):
             PrintInstParmsSig(Inst,instSig)
             PrintBackgroundSig(Background,backSig)
 
-
-def SetupSFcalc(General,Atoms):
-    ''' setup data for use in StructureFactor; mostly rearranging arrays
+def GetAtomFXU(pfx,FFtables,calcControls,parmDict):
+    Natoms = calcControls['Natoms'][pfx]
+    Tdata = Natoms*[' ',]
+    Mdata = np.zeros(Natoms)
+    IAdata = Natoms*[' ',]
+    Fdata = np.zeros(Natoms)
+    FFdata = []
+    Xdata = np.zeros((3,Natoms))
+    dXdata = np.zeros((3,Natoms))
+    Uisodata = np.zeros(Natoms)
+    Uijdata = np.zeros((6,Natoms))
+    keys = {'Atype:':Tdata,'Amul:':Mdata,'Afrac:':Fdata,'AI/A:':IAdata,
+        'dAx:':dXdata[0],'dAy:':dXdata[1],'dAz:':dXdata[2],
+        'Ax:':Xdata[0],'Ay:':Xdata[1],'Az:':Xdata[2],'AUiso:':Uisodata,
+        'AU11:':Uijdata[0],'AU22:':Uijdata[1],'AU33:':Uijdata[2],
+        'AU12:':Uijdata[3],'AU13:':Uijdata[4],'AU23:':Uijdata[5]}
+    for iatm in range(Natoms):
+        for key in keys:
+            parm = pfx+key+str(iatm)
+            if parm in parmDict:
+                keys[key][iatm] = parmDict[parm]
+        FFdata.append(FFtables[Tdata[iatm]])
+    return FFdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
+    
+def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
+    ''' Compute structure factors for all h,k,l for phase
     input:
-        General = dictionary of general phase info.
-        Atoms = list of atom parameters
-    returns:
-        G = reciprocal metric tensor
-        StrData = list of arrays; one entry per atom:
-            T = atom types
-            R = refinement flags, e.g. 'FXU'
-            F = site fractions
-            X = atom coordinates as numpy array
-            M = atom multiplicities
-            IA = isotropic/anisotropic thermal flags
-            Uiso = isotropic thermal parameters if IA = 'I'; else = 0
-            Uij = numpy array of 6 anisotropic thermal parameters if IA='A'; else = zeros
-    '''            
-    SGData = General['SGData']
-    Cell = General['Cell']
-    G,g = G2lat.cell2Gmat(Cell[1:7])        #skip refine & volume; get recip & real metric tensors
-    cx,ct,cs,cia = General['AtomPtrs']
-    X = [];F = [];T = [];IA = [];Uiso = [];Uij = [];R = [];M = []
-    for atom in Atoms:
-        T.append(atom[ct])
-        R.append(atom[ct+1])
-        F.append(atom[cx+3])
-        X.append(np.array(atom[cx:cx+3]))
-        M.append(atom[cia-1])
-        IA.append(atom[cia])
-        Uiso.append(atom[cia+1])
-        Uij.append(np.array(atom[cia+2:cia+8]))
-    return G,[T,R,np.array(F),np.array(X),np.array(M),IA,np.array(Uiso),np.array(Uij)]
-            
-def StructureFactor(H,G,SGData,StrData,FFtable):
-    ''' Compute structure factor for a single h,k,l
-    H = np.array(h,k,l)
-    G = reciprocal metric tensor
-    SGData = space group info. dictionary output from SpcGroup
-    StrData = [
-        [atom types], 
-        [refinement flags], 
-        [site fractions],
-        np.array(coordinates), 
-        [multiplicities], 
-        [I/A flag], 
-        [Uiso], 
-        np.array(Uij)]
-    FFtable = dictionary of form factor coeff. for atom types used in StrData
-    '''
-    twopi = 2.0*math.pi
-    twopisq = 2.0*math.pi**2
-    SQ = G2lat.calc_rDsq2(H,G)/4.0          # SQ = (sin(theta)/lambda)**2
-    SQfactor = 8.0*SQ*math.pi**2
-    print 'SQ',SQfactor
-    FF = {}
-    for type in FFtable.keys():
-        FF[type] = G2el.ScatFac(FFtable[type],SQ)
-    print 'FF',FF 
-    iabsnt,mulp,Uniq,Phs = G2spc.GenHKL(H,SGData,False)
-    fa = [0,0,0]        #real
-    fb = [0,0,0]        #imaginary
-    if not iabsnt:
-        phase = twopi*np.inner(Uniq,StrData[3])       #2pi[hx+ky+lz] for each atom in each equiv. hkl
+        refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
+        G:      reciprocal metric tensor
+        pfx:    phase id string
+        SGData: space group info. dictionary output from SpcGroup
+        calcControls:
+        ParmDict:
+    puts result F^2 in each ref[8] in refList
+    '''        
+    twopi = 2.0*np.pi
+    twopisq = 2.0*np.pi**2
+    ast = np.sqrt(np.diag(G))
+    Mast = twopisq*np.multiply.outer(ast,ast)
+    FFtables = calcControls['FFtables']
+    FFdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,calcControls,parmDict)
+    FP = np.array([El[hfx+'FP'] for El in FFdata])
+    FPP = np.array([El[hfx+'FPP'] for El in FFdata])
+    maxPos = len(SGData['SGOps'])
+    Uij = np.array(G2lat.U6toUij(Uijdata))
+    bij = Mast*Uij.T
+    for refl in refList:
+        fb = [0,0]
+        H = refl[:3]
+        SQ = 1./(2.*refl[4])**2
+        FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
+        SQfactor = 4.0*SQ*twopisq
+        Uniq = refl[11]
+        phi = refl[12]
+        phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
-        occ = StrData[2]*StrData[4]/mulp
-        Tiso = np.multiply(StrData[6],SQfactor)
-        Tuij = np.multiply(-SQfactor,np.inner(H,np.inner(G2spc.Uij2U(StrData[7]),H)))
-        print 'sinp',sinp
-        print 'cosp',cosp
-        print 'occ',occ
-        print 'Tiso',Tiso
-        print 'Tuij',Tuij
-    else:
-        print 'Absent'
+        occ = Mdata*Fdata/len(Uniq)
+        biso = -SQfactor*Uisodata
+        Tiso = np.where(biso<1.,np.exp(biso),1.0)
+        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
+        Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
+        Tcorr = Tiso*Tuij
+        fa = np.array([(FF+FP)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
+        fa = np.sum(np.sum(fa,axis=1),axis=1)        #real
+        if not SGData['SGInv']:
+            fb = np.array([(FF+FP)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
+            fb = np.sum(np.sum(fb,axis=1),axis=1)        #imaginary
+        refl[9] = fa[0]**2+fb[1]**2+fb[0]+fa[1]**2
+        refl[10] = atan2d(fb[0],fa[0])
+    return refList
+    
+def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
+    twopi = 2.0*np.pi
+    twopisq = 2.0*np.pi**2
+    ast = np.sqrt(np.diag(G))
+    Mast = twopisq*np.multiply.outer(ast,ast)
+    FFtables = calcControls['FFtables']
+    FFdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,calcControls,parmDict)
+    FP = np.array([El[hfx+'FP'] for El in FFdata])
+    FPP = np.array([El[hfx+'FPP'] for El in FFdata])
+    maxPos = len(SGData['SGOps'])       
+    Uij = np.array(G2lat.U6toUij(Uijdata))
+    bij = Mast*Uij.T
+    dFdvDict = {}
+    dFdfr = np.zeros((len(refList),len(Mdata)))
+    dFdx = np.zeros((len(refList),len(Mdata),3))
+    dFdui = np.zeros((len(refList),len(Mdata)))
+    dFdua = np.zeros((len(refList),len(Mdata),6))
+    for iref,refl in enumerate(refList):
+        H = np.array(refl[:3])
+        SQ = 1./(2.*refl[4])**2          # or (sin(theta)/lambda)**2
+        FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
+        SQfactor = 8.0*SQ*np.pi**2
+        Uniq = refl[11]
+        phi = refl[12]
+        phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+phi[np.newaxis,:])
+        sinp = np.sin(phase)
+        cosp = np.cos(phase)
+        occ = Mdata*Fdata/len(Uniq)
+        biso = -SQfactor*Uisodata
+        Tiso = np.where(biso<1.,np.exp(biso),1.0)
+#        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
+        HbH = -np.inner(H,np.inner(bij,H))
+        Hij = np.array([Mast*np.multiply.outer(U,U) for U in Uniq])
+        Hij = np.array([G2lat.UijtoU6(Uij) for Uij in Hij])
+        Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
+        Tcorr = Tiso*Tuij
+        fot = (FF+FP)*occ*Tcorr
+        fotp = FPP*occ*Tcorr
+        fa = np.array([fot[:,np.newaxis]*cosp,fotp[:,np.newaxis]*cosp])       #non positions
+        fb = np.array([fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])
+        
+        fas = np.sum(np.sum(fa,axis=1),axis=1)
+        fbs = np.sum(np.sum(fb,axis=1),axis=1)
+        fax = np.array([-fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])   #positions
+        fbx = np.array([fot[:,np.newaxis]*cosp,-fot[:,np.newaxis]*cosp])
+        #sum below is over Uniq
+        dfadfr = np.sum(fa/occ[:,np.newaxis],axis=2)
+        dfadx = np.sum(twopi*Uniq*fax[:,:,:,np.newaxis],axis=2)
+        dfadui = np.sum(-SQfactor*fa,axis=2)
+        dfadua = np.sum(-Hij*fa[:,:,:,np.newaxis],axis=2)
+        #NB: the above have been checked against PA(1:10,1:2) in strfctr.for      
+        dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)
+        dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])
+        dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
+        dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
+        if not SGData['SGInv']:
+            dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)
+            dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)          
+            dfbdui = np.sum(-SQfactor*fb,axis=2)
+            dfbdua = np.sum(-Hij*fb[:,:,:,np.newaxis],axis=2)
+            dFdfr[iref] += 2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(Uniq)
+            dFdx[iref] += 2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
+            dFdui[iref] += 2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
+            dFdua[iref] += 2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
+        #loop over atoms - each dict entry is list of derivatives for all the reflections
+    for i in range(len(Mdata)):     
+        dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
+        dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]
+        dFdvDict[pfx+'dAy:'+str(i)] = dFdx.T[1][i]
+        dFdvDict[pfx+'dAz:'+str(i)] = dFdx.T[2][i]
+        dFdvDict[pfx+'AUiso:'+str(i)] = dFdui.T[i]
+        dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
+        dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
+        dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+    return dFdvDict
         
 def Dict2Values(parmdict, varylist):
     '''Use before call to leastsq to setup list of values for the parameters 
@@ -1154,6 +1368,14 @@ def Values2Dict(parmdict, varylist, values):
     ''' Use after call to leastsq to update the parameter dictionary with 
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
+    
+def ApplyXYZshifts(parmDict,varyList):
+    ''' takes atom x,y,z shift and applies it to corresponding atom x,y,z value
+    '''
+    for vary in varyList:
+        if 'dA' in vary:
+            parm = ''.join(vary.split('d'))
+            parmDict[parm] += parmDict[vary]
     
 def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     odfCor = 1.0
@@ -1203,11 +1425,11 @@ def GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
         MD = parmDict[phfx+'MD']
         MDAxis = calcControls[phfx+'MDAxis']
         sumMD = 0
-        for H in refl[10]:            
+        for H in refl[11]:            
             cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
             A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
             sumMD += A**3
-        POcorr = sumMD/len(refl[10])
+        POcorr = sumMD/len(refl[11])
     else:   #spherical harmonics
         POcorr = SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr
@@ -1219,13 +1441,13 @@ def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
         MDAxis = calcControls[phfx+'MDAxis']
         sumMD = 0
         sumdMD = 0
-        for H in refl[10]:            
+        for H in refl[11]:            
             cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
             A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
             sumMD += A**3
             sumdMD -= (1.5*A**5)*(2.0*MD*cosP**2-(sinP/MD)**2)
-        POcorr = sumMD/len(refl[10])
-        POderv[phfx+'MD'] = sumdMD/len(refl[10])
+        POcorr = sumMD/len(refl[11])
+        POderv[phfx+'MD'] = sumdMD/len(refl[11])
     else:   #spherical harmonics
         POcorr,POderv = SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr,POderv
@@ -1412,6 +1634,22 @@ def GetHStrainShiftDerv(refl,SGData,phfx):
     for item in dDijDict:
         dDijDict[item] *= refl[4]**2*tand(refl[5]/2.0)
     return dDijDict
+    
+def GetFprime(controlDict,Histograms):
+    FFtables = controlDict['FFtables']
+    if not FFtables:
+        return
+    for histogram in Histograms:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            keV = controlDict[hfx+'keV']
+            for El in FFtables:
+                Orbs = G2el.GetXsectionCoeff(El.split('+')[0].split('-')[0])
+                FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
+                FFtables[El][hfx+'FP'] = FP
+                FFtables[El][hfx+'FPP'] = FPP                
             
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
@@ -1425,7 +1663,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         sig = U*tanPos**2+V*tanPos+W        #save peak sigma
         sig = max(0.001,sig)
         gam = X/cosd(refl[5]/2.0)+Y*tanPos+GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse) #save peak gamma
-        gam = max(0.01,gam)
+        gam = max(0.001,gam)
         return sig,gam
                 
     hId = Histogram['hId']
@@ -1435,7 +1673,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     yc = np.zeros_like(yb)
         
     if 'C' in calcControls[hfx+'histType']:    
-        shl = max(parmDict[hfx+'SH/L'],0.0005)
+        shl = max(parmDict[hfx+'SH/L'],0.002)
         Ka2 = False
         if hfx+'Lam1' in parmDict.keys():
             wave = parmDict[hfx+'Lam1']
@@ -1453,9 +1691,13 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
+        hfx = ':%d:'%(hId)
         SGData = Phase['General']['SGData']
         A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+        Vst = np.sqrt(nl.det(G))    #V*
+        if 'Pawley' not in Phase['General']['Type']:
+            refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
         sizeEllipse = []
         if calcControls[phfx+'SizeType'] == 'ellipsoidal':
             sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
@@ -1463,17 +1705,16 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             if 'C' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
+                Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
                 refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse)    #peak sig & gam
-                Icorr = GetIntensityCorr(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
+                Icorr = GetIntensityCorr(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)*Vst*Lorenz
                 if 'Pawley' in Phase['General']['Type']:
                     try:
-                        refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
+                        refl[9] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
-                else:
-                    raise ValueError       #wants strctrfacr calc here
                 Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
                 iBeg = np.searchsorted(x,refl[5]-fmin)
                 iFin = np.searchsorted(x,refl[5]+fmax)
@@ -1481,7 +1722,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
-                yc[iBeg:iFin] += Icorr*refl[8]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
+                yc[iBeg:iFin] += Icorr*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
@@ -1491,7 +1732,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         continue
                     elif not iBeg-iFin:     #peak above high limit - done
                         return yc,yb
-                    yc[iBeg:iFin] += Icorr*refl[8]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
+                    yc[iBeg:iFin] += Icorr*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise ValueError    #no TOF yet
@@ -1554,22 +1795,24 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         phfx = '%d:%d:'%(pId,hId)
         A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+        Vst = np.sqrt(nl.det(G))    #V*
+        if 'Pawley' not in Phase['General']['Type']:
+            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
         sizeEllipse = []
         if calcControls[phfx+'SizeType'] == 'ellipsoidal':
             sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
-        for refl in refList:
+        for iref,refl in enumerate(refList):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
-                iref = pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]
+                Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
                 Icorr,dIdsh,dIdsp,dIdpola,dIdPO = GetIntensityDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
+                Icorr *= Vst*Lorenz
                 if 'Pawley' in Phase['General']['Type']:
                     try:
-                        refl[8] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
+                        refl[9] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
-                else:
-                    raise ValueError       #wants strctrfacr deriv calc here
                 Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
                 iBeg = np.searchsorted(x,refl[5]-fmin)
                 iFin = np.searchsorted(x,refl[5]+fmax)
@@ -1583,8 +1826,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 dMdpk = np.zeros(shape=(6,len(x)))
                 dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])
                 for i in range(1,5):
-                    dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += 100.*dx*Icorr*refl[8]*dMdipk[0]
+                    dMdpk[i][iBeg:iFin] += 100.*dx*Icorr*refl[9]*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += 100.*dx*Icorr*refl[9]*dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tanth       # + 360/pi * Dlam/lam * tan(th)
@@ -1594,15 +1837,16 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     if iBeg2-iFin2:
                         dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])
                         for i in range(1,5):
-                            dMdpk[i][iBeg2:iFin2] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[i]
-                        dMdpk[0][iBeg2:iFin2] += 100.*dx*Icorr*refl[8]*kRatio*dMdipk2[0]
+                            dMdpk[i][iBeg2:iFin2] += 100.*dx*Icorr*refl[9]*kRatio*dMdipk2[i]
+                        dMdpk[0][iBeg2:iFin2] += 100.*dx*Icorr*refl[9]*kRatio*dMdipk2[0]
                         dMdpk[5][iBeg2:iFin2] += 100.*dx*Icorr*dMdipk2[0]
-                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*refl[8]}
-                try:
-                    idx = varylist.index(pfx+'PWLref:'+str(iref))
-                    dMdv[idx] = dervDict['int']/refl[8]
-                except ValueError:
-                    pass
+                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*refl[9]}
+                if 'Pawley' in Phase['General']['Type']:
+                    try:
+                        idx = varylist.index(pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]))
+                        dMdv[idx] = dervDict['int']/refl[9]
+                    except ValueError:
+                        pass
                 dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],
@@ -1628,10 +1872,18 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 gamDict = GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse)
                 for name in gamDict:
                     if name in varylist:
-                        dMdv[varylist.index(name)] += gamDict[name]*dervDict['gam']                       
+                        dMdv[varylist.index(name)] += gamDict[name]*dervDict['gam']
+                                               
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
-                raise ValueError    #no TOF yet
+                raise Exception    #no TOF yet
+#do atom derivatives -  for F,X & U so far              
+            atNames = [pfx+'Afrac',pfx+'dAx',pfx+'dAy',pfx+'dAz',pfx+'AUiso',
+                pfx+'AU11',pfx+'AU22',pfx+'AU33',pfx+'AU12',pfx+'AU13',pfx+'AU23']
+            for atname in atNames:
+                for name in varylist:
+                    if atname in name:
+                        dMdv[varylist.index(name)] += dFdvDict[name][iref]*dervDict['int']/refl[9]
             
     return dMdv    
                     
@@ -1703,7 +1955,8 @@ def Refine(GPXfile,dlg):
     ShowBanner()
     varyList = []
     parmDict = {}
-    calcControls = {}    
+    calcControls = {}
+    G2mv.InitVars()    
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
@@ -1715,7 +1968,9 @@ def Refine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception
-    phaseVary,phaseDict,pawleyLookup = GetPhaseData(Phases)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables = GetPhaseData(Phases)
+    calcControls['Natoms'] = Natoms
+    calcControls['FFtables'] = FFtables
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms)
     calcControls.update(controlDict)
     histVary,histDict,controlDict = GetHistogramData(Histograms)
@@ -1724,6 +1979,7 @@ def Refine(GPXfile,dlg):
     parmDict.update(phaseDict)
     parmDict.update(hapDict)
     parmDict.update(histDict)
+    GetFprime(calcControls,Histograms)
     constrDict,constrFlag,fixedList = G2mv.InputParse([])        #constraints go here?
     groups,parmlist = G2mv.GroupConstraints(constrDict)
     G2mv.GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList)
@@ -1743,12 +1999,14 @@ def Refine(GPXfile,dlg):
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/len(varyList))
-#        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
-#        for item in table: print item,table[item]               #useful debug - are things shifting?
+        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
+        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
+        ApplyXYZshifts(parmDict,varyList)
         G2mv.Dict2Map(parmDict)
+        
         Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
         GOF = chisq/(Histograms['Nobs']-len(varyList))
         print '\n Refinement results:'

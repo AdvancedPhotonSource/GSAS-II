@@ -1452,7 +1452,7 @@ class GSASII(wx.Frame):
     def OnViewLSParms(self,event):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
-        phaseVary,phaseDict,pawleyLookup = G2str.GetPhaseData(Phases,Print=False)        
+        Natoms,phaseVary,phaseDict,pawleyLookup,FFtable = G2str.GetPhaseData(Phases,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
         varyList = phaseVary+hapVary+histVary
@@ -1462,6 +1462,8 @@ class GSASII(wx.Frame):
         for parm in parmDict:
             if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2']:
                 parmDict[parm] = [parmDict[parm],' ']
+            elif parm.split(':')[-2] in ['Ax','Ay','Az']:
+                parmDict[parm] = [parmDict[parm],' ']
             elif parm in varyList:
                 parmDict[parm] = [parmDict[parm],'True']
             else:
@@ -1469,17 +1471,15 @@ class GSASII(wx.Frame):
         dlg = self.ViewParmDialog(self,'Parameters for least squares',parmDict)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                print 'do something with changes??'
+                print 'do something with changes?? - No!'
         finally:
             dlg.Destroy()
-
-
        
     def OnRefine(self,event):
         self.OnFileSave(event)
         #works - but it'd be better if it could restore plots
         dlg = wx.ProgressDialog('Residual','Powder profile Rwp =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))

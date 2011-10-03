@@ -321,112 +321,11 @@ def GenHKLf(HKL,SGData,Friedel=False):
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
     h,k,l,f = Uniq
     Uniq=np.array(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq]))
+    phi = f[:Nuniq]
     Uniq = np.array(Uniq)
     
-    return iabsnt,2*mulp,Uniq       #include Friedel pairs in powder mulp
-
-        
-def GenHKL(HKL,SGData,Friedel=False):          #gives wrong answers!
-    '''
-    Generate set of equivalent reflections
-    input:
-        HKL - [h,k,l]
-        SGData - space group data obtained from SpcGroup
-        Friedel = True to retain Friedel pairs for centrosymmetric case
-    returns:
-        iabsnt = True is reflection is forbidden by symmetry
-        mulp = reflection multiplicity including Fridel pairs
-        Uniq = numpy array of equivalent hkl in descending order of h,k,l
-        Phs = numpy array of corresponding phase factors (multiples of 2pi)
-        
-    NB: only works on one HKL at a time - 
-        it can be made to do an array of HKLs - not any faster!
-    ''' 
-    iabsnt = False
-    H = np.array(HKL)
-    Inv = SGData['SGInv']
-    Cen = SGData['SGCen'][1:]           #skip P
-    # do cell centering extinction check
-    for cen in Cen:
-        iabsnt |= bool(int(round(np.sum(cen*H*12)))%12)
-    # get operators & expand if centrosymmetric
-    Ops = SGData['SGOps']
-    opM = np.array([op[0] for op in Ops])
-    opT = np.array([op[1] for op in Ops])
-    if Inv:
-        opM = np.concatenate((opM,-opM))
-        opT = np.concatenate((opT,-opT))
-    # generate full hkl table and phase factors; find duplicates for multiplicity
-    eqH = np.inner(opM,H)
-    HT = np.dot(opT,H)%1.
-    dup = len(ma.nonzero([ma.allclose(H,hkl,atol=0.001) for hkl in eqH])[0])
-    mulp = len(eqH)/dup
-    # generate unique reflection set (with or without Friedel pairs)
-    HPT = [tuple(hp) for hp in np.column_stack((eqH,HT))]
-    HPT.sort()
-    UPT = HPT[::dup]
-    UPT.reverse()
-    if Inv and not Friedel:
-        UPT = UPT[:len(UPT)/2]            
-    Uniq = np.split(UPT,[3,4],axis=1)
-    Phs = Uniq[1].T[0]
-    Uniq = Uniq[0]
-    # determine if extinct
-    HPT = np.split(HPT,[3,4],axis=1)[1].T[0]
-    HPT = np.reshape(HPT,(mulp,-1)).T
-    HPT = np.around(HPT-HPT[0],4)%1.
-    iabsnt |= np.any(HPT)
-    return iabsnt,mulp,Uniq
-                                   
-#def GenHKLs(H,SGData,Friedel=False):
-#    '''
-#    Generate set of equivalent reflections
-#    input:
-#        H - np.array of [h,k,l] assumed to exclude lattice centering extinctions
-#        SGData - space group data obtained from SpcGroup
-#        Friedel = True to retain Friedel pairs for centrosymmetric case
-#    returns:
-#        iabsnt = True is reflection is forbidden by symmetry
-#        mulp = reflection multiplicity including Fridel pairs
-#        Uniq = numpy array of equivalent hkl in descending order of h,k,l
-#        Phs = numpy array of corresponding phase factors (multiples of 2pi)
-#    this is not any faster than GenHKL above - oh well
-#    ''' 
-#    H = np.array(H,dtype=float)
-#    Inv = SGData['SGInv']
-#    Ops = SGData['SGOps']
-#    opM = np.array([op[0] for op in Ops])
-#    opT = np.array([op[1] for op in Ops])
-#    if Inv:
-#        opM = np.concatenate((opM,-opM))
-#        opT = np.concatenate((opT,-opT))
-#    # generate full hkl table and phase factors; find duplicates for multiplicity
-#    eqH = np.swapaxes(np.swapaxes(np.inner(opM,H),0,2),1,2)
-#    HeqH = zip(H,eqH)
-#    dup = np.array([sum([ma.allclose(h,hkl,atol=0.001) for hkl in HKL]) for h,HKL in HeqH])
-#    mulp = len(eqH[0])/dup
-#    # generate unique reflection set (with or without Friedel pairs)
-#    HT = np.dot(H,opT.T)%1.
-#    HPT = zip(mulp,dup,[[tuple(hp) for hp in HP] for HP in np.dstack((eqH,HT))])
-#    Uniq = []
-#    Phs = []
-#    iabsnt = []
-#    for mp,dp,hpt in HPT:
-#        hpt.sort()
-#        upt = hpt[::dp]
-#        upt.reverse()
-#        if Inv and not Friedel:
-#            upt = upt[:len(upt)/2]            
-#        uniq = np.split(upt,[3,4],axis=1)
-#        Phs.append(uniq[1].T[0])
-#        Uniq.append(uniq[0])
-#        # determine if extinct
-#        hpt = np.split(hpt,[3,4],axis=1)[1].T[0]
-#        hpt = np.reshape(hpt,(mp,-1)).T
-#        hpt = np.around(hpt-hpt[0],4)%1.
-#        iabsnt.append(np.any(hpt))
-#    return iabsnt,mulp,Uniq,Phs
-                                   
+    return iabsnt,2*mulp,Uniq,phi       #include Friedel pairs in powder mulp
+                                  
 def GetOprPtrName(key):            
     OprPtrName = {
         '-6643':[   2,' 1bar ', 1],'6479' :[  10,'  2z  ', 2],'-6479':[   9,'  mz  ', 3],

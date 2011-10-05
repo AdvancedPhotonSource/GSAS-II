@@ -343,7 +343,7 @@ def cellVary(pfx,SGData):
     elif SGData['SGLaue'] in ['3R', '3mR']:
         return [pfx+'A0',pfx+'A3']                       
     elif SGData['SGLaue'] in ['m3m','m3']:
-        return [pfx+'A0']
+        return [pfx+'A0',]
         
             
 def GetPhaseData(PhaseData,Print=True):
@@ -411,7 +411,7 @@ def GetPhaseData(PhaseData,Print=True):
         A = G2lat.cell2A(cell[1:7])
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5]})
         if cell[0]:
-            phaseVary = cellVary(pfx,SGData)
+            phaseVary += cellVary(pfx,SGData)
         if Print: print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
             ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
             '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
@@ -1878,13 +1878,14 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet
 #do atom derivatives -  for F,X & U so far              
-            atNames = [pfx+'Afrac',pfx+'dAx',pfx+'dAy',pfx+'dAz',pfx+'AUiso',
-                pfx+'AU11',pfx+'AU22',pfx+'AU33',pfx+'AU12',pfx+'AU13',pfx+'AU23']
-            for atname in atNames:
-                for name in varylist:
-                    if atname in name:
-                        dMdv[varylist.index(name)] += dFdvDict[name][iref]*dervDict['int']/refl[9]
-            
+            corr = dervDict['int']/refl[9]
+            for name in varylist:
+                try:
+                    aname = name.split(pfx)[1][:2]
+                    if aname in ['Af','dA','AU']:
+                         dMdv[varylist.index(name)] += dFdvDict[name][iref]*corr
+                except IndexError:
+                    pass
     return dMdv    
                     
 def Refine(GPXfile,dlg):
@@ -1999,8 +2000,8 @@ def Refine(GPXfile,dlg):
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/len(varyList))
-        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
-        for item in table: print item,table[item]               #useful debug - are things shifting?
+#        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
+#        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
@@ -2065,7 +2066,7 @@ def main():
             print 'ERROR - ',GPXfile," doesn't exist!"
             exit()
         GPXpath = ospath.dirname(arg[1])
-        Refine(GPXfile)
+        Refine(GPXfile,None)
     else:
         print 'ERROR - missing filename'
         exit()

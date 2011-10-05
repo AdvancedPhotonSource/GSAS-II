@@ -560,7 +560,7 @@ def UpdateControls(self,data):
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
     LSSizer = wx.FlexGridSizer(cols=6,vgap=5,hgap=5)
-    LSSizer.Add(wx.StaticText(self.dataDisplay,label='Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
+    LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
     Choice=['analytic','numeric']
     derivSel = wx.ComboBox(parent=self.dataDisplay,value=data['deriv type'],choices=Choice,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)

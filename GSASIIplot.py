@@ -341,6 +341,9 @@ def PlotPatterns(self,newPlot=False):
                 PlotPatterns(self)
             else:                                                   #picked a limit line
                 self.itemPicked = pick
+        elif self.PatternTree.GetItemText(PickId) == 'Reflection Lists':
+            if ind.all() == [0]:                                    #picked a limit line
+                self.itemPicked = pick
         
     def OnPlotKeyPress(event):
         newPlot = False

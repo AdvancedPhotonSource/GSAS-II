@@ -1888,7 +1888,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                          dMdv[varylist.index(name)] += dFdvDict[name][iref]*corr
                 except IndexError:
                     pass
-    return dMdv    
+    return dMdv   
                     
 def Refine(GPXfile,dlg):
     import cPickle
@@ -1912,7 +1912,7 @@ def Refine(GPXfile,dlg):
                 dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
                     varylist,Histogram,Phases,calcControls,pawleyLookup)
                 if len(dMdv):
-                    dMdv = np.concatenate((dMdv,dMdvh))
+                    dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
                 else:
                     dMdv = dMdvh
         return dMdv

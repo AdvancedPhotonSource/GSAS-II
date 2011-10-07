@@ -11,4 +11,5 @@
 @set gsasloc=%gsasloc:\\*=\*%
 @set gsasloc=%gsasloc:\*=\%
 @
-python "%gsasloc%\GSASII.py %1
+python %gsasloc%\GSASII.py %1
+

@@ -51,6 +51,12 @@ import GSASIIphsGUI as G2phG
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
 
+[ wxID_CONSTRAINTADD,
+] = [wx.NewId() for _init_coll_Constraint_Items in range(1)]
+
+[ wxID_RESTRAINTADD,
+] = [wx.NewId() for _init_coll_Restraint_Items in range(1)]
+
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for _init_coll_Refl_Items in range(1)]
 
@@ -69,6 +75,12 @@ class DataFrame(wx.Frame):
         
     def _init_coll_AtomsMenu(self,parent):
         parent.Append(menu=self.AtomEdit, title='Edit')
+        
+    def _init_coll_ConstraintMenu(self,parent):
+        parent.Append(menu=self.ConstraintEdit, title='Edit')
+        
+    def _init_coll_RestraintMenu(self,parent):
+        parent.Append(menu=self.RestraintEdit, title='Edit')
         
     def _init_coll_DataMenu(self,parent):
         parent.Append(menu=self.DataEdit, title='Edit')
@@ -126,6 +138,14 @@ class DataFrame(wx.Frame):
         parent.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
             help='Reload atom drawing list')
             
+    def _init_coll_Constraint_Items(self,parent):
+        parent.Append(id=wxID_CONSTRAINTADD, kind=wx.ITEM_NORMAL,text='Add constraint',
+            help='constraint dummy menu item')
+        
+    def _init_coll_Restraint_Items(self,parent):
+        parent.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraint',
+            help='restraint dummy menu item')
+                    
     def _init_coll_Data_Items(self,parent):
         parent.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
             help='Select new powder histograms to be used for this phase')
@@ -252,6 +272,8 @@ class DataFrame(wx.Frame):
         self.BlankMenu = wx.MenuBar()
         
         self.AtomsMenu = wx.MenuBar()
+        self.ConstraintMenu = wx.MenuBar()
+        self.RestraintMenu = wx.MenuBar()
         self.DataMenu = wx.MenuBar()
         self.TextureMenu = wx.MenuBar()
         self.DrawAtomsMenu = wx.MenuBar()
@@ -265,6 +287,8 @@ class DataFrame(wx.Frame):
         self.ReflMenu = wx.MenuBar()
         self.PDFMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
+        self.ConstraintEdit = wx.Menu(title='')
+        self.RestraintEdit = wx.Menu(title='')
         self.DataEdit = wx.Menu(title='')
         self.TextureEdit = wx.Menu(title='')
         self.DrawAtomEdit = wx.Menu(title='')
@@ -279,6 +303,10 @@ class DataFrame(wx.Frame):
         self.PDFEdit = wx.Menu(title='')
         self._init_coll_AtomsMenu(self.AtomsMenu)
         self._init_coll_Atom_Items(self.AtomEdit)
+        self._init_coll_ConstraintMenu(self.ConstraintMenu)
+        self._init_coll_Constraint_Items(self.ConstraintEdit)
+        self._init_coll_RestraintMenu(self.RestraintMenu)
+        self._init_coll_Restraint_Items(self.RestraintEdit)
         self._init_coll_DataMenu(self.DataMenu)
         self._init_coll_Data_Items(self.DataEdit)
         self._init_coll_TextureMenu(self.TextureMenu)
@@ -599,6 +627,43 @@ def UpdateComments(self,data):
             self.dataDisplay.AppendText(line)
         else:
             self.dataDisplay.AppendText(line+'\n')
+            
+def UpdateConstraints(self,data):
+    
+    
+    if self.dataDisplay:
+        self.dataDisplay.Destroy()
+    self.dataFrame.SetLabel('Constraints')
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+    
+    
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    
+    
+def UpdateRestraints(self,data):
+
+
+    if self.dataDisplay:
+        self.dataDisplay.Destroy()
+    self.dataFrame.SetLabel('Restraints')
+    self.dataDisplay = wx.Panel(self.dataFrame)
+    self.dataFrame.SetMenuBar(self.dataFrame.RestraintMenu)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement restraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+    
+    
+    mainSizer.Layout()    
+    self.dataDisplay.SetSizer(mainSizer)
+    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
+    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
              
 def UpdateHKLControls(self,data):
     
@@ -713,11 +778,6 @@ def MovePatternTreeToGrid(self,item):
             self.dataDisplay.Clear() 
             Id = GetPatternTreeItemId(self,self.root, 'Notebook')
             if Id: self.PatternTree.SetItemPyData(Id,data)
-        if self.dataFrame.GetLabel() == 'Covariance':
-            data = [self.dataDisplay.GetValue()]
-            self.dataDisplay.Clear() 
-            Id = GetPatternTreeItemId(self,self.root, 'Covariance')
-            if Id: self.PatternTree.SetItemPyData(Id,data)
         if 'Phase Data for' in self.dataFrame.GetLabel():
             if self.dataDisplay: 
                 oldPage = self.dataDisplay.GetSelection()
@@ -759,6 +819,12 @@ def MovePatternTreeToGrid(self,item):
         elif self.PatternTree.GetItemText(item) == 'Covariance':
             data = self.PatternTree.GetItemPyData(item)
             G2plt.PlotCovariance(self)
+        elif self.PatternTree.GetItemText(item) == 'Constraints':
+            data = self.PatternTree.GetItemPyData(item)
+            UpdateConstraints(self,data)
+        elif self.PatternTree.GetItemText(item) == 'Restraints':
+            data = self.PatternTree.GetItemPyData(item)
+            UpdateRestraints(self,data)
         elif 'IMG' in self.PatternTree.GetItemText(item):
             self.Image = item
             G2plt.PlotImage(self,newPlot=True)

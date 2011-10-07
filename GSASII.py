@@ -544,9 +544,17 @@ class GSASII(wx.Frame):
         if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
             self.PatternTree.SetItemPyData(sub,[''])
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Controls'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
             self.PatternTree.SetItemPyData(sub,{})
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Covariance'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Covariance')
+            self.PatternTree.SetItemPyData(sub,{})
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Constraints'):
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Constraints')
+            self.PatternTree.SetItemPyData(sub,{})
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Restraints'):
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Restraints')
             self.PatternTree.SetItemPyData(sub,{})
             
                 
@@ -1051,11 +1059,6 @@ class GSASII(wx.Frame):
                     self.GSASprojectfile = dlg.GetPath()
                     self.dirname = dlg.GetDirectory()
                     G2IO.ProjFileOpen(self)
-                    #patch
-                    if not G2gd.GetPatternTreeItemId(self,self.root,'Covariance'):
-                        sub = self.PatternTree.AppendItem(parent=self.root,text='Covariance')
-                        self.PatternTree.SetItemPyData(sub,{})
-                    #end patch
                     self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
                     self.PatternTree.Expand(self.root)
                     self.HKL = []
@@ -1072,8 +1075,10 @@ class GSASII(wx.Frame):
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
                         self.PatternTree.SelectItem(Id)
+                    self.CheckNotebook()
             finally:
                 dlg.Destroy()
+
 
     def OnFileClose(self, event):
         if self.dataFrame:

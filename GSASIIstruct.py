@@ -1255,7 +1255,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     for refl in refList:
-        fb = [0,0]
+        fbs = np.array([0,0])
         H = refl[:3]
         SQ = 1./(2.*refl[4])**2
         FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
@@ -1272,12 +1272,14 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij
         fa = np.array([(FF+FP)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
-        fa = np.sum(np.sum(fa,axis=1),axis=1)        #real
+        fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
         if not SGData['SGInv']:
             fb = np.array([(FF+FP)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
-            fb = np.sum(np.sum(fb,axis=1),axis=1)        #imaginary
-        refl[9] = fa[0]**2+fb[1]**2+fb[0]+fa[1]**2
-        refl[10] = atan2d(fb[0],fa[0])
+            fbs = np.sum(np.sum(fb,axis=1),axis=1)
+        fasq = fas**2
+        fbsq = fbs**2        #imaginary
+        refl[9] = np.sum(fasq)+np.sum(fbsq)
+        refl[10] = atan2d(fbs[0],fas[0])
     return refList
     
 def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
@@ -1372,10 +1374,10 @@ def Values2Dict(parmdict, varylist, values):
 def ApplyXYZshifts(parmDict,varyList):
     ''' takes atom x,y,z shift and applies it to corresponding atom x,y,z value
     '''
-    for vary in varyList:
-        if 'dA' in vary:
-            parm = ''.join(vary.split('d'))
-            parmDict[parm] += parmDict[vary]
+    for item in parmDict:
+        if 'dA' in item:
+            parm = ''.join(item.split('d'))
+            parmDict[parm] += parmDict[item]
     
 def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     odfCor = 1.0
@@ -1917,6 +1919,7 @@ def Refine(GPXfile,dlg):
     
     def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
         parmdict.update(zip(varylist,values))
+        Values2Dict(parmdict, varylist, values)
         G2mv.Dict2Map(parmDict)
         Histograms,Phases = HistoPhases
         M = np.empty(0)
@@ -2005,8 +2008,8 @@ def Refine(GPXfile,dlg):
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
-        ApplyXYZshifts(parmDict,varyList)
         G2mv.Dict2Map(parmDict)
+        ApplyXYZshifts(parmDict,varyList)
         
         Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
         GOF = chisq/(Histograms['Nobs']-len(varyList))

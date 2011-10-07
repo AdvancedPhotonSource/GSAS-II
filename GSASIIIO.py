@@ -881,6 +881,7 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'),{})             
         else:
             Id = self.PatternTree.AppendItem(parent=self.root,text=name+" Azm= %.2f"%(azm))
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
@@ -891,6 +892,7 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Reflection Lists'),{})             
         self.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     self.PatternTree.SelectItem(Id)
     self.PatternTree.Expand(Id)

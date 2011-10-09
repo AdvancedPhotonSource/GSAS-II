@@ -736,7 +736,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     Atoms.DeselectCol(c)
                 else:
                     Atoms.SelectCol(c,True)
-
+        
+        SGData = data['General']['SGData']
+        if SGData['SGPolax']:
+            self.dataFrame.SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'])
         table = []
         rowLabels = []
         for i,atom in enumerate(atomData):

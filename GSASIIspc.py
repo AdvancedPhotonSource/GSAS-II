@@ -81,6 +81,7 @@ def SpcGroup(SGSymbol):
         SGData['SGSys'] = SysSym[6]
     elif SGData['SGLaue'] in ['m3','m3m']:
         SGData['SGSys'] = SysSym[7]
+    SGData['SGPolax'] = SGpolar(SGData)
     return SGInfo[8],SGData
 
 def SGErrors(IErr):
@@ -123,6 +124,20 @@ def SGErrors(IErr):
         return ErrString[IErr]
     except:
         return "Unknown error"
+def SGpolar(SGData):
+    '''
+    Determine identity of polar axes if any
+    '''
+    POL = ('','x','y','x y','z','x z','y z','xyz','111')
+    NP = [1,2,4]
+    NPZ = [0,1]
+    for M,T in SGData['SGOps']:
+        for i in range(3):
+            if M[i][i] <= 0.: NP[i] = 0
+        if M[0][2] > 0: NPZ[0] = 8
+        if M[1][2] > 0: NPZ[1] = 0
+    NPol = (NP[0]+NP[1]+NP[2]+NPZ[0]*NPZ[1])*(1-int(SGData['SGInv']))
+    return POL[NPol]
     
 def SGPrint(SGData):
     '''
@@ -132,16 +147,7 @@ def SGPrint(SGData):
     returns:
         SGText - list of strings with the space group details
     '''
-    POL = (' ','x','y','x y','z','x z','y z','xyz','111')
     Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
-    NP = [1,2,4]
-    NPZ = [0,1]
-    for M,T in SGData['SGOps']:
-        for i in range(3):
-            if M[i][i] <= 0.: NP[i] = 0
-        if M[0][2] > 0: NPZ[0] = 8
-        if M[1][2] > 0: NPZ[1] = 0
-    NPol = (NP[0]+NP[1]+NP[2]+NPZ[0]*NPZ[1])*(1-int(SGData['SGInv']))
     SGText = []
     SGText.append(' Space Group: '+SGData['SpGrp'])
     CentStr = 'centrosymmetric'
@@ -157,8 +163,8 @@ def SGPrint(SGData):
         SGText.append(' The unique monoclinic axis is '+SGData['SGUniq'])
     if SGData['SGInv']:
         SGText.append(' The inversion center is located at 0,0,0')
-    if NPol:
-        SGText.append(' The location of the origin is arbitrary in '+POL[NPol])
+    if SGData['SGPolax']:
+        SGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
     SGText.append('\n'+' The equivalent positions are:')
     if SGData['SGLatt'] != 'P':
         SGText.append('\n ('+Latt2text(SGData['SGLatt'])+')+')

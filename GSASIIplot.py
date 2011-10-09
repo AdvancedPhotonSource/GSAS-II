@@ -1082,28 +1082,28 @@ def PlotPeakWidths(self):
     Y = []
     Z = []
     W = []
-    V = []
+#    V = []
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
-    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
+#    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
     for theta in thetas:
         X.append(4.0*math.pi*sind(theta)/lam)              #q
         s = sig(theta,GU,GV,GW)
         g = gam(theta,LX,LY)
         G = gamFW(g,s)
-        H = gamFW2(g,s)
+#        H = gamFW2(g,s)
         Y.append(s/tand(theta))
         Z.append(g/tand(theta))
         W.append(G/tand(theta))
-        V.append(H/tand(theta))
+#        V.append(H/tand(theta))
     Plot.set_title('Instrument and sample peak widths')
     Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
     Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
     Plot.plot(X,Y,color='r',label='Gaussian')
     Plot.plot(X,Z,color='g',label='Lorentzian')
     Plot.plot(X,W,color='b',label='G+L')
-    Plot.plot(X,V,color='k',label='G+L2')
+#    Plot.plot(X,V,color='k',label='G+L2')
     X = []
     Y = []
     Z = []
@@ -1117,15 +1117,15 @@ def PlotPeakWidths(self):
             s = 0.01
         g = peak[6]*math.pi/18000.
         G = gamFW(g,s)
-        H = gamFW2(g,s)
+#        H = gamFW2(g,s)
         Y.append(s/tand(peak[0]/2.))
         Z.append(g/tand(peak[0]/2.))
         W.append(G/tand(peak[0]/2.))
-        V.append(H/tand(peak[0]/2.))
+#        V.append(H/tand(peak[0]/2.))
     Plot.plot(X,Y,'+',color='r',label='G peak')
     Plot.plot(X,Z,'+',color='g',label='L peak')
     Plot.plot(X,W,'+',color='b',label='G+L peak')
-    Plot.plot(X,V,'+',color='k',label='G+L2 peak')
+#    Plot.plot(X,V,'+',color='k',label='G+L2 peak')
     Plot.legend(loc='best')
     Page.canvas.draw()
     

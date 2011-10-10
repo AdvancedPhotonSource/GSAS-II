@@ -1292,7 +1292,7 @@ def UpdateReflectionGrid(self,data):
         self.dataFrame.SelectPhase.Enable(True)
     rowLabels = []
     refList = []
-    for h,k,l,m,d,pos,sig,gam,fo,fc,phi,x,x in data[self.RefList]:
+    for h,k,l,m,d,pos,sig,gam,fo,fc,phi,x,x,x in data[self.RefList]:
         refList.append([h,k,l,m,d,pos,sig,gam,fo,fc,phi])
     for i in range(len(refList)): rowLabels.append(str(i))
     colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase',]

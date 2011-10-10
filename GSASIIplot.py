@@ -1392,8 +1392,9 @@ def PlotCovariance(self):
             xpos = int(event.xdata+.5)
             ypos = int(event.ydata+.5)
             if -1 < xpos < len(varyList) and -1 < ypos < len(varyList):
-                self.G2plotNB.status.SetFields(['Key: s to change colors',
-                    '%s - %s: %5.3f'%(varyList[xpos].ljust(19),varyList[ypos].ljust(19),covArray[xpos][ypos])])
+                msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
+                Page.canvas.SetToolTipString(msg)
+                self.G2plotNB.status.SetFields(['Key: s to change colors',msg])
     try:
         plotNum = self.G2plotNB.plotList.index('Covariance')
         Page = self.G2plotNB.nb.GetPage(plotNum)

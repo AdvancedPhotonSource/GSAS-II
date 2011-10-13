@@ -1391,6 +1391,13 @@ def PlotCovariance(self):
         PlotCovariance(self)
 
     def OnMotion(event):
+        if event.button:
+            ytics = imgAx.get_yticks()
+            ytics = np.where(ytics<len(varyList),ytics,-1)
+            ylabs = [np.where(0<=i ,varyList[int(i)],' ') for i in ytics]
+#            ylabs = [varyList[int(i)] for i in ytics[:-1]]
+            imgAx.set_yticklabels(ylabs)
+            
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = int(event.xdata+.5)
             ypos = int(event.ydata+.5)
@@ -1416,10 +1423,14 @@ def PlotCovariance(self):
     self.G2plotNB.status.SetFields(['',''])    
     acolor = mpl.cm.get_cmap(self.ContourColor)
     Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower')
+    imgAx = Img.get_axes()
+    ytics = imgAx.get_yticks()
+    ylabs = [varyList[int(i)] for i in ytics[:-1]]
+    imgAx.set_yticklabels(ylabs)
     colorBar = Page.figure.colorbar(Img)
     Plot.set_title('Variance-Covariance matrix from LS refinement')
     Plot.set_xlabel('Variable number')
-    Plot.set_ylabel('Variable number')
+    Plot.set_ylabel('Variable name')
     Page.canvas.draw()
 
             

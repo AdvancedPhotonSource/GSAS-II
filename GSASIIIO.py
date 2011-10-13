@@ -1268,7 +1268,7 @@ def ReadCIFPhase(filename):
             if labels:
                 if 'aniso_label' not in labels:
                     while S:
-                        atom = ['','','',0,0,0,0,'','','I',0.01,0,0,0,0,0,0]
+                        atom = ['','','',0,0,0,1.0,'','','I',0.01,0,0,0,0,0,0]
                         S.strip()
                         if len(S.split()) != len(labels):
                             if 'loop_' in S:

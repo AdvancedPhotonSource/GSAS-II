@@ -1291,9 +1291,7 @@ def UpdateReflectionGrid(self,data):
     if len(data) > 1:
         self.dataFrame.SelectPhase.Enable(True)
     rowLabels = []
-    refList = []
-    for h,k,l,m,d,pos,sig,gam,fo,fc,phi,x,x,x in data[self.RefList]:
-        refList.append([h,k,l,m,d,pos,sig,gam,fo,fc,phi])
+    refList = [refl[:11] for refl in data[self.RefList]]
     for i in range(len(refList)): rowLabels.append(str(i))
     colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase',]
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]

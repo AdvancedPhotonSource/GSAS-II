@@ -472,7 +472,75 @@ def GetPhaseData(PhaseData,Print=True):
                 
     return Natoms,phaseVary,phaseDict,pawleyLookup,FFtables
     
-def SetPhaseData(parmDict,sigDict,Phases):
+def getVCov(varyNames,varyList,covMatrix):
+    vcov = np.zeros((len(varyNames),len(varyNames)))
+    for i1,name1 in enumerate(varyNames):
+        for i2,name2 in enumerate(varyNames):
+            try:
+                vcov[i1][i2] = covMatrix[varyList.index(name1)][varyList.index(name2)]
+            except ValueError:
+                vcov[i1][i2] = 0.0
+    return vcov
+    
+def getCellEsd(pfx,SGData,A,covData):
+    dpr = 180./np.pi
+    rVsq = G2lat.calc_rVsq(A)
+    G,g = G2lat.A2Gmat(A)       #get recip. & real metric tensors
+    cell = np.array(G2lat.Gmat2cell(g))   #real cell
+    cellst = np.array(G2lat.Gmat2cell(G)) #recip. cell
+    scos = cosd(cellst[3:6])
+    ssin = sind(cellst[3:6])
+    scot = scos/ssin
+    rcos = cosd(cell[3:6])
+    rsin = sind(cell[3:6])
+    rcot = rcos/rsin
+    RMnames = [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
+    varyList = covData['varyList']
+    covMatrix = covData['covMatrix']
+    vcov = getVCov(RMnames,varyList,covMatrix)
+    Ax = np.array(A)
+    Ax[3:] /= 2.
+    drVdA = np.array([Ax[1]*Ax[2]-Ax[5]**2,Ax[0]*Ax[2]-Ax[4]**2,Ax[0]*Ax[1]-Ax[3]**2,
+        Ax[4]*Ax[5]-Ax[2]*Ax[3],Ax[3]*Ax[5]-Ax[1]*Ax[4],Ax[3]*Ax[4]-Ax[0]*Ax[5]])
+    srcvlsq = np.inner(drVdA,np.inner(vcov,drVdA.T))
+    Vol = 1/np.sqrt(rVsq)
+    sigVol = Vol**3*np.sqrt(srcvlsq)/2.
+    R123 = Ax[0]*Ax[1]*Ax[2]
+    dsasdg = np.zeros((3,6))
+    dadg = np.zeros((6,6))
+    for i0 in range(3):         #0  1   2
+        i1 = (i0+1)%3           #1  2   0
+        i2 = (i1+1)%3           #2  0   1
+        i3 = 5-i2               #3  5   4
+        i4 = 5-i1               #4  3   5
+        i5 = 5-i0               #5  4   3
+        dsasdg[i0][i1] = 0.5*scot[i0]*scos[i0]/Ax[i1]
+        dsasdg[i0][i2] = 0.5*scot[i0]*scos[i0]/Ax[i2]
+        dsasdg[i0][i5] = -scot[i0]/np.sqrt(Ax[i1]*Ax[i2])
+        denmsq = Ax[i0]*(R123-Ax[i1]*Ax[i4]**2-Ax[i2]*Ax[i3]**2+(Ax[i4]*Ax[i3])**2)
+        denom = np.sqrt(denmsq)
+        dadg[i5][i0] = -Ax[i5]/denom-rcos[i0]/denmsq*(R123-0.5*Ax[i1]*Ax[i4]**2-0.5*Ax[i2]*Ax[i3]**2)
+        dadg[i5][i1] = -0.5*rcos[i0]/denmsq*(Ax[i0]**2*Ax[i2]-Ax[i0]*Ax[i4]**2)
+        dadg[i5][i2] = -0.5*rcos[i0]/denmsq*(Ax[i0]**2*Ax[i1]-Ax[i0]*Ax[i3]**2)
+        dadg[i5][i3] = Ax[i4]/denom+rcos[i0]/denmsq*(Ax[i0]*Ax[i2]*Ax[i3]-Ax[i3]*Ax[i4]**2)
+        dadg[i5][i4] = Ax[i3]/denom+rcos[i0]/denmsq*(Ax[i0]*Ax[i1]*Ax[i4]-Ax[i3]**2*Ax[i4])
+        dadg[i5][i5] = -Ax[i0]/denom
+    for i0 in range(3):
+        i1 = (i0+1)%3
+        i2 = (i1+1)%3
+        i3 = 5-i2
+        for ij in range(6):
+            dadg[i0][ij] = cell[i0]*(rcot[i2]*dadg[i3][ij]/rsin[i2]-dsasdg[i1][ij]/ssin[i1])
+            if ij == i0:
+                dadg[i0][ij] = dadg[i0][ij]-0.5*cell[i0]/Ax[i0]
+            dadg[i3][ij] = -dadg[i3][ij]*rsin[2-i0]*dpr
+    sigMat = np.inner(dadg,np.inner(vcov,dadg.T))
+    var = np.diag(sigMat)
+    CS = np.where(var>0.,np.sqrt(var),0.)
+    cellSig = [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]  #exchange sig(alp) & sig(gam) to get in right order
+    return cellSig            
+    
+def SetPhaseData(parmDict,sigDict,Phases,covData):
     
     def cellFill(pfx,SGData,parmDict,sigDict): 
         if SGData['SGLaue'] in ['-1',]:
@@ -571,6 +639,7 @@ def SetPhaseData(parmDict,sigDict,Phases):
         pfx = str(pId)+'::'
         if cell[0]:
             A,sigA = cellFill(pfx,SGData,parmDict,sigDict)
+            cellSig = getCellEsd(pfx,SGData,A,covData)  #includes sigVol
             print ' Reciprocal metric tensor: '
             ptfmt = "%15.9f"
             names = ['A11','A22','A33','A12','A13','A23']
@@ -589,9 +658,23 @@ def SetPhaseData(parmDict,sigDict,Phases):
             print sigstr
             cell[1:7] = G2lat.A2cell(A)
             cell[7] = G2lat.calc_V(A)
-            print ' New unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]), \
-                ' c = %.5f'%(cell[3]),' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]), \
-                ' gamma = %.3f'%(cell[6]),' volume = %.3f'%(cell[7])
+            print ' New unit cell:'
+            ptfmt = ["%12.6f","%12.6f","%12.6f","%12.4f","%12.4f","%12.4f","%12.3f"]
+            names = ['a','b','c','alpha','beta','gamma','Volume']
+            namstr = '  names :'
+            ptstr =  '  values:'
+            sigstr = '  esds  :'
+            for name,fmt,a,siga in zip(names,ptfmt,cell[1:8],cellSig):
+                namstr += '%12s'%(name)
+                ptstr += fmt%(a)
+                if siga:
+                    sigstr += fmt%(siga)
+                else:
+                    sigstr += 12*' '
+            print namstr
+            print ptstr
+            print sigstr
+            
         if 'Pawley' in Phase['General']['Type']:
             pawleyRef = Phase['Pawley ref']
             for i,refl in enumerate(pawleyRef):
@@ -1761,7 +1844,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             x,y,w,yc,yb,yd = Histogram['Data']
             ymb = np.array(y-yb)
             ycmb = np.array(yc-yb)
-            ratio = np.where(ycmb>0.,ymb/ycmb,1.0)            
+            ratio = np.where(ycmb!=0.,ymb/ycmb,0.0)            
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
             refLists = Histogram['Reflection Lists']
@@ -1788,7 +1871,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             iBeg2 = np.searchsorted(x,pos2-fmin)
                             iFin2 = np.searchsorted(x,pos2+fmax)
                             yp[iBeg2:iFin2] += refl[13]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])        #and here
-                        refl[8] = np.sum(yp[iBeg:iFin2]*ratio[iBeg:iFin2])/(refl[13]*(1.+kRatio))
+                        refl[8] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[13]*(1.+kRatio)),0.0))
                     elif 'T' in calcControls[hfx+'histType']:
                         print 'TOF Undefined at present'
                         raise Exception    #no TOF yet
@@ -2082,8 +2165,6 @@ def Refine(GPXfile,dlg):
         try:
             covMatrix = result[1]*GOF
             sig = np.sqrt(np.diag(covMatrix))
-            xvar = np.outer(sig,np.ones_like(sig))
-            cov = np.divide(np.divide(covMatrix,xvar),xvar.T)
             if np.any(np.isnan(sig)):
                 print '*** Least squares aborted - some invalid esds possible ***'
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
@@ -2105,10 +2186,10 @@ def Refine(GPXfile,dlg):
 #    print 'fixedDict: ',G2mv.fixedDict
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
     sigDict = dict(zip(varyList,sig))
-    SetPhaseData(parmDict,sigDict,Phases)
+    covData = {'variables':result[0],'varyList':varyList,'covMatrix':covMatrix}
+    SetPhaseData(parmDict,sigDict,Phases,covData)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
-    covData = {'variables':result[0],'varyList':varyList,'covariance':cov}
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
 #for testing purposes!!!
 #    file = open('structTestdata.dat','wb')

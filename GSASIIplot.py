@@ -1371,7 +1371,10 @@ def PlotCovariance(self):
         return
     varyList = Data['varyList']
     Xmax = len(varyList)
-    covArray = Data['covariance']
+    covMatrix = Data['covMatrix']
+    sig = np.sqrt(np.diag(covMatrix))
+    xvar = np.outer(sig,np.ones_like(sig))
+    covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
 
     def OnPlotKeyPress(event):
         newPlot = False

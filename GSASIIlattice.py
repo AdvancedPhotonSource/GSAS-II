@@ -84,10 +84,12 @@ def cell2Gmat(cell):
     G = nl.inv(g)        
     return G,g
 
-def A2Gmat(A):
+def A2Gmat(A,inverse=True):
     """Fill real & reciprocal metric tensor (G) from A
 
-    :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+    :param
+        A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+        inverse: if True return bot G and g; else just G
     :return: reciprocal (G) & real (g) metric tensors (list of two numpy 3x3 arrays)
 
     """
@@ -96,8 +98,11 @@ def A2Gmat(A):
         [A[0],  A[3]/2.,  A[4]/2.], 
         [A[3]/2.,A[1],    A[5]/2.], 
         [A[4]/2.,A[5]/2.,    A[2]]]
-    g = nl.inv(G)
-    return G,g
+    if inverse:
+        g = nl.inv(G)
+        return G,g
+    else:
+        return G
 
 def Gmat2A(G):
     """Extract A from reciprocal metric tensor (G)

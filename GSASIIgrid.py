@@ -15,6 +15,8 @@ import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
+import GSASIIstruct as G2str
+import GSASIImapvars as G2mv
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSTESTADD, wxID_ATONTESTINSERT,
@@ -629,41 +631,218 @@ def UpdateComments(self,data):
             self.dataDisplay.AppendText(line+'\n')
             
 def UpdateConstraints(self,data):
+    Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtable = G2str.GetPhaseData(Phases,Print=False)        
+    hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
+    histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
     
+    def FindEquivVarb(name,nameList):
+        outList = []
+        for item in nameList:
+            key = item.split(':')[2]
+            if key in name and item != name:
+                outList.append(item)
+        return outList
+        
+    def SelectVarbs(FrstVarb,varList,legend):
+        #future -  add 'all:all:name', '0:all:name', etc. to the varList
+        dlg = wx.MultiChoiceDialog(self,'Select more variables:'+legend,FrstVarb+' and:',varList)
+        varbs = [FrstVarb,]
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            for x in sel:
+                varbs.append(varList[x])
+        dlg.Destroy()
+        if len(varbs) > 1:
+            return map(list,zip(varbs,[1.0 for i in range(len(varbs))]))
+        else:
+            return [[FrstVarb,0.0],]
     
+    def OnAddConstraint(event):
+        constr = []
+        plegend = '\n In p::name'
+        hlegend = '\n In :h:name'
+        phlegend = '\n In p:h:name'
+        for phase in Phases:
+            plegend += '\n p:: = '+str(Phases[phase]['pId'])+':: for '+phase
+            for histogram in Phases[phase]['Histograms']:
+                phlegend += '\n p:h: = '+str(Phases[phase]['pId'])+':'+str(Histograms[histogram]['hId'])+': for '+phase+' in '+histogram
+        for histogram in Histograms:
+            hlegend += '\n :h: = :'+str(Histograms[histogram]['hId'])+': for '+histogram
+        page = self.dataDisplay.GetSelection()
+        if 'Histogram ' in self.dataDisplay.GetPageText(page):
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+hlegend,'Histogram variables:',histVary)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                FrstVarb = histVary[sel]
+                moreVarb = FindEquivVarb(FrstVarb,histVary)
+                constr = SelectVarbs(FrstVarb,moreVarb,hlegend)
+            dlg.Destroy()
+        elif '/Phase' in self.dataDisplay.GetPageText(page):
+            legend = 'Select 1st variable: \n '
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+phlegend,'HAP variables:',hapVary)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                FrstVarb = hapVary[sel]
+                moreVarb = FindEquivVarb(FrstVarb,hapVary)
+                constr = SelectVarbs(FrstVarb,moreVarb,phlegend)
+            dlg.Destroy()
+        elif 'Phase' in self.dataDisplay.GetPageText(page):
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+plegend,'Phase variables:',phaseVary)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                FrstVarb = phaseVary[sel]
+                moreVarb = FindEquivVarb(FrstVarb,phaseVary)
+                constr = SelectVarbs(FrstVarb,moreVarb,plegend)
+            dlg.Destroy()
+        if constr:
+            constr += [0.0,True]
+                
+            
+             
+    
+    def UpdateHAPConstr():
+        HAPConstr.DestroyChildren()
+        dataDisplay = wx.Panel(HAPConstr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram/Phase constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+        
+
+
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[1] += 26                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
+        
+    def UpdateHistConstr():
+        HistConstr.DestroyChildren()
+        dataDisplay = wx.Panel(HistConstr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+
+
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[1] += 26                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
+        
+    def UpdatePhaseConstr():
+        PhaseConstr.DestroyChildren()
+        dataDisplay = wx.Panel(PhaseConstr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Phase constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+
+
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[1] += 26                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
+    
+    def OnPageChanged(event):
+        page = event.GetSelection()
+        text = self.dataDisplay.GetPageText(page)
+        if text == 'Histogram/Phase constraints':
+            self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
+            UpdateHAPConstr()
+        elif text == 'Histogram constraints':
+            UpdateHistConstr()
+            self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
+        elif text == 'Phase constraints':
+            UpdatePhaseConstr()
+            self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
+        event.Skip()
+
     if self.dataDisplay:
         self.dataDisplay.Destroy()
-    self.dataFrame.SetLabel('Constraints')
-    self.dataDisplay = wx.Panel(self.dataFrame)
     self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+    self.dataFrame.SetLabel('Constraints')
+    self.dataFrame.CreateStatusBar()
+    self.dataFrame.Bind(wx.EVT_MENU, OnAddConstraint, id=wxID_CONSTRAINTADD)
+    self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
     
-    
-    mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    PhaseConstr = wx.ScrolledWindow(self.dataDisplay)
+    self.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
+    HAPConstr = wx.ScrolledWindow(self.dataDisplay)
+    self.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
+    HistConstr = wx.ScrolledWindow(self.dataDisplay)
+    self.dataDisplay.AddPage(HistConstr,'Histogram constraints')
+    UpdatePhaseConstr()
+
+    self.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
     
 def UpdateRestraints(self,data):
 
+    def OnAddRestraint(event):
+        page = self.dataDisplay.GetSelection()
+        print self.dataDisplay.GetPageText(page)
+
+    def UpdateAtomRestr():
+        AtomRestr.DestroyChildren()
+        dataDisplay = wx.Panel(AtomRestr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Atom restraint data:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+
+
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[1] += 26                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
+        
+    def UpdatePhaseRestr():
+        PhaseRestr.DestroyChildren()
+        dataDisplay = wx.Panel(PhaseRestr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Phase restraint data:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+
+
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(self.dataFrame)
+        Size[1] += 26                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        self.dataFrame.setSizePosLeft(Size)
+    
+    def OnPageChanged(event):
+        page = event.GetSelection()
+        text = self.dataDisplay.GetPageText(page)
+        if text == 'Atom restraints':
+            self.dataFrame.SetMenuBar(self.dataFrame.RestraintMenu)
+            UpdateAtomRestr()
+        elif text == 'Phase restraints':
+            UpdatePhaseRestr()
+            self.dataFrame.SetMenuBar(self.dataFrame.RestraintMenu)
+        event.Skip()
 
     if self.dataDisplay:
         self.dataDisplay.Destroy()
-    self.dataFrame.SetLabel('Restraints')
-    self.dataDisplay = wx.Panel(self.dataFrame)
     self.dataFrame.SetMenuBar(self.dataFrame.RestraintMenu)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement restraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+    self.dataFrame.SetLabel('restraints')
+    self.dataFrame.CreateStatusBar()
+    self.dataFrame.Bind(wx.EVT_MENU, OnAddRestraint, id=wxID_RESTRAINTADD)
+    self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
     
-    
-    mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    PhaseRestr = wx.ScrolledWindow(self.dataDisplay)
+    self.dataDisplay.AddPage(PhaseRestr,'Phase restraints')
+    AtomRestr = wx.ScrolledWindow(self.dataDisplay)
+    self.dataDisplay.AddPage(AtomRestr,'Atom restraints')
+    UpdatePhaseRestr()
+#    AtomRestrData = data['AtomRestr']
+
+    self.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)        
              
 def UpdateHKLControls(self,data):
     

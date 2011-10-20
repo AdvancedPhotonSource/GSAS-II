@@ -730,18 +730,17 @@ def OdfChk(SGLaue,L,M):
                     if M <= L/12+1: return True
     return False
         
-def GenSHCoeff(SGLaue,SamSym,L):
+def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     coeffNames = []
     for iord in [2*i+2 for i in range(L/2)]:
         for m in [i-iord for i in range(2*iord+1)]:
-            if SamSym and OdfChk(SamSym,iord,m):
+            if OdfChk(SamSym,iord,m):
                 for n in [i-iord for i in range(2*iord+1)]:
                     if OdfChk(SGLaue,iord,n):
-                        coeffNames.append('C(%d,%d,%d)'%(iord,m,n))
-            else:                  #use for powder sample PO when SamSym = None
-                for n in [i-iord for i in range(2*iord+1)]:
-                    if OdfChk(SGLaue,iord,n):
-                        coeffNames.append('C(%d,%d)'%(iord,n))
+                        if IfLMN:
+                            coeffNames.append('C(%d,%d,%d)'%(iord,m,n))
+                        else:
+                            coeffNames.append('C(%d,%d)'%(iord,n))
     return coeffNames
 
 def CrsAng(H,cell,SGData):
@@ -912,21 +911,19 @@ BOH = {
     [-0.11527834,0.18472133,-0.04403280,-0.16908618,0.27227021,0.21086614,0.04041752,0.32688152,0.0],
     [-0.06773139,0.14120811,-0.15835721,0.18357456,-0.19364673,0.08377174,0.43116318,0.0,0.0]]
 }
-   
-def GetKclKsl(L,N,SGLaue,psi,phi,beta):
+
+Lnorm = lambda L: 4.*np.pi/(2.0*L+1.)
+
+def GetKcl(L,N,SGLaue,phi,beta):
     import pytexture as ptx
-    FORPI = 12.5663706143592
     RSQ2PI = 0.3989422804014
     SQ2 = 1.414213562373
-    Lnorm = FORPI/(2.0*L+1.)
-    Ksl,x = ptx.pyplmpsi(L,0,1,psi)
-    Ksl *= RSQ2PI
     if SGLaue in ['m3','m3m']:
         Kcl = 0.0
         for j in range(0,L+1,4):
             im = j/4+1
             pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
-            Kcl += BOH['L='+str(l)][N-1][im-1]*pcrs*cosd(j*beta)        
+            Kcl += BOH['L='+str(L)][N-1][im-1]*pcrs*cosd(j*beta)        
     else:
         pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
         pcrs *= RSQ2PI
@@ -942,7 +939,62 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
                 Kcl = pcrs*cosd(N*beta)
         else:
             Kcl = pcrs*(cosd(N*beta)+sind(N*beta))
-    return Kcl*Ksl,Lnorm
+    return Kcl
+    
+def GetKsl(L,M,SamSym,psi,gam):
+    import pytexture as ptx
+    RSQPI = 0.5641895835478
+    SQ2 = 1.414213562373
+    psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
+    psrs *= RSQPI
+    dpdps *= RSQPI
+    if M == 0:
+        psrs /= SQ2
+        dpdps /= SQ2
+    if SamSym in ['mmm',]:
+        dum = cosd(M*gam)
+        Ksl = psrs*dum
+        dKsdp = dpdps*dum
+        dKsdg = -psrs*M*sind(M*gam)
+    else:
+        dum = cosd(M*gam)+sind(M*gam)
+        Ksl = psrs*dum
+        dKsdp = dpdps*dum
+        dKsdg = psrs*M*(-sind(M*gam)+cosd(M*gam))
+    return Ksl,dKsdp,dKsdg 
+   
+def GetKclKsl(L,N,SGLaue,psi,phi,beta):
+    """
+    This is used for spherical harmonics description of preferred orientation;
+        cylindrical symmetry only (M=0) and no sample angle derivatives returned
+    """
+    import pytexture as ptx
+    RSQ2PI = 0.3989422804014
+    SQ2 = 1.414213562373
+    Ksl,x = ptx.pyplmpsi(L,0,1,psi)
+    Ksl *= RSQ2PI
+    if SGLaue in ['m3','m3m']:
+        Kcl = 0.0
+        for j in range(0,L+1,4):
+            im = j/4+1
+            pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
+            Kcl += BOH['L='+str(L)][N-1][im-1]*pcrs*cosd(j*beta)        
+    else:
+        pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
+        pcrs *= RSQ2PI
+        if N:
+            pcrs *= SQ2
+        if SGLaue in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
+            if SGLaue in ['3mR','3m1','31m']: 
+                if n%6 == 3:
+                    Kcl = pcrs*sind(N*beta)
+                else:
+                    Kcl = pcrs*cosd(N*beta)
+            else:
+                Kcl = pcrs*cosd(N*beta)
+        else:
+            Kcl = pcrs*(cosd(N*beta)+sind(N*beta))
+    return Kcl*Ksl,Lnorm(L)
     
 def Glnh(Start,SHCoef,psi,gam,SamSym):
     import pytexture as ptx
@@ -955,7 +1007,6 @@ def Glnh(Start,SHCoef,psi,gam,SamSym):
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
         l,m,n = eval(term.strip('C'))
-        lNorm = 4.*np.pi/(2.*l+1.)
         pcrs,dum = ptx.pyplmpsi(l,m,1,psi)
         pcrs *= RSQPI
         if m == 0:
@@ -964,7 +1015,7 @@ def Glnh(Start,SHCoef,psi,gam,SamSym):
             Ksl = pcrs*cosd(m*gam)
         else:
             Ksl = pcrs*(cosd(m*gam)+sind(m*gam))
-        Fln[i] = SHCoef[term]*Ksl*lNorm
+        Fln[i] = SHCoef[term]*Ksl*Lnorm(l)
     ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
     return ODFln
 
@@ -981,7 +1032,6 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
         l,m,n = eval(term.strip('C'))
-        lNorm = 4.*np.pi/(2.*l+1.)
         if SGData['SGLaue'] in ['m3','m3m']:
             Kcl = 0.0
             for j in range(0,l+1,4):
@@ -1003,7 +1053,7 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
                    Kcl = pcrs*cosd(n*beta)
             else:
                 Kcl = pcrs*(cosd(n*beta)+sind(n*beta))
-        Fln[i] = SHCoef[term]*Kcl*lNorm
+        Fln[i] = SHCoef[term]*Kcl*Lnorm(l)
     ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
     return ODFln
     
@@ -1068,7 +1118,7 @@ def invpolfcal(ODFln,SGData,phi,beta):
 def textureIndex(SHCoef):
     Tindx = 1.0
     for term in SHCoef:
-        l,m,n = eval(term.strip('C'))
+        l = eval(term.strip('C'))[0]
         Tindx += SHCoef[term]**2/(2.0*l+1.)
     return Tindx
     

@@ -1939,22 +1939,23 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def OnPFValue(event):
             Obj = event.GetEventObject()
-            if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
+            Saxis = Obj.GetValue().split()
+            if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:                
                 try:
-                    value = '['+Obj.GetValue()+']'
-                    hkl = eval(value)
-                except:
-                    value = str(textureData['PFhkl'])
-                    hkl = eval(value)
-                Obj.SetValue('%d %d d'%(hkl[0],hkl[1],hkl[2]))
+                    hkl = [int(Saxis[i]) for i in range(3)]
+                except (ValueError,IndexError):
+                    hkl = textureData['PFhkl']
+                if not np.any(np.array(hkl)):       #can't be all zeros!
+                    hkl = textureData['PFhkl']
+                Obj.SetValue('%d %d %d'%(hkl[0],hkl[1],hkl[2]))
                 textureData['PFhkl'] = hkl
             else:
                 try:
-                    value =  '['+Obj.GetValue()+']'
-                    xyz = eval(value)
-                except:
-                    value = str(textureData['PFhkl'])
-                    xyz = eval(value)
+                    hkl = [float(Saxis[i]) for i in range(3)]
+                except (ValueError,IndexError):
+                    hkl = textureData['PFxyz']
+                if not np.any(np.array(hkl)):       #can't be all zeros!
+                    hkl = textureData['PFxyz']
                 Obj.SetValue('%3.1f %3.1f %3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
             G2plt.PlotTexture(self,data)
@@ -2266,7 +2267,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             UpdateDData()
 
         def SetPOCoef(Order,hist):
-            cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],None,Order)     #cylindrical sample symmetry
+            cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
             newPOCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
             POCoeff = UseList[hist]['Pref.Ori.'][5]
             for cofName in POCoeff:
@@ -2536,7 +2537,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(poSizer)
                     if POData[4]:
-                        mainSizer.Add(wx.StaticText(dataDisplay,-1,' Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+                        textJ = G2lat.textureIndex(POData[5])
+                        mainSizer.Add(wx.StaticText(dataDisplay,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ)),0,wx.ALIGN_CENTER_VERTICAL)
                         mainSizer.Add((0,5),0)
                         ODFSizer = wx.FlexGridSizer(2,8,2,2)
                         ODFIndx = {}

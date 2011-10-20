@@ -608,6 +608,8 @@ def UpdateSampleGrid(self,data):
 #patch
     if not 'Gonio. radius' in data:
         data['Gonio. radius'] = 200.0
+    if not 'Omega' in data:
+        data.update({'Omega':0.0,'Chi':0.0,'Phi':0.0})
 #patch end
     
     parms = [['Gonio. radius',' Goniometer radius(mm): ','%.2f',]]
@@ -618,6 +620,9 @@ def UpdateSampleGrid(self,data):
     elif data['Type'] == 'Bragg-Brentano':
         parms += [['Shift',' Sample displacement(\xb5m): ','%.2f',],
             ['Transparency',' Sample transparency(1/\xb5eff,cm): ','%.4f'],]
+    parms.append(['Omega','Goniometer omega:','%.2f'])
+    parms.append(['Chi','Goniometer chi:','%.2f'])
+    parms.append(['Phi','Goniometer phi:','%.2f'])
     parms.append(['Temperature',' Sample temperature(K): ','%.2f'])
     parms.append(['Pressure',' Sample pressure(MPa): ','%.3f'])
     parms.append(['Humidity',' Sample humidity(%): ','%.1f'])

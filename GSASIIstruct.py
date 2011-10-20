@@ -381,6 +381,23 @@ def GetPhaseData(PhaseData,Print=True):
                         line += '%8.4f'%(at[11+j])
                 print line
         
+    def PrintTexture(textureData):
+        print '\n Spherical harmonics texture: Order:' + \
+            str(textureData['Order'])+' Refine? '+str(textureData['SH Coeff'][0])
+        names = ['omega','chi','phi']
+        line = '\n'
+        for name in names:
+            line += ' SH '+name+':'+'%12.4f'%(textureData['Sample '+name][1])+' Refine? '+str(textureData['Sample '+name][0])
+        print line
+        print '\n Texture coefficients:'
+        ptlbls = ' names :'
+        ptstr =  ' values:'
+        SHcoeff = textureData['SH Coeff'][1]
+        for item in SHcoeff:
+            ptlbls += '%12s'%(item)
+            ptstr += '%12.4f'%(SHcoeff[item]) 
+        print ptlbls
+        print ptstr    
         
     if Print: print ' Phases:'
     phaseVary = []
@@ -391,6 +408,8 @@ def GetPhaseData(PhaseData,Print=True):
     Natoms = {}
     AtMults = {}
     AtIA = {}
+    shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
     for name in PhaseData:
         General = PhaseData[name]['General']
         pId = PhaseData[name]['pId']
@@ -455,11 +474,27 @@ def GetPhaseData(PhaseData,Print=True):
                                     for k in range(j):
                                         if uId[j] == uId[k]:
                                             G2mv.StoreEquivalence(names[k],((names[j],uCoef[j]),))
+#            elif General['Type'] == 'magnetic':
+#            elif General['Type'] == 'macromolecular':
+
+            if 'SH Texture' in General:
+                textureData = General['SH Texture']
+                phaseDict[pfx+'SHmodel'] = SamSym[textureData['Model']]
+                phaseDict[pfx+'SHorder'] = textureData['Order']
+                for name in ['omega','chi','phi']:
+                    phaseDict[pfx+'SH '+name] = textureData['Sample '+name][1]
+                    if textureData['Sample '+name][0]:
+                        phaseVary.append(pfx+'SH '+name)
+                for name in textureData['SH Coeff'][1]:
+                    phaseDict[pfx+name] = textureData['SH Coeff'][1][name]
+                    if textureData['SH Coeff'][0]:
+                        phaseVary.append(pfx+name)
+                
             if Print:
                 PrintAtoms(General,Atoms)
-#        elif General['Type'] == 'magnetic':
-#        elif General['Type'] == 'macromolecular':
-#       PWDR: harmonics texture
+                if 'SH Texture' in General:
+                    PrintTexture(textureData)
+                    
         elif PawleyRef:
             pawleyVary = []
             for i,refl in enumerate(PawleyRef):
@@ -626,6 +661,39 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                 print name
                 print valstr
                 print sigstr
+                
+    def PrintSHtextureAndSig(textureData,SHtextureSig):
+        print '\n Spherical harmonics texture: Order:' + str(textureData['Order'])
+        names = ['omega','chi','phi']
+        namstr = '  names :'
+        ptstr =  '  values:'
+        sigstr = '  esds  :'
+        for name in names:
+            namstr += '%12s'%(name)
+            ptstr += '%12.3f'%(textureData['Sample '+name][1])
+            if 'Sample '+name in SHtextureSig:
+                sigstr += '%12.3f'%(SHtextureSig['Sample '+name])
+            else:
+                sigstr += 12*' '
+        print namstr
+        print ptstr
+        print sigstr
+        print '\n Texture coefficients:'
+        namstr = '  names :'
+        ptstr =  '  values:'
+        sigstr = '  esds  :'
+        SHcoeff = textureData['SH Coeff'][1]
+        for name in SHcoeff:
+            namstr += '%12s'%(name)
+            ptstr += '%12.3f'%(SHcoeff[name])
+            if name in SHtextureSig:
+                sigstr += '%12.3f'%(SHtextureSig[name])
+            else:
+                sigstr += 12*' '
+        print namstr
+        print ptstr
+        print sigstr
+        
             
     print '\n Phases:'
     for phase in Phases:
@@ -635,6 +703,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
         SGData = General['SGData']
         Atoms = Phase['Atoms']
         cell = General['Cell']
+        textureData = General['SH Texture']
         pId = Phase['pId']
         pfx = str(pId)+'::'
         if cell[0]:
@@ -708,7 +777,21 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                             at[ind] = parmDict[names[ind]]
                             if names[ind] in sigDict:
                                 atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
-            PrintAtomsAndSig(General,Atoms,atomsSig)    
+            PrintAtomsAndSig(General,Atoms,atomsSig)
+            
+        if textureData['Order']:
+            SHtextureSig = {}
+            for name in ['omega','chi','phi']:
+                aname = pfx+'SH '+name
+                textureData['Sample '+name][1] = parmDict[aname]
+                if aname in sigDict:
+                    SHtextureSig['Sample '+name] = sigDict[aname]
+            for name in textureData['SH Coeff'][1]:
+                aname = pfx+name
+                textureData['SH Coeff'][1][name] = parmDict[aname]
+                if aname in sigDict:
+                    SHtextureSig[name] = sigDict[aname]
+            PrintSHtextureAndSig(textureData,SHtextureSig)
 
 def GetHistogramPhaseData(Phases,Histograms,Print=True):
     
@@ -775,7 +858,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
         ptstr =  ' values:'
         for item in hapData[5]:
             ptlbls += '%12s'%(item)
-            ptstr += '%12.4f'%(hapData[5][item]) 
+            ptstr += '%12.3f'%(hapData[5][item]) 
         print ptlbls
         print ptstr
     
@@ -966,9 +1049,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
         sigstr = ' sig   :'
         for item in hapData[5]:
             ptlbls += '%12s'%(item)
-            ptstr += '%12.4f'%(hapData[5][item])
+            ptstr += '%12.3f'%(hapData[5][item])
             if item in POsig:
-                sigstr += '%12.4f'%(POsig[item])
+                sigstr += '%12.3f'%(POsig[item])
             else:
                 sigstr += 12*' ' 
         print ptlbls
@@ -1073,7 +1156,8 @@ def GetHistogramData(Histograms,Print=True):
     def GetSampleParms(hId,Sample):
         sampVary = []
         hfx = ':'+str(hId)+':'        
-        sampDict = {hfx+'Gonio. radius':Sample['Gonio. radius']}
+        sampDict = {hfx+'Gonio. radius':Sample['Gonio. radius'],hfx+'Omega':Sample['Omega'],
+            hfx+'Chi':Sample['Chi'],hfx+'Phi':Sample['Phi']}
         Type = Sample['Type']
         if 'Bragg' in Type:             #Bragg-Brentano
             for item in ['Scale','Shift','Transparency']:       #surface roughness?, diffuse scattering?
@@ -1115,6 +1199,8 @@ def GetHistogramData(Histograms,Print=True):
         
     def PrintSampleParms(Sample):
         print '\n Sample Parameters:'
+        print ' Goniometer omega = %.2f, chi = %.2f, phi = %.2f'% \
+            (Sample['Omega'],Sample['Chi'],Sample['Phi'])
         ptlbls = ' name  :'
         ptstr =  ' value :'
         varstr = ' refine:'
@@ -1466,6 +1552,48 @@ def ApplyXYZshifts(parmDict,varyList):
             parm = ''.join(item.split('d'))
             parmDict[parm] += parmDict[item]
     
+def SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict):
+    IFCoup = 'Bragg' in calcControls[hfx+'instType']
+    odfCor = 1.0
+    H = refl[:3]
+    cell = G2lat.Gmat2cell(g)
+    Sangls = [parmDict[pfx+'SH omega'],parmDict[pfx+'SH chi'],parmDict[pfx+'SH phi']]
+    Gangls = [parmDict[hfx+'Omega'],parmDict[hfx+'Chi'],parmDict[hfx+'Phi'],parmDict[hfx+'Azimuth']]
+    phi,beta = G2lat.CrsAng(H,cell,SGData)
+    psi,gam,x,x = G2lat.SamAng(refl[5]/2.,Gangls,Sangls,IFCoup) #ignore 2 sets of angle derivs.
+    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],parmDict[pfx+'SHmodel'],parmDict[pfx+'SHorder'])
+    for item in SHnames:
+        L,M,N = eval(item.strip('C'))
+        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+        Ksl,x,x = G2lat.GetKsl(L,M,parmDict[pfx+'SHmodel'],psi,gam)
+        Lnorm = G2lat.Lnorm(L)
+        odfCor += parmDict[pfx+item]*Lnorm*Kcl*Ksl
+    return odfCor
+    
+def SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict):
+    FORPI = 12.5663706143592
+    IFCoup = 'Bragg' in calcControls[hfx+'instType']
+    odfCor = 1.0
+    dFdODF = {}
+    dFdSA = [0,0,0]
+    H = refl[:3]
+    cell = G2lat.Gmat2cell(g)
+    Sangls = [parmDict[pfx+'SH omega'],parmDict[pfx+'SH chi'],parmDict[pfx+'SH phi']]
+    Gangls = [parmDict[hfx+'Omega'],parmDict[hfx+'Chi'],parmDict[hfx+'Phi'],parmDict[hfx+'Azimuth']]
+    phi,beta = G2lat.CrsAng(H,cell,SGData)
+    psi,gam,dPSdA,dGMdA = G2lat.SamAng(refl[5]/2.,Gangls,Sangls,IFCoup)
+    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],parmDict[pfx+'SHmodel'],parmDict[pfx+'SHorder'])
+    for item in SHnames:
+        L,M,N = eval(item.strip('C'))
+        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+        Ksl,dKsdp,dKsdg = G2lat.GetKsl(L,M,parmDict[pfx+'SHmodel'],psi,gam)
+        Lnorm = G2lat.Lnorm(L)
+        odfCor += parmDict[pfx+item]*Lnorm*Kcl*Ksl
+        dFdODF[pfx+item] = Lnorm*Kcl*Ksl
+        for i in range(3):
+            dFdSA[i] += parmDict[pfx+item]*Lnorm*Kcl*(dKsdp*dPSdA[i]+dKsdg*dGMdA[i])
+    return odfCor,dFdODF,dFdSA
+    
 def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     odfCor = 1.0
     H = refl[:3]
@@ -1479,7 +1607,7 @@ def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
     psi,gam,x,x = G2lat.SamAng(refl[5]/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
-    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],None,calcControls[phfx+'SHord'])
+    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',calcControls[phfx+'SHord'],False)
     for item in SHnames:
         L,N = eval(item.strip('C'))
         Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
@@ -1501,12 +1629,12 @@ def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
     psi,gam,x,x = G2lat.SamAng(refl[5]/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
-    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],None,calcControls[phfx+'SHord'])
+    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',calcControls[phfx+'SHord'],False)
     for item in SHnames:
         L,N = eval(item.strip('C'))
         Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
         odfCor += parmDict[phfx+item]*Lnorm*Kcsl
-        dFdODF[phfx+item] = FORPI*Kcsl
+        dFdODF[phfx+item] = Kcsl*Lnorm
     return odfCor,dFdODF
     
 def GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
@@ -1541,21 +1669,31 @@ def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
         POcorr,POderv = SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr,POderv
     
-def GetIntensityCorr(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
+def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
     Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
     Icorr *= GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
+    if pfx+'SHorder' in parmDict:
+        Icorr *= SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict)
     refl[13] = Icorr        
     
-def GetIntensityDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
-    pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
-    POcorr,dIdPO = GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
-    dIdPola /= pola
-    for iPO in dIdPO:
-        dIdPO[iPO] /= POcorr
+def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     dIdsh = 1./parmDict[hfx+'Scale']
     dIdsp = 1./parmDict[phfx+'Scale']
-    return dIdsh,dIdsp,dIdPola,dIdPO
+    pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
+    dIdPola /= pola
+    POcorr,dIdPO = GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
+    for iPO in dIdPO:
+        dIdPO[iPO] /= POcorr
+    dFdODF = {}
+    dFdSA = [0,0,0]
+    if pfx+'SHorder' in parmDict:
+        odfCor,dFdODF,dFdSA = SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict)
+        for iSH in dFdODF:
+            dFdODF[iSH] /= odfCor
+        for i in range(3):
+            dFdSA[i] /= odfCor
+    return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA
         
 def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
     costh = cosd(refl[5]/2.)
@@ -1796,7 +1934,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
                 refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse)    #peak sig & gam
-                GetIntensityCorr(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)    #puts corrections in refl[13]
+                GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)    #puts corrections in refl[13]
                 refl[13] *= Vst*Lorenz
                 if 'Pawley' in Phase['General']['Type']:
                     try:
@@ -1950,7 +2088,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         for iref,refl in enumerate(refList):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
-                dIdsh,dIdsp,dIdpola,dIdPO = GetIntensityDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
+                dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA = GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 if 'Pawley' in Phase['General']['Type']:
                     try:
                         refl[9] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
@@ -2005,6 +2143,13 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 for iPO in dIdPO:
                     if iPO in varylist:
                         dMdv[varylist.index(iPO)] += dIdPO[iPO]*dervDict['int']
+                for i,name in enumerate(['omega','chi','phi']):
+                    aname = pfx+'SH '+name
+                    if aname in varylist:
+                        dMdv[varylist.index(aname)] += dFdSA[i]*dervDict['int']
+                for iSH in dFdODF:
+                    if iSH in varylist:
+                        dMdv[varylist.index(iSH)] += dFdODF[iSH]*dervDict['int']
                 cellDervNames = cellVaryDerv(pfx,SGData,dpdA)
                 for name,dpdA in cellDervNames:
                     if name in varylist:
@@ -2097,7 +2242,8 @@ def Refine(GPXfile,dlg):
         if dlg:
             GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile wRp =',Rwp,'%'))[0]
             if not GoOn:
-                return -M           #abort!!
+                parmDict['saved values'] = values
+                raise Exception         #Abort!!
         return M
     
     ShowBanner()
@@ -2138,17 +2284,20 @@ def Refine(GPXfile,dlg):
         values =  np.array(Dict2Values(parmDict, varyList))
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
-        if Controls['deriv type'] == 'analytic':
-            result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
-                ftol=Ftol,col_deriv=True,factor=Factor,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-            ncyc = int(result[2]['nfev']/2)                
-        else:           #'numeric'
-            result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-            ncyc = int(result[2]['nfev']/len(varyList))
-#        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
-#        for item in table: print item,table[item]               #useful debug - are things shifting?
+        try:
+            if Controls['deriv type'] == 'analytic':
+                result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
+                    ftol=Ftol,col_deriv=True,factor=Factor,
+                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = int(result[2]['nfev']/2)                
+            else:           #'numeric'
+                result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
+                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = int(result[2]['nfev']/len(varyList))
+#            table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
+#            for item in table: print item,table[item]               #useful debug - are things shifting?
+        except Exception:
+            result = [parmDict['saved values'],None]
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])

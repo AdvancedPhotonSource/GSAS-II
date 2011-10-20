@@ -29,6 +29,7 @@ import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
 import GSASIIstruct as G2str
+import GSASIImapvars as G2mv
 import GSASIIsolve as G2sol
 import OpenGL as ogl
 
@@ -344,8 +345,8 @@ class GSASII(wx.Frame):
                     wx.BeginBusyCursor()
                     Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
                         'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
-                        'Temperature':Temperature,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,
-                        'Force':0.0,'Gonio. radius':200.0}
+                        'Temperature':Temperature,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0,
+                        'Gonio. radius':200.0,'Omega':0.0,'Chi':0.0,'Phi':0.0}
                     try:
                         for Item in Data:
                             vals = Item[2].split()          #split up the BANK record
@@ -763,7 +764,8 @@ class GSASII(wx.Frame):
                         Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
                             'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
                             'Temperature':300.,'Pressure':1.0,'Humidity':0.0,
-                            'Voltage':0.0,'Force':0.0,'Gonio. radius':200.0}
+                            'Voltage':0.0,'Force':0.0,'Gonio. radius':200.0,
+                            'Omega':0.0,'Chi':0.0,'Phi':0.0}
                         self.PatternTree.SetItemPyData(Id,[[''],[Xsum,Ysum,Wsum,YCsum,YBsum,YDsum]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
@@ -901,23 +903,23 @@ class GSASII(wx.Frame):
                 'Type':'nuclear',
                 'SGData':SGData,
                 'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
-                'Pawley dmin':1.0},
+                'Pawley dmin':1.0,
+                'SH Texture':{
+                    'Order':0,
+                    'Model':'cylindrical',
+                    'Sample omega':[False,0.0],
+                    'Sample chi':[False,0.0],
+                    'Sample phi':[False,0.0],
+                    'SH Coeff':[False,{}],
+                    'SHShow':False,
+                    'PFhkl':[0,0,1],
+                    'PFxyz':[0,0,1],
+                    'PlotType':'Pole figure'}},
             'Atoms':[],
             'Drawing':{},
             'Histograms':{},
             'Pawley ref':[],
             'Models':{},
-            'SH Texture':{
-                'Order':0,
-                'Model':'cylindrical',
-                'Sample omega':[False,0.0],
-                'Sample chi':[False,0.0],
-                'Sample phi':[False,0.0],
-                'SH Coeff':[False,{}],
-                'SHShow':False,
-                'PFhkl':[0,0,1],
-                'PFxyz':[0,0,1],
-                'PlotType':'Pole figure'}
             })
         
     def OnDeletePhase(self,event):
@@ -951,6 +953,16 @@ class GSASII(wx.Frame):
                         name = self.PatternTree.GetItemText(item)
                         self.PatternTree.Delete(item)
                         self.G2plotNB.Delete(name)
+                    item, cookie = self.PatternTree.GetFirstChild(self.root)
+                    while item:
+                        name = self.PatternTree.GetItemText(item)
+                        if 'PWDR' in name:
+                            Id = G2gd.GetPatternTreeItemId(self,item, 'Reflection Lists')
+                            refList = self.PatternTree.GetItemPyData(Id)
+                            for i,item in DelList:
+                                del(refList[item])
+                            self.PatternTree.SetItemPyData(Id,refList)
+                        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             finally:
                 dlg.Destroy()
                 
@@ -1465,9 +1477,9 @@ class GSASII(wx.Frame):
         parmDict.update(hapDict)
         parmDict.update(histDict)
         for parm in parmDict:
-            if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2']:
+            if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2','Omega','Chi','Phi']:
                 parmDict[parm] = [parmDict[parm],' ']
-            elif parm.split(':')[-2] in ['Ax','Ay','Az']:
+            elif parm.split(':')[-2] in ['Ax','Ay','Az','SHmodel','SHord']:
                 parmDict[parm] = [parmDict[parm],' ']
             elif parm in varyList:
                 parmDict[parm] = [parmDict[parm],'True']

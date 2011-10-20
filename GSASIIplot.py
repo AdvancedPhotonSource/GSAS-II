@@ -1926,7 +1926,7 @@ def PlotIntegration(self,newPlot=False,event=None):
             ring = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
             x,y = np.hsplit(ring,2)
             tth,azm = G2img.GetTthAzm(x,y,Data)
-            azm = np.where(azm < 0.,azm+360,azm)
+#            azm = np.where(azm < 0.,azm+360,azm)
             Plot.plot(tth,azm,'b,')
     if not newPlot:
         Page.toolbar.push_current()

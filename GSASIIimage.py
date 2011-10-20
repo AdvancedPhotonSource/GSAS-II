@@ -213,9 +213,9 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     cphi = cosd(phi)
     sphi = sind(phi)
     ring = []
-    amin = 180
-    amax = -180
-    for a in range(-180,180,1):
+    amin = 0
+    amax = 360
+    for a in range(0,360,1):
         x = radii[0]*cosd(a)
         y = radii[1]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
@@ -336,7 +336,6 @@ def GetTthAzmDsp(x,y,data):
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dx,-dy)+azmthoff+720.)%360.
-    azm = np.where(azm>180,azm-360.,azm)
     return tth,azm,dsp
     
 def GetTth(x,y,data):
@@ -567,8 +566,7 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
     
-#    tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
-    tay,tax = np.mgrid[iLim[0]:iLim[1],jLim[0]:jLim[1]]         #bin corners
+    tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32)
     tay = np.asfarray(tay*scaley,dtype=np.float32)
     nI = iLim[1]-iLim[0]

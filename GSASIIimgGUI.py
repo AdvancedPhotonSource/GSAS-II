@@ -225,6 +225,7 @@ def UpdateImageControls(self,data,masks):
         
     def OnRecalibrate(event):
         G2img.ImageRecalibrate(self,data)
+        UpdateImageControls(self,data,masks)
         
     def OnIntegrate(event):
         self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)

@@ -31,9 +31,9 @@ import GSASIImapvars as G2mv
     wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD,
 ] = [wx.NewId() for _init_coll_DrawAtom_Items in range(10)]
 
-[ wxID_IMCALIBRATE, wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
+[ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(7)]
+] = [wx.NewId() for _init_coll_IMAGE_Items in range(8)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
 ] = [wx.NewId() for _init_coll_MASK_Items in range(3)]
@@ -203,6 +203,8 @@ class DataFrame(wx.Frame):
     def _init_coll_Image_Items(self,parent):
         parent.Append(help='Calibrate detector by fitting to calibrant lines', 
             id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
+        parent.Append(help='Recalibrate detector by fitting to calibrant lines', 
+            id=wxID_IMRECALIBRATE, kind=wx.ITEM_NORMAL,text='Realibrate')
         parent.Append(help='Clear calibration data points and rings',id=wxID_IMCLEARCALIB, 
             kind=wx.ITEM_NORMAL,text='Clear calibration')
         parent.Append(help='Integrate selected image',id=wxID_IMINTEGRATE, 

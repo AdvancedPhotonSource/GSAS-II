@@ -2089,6 +2089,35 @@ def UpdatePhaseData(self,Item,data,oldPage):
             UpdateDData()
             G2plt.PlotStrain(self,data)
             
+        def OnCopyData(event):
+            #how about HKLF data? This is only for PWDR data
+            Obj = event.GetEventObject()
+            Obj.SetValue(False)
+            hist = Indx[Obj.GetId()]
+            sourceDict = UseList[hist]
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction']
+            copyDict = {}
+            for name in copyNames: 
+                copyDict[name] = sourceDict[name]
+            keyList = ['All',]+UseList.keys()
+            if UseList:
+                copyList = []
+                dlg = wx.MultiChoiceDialog(self, 
+                    'Copy parameters to which histograms?', 'Copy parameters', 
+                    keyList, wx.CHOICEDLG_STYLE)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        result = dlg.GetSelections()
+                        for i in result: 
+                            copyList.append(keyList[i])
+                        if 'All' in copyList: 
+                            copyList = keyList[1:]
+                        for item in copyList:
+                            UseList[item].update(copyDict)
+                        UpdateDData()
+                finally:
+                    dlg.Destroy()
+            
         def OnScaleRef(event):
             Obj = event.GetEventObject()
             UseList[Indx[Obj.GetId()]]['Scale'][1] = Obj.GetValue()
@@ -2301,12 +2330,20 @@ def UpdatePhaseData(self,Item,data,oldPage):
         for item in keyList:
             histData = UseList[item]
             mainSizer.Add((5,5),0)
+            
+            showSizer = wx.BoxSizer(wx.HORIZONTAL)
             showData = wx.CheckBox(dataDisplay,-1,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
             Indx[showData.GetId()] = item
             showData.Bind(wx.EVT_CHECKBOX, OnShowData)
-            mainSizer.Add(showData,0,wx.ALIGN_CENTER_VERTICAL)
+            showSizer.Add(showData,0,wx.ALIGN_CENTER_VERTICAL)
+            copyData = wx.CheckBox(dataDisplay,-1,label=' Copy?')
+            Indx[copyData.GetId()] = item
+            copyData.Bind(wx.EVT_CHECKBOX,OnCopyData)
+            showSizer.Add(copyData,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(showSizer,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
+            
             if UseList[item]['Show']:
                 scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
                 scaleRef = wx.CheckBox(dataDisplay,-1,label=' Phase fraction: ')
@@ -2611,10 +2648,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
         generalData = data['General']
         SGData = generalData['SGData']
         UseList = data['Histograms']
+        newList = []
         NShkl = len(G2spc.MustrainNames(SGData))
         NDij = len(G2spc.HStrainNames(SGData))
         keyList = UseList.keys()
-        TextList = []
+        TextList = ['All PWDR']
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
@@ -2626,8 +2664,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
-                    for i in result: 
-                        histoName = TextList[i]
+                    for i in result: newList.append(TextList[i])
+                    if 'All PWDR' in newList:
+                        newList = TextList[1:]
+                    for histoName in newList:
                         pId = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
@@ -2645,7 +2685,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         
     def OnDataDelete(event):
         UseList = data['Histograms']
-        keyList = UseList.keys()
+        keyList = ['All',]+UseList.keys()
         keyList.sort()
         DelList = []
         if UseList:
@@ -2656,7 +2696,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
-                    for i in result: DelList.append(keyList[i])
+                    for i in result: 
+                        DelList.append(keyList[i])
+                    if 'All' in DelList:
+                        DelList = keyList[1:]
                     for i in DelList:
                         del UseList[i]
                     UpdateDData()

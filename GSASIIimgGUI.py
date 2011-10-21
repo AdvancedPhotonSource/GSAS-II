@@ -214,12 +214,17 @@ def UpdateImageControls(self,data,masks):
         data['rings'] = []
         data['ellipses'] = []
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=False)    
+        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)    
         G2plt.PlotExposedImage(self,event=event)
             
     def OnCalibrate(event):        
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=True)    
+        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)    
         self.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB on point to delete else RB to finish')
         self.ifGetRing = True
+        
+    def OnRecalibrate(event):
+        G2img.ImageRecalibrate(self,data)
         
     def OnIntegrate(event):
         self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
@@ -389,9 +394,11 @@ def UpdateImageControls(self,data,masks):
     if not self.dataFrame.GetStatusBar():
         self.dataFrame.CreateStatusBar()
     self.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=G2gd.wxID_IMCALIBRATE)
+    self.dataFrame.Bind(wx.EVT_MENU, OnRecalibrate, id=G2gd.wxID_IMRECALIBRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=G2gd.wxID_IMCLEARCALIB)
     if not data['rings']:
         self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCLEARCALIB,enable=False)    
+        self.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)    
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=G2gd.wxID_IMINTEGRATE)
     self.dataFrame.Bind(wx.EVT_MENU, OnIntegrateAll, id=G2gd.wxID_INTEGRATEALL)
     self.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)

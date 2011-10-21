@@ -375,6 +375,65 @@ def EdgeFinder(image,data):          #this makes list of all x,y where I>edgeMin
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     return zip(tax,tay)
+    
+def ImageRecalibrate(self,data):
+    import copy
+    import ImageCalibrants as calFile
+    print 'Image recalibration:'
+    time0 = time.time()
+    pixelSize = data['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
+    pixLimit = data['pixLimit']
+    cutoff = data['cutoff']
+    data['rings'] = []
+    data['ellipses'] = []
+    if not data['calibrant']:
+        print 'no calibration material selected'
+        return True
+    
+    skip = data['calibskip']
+    dmin = data['calibdmin']
+    Bravais,Cells = calFile.Calibrants[data['calibrant']][:2]
+    HKL = []
+    for bravais,cell in zip(Bravais,Cells):
+        A = G2lat.cell2A(cell)
+        hkl = G2lat.GenHBravais(dmin,bravais,A)[skip:]
+        HKL += hkl
+    HKL = G2lat.sortHKLd(HKL,True,False)
+    wave = data['wavelength']
+    cent = data['center']    
+    dist = data['distance']
+    cent = data['center']
+    tilt = data['tilt']
+    phi = data['rotation']
+    for H in HKL: 
+        dsp = H[3]
+        ellipse = GetEllipse(dsp,data)
+        Ring,delt = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+        if Ring:
+            numZ = len(Ring)
+            data['rings'].append(np.array(Ring))
+            data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
+        else:
+            continue
+    rings = np.concatenate((data['rings']),axis=0)
+    p0 = [dist,cent[0],cent[1],phi,tilt]
+    result,newWave = FitDetector(rings,p0,wave)
+    data['distance'] = result[0]
+    data['center'] = result[1:3]
+    data['rotation'] = np.mod(result[3],360.0)
+    data['tilt'] = result[4]
+    N = len(data['ellipses'])
+    data['ellipses'] = []           #clear away individual ellipse fits
+    for H in HKL[:N]:
+        ellipse = GetEllipse(H[3],data)
+        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
+    
+    print 'calibration time = ',time.time()-time0
+    G2plt.PlotImage(self,newImage=True)        
+    return True
+    
             
 def ImageCalibrate(self,data):
     import copy
@@ -544,7 +603,6 @@ def ImageCalibrate(self,data):
     rings = np.concatenate((data['rings']),axis=0)
     p0 = [dist,cent[0],cent[1],phi,tilt]
     result,newWave = FitDetector(rings,p0,wave)
-#    print 'Suggested new wavelength = ',('%.5f')%(newWave),' (not reliable if distance > 2m)'
     data['distance'] = result[0]
     data['center'] = result[1:3]
     data['rotation'] = np.mod(result[3],360.0)

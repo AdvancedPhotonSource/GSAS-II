@@ -2284,20 +2284,17 @@ def Refine(GPXfile,dlg):
         values =  np.array(Dict2Values(parmDict, varyList))
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
-        try:
-            if Controls['deriv type'] == 'analytic':
-                result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
-                    ftol=Ftol,col_deriv=True,factor=Factor,
-                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-                ncyc = int(result[2]['nfev']/2)                
-            else:           #'numeric'
-                result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-                ncyc = int(result[2]['nfev']/len(varyList))
-#            table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
-#            for item in table: print item,table[item]               #useful debug - are things shifting?
-        except Exception:
-            result = [parmDict['saved values'],None]
+        if Controls['deriv type'] == 'analytic':
+            result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
+                ftol=Ftol,col_deriv=True,factor=Factor,
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            ncyc = int(result[2]['nfev']/2)                
+        else:           #'numeric'
+            result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            ncyc = int(result[2]['nfev']/len(varyList))
+#        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
+#        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])

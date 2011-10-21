@@ -343,10 +343,7 @@ class GSASII(wx.Frame):
                     DataType = Iparm['INS   HTYPE ']                                #expect only 4 char string
                     DataType = DataType.strip()[0:3]                                #just 1st 3 chars
                     wx.BeginBusyCursor()
-                    Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
-                        'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
-                        'Temperature':Temperature,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0,
-                        'Gonio. radius':200.0,'Omega':0.0,'Chi':0.0,'Phi':0.0}
+                    Sample = G2pdG.GetDefaultSample()
                     try:
                         for Item in Data:
                             vals = Item[2].split()          #split up the BANK record
@@ -761,11 +758,7 @@ class GSASII(wx.Frame):
                             dlg2.Destroy()
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
-                        Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
-                            'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
-                            'Temperature':300.,'Pressure':1.0,'Humidity':0.0,
-                            'Voltage':0.0,'Force':0.0,'Gonio. radius':200.0,
-                            'Omega':0.0,'Chi':0.0,'Phi':0.0}
+                        Sample = G2pdG.SetDefaultSample()
                         self.PatternTree.SetItemPyData(Id,[[''],[Xsum,Ysum,Wsum,YCsum,YBsum,YDsum]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])

@@ -18,6 +18,7 @@ import GSASIIpath
 import GSASIIgrid as G2gd
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
+import GSASIIpwdGUI as G2pdG
 import GSASIIElem as G2el
 import os.path as ospath
 
@@ -847,7 +848,7 @@ def ProjFileSave(self):
         print 'project save successful'
         
 def SaveIntegration(self,PickId,data):
-    azms = self.Integrate[1][:-1]
+    azms = self.Integrate[1]
     X = self.Integrate[2][:-1]
     Xminmax = [X[0],X[-1]]
     N = len(X)
@@ -858,9 +859,13 @@ def SaveIntegration(self,PickId,data):
     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
     codes = [0 for i in range(11)]
     LRazm = data['LRazimuth']
+    Azms = []
     if data['fullIntegrate'] and data['outAzimuths'] == 1:
         Azms = [45.0,]                              #a poor man's average?
-    for i,azm in enumerate(azms):
+    else:
+        for i,azm in enumerate(azms[:-1]):
+            Azms.append((azms[i+1]+azm)/2.)
+    for i,azm in enumerate(azms[:-1]):
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         Id = 0
         while item:
@@ -868,11 +873,10 @@ def SaveIntegration(self,PickId,data):
             if name == Name:
                 Id = item
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-        parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,azm]    #set polarization for synchrotron radiation!
+        parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
         Y = self.Integrate[0][i]
         W = 1./Y                    #probably not true
-        Sample = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
-            'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,'Force':0.0}
+        Sample = G2pdG.SetDefaultSample()
         if Id:
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])
@@ -883,7 +887,7 @@ def SaveIntegration(self,PickId,data):
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'),{})             
         else:
-            Id = self.PatternTree.AppendItem(parent=self.root,text=name+" Azm= %.2f"%(azm))
+            Id = self.PatternTree.AppendItem(parent=self.root,text=name+" Azm= %.2f"%(Azms[i]))
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])

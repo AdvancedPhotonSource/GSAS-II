@@ -63,8 +63,8 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(1)]
 
 [wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN,  wxID_FILESAVE, wxID_FILESAVEAS, 
-wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS, wxID_VIEWLSPARMS,
-] = [wx.NewId() for _init_coll_File_Items in range(9)]
+wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS, wxID_VIEWLSPARMS, wxID_SEQREFINE,
+] = [wx.NewId() for _init_coll_File_Items in range(10)]
 
 [wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
  wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
@@ -152,6 +152,10 @@ class GSASII(wx.Frame):
             text='Refine')
         self.Refine.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=wxID_REFINE)
+        self.SeqRefine = parent.Append(help='', id=wxID_SEQREFINE, kind=wx.ITEM_NORMAL,
+            text='Sequental refine')
+        self.SeqRefine.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=wxID_SEQREFINE)
         self.Solve = parent.Append(help='', id=wxID_SOLVE, kind=wx.ITEM_NORMAL,
             text='Solve')
         self.Solve.Enable(False)
@@ -298,6 +302,7 @@ class GSASII(wx.Frame):
             G2IO.ProjFileOpen(self)
             self.PatternTree.Expand(self.root)
             self.Refine.Enable(True)
+            self.SeqRefine.Enable(True)
             self.Solve.Enable(True)
 
     def OnSize(self,event):
@@ -1076,6 +1081,7 @@ class GSASII(wx.Frame):
                             data = self.PatternTree.GetItemPyData(item)
                             if data:
                                 self.Refine.Enable(True)
+                                self.SeqRefine.Enable(True)
                                 self.Solve.Enable(True)         #not right but something needed here
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
@@ -1495,6 +1501,41 @@ class GSASII(wx.Frame):
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
             G2str.Refine(self.GSASprojectfile,dlg)
+        finally:
+            dlg.Destroy()        
+        dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                Id = 0
+                self.PatternTree.DeleteChildren(self.root)
+                if self.HKL: self.HKL = []
+                if self.G2plotNB.plotList:
+                    self.G2plotNB.clear()
+                G2IO.ProjFileOpen(self)
+                item, cookie = self.PatternTree.GetFirstChild(self.root)
+                while item and not Id:
+                    name = self.PatternTree.GetItemText(item)
+                    if name[:4] in ['PWDR','HKLF']:
+                        Id = item
+                    item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+                if Id:
+                    self.PatternTree.SelectItem(Id)
+        finally:
+            dlg.Destroy()
+
+    def OnSeqRefine(self,event):
+        self.OnFileSave(event)
+        Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequental results')
+        if not Id:
+            Id = self.PatternTree.AppendItem(self.root,text='Sequental results')
+            self.PatternTree.SetItemPyData(Id,{})            
+        dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = dlg.GetSize()
+        dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        try:
+            G2str.SeqRefine(self.GSASprojectfile,dlg)
         finally:
             dlg.Destroy()        
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)

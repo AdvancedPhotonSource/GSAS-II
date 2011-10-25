@@ -1432,7 +1432,29 @@ def PlotCovariance(self):
     Plot.set_xlabel('Variable number')
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()
-
+    
+def PlotSeq(self,SeqData,SeqNames):
+    
+    try:
+        plotNum = self.G2plotNB.plotList.index('Sequential refinement')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
+        Plot = self.G2plotNB.addMpl('Sequential refinement').gca()
+        plotNum = self.G2plotNB.plotList.index('Sequential refinement')
+        Page = self.G2plotNB.nb.GetPage(plotNum)
+        
+    Page.SetFocus()
+    self.G2plotNB.status.SetFields(['',''])
+    if len(SeqData):    
+        X = np.arange(0,len(SeqData[0]),1)
+        for Y,name in zip(SeqData,SeqNames):
+            Plot.plot(X,Y,label=name)        
+        Plot.legend(loc='best')
+        Page.canvas.draw()
             
 def PlotExposedImage(self,newPlot=False,event=None):
     '''General access module for 2D image plotting
@@ -1810,7 +1832,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
             for i in range(Nazm):
-                cake = LRAzim[0]+i*delAzm
+                cake = LRAzim[0]+i*delAzm-AzmthOff
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
                     

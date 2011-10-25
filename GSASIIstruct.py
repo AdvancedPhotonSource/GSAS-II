@@ -108,13 +108,14 @@ def GetAllPhaseData(GPXfile,PhaseName):
     file.close()
     return datus[1]
     
-def GetHistogramNames(GPXfile):
-    ''' Returns a list of histogram names found in GSASII gpx file
+def GetHistogramNames(GPXfile,hType):
+    """ Returns a list of histogram names found in GSASII gpx file
     input: 
         GPXfile = .gpx full file name
+        hType = list ['PWDR','HKLF'] 
     return: 
         HistogramNames = list of histogram names (types = PWDR & HKLF)
-    '''
+    """
     file = open(GPXfile,'rb')
     HistogramNames = []
     while True:
@@ -123,7 +124,7 @@ def GetHistogramNames(GPXfile):
         except EOFError:
             break
         datum = data[0]
-        if datum[0][:4] in ['PWDR','HKLF']:
+        if datum[0][:4] in hType:
             HistogramNames.append(datum[0])
     file.close()
     return HistogramNames
@@ -138,19 +139,18 @@ def GetUsedHistogramsAndPhases(GPXfile):
         Phases = dictionary of phases that use histograms
     '''
     phaseNames = GetPhaseNames(GPXfile)
+    histoList = GetHistogramNames(GPXfile,['PWDR','HKLF'])
     phaseData = {}
     for name in phaseNames: 
         phaseData[name] =  GetAllPhaseData(GPXfile,name)
     Histograms = {}
     Phases = {}
-    pId = 0
-    hId = 0
     for phase in phaseData:
         Phase = phaseData[phase]
         if Phase['Histograms']:
             if phase not in Phases:
+                pId = phaseNames.index(phase)
                 Phase['pId'] = pId
-                pId += 1
                 Phases[phase] = Phase
             for hist in Phase['Histograms']:
                 if hist not in Histograms:
@@ -159,10 +159,24 @@ def GetUsedHistogramsAndPhases(GPXfile):
                     elif 'HKLF' in hist[:4]:
                         Histograms[hist] = GetHKLFdata(GPXfile,hist)
                     #future restraint, etc. histograms here            
+                    hId = histoList.index(hist)
                     Histograms[hist]['hId'] = hId
-                    hId += 1
     return Histograms,Phases
     
+def GPXBackup(GPXfile):
+    import distutils.file_util as dfu
+    GPXpath,GPXname = ospath.split(GPXfile)
+    Name = ospath.splitext(GPXname)[0]
+    files = os.listdir(GPXpath)
+    last = 0
+    for name in files:
+        name = name.split('.')
+        if len(name) == 3 and name[0] == Name and 'bak' in name[1]:
+            last = max(last,int(name[1].strip('bak'))+1)
+    GPXback = ospath.join(GPXpath,ospath.splitext(GPXname)[0]+'.bak'+str(last)+'.gpx')
+    dfu.copy_file(GPXfile,GPXback)
+    return GPXback
+        
 def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
     ''' Updates gpxfile from all histograms that are found in any phase
     and any phase that used a histogram
@@ -173,20 +187,6 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
         CovData = dictionary of refined variables, varyList, & covariance matrix
     '''
                         
-    def GPXBackup(GPXfile):
-        import distutils.file_util as dfu
-        GPXpath,GPXname = ospath.split(GPXfile)
-        Name = ospath.splitext(GPXname)[0]
-        files = os.listdir(GPXpath)
-        last = 0
-        for name in files:
-            name = name.split('.')
-            if len(name) == 3 and name[0] == Name and 'bak' in name[1]:
-                last = max(last,int(name[1].strip('bak'))+1)
-        GPXback = ospath.join(GPXpath,ospath.splitext(GPXname)[0]+'.bak'+str(last)+'.gpx')
-        dfu.copy_file(GPXfile,GPXback)
-        return GPXback
-        
     GPXback = GPXBackup(GPXfile)
     print '\n',135*'-'
     print 'Read from file:',GPXback
@@ -199,7 +199,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
         except EOFError:
             break
         datum = data[0]
-        print 'read: ',datum[0]
+#        print 'read: ',datum[0]
         if datum[0] == 'Phases':
             for iphase in range(len(data)):
                 if data[iphase][0] in Phases:
@@ -209,10 +209,10 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
             data[0][1] = CovData
         try:
             histogram = Histograms[datum[0]]
-            print 'found ',datum[0]
+#            print 'found ',datum[0]
             data[0][1][1] = histogram['Data']
             for datus in data[1:]:
-                print '    read: ',datus[0]
+#                print '    read: ',datus[0]
                 if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
                     datus[1] = histogram[datus[0]]
         except KeyError:
@@ -222,6 +222,36 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
     infile.close()
     outfile.close()
     print 'refinement save successful'
+    
+def SetSeqResult(GPXfile,Histograms,SeqResult):
+    GPXback = GPXBackup(GPXfile)
+    print '\n',135*'-'
+    print 'Read from file:',GPXback
+    print 'Save to file  :',GPXfile
+    infile = open(GPXback,'rb')
+    outfile = open(GPXfile,'wb')
+    while True:
+        try:
+            data = cPickle.load(infile)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Sequental results':
+            data[0][1] = SeqResult
+        try:
+            histogram = Histograms[datum[0]]
+            data[0][1][1] = histogram['Data']
+            for datus in data[1:]:
+                if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
+                    datus[1] = histogram[datus[0]]
+        except KeyError:
+            pass
+                                
+        cPickle.dump(data,outfile,1)
+    infile.close()
+    outfile.close()
+    print 'refinement save successful'
+    
                     
 def GetPWDRdata(GPXfile,PWDRname):
     ''' Returns powder data from GSASII gpx file
@@ -877,8 +907,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
         A = G2lat.cell2A(cell)
         pId = Phases[phase]['pId']
         for histogram in HistoPhase:
+            try:
+                Histogram = Histograms[histogram]
+            except KeyError:                        
+                #skip if histogram not included e.g. in a sequential refinement
+                continue
             hapData = HistoPhase[histogram]
-            Histogram = Histograms[histogram]
             hId = Histogram['hId']
             limits = Histogram['Limits'][1]
             inst = Histogram['Instrument Parameters']
@@ -967,7 +1001,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             Histogram['Reflection Lists'][phase] = refList
     return hapVary,hapDict,controlDict
     
-def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
+def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
     
     def PrintSizeAndSig(hapData,sizeSig):
         line = '\n Size model:     %9s'%(hapData[0])
@@ -1063,10 +1097,14 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
         SGData = Phases[phase]['General']['SGData']
         pId = Phases[phase]['pId']
         for histogram in HistoPhase:
+            try:
+                Histogram = Histograms[histogram]
+            except KeyError:                        
+                #skip if histogram not included e.g. in a sequential refinement
+                continue
             print '\n Phase: ',phase,' in histogram: ',histogram
             print 130*'-'
             hapData = HistoPhase[histogram]
-            Histogram = Histograms[histogram]
             hId = Histogram['hId']
             pfx = str(pId)+':'+str(hId)+':'
             print ' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
@@ -1086,15 +1124,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
                     hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
                     if pfx+item in sigDict:
                         PhFrExtPOSig[item] = sigDict[pfx+item]
-            if 'Scale' in PhFrExtPOSig:
-                print ' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
-            if 'Extinction' in PhFrExtPOSig:
-                print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
-            if hapData['Pref.Ori.'][0] == 'MD':
-                if 'MD' in PhFrExtPOSig:
-                    print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
-            else:
-                PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
+            if Print:
+                if 'Scale' in PhFrExtPOSig:
+                    print ' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
+                if 'Extinction' in PhFrExtPOSig:
+                    print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
+                if hapData['Pref.Ori.'][0] == 'MD':
+                    if 'MD' in PhFrExtPOSig:
+                        print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
+                else:
+                    PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
             SizeMuStrSig = {'Mustrain':[[0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
                 'Size':[[0,0],[0 for i in range(len(hapData['Size'][4]))]],
                 'HStrain':{}}                  
@@ -1122,9 +1161,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms):
                 hapData['HStrain'][0][i] = parmDict[pfx+name]
                 if pfx+name in sigDict:
                     SizeMuStrSig['HStrain'][name] = sigDict[pfx+name]
-            PrintSizeAndSig(hapData['Size'],SizeMuStrSig['Size'])
-            PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
-            PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig['HStrain'],SGData)
+            if Print:
+                PrintSizeAndSig(hapData['Size'],SizeMuStrSig['Size'])
+                PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
+                PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig['HStrain'],SGData)
     
 def GetHistogramData(Histograms,Print=True):
     
@@ -1266,7 +1306,7 @@ def GetHistogramData(Histograms,Print=True):
         
     return histVary,histDict,controlDict
     
-def SetHistogramData(parmDict,sigDict,Histograms):
+def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
         lenBack = len(Background[3:])
@@ -1375,11 +1415,12 @@ def SetHistogramData(parmDict,sigDict,Histograms):
 
             print '\n Histogram: ',histogram,' histogram Id: ',hId
             print 135*'-'
-            print ' Instrument type: ',Sample['Type']
             print ' Final refinement wRp = %.2f%% on %d observations in this histogram'%(Histogram['wRp'],Histogram['Nobs'])
-            PrintSampleParmsSig(Sample,sampSig)
-            PrintInstParmsSig(Inst,instSig)
-            PrintBackgroundSig(Background,backSig)
+            if Print:
+                print ' Instrument type: ',Sample['Type']
+                PrintSampleParmsSig(Sample,sampSig)
+                PrintInstParmsSig(Inst,instSig)
+                PrintBackgroundSig(Background,backSig)
 
 def GetAtomFXU(pfx,FFtables,calcControls,parmDict):
     Natoms = calcControls['Natoms'][pfx]
@@ -2175,76 +2216,77 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                          dMdv[varylist.index(name)] += dFdvDict[name][iref]*corr
                 except IndexError:
                     pass
-    return dMdv   
+    return dMdv
+
+def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
+    parmdict.update(zip(varylist,values))
+    G2mv.Dict2Map(parmdict)
+    Histograms,Phases = HistoPhases
+    dMdv = np.empty(0)
+    for histogram in Histograms:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            Limits = calcControls[hfx+'Limits']
+            x,y,w,yc,yb,yd = Histogram['Data']
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])
+            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
+                varylist,Histogram,Phases,calcControls,pawleyLookup)
+            if len(dMdv):
+                dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
+            else:
+                dMdv = dMdvh
+    return dMdv
+
+def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
+    parmdict.update(zip(varylist,values))
+    Values2Dict(parmdict, varylist, values)
+    G2mv.Dict2Map(parmdict)
+    Histograms,Phases = HistoPhases
+    M = np.empty(0)
+    sumwYo = 0
+    Nobs = 0
+    for histogram in Histograms:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            Limits = calcControls[hfx+'Limits']
+            x,y,w,yc,yb,yd = Histogram['Data']
+            yc *= 0.0                           #zero full calcd profiles
+            yb *= 0.0
+            yd *= 0.0
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])
+            Histogram['Nobs'] = xF-xB
+            Nobs += Histogram['Nobs']
+            Histogram['sumwYo'] = np.sum(w[xB:xF]*y[xB:xF]**2)
+            sumwYo += Histogram['sumwYo']
+            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmdict,x[xB:xF],
+                varylist,Histogram,Phases,calcControls,pawleyLookup)
+            yc[xB:xF] += yb[xB:xF]
+            yd[xB:xF] = yc[xB:xF]-y[xB:xF]          #yc-yo then all dydv have no '-' needed
+            Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
+            wdy = np.sqrt(w[xB:xF])*(yd[xB:xF])
+            Histogram['wRp'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
+            M = np.concatenate((M,wdy))
+    Histograms['sumwYo'] = sumwYo
+    Histograms['Nobs'] = Nobs
+    Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
+    if dlg:
+        GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile wRp =',Rwp,'%'))[0]
+        if not GoOn:
+            parmDict['saved values'] = values
+            raise Exception         #Abort!!
+    return M
+    
                     
 def Refine(GPXfile,dlg):
     import cPickle
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
-    
-    def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
-        parmdict.update(zip(varylist,values))
-        G2mv.Dict2Map(parmDict)
-        Histograms,Phases = HistoPhases
-        dMdv = np.empty(0)
-        for histogram in Histograms:
-            if 'PWDR' in histogram[:4]:
-                Histogram = Histograms[histogram]
-                hId = Histogram['hId']
-                hfx = ':%d:'%(hId)
-                Limits = calcControls[hfx+'Limits']
-                x,y,w,yc,yb,yd = Histogram['Data']
-                xB = np.searchsorted(x,Limits[0])
-                xF = np.searchsorted(x,Limits[1])
-                dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
-                    varylist,Histogram,Phases,calcControls,pawleyLookup)
-                if len(dMdv):
-                    dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
-                else:
-                    dMdv = dMdvh
-        return dMdv
-    
-    def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
-        parmdict.update(zip(varylist,values))
-        Values2Dict(parmdict, varylist, values)
-        G2mv.Dict2Map(parmDict)
-        Histograms,Phases = HistoPhases
-        M = np.empty(0)
-        sumwYo = 0
-        Nobs = 0
-        for histogram in Histograms:
-            if 'PWDR' in histogram[:4]:
-                Histogram = Histograms[histogram]
-                hId = Histogram['hId']
-                hfx = ':%d:'%(hId)
-                Limits = calcControls[hfx+'Limits']
-                x,y,w,yc,yb,yd = Histogram['Data']
-                yc *= 0.0                           #zero full calcd profiles
-                yb *= 0.0
-                yd *= 0.0
-                xB = np.searchsorted(x,Limits[0])
-                xF = np.searchsorted(x,Limits[1])
-                Histogram['Nobs'] = xF-xB
-                Nobs += Histogram['Nobs']
-                Histogram['sumwYo'] = np.sum(w[xB:xF]*y[xB:xF]**2)
-                sumwYo += Histogram['sumwYo']
-                yc[xB:xF],yb[xB:xF] = getPowderProfile(parmdict,x[xB:xF],
-                    varylist,Histogram,Phases,calcControls,pawleyLookup)
-                yc[xB:xF] += yb[xB:xF]
-                yd[xB:xF] = yc[xB:xF]-y[xB:xF]          #yc-yo then all dydv have no '-' needed
-                Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
-                wdy = np.sqrt(w[xB:xF])*(yd[xB:xF])
-                Histogram['wRp'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
-                M = np.concatenate((M,wdy))
-        Histograms['sumwYo'] = sumwYo
-        Histograms['Nobs'] = Nobs
-        Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
-        if dlg:
-            GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile wRp =',Rwp,'%'))[0]
-            if not GoOn:
-                parmDict['saved values'] = values
-                raise Exception         #Abort!!
-        return M
     
     ShowBanner()
     varyList = []
@@ -2349,6 +2391,134 @@ def Refine(GPXfile,dlg):
 #    cPickle.dump(calcControls,file,1)
 #    cPickle.dump(pawleyLookup,file,1)
 #    file.close()
+
+def SeqRefine(GPXfile,dlg):
+    import cPickle
+    import pytexture as ptx
+    ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
+    
+    ShowBanner()
+    print ' Sequential Refinement'
+    G2mv.InitVars()    
+    Controls = GetControls(GPXfile)
+    ShowControls(Controls)            
+    Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
+    if not Phases:
+        print ' *** ERROR - you have no histograms to refine! ***'
+        print ' *** Refine aborted ***'
+        raise Exception
+    if not Histograms:
+        print ' *** ERROR - you have no data to refine with! ***'
+        print ' *** Refine aborted ***'
+        raise Exception
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables = GetPhaseData(Phases,False)
+    if 'Seq Data' in Controls:
+        histNames = Controls['Seq Data']
+    else:
+        histNames = GetHistogramNames(GPXfile,['PWDR',])
+    if 'Reverse Seq' in Controls:
+        if Controls['Reverse Seq']:
+            histNames.reverse()
+    SeqResult = {'histNames':histNames}
+    
+    for ihst,histogram in enumerate(histNames):
+        print ihst,histogram
+        ifPrint = False
+        if dlg:
+            dlg.SetTitle('Residual for histogram '+str(ihst))
+        calcControls = {}
+        calcControls['Natoms'] = Natoms
+        calcControls['FFtables'] = FFtables
+        varyList = []
+        parmDict = {}
+        Histo = {histogram:Histograms[histogram],}
+        hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histo,False)
+        calcControls.update(controlDict)
+        histVary,histDict,controlDict = GetHistogramData(Histo,False)
+        calcControls.update(controlDict)
+        varyList = phaseVary+hapVary+histVary
+        if not ihst:
+            saveVaryList = varyList[:]
+            for i,item in enumerate(saveVaryList):
+                items = item.split(':')
+                if items[1]:
+                    items[1] = ''
+                item = ':'.join(items)
+                saveVaryList[i] = item
+            SeqResult['varyList'] = saveVaryList
+        else:
+            newVaryList = varyList[:]
+            for i,item in enumerate(newVaryList):
+                items = item.split(':')
+                if items[1]:
+                    items[1] = ''
+                item = ':'.join(items)
+                newVaryList[i] = item
+            if newVaryList != SeqResult['varyList']:
+                print newVaryList
+                print SeqResult['varyList']
+                print '**** ERROR - variable list for this histogram does not match previous'
+                raise Exception
+        parmDict.update(phaseDict)
+        parmDict.update(hapDict)
+        parmDict.update(histDict)
+        GetFprime(calcControls,Histo)
+        constrDict,constrFlag,fixedList = G2mv.InputParse([])        #constraints go here?
+        groups,parmlist = G2mv.GroupConstraints(constrDict)
+        G2mv.GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList)
+        G2mv.Map2Dict(parmDict,varyList)
+    
+        while True:
+            begin = time.time()
+            values =  np.array(Dict2Values(parmDict, varyList))
+            Ftol = Controls['min dM/M']
+            Factor = Controls['shift factor']
+            if Controls['deriv type'] == 'analytic':
+                result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
+                    ftol=Ftol,col_deriv=True,factor=Factor,
+                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = int(result[2]['nfev']/2)                
+            else:           #'numeric'
+                result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
+                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = int(result[2]['nfev']/len(varyList))
+            runtime = time.time()-begin
+            chisq = np.sum(result[2]['fvec']**2)
+            Values2Dict(parmDict, varyList, result[0])
+            G2mv.Dict2Map(parmDict)
+            ApplyXYZshifts(parmDict,varyList)
+            
+            Rwp = np.sqrt(chisq/Histo['sumwYo'])*100.      #to %
+            GOF = chisq/(Histo['Nobs']-len(varyList))
+            print '\n Refinement results for histogram: v'+histogram
+            print 135*'-'
+            print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histo['Nobs'],' Number of parameters: ',len(varyList)
+            print ' Refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+            print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+            try:
+                covMatrix = result[1]*GOF
+                sig = np.sqrt(np.diag(covMatrix))
+                if np.any(np.isnan(sig)):
+                    print '*** Least squares aborted - some invalid esds possible ***'
+                    ifPrint = True
+                break                   #refinement succeeded - finish up!
+            except TypeError:          #result[1] is None on singular matrix
+                print '**** Refinement failed - singular matrix ****'
+                Ipvt = result[2]['ipvt']
+                for i,ipvt in enumerate(Ipvt):
+                    if not np.sum(result[2]['fjac'],axis=1)[i]:
+                        print 'Removing parameter: ',varyList[ipvt-1]
+                        del(varyList[ipvt-1])
+                        break
+    
+        GetFobsSq(Histo,Phases,parmDict,calcControls)
+        sigDict = dict(zip(varyList,sig))
+        covData = {'variables':result[0],'covMatrix':covMatrix}
+        SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
+        SetHistogramData(parmDict,sigDict,Histo,ifPrint)
+        SeqResult[histogram] = covData
+    SetSeqResult(GPXfile,Histograms,SeqResult)
+
 
 def main():
     arg = sys.argv

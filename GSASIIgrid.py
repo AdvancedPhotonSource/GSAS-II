@@ -10,6 +10,7 @@ import wx
 import wx.grid as wg
 import time
 import cPickle
+import numpy as np
 import GSASIIpath
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
@@ -460,6 +461,12 @@ class Table(wg.PyGridTableBase):
         if self.rowLabels:
             return self.rowLabels[row]
         
+    def GetColValues(self, col):
+        data = []
+        for row in range(self.GetNumberRows()):
+            data.append(self.GetValue(row, col))
+        return data
+        
     def GetRowValues(self, row):
         data = []
         for col in range(self.GetNumberCols()):
@@ -580,6 +587,28 @@ def UpdateControls(self,data):
         data['shift factor'] = value
         Factr.SetValue('%.5f'%(value))
         
+    def OnSelectData(event):
+        choices = ['All',]+GetPatternTreeDataNames(self,['PWDR',])
+        if 'Seq Data' in data:
+            sel = []
+            for item in data['Seq Data']:
+                sel.append(choices.index(item))
+        names = []
+        dlg = wx.MultiChoiceDialog(self,'Select data:','Sequential refinement',choices)
+        dlg.SetSelections(sel)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            for i in sel: names.append(choices[i])
+            if 'All' in names:
+                names = choices[1:]
+                
+        dlg.Destroy()
+        data['Seq Data'] = names
+        reverseSel.Enable(True)
+        
+    def OnReverse(event):
+        data['Reverse Seq'] = reverseSel.GetValue()
+        
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     if not self.dataFrame.GetStatusBar():
@@ -609,9 +638,27 @@ def UpdateControls(self,data):
     Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
     Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
     LSSizer.Add(Factr,0,wx.ALIGN_CENTER_VERTICAL)
-        
     mainSizer.Add(LSSizer)
     mainSizer.Add((5,5),0)
+    
+    SeqSizer = wx.BoxSizer(wx.HORIZONTAL)
+    SeqSizer.Add(wx.StaticText(self.dataDisplay,label=' Sequential Refinement Powder Data: '),0,wx.ALIGN_CENTER_VERTICAL)
+    selSeqData = wx.Button(self.dataDisplay,-1,label=' Select data')
+    selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
+    SeqSizer.Add(selSeqData,0,wx.ALIGN_CENTER_VERTICAL)
+    SeqSizer.Add((5,0),0)
+    reverseSel = wx.CheckBox(self.dataDisplay,-1,label=' Reverse order?')
+    reverseSel.Bind(wx.EVT_CHECKBOX,OnReverse)
+    if 'Seq Data' not in data:
+        reverseSel.Enable(False)
+    if 'Reverse Seq' in data:
+        reverseSel.SetValue(data['Reverse Seq'])
+    SeqSizer.Add(reverseSel,0,wx.ALIGN_CENTER_VERTICAL)
+    
+    
+    mainSizer.Add(SeqSizer)
+    mainSizer.Add((5,5),0)
+        
     mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Density Map Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
 
     mainSizer.Add((5,5),0)
@@ -632,6 +679,40 @@ def UpdateComments(self,data):
         else:
             self.dataDisplay.AppendText(line+'\n')
             
+def UpdateSeqResults(self,data):
+    if not data:
+        print 'No sequential refinement results'
+        return
+    histNames = data['histNames']
+    
+    def ColSelect(event):
+        cols = self.dataDisplay.GetSelectedCols()
+        plotData = []
+        plotNames = []
+        for col in cols:
+            plotData.append(self.SeqTable.GetColValues(col))
+            plotNames.append(self.SeqTable.GetColLabelValue(col))
+        plotData = np.array(plotData)
+        G2plt.PlotSeq(self,plotData,plotNames)
+        
+    if self.dataDisplay:
+        self.dataDisplay.Destroy()
+    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataFrame.SetLabel('Sequental refinement results')
+    self.dataFrame.CreateStatusBar()
+    colLabels = data['varyList']
+    Types = len(data['varyList'])*[wg.GRID_VALUE_FLOAT,]
+    seqList = [list(data[name]['variables']) for name in histNames]
+    self.SeqTable = Table(seqList,colLabels=colLabels,rowLabels=histNames,types=Types)
+    self.dataDisplay = GSGrid(parent=self.dataFrame)
+    self.dataDisplay.SetTable(self.SeqTable, True)
+    self.dataDisplay.EnableEditing(False)
+    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, ColSelect)
+    self.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
+    self.dataDisplay.SetMargins(0,0)
+    self.dataDisplay.AutoSizeColumns(True)
+    self.dataFrame.setSizePosLeft([700,350])
+                
 def UpdateConstraints(self,data):
     Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
     Natoms,phaseVary,phaseDict,pawleyLookup,FFtable = G2str.GetPhaseData(Phases,Print=False)        
@@ -932,7 +1013,16 @@ def UpdateHKLControls(self,data):
     self.dataDisplay.SetSizer(mainSizer)
     self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
-        
+
+def GetPatternTreeDataNames(self,dataTypes):
+    names = []
+    item, cookie = self.PatternTree.GetFirstChild(self.root)        
+    while item:
+        name = self.PatternTree.GetItemText(item)
+        if name[:4] in dataTypes:
+            names.append(name)
+        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+    return names
                           
 def GetPatternTreeItemId(self, parentId, itemText):
     item, cookie = self.PatternTree.GetFirstChild(parentId)
@@ -996,7 +1086,11 @@ def MovePatternTreeToGrid(self,item):
                     'distMax':0.0,'angleMax':0.0,'useMapPeaks':False}
                 self.PatternTree.SetItemPyData(item,data)                             
             self.Refine.Enable(True)
+            self.SeqRefine.Enable(True)
             UpdateControls(self,data)
+        elif self.PatternTree.GetItemText(item) == 'Sequental results':
+            data = self.PatternTree.GetItemPyData(item)
+            UpdateSeqResults(self,data)            
         elif self.PatternTree.GetItemText(item) == 'Covariance':
             data = self.PatternTree.GetItemPyData(item)
             G2plt.PlotCovariance(self)

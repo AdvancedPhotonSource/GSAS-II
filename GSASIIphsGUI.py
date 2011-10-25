@@ -2092,7 +2092,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnCopyData(event):
             #how about HKLF data? This is only for PWDR data
             Obj = event.GetEventObject()
-            Obj.SetValue(False)
             hist = Indx[Obj.GetId()]
             sourceDict = UseList[hist]
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction']
@@ -2337,9 +2336,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Indx[showData.GetId()] = item
             showData.Bind(wx.EVT_CHECKBOX, OnShowData)
             showSizer.Add(showData,0,wx.ALIGN_CENTER_VERTICAL)
-            copyData = wx.CheckBox(dataDisplay,-1,label=' Copy?')
+            copyData = wx.Button(dataDisplay,-1,label=' Copy?')
             Indx[copyData.GetId()] = item
-            copyData.Bind(wx.EVT_CHECKBOX,OnCopyData)
+            copyData.Bind(wx.EVT_BUTTON,OnCopyData)
             showSizer.Add(copyData,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(showSizer,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)

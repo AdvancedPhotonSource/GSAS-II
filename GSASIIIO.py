@@ -800,7 +800,6 @@ def ProjFileOpen(self):
             except EOFError:
                 break
             datum = data[0]
-            print 'load: ',datum[0]
             
             Id = self.PatternTree.AppendItem(parent=self.root,text=datum[0])
             if 'PWDR' in datum[0]:                
@@ -808,7 +807,6 @@ def ProjFileOpen(self):
             else:
                 self.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
-                print '    load: ',datus[0]
                 sub = self.PatternTree.AppendItem(Id,datus[0])
                 self.PatternTree.SetItemPyData(sub,datus[1])
             if 'IMG' in datum[0]:                   #retreive image default flag & data if set
@@ -832,12 +830,10 @@ def ProjFileSave(self):
             while item:
                 data = []
                 name = self.PatternTree.GetItemText(item)
-                print 'save: ',name
                 data.append([name,self.PatternTree.GetItemPyData(item)])
                 item2, cookie2 = self.PatternTree.GetFirstChild(item)
                 while item2:
                     name = self.PatternTree.GetItemText(item2)
-                    print '    save: ',name
                     data.append([name,self.PatternTree.GetItemPyData(item2)])
                     item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            

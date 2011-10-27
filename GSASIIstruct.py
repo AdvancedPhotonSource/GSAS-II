@@ -108,6 +108,45 @@ def GetAllPhaseData(GPXfile,PhaseName):
     file.close()
     return datus[1]
     
+def GetHistograms(GPXfile,hNames):
+    """ Returns a dictionary of histograms found in GSASII gpx file
+    input: 
+        GPXfile = .gpx full file name
+        hNames = list of histogram names 
+    return: 
+        Histograms = dictionary of histograms (types = PWDR & HKLF)
+    """
+    file = open(GPXfile,'rb')
+    Histograms = {}
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        hist = datum[0]
+        if hist in hNames:
+            if 'PWDR' in hist[:4]:
+                PWDRdata = {}
+                PWDRdata['Data'] = datum[1][1]          #powder data arrays
+                PWDRdata[data[2][0]] = data[2][1]       #Limits
+                PWDRdata[data[3][0]] = data[3][1]       #Background
+                PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
+                PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
+                try:
+                    PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
+                except IndexError:
+                    PWDRdata['Reflection lists'] = {}
+    
+                Histograms[hist] = PWDRdata
+            elif 'HKLF' in hist[:4]:
+                HKLFdata = []
+                datum = data[0]
+                HKLFdata = datum[1:][0]
+                Histograms[hist] = HKLFdata           
+    file.close()
+    return Histograms
+    
 def GetHistogramNames(GPXfile,hType):
     """ Returns a list of histogram names found in GSASII gpx file
     input: 
@@ -140,6 +179,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
     '''
     phaseNames = GetPhaseNames(GPXfile)
     histoList = GetHistogramNames(GPXfile,['PWDR','HKLF'])
+    allHistograms = GetHistograms(GPXfile,histoList)
     phaseData = {}
     for name in phaseNames: 
         phaseData[name] =  GetAllPhaseData(GPXfile,name)
@@ -154,10 +194,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
                 Phases[phase] = Phase
             for hist in Phase['Histograms']:
                 if hist not in Histograms:
-                    if 'PWDR' in hist[:4]: 
-                        Histograms[hist] = GetPWDRdata(GPXfile,hist)
-                    elif 'HKLF' in hist[:4]:
-                        Histograms[hist] = GetHKLFdata(GPXfile,hist)
+                    Histograms[hist] = allHistograms[hist]
                     #future restraint, etc. histograms here            
                     hId = histoList.index(hist)
                     Histograms[hist]['hId'] = hId

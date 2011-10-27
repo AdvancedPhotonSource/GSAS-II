@@ -698,7 +698,6 @@ def GetTifData(filename,imageOnly=False):
         return lines,0,0,0
     File.seek(IFD)                                                  #get number of directory entries
     NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
-    print IFD,NED
     IFD = {}
     for ied in range(NED):
         Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))

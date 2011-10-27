@@ -601,6 +601,8 @@ def PlotPatterns(self,newPlot=False):
         ContourZ = []
         ContourY = []
         Nseq = 0
+    if len(PlotList) < 2:
+        self.Contour = False
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         ifpicked = False
@@ -1363,18 +1365,22 @@ def PlotTexture(self,data,newPlot=False,Start=False):
             Plot.set_xlabel(self.Projection.capitalize()+' projection')
     Page.canvas.draw()
 
-def PlotCovariance(self):
-    Data = self.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
+def PlotCovariance(self,Data={}):
+    if not Data:
+        Data = self.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
     if not Data:
         print 'No covariance matrix available'
         return
     varyList = Data['varyList']
+    values = Data['variables']
     Xmax = len(varyList)
     covMatrix = Data['covMatrix']
     sig = np.sqrt(np.diag(covMatrix))
     xvar = np.outer(sig,np.ones_like(sig))
     covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
+    title = ' for\n'+Data['title']
+    newAtomDict = Data['newAtomDict']
 
     def OnPlotKeyPress(event):
         newPlot = False
@@ -1384,9 +1390,9 @@ def PlotCovariance(self):
             dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
-                self.ContourColor = choice[sel]
+                self.VcovColor = choice[sel]
             else:
-                self.ContourColor = 'Spectral'
+                self.VcovColor = 'RdYlGn'
             dlg.Destroy()
         PlotCovariance(self)
 
@@ -1395,14 +1401,20 @@ def PlotCovariance(self):
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(varyList),ytics,-1)
             ylabs = [np.where(0<=i ,varyList[int(i)],' ') for i in ytics]
-#            ylabs = [varyList[int(i)] for i in ytics[:-1]]
             imgAx.set_yticklabels(ylabs)
             
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = int(event.xdata+.5)
             ypos = int(event.ydata+.5)
             if -1 < xpos < len(varyList) and -1 < ypos < len(varyList):
-                msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
+                if xpos == ypos:
+                    value = values[xpos]
+                    name = varyList[xpos]
+                    if varyList[xpos] in newAtomDict:
+                        name,value = newAtomDict[name]                        
+                    msg = '%s value = %.4g, esd = %.4g'%(name,value,sig[xpos])
+                else:
+                    msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
                 Page.canvas.SetToolTipString(msg)
                 self.G2plotNB.status.SetFields(['Key: s to change colors',msg])
     try:
@@ -1421,14 +1433,14 @@ def PlotCovariance(self):
 
     Page.SetFocus()
     self.G2plotNB.status.SetFields(['',''])    
-    acolor = mpl.cm.get_cmap(self.ContourColor)
+    acolor = mpl.cm.get_cmap(self.VcovColor)
     Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower')
     imgAx = Img.get_axes()
     ytics = imgAx.get_yticks()
     ylabs = [varyList[int(i)] for i in ytics[:-1]]
     imgAx.set_yticklabels(ylabs)
     colorBar = Page.figure.colorbar(Img)
-    Plot.set_title('Variance-Covariance matrix from LS refinement')
+    Plot.set_title('V-Cov matrix'+title)
     Plot.set_xlabel('Variable number')
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()

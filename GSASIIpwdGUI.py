@@ -604,9 +604,52 @@ def UpdateInstrumentGrid(self,data):
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
     
 def UpdateSampleGrid(self,data):
+    
+    def OnSampleCopy(event):
+        histName = self.PatternTree.GetItemText(self.PatternId)
+        copyNames = ['Scale',]
+        dataType = data['Type']
+        histType = 'HKLF'
+        if 'PWDR' in histName:          #else HKLF - only Scale
+            histType = 'PWDR'
+            if 'Debye' in dataType:
+                copyNames += ['DisplaceX','DisplaceY','Absorption']
+            else:       #Bragg-Brentano
+                copyNames += ['Shift','Transparency']
+        copyDict = {}
+        for parm in copyNames:
+            copyDict[parm] = data[parm]
+        histList = ['All '+histType,]
+        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        while item:
+            name = self.PatternTree.GetItemText(item)
+            if histType in name and name != histName:
+                histList.append(name)
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        if len(histList) == 1:      #nothing to copy to!
+            return
+        copyList = []
+        dlg = wx.MultiChoiceDialog(self, 
+            'Copy parameters to which histograms?', 'Copy parameters', 
+            histList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All '+histType in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
+                sampleData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Sample Parameters'))
+                sampleData.update(copyDict)
+        finally:
+            dlg.Destroy()
+
     if self.dataDisplay:
         self.dataFrame.Clear()
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataFrame.SetMenuBar(self.dataFrame.SampleMenu)
+    self.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()    
     self.dataDisplay = wx.Panel(self.dataFrame)

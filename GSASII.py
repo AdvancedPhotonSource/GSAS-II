@@ -250,6 +250,8 @@ class GSASII(wx.Frame):
             self.OnPatternTreeItemCollapsed, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_EXPANDED,
             self.OnPatternTreeItemExpanded, id=wxID_PATTERNTREE)
+        self.PatternTree.Bind(wx.EVT_TREE_DELETE_ITEM,
+            self.OnPatternTreeItemDelete, id=wxID_PATTERNTREE)
         self.root = self.PatternTree.AddRoot('Loaded Data: ')
         
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
@@ -266,6 +268,7 @@ class GSASII(wx.Frame):
         self.GSASprojectfile = ''
         self.dirname = ''
         self.undofile = ''
+        self.TreeItemDelete = False
         self.Offset = [0.0,0.0]
         self.Weight = False
         self.IparmName = ''
@@ -280,6 +283,7 @@ class GSASII(wx.Frame):
         self.dataFrame = None
         self.Interpolate = 'nearest'
         self.ContourColor = 'Paired'
+        self.VcovColor = 'RdYlGn'
         self.Projection = 'equal area'
         self.logPlot = False
         self.qPlot = False
@@ -311,12 +315,15 @@ class GSASII(wx.Frame):
         self.PatternTree.SetSize(wx.Size(w,h))
                         
     def OnPatternTreeSelChanged(self, event):
-        pltNum = self.G2plotNB.nb.GetSelection()
-        if pltNum >= 0:                         #to avoid the startup with no plot!
-            pltPage = self.G2plotNB.nb.GetPage(pltNum)
-            pltPlot = pltPage.figure
-        item = event.GetItem()
-        G2gd.MovePatternTreeToGrid(self,item)
+        if self.TreeItemDelete:
+            self.TreeItemDelete = False
+        else:
+            pltNum = self.G2plotNB.nb.GetSelection()
+            if pltNum >= 0:                         #to avoid the startup with no plot!
+                pltPage = self.G2plotNB.nb.GetPage(pltNum)
+                pltPlot = pltPage.figure
+            item = event.GetItem()
+            G2gd.MovePatternTreeToGrid(self,item)
         
     def OnPatternTreeItemCollapsed(self, event):
         event.Skip()
@@ -324,12 +331,12 @@ class GSASII(wx.Frame):
     def OnPatternTreeItemExpanded(self, event):
         event.Skip()
         
-    def OnPatternTreeDeleteItem(self, event):
-        event.Skip()
+    def OnPatternTreeItemDelete(self, event):
+        self.TreeItemDelete = True
 
     def OnPatternTreeItemActivated(self, event):
         event.Skip()
-        
+                
     def OnPwdrRead(self, event):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose files', '.', '', 
@@ -1005,7 +1012,7 @@ class GSASII(wx.Frame):
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
                 name = self.PatternTree.GetItemText(item)
-                if 'PWDR' in name or 'HKLF' in name or 'IMG' or 'PDF' in name:
+                if name not in ['Notebook','Controls','Covariance','Constraints','Restraints','Phases']:
                     if 'PWDR' in name: ifPWDR = True
                     if 'IMG' in name: ifIMG = True
                     if 'HKLF' in name: ifHKLF = True
@@ -1053,7 +1060,7 @@ class GSASII(wx.Frame):
                 if result == wx.ID_OK:
                     self.PatternTree.DeleteChildren(self.root)
                     self.GSASprojectfile = ''
-                    self.PatternTree.DeleteChildren(self.root)
+#                    self.PatternTree.DeleteChildren(self.root)
                     if self.HKL: self.HKL = []
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
@@ -1526,8 +1533,10 @@ class GSASII(wx.Frame):
     def OnSeqRefine(self,event):
         self.OnFileSave(event)
         Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequental results')
+        print Id
         if not Id:
             Id = self.PatternTree.AppendItem(self.root,text='Sequental results')
+            print Id
             self.PatternTree.SetItemPyData(Id,{})            
         dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)

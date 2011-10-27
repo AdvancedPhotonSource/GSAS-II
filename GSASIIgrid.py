@@ -54,6 +54,9 @@ import GSASIImapvars as G2mv
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
 
+[ wxID_SAMPLECOPY,
+] = [wx.NewId() for _init_coll_Sample_Items in range(1)]
+
 [ wxID_CONSTRAINTADD,
 ] = [wx.NewId() for _init_coll_Constraint_Items in range(1)]
 
@@ -106,6 +109,9 @@ class DataFrame(wx.Frame):
     def _init_coll_MaskMenu(self,parent):
         parent.Append(menu=self.MaskEdit, title='Mask Operations')
         
+    def _init_coll_SampleMenu(self,parent):
+        parent.Append(menu=self.SampleEdit, title='Edit')
+        
     def _init_coll_PeakMenu(self,parent):
         parent.Append(menu=self.PeakEdit, title='Peak Fitting')
 
@@ -148,6 +154,10 @@ class DataFrame(wx.Frame):
     def _init_coll_Restraint_Items(self,parent):
         parent.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraint',
             help='restraint dummy menu item')
+                    
+    def _init_coll_Sample_Items(self,parent):
+        parent.Append(id=wxID_SAMPLECOPY, kind=wx.ITEM_NORMAL,text='Copy',
+            help='Copy refinable sample parameters to other histograms')
                     
     def _init_coll_Data_Items(self,parent):
         parent.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
@@ -286,6 +296,7 @@ class DataFrame(wx.Frame):
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
         self.InstMenu = wx.MenuBar()
+        self.SampleMenu = wx.MenuBar()
         self.PeakMenu = wx.MenuBar()
         self.IndPeaksMenu = wx.MenuBar()
         self.IndexMenu = wx.MenuBar()
@@ -301,6 +312,7 @@ class DataFrame(wx.Frame):
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
         self.InstEdit = wx.Menu(title='')
+        self.SampleEdit = wx.Menu(title='')
         self.PeakEdit = wx.Menu(title='')
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndexEdit = wx.Menu(title='')
@@ -326,6 +338,8 @@ class DataFrame(wx.Frame):
         self._init_coll_Mask_Items(self.MaskEdit)
         self._init_coll_InstMenu(self.InstMenu)
         self._init_coll_Inst_Items(self.InstEdit)
+        self._init_coll_SampleMenu(self.SampleMenu)
+        self._init_coll_Sample_Items(self.SampleEdit)
         self._init_coll_PeakMenu(self.PeakMenu)
         self._init_coll_Peak_Items(self.PeakEdit)
         self._init_coll_IndPeaksMenu(self.IndPeaksMenu)
@@ -589,8 +603,8 @@ def UpdateControls(self,data):
         
     def OnSelectData(event):
         choices = ['All',]+GetPatternTreeDataNames(self,['PWDR',])
+        sel = []
         if 'Seq Data' in data:
-            sel = []
             for item in data['Seq Data']:
                 sel.append(choices.index(item))
         names = []
@@ -685,16 +699,21 @@ def UpdateSeqResults(self,data):
         return
     histNames = data['histNames']
     
-    def ColSelect(event):
+    def Select(event):
         cols = self.dataDisplay.GetSelectedCols()
-        plotData = []
-        plotNames = []
-        for col in cols:
-            plotData.append(self.SeqTable.GetColValues(col))
-            plotNames.append(self.SeqTable.GetColLabelValue(col))
-        plotData = np.array(plotData)
-        G2plt.PlotSeq(self,plotData,plotNames)
-        
+        rows = self.dataDisplay.GetSelectedRows()
+        if cols:
+            plotData = []
+            plotNames = []
+            for col in cols:
+                plotData.append(self.SeqTable.GetColValues(col))
+                plotNames.append(self.SeqTable.GetColLabelValue(col))
+            plotData = np.array(plotData)
+            G2plt.PlotSeq(self,plotData,plotNames)
+        elif rows:
+            name = histNames[rows[0]]
+            G2plt.PlotCovariance(self,Data=data[name])
+               
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
@@ -707,7 +726,7 @@ def UpdateSeqResults(self,data):
     self.dataDisplay = GSGrid(parent=self.dataFrame)
     self.dataDisplay.SetTable(self.SeqTable, True)
     self.dataDisplay.EnableEditing(False)
-    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, ColSelect)
+    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, Select)
     self.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(True)

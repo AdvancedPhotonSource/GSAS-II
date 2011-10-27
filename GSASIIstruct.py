@@ -1587,11 +1587,20 @@ def Values2Dict(parmdict, varylist, values):
     
 def ApplyXYZshifts(parmDict,varyList):
     ''' takes atom x,y,z shift and applies it to corresponding atom x,y,z value
+        input:
+            parmDict - parameter dictionary
+            varyList - list of variables
+        returns:
+            newAtomDict - dictionary of new atomic coordinate names & values; 
+                key is parameter shift name
     '''
+    newAtomDict = {}
     for item in parmDict:
         if 'dA' in item:
             parm = ''.join(item.split('d'))
             parmDict[parm] += parmDict[item]
+            newAtomDict[item] = [parm,parmDict[parm]]
+    return newAtomDict
     
 def SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict):
     IFCoup = 'Bragg' in calcControls[hfx+'instType']
@@ -2341,7 +2350,7 @@ def Refine(GPXfile,dlg):
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict)
-        ApplyXYZshifts(parmDict,varyList)
+        newAtomDict = ApplyXYZshifts(parmDict,varyList)
         
         Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
         GOF = chisq/(Histograms['Nobs']-len(varyList))
@@ -2374,7 +2383,8 @@ def Refine(GPXfile,dlg):
 #    print 'fixedDict: ',G2mv.fixedDict
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
     sigDict = dict(zip(varyList,sig))
-    covData = {'variables':result[0],'varyList':varyList,'covMatrix':covMatrix}
+    covData = {'variables':result[0],'varyList':varyList,'covMatrix':covMatrix,
+        'title':GPXfile,'newAtomDict':newAtomDict}
     SetPhaseData(parmDict,sigDict,Phases,covData)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
@@ -2422,7 +2432,6 @@ def SeqRefine(GPXfile,dlg):
     SeqResult = {'histNames':histNames}
     
     for ihst,histogram in enumerate(histNames):
-        print ihst,histogram
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -2486,7 +2495,7 @@ def SeqRefine(GPXfile,dlg):
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             G2mv.Dict2Map(parmDict)
-            ApplyXYZshifts(parmDict,varyList)
+            newAtomDict = ApplyXYZshifts(parmDict,varyList)
             
             Rwp = np.sqrt(chisq/Histo['sumwYo'])*100.      #to %
             GOF = chisq/(Histo['Nobs']-len(varyList))
@@ -2513,7 +2522,8 @@ def SeqRefine(GPXfile,dlg):
     
         GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))
-        covData = {'variables':result[0],'covMatrix':covMatrix}
+        covData = {'variables':result[0],'varyList':varyList,'covMatrix':covMatrix,
+            'title':histogram,'newAtomDict':newAtomDict}
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint)
         SeqResult[histogram] = covData

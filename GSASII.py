@@ -355,7 +355,8 @@ class GSASII(wx.Frame):
                     DataType = Iparm['INS   HTYPE ']                                #expect only 4 char string
                     DataType = DataType.strip()[0:3]                                #just 1st 3 chars
                     wx.BeginBusyCursor()
-                    Sample = G2pdG.GetDefaultSample()
+                    Sample = G2pdG.SetDefaultSample()
+                    Sample['Temperature'] = Temperature
                     try:
                         for Item in Data:
                             vals = Item[2].split()          #split up the BANK record

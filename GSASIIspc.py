@@ -550,7 +550,7 @@ def HStrainNames(SGData):
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
     if laue in ['m3','m3m']:
-        return ['D11']
+        return ['D11','eA']         #add cubic strain term
     elif laue in ['6/m','6/mmm','3m1','31m','3']:
         return ['D11','D33']
     elif laue in ['3R','3mR']:

@@ -2529,7 +2529,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 mainSizer.Add(strainSizer)
                 mainSizer.Add((0,5),0)
                 
-                mainSizer.Add(wx.StaticText(dataDisplay,-1,' Hydrostatic strain:'))
+                mainSizer.Add(wx.StaticText(dataDisplay,-1,' Hydrostatic/elastic strain:'))
                 mainSizer.Add(HstrainSizer())
                     
                 #texture  'Pref. Ori.':['MD',1.0,False,[0,0,1],0,[]] last two for 'SH' are SHorder & coeff

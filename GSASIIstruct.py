@@ -200,7 +200,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
                     Histograms[hist]['hId'] = hId
     return Histograms,Phases
     
-def GPXBackup(GPXfile):
+def GPXBackup(GPXfile,makeBack=True):
     import distutils.file_util as dfu
     GPXpath,GPXname = ospath.split(GPXfile)
     Name = ospath.splitext(GPXname)[0]
@@ -209,12 +209,15 @@ def GPXBackup(GPXfile):
     for name in files:
         name = name.split('.')
         if len(name) == 3 and name[0] == Name and 'bak' in name[1]:
-            last = max(last,int(name[1].strip('bak'))+1)
+            if makeBack:
+                last = max(last,int(name[1].strip('bak'))+1)
+            else:
+                last = max(last,int(name[1].strip('bak')))
     GPXback = ospath.join(GPXpath,ospath.splitext(GPXname)[0]+'.bak'+str(last)+'.gpx')
     dfu.copy_file(GPXfile,GPXback)
     return GPXback
         
-def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
+def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
     ''' Updates gpxfile from all histograms that are found in any phase
     and any phase that used a histogram
     input:
@@ -222,9 +225,10 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData):
         Histograms = dictionary of histograms as {name:data,...}
         Phases = dictionary of phases that use histograms
         CovData = dictionary of refined variables, varyList, & covariance matrix
+        makeBack = True if new backup of .gpx file is to be made; else use the last one made
     '''
                         
-    GPXback = GPXBackup(GPXfile)
+    GPXback = GPXBackup(GPXfile,makeBack)
     print '\n',135*'-'
     print 'Read from file:',GPXback
     print 'Save to file  :',GPXfile
@@ -905,7 +909,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             print varstr
 
     def PrintHStrain(hapData,SGData):
-        print '\n Hydrostatic strain: '
+        print '\n Hydrostatic/elastic strain: '
         Hsnames = G2spc.HStrainNames(SGData)
         ptlbls = ' names :'
         ptstr =  ' values:'
@@ -1097,7 +1101,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
             print sigstr
             
     def PrintHStrainAndSig(hapData,strainSig,SGData):
-        print '\n Hydrostatic strain: '
+        print '\n Hydrostatic/elastic strain: '
         Hsnames = G2spc.HStrainNames(SGData)
         ptlbls = ' name  :'
         ptstr =  ' value :'
@@ -1896,7 +1900,8 @@ def GetHStrainShift(refl,SGData,phfx,parmDict):
     uniq = SGData['SGUniq']
     h,k,l = refl[:3]
     if laue in ['m3','m3m']:
-        Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)
+        Dij = parmDict[phfx+'D11']*(h**2+k**2+l**2)+ \
+            refl[4]**2*parmDict[phfx+'eA']*((h*k)**2+(h*l)**2+(k*l)**2)/(h**2+k**2+l**2)**2
     elif laue in ['6/m','6/mmm','3m1','31m','3']:
         Dij = parmDict[phfx+'D11']*(h**2+k**2+h*k)+parmDict[phfx+'D33']*l**2
     elif laue in ['3R','3mR']:
@@ -1923,7 +1928,8 @@ def GetHStrainShiftDerv(refl,SGData,phfx):
     uniq = SGData['SGUniq']
     h,k,l = refl[:3]
     if laue in ['m3','m3m']:
-        dDijDict = {phfx+'D11':h**2+k**2+l**2,}
+        dDijDict = {phfx+'D11':h**2+k**2+l**2,
+            phfx+'eA':((h*k)**2+(h*l)**2+(k*l)**2)/(h**2+k**2+l**2)**2}
     elif laue in ['6/m','6/mmm','3m1','31m','3']:
         dDijDict = {phfx+'D11':h**2+k**2+h*k,phfx+'D33':l**2}
     elif laue in ['3R','3mR']:
@@ -2420,8 +2426,8 @@ def Refine(GPXfile,dlg):
 #    print 'fixedDict: ',G2mv.fixedDict
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
     sigDict = dict(zip(varyList,sig))
-    covData = {'variables':result[0],'varyList':varyList,'covMatrix':covMatrix,
-        'title':GPXfile,'newAtomDict':newAtomDict}
+    covData = {'variables':result[0],'varyList':varyList,'sig':sig,
+        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict}
     SetPhaseData(parmDict,sigDict,Phases,covData)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
@@ -2467,7 +2473,7 @@ def SeqRefine(GPXfile,dlg):
         if Controls['Reverse Seq']:
             histNames.reverse()
     SeqResult = {'histNames':histNames}
-    
+    makeBack = True
     for ihst,histogram in enumerate(histNames):
         ifPrint = False
         if dlg:
@@ -2559,11 +2565,13 @@ def SeqRefine(GPXfile,dlg):
     
         GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))
-        covData = {'variables':result[0],'varyList':varyList,'covMatrix':covMatrix,
-            'title':histogram,'newAtomDict':newAtomDict}
+        covData = {'variables':result[0],'varyList':varyList,'sig':sig,
+            'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict}
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint)
         SeqResult[histogram] = covData
+        SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData,makeBack)
+        makeBack = False
     SetSeqResult(GPXfile,Histograms,SeqResult)
 
 

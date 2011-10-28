@@ -1445,7 +1445,7 @@ def PlotCovariance(self,Data={}):
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()
     
-def PlotSeq(self,SeqData,SeqNames):
+def PlotSeq(self,SeqData,SeqSig,SeqNames):
     
     try:
         plotNum = self.G2plotNB.plotList.index('Sequential refinement')
@@ -1463,8 +1463,8 @@ def PlotSeq(self,SeqData,SeqNames):
     self.G2plotNB.status.SetFields(['',''])
     if len(SeqData):    
         X = np.arange(0,len(SeqData[0]),1)
-        for Y,name in zip(SeqData,SeqNames):
-            Plot.plot(X,Y,label=name)        
+        for Y,sig,name in zip(SeqData,SeqSig,SeqNames):
+            Plot.errorbar(X,Y,yerr=sig,label=name)        
         Plot.legend(loc='best')
         Page.canvas.draw()
             

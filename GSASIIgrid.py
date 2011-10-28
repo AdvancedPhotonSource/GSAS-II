@@ -699,17 +699,26 @@ def UpdateSeqResults(self,data):
         return
     histNames = data['histNames']
     
+    def GetSigData(parm):
+        sigData = []
+        for name in histNames:
+            sigList = data[name]['sig']
+            sigData.append(sigList[parm])
+        return sigData
+    
     def Select(event):
         cols = self.dataDisplay.GetSelectedCols()
         rows = self.dataDisplay.GetSelectedRows()
         if cols:
             plotData = []
+            plotSig = []
             plotNames = []
             for col in cols:
                 plotData.append(self.SeqTable.GetColValues(col))
+                plotSig.append(GetSigData(col))
                 plotNames.append(self.SeqTable.GetColLabelValue(col))
             plotData = np.array(plotData)
-            G2plt.PlotSeq(self,plotData,plotNames)
+            G2plt.PlotSeq(self,plotData,plotSig,plotNames)
         elif rows:
             name = histNames[rows[0]]
             G2plt.PlotCovariance(self,Data=data[name])

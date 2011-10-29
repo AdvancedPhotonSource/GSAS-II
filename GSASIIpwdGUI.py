@@ -966,7 +966,6 @@ def UpdateUnitCellsGrid(self, data):
         volVal.SetValue("%.3f"%(controls[12]))
         
     def OnHklShow(event):
-        hklShow.SetValue(False)
         PatternId = self.PatternId
         PickId = self.PickId    
         limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
@@ -1239,8 +1238,8 @@ def UpdateUnitCellsGrid(self, data):
     zeroVar.SetValue(controls[0])
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
-    hklShow = wx.CheckBox(self.dataDisplay,label="  Show hkl positions")
-    hklShow.Bind(wx.EVT_CHECKBOX,OnHklShow)
+    hklShow = wx.Button(self.dataDisplay,label="  Show hkl positions")
+    hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
     littleSizer.Add(hklShow,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     

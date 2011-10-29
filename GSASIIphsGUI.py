@@ -2250,7 +2250,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnPOType(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
-            if 'March' in POType.GetValue():
+            if 'March' in Obj.GetValue():
                 UseList[hist]['Pref.Ori.'][0] = 'MD'
             else:
                 UseList[hist]['Pref.Ori.'][0] = 'SH'
@@ -2452,6 +2452,83 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 hstrainSizer.Add(hstrainVal,0,wx.ALIGN_CENTER_VERTICAL)
             return hstrainSizer
             
+        def PoTopSizer(POData):
+            poSizer = wx.FlexGridSizer(1,6,5,5)
+            choice = ['March-Dollase','Spherical harmonics']
+            POtype = choice[['MD','SH'].index(POData[0])]
+            poSizer.Add(wx.StaticText(dataDisplay,-1,' Preferred orientation model '),0,wx.ALIGN_CENTER_VERTICAL)
+            POType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=POtype,choices=choice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[POType.GetId()] = item
+            POType.Bind(wx.EVT_COMBOBOX, OnPOType)
+            poSizer.Add(POType)
+            if POData[0] == 'SH':
+                poSizer.Add(wx.StaticText(dataDisplay,-1,' Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
+                poOrder = wx.ComboBox(dataDisplay,wx.ID_ANY,value=str(POData[4]),choices=[str(2*i) for i in range(18)],
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                Indx[poOrder.GetId()] = item
+                poOrder.Bind(wx.EVT_COMBOBOX,OnPOOrder)
+                poSizer.Add(poOrder,0,wx.ALIGN_CENTER_VERTICAL)
+                poRef = wx.CheckBox(dataDisplay,-1,label=' Refine? ')
+                poRef.SetValue(POData[2])
+                Indx[poRef.GetId()] = item
+                poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
+                poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
+            return poSizer
+           
+        def MDDataSizer(POData):
+            poSizer = wx.BoxSizer(wx.HORIZONTAL)
+            poRef = wx.CheckBox(dataDisplay,-1,label=' March-Dollase ratio: ')
+            poRef.SetValue(POData[2])
+            Indx[poRef.GetId()] = item
+            poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
+            poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
+            poVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                '%.3f'%(POData[1]),style=wx.TE_PROCESS_ENTER)
+            Indx[poVal.GetId()] = item
+            poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
+            poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
+            poSizer.Add(poVal,0,wx.ALIGN_CENTER_VERTICAL)
+            poSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+            h,k,l =POData[3]
+            poAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+            Indx[poAxis.GetId()] = item
+            poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
+            poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
+            poSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
+            return poSizer
+            
+        def SHDataSizer(POData):
+            textJ = G2lat.textureIndex(POData[5])
+            mainSizer.Add(wx.StaticText(dataDisplay,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ)),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((0,5),0)
+            ODFSizer = wx.FlexGridSizer(2,8,2,2)
+            ODFIndx = {}
+            ODFkeys = POData[5].keys()
+            ODFkeys.sort()
+            for odf in ODFkeys:
+                ODFSizer.Add(wx.StaticText(dataDisplay,-1,odf),0,wx.ALIGN_CENTER_VERTICAL)
+                ODFval = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
+                ODFIndx[ODFval.GetId()] = odf
+#                ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
+#                ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
+                ODFSizer.Add(ODFval,0,wx.ALIGN_CENTER_VERTICAL)
+            return ODFSizer
+            
+        def ExtSizer():            
+            extSizer = wx.BoxSizer(wx.HORIZONTAL)
+            extRef = wx.CheckBox(dataDisplay,-1,label=' Extinction: ')
+            extRef.SetValue(UseList[item]['Extinction'][1])
+            Indx[extRef.GetId()] = item
+            extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
+            extSizer.Add(extRef,0,wx.ALIGN_CENTER_VERTICAL)
+            extVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+                '%.2f'%(UseList[item]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
+            Indx[extVal.GetId()] = item
+            extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
+            extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
+            extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
+            return extSizer
                                     
         DData.DestroyChildren()
         dataDisplay = wx.Panel(DData)
@@ -2533,90 +2610,25 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 mainSizer.Add(HstrainSizer())
                     
                 #texture  'Pref. Ori.':['MD',1.0,False,[0,0,1],0,[]] last two for 'SH' are SHorder & coeff
-                poSizer = wx.FlexGridSizer(1,6,5,5)
+                poSizer = wx.BoxSizer(wx.VERTICAL)
                 POData = UseList[item]['Pref.Ori.']
-                choice = ['March-Dollase','Spherical harmonics']
-                POtype = choice[['MD','SH'].index(POData[0])]
-                poSizer.Add(wx.StaticText(dataDisplay,-1,' Preferred orientation model '),0,wx.ALIGN_CENTER_VERTICAL)
-                POType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=POtype,choices=choice,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                Indx[POType.GetId()] = item
-                POType.Bind(wx.EVT_COMBOBOX, OnPOType)
-                poSizer.Add(POType)
+                poSizer.Add(PoTopSizer(POData))
                 if POData[0] == 'MD':
-                    mainSizer.Add(poSizer)
-                    poSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    poRef = wx.CheckBox(dataDisplay,-1,label=' March-Dollase ratio: ')
-                    poRef.SetValue(POData[2])
-                    Indx[poRef.GetId()] = item
-                    poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
-                    poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
-                    poVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                        '%.3f'%(POData[1]),style=wx.TE_PROCESS_ENTER)
-                    Indx[poVal.GetId()] = item
-                    poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
-                    poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
-                    poSizer.Add(poVal,0,wx.ALIGN_CENTER_VERTICAL)
-                    poSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
-                    h,k,l =POData[3]
-                    poAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
-                    Indx[poAxis.GetId()] = item
-                    poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
-                    poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
-                    poSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
-                    mainSizer.Add(poSizer)
+                    poSizer.Add(MDDataSizer(POData))
                 else:           #'SH'
-                    poSizer.Add(wx.StaticText(dataDisplay,-1,' Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
-                    poOrder = wx.ComboBox(dataDisplay,wx.ID_ANY,value=str(POData[4]),choices=[str(2*i) for i in range(18)],
-                        style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                    Indx[poOrder.GetId()] = item
-                    poOrder.Bind(wx.EVT_COMBOBOX,OnPOOrder)
-                    poSizer.Add(poOrder,0,wx.ALIGN_CENTER_VERTICAL)
-                    poRef = wx.CheckBox(dataDisplay,-1,label=' Refine? ')
-                    poRef.SetValue(POData[2])
-                    Indx[poRef.GetId()] = item
-                    poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
-                    poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
-                    mainSizer.Add(poSizer)
-                    if POData[4]:
-                        textJ = G2lat.textureIndex(POData[5])
-                        mainSizer.Add(wx.StaticText(dataDisplay,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ)),0,wx.ALIGN_CENTER_VERTICAL)
-                        mainSizer.Add((0,5),0)
-                        ODFSizer = wx.FlexGridSizer(2,8,2,2)
-                        ODFIndx = {}
-                        ODFkeys = POData[5].keys()
-                        ODFkeys.sort()
-                        for odf in ODFkeys:
-                            ODFSizer.Add(wx.StaticText(dataDisplay,-1,odf),0,wx.ALIGN_CENTER_VERTICAL)
-                            ODFval = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
-                            ODFIndx[ODFval.GetId()] = odf
-    #                        ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
-    #                        ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
-                            ODFSizer.Add(ODFval,0,wx.ALIGN_CENTER_VERTICAL)
-                        mainSizer.Add(ODFSizer,0,wx.ALIGN_CENTER_VERTICAL)
-                        mainSizer.Add((0,5),0)
+                    if POData[4]:       #SH order > 0
+                        poSizer.Add(SHDataSizer(POData))
+                mainSizer.Add(poSizer)
                 mainSizer.Add((0,5),0)                
                 #Extinction  'Extinction':[0.0,False]
-                extSizer = wx.BoxSizer(wx.HORIZONTAL)
-                extRef = wx.CheckBox(dataDisplay,-1,label=' Extinction: ')
-                extRef.SetValue(UseList[item]['Extinction'][1])
-                Indx[extRef.GetId()] = item
-                extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
-                extSizer.Add(extRef,0,wx.ALIGN_CENTER_VERTICAL)
-                extVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
-                    '%.2f'%(UseList[item]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
-                Indx[extVal.GetId()] = item
-                extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
-                extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
-                extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(extSizer)
+                mainSizer.Add(ExtSizer())
                 mainSizer.Add((0,5),0)
             elif item[:4] == 'HKLF' and UseList[item]['Show']:
                 pass
         mainSizer.Add((5,5),0)
 
         dataDisplay.SetSizer(mainSizer,True)
-        mainSizer.Fit(self.dataFrame)
+        mainSizer.FitInside(self.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20

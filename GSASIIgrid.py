@@ -42,8 +42,8 @@ import GSASIImapvars as G2mv
 [ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT, wxID_PAWLEYDELETE, wxID_PAWLEYESTIMATE,
 ] = [wx.NewId() for _init_coll_PAWLEY_Items in range(4)]
 
-[ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,
-] = [wx.NewId() for _init_coll_INST_Items in range(2)]
+[ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY,
+] = [wx.NewId() for _init_coll_INST_Items in range(3)]
 
 [ wxID_INDXRELOAD,
 ] = [wx.NewId() for _init_coll_IndPeaks_Items in range(1)]
@@ -53,6 +53,9 @@ import GSASIImapvars as G2mv
 
 [  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
+
+[ wxID_BACKCOPY,
+] = [wx.NewId() for _init_coll_Back_Items in range(1)]
 
 [ wxID_SAMPLECOPY,
 ] = [wx.NewId() for _init_coll_Sample_Items in range(1)]
@@ -95,22 +98,25 @@ class DataFrame(wx.Frame):
         parent.Append(menu=self.DrawAtomEdit, title='Edit')
 
     def _init_coll_PawleyMenu(self,parent):
-        parent.Append(menu=self.PawleyEdit,title='Pawley Reflections Operations')
+        parent.Append(menu=self.PawleyEdit,title='Operations')
       
     def _init_coll_IndPeaksMenu(self,parent):
-        parent.Append(menu=self.IndPeaksEdit,title='Index Peaks Operations')
+        parent.Append(menu=self.IndPeaksEdit,title='Operations')
                    
     def _init_coll_ImageMenu(self,parent):
-        parent.Append(menu=self.ImageEdit, title='Image Operations')
+        parent.Append(menu=self.ImageEdit, title='Operations')
+        
+    def _init_coll_BackMenu(self,parent):
+        parent.Append(menu=self.BackEdit, title='File')
         
     def _init_coll_InstMenu(self,parent):
-        parent.Append(menu=self.InstEdit, title='Inst. Parm. Operations')
+        parent.Append(menu=self.InstEdit, title='Operations')
         
     def _init_coll_MaskMenu(self,parent):
-        parent.Append(menu=self.MaskEdit, title='Mask Operations')
+        parent.Append(menu=self.MaskEdit, title='Operations')
         
     def _init_coll_SampleMenu(self,parent):
-        parent.Append(menu=self.SampleEdit, title='Edit')
+        parent.Append(menu=self.SampleEdit, title='File')
         
     def _init_coll_PeakMenu(self,parent):
         parent.Append(menu=self.PeakEdit, title='Peak Fitting')
@@ -158,6 +164,10 @@ class DataFrame(wx.Frame):
     def _init_coll_Sample_Items(self,parent):
         parent.Append(id=wxID_SAMPLECOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy refinable sample parameters to other histograms')
+                    
+    def _init_coll_Back_Items(self,parent):
+        parent.Append(id=wxID_BACKCOPY, kind=wx.ITEM_NORMAL,text='Copy',
+            help='Copy background parameters to other histograms')
                     
     def _init_coll_Data_Items(self,parent):
         parent.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
@@ -241,6 +251,8 @@ class DataFrame(wx.Frame):
     def _init_coll_Inst_Items(self,parent):
         parent.Append(help='Reset instrument profile parameters to default', 
             id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')
+        parent.Append(help='Copy instrument profile parameters to other histograms', 
+            id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')        
         parent.Append(help='Change radiation type (Ka12 - synch)', 
             id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
 
@@ -295,6 +307,7 @@ class DataFrame(wx.Frame):
         self.PawleyMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
+        self.BackMenu = wx.MenuBar()
         self.InstMenu = wx.MenuBar()
         self.SampleMenu = wx.MenuBar()
         self.PeakMenu = wx.MenuBar()
@@ -311,6 +324,7 @@ class DataFrame(wx.Frame):
         self.PawleyEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
+        self.BackEdit = wx.Menu(title='')
         self.InstEdit = wx.Menu(title='')
         self.SampleEdit = wx.Menu(title='')
         self.PeakEdit = wx.Menu(title='')
@@ -336,6 +350,8 @@ class DataFrame(wx.Frame):
         self._init_coll_Image_Items(self.ImageEdit)
         self._init_coll_MaskMenu(self.MaskMenu)
         self._init_coll_Mask_Items(self.MaskEdit)
+        self._init_coll_BackMenu(self.BackMenu)
+        self._init_coll_Back_Items(self.BackEdit)
         self._init_coll_InstMenu(self.InstMenu)
         self._init_coll_Inst_Items(self.InstEdit)
         self._init_coll_SampleMenu(self.SampleMenu)
@@ -742,10 +758,14 @@ def UpdateSeqResults(self,data):
     self.dataFrame.setSizePosLeft([700,350])
                 
 def UpdateConstraints(self,data):
+    if not data:
+        data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
     Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
     Natoms,phaseVary,phaseDict,pawleyLookup,FFtable = G2str.GetPhaseData(Phases,Print=False)        
     hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
+    Indx = {}
+    self.Page = 0
     
     def FindEquivVarb(name,nameList):
         outList = []
@@ -765,9 +785,9 @@ def UpdateConstraints(self,data):
                 varbs.append(varList[x])
         dlg.Destroy()
         if len(varbs) > 1:
-            return map(list,zip(varbs,[1.0 for i in range(len(varbs))]))
+            return map(list,zip([1.0 for i in range(len(varbs))],varbs))
         else:
-            return [[FrstVarb,0.0],]
+            return [[0.0,FrstVarb],]        #setup for "fix" of variable
     
     def OnAddConstraint(event):
         constr = []
@@ -780,7 +800,7 @@ def UpdateConstraints(self,data):
                 phlegend += '\n p:h: = '+str(Phases[phase]['pId'])+':'+str(Histograms[histogram]['hId'])+': for '+phase+' in '+histogram
         for histogram in Histograms:
             hlegend += '\n :h: = :'+str(Histograms[histogram]['hId'])+': for '+histogram
-        page = self.dataDisplay.GetSelection()
+        page = self.Page
         if 'Histogram ' in self.dataDisplay.GetPageText(page):
             dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+hlegend,'Histogram variables:',histVary)
             if dlg.ShowModal() == wx.ID_OK:
@@ -788,7 +808,10 @@ def UpdateConstraints(self,data):
                 FrstVarb = histVary[sel]
                 moreVarb = FindEquivVarb(FrstVarb,histVary)
                 constr = SelectVarbs(FrstVarb,moreVarb,hlegend)
+                constr += [0.0,True]        #constant & refine flag
+                data['Hist'].append(constr)
             dlg.Destroy()
+            UpdateHistConstr()
         elif '/Phase' in self.dataDisplay.GetPageText(page):
             legend = 'Select 1st variable: \n '
             dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+phlegend,'HAP variables:',hapVary)
@@ -797,86 +820,135 @@ def UpdateConstraints(self,data):
                 FrstVarb = hapVary[sel]
                 moreVarb = FindEquivVarb(FrstVarb,hapVary)
                 constr = SelectVarbs(FrstVarb,moreVarb,phlegend)
+                constr += [0.0,True]        #constant & refine flag
+                data['HAP'].append(constr)
             dlg.Destroy()
+            UpdateHAPConstr()
         elif 'Phase' in self.dataDisplay.GetPageText(page):
+            #maybe get atom name in phaseVary items?
+            for phase in Phases:
+                Phase = Phases[phase]
+                Atoms = Phase['Atoms']
             dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+plegend,'Phase variables:',phaseVary)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
                 FrstVarb = phaseVary[sel]
                 moreVarb = FindEquivVarb(FrstVarb,phaseVary)
-                constr = SelectVarbs(FrstVarb,moreVarb,plegend)
+                constr = SelectVarbs(FrstVarb,moreVarb,plegend+'\nIf none selected then '+FrstVarb+' is held fixed')
+                constr += [0.0,True]        #constant & refine flag
+                data['Phase'].append(constr)
             dlg.Destroy()
-        if constr:
-            constr += [0.0,True]
-                
+            UpdatePhaseConstr()
             
+    def ConstSizer(name,pageDisplay):
+        constSizer = wx.FlexGridSizer(1,4,0,0)
+        for Id,item in enumerate(data[name]):
+            if len(item) < 4:
+                constSizer.Add((5,0),0)
+                eqString = ' FIXED   '+item[0][1]
+                constSizer.Add((5,0),0)
+            else:
+                constEdit = wx.Button(pageDisplay,-1,'Edit',style=wx.BU_EXACTFIT)
+                constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
+                Indx[constEdit.GetId()] = [Id,name]
+                constSizer.Add(constEdit)            
+                constRef = wx.CheckBox(pageDisplay,-1,label=' Refine?')
+                constRef.SetValue(item[-1])
+                constRef.Bind(wx.EVT_CHECKBOX,OnConstRef)
+                Indx[constRef.GetId()] = item
+                constSizer.Add(constRef,0,wx.ALIGN_CENTER_VERTICAL)
+                eqString = ''
+                for term in item[:-2]:
+                    eqString += '%+.3f*%s '%(term[0],term[1])
+                eqString += ' = %.3f'%(item[-2])
+            constSizer.Add(wx.StaticText(pageDisplay,-1,eqString),0,wx.ALIGN_CENTER_VERTICAL)
+            constDel = wx.Button(pageDisplay,-1,'Delete',style=wx.BU_EXACTFIT)
+            constDel.Bind(wx.EVT_BUTTON,OnConstDel)
+            Indx[constDel.GetId()] = [Id,name]
+            constSizer.Add(constDel)
+        return constSizer
+                
+    def OnConstRef(event):
+        Obj = event.GetEventObject()
+        Indx[Obj.GetId()][-1] = Obj.GetValue()
+        
+    def OnConstDel(event):
+        Obj = event.GetEventObject()
+        Id,name = Indx[Obj.GetId()]
+        del(data[name][Id])
+        OnPageChanged(event)        
+        
+    def OnConstEdit(event):
+        Obj = event.GetEventObject()
+        Id,name = Indx[Obj.GetId()]
+        const = data[name][Id][-2]
+        items = data[name][Id][:-2]+[[const,'= constant'],[]]
+        print items
+        dlg = self.SumDialog(self,'Constraint','Enter value for each term in constraint','',items)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetData()
+                print result
+                data[name][Id][:-2] = result[:-1]
+                data[name][Id][-2] = result[-2][0]
+        finally:
+            dlg.Destroy()            
+        OnPageChanged(event)        
              
     
     def UpdateHAPConstr():
         HAPConstr.DestroyChildren()
-        dataDisplay = wx.Panel(HAPConstr)
+        pageDisplay = wx.Panel(HAPConstr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram/Phase constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add((5,5),0)
-        
-
-
-        dataDisplay.SetSizer(mainSizer)
+        mainSizer.Add(ConstSizer('HAP',pageDisplay))
+        pageDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.dataFrame)
         Size[1] += 26                           #compensate for status bar
-        dataDisplay.SetSize(Size)
+        pageDisplay.SetSize(Size)
         self.dataFrame.setSizePosLeft(Size)
         
     def UpdateHistConstr():
         HistConstr.DestroyChildren()
-        dataDisplay = wx.Panel(HistConstr)
+        pageDisplay = wx.Panel(HistConstr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add((5,5),0)
-
-
-        dataDisplay.SetSizer(mainSizer)
+        mainSizer.Add((5,5),0)        
+        mainSizer.Add(ConstSizer('Hist',pageDisplay))
+        pageDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.dataFrame)
         Size[1] += 26                           #compensate for status bar
-        dataDisplay.SetSize(Size)
+        pageDisplay.SetSize(Size)
         self.dataFrame.setSizePosLeft(Size)
         
     def UpdatePhaseConstr():
         PhaseConstr.DestroyChildren()
-        dataDisplay = wx.Panel(PhaseConstr)
+        pageDisplay = wx.Panel(PhaseConstr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Phase constraints:'),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add((5,5),0)
-
-
-        dataDisplay.SetSizer(mainSizer)
+        mainSizer.Add((5,5),0)        
+        mainSizer.Add(ConstSizer('Phase',pageDisplay))
+        pageDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.dataFrame)
         Size[1] += 26                           #compensate for status bar
-        dataDisplay.SetSize(Size)
+        pageDisplay.SetSize(Size)
         self.dataFrame.setSizePosLeft(Size)
     
     def OnPageChanged(event):
         page = event.GetSelection()
+        self.Page = page
         text = self.dataDisplay.GetPageText(page)
         if text == 'Histogram/Phase constraints':
-            self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
             UpdateHAPConstr()
         elif text == 'Histogram constraints':
             UpdateHistConstr()
-            self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
         elif text == 'Phase constraints':
             UpdatePhaseConstr()
-            self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
-        event.Skip()
 
     if self.dataDisplay:
         self.dataDisplay.Destroy()
     self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
     self.dataFrame.SetLabel('Constraints')
     self.dataFrame.CreateStatusBar()
+    self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddConstraint, id=wxID_CONSTRAINTADD)
     self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
     

@@ -11,6 +11,7 @@ import wx.grid as wg
 import numpy as np
 import math
 import time
+import copy
 import cPickle
 import GSASIIpath
 import GSASIIpwd as G2pwd
@@ -287,9 +288,35 @@ def UpdateBackgroundGrid(self,data):
         data[0][item] = value
         Obj.SetValue('%10.4f'%(value))
         
+    def OnBackCopy(event):
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
+        copyList = []
+        dlg = wx.MultiChoiceDialog(self, 
+            'Copy parameters to which histograms?', 'Copy parameters', 
+            histList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All' in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
+                self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),
+                    copy.copy(data))
+        finally:
+            dlg.Destroy()
+        
+        
     if self.dataDisplay:
         self.dataFrame.Clear()
     self.dataDisplay = wx.Panel(self.dataFrame)
+    self.dataFrame.SetMenuBar(self.dataFrame.BackMenu)
+    self.dataFrame.SetLabel('Background')
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
+    self.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
     Choices = ['chebyschev','cosine','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -403,6 +430,30 @@ def UpdateInstrumentGrid(self,data):
         RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
         UpdateInstrumentGrid(self,data)
         
+    def OnInstCopy(event):
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
+        copyList = []
+        dlg = wx.MultiChoiceDialog(self, 
+            'Copy parameters to which histograms?', 'Copy parameters', 
+            histList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All' in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
+                instData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'))
+                if len(data) == len(instData):                          #don't mix lam & lam1/lam2 parms!
+                    for i,item in enumerate(data[1:]):                  #skip default values in tuple
+                        instData[i+1][:-1] = copy.copy(item[:-1])       #skip azimuth at end
+                else:
+                    print item+' not copied - instrument parameters not commensurate'
+        finally:
+            dlg.Destroy()
+        
     def OnWaveChange(event):
         if 'Lam' in insVal:            
             data[0] = data[0][:1]+tuple(waves['CuKa'])+(.5,)+data[0][2:]
@@ -480,6 +531,7 @@ def UpdateInstrumentGrid(self,data):
     histoName = self.PatternTree.GetItemPyData(self.PatternId)[-1]
     ifHisto = IsHistogramInAnyPhase(self,histoName)
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataFrame.SetLabel('Instrument Parameters')
     self.dataDisplay = wx.Panel(self.dataFrame)
     instSizer = wx.FlexGridSizer(2,6,5,5)
     instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Histogram Type:'),0,wx.ALIGN_CENTER_VERTICAL)
@@ -487,8 +539,9 @@ def UpdateInstrumentGrid(self,data):
         self.dataFrame.SetMenuBar(self.dataFrame.InstMenu)
         if not self.dataFrame.GetStatusBar():
             Status = self.dataFrame.CreateStatusBar()
-        self.Bind(wx.EVT_MENU, OnReset,id=G2gd.wxID_INSTPRMRESET)
-        self.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)
+        self.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
+        self.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
+        self.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
         typePick = wx.ComboBox(self.dataDisplay,value=insVal['Type'],
             choices=['PXC','PNC','PNT'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
         typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
@@ -642,13 +695,14 @@ def UpdateSampleGrid(self,data):
             for item in copyList:
                 Id = G2gd.GetPatternTreeItemId(self,self.root,item)
                 sampleData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Sample Parameters'))
-                sampleData.update(copyDict)
+                sampleData.update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()
 
     if self.dataDisplay:
         self.dataFrame.Clear()
     self.dataFrame.SetMenuBar(self.dataFrame.SampleMenu)
+    self.dataFrame.SetLabel('Sample Parameters')
     self.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()    
@@ -1647,7 +1701,7 @@ def UpdatePDFGrid(self,data):
                     if ifcopy:
                         olddata = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'PDF Controls'))
                         sample = olddata['Sample']
-                        olddata.update(data)
+                        olddata.update(copy.deepcopy(data))
                         olddata['Sample'] = sample
                         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'PDF Controls'),olddata)
                 Status.SetStatusText('PDF controls copied')

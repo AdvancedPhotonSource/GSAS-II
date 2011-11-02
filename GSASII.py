@@ -501,6 +501,7 @@ class GSASII(wx.Frame):
                             Data['outAzimuths'] = 1
                             Data['fullIntegrate'] = False
                             Data['setRings'] = False
+                            Data['background image'] = ['',1.0]                            
                         Data['setDefault'] = False
                         Data['range'] = [(Imin,Imax),[Imin,Imax]]
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
@@ -563,7 +564,7 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(sub,{})
         if not G2gd.GetPatternTreeItemId(self,self.root,'Constraints'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Constraints')
-            self.PatternTree.SetItemPyData(sub,{})
+            self.PatternTree.SetItemPyData(sub,{'Hist':[],'HAP':[],'Phase':[]})
         if not G2gd.GetPatternTreeItemId(self,self.root,'Restraints'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Restraints')
             self.PatternTree.SetItemPyData(sub,{})
@@ -642,12 +643,13 @@ class GSASII(wx.Frame):
                 scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
                 dataGridSizer.Add(scale,0,wx.LEFT,10)
                 dataGridSizer.Add(name,0,wx.RIGHT,10)
-            dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
-                wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
-            self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(200,20),style=wx.TE_PROCESS_ENTER)
-            self.name.Bind(wx.EVT_TEXT_ENTER,self.OnNameChange)
-            self.name.Bind(wx.EVT_KILL_FOCUS,self.OnNameChange)
-            dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
+            if dataType:
+                dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
+                    wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
+                self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(200,20),style=wx.TE_PROCESS_ENTER)
+                self.name.Bind(wx.EVT_TEXT_ENTER,self.OnNameChange)
+                self.name.Bind(wx.EVT_KILL_FOCUS,self.OnNameChange)
+                dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
             mainSizer.Add(dataGridSizer,0,wx.EXPAND)
             OkBtn = wx.Button(panel,-1,"Ok")
             OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -1532,13 +1534,11 @@ class GSASII(wx.Frame):
             dlg.Destroy()
 
     def OnSeqRefine(self,event):
-        self.OnFileSave(event)
         Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequental results')
-        print Id
         if not Id:
             Id = self.PatternTree.AppendItem(self.root,text='Sequental results')
-            print Id
             self.PatternTree.SetItemPyData(Id,{})            
+        self.OnFileSave(event)
         dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()

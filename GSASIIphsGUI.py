@@ -2097,7 +2097,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction']
             copyDict = {}
             for name in copyNames: 
-                copyDict[name] = sourceDict[name]
+                copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
             keyList = ['All',]+UseList.keys()
             if UseList:
                 copyList = []
@@ -2112,7 +2112,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         if 'All' in copyList: 
                             copyList = keyList[1:]
                         for item in copyList:
-                            UseList[item].update(copyDict)
+                            UseList[item].update(copy.deepcopy(copyDict))
                         UpdateDData()
                 finally:
                     dlg.Destroy()

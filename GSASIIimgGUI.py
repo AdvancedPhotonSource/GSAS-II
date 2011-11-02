@@ -208,7 +208,18 @@ def UpdateImageControls(self,data,masks):
             Lazm -= 360
         data['LRazimuth'] = [Lazm,Razm]
         G2plt.PlotExposedImage(self,event=event)
-            
+        
+    def OnBackImage(event):
+        data['background image'][0] = backImage.GetValue()
+        
+    def OnBackMult(event):
+        try:
+            mult = float(backMult.GetValue())
+            data['background image'][1] = mult
+        except ValueError:
+            pass
+        backMult.SetValue("%.3f" % (data['background image'][1]))          #reset in case of error          
+                            
     def OnClearCalib(event):
         data['ring'] = []
         data['rings'] = []
@@ -226,7 +237,16 @@ def UpdateImageControls(self,data,masks):
         UpdateImageControls(self,data,masks)
         
     def OnIntegrate(event):
-        self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
+        
+        if data['background image'][0]:
+            backImg = data['background image'][0]
+            backScale = data['background image'][1]
+            id = G2gd.GetPatternTreeItemId(self, self.root, backImg)
+            Npix,imagefile = self.PatternTree.GetItemPyData(id)
+            backImage = G2IO.GetImageData(self,imagefile,True)*backScale
+            self.Integrate = G2img.ImageIntegrate(self.ImageZ+backImage,data,masks)
+        else:
+            self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
         G2plt.PlotIntegration(self,newPlot=True)
         G2IO.SaveIntegration(self,self.PickId,data)
         self.MakePDF.Enable(True)
@@ -261,6 +281,13 @@ def UpdateImageControls(self,data,masks):
                             image = G2IO.GetImageData(self,imagefile,True)
                             Id = G2gd.GetPatternTreeItemId(self,id, 'Image Controls')
                             Data = self.PatternTree.GetItemPyData(Id)
+                            backImage = []
+                            if Data['background image'][0]:
+                                backImg = Data['background image'][0]
+                                backScale = Data['background image'][1]
+                                id = G2gd.GetPatternTreeItemId(self, self.root, backImg)
+                                Npix,imagefile = self.PatternTree.GetItemPyData(id)
+                                backImage = G2IO.GetImageData(self,imagefile,True)*backScale
                             try:
                                 Masks = self.PatternTree.GetItemPyData(
                                     G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
@@ -268,8 +295,11 @@ def UpdateImageControls(self,data,masks):
                                 Imin,Imax = Data['Range']
                                 Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                                 self.PatternTree.SetItemPyData(
-                                    G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'),Masks)                                
-                            self.Integrate = G2img.ImageIntegrate(image,Data,Masks)
+                                    G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'),Masks)
+                            if len(backImage):                                
+                                self.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks)
+                            else:
+                                self.Integrate = G2img.ImageIntegrate(image,Data,Masks)
 #                            G2plt.PlotIntegration(self,newPlot=True,event=event)
                             G2IO.SaveIntegration(self,Id,Data)
             finally:
@@ -378,6 +408,8 @@ def UpdateImageControls(self,data,masks):
     #fix for old files:
     if 'azmthOff' not in data:
         data['azmthOff'] = 0.0
+    if 'background image' not in data:
+        data['background image'] = ['',1.0]
     #end fix
     
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -560,6 +592,20 @@ def UpdateImageControls(self,data,masks):
     dataSizer.Add(setDefault,0,wx.ALIGN_CENTER_VERTICAL)
     setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
     setDefault.SetValue(data['setDefault'])
+    dataSizer.Add((5,5),0)
+    
+    dataSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background image'),0,wx.ALIGN_CENTER_VERTICAL)
+    Choices = ['',]+G2gd.GetPatternTreeDataNames(self,['IMG ',])
+    backImage = wx.ComboBox(parent=self.dataDisplay,value=data['background image'][0],choices=Choices,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    backImage.Bind(wx.EVT_COMBOBOX,OnBackImage)
+    dataSizer.Add(backImage)
+    dataSizer.Add(wx.StaticText(self.dataDisplay,-1,' multiplier'),0,wx.ALIGN_CENTER_VERTICAL)
+    backMult =  wx.TextCtrl(parent=self.dataDisplay,value=("%.3f" % (data['background image'][1])),
+        style=wx.TE_PROCESS_ENTER)
+    backMult.Bind(wx.EVT_TEXT_ENTER,OnBackMult)
+    backMult.Bind(wx.EVT_KILL_FOCUS,OnBackMult)
+    dataSizer.Add(backMult,0,wx.ALIGN_CENTER_VERTICAL)
 
     mainSizer.Add((5,5),0)        
     mainSizer.Add(dataSizer,0)

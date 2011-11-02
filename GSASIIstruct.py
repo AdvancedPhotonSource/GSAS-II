@@ -245,7 +245,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
             for iphase in range(len(data)):
                 if data[iphase][0] in Phases:
                     phaseName = data[iphase][0]
-                    data[iphase][1] = Phases[phaseName]
+                    data[iphase][1].update(Phases[phaseName])
         elif datum[0] == 'Covariance':
             data[0][1] = CovData
         try:
@@ -2570,7 +2570,7 @@ def SeqRefine(GPXfile,dlg):
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint)
         SeqResult[histogram] = covData
-        SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData,makeBack)
+        SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,covData,makeBack)
         makeBack = False
     SetSeqResult(GPXfile,Histograms,SeqResult)
 

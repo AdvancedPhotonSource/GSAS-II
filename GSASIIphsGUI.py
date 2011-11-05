@@ -2397,7 +2397,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def EllSizeDataSizer():
             parms = zip(['S11','S22','S33','S12','S13','S23'],UseList[item]['Size'][4],
                 UseList[item]['Size'][5],range(6))
-            dataSizer = wx.FlexGridSizer(2,6,5,5)
+            dataSizer = wx.FlexGridSizer(1,6,5,5)
             for Pa,val,ref,id in parms:
                 sizeRef = wx.CheckBox(dataDisplay,-1,label=Pa)
                 sizeRef.thisown = False

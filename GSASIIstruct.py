@@ -63,6 +63,22 @@ def ShowControls(Controls):
     print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
     print ' Initial shift factor: ','%.3f'%(Controls['shift factor'])
     
+def GetConstraints(GPXfile):
+    constrList = []
+    file = open(GPXfile,'rb')
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Constraints':
+            constDict = datum[1]
+            for item in constDict:
+                constrList += constDict[item]
+    file.close()
+    return constrList
+    
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
     input: 
@@ -2347,6 +2363,7 @@ def Refine(GPXfile,dlg):
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
+    constrList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -2368,6 +2385,7 @@ def Refine(GPXfile,dlg):
     parmDict.update(hapDict)
     parmDict.update(histDict)
     GetFprime(calcControls,Histograms)
+    for item in constrList: print item
     constrDict,constrFlag,fixedList = G2mv.InputParse([])        #constraints go here?
     groups,parmlist = G2mv.GroupConstraints(constrDict)
     G2mv.GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList)
@@ -2455,6 +2473,7 @@ def SeqRefine(GPXfile,dlg):
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
+    constrList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'

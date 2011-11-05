@@ -126,7 +126,7 @@ rex_vary = re.compile('\s*Vary\s*', re.IGNORECASE)
 rex_varyfree = re.compile('(.*)\s*VaryFree\s*', re.IGNORECASE)
 
 # prefix for parameter names
-paramPrefix = "::constr"
+paramPrefix = "::constr:"
 consNum = 0 # number of the next constraint to be created
 
 def InitVars():
@@ -654,6 +654,9 @@ if __name__ == "__main__":
         "-10e-1 * p1 - -2*p2 + 3.0*p4",
         ]
     constrDict,constrFlag,fixedList = InputParse(mapList)
+    print constrDict
+    print constrFlag
+    print fixedList
     groups,parmlist = GroupConstraints(constrDict)
     GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList)
     print VarRemapShow()
@@ -664,7 +667,7 @@ if __name__ == "__main__":
                       })
     #print 'parmdict start',parmdict
     before = parmdict.copy()
-    Map2Dict(parmdict)
+    Map2Dict(parmdict,[])
     print 'parmdict before and after Map2Dict'
     print '  key / before / after'
     for key in sorted(parmdict.keys()):

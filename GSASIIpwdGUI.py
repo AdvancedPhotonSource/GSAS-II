@@ -365,19 +365,42 @@ def UpdateLimitsGrid(self, data):
         data = [old,new]
         G2plt.PlotPatterns(self)
         
+    def OnLimitCopy(event):
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
+        copyList = []
+        dlg = wx.MultiChoiceDialog(self, 
+            'Copy limits to which histograms?', 'Copy limits', 
+            histList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All' in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
+                self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),
+                    copy.copy(data))
+        finally:
+            dlg.Destroy()
+        
     self.LimitsTable = []
     colLabels = ['Tmin','Tmax']
     rowLabels = ['original','changed']
     Types = 2*[wg.GRID_VALUE_FLOAT+':10,3',]
     self.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     self.dataFrame.SetLabel('Limits')
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataFrame.SetMenuBar(self.dataFrame.LimitMenu)
+    if not self.dataFrame.GetStatusBar():
+        Status = self.dataFrame.CreateStatusBar()
+    self.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
     self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)
     self.dataDisplay.SetTable(self.LimitsTable, True)
     self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
     self.dataDisplay.SetMargins(0,0)
     self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([230,120])
+    self.dataFrame.setSizePosLeft([230,160])
     
 def UpdateInstrumentGrid(self,data):
     if len(data) > 3:                   #powder data

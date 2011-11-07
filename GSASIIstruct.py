@@ -790,7 +790,6 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
         SGData = General['SGData']
         Atoms = Phase['Atoms']
         cell = General['Cell']
-        textureData = General['SH Texture']
         pId = Phase['pId']
         pfx = str(pId)+'::'
         if cell[0]:
@@ -865,20 +864,22 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                             if names[ind] in sigDict:
                                 atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
             PrintAtomsAndSig(General,Atoms,atomsSig)
-            
-        if textureData['Order']:
-            SHtextureSig = {}
-            for name in ['omega','chi','phi']:
-                aname = pfx+'SH '+name
-                textureData['Sample '+name][1] = parmDict[aname]
-                if aname in sigDict:
-                    SHtextureSig['Sample '+name] = sigDict[aname]
-            for name in textureData['SH Coeff'][1]:
-                aname = pfx+name
-                textureData['SH Coeff'][1][name] = parmDict[aname]
-                if aname in sigDict:
-                    SHtextureSig[name] = sigDict[aname]
-            PrintSHtextureAndSig(textureData,SHtextureSig)
+        
+        if 'SH Texture' in General:
+            textureData = General['SH Texture']    
+            if textureData['Order']:
+                SHtextureSig = {}
+                for name in ['omega','chi','phi']:
+                    aname = pfx+'SH '+name
+                    textureData['Sample '+name][1] = parmDict[aname]
+                    if aname in sigDict:
+                        SHtextureSig['Sample '+name] = sigDict[aname]
+                for name in textureData['SH Coeff'][1]:
+                    aname = pfx+name
+                    textureData['SH Coeff'][1][name] = parmDict[aname]
+                    if aname in sigDict:
+                        SHtextureSig[name] = sigDict[aname]
+                PrintSHtextureAndSig(textureData,SHtextureSig)
 
 def GetHistogramPhaseData(Phases,Histograms,Print=True):
     

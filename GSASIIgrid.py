@@ -57,11 +57,14 @@ import GSASIImapvars as G2mv
 [ wxID_BACKCOPY,
 ] = [wx.NewId() for _init_coll_Back_Items in range(1)]
 
+[ wxID_LIMITCOPY,
+] = [wx.NewId() for _init_coll_Limit_Items in range(1)]
+
 [ wxID_SAMPLECOPY,
 ] = [wx.NewId() for _init_coll_Sample_Items in range(1)]
 
-[ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,
-] = [wx.NewId() for _init_coll_Constraint_Items in range(3)]
+[ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
+] = [wx.NewId() for _init_coll_Constraint_Items in range(4)]
 
 [ wxID_RESTRAINTADD,
 ] = [wx.NewId() for _init_coll_Restraint_Items in range(1)]
@@ -109,6 +112,9 @@ class DataFrame(wx.Frame):
     def _init_coll_BackMenu(self,parent):
         parent.Append(menu=self.BackEdit, title='File')
         
+    def _init_coll_LimitMenu(self,parent):
+        parent.Append(menu=self.LimitEdit, title='File')
+        
     def _init_coll_InstMenu(self,parent):
         parent.Append(menu=self.InstEdit, title='Operations')
         
@@ -154,12 +160,14 @@ class DataFrame(wx.Frame):
             help='Reload atom drawing list')
             
     def _init_coll_Constraint_Items(self,parent):
-        parent.Append(id=wxID_CONSTRAINTADD, kind=wx.ITEM_NORMAL,text='Add constraint',
-            help='Add constraint on parameter values')
-        parent.Append(id=wxID_EQUIVADD, kind=wx.ITEM_NORMAL,text='Add equivalence',
-            help='Add equivalence between parameter values')
         parent.Append(id=wxID_HOLDADD, kind=wx.ITEM_NORMAL,text='Add hold',
             help='Add hold on a parameter value')
+        parent.Append(id=wxID_EQUIVADD, kind=wx.ITEM_NORMAL,text='Add equivalence',
+            help='Add equivalence between parameter values')
+        parent.Append(id=wxID_CONSTRAINTADD, kind=wx.ITEM_NORMAL,text='Add constraint',
+            help='Add constraint on parameter values')
+        parent.Append(id=wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add function',
+            help='Add function of parameter values')
         
     def _init_coll_Restraint_Items(self,parent):
         parent.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraint',
@@ -172,6 +180,10 @@ class DataFrame(wx.Frame):
     def _init_coll_Back_Items(self,parent):
         parent.Append(id=wxID_BACKCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy background parameters to other histograms')
+                    
+    def _init_coll_Limit_Items(self,parent):
+        parent.Append(id=wxID_LIMITCOPY, kind=wx.ITEM_NORMAL,text='Copy',
+            help='Copy limits to other histograms')
                     
     def _init_coll_Data_Items(self,parent):
         parent.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
@@ -242,7 +254,6 @@ class DataFrame(wx.Frame):
             id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
         parent.Append(help='Load image controls from file', 
             id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
-
                     
     def _init_coll_Mask_Items(self,parent):
         parent.Append(help='Copy mask to other images', 
@@ -312,6 +323,7 @@ class DataFrame(wx.Frame):
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
         self.BackMenu = wx.MenuBar()
+        self.LimitMenu = wx.MenuBar()
         self.InstMenu = wx.MenuBar()
         self.SampleMenu = wx.MenuBar()
         self.PeakMenu = wx.MenuBar()
@@ -329,6 +341,7 @@ class DataFrame(wx.Frame):
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
         self.BackEdit = wx.Menu(title='')
+        self.LimitEdit = wx.Menu(title='')
         self.InstEdit = wx.Menu(title='')
         self.SampleEdit = wx.Menu(title='')
         self.PeakEdit = wx.Menu(title='')
@@ -356,6 +369,8 @@ class DataFrame(wx.Frame):
         self._init_coll_Mask_Items(self.MaskEdit)
         self._init_coll_BackMenu(self.BackMenu)
         self._init_coll_Back_Items(self.BackEdit)
+        self._init_coll_LimitMenu(self.LimitMenu)
+        self._init_coll_Limit_Items(self.LimitEdit)
         self._init_coll_InstMenu(self.InstMenu)
         self._init_coll_Inst_Items(self.InstEdit)
         self._init_coll_SampleMenu(self.SampleMenu)
@@ -766,12 +781,21 @@ def UpdateConstraints(self,data):
     if not data:
         data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
     Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+    AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
     Natoms,phaseVary,phaseDict,pawleyLookup,FFtable = G2str.GetPhaseData(Phases,Print=False)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder']:
             phaseList.append(item)
     phaseList.sort()
+    phaseAtNames = {}
+    for item in phaseList:
+        Split = item.split(':')
+        if Split[2][:2] in ['AU','Af','dA']:
+            phaseAtNames[item] = AtomDict[int(Split[0])][int(Split[3])][0]
+        else:
+            phaseAtNames[item] = ''
+            
     hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
     hapList = hapDict.keys()
     hapList.sort()
@@ -810,9 +834,13 @@ def UpdateConstraints(self,data):
                 outList.append(item)
         return outList
         
-    def SelectVarbs(FrstVarb,varList,legend,constType):
+    def SelectVarbs(page,FrstVarb,varList,legend,constType):
         #future -  add 'all:all:name', '0:all:name', etc. to the varList
-        dlg = wx.MultiChoiceDialog(self,'Select more variables:'+legend,FrstVarb+' and:',varList)
+        if page[1] == 'phs':
+            atchoice = [item+' for '+phaseAtNames[item] for item in varList]
+            dlg = wx.MultiChoiceDialog(self,'Select more variables:'+legend,FrstVarb+' and:',atchoice)
+        else:
+            dlg = wx.MultiChoiceDialog(self,'Select more variables:'+legend,FrstVarb+' and:',varList)
         varbs = [FrstVarb,]
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
@@ -820,33 +848,22 @@ def UpdateConstraints(self,data):
                 varbs.append(varList[x])
         dlg.Destroy()
         if len(varbs) > 1:
-            if 'equivalents' in constType:
+            if 'equivalence' in constType:
                 constr = []
                 for item in varbs[1:]:
-#                    constr += [[{FrstVarb:1.0},{item:-1.0},0.0,False],]
+#                    constr += [[{FrstVarb:1.0},{item:-1.0},None,None],]
                     constr += [[[1.0,FrstVarb],[-1.0,item],None,None],]
-                return constr
-            else:
+                return constr           #multiple constraints
+            elif 'function' in constType:
+#                constr = map(dict,zip(varbs,[1.0 for i in range(len(varbs))]))
+                constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
+                return [constr+[0.0,False]]         #just one constraint
+            else:       #'constraint'
                 constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
 #                constr = map(dict,zip(varbs,[1.0 for i in range(len(varbs))]))
-                return [constr+[0.0,False]]
+                return [constr+[0.0,None]]          #just one constraint
         return []
              
-    def OnAddEquivalence(event):
-        constr = []
-        page = self.Page
-        choice = scope[page[1]]
-        dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            FrstVarb = choice[2][sel]
-            moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            constr = SelectVarbs(FrstVarb,moreVarb,choice[1],'equivalents')
-            if len(constr) > 0:
-                data[choice[3]] += constr
-        dlg.Destroy()
-        choice[4]()
-   
     def OnAddHold(event):
         for phase in Phases:
             Phase = Phases[phase]
@@ -854,24 +871,70 @@ def UpdateConstraints(self,data):
         constr = []
         page = self.Page
         choice = scope[page[1]]
-        dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+        if page[1] == 'phs':
+            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+        else:    
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
-            data[choice[3]] += [[[0.0,FrstVarb],0.0,False],]
+            data[choice[3]] += [[[0.0,FrstVarb],None,None],]
         dlg.Destroy()
         choice[4]()
         
-    def OnAddConstraint(event):
+    def OnAddEquivalence(event):
         constr = []
         page = self.Page
         choice = scope[page[1]]
-        dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+        if page[1] == 'phs':
+            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+        else:    
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
             moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            constr = SelectVarbs(FrstVarb,moreVarb,choice[1],'')
+            constr = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'equivalence')
+            if len(constr) > 0:
+                data[choice[3]] += constr
+        dlg.Destroy()
+        choice[4]()
+   
+    def OnAddFunction(event):
+        constr = []
+        page = self.Page
+        choice = scope[page[1]]
+        if page[1] == 'phs':
+            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+        else:    
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            FrstVarb = choice[2][sel]
+            moreVarb = FindEquivVarb(FrstVarb,choice[2])
+            constr = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'function')
+            if len(constr) > 0:
+                data[choice[3]] += constr
+        dlg.Destroy()
+        choice[4]()
+                        
+    def OnAddConstraint(event):
+        constr = []
+        page = self.Page
+        choice = scope[page[1]]
+        if page[1] == 'phs':
+            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+        else:    
+            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            FrstVarb = choice[2][sel]
+            moreVarb = FindEquivVarb(FrstVarb,choice[2])
+            constr = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'constraint')
             if len(constr) > 0:
                 data[choice[3]] += constr
         dlg.Destroy()
@@ -887,7 +950,7 @@ def UpdateConstraints(self,data):
                 constSizer.Add((5,5),0)
                 constSizer.Add(constDel)
                 eqString = ' FIXED   '+item[0][1]+'   '
-                constSizer.Add((5,0),0)
+                constSizer.Add((5,0),0)                
             else:
                 constEdit = wx.Button(pageDisplay,-1,'Edit',style=wx.BU_EXACTFIT)
                 constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
@@ -900,6 +963,9 @@ def UpdateConstraints(self,data):
                     constRef.Bind(wx.EVT_CHECKBOX,OnConstRef)
                     Indx[constRef.GetId()] = item
                     constSizer.Add(constRef,0,wx.ALIGN_CENTER_VERTICAL)
+                    eqString = ' FUNCT   '
+                elif isinstance(item[-2],float):
+                    constSizer.Add((5,5),0)
                     eqString = ' CONSTR  '
                 else:
                     constSizer.Add((5,5),0)
@@ -926,12 +992,20 @@ def UpdateConstraints(self,data):
     def OnConstEdit(event):
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
-        const = data[name][Id][-2]
-        if isinstance(data[name][Id][-2],float):
-            items = data[name][Id][:-2]+[[const,'= constant'],[]]
+        const = data[name][Id][-2]        
+        if isinstance(data[name][Id][-1],bool):
+            items = data[name][Id][:-2]+[[],]
+            constType = 'Function'
+            extra = '; sum = new variable'
+        elif isinstance(data[name][Id][-2],float):
+            items = data[name][Id][:-2]+[[const,'= fixed value'],[]]
+            constType = 'Constraint'
+            extra = ' sum = constant'
         else:
             items = data[name][Id][:-2]+[[],]
-        dlg = self.SumDialog(self,'Constraint','Enter value for each term in constraint','',items)
+            constType = 'Equivalence'
+            extra = '; sum = 0'
+        dlg = self.SumDialog(self,constType,'Enter value for each term in constraint'+extra,'',items)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetData()
@@ -950,12 +1024,13 @@ def UpdateConstraints(self,data):
         HAPSizer = wx.BoxSizer(wx.VERTICAL)
         HAPSizer.Add((5,5),0)
         HAPSizer.Add(ConstSizer('HAP',HAPDisplay))
-        HAPSizer.Layout()
-        HAPDisplay.SetSizer(HAPSizer)
-        Size = HAPSizer.Fit(self.dataFrame)
-        Size[0] = max(450,Size[0])
-        Size[1] += 26                           #compensate for status bar
+        HAPDisplay.SetSizer(HAPSizer,True)
+        Size = HAPSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
         HAPDisplay.SetSize(Size)
+        HAPConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],250)
         self.dataFrame.setSizePosLeft(Size)
         
     def UpdateHistConstr():
@@ -964,12 +1039,13 @@ def UpdateConstraints(self,data):
         HistSizer = wx.BoxSizer(wx.VERTICAL)
         HistSizer.Add((5,5),0)        
         HistSizer.Add(ConstSizer('Hist',HistDisplay))
-        HistSizer.Layout()
-        HistDisplay.SetSizer(HistSizer)
-        Size = HistSizer.Fit(self.dataFrame)
-        Size[0] = max(450,Size[0])
-        Size[1] += 26                           #compensate for status bar
+        HistDisplay.SetSizer(HistSizer,True)
+        Size = HistSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
         HistDisplay.SetSize(Size)
+        HistConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],250)
         self.dataFrame.setSizePosLeft(Size)
         
     def UpdatePhaseConstr():
@@ -978,12 +1054,13 @@ def UpdateConstraints(self,data):
         PhaseSizer = wx.BoxSizer(wx.VERTICAL)
         PhaseSizer.Add((5,5),0)        
         PhaseSizer.Add(ConstSizer('Phase',PhaseDisplay))
-        PhaseSizer.Layout()
-        PhaseDisplay.SetSizer(PhaseSizer)
-        Size = PhaseSizer.Fit(self.dataFrame)
-        Size[1] += 26                           #compensate for status bar
-        Size[0] = max(450,Size[0])
+        PhaseDisplay.SetSizer(PhaseSizer,True)
+        Size = PhaseSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
         PhaseDisplay.SetSize(Size)
+        PhaseConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],250)
         self.dataFrame.setSizePosLeft(Size)
     
     def OnPageChanged(event):
@@ -1016,10 +1093,11 @@ def UpdateConstraints(self,data):
     self.dataFrame.SetLabel('Constraints')
     if not self.dataFrame.GetStatusBar():
         Status = self.dataFrame.CreateStatusBar()
-    SetStatusLine('NB: Set parameters to be varied first')
+    SetStatusLine('')
     
     self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddConstraint, id=wxID_CONSTRAINTADD)
+    self.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=wxID_FUNCTADD)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=wxID_EQUIVADD)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=wxID_HOLDADD)
     self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())

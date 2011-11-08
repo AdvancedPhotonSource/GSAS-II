@@ -18,18 +18,19 @@ import GSASIIpath
 import numpy as np
 
 def GetFormFactorCoeff(El):
-    """Read form factor coefficients from `atomdata.asc` file
+    """Read X-ray form factor coefficients from `atomdata.asc` file
 
     :param El: element 1-2 character symbol case irrevelant
     :return: `FormFactors`: list of form factor dictionaries
     
-    Each form factor dictionary is:
+    Each X-ray form factor dictionary is:
     
     * `Symbol`: 4 character element symbol with valence (e.g. 'NI+2')
     * `Z`: atomic number
     * `fa`: 4 A coefficients
     * `fb`: 4 B coefficients
-    * `fc`: C coefficient 
+    * `fc`: C coefficient
+    
     """
     ElS = El.upper()
     ElS = ElS.rjust(2)
@@ -92,6 +93,7 @@ def GetAtomInfo(El):
         sys.exit()
     S = '1'
     AtomInfo = {}
+    Isotopes = {}
     Mass = []
     while S:
         S = FFdata.readline()
@@ -99,7 +101,21 @@ def GetAtomInfo(El):
             if S[5:6] == '_':
                 if not Mass:                                 #picks 1st one; natural abundance or 1st isotope
                     Mass = float(S[10:19])
-                if S[5:9] == '_SIZ':
+                if S[6] in [' ','1','2','3','4','5','6','7','8','9']:                        
+                    isoName = S[6:9]
+                    if isoName == '   ':
+                        isoName = 'Nat. Abund.'              #natural abundance
+                    if S[76:78] in ['LS','BW']:     #special anomalous scattering length info
+                        St = [S[10:19],S[19:25],S[25:31],S[31:38],S[38:44],S[44:50],
+                            S[50:56],S[56:62],S[62:68],S[68:74],]
+                        Vals = []
+                        for item in St:
+                            if item.strip():
+                                Vals.append(float(item.strip()))
+                        Isotopes[isoName.rstrip()] = Vals                        
+                    else:
+                        Isotopes[isoName.rstrip()] = [float(S[10:19]),float(S[19:25])]
+                elif S[5:9] == '_SIZ':
                     Z=int(S[:2])
                     Symbol = S[3:5].strip().lower().capitalize()
                     Drad = float(S[12:22])
@@ -107,7 +123,7 @@ def GetAtomInfo(El):
                     Vdrad = float(S[32:38])
                     Color = ET.ElTable[Elements.index(Symbol)][6]
     FFdata.close()
-    AtomInfo={'Symbol':Symbol,'Mass':Mass,'Z':Z,'Drad':Drad,'Arad':Arad,'Vdrad':Vdrad,'Color':Color}    
+    AtomInfo={'Symbol':Symbol,'Isotopes':Isotopes,'Mass':Mass,'Z':Z,'Drad':Drad,'Arad':Arad,'Vdrad':Vdrad,'Color':Color}    
     return AtomInfo
       
 def GetXsectionCoeff(El):
@@ -243,6 +259,27 @@ def ScatFac(El, SQ):
     fb = np.array(El['fb'])
     t = -fb[:,np.newaxis]*SQ
     return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
+        
+def BlenFac(El,wave):
+    pass
+    
+#        F(I) = BLEN(I)
+#        IF ( BFAN(1,I).NE.0.0 ) THEN
+#          EMEV = 81.80703/XRAY**2
+#          GAM2 = BFAN(4,I)**2
+#          T1 = EMEV-BFAN(3,I)
+#          D1 = T1**2+GAM2
+#          T2 = EMEV-BFAN(6,I)
+#          D2 = T2**2+GAM2
+#          T3 = EMEV-BFAN(8,I)
+#          D3 = T3**2+GAM2
+#          FP(I) = BFAN(1,I)*(T1/D1+BFAN(5,I)*T2/D2+BFAN(7,I)*T3/D3)
+#          FPP(I) = -BFAN(2,I)*(1.0/D1+BFAN(5,I)/D2+BFAN(7,I)/D3)
+#        ELSE
+#          FP(I) = 0.0
+#          FPP(I) = 0.0
+#        END IF
+    
     
 def ComptonFac(El,SQ):
     """compute Compton scattering factor

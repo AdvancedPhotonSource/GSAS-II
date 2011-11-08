@@ -146,6 +146,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
         generalData = data['General']
         atomData = data['Atoms']
         generalData['AtomTypes'] = []
+        generalData['Isotopes'] = {}
+        if 'Isotope' not in generalData:
+            generalData['Isotope'] = {}
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
@@ -165,6 +168,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             elif atom[ct] != 'UNK':
                 Info = G2elem.GetAtomInfo(atom[ct])
                 generalData['AtomTypes'].append(atom[ct])
+                generalData['Isotopes'][atom[ct]] = Info['Isotopes']
                 generalData['BondRadii'].append(Info['Drad'])
                 generalData['AngleRadii'].append(Info['Arad'])
                 generalData['vdWRadii'].append(Info['Vdrad'])
@@ -319,8 +323,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     generalData['Pawley dmin'] = dmin
             except ValueError:
                 pass
-            pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error            
-                                    
+            pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error       
+            
+        def OnIsotope(event):
+            Obj = event.GetEventObject()
+            generalData['Isotope'][Indx[Obj.GetId()]] = Obj.GetValue() #mass too
+                                               
         cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
         [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],
         [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
@@ -392,6 +400,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         mainSizer.Add(cellSizer,0)
         mainSizer.Add((5,5),0)
         
+        Indx = {}
         if len(generalData['AtomTypes']):
             mass = 0.
             for i,elem in enumerate(generalData['AtomTypes']):
@@ -412,12 +421,22 @@ def UpdatePhaseData(self,Item,data,oldPage):
             mainSizer.Add(denSizer)
             mainSizer.Add((5,5),0)
             
-            elemSizer = wx.FlexGridSizer(7,len(generalData['AtomTypes'])+1,1,1)
+            elemSizer = wx.FlexGridSizer(8,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(dataDisplay,label='Elements'),0,wx.ALIGN_CENTER_VERTICAL)
             for elem in generalData['AtomTypes']:
                 typTxt = wx.TextCtrl(dataDisplay,value=elem,style=wx.TE_READONLY)
                 typTxt.SetBackgroundColour(VERY_LIGHT_GREY)
                 elemSizer.Add(typTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label='Isotope'),0,wx.ALIGN_CENTER_VERTICAL)
+            for elem in generalData['AtomTypes']:
+                choices = generalData['Isotopes'][elem].keys()
+                if elem not in generalData['Isotope']:
+                    generalData['Isotope'][elem] = 'Nat. Abund.'
+                isoSel = wx.ComboBox(dataDisplay,-1,value=generalData['Isotope'][elem],choices=choices,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
+                Indx[isoSel.GetId()] = elem
+                elemSizer.Add(isoSel,1,wx.ALIGN_CENTER_VERTICAL)
             elemSizer.Add(wx.StaticText(dataDisplay,label='No. per cell'),0,wx.ALIGN_CENTER_VERTICAL)
             for elem in generalData['AtomTypes']:
                 numbTxt = wx.TextCtrl(dataDisplay,value='%.1f'%(generalData['NoAtoms'][elem]),

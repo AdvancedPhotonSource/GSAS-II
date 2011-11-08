@@ -379,6 +379,21 @@ def GetFFtable(General):
                 FFtable[El] = item
     return FFtable
     
+def GetBLtable(General):
+    ''' returns a dictionary of neutron scattering length data for atom types & isotopes found in General
+    input:
+        General = dictionary of phase info.; includes AtomTypes & Isotopes
+    return:
+        BLtable = dictionary of scattering length data; key is atom type
+    '''
+    atomTypes = General['AtomTypes']
+    BLtable = {}
+    isotopes = General['Isotopes']
+    isotope = General['Isotope']
+    for El in atomTypes:
+        BLtable[El] = isotopes[El][isotope[El]]
+    return BLtable
+        
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
     if SGLaue in ['-1','2/m','mmm']:
         return                      #no Pawley symmetry required constraints
@@ -491,7 +506,8 @@ def GetPhaseData(PhaseData,Print=True):
     phaseDict = {}
     phaseConstr = {}
     pawleyLookup = {}
-    FFtables = {}
+    FFtables = {}                   #scattering factors - xrays
+    BLtables = {}                   # neutrons
     Natoms = {}
     AtMults = {}
     AtIA = {}
@@ -502,7 +518,9 @@ def GetPhaseData(PhaseData,Print=True):
         pId = PhaseData[name]['pId']
         pfx = str(pId)+'::'
         FFtable = GetFFtable(General)
+        BLtable = GetBLtable(General)
         FFtables.update(FFtable)
+        BLtables.update(BLtable)
         Atoms = PhaseData[name]['Atoms']
         try:
             PawleyRef = PhaseData[name]['Pawley ref']
@@ -592,7 +610,7 @@ def GetPhaseData(PhaseData,Print=True):
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
                 
-    return Natoms,phaseVary,phaseDict,pawleyLookup,FFtables
+    return Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables
     
 def getVCov(varyNames,varyList,covMatrix):
     vcov = np.zeros((len(varyNames),len(varyNames)))
@@ -1480,13 +1498,14 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)
 
-def GetAtomFXU(pfx,FFtables,calcControls,parmDict):
+def GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict):
     Natoms = calcControls['Natoms'][pfx]
     Tdata = Natoms*[' ',]
     Mdata = np.zeros(Natoms)
     IAdata = Natoms*[' ',]
     Fdata = np.zeros(Natoms)
     FFdata = []
+    BLdata = []
     Xdata = np.zeros((3,Natoms))
     dXdata = np.zeros((3,Natoms))
     Uisodata = np.zeros(Natoms)
@@ -1502,7 +1521,8 @@ def GetAtomFXU(pfx,FFtables,calcControls,parmDict):
             if parm in parmDict:
                 keys[key][iatm] = parmDict[parm]
         FFdata.append(FFtables[Tdata[iatm]])
-    return FFdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
+        BLdata.append(BLtables[Tdata[iatm]])
+    return FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
     
 def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     ''' Compute structure factors for all h,k,l for phase
@@ -1520,9 +1540,14 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
     FFtables = calcControls['FFtables']
-    FFdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,calcControls,parmDict)
-    FP = np.array([El[hfx+'FP'] for El in FFdata])
-    FPP = np.array([El[hfx+'FPP'] for El in FFdata])
+    BLtables = calcControls['BLtables']
+    FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict)
+    if 'N' in parmDict[hfx+'Type']:
+        FP = 0.
+        FPP = 0.
+    else:
+        FP = np.array([El[hfx+'FP'] for El in FFdata])
+        FPP = np.array([El[hfx+'FPP'] for El in FFdata])
     maxPos = len(SGData['SGOps'])
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1530,7 +1555,10 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         fbs = np.array([0,0])
         H = refl[:3]
         SQ = 1./(2.*refl[4])**2
-        FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
+        if 'N' in parmDict[hfx+'Type']:
+            FF = np.array([El[1] for El in BLdata])
+        else:       #'X'
+            FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
         SQfactor = 4.0*SQ*twopisq
         Uniq = refl[11]
         phi = refl[12]
@@ -1560,9 +1588,14 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
     FFtables = calcControls['FFtables']
-    FFdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,calcControls,parmDict)
-    FP = np.array([El[hfx+'FP'] for El in FFdata])
-    FPP = np.array([El[hfx+'FPP'] for El in FFdata])
+    BLtables = calcControls['BLtables']
+    FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict)
+    if 'N' in parmDict[hfx+'Type']:
+        FP = 0.
+        FPP = 0.
+    else:
+        FP = np.array([El[hfx+'FP'] for El in FFdata])
+        FPP = np.array([El[hfx+'FPP'] for El in FFdata])
     maxPos = len(SGData['SGOps'])       
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1574,7 +1607,10 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     for iref,refl in enumerate(refList):
         H = np.array(refl[:3])
         SQ = 1./(2.*refl[4])**2          # or (sin(theta)/lambda)**2
-        FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
+        if 'N' in parmDict[hfx+'Type']:
+            FF = np.array([El[1] for El in BLdata])
+        else:       #'X'
+            FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
         SQfactor = 8.0*SQ*np.pi**2
         Uniq = refl[11]
         phi = refl[12]
@@ -1779,7 +1815,8 @@ def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
     
 def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
-    Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
+    if 'X' in parmDict[hfx+'Type']:
+        Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
     Icorr *= GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
     if pfx+'SHorder' in parmDict:
         Icorr *= SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict)
@@ -1788,8 +1825,11 @@ def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
 def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     dIdsh = 1./parmDict[hfx+'Scale']
     dIdsp = 1./parmDict[phfx+'Scale']
-    pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
-    dIdPola /= pola
+    if 'X' in parmDict[hfx+'Type']:
+        pola,dIdPola = G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])
+        dIdPola /= pola
+    else:       #'N'
+        dIdPola = 0.0
     POcorr,dIdPO = GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
     for iPO in dIdPO:
         dIdPO[iPO] /= POcorr
@@ -2374,9 +2414,10 @@ def Refine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables = GetPhaseData(Phases)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases)
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
+    calcControls['BLtables'] = BLtables
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms)
     calcControls.update(controlDict)
     histVary,histDict,controlDict = GetHistogramData(Histograms)
@@ -2484,7 +2525,7 @@ def SeqRefine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables = GetPhaseData(Phases,False)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,False)
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:
@@ -2501,6 +2542,7 @@ def SeqRefine(GPXfile,dlg):
         calcControls = {}
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
+        calcControls['BLtables'] = BLtables
         varyList = []
         parmDict = {}
         Histo = {histogram:Histograms[histogram],}

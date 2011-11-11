@@ -697,12 +697,14 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
     
     Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
+#    Df = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     Df /= np.sum(Df)
     return Df
 
 def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
+#    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     sumDf = np.sum(Df)
     return Df,dFdp,dFds,dFdg,dFdsh
     

@@ -172,7 +172,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 generalData['BondRadii'].append(Info['Drad'])
                 generalData['AngleRadii'].append(Info['Arad'])
                 generalData['vdWRadii'].append(Info['Vdrad'])
-                generalData['AtomMass'].append(Info['Mass'])
+                if atom[ct] in generalData['Isotope']:
+                    generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]][0])
+                else:
+                    generalData['AtomMass'].append(Info['Mass'])
                 generalData['NoAtoms'][atom[ct]] = atom[cs-1]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
 
@@ -327,7 +330,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def OnIsotope(event):
             Obj = event.GetEventObject()
-            generalData['Isotope'][Indx[Obj.GetId()]] = Obj.GetValue() #mass too
+            item = Indx[Obj.GetId()]
+            isotope = Obj.GetValue()
+            generalData['Isotope'][item] = isotope
+            indx = generalData['AtomTypes'].index(item)
+            data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
+            UpdateGeneral()
                                                
         cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
         [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],

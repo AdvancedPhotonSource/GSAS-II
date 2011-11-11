@@ -64,7 +64,7 @@ def ShowControls(Controls):
     print ' Initial shift factor: ','%.3f'%(Controls['shift factor'])
     
 def GetConstraints(GPXfile):
-    constrList = []
+    constList = []
     file = open(GPXfile,'rb')
     while True:
         try:
@@ -75,9 +75,25 @@ def GetConstraints(GPXfile):
         if datum[0] == 'Constraints':
             constDict = datum[1]
             for item in constDict:
-                constrList += constDict[item]
+                constList += constDict[item]
     file.close()
-    return constrList
+    constDict = []
+    constFlag = []
+    fixedList = []
+    for item in constList:
+        if item[-2]:
+            fixedList.append(str(item[-2]))
+        else:
+            fixedList.append('0')
+        if item[-1]:
+            constFlag.append(['VARY'])
+        else:
+            constFlag.append([])
+        itemDict = {}
+        for term in item[:-2]:
+            itemDict[term[1]] = term[0]
+        constDict.append(itemDict)
+    return constDict,constFlag,fixedList
     
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -391,7 +407,7 @@ def GetBLtable(General):
     isotopes = General['Isotopes']
     isotope = General['Isotope']
     for El in atomTypes:
-        BLtable[El] = isotopes[El][isotope[El]]
+        BLtable[El] = [isotope[El],isotopes[El][isotope[El]]]
     return BLtable
         
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
@@ -451,7 +467,7 @@ def cellVary(pfx,SGData):
 def GetPhaseData(PhaseData,Print=True):
             
     def PrintFFtable(FFtable):
-        print '\n Scattering factors:'
+        print '\n X-ray scattering factors:'
         print '   Symbol     fa                                      fb                                      fc'
         print 99*'-'
         for Ename in FFtable:
@@ -460,6 +476,23 @@ def GetPhaseData(PhaseData,Print=True):
             fb = ffdata['fb']
             print ' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
                 (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc'])
+                
+    def PrintBLtable(BLtable):
+        print '\n Neutron scattering factors:'
+        print '   Symbol   isotope       mass       b       resonant terms'
+        print 99*'-'
+        for Ename in BLtable:
+            bldata = BLtable[Ename]
+            isotope = bldata[0]
+            mass = bldata[1][0]
+            blen = bldata[1][1]
+            bres = []
+            if len(bldata[1]) > 2:
+                bres = bldata[1][2:]
+            line = ' %8s%11s %10.3f %8.3f'%(Ename.ljust(8),isotope.center(11),mass,blen)
+            for item in bres:
+                line += '%10.5g'%(item)
+            print line
                 
     def PrintAtoms(General,Atoms):
         print '\n Atoms:'
@@ -484,8 +517,13 @@ def GetPhaseData(PhaseData,Print=True):
                 print line
         
     def PrintTexture(textureData):
-        print '\n Spherical harmonics texture: Order:' + \
-            str(textureData['Order'])+' Refine? '+str(textureData['SH Coeff'][0])
+        topstr = '\n Spherical harmonics texture: Order:' + \
+            str(textureData['Order'])
+        if textureData['Order']:
+            print topstr+' Refine? '+str(textureData['SH Coeff'][0])
+        else:
+            print topstr
+            return
         names = ['omega','chi','phi']
         line = '\n'
         for name in names:
@@ -526,21 +564,13 @@ def GetPhaseData(PhaseData,Print=True):
             PawleyRef = PhaseData[name]['Pawley ref']
         except KeyError:
             PawleyRef = []
-        if Print: print '\n Phase name: ',General['Name']
         SGData = General['SGData']
         SGtext = G2spc.SGPrint(SGData)
-        if Print: 
-            for line in SGtext: print line
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5]})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
-        if Print: print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
-            ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
-            '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
-        if Print and FFtable:
-            PrintFFtable(FFtable)
         Natoms[pfx] = 0
         if Atoms:
             if General['Type'] == 'nuclear':
@@ -582,6 +612,7 @@ def GetPhaseData(PhaseData,Print=True):
 #            elif General['Type'] == 'magnetic':
 #            elif General['Type'] == 'macromolecular':
 
+                
             if 'SH Texture' in General:
                 textureData = General['SH Texture']
                 phaseDict[pfx+'SHmodel'] = SamSym[textureData['Model']]
@@ -596,7 +627,16 @@ def GetPhaseData(PhaseData,Print=True):
                         phaseVary.append(pfx+name)
                 
             if Print:
+                print '\n Phase name: ',General['Name']
+                print 135*'-'
+                PrintFFtable(FFtable)
+                PrintBLtable(BLtable)
+                print ''
+                for line in SGtext: print line
                 PrintAtoms(General,Atoms)
+                print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
+                    ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
+                    '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
                 if 'SH Texture' in General:
                     PrintTexture(textureData)
                     
@@ -1521,7 +1561,7 @@ def GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict):
             if parm in parmDict:
                 keys[key][iatm] = parmDict[parm]
         FFdata.append(FFtables[Tdata[iatm]])
-        BLdata.append(BLtables[Tdata[iatm]])
+        BLdata.append(BLtables[Tdata[iatm]][1])
     return FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
     
 def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
@@ -1543,8 +1583,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     BLtables = calcControls['BLtables']
     FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict)
     if 'N' in parmDict[hfx+'Type']:
-        FP = 0.
-        FPP = 0.
+        FP,FPP = G2el.BlenRes(BLdata,parmDict[hfx+'Lam'])
     else:
         FP = np.array([El[hfx+'FP'] for El in FFdata])
         FPP = np.array([El[hfx+'FPP'] for El in FFdata])
@@ -1646,7 +1685,7 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
         dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
         if not SGData['SGInv']:
-            dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)
+            dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #problem here if occ=0 for some atom
             dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)          
             dfbdui = np.sum(-SQfactor*fb,axis=2)
             dfbdua = np.sum(-Hij*fb[:,:,:,np.newaxis],axis=2)
@@ -2329,7 +2368,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
 
 def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
-    G2mv.Dict2Map(parmdict)
+    G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
     dMdv = np.empty(0)
     for histogram in Histograms:
@@ -2352,7 +2391,7 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
 def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
     parmdict.update(zip(varylist,values))
     Values2Dict(parmdict, varylist, values)
-    G2mv.Dict2Map(parmdict)
+    G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
     M = np.empty(0)
     sumwYo = 0
@@ -2404,7 +2443,7 @@ def Refine(GPXfile,dlg):
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
-    constrList = GetConstraints(GPXfile)
+    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -2427,10 +2466,9 @@ def Refine(GPXfile,dlg):
     parmDict.update(hapDict)
     parmDict.update(histDict)
     GetFprime(calcControls,Histograms)
-    for item in constrList: print item
-    constrDict,constrFlag,fixedList = G2mv.InputParse([])        #constraints go here?
     groups,parmlist = G2mv.GroupConstraints(constrDict)
-    G2mv.GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList)
+    G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
+    print G2mv.VarRemapShow(varyList)
     G2mv.Map2Dict(parmDict,varyList)
 
     while True:
@@ -2452,7 +2490,7 @@ def Refine(GPXfile,dlg):
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
-        G2mv.Dict2Map(parmDict)
+        G2mv.Dict2Map(parmDict,varyList)
         newAtomDict = ApplyXYZshifts(parmDict,varyList)
         
         Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
@@ -2479,12 +2517,14 @@ def Refine(GPXfile,dlg):
                     del(varyList[ipvt-1])
                     break
 
-#    print 'dependentParmList: ',G2mv.dependentParmList
-#    print 'arrayList: ',G2mv.arrayList
-#    print 'invarrayList: ',G2mv.invarrayList
-#    print 'indParmList: ',G2mv.indParmList
-#    print 'fixedDict: ',G2mv.fixedDict
+    print 'dependentParmList: ',G2mv.dependentParmList
+    print 'arrayList: ',G2mv.arrayList
+    print 'invarrayList: ',G2mv.invarrayList
+    print 'indParmList: ',G2mv.indParmList
+    print 'fixedDict: ',G2mv.fixedDict
+    print 'test1'
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
+    print 'test2'
     sigDict = dict(zip(varyList,sig))
     covData = {'variables':result[0],'varyList':varyList,'sig':sig,
         'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict}
@@ -2493,17 +2533,17 @@ def Refine(GPXfile,dlg):
     SetHistogramData(parmDict,sigDict,Histograms)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
 #for testing purposes!!!
-#    file = open('structTestdata.dat','wb')
-#    cPickle.dump(parmDict,file,1)
-#    cPickle.dump(varyList,file,1)
-#    for histogram in Histograms:
-#        if 'PWDR' in histogram[:4]:
-#            Histogram = Histograms[histogram]
-#    cPickle.dump(Histogram,file,1)
-#    cPickle.dump(Phases,file,1)
-#    cPickle.dump(calcControls,file,1)
-#    cPickle.dump(pawleyLookup,file,1)
-#    file.close()
+    file = open('structTestdata.dat','wb')
+    cPickle.dump(parmDict,file,1)
+    cPickle.dump(varyList,file,1)
+    for histogram in Histograms:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+    cPickle.dump(Histogram,file,1)
+    cPickle.dump(Phases,file,1)
+    cPickle.dump(calcControls,file,1)
+    cPickle.dump(pawleyLookup,file,1)
+    file.close()
 
 def SeqRefine(GPXfile,dlg):
     import cPickle
@@ -2515,7 +2555,7 @@ def SeqRefine(GPXfile,dlg):
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
-    constrList = GetConstraints(GPXfile)
+    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -2579,7 +2619,7 @@ def SeqRefine(GPXfile,dlg):
         GetFprime(calcControls,Histo)
         constrDict,constrFlag,fixedList = G2mv.InputParse([])        #constraints go here?
         groups,parmlist = G2mv.GroupConstraints(constrDict)
-        G2mv.GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList)
+        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
         G2mv.Map2Dict(parmDict,varyList)
     
         while True:
@@ -2599,7 +2639,7 @@ def SeqRefine(GPXfile,dlg):
             runtime = time.time()-begin
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
-            G2mv.Dict2Map(parmDict)
+            G2mv.Dict2Map(parmDict,varyList)
             newAtomDict = ApplyXYZshifts(parmDict,varyList)
             
             Rwp = np.sqrt(chisq/Histo['sumwYo'])*100.      #to %

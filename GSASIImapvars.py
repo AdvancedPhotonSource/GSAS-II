@@ -89,7 +89,6 @@ Global Variables:
    indParmList: a list of groups of Independent parameters defined in
      each group. This contains both parameters used in parameter
      redefinitions as well as names of generated new parameters.
-   varyList: a list of parameters that have been flagged to be varied.
    
    arrayList: a list by group of relationship matrices to relate
      parameters in dependentParmList to those in indParmList. Unlikely
@@ -115,7 +114,6 @@ invarrayList = [] # a list of inverse relationship matrices
 indParmList = [] # a list of names for the new parameters
 fixedDict = {} # a dictionary containing the fixed values corresponding to defined parameter equations
                # key is original ascii string, value is float
-varyList = [] # a list of varied constraints
 
 # compile regular expressions used for parsing input
 rex_mult = re.compile('[+-]?[0-9.]+[eE]?[+-]?[0-9]*')
@@ -131,13 +129,12 @@ consNum = 0 # number of the next constraint to be created
 
 def InitVars():
     '''Initializes all constraint information'''
-    global dependentParmList,arrayList,invarrayList,indParmList,fixedDict,varyList,consNum
+    global dependentParmList,arrayList,invarrayList,indParmList,fixedDict,consNum
     dependentParmList = [] # contains a list of parameters in each group
     arrayList = [] # a list of of relationship matrices 
     invarrayList = [] # a list of inverse relationship matrices 
     indParmList = [] # a list of names for the new parameters
     fixedDict = {} # a dictionary containing the fixed values corresponding to defined parameter equations
-    varyList = [] # a list of varied constraints
     consNum = 0 # number of the next constraint to be created
 
 def InputParse(mapList):
@@ -300,11 +297,11 @@ def GroupConstraints(constrDict):
         ParmList.append(varlist)
     return groups,ParmList
 
-def GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList):
+def GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList):
     '''Takes a list of relationship entries comprising a group of constraints and
     builds the relationship lists and their inverse and stores them in global variables
     '''
-    global dependentParmList,arrayList,invarrayList,indParmList,varyList,consNum
+    global dependentParmList,arrayList,invarrayList,indParmList,consNum
     for group,varlist in zip(groups,parmlist):
         VaryFree = False
         for row in group:
@@ -336,7 +333,7 @@ def GenerateConstraints(groups,parmlist,constrDict,constrFlag,fixedList):
     global fixedDict 
     # key is original ascii string, value is float
     for fixedval in fixedList:
-        if fixedval is not None:
+        if fixedval:
             fixedDict[fixedval] = float(fixedval)
 
     if debug: # on debug, show what is parsed & generated, semi-readable
@@ -384,12 +381,12 @@ def StoreEquivalence(independentVar,dependentList):
     dependentParmList.append(mapList)
     return
 
-def VarRemapShow():
+def VarRemapShow(varyList):
     '''List out the saved relationships.
     Returns a string containing the details.
     '''
     s = 'Mapping relations:\n'
-    global dependentParmList,arrayList,invarrayList,indParmList,fixedDict,varyList
+    global dependentParmList,arrayList,invarrayList,indParmList,fixedDict
     for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):
         i = 0
         for mv in mapvars:
@@ -442,14 +439,16 @@ def Map2Dict(parmDict,varyList):
             except ValueError:
                 pass
         if multarr is None: continue
-        valuelist = [parmdict[var] for var in varlist]
+        valuelist = [parmDict[var] for var in varlist]
         parmDict.update(zip(mapvars,
                             np.dot(multarr,np.array(valuelist)))
                         )
     # overwrite dict with constraints - why not parmDict.update(fixDict)?
     parmDict.update(fixedDict)
 
-def Dict2Map(parmDict):
+def Dict2Map(parmDict,varyList):
+    #I think this needs fixing to update parmDict with new values 
+    #   from the constraints based on what is in varyList - RVD 
     '''Convert the remapped values back to the original parameters
     
     This should be done to apply constraints to parameter values (use
@@ -457,7 +456,8 @@ def Dict2Map(parmDict):
     evaluation, before any computation is done
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,fixedDict
-    # reset fixed values (should not be needed, but very quick)
+    # reset fixed values (should not be needed, but very quick) 
+    # - this seems to update parmDict with {'0':0.0} & {'1.0':1.0} - probably not what was intended
     parmDict.update(fixedDict)
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         if invmultarr is None: continue
@@ -674,7 +674,7 @@ if __name__ == "__main__":
         print '  '+key,'\t',before.get(key),'\t',parmdict[key]
 
     before = parmdict.copy()
-    Dict2Map(parmdict)
+    Dict2Map(parmdict,[])
     print 'after Dict2Map'
     print '  key / before / after'
     for key in sorted(parmdict.keys()):

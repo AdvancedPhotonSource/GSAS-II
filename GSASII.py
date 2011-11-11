@@ -638,7 +638,7 @@ class GSASII(wx.Frame):
             for id,item in enumerate(self.data[:-1]):
                 name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(200,20))
                 name.SetEditable(False)
-                scale = wx.TextCtrl(panel,id,str(item[0]),style=wx.TE_PROCESS_ENTER)
+                scale = wx.TextCtrl(panel,id,'%.3f'%(item[0]),style=wx.TE_PROCESS_ENTER)
                 scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
                 scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
                 dataGridSizer.Add(scale,0,wx.LEFT,10)
@@ -679,7 +679,7 @@ class GSASII(wx.Frame):
             except ValueError:
                 if value and '-' not in value[0]:
                     print 'bad input - numbers only'
-                    self.FindWindowById(id).SetValue('0.0')
+                    self.FindWindowById(id).SetValue('0.000')
             
         def OnOk(self,event):
             parent = self.GetParent()
@@ -1478,7 +1478,7 @@ class GSASII(wx.Frame):
     def OnViewLSParms(self,event):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
-        Natoms,phaseVary,phaseDict,pawleyLookup,FFtable = G2str.GetPhaseData(Phases,Print=False)        
+        Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
         varyList = phaseVary+hapVary+histVary

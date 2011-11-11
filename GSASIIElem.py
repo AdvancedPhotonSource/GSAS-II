@@ -251,7 +251,7 @@ def GetMagFormFacCoeff(El):
 
 def ScatFac(El, SQ):
     """compute value of form factor
-    @param El: element dictionary  defined in GetFormFactorCoeff 
+    @param El: element dictionary defined in GetFormFactorCoeff 
     @param SQ: (sin-theta/lambda)**2
     @return: real part of form factor
     """
@@ -260,26 +260,34 @@ def ScatFac(El, SQ):
     t = -fb[:,np.newaxis]*SQ
     return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
         
-def BlenFac(El,wave):
-    pass
-    
-#        F(I) = BLEN(I)
-#        IF ( BFAN(1,I).NE.0.0 ) THEN
-#          EMEV = 81.80703/XRAY**2
-#          GAM2 = BFAN(4,I)**2
-#          T1 = EMEV-BFAN(3,I)
-#          D1 = T1**2+GAM2
-#          T2 = EMEV-BFAN(6,I)
-#          D2 = T2**2+GAM2
-#          T3 = EMEV-BFAN(8,I)
-#          D3 = T3**2+GAM2
-#          FP(I) = BFAN(1,I)*(T1/D1+BFAN(5,I)*T2/D2+BFAN(7,I)*T3/D3)
-#          FPP(I) = -BFAN(2,I)*(1.0/D1+BFAN(5,I)/D2+BFAN(7,I)/D3)
-#        ELSE
-#          FP(I) = 0.0
-#          FPP(I) = 0.0
-#        END IF
-    
+def BlenRes(BLdata,wave):
+    FP = []
+    FPP = []
+    Emev = 81.80703/wave**2
+    for BL in BLdata:
+        if len(BL) >= 6:
+            Emev = 81.80703/wave**2
+            G2 = BL[5]**2
+            T = [Emev-BL[4],0,0]
+            D = [T**2+G2,0,0]
+            fp = T/D
+            fpp = 1.0/D
+            if len(BL) == 8:
+                T = Emev-BL[7]
+                D = T**2+G2
+                fp += BL[6]*T/D
+                fpp += BL[6]/D
+            if len(BL) == 10:
+                T = Emev-BL[9]
+                D = T**2+G2
+                fp += BL[8]*T/D
+                fpp += BL[8]/D
+            FP.append(BL[2]*fp)
+            FPP.append(-BL[3]*fpp)
+        else:
+            FP.append(0.0)
+            FPP.append(0.0)
+    return np.array(FP),np.array(FPP)
     
 def ComptonFac(El,SQ):
     """compute Compton scattering factor

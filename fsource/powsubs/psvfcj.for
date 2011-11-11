@@ -125,17 +125,14 @@ c
 C handle the case where there is asymmetry
 c
       IF (A .ne. 0.0) then
-        Einfl = Acosd(cos2THETA) ! 2phi(infl) FCJ eq 5 (degrees)
+        Einfl = Acosd(cos2THETA)
         tmp2 = 1.0 + ApB2
         tmp = SQRT(tmp2)*cos2THETA
-c
-C Treat case where A is zero - Set Einfl = 2theta
-c
-        if (A.eq.0.0) Einfl = Acosd(cos2THETA)
         if (abs(tmp) .le. 1.0) then
-          Emin = Acosd(tmp)      ! 2phi(min) FCJ eq 4 (degrees)
+          Emin = Acosd(tmp)
           tmp1 = tmp2*(1.0 - tmp2*(1.0-sin2THETA2))
         else
+            print *,'tmp > 1.0'
           tmp1 = 0.0
           if (tmp .gt. 0.0) then
             Emin = 0.0
@@ -212,29 +209,27 @@ c
           RcosDELTA = 1. / cosDELTA
           tanDELTA = tand(Delta)
           cosDELTA2 = cosDELTA*cosDELTA      
-          tmp1 = cosDELTA2 - cos2THETA2
-          tmp2 = sin2THETA2 - sinDelta * sinDELTA
-          tmp = tmp2
-          if ( ttheta.gt.4500.0 ) tmp = tmp1 
+          if ( ttheta.le.4500.0 .or. ttheta.gt.13500.0 ) then
+            tmp = sin2THETA2-sinDelta**2
+          else
+            tmp = cosDELTA2-cos2THETA2
+          end if
           if (tmp .gt. 0) then
             tmp1 = 1.0/SQRT(tmp)
             F = abs(cos2THETA) * tmp1
-            dFdA = cosDELTA*cos2THETA*sinDELTA*dDELTAdA * 
-     1           (tmp1*tmp1*tmp1)
+            dFdA = cosDELTA*cos2THETA*sinDELTA*dDELTAdA*tmp1**3
           else
             F = 1.0
             dFdA = 0.0
           endif
 c       
 c Calculate G(Delta,2theta) [G = W /(h cos(delta) ] [ FCJ eq. 7(a) and 7(b) ]
-c       
-          if(abs(delta-emin) .gt. abs(einfl-emin))then
 c
-C N.B. this is the only place where d()/dA <> d()/dB
-c
+          if ( ttheta.gt.9000.0 ) then                  !are you kidding!! this worked
+!          if(abs(delta-emin) .gt. abs(einfl-emin))then
               G = 2.0*A*F*RcosDELTA
               dGdA = 2.0*A*RcosDELTA*(dFdA + F*tanDELTA*dDELTAdA)
-          else                                            ! delta .le. einfl .or. min(A,B) .eq. 0
+          else
             G = (-1.0 + ApB*F) * RcosDELTA
             dGdA = RcosDELTA*(F - tanDELTA*dDELTAdA
      1             + ApB*F*tanDELTA*dDELTAdA + ApB*dFdA)

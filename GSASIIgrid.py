@@ -782,7 +782,7 @@ def UpdateConstraints(self,data):
         data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
     Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
     AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtable = G2str.GetPhaseData(Phases,Print=False)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder']:
@@ -851,16 +851,13 @@ def UpdateConstraints(self,data):
             if 'equivalence' in constType:
                 constr = []
                 for item in varbs[1:]:
-#                    constr += [[{FrstVarb:1.0},{item:-1.0},None,None],]
                     constr += [[[1.0,FrstVarb],[-1.0,item],None,None],]
                 return constr           #multiple constraints
             elif 'function' in constType:
-#                constr = map(dict,zip(varbs,[1.0 for i in range(len(varbs))]))
                 constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
                 return [constr+[0.0,False]]         #just one constraint
             else:       #'constraint'
                 constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
-#                constr = map(dict,zip(varbs,[1.0 for i in range(len(varbs))]))
                 return [constr+[0.0,None]]          #just one constraint
         return []
              
@@ -950,7 +947,6 @@ def UpdateConstraints(self,data):
                 constSizer.Add((5,5),0)
                 constSizer.Add(constDel)
                 eqString = ' FIXED   '+item[0][1]+'   '
-                constSizer.Add((5,0),0)                
             else:
                 constEdit = wx.Button(pageDisplay,-1,'Edit',style=wx.BU_EXACTFIT)
                 constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
@@ -958,17 +954,10 @@ def UpdateConstraints(self,data):
                 constSizer.Add(constEdit)            
                 constSizer.Add(constDel)
                 if isinstance(item[-1],bool):
-                    constRef = wx.CheckBox(pageDisplay,-1,label=' Refine?')                    
-                    constRef.SetValue(item[-1])
-                    constRef.Bind(wx.EVT_CHECKBOX,OnConstRef)
-                    Indx[constRef.GetId()] = item
-                    constSizer.Add(constRef,0,wx.ALIGN_CENTER_VERTICAL)
                     eqString = ' FUNCT   '
                 elif isinstance(item[-2],float):
-                    constSizer.Add((5,5),0)
                     eqString = ' CONSTR  '
                 else:
-                    constSizer.Add((5,5),0)
                     eqString = ' EQUIV   '
                 for term in item[:-2]:
                     eqString += '%+.3f*%s '%(term[0],term[1])
@@ -977,6 +966,14 @@ def UpdateConstraints(self,data):
                 else:
                     eqString += ' = 0   '
             constSizer.Add(wx.StaticText(pageDisplay,-1,eqString),0,wx.ALIGN_CENTER_VERTICAL)
+            if isinstance(item[-1],bool):
+                constRef = wx.CheckBox(pageDisplay,-1,label=' Refine?')                    
+                constRef.SetValue(item[-1])
+                constRef.Bind(wx.EVT_CHECKBOX,OnConstRef)
+                Indx[constRef.GetId()] = item
+                constSizer.Add(constRef,0,wx.ALIGN_CENTER_VERTICAL)
+            else:
+                constSizer.Add((5,5),0)
         return constSizer
                 
     def OnConstRef(event):

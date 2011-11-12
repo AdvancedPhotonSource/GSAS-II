@@ -729,6 +729,19 @@ def UpdateComments(self,data):
             self.dataDisplay.AppendText(line+'\n')
             
 def UpdateSeqResults(self,data):
+    """ 
+    input:
+        data - dictionary
+            'histNames' - list of histogram names in order as processed by Sequential Refinement
+            'varyList' - list of variables - identical over all refinements insequence
+            histName - dictionaries for all data sets processed:
+                'variables'- result[0] from leastsq call
+                'varyList' - list of variables; same as above
+                'sig' - esds for variables
+                'covMatrix' - covariance matrix from individual refinement
+                'title' - histogram name; same as dict item name
+                'newAtomDict' - new atom parameters after shifts applied
+    """
     if not data:
         print 'No sequential refinement results'
         return
@@ -738,7 +751,10 @@ def UpdateSeqResults(self,data):
         sigData = []
         for name in histNames:
             sigList = data[name]['sig']
-            sigData.append(sigList[parm])
+            if colLabels[parm] in atomList:
+                sigData.append(sigList[colLabels.index(atomList[colLabels[parm]])])
+            else:
+                sigData.append(sigList[parm])
         return sigData
     
     def Select(event):
@@ -760,12 +776,20 @@ def UpdateSeqResults(self,data):
                
     if self.dataDisplay:
         self.dataDisplay.Destroy()
+    atomList = {}
+    newAtomDict = data[histNames[0]]['newAtomDict']
+    for item in newAtomDict:
+        if item in data['varyList']:
+            atomList[newAtomDict[item][0]] = item
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataFrame.SetLabel('Sequental refinement results')
     self.dataFrame.CreateStatusBar()
-    colLabels = data['varyList']
-    Types = len(data['varyList'])*[wg.GRID_VALUE_FLOAT,]
+    colLabels = data['varyList']+atomList.keys()
+    Types = len(data['varyList']+atomList.keys())*[wg.GRID_VALUE_FLOAT,]
     seqList = [list(data[name]['variables']) for name in histNames]
+    for i,item in enumerate(seqList):
+        newAtomDict = data[histNames[i]]['newAtomDict']
+        item += [newAtomDict[atomList[parm]][1] for parm in atomList.keys()]
     self.SeqTable = Table(seqList,colLabels=colLabels,rowLabels=histNames,types=Types)
     self.dataDisplay = GSGrid(parent=self.dataFrame)
     self.dataDisplay.SetTable(self.SeqTable, True)

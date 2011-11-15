@@ -740,12 +740,12 @@ def UpdateSampleGrid(self,data):
     
     parms = [['Gonio. radius',' Goniometer radius(mm): ','%.2f',]]
     if data['Type'] == 'Debye-Scherrer':
-        parms += [['DisplaceX',' Sample X displacement(\xb5m): ','%.2f',],
-            ['DisplaceY',' Sample Y displacement(\xb5m): ','%.2f',],
-            ['Absorption',' Sample absorption(\xb5r): ','%.4f',],]
+        parms += [['DisplaceX',u' Sample X displacement(\xb5m): ','%.2f',],
+            ['DisplaceY',u' Sample Y displacement(\xb5m): ','%.2f',],
+            ['Absorption',u' Sample absorption(\xb5r): ','%.4f',],]
     elif data['Type'] == 'Bragg-Brentano':
-        parms += [['Shift',' Sample displacement(\xb5m): ','%.2f',],
-            ['Transparency',' Sample transparency(1/\xb5eff,cm): ','%.4f'],]
+        parms += [['Shift',u' Sample displacement(\xb5m): ','%.2f',],
+            ['Transparency',u' Sample transparency(1/\xb5eff,cm): ','%.4f'],]
     parms.append(['Omega','Goniometer omega:','%.2f'])
     parms.append(['Chi','Goniometer chi:','%.2f'])
     parms.append(['Phi','Goniometer phi:','%.2f'])

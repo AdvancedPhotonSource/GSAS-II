@@ -2588,7 +2588,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     isoSizer = wx.BoxSizer(wx.HORIZONTAL)
                     isoSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
-                    isoSizer.Add(IsoSizer(' Cryst. size(\xb5m): ','Size','%.3f',
+                    isoSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.3f',
                         OnSizeVal,OnSizeRef),0,wx.ALIGN_CENTER_VERTICAL)
                     sizeSizer.Add(isoSizer)
                 elif UseList[item]['Size'][0] == 'uniaxial':
@@ -2597,12 +2597,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
                     sizeSizer.Add(uniSizer)
-                    sizeSizer.Add(UniDataSizer('size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
+                    sizeSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
                 elif UseList[item]['Size'][0] == 'ellipsoidal':
                     ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                     ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
-                    ellSizer.Add(wx.StaticText(dataDisplay,-1,' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
+                    ellSizer.Add(wx.StaticText(dataDisplay,-1,u' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
                     sizeSizer.Add(ellSizer)
                     sizeSizer.Add(EllSizeDataSizer())
                 mainSizer.Add(sizeSizer)

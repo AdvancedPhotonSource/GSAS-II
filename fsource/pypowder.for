@@ -125,3 +125,50 @@ Cf2py depend(NPTS) SLPART
       RETURN
       END
 
+C Fortran (fast) linear interpolation -- B.H. Toby 9/2011
+      SUBROUTINE PYFINTERP(NIN,XIN,YIN,NOUT,XOUT,YOUT)
+C XIN(1:NIN) and YIN(1:NIN) are arrays of (x,y) points to be interpolated
+C     Values must be sorted increasing in XIN
+C XOUT(1:NOUT) is an array of x values, must also be sorted increasing in x
+C    XOUT may contain values smaller than XIN(1) or larger than XIN(NIN)
+C RETURNS interpolated y values corresponding to XOUT. Values outside the 
+C   range of XIN are set to zero.
+C Needs a way to signal an error if XIN or XOUT is not sorted -- for now stops
+Cf2py intent(in) NIN
+Cf2py intent(in)  XIN
+cf2py depend(NIN) XIN
+Cf2py intent(in)  YIN
+cf2py depend(NIN) YIN
+Cf2py intent(in) NOUT
+Cf2py intent(in)   XOUT
+cf2py depend(NOUT) XOUT
+Cf2py intent(out)  YOUT
+cf2py depend(NOUT) YOUT
+
+      REAL XIN(NIN),YIN(NIN)
+      REAL XOUT(NOUT),YOUT(NOUT)
+      INTEGER IERROR
+      REAL X,F
+      INTEGER IIN,I
+
+      IERROR = 1
+      IIN = 1
+      X = XOUT(1)
+      DO I=1,NOUT
+         IF (X .GT. XOUT(I)) STOP ! test if Xout not sorted
+         X = XOUT(I)
+         IF (X .LT. XIN(1) .OR. X .GT. XIN(NIN) ) THEN
+            YOUT(I) = 0.0
+         ELSE
+            DO WHILE (X .GT.  XIN(IIN+1))
+               IF (XIN(IIN) .GT. XIN(IIN+1)) STOP ! test if Xin not sorted
+               IIN = IIN + 1
+             ENDDO
+             F = (X - XIN(IIN)) / (XIN(IIN+1) - XIN(IIN))
+             YOUT(I) = (1.-F)*YIN(IIN) + F*YIN(IIN+1)
+          ENDIF
+          !write (*,*) xout(i),iin,f,yout(i)
+      END DO
+      IERROR = 0
+      RETURN
+      END

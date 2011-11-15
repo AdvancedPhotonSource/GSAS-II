@@ -235,6 +235,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
 def GPXBackup(GPXfile,makeBack=True):
     import distutils.file_util as dfu
     GPXpath,GPXname = ospath.split(GPXfile)
+    if GPXpath == '': GPXpath = '.'
     Name = ospath.splitext(GPXname)[0]
     files = os.listdir(GPXpath)
     last = 0
@@ -2452,7 +2453,7 @@ def Refine(GPXfile,dlg):
     if not Histograms:
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
-        raise Exception
+        raise Exception        
     Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases)
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
@@ -2466,10 +2467,23 @@ def Refine(GPXfile,dlg):
     parmDict.update(hapDict)
     parmDict.update(histDict)
     GetFprime(calcControls,Histograms)
-    groups,parmlist = G2mv.GroupConstraints(constrDict)
-    G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
-    print G2mv.VarRemapShow(varyList)
+    # do constraint processing
+    try:
+        groups,parmlist = G2mv.GroupConstraints(constrDict)
+        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
+    except:
+        print ' *** ERROR - your constraints are internally inconsistent ***'
+        print ' *** Refine aborted ***'
+        raise Exception
+    # check to see which generated parameters are fully varied
+    msg = G2mv.SetVaryFlags(varyList)
+    if msg:
+        print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
+        print msg
+        print ' *** Refine aborted ***'
+        raise Exception        
     G2mv.Map2Dict(parmDict,varyList)
+    print G2mv.VarRemapShow(varyList)
 
     while True:
         begin = time.time()

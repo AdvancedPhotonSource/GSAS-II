@@ -1508,7 +1508,9 @@ class GSASII(wx.Frame):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()
+        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        dlg.SetSize(Size)
         try:
             G2str.Refine(self.GSASprojectfile,dlg)
         finally:
@@ -1543,7 +1545,9 @@ class GSASII(wx.Frame):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()
+        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        dlg.SetSize(Size)
         try:
             G2str.SeqRefine(self.GSASprojectfile,dlg)
         finally:
@@ -1616,7 +1620,8 @@ class GSASIImain(wx.App):
 
 def main():
     application = GSASIImain(0)
+    #application.main.OnRefine(None)
     application.MainLoop()
-
+    
 if __name__ == '__main__':
     main()

@@ -2236,13 +2236,18 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]],[pfx+'A3',dpdA[3]+dpdA[4]+dpdA[5]]]                       
         elif SGData['SGLaue'] in ['m3m','m3']:
             return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]]]
-    
+    # create a list of dependent variables and set up a dictionary to hold their derivatives
+    dependentVars = G2mv.GetDependentVars()
+    depDerivDict = {}
+    for j in dependentVars:
+        depDerivDict[j] = np.zeros(shape=(len(x)))
+    #print 'dependent vars',dependentVars
     lenX = len(x)                
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
-    if hfx+'Back:0' in varylist:
+    if hfx+'Back:0' in varylist: # for now assume that Back:x vars to not appear in constraints
         dMdb = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,x)
         bBpos =varylist.index(hfx+'Back:0')
         dMdv[bBpos:bBpos+len(dMdb)] = dMdb
@@ -2317,6 +2322,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     try:
                         idx = varylist.index(pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]))
                         dMdv[idx] = dervDict['int']/refl[9]
+                        # Assuming Pawley variables not in constraints
                     except ValueError:
                         pass
                 dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict)
@@ -2330,41 +2336,62 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     if name in varylist:
                         item = names[name]
                         dMdv[varylist.index(name)] += item[0]*dervDict[item[1]]
+                    if name in dependentVars:
+                        depDerivDict[name] += item[0]*dervDict[item[1]]
+
                 for iPO in dIdPO:
                     if iPO in varylist:
                         dMdv[varylist.index(iPO)] += dIdPO[iPO]*dervDict['int']
+                    if iPO in dependentVars:
+                        depDerivDict[iPO] = dIdPO[iPO]*dervDict['int']
+
                 for i,name in enumerate(['omega','chi','phi']):
                     aname = pfx+'SH '+name
                     if aname in varylist:
                         dMdv[varylist.index(aname)] += dFdSA[i]*dervDict['int']
+                    if aname in dependentVars:
+                        depDerivDict[aname] += dFdSA[i]*dervDict['int']
                 for iSH in dFdODF:
                     if iSH in varylist:
                         dMdv[varylist.index(iSH)] += dFdODF[iSH]*dervDict['int']
+                    if iSH in dependentVars:
+                        depDerivDict[iSH] += dFdODF[iSH]*dervDict['int']
                 cellDervNames = cellVaryDerv(pfx,SGData,dpdA)
                 for name,dpdA in cellDervNames:
                     if name in varylist:
                         dMdv[varylist.index(name)] += dpdA*dervDict['pos']
+                    if name in dependentVars:
+                        depDerivDict[name] += dpdA*dervDict['pos']
                 dDijDict = GetHStrainShiftDerv(refl,SGData,phfx)
                 for name in dDijDict:
                     if name in varylist:
                         dMdv[varylist.index(name)] += dDijDict[name]*dervDict['pos']
+                    if name in dependentVars:
+                        depDerivDict[name] += dDijDict[name]*dervDict['pos']
                 gamDict = GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse)
                 for name in gamDict:
                     if name in varylist:
                         dMdv[varylist.index(name)] += gamDict[name]*dervDict['gam']
+                    if name in dependentVars:
+                        depDerivDict[name] += gamDict[name]*dervDict['gam']
                                                
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet
-#do atom derivatives -  for F,X & U so far              
+            #do atom derivatives -  for F,X & U so far              
             corr = dervDict['int']/refl[9]
-            for name in varylist:
+            for name in varylist+dependentVars:
                 try:
                     aname = name.split(pfx)[1][:2]
-                    if aname in ['Af','dA','AU']:
-                         dMdv[varylist.index(name)] += dFdvDict[name][iref]*corr
+                    if aname not in ['Af','dA','AU']: continue # skip anything not an atom param
                 except IndexError:
-                    pass
+                    continue
+                if name in varylist:
+                    dMdv[varylist.index(name)] += dFdvDict[name][iref]*corr
+                if name in dependentVars:
+                    depDerivDict[name] += dFdvDict[name][iref]*corr
+    # now process derivatives in constraints
+    G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
     return dMdv
 
 def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):

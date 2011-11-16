@@ -429,6 +429,14 @@ def SetVaryFlags(varyList):
                 varyList.append(mv)
     return msg
 
+def GetDependentVars():
+    '''Return a list of dependent variables: e.g. variables that are
+    constrained in terms of other variables'''
+    dependentVars = []
+    global dependentParmList
+    for lst in dependentParmList:
+        for itm in lst: dependentVars.append(itm)
+    return dependentVars
 
 def VarRemapShow(varyList):
     '''List out the saved relationships.
@@ -441,16 +449,20 @@ def VarRemapShow(varyList):
             s += '    ' + v + '\n'
     s += 'Variable mapping relations:\n'
     global dependentParmList,arrayList,invarrayList,indParmList,fixedDict
-    for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):
+    for varlist,mapvars,multarr,invmultarr in zip(
+        dependentParmList,indParmList,arrayList,invarrayList):
         i = 0
         for mv in mapvars:
             if multarr is None:
                 s += '  ' + str(mv) + ' defines parameter(s): '
                 j = 0
-                for v in varlist:
+                for v,m in zip(varlist,invmultarr):
+                    print v,m[0]
                     if j > 0: s += '  & '
                     j += 1
                     s += str(v)
+                    if m != 1:
+                        s += " / " + str(m[0])                        
                 s += '\n'
                 continue
             s += '  %s = ' % mv
@@ -477,6 +489,27 @@ def VarRemapShow(varyList):
             s += '\n'
             i += 1
     return s
+
+def Dict2Deriv(varyList,derivDict,dMdv):
+    '''Compute derivatives for Independent Parameters from the
+    derivatives for the original parameters
+    '''
+    global dependentParmList,arrayList,invarrayList,indParmList,invarrayList
+    for varlist,mapvars,multarr,invmultarr in zip(
+        dependentParmList,indParmList,arrayList,invarrayList):
+        for i,name in enumerate(mapvars):
+            if name not in varyList: continue # if independent var not varied
+            if multarr is None:
+                # grouped variables need to add in the derv. w/r
+                # dependent variables to the dependent ones
+                for v,m in zip(varlist,invmultarr):
+                    print 'add derv',v,'/',m[0],'to derv',name
+                    if m[0] != 1 and m[0] != 0:
+                        dMdv[varyList.index(name)] += derivDict[v]/m[0]
+            else:
+                for m,v in zip(multarr[i,:],varlist):
+                    print 'add',m,' * derv',v,'to derv',name
+                    dMdv[varyList.index(name)] += m * derivDict[v]
 
 def Map2Dict(parmDict,varyList):
     '''Create (or update) the Independent Parameters from the original
@@ -700,9 +733,9 @@ if __name__ == "__main__":
     parmdict = {}
     StoreEquivalence('2::atomx:3',('2::atomy:3', ('2::atomz:3',2,), ))
     varylist = ['2::atomx:3',]
-    print VarRemapShow(varylist)
-    msg = SetVaryFlags(varylist)
-    if msg != "": print msg
+    #print VarRemapShow(varylist)
+    #msg = SetVaryFlags(varylist)
+    #if msg != "": print msg
     varylist = ['2::atomx:3', '2::atomy:3', '2::atomz:3',]
     print VarRemapShow(varylist)
     msg = SetVaryFlags(varylist)

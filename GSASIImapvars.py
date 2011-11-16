@@ -495,21 +495,15 @@ def Dict2Deriv(varyList,derivDict,dMdv):
     derivatives for the original parameters
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,invarrayList
-    for varlist,mapvars,multarr,invmultarr in zip(
-        dependentParmList,indParmList,arrayList,invarrayList):
+    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         for i,name in enumerate(mapvars):
+            # grouped variables: need to add in the derv. w/r
+            # dependent variables to the independent ones
             if name not in varyList: continue # if independent var not varied
-            if multarr is None:
-                # grouped variables need to add in the derv. w/r
-                # dependent variables to the dependent ones
-                for v,m in zip(varlist,invmultarr):
-                    print 'add derv',v,'/',m[0],'to derv',name
-                    if m[0] != 1 and m[0] != 0:
-                        dMdv[varyList.index(name)] += derivDict[v]/m[0]
-            else:
-                for m,v in zip(multarr[i,:],varlist):
-                    print 'add',m,' * derv',v,'to derv',name
-                    dMdv[varyList.index(name)] += m * derivDict[v]
+            for m,v in zip(invmultarr[:,i],varlist):
+                print 'add derv',v,'*',m,'to derv',name
+                if m == 0: continue
+                dMdv[varyList.index(name)] += m * derivDict[v]
 
 def Map2Dict(parmDict,varyList):
     '''Create (or update) the Independent Parameters from the original

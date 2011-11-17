@@ -79,6 +79,9 @@ import GSASIIstruct as G2str
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
 ] = [wx.NewId() for _init_coll_PDF_Items in range(7)]
 
+[ wxID_HELP,
+] = [wx.NewId() for _init_coll_Help_Items in range(1)]
+
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class DataFrame(wx.Frame):
@@ -308,8 +311,7 @@ class DataFrame(wx.Frame):
             text='Compute PDF')
         self.PDFCompute = parent.Append(help='Compute all PDFs', id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
             text='Compute all PDFs')
-        
-
+            
     def _init_utils(self):
         self.BlankMenu = wx.MenuBar()
         
@@ -741,12 +743,27 @@ def UpdateSeqResults(self,data):
                 'covMatrix' - covariance matrix from individual refinement
                 'title' - histogram name; same as dict item name
                 'newAtomDict' - new atom parameters after shifts applied
+                'newCellDict' - new cell parameters after shifts to A0-A5 applied'
     """
     if not data:
         print 'No sequential refinement results'
         return
     histNames = data['histNames']
-    
+       
+    def GetSampleParms():
+        sampleParmDict = {'Temperature':[],'Pressure':[],'Humidity':[],'Voltage':[],'Force':[],}
+        sampleParm = {}
+        for name in histNames:
+            Id = GetPatternTreeItemId(self,self.root,name)
+            sampleData = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,Id,'Sample Parameters'))
+            for item in sampleParmDict:
+                sampleParmDict[item].append(sampleData[item])
+        for item in sampleParmDict:
+            frstValue = sampleParmDict[item][0]
+            if np.any(np.array(sampleParmDict[item])-frstValue):
+                sampleParm[item] = sampleParmDict[item]            
+        return sampleParm
+            
     def GetSigData(parm):
         sigData = []
         for name in histNames:
@@ -769,7 +786,7 @@ def UpdateSeqResults(self,data):
                 plotSig.append(GetSigData(col))
                 plotNames.append(self.SeqTable.GetColLabelValue(col))
             plotData = np.array(plotData)
-            G2plt.PlotSeq(self,plotData,plotSig,plotNames)
+            G2plt.PlotSeq(self,plotData,plotSig,plotNames,sampleParms)
         elif rows:
             name = histNames[rows[0]]
             G2plt.PlotCovariance(self,Data=data[name])
@@ -781,12 +798,14 @@ def UpdateSeqResults(self,data):
     for item in newAtomDict:
         if item in data['varyList']:
             atomList[newAtomDict[item][0]] = item
+    sampleParms = GetSampleParms()
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataFrame.SetLabel('Sequental refinement results')
     self.dataFrame.CreateStatusBar()
     colLabels = data['varyList']+atomList.keys()
     Types = len(data['varyList']+atomList.keys())*[wg.GRID_VALUE_FLOAT,]
     seqList = [list(data[name]['variables']) for name in histNames]
+    
     for i,item in enumerate(seqList):
         newAtomDict = data[histNames[i]]['newAtomDict']
         item += [newAtomDict[atomList[parm]][1] for parm in atomList.keys()]
@@ -1121,6 +1140,7 @@ def UpdateConstraints(self,data):
     self.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=wxID_FUNCTADD)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=wxID_EQUIVADD)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=wxID_HOLDADD)
+    self.dataFrame.Bind(wx.EVT_MENU, OnHelp, id=wxID_HELP)
     self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
     
     PhaseConstr = wx.ScrolledWindow(self.dataDisplay)
@@ -1517,3 +1537,6 @@ def MovePatternTreeToGrid(self,item):
         G2pdG.UpdateReflectionGrid(self,data)
         G2plt.PlotPatterns(self)
      
+def OnHelp(event):
+    Obj = event.GetEventObject()
+    print 'Help on '+Obj.GetTitle()

@@ -663,6 +663,47 @@ def getVCov(varyNames,varyList,covMatrix):
                 vcov[i1][i2] = 0.0
     return vcov
     
+def cellFill(pfx,SGData,parmDict,sigDict): 
+    if SGData['SGLaue'] in ['-1',]:
+        A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
+            parmDict[pfx+'A3'],parmDict[pfx+'A4'],parmDict[pfx+'A5']]
+        sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+            sigDict[pfx+'A3'],sigDict[pfx+'A4'],sigDict[pfx+'A5']]
+    elif SGData['SGLaue'] in ['2/m',]:
+        if SGData['SGUniq'] == 'a':
+            A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
+                parmDict[pfx+'A3'],0,0]
+            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+                sigDict[pfx+'A3'],0,0]
+        elif SGData['SGUniq'] == 'b':
+            A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
+                0,parmDict[pfx+'A4'],0]
+            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+                0,sigDict[pfx+'A4'],0]
+        else:
+            A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
+                0,0,parmDict[pfx+'A5']]
+            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+                0,0,sigDict[pfx+'A5']]
+    elif SGData['SGLaue'] in ['mmm',]:
+        A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],0,0,0]
+        sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],0,0,0]
+    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+        A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A2'],0,0,0]
+        sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
+    elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A2'],
+            parmDict[pfx+'A0'],0,0]
+        sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
+    elif SGData['SGLaue'] in ['3R', '3mR']:
+        A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],
+            parmDict[pfx+'A3'],parmDict[pfx+'A3'],parmDict[pfx+'A3']]
+        sigA = [sigDict[pfx+'A0'],0,0,sigDict[pfx+'A3'],0,0]
+    elif SGData['SGLaue'] in ['m3m','m3']:
+        A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],0,0,0]
+        sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
+    return A,sigA
+        
 def getCellEsd(pfx,SGData,A,covData):
     dpr = 180./np.pi
     rVsq = G2lat.calc_rVsq(A)
@@ -723,47 +764,6 @@ def getCellEsd(pfx,SGData,A,covData):
     
 def SetPhaseData(parmDict,sigDict,Phases,covData):
     
-    def cellFill(pfx,SGData,parmDict,sigDict): 
-        if SGData['SGLaue'] in ['-1',]:
-            A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
-                parmDict[pfx+'A3'],parmDict[pfx+'A4'],parmDict[pfx+'A5']]
-            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                sigDict[pfx+'A3'],sigDict[pfx+'A4'],sigDict[pfx+'A5']]
-        elif SGData['SGLaue'] in ['2/m',]:
-            if SGData['SGUniq'] == 'a':
-                A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
-                    parmDict[pfx+'A3'],0,0]
-                sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                    sigDict[pfx+'A3'],0,0]
-            elif SGData['SGUniq'] == 'b':
-                A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
-                    0,parmDict[pfx+'A4'],0]
-                sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                    0,sigDict[pfx+'A4'],0]
-            else:
-                A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
-                    0,0,parmDict[pfx+'A5']]
-                sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                    0,0,sigDict[pfx+'A5']]
-        elif SGData['SGLaue'] in ['mmm',]:
-            A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],0,0,0]
-            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],0,0,0]
-        elif SGData['SGLaue'] in ['4/m','4/mmm']:
-            A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A2'],0,0,0]
-            sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
-        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
-            A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A2'],
-                parmDict[pfx+'A0'],0,0]
-            sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
-        elif SGData['SGLaue'] in ['3R', '3mR']:
-            A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],
-                parmDict[pfx+'A3'],parmDict[pfx+'A3'],parmDict[pfx+'A3']]
-            sigA = [sigDict[pfx+'A0'],0,0,sigDict[pfx+'A3'],0,0]
-        elif SGData['SGLaue'] in ['m3m','m3']:
-            A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],0,0,0]
-            sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
-        return A,sigA
-        
     def PrintAtomsAndSig(General,Atoms,atomsSig):
         print '\n Atoms:'
         line = '   name      x         y         z      frac   Uiso     U11     U22     U33     U12     U13     U23'
@@ -1719,6 +1719,14 @@ def Values2Dict(parmdict, varylist, values):
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
     
+def GetNewCellParms(parmDict,varyList):
+    newCellDict = {}
+    Dchoices = ['D11','D22','D33','D12','D13','D23']
+    Achoices = ['A'+str(i) for i in range(6)]
+    
+    
+    return newCellDict
+    
 def ApplyXYZshifts(parmDict,varyList):
     ''' takes atom x,y,z shift and applies it to corresponding atom x,y,z value
         input:
@@ -2337,6 +2345,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         item = names[name]
                         dMdv[varylist.index(name)] += item[0]*dervDict[item[1]]
                     if name in dependentVars:
+                        item = names[name]
                         depDerivDict[name] += item[0]*dervDict[item[1]]
 
                 for iPO in dIdPO:
@@ -2443,16 +2452,16 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             yc[xB:xF],yb[xB:xF] = getPowderProfile(parmdict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]
-            yd[xB:xF] = yc[xB:xF]-y[xB:xF]          #yc-yo then all dydv have no '-' needed
+            yd[xB:xF] = y[xB:xF]-yc[xB:xF]
             Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
-            wdy = np.sqrt(w[xB:xF])*(yd[xB:xF])
+            wdy = -np.sqrt(w[xB:xF])*(yd[xB:xF])
             Histogram['wRp'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
             M = np.concatenate((M,wdy))
     Histograms['sumwYo'] = sumwYo
     Histograms['Nobs'] = Nobs
     Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
     if dlg:
-        GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile wRp =',Rwp,'%'))[0]
+        GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('wRp =',Rwp,'%'))[0]
         if not GoOn:
             parmDict['saved values'] = values
             raise Exception         #Abort!!
@@ -2510,7 +2519,7 @@ def Refine(GPXfile,dlg):
         print ' *** Refine aborted ***'
         raise Exception        
     G2mv.Map2Dict(parmDict,varyList)
-    print G2mv.VarRemapShow(varyList)
+#    print G2mv.VarRemapShow(varyList)
 
     while True:
         begin = time.time()
@@ -2532,6 +2541,7 @@ def Refine(GPXfile,dlg):
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict,varyList)
+        newCellDict = GetNewCellParms(parmDict,varyList)
         newAtomDict = ApplyXYZshifts(parmDict,varyList)
         
         Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
@@ -2558,34 +2568,34 @@ def Refine(GPXfile,dlg):
                     del(varyList[ipvt-1])
                     break
 
-    print 'dependentParmList: ',G2mv.dependentParmList
-    print 'arrayList: ',G2mv.arrayList
-    print 'invarrayList: ',G2mv.invarrayList
-    print 'indParmList: ',G2mv.indParmList
-    print 'fixedDict: ',G2mv.fixedDict
-    print 'test1'
+#    print 'dependentParmList: ',G2mv.dependentParmList
+#    print 'arrayList: ',G2mv.arrayList
+#    print 'invarrayList: ',G2mv.invarrayList
+#    print 'indParmList: ',G2mv.indParmList
+#    print 'fixedDict: ',G2mv.fixedDict
+#    print 'test1'
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
-    print 'test2'
+#    print 'test2'
     sigDict = dict(zip(varyList,sig))
     covData = {'variables':result[0],'varyList':varyList,'sig':sig,
-        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict}
+        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
     SetPhaseData(parmDict,sigDict,Phases,covData)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
 #for testing purposes!!!
-    file = open('structTestdata.dat','wb')
-    cPickle.dump(parmDict,file,1)
-    cPickle.dump(varyList,file,1)
-    for histogram in Histograms:
-        if 'PWDR' in histogram[:4]:
-            Histogram = Histograms[histogram]
-    cPickle.dump(Histogram,file,1)
-    cPickle.dump(Phases,file,1)
-    cPickle.dump(calcControls,file,1)
-    cPickle.dump(pawleyLookup,file,1)
-    file.close()
+#    file = open('structTestdata.dat','wb')
+#    cPickle.dump(parmDict,file,1)
+#    cPickle.dump(varyList,file,1)
+#    for histogram in Histograms:
+#        if 'PWDR' in histogram[:4]:
+#            Histogram = Histograms[histogram]
+#    cPickle.dump(Histogram,file,1)
+#    cPickle.dump(Phases,file,1)
+#    cPickle.dump(calcControls,file,1)
+#    cPickle.dump(pawleyLookup,file,1)
+#    file.close()
 
 def SeqRefine(GPXfile,dlg):
     import cPickle
@@ -2682,6 +2692,7 @@ def SeqRefine(GPXfile,dlg):
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             G2mv.Dict2Map(parmDict,varyList)
+            newCellDict = GetNewCellParms(parmDict,varyList)
             newAtomDict = ApplyXYZshifts(parmDict,varyList)
             
             Rwp = np.sqrt(chisq/Histo['sumwYo'])*100.      #to %
@@ -2710,7 +2721,7 @@ def SeqRefine(GPXfile,dlg):
         GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,
-            'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict}
+            'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint)
         SeqResult[histogram] = covData

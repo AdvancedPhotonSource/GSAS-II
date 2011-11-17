@@ -54,7 +54,7 @@ npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
 class G2PlotMpl(wx.Panel):    
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
-        mpl.rcParams['legend.fontsize'] = 8
+        mpl.rcParams['legend.fontsize'] = 10
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,7))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = Toolbar(self.canvas)
@@ -638,7 +638,7 @@ def PlotPatterns(self,newPlot=False):
             if ifpicked:
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
-                D = xye[5]+offset*N-Ymax*.02
+                D = xye[5]-Ymax*.02
                 if self.Weight:
                     W2 = np.sqrt(xye[2])
                     D *= W2-Ymax*.02
@@ -1445,8 +1445,15 @@ def PlotCovariance(self,Data={}):
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()
     
-def PlotSeq(self,SeqData,SeqSig,SeqNames):
+def PlotSeq(self,SeqData,SeqSig,SeqNames,sampleParm):
     
+    def OnKeyPress(event):
+        if event.key == 's' and sampleParm:
+            if self.xAxis:
+                self.xAxis = False
+            else:
+                self.xAxis = True
+            Draw(False)
     try:
         plotNum = self.G2plotNB.plotList.index('Sequential refinement')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -1458,15 +1465,27 @@ def PlotSeq(self,SeqData,SeqSig,SeqNames):
         Plot = self.G2plotNB.addMpl('Sequential refinement').gca()
         plotNum = self.G2plotNB.plotList.index('Sequential refinement')
         Page = self.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        self.xAxis = False
         
-    Page.SetFocus()
-    self.G2plotNB.status.SetFields(['',''])
-    if len(SeqData):    
-        X = np.arange(0,len(SeqData[0]),1)
-        for Y,sig,name in zip(SeqData,SeqSig,SeqNames):
-            Plot.errorbar(X,Y,yerr=sig,label=name)        
-        Plot.legend(loc='best')
-        Page.canvas.draw()
+    def Draw(newPlot):
+        Page.SetFocus()
+        self.G2plotNB.status.SetFields(['','press s to toggle x-axis = sample environment parameter'])
+        if len(SeqData):
+            Plot.clear()
+            if self.xAxis:    
+                xName = sampleParm.keys()[0]
+                X = sampleParm[xName]
+            else:
+                X = np.arange(0,len(SeqData[0]),1)
+                xName = 'Data sequence number'
+            for Y,sig,name in zip(SeqData,SeqSig,SeqNames):
+                Plot.errorbar(X,Y,yerr=sig,label=name)        
+            Plot.legend(loc='best')
+            Plot.set_ylabel('Parameter values')
+            Plot.set_xlabel(xName)
+            Page.canvas.draw()            
+    Draw(True)
             
 def PlotExposedImage(self,newPlot=False,event=None):
     '''General access module for 2D image plotting

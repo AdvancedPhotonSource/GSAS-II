@@ -79,7 +79,7 @@ wxID_IMPORTCIF, wxID_IMPORTPDB,
 wxID_EXPORTCIF, wxID_EXPORTPEAKLIST, wxID_EXPORTPDF,
 ] = [wx.NewId() for _init_coll_Export_Items in range(7)]
 
-[wxID_HELPABOUT, wxID_HELPHELP, 
+[wxID_HELPABOUT, wxID_HELPHELP,
 ] = [wx.NewId() for _init_coll_Help_Items in range(2)]
 
 class GSASII(wx.Frame):
@@ -1504,7 +1504,7 @@ class GSASII(wx.Frame):
     def OnRefine(self,event):
         self.OnFileSave(event)
         #works - but it'd be better if it could restore plots
-        dlg = wx.ProgressDialog('Residual','Powder profile Rwp =',101.0, 
+        dlg = wx.ProgressDialog('Residual','wRp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()

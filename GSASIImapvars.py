@@ -402,8 +402,8 @@ def SetVaryFlags(varyList):
     variables are being varied.
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,fixedDict
+    msg = ""
     for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):
-        msg = ""
         for mv in mapvars:
             varied = []
             notvaried = []

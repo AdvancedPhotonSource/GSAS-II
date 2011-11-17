@@ -2579,6 +2579,8 @@ def Refine(GPXfile,dlg):
     sigDict = dict(zip(varyList,sig))
     covData = {'variables':result[0],'varyList':varyList,'sig':sig,
         'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
+    # add the uncertainties into the esd dictionary (sigDict)
+    sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
     SetPhaseData(parmDict,sigDict,Phases,covData)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)

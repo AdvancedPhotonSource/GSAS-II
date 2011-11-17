@@ -1984,8 +1984,8 @@ def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
     h,k,l = refl[:3]
     dstsq = G2lat.calc_rDsq(np.array([h,k,l]),A)
     dst = np.sqrt(dstsq)
-    pos = refl[5]
-    const = dpr/np.sqrt(1.0-wave*dst/4.0)
+    pos = refl[5]-parmDict[hfx+'Zero']
+    const = dpr/np.sqrt(1.0-wave**2*dstsq/4.0)
     dpdw = const*dst
     dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])
     dpdA *= const*wave/(2.0*dst)
@@ -2237,13 +2237,16 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         elif SGData['SGLaue'] in ['mmm',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]]]
         elif SGData['SGLaue'] in ['4/m','4/mmm']:
-            return [[pfx+'A0',dpdA[0]+dpdA[1]],[pfx+'A2',dpdA[2]]]
+#            return [[pfx+'A0',dpdA[0]+dpdA[1]],[pfx+'A2',dpdA[2]]]
+            return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
         elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
-            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[3]],[pfx+'A2',dpdA[2]]]
+#            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[3]],[pfx+'A2',dpdA[2]]]
+            return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
         elif SGData['SGLaue'] in ['3R', '3mR']:
             return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]],[pfx+'A3',dpdA[3]+dpdA[4]+dpdA[5]]]                       
         elif SGData['SGLaue'] in ['m3m','m3']:
-            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]]]
+#            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]]]
+            return [[pfx+'A0',dpdA[0]]]
     # create a list of dependent variables and set up a dictionary to hold their derivatives
     dependentVars = G2mv.GetDependentVars()
     depDerivDict = {}

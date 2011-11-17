@@ -2572,6 +2572,7 @@ def Refine(GPXfile,dlg):
     SetPhaseData(parmDict,sigDict,Phases,covData)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
+    G2mv.PrintIndependentVars(parmDict,varyList,sigDict)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
 #for testing purposes!!!
     file = open('structTestdata.dat','wb')

@@ -84,63 +84,87 @@ import GSASIIstruct as G2str
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
+class MyHelp(wx.Menu):
+    def __init__(self,title=''):
+        wx.Menu.__init__(self,title)
+        self.Append(help='Help on this item',id=wxID_HELP, kind=wx.ITEM_NORMAL,
+            text='Help')                            
+
 class DataFrame(wx.Frame):
     def _init_coll_BlankMenu(self,parent):
         parent.Append(menu=self.Blank,title='')
         
     def _init_coll_AtomsMenu(self,parent):
         parent.Append(menu=self.AtomEdit, title='Edit')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_ConstraintMenu(self,parent):
         parent.Append(menu=self.ConstraintEdit, title='Edit')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_RestraintMenu(self,parent):
         parent.Append(menu=self.RestraintEdit, title='Edit')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_DataMenu(self,parent):
         parent.Append(menu=self.DataEdit, title='Edit')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_DrawAtomsMenu(self,parent):
         parent.Append(menu=self.DrawAtomEdit, title='Edit')
+        parent.Append(menu=MyHelp(),title='Help' )
 
     def _init_coll_PawleyMenu(self,parent):
         parent.Append(menu=self.PawleyEdit,title='Operations')
+        parent.Append(menu=MyHelp(),title='Help' )
       
     def _init_coll_IndPeaksMenu(self,parent):
         parent.Append(menu=self.IndPeaksEdit,title='Operations')
+        parent.Append(menu=MyHelp(),title='Help' )
                    
     def _init_coll_ImageMenu(self,parent):
         parent.Append(menu=self.ImageEdit, title='Operations')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_BackMenu(self,parent):
         parent.Append(menu=self.BackEdit, title='File')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_LimitMenu(self,parent):
         parent.Append(menu=self.LimitEdit, title='File')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_InstMenu(self,parent):
         parent.Append(menu=self.InstEdit, title='Operations')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_MaskMenu(self,parent):
         parent.Append(menu=self.MaskEdit, title='Operations')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_SampleMenu(self,parent):
         parent.Append(menu=self.SampleEdit, title='File')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_PeakMenu(self,parent):
         parent.Append(menu=self.PeakEdit, title='Peak Fitting')
+        parent.Append(menu=MyHelp(),title='Help' )
 
     def _init_coll_IndexMenu(self,parent):
         parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
+        parent.Append(menu=MyHelp(),title='Help' )
         
     def _init_coll_ReflMenu(self,parent):
         parent.Append(menu=self.ReflEdit, title='Reflection List')
+        parent.Append(menu=MyHelp(),title='Help' )
 
     def _init_coll_TextureMenu(self,parent):
         parent.Append(menu=self.TextureEdit, title='Texture')
+        parent.Append(menu=MyHelp(),title='Help' )
 
     def _init_coll_PDFMenu(self,parent):
         parent.Append(menu=self.PDFEdit, title='PDF Controls')
+        parent.Append(menu=MyHelp(),title='Help' )
 
     def _init_coll_Atom_Items(self,parent):
         parent.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
@@ -1140,7 +1164,6 @@ def UpdateConstraints(self,data):
     self.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=wxID_FUNCTADD)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=wxID_EQUIVADD)
     self.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=wxID_HOLDADD)
-    self.dataFrame.Bind(wx.EVT_MENU, OnHelp, id=wxID_HELP)
     self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
     
     PhaseConstr = wx.ScrolledWindow(self.dataDisplay)
@@ -1346,7 +1369,9 @@ def MovePatternTreeToGrid(self,item):
         self.dataFrame.Clear()
         self.dataFrame.SetLabel('')
     else:
+        #it all starts here for dataFrame; universal Bind to the Help is here also
         self.dataFrame = DataFrame(parent=self.mainPanel)
+        self.dataFrame.Bind(wx.EVT_MENU, OnHelp, id=wxID_HELP)
 
     self.dataFrame.Raise()            
     self.PickId = 0
@@ -1539,4 +1564,12 @@ def MovePatternTreeToGrid(self,item):
      
 def OnHelp(event):
     Obj = event.GetEventObject()
-    print 'Help on '+Obj.GetTitle()
+    line = 'Help on '+Obj.GetTitle()
+    for child in Obj.GetChildren():
+        if 'NoteBook' in str(type(child)):
+            page = child.GetCurrentPage()
+            notebook = page.GetParent()
+            num = notebook.GetSelection()
+            line = 'Help on '+notebook.GetPageText(num)
+    print line
+    print 'Real help will come here as HTML pages'

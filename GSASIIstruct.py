@@ -1721,8 +1721,13 @@ def Values2Dict(parmdict, varylist, values):
     
 def GetNewCellParms(parmDict,varyList):
     newCellDict = {}
-    Dchoices = ['D11','D22','D33','D12','D13','D23']
-    Achoices = ['A'+str(i) for i in range(6)]
+    Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],['A'+str(i) for i in range(6)]))
+    for item in varyList:
+        keys = item.split(':')
+        if keys[2] in Ddict:
+            key = keys[0]+':'+keys[1]+':'+Ddict[keys[2]]
+            newCellDict[key] = parmDict[key]+parmDict[item]
+            
     
     
     return newCellDict
@@ -2344,47 +2349,46 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
                     hfx+'DisplaceY':[dpdY,'pos'],}
                 for name in names:
+                    item = names[name]
                     if name in varylist:
-                        item = names[name]
                         dMdv[varylist.index(name)] += item[0]*dervDict[item[1]]
-                    if name in dependentVars:
-                        item = names[name]
+                    elif name in dependentVars:
                         depDerivDict[name] += item[0]*dervDict[item[1]]
 
                 for iPO in dIdPO:
                     if iPO in varylist:
                         dMdv[varylist.index(iPO)] += dIdPO[iPO]*dervDict['int']
-                    if iPO in dependentVars:
+                    elif iPO in dependentVars:
                         depDerivDict[iPO] = dIdPO[iPO]*dervDict['int']
 
                 for i,name in enumerate(['omega','chi','phi']):
                     aname = pfx+'SH '+name
                     if aname in varylist:
                         dMdv[varylist.index(aname)] += dFdSA[i]*dervDict['int']
-                    if aname in dependentVars:
+                    elif aname in dependentVars:
                         depDerivDict[aname] += dFdSA[i]*dervDict['int']
                 for iSH in dFdODF:
                     if iSH in varylist:
                         dMdv[varylist.index(iSH)] += dFdODF[iSH]*dervDict['int']
-                    if iSH in dependentVars:
+                    elif iSH in dependentVars:
                         depDerivDict[iSH] += dFdODF[iSH]*dervDict['int']
                 cellDervNames = cellVaryDerv(pfx,SGData,dpdA)
                 for name,dpdA in cellDervNames:
                     if name in varylist:
                         dMdv[varylist.index(name)] += dpdA*dervDict['pos']
-                    if name in dependentVars:
+                    elif name in dependentVars:
                         depDerivDict[name] += dpdA*dervDict['pos']
                 dDijDict = GetHStrainShiftDerv(refl,SGData,phfx)
                 for name in dDijDict:
                     if name in varylist:
                         dMdv[varylist.index(name)] += dDijDict[name]*dervDict['pos']
-                    if name in dependentVars:
+                    elif name in dependentVars:
                         depDerivDict[name] += dDijDict[name]*dervDict['pos']
                 gamDict = GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse)
                 for name in gamDict:
                     if name in varylist:
                         dMdv[varylist.index(name)] += gamDict[name]*dervDict['gam']
-                    if name in dependentVars:
+                    elif name in dependentVars:
                         depDerivDict[name] += gamDict[name]*dervDict['gam']
                                                
             elif 'T' in calcControls[hfx+'histType']:
@@ -2400,7 +2404,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     continue
                 if name in varylist:
                     dMdv[varylist.index(name)] += dFdvDict[name][iref]*corr
-                if name in dependentVars:
+                elif name in dependentVars:
                     depDerivDict[name] += dFdvDict[name][iref]*corr
     # now process derivatives in constraints
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)

@@ -1969,11 +1969,6 @@ def PlotIntegration(self,newPlot=False,event=None):
     Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
     colorBar = Page.figure.colorbar(Img)
-    if Data['setRings'] and Data['rings']:
-        rings = np.concatenate((Data['rings']),axis=0)
-        for xring,yring,dsp in rings:
-            x,y = G2img.GetTthAzm(xring,yring,Data)
-            Plot.plot(x,y,'r+')
     if Data['ellipses']:            
         for ellipse in Data['ellipses']:
             ring = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color

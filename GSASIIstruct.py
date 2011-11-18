@@ -1722,11 +1722,14 @@ def Values2Dict(parmdict, varylist, values):
 def GetNewCellParms(parmDict,varyList):
     newCellDict = {}
     Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],['A'+str(i) for i in range(6)]))
+    Adict = dict(zip(['A'+str(i) for i in range(6)],['D11','D22','D33','D12','D13','D23']))
     for item in varyList:
         keys = item.split(':')
         if keys[2] in Ddict:
             key = keys[0]+':'+keys[1]+':'+Ddict[keys[2]]
             newCellDict[key] = parmDict[key]+parmDict[item]
+        elif keys[2] in Adict:
+            newCellDict[key] = parmDict[item]
             
     
     
@@ -1738,7 +1741,7 @@ def ApplyXYZshifts(parmDict,varyList):
             parmDict - parameter dictionary
             varyList - list of variables
         returns:
-            newAtomDict - dictionary of new atomic coordinate names & values; 
+            newAtomDict - dictitemionary of new atomic coordinate names & values; 
                 key is parameter shift name
     '''
     newAtomDict = {}

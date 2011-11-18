@@ -869,7 +869,7 @@ def UpdateConstraints(self,data):
     histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
     histList = []
     for item in histDict:
-        if item.split(':')[2] not in ['Omega','Type','Chi','Phi','Azimuth','Gonio. radius','Lam1','Lam2']:
+        if item.split(':')[2] not in ['Omega','Type','Chi','Phi','Azimuth','Gonio. radius','Lam1','Lam2','Back']:
             histList.append(item)
     histList.sort()
     Indx = {}

@@ -291,60 +291,12 @@ def PlotPatterns(self,newPlot=False):
     '''
     global HKL
     
-    def OnPick(event):
-        if self.itemPicked is not None: return
-        PatternId = self.PatternId
-        try:
-            Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
-        except TypeError:
-            return
-        Parms = dict(zip(Names,Values))
-        try:
-            wave = Parms['Lam']
-        except KeyError:
-            wave = Parms['Lam1']
-        PickId = self.PickId
-        pick = event.artist
-        mouse = event.mouseevent       
-        xpos = pick.get_xdata()
-        ypos = pick.get_ydata()
-        ind = event.ind
-        xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
-        if self.PatternTree.GetItemText(PickId) == 'Peak List':
-            if ind.all() != [0]:                                    #picked a data point
-                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
-                    ins = [Parms[x] for x in ['U','V','W','X','Y']]
-                    if self.qPlot:                              #qplot - convert back to 2-theta
-                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
-                    sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
-                    gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
-                    data = self.PatternTree.GetItemPyData(self.PickId)
-                    XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
-                data.append(XY)
-                G2pdG.UpdatePeakGrid(self,data)
-                PlotPatterns(self)
-            else:                                                   #picked a peak list line
-                self.itemPicked = pick
-        elif self.PatternTree.GetItemText(PickId) == 'Limits':
-            if ind.all() != [0]:                                    #picked a data point
-                LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
-                data = self.PatternTree.GetItemPyData(LimitId)
-                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
-                    if self.qPlot:                              #qplot - convert back to 2-theta
-                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
-                if mouse.button==1:
-                    data[1][0] = min(xy[0],data[1][1])
-                if mouse.button==3:
-                    data[1][1] = max(xy[0],data[1][0])
-                self.PatternTree.SetItemPyData(LimitId,data)
-                G2pdG.UpdateLimitsGrid(self,data)
-                PlotPatterns(self)
-            else:                                                   #picked a limit line
-                self.itemPicked = pick
-        elif self.PatternTree.GetItemText(PickId) == 'Reflection Lists':
-            if ind.all() == [0]:                                    #picked a limit line
-                self.itemPicked = pick
-        
+    def OnKeyBox(event):
+        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('Powder Patterns'):
+            event.key = cb.GetValue()[0]
+            cb.SetValue(' key press')
+            OnPlotKeyPress(event)
+                        
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w':
@@ -429,12 +381,6 @@ def PlotPatterns(self,newPlot=False):
             
         PlotPatterns(self,newPlot=newPlot)
         
-    def OnKeyBox(event):
-        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('Powder Patterns'):
-            event.key = cb.GetValue()[0]
-            cb.SetValue(' key press')
-            OnPlotKeyPress(event)
-                        
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -474,6 +420,60 @@ def PlotPatterns(self,newPlot=False):
             except TypeError:
                 self.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',1)
                                                    
+    def OnPick(event):
+        if self.itemPicked is not None: return
+        PatternId = self.PatternId
+        try:
+            Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
+        except TypeError:
+            return
+        Parms = dict(zip(Names,Values))
+        try:
+            wave = Parms['Lam']
+        except KeyError:
+            wave = Parms['Lam1']
+        PickId = self.PickId
+        pick = event.artist
+        mouse = event.mouseevent       
+        xpos = pick.get_xdata()
+        ypos = pick.get_ydata()
+        ind = event.ind
+        xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
+        if self.PatternTree.GetItemText(PickId) == 'Peak List':
+            if ind.all() != [0]:                                    #picked a data point
+                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
+                    ins = [Parms[x] for x in ['U','V','W','X','Y']]
+                    if self.qPlot:                              #qplot - convert back to 2-theta
+                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
+                    sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
+                    gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
+                    data = self.PatternTree.GetItemPyData(self.PickId)
+                    XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
+                data.append(XY)
+                G2pdG.UpdatePeakGrid(self,data)
+                PlotPatterns(self)
+            else:                                                   #picked a peak list line
+                self.itemPicked = pick
+        elif self.PatternTree.GetItemText(PickId) == 'Limits':
+            if ind.all() != [0]:                                    #picked a data point
+                LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
+                data = self.PatternTree.GetItemPyData(LimitId)
+                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
+                    if self.qPlot:                              #qplot - convert back to 2-theta
+                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
+                if mouse.button==1:
+                    data[1][0] = min(xy[0],data[1][1])
+                if mouse.button==3:
+                    data[1][1] = max(xy[0],data[1][0])
+                self.PatternTree.SetItemPyData(LimitId,data)
+                G2pdG.UpdateLimitsGrid(self,data)
+                PlotPatterns(self)
+            else:                                                   #picked a limit line
+                self.itemPicked = pick
+        elif self.PatternTree.GetItemText(PickId) == 'Reflection Lists':
+            self.itemPicked = pick
+            pick = str(pick)
+        
     def OnRelease(event):
         if self.itemPicked is None: return
         Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
@@ -483,14 +483,14 @@ def PlotPatterns(self,newPlot=False):
         except KeyError:
             wave = Parms['Lam1']
         xpos = event.xdata
-        if xpos:                                        #avoid out of frame mouse position
+        PickId = self.PickId
+        if self.PatternTree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
             lines = []
             for line in self.Lines: lines.append(line.get_xdata()[0])
             lineNo = lines.index(self.itemPicked.get_xdata()[0])
             if  lineNo in [0,1]:
                 LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
                 data = self.PatternTree.GetItemPyData(LimitId)
-#                print 'limits',xpos
                 if self.qPlot:
                     data[1][lineNo] = 2.0*asind(wave*xpos/(4*math.pi))
                 else:
@@ -511,6 +511,15 @@ def PlotPatterns(self,newPlot=False):
                         data[lineNo-2][0] = xpos
                 self.PatternTree.SetItemPyData(PeakId,data)
                 G2pdG.UpdatePeakGrid(self,data)
+        elif self.PatternTree.GetItemText(PickId) == 'Reflection Lists' and xpos:
+            Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
+            pick = str(self.itemPicked).split('(')[1].strip(')')
+            if 'Line' not in pick:       #avoid data points, etc.
+                num = Phases.keys().index(pick)
+                if num:
+                    self.refDelt = -(event.ydata-self.refOffset)/(num*Ymax)
+                else:       #1st row of refl ticks
+                    self.refOffset = event.ydata
         PlotPatterns(self)
         self.itemPicked = None    
 
@@ -638,10 +647,10 @@ def PlotPatterns(self,newPlot=False):
             if ifpicked:
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
-                D = xye[5]-Ymax*.02
+                D = xye[5]-Ymax*self.delOffset
                 if self.Weight:
                     W2 = np.sqrt(xye[2])
-                    D *= W2-Ymax*.02
+                    D *= W2-Ymax*self.delOffset
                 if self.logPlot:
                     Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
                     Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
@@ -693,13 +702,15 @@ def PlotPatterns(self,newPlot=False):
         elif self.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
             Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
-                pId += 1
                 peaks = Phases[phase]
-                for peak in peaks:
-                    if self.qPlot:
-                        Plot.plot(2*np.pi/peak[4],offset*N-pId*Ymax*.005,colors[pId%6]+'|',mew=1,ms=8,picker=2.)
-                    else:
-                        Plot.plot(peak[5],offset*N-pId*Ymax*.005,colors[pId%6]+'|',mew=1,ms=8,picker=2.)
+                peak = np.array([[peak[4],peak[5]] for peak in peaks])
+                pos = self.refOffset-pId*Ymax*self.refDelt*np.ones_like(peak)
+                if self.qPlot:
+                    Plot.plot(2*np.pi/peak.T[0],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                else:
+                    Plot.plot(peak.T[1],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+            handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
+            Plot.legend(handles[::2],legends[::2],title='Phases',loc='best')    #skip every other one
             
     if self.Contour:
         acolor = mpl.cm.get_cmap(self.ContourColor)
@@ -1084,7 +1095,6 @@ def PlotPeakWidths(self):
     Y = []
     Z = []
     W = []
-#    V = []
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
@@ -1094,18 +1104,15 @@ def PlotPeakWidths(self):
         s = sig(theta,GU,GV,GW)
         g = gam(theta,LX,LY)
         G = gamFW(g,s)
-#        H = gamFW2(g,s)
         Y.append(s/tand(theta))
         Z.append(g/tand(theta))
         W.append(G/tand(theta))
-#        V.append(H/tand(theta))
     Plot.set_title('Instrument and sample peak widths')
     Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
     Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
     Plot.plot(X,Y,color='r',label='Gaussian')
     Plot.plot(X,Z,color='g',label='Lorentzian')
     Plot.plot(X,W,color='b',label='G+L')
-#    Plot.plot(X,V,color='k',label='G+L2')
     X = []
     Y = []
     Z = []
@@ -1119,15 +1126,12 @@ def PlotPeakWidths(self):
             s = 0.01
         g = peak[6]*math.pi/18000.
         G = gamFW(g,s)
-#        H = gamFW2(g,s)
         Y.append(s/tand(peak[0]/2.))
         Z.append(g/tand(peak[0]/2.))
         W.append(G/tand(peak[0]/2.))
-#        V.append(H/tand(peak[0]/2.))
     Plot.plot(X,Y,'+',color='r',label='G peak')
     Plot.plot(X,Z,'+',color='g',label='L peak')
     Plot.plot(X,W,'+',color='b',label='G+L peak')
-#    Plot.plot(X,V,'+',color='k',label='G+L2 peak')
     Plot.legend(loc='best')
     Page.canvas.draw()
     

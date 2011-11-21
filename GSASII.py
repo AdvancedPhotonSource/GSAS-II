@@ -270,6 +270,9 @@ class GSASII(wx.Frame):
         self.undofile = ''
         self.TreeItemDelete = False
         self.Offset = [0.0,0.0]
+        self.delOffset = .02
+        self.refOffset = -100.0
+        self.refDelt = .01
         self.Weight = False
         self.IparmName = ''
         self.IfPlot = False

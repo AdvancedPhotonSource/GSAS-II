@@ -1504,7 +1504,7 @@ class GSASII(wx.Frame):
     def OnRefine(self,event):
         self.OnFileSave(event)
         #works - but it'd be better if it could restore plots
-        dlg = wx.ProgressDialog('Residual','wRp =',101.0, 
+        dlg = wx.ProgressDialog('Residual','Powder profile Rwp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()

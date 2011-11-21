@@ -1722,17 +1722,12 @@ def Values2Dict(parmdict, varylist, values):
 def GetNewCellParms(parmDict,varyList):
     newCellDict = {}
     Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],['A'+str(i) for i in range(6)]))
-    Adict = dict(zip(['A'+str(i) for i in range(6)],['D11','D22','D33','D12','D13','D23']))
     for item in varyList:
         keys = item.split(':')
         if keys[2] in Ddict:
-            key = keys[0]+':'+keys[1]+':'+Ddict[keys[2]]
-            newCellDict[key] = parmDict[key]+parmDict[item]
-        elif keys[2] in Adict:
-            newCellDict[key] = parmDict[item]
-            
-    
-    
+            key = keys[0]+'::'+Ddict[keys[2]]
+            parm = keys[0]+'::'+keys[2]
+            newCellDict[parm] = [key,parmDict[key]+parmDict[item]]
     return newCellDict
     
 def ApplyXYZshifts(parmDict,varyList):
@@ -2471,7 +2466,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     Histograms['Nobs'] = Nobs
     Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
     if dlg:
-        GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('wRp =',Rwp,'%'))[0]
+        GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile Rwp =',Rwp,'%'))[0]
         if not GoOn:
             parmDict['saved values'] = values
             raise Exception         #Abort!!
@@ -2551,8 +2546,6 @@ def Refine(GPXfile,dlg):
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict,varyList)
-        newCellDict = GetNewCellParms(parmDict,varyList)
-        newAtomDict = ApplyXYZshifts(parmDict,varyList)
         
         Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
         GOF = chisq/(Histograms['Nobs']-len(varyList))
@@ -2587,6 +2580,9 @@ def Refine(GPXfile,dlg):
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
 #    print 'test2'
     sigDict = dict(zip(varyList,sig))
+    newCellDict = GetNewCellParms(parmDict,varyList)
+    print newCellDict
+    newAtomDict = ApplyXYZshifts(parmDict,varyList)
     covData = {'variables':result[0],'varyList':varyList,'sig':sig,
         'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
     # add the uncertainties into the esd dictionary (sigDict)
@@ -2704,8 +2700,6 @@ def SeqRefine(GPXfile,dlg):
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             G2mv.Dict2Map(parmDict,varyList)
-            newCellDict = GetNewCellParms(parmDict,varyList)
-            newAtomDict = ApplyXYZshifts(parmDict,varyList)
             
             Rwp = np.sqrt(chisq/Histo['sumwYo'])*100.      #to %
             GOF = chisq/(Histo['Nobs']-len(varyList))
@@ -2732,6 +2726,8 @@ def SeqRefine(GPXfile,dlg):
     
         GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))
+        newCellDict = GetNewCellParms(parmDict,varyList)
+        newAtomDict = ApplyXYZshifts(parmDict,varyList)
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,
             'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)

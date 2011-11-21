@@ -564,7 +564,7 @@ def Dict2Deriv(varyList,derivDict,dMdv):
             # dependent variables to the independent ones
             if name not in varyList: continue # if independent var not varied
             for m,v in zip(invmultarr[:,i],varlist):
-                print 'add derv',v,'*',m,'to derv',name
+#                print 'add derv',v,'*',m,'to derv',name
                 if m == 0: continue
                 dMdv[varyList.index(name)] += m * derivDict[v]
 

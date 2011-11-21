@@ -85,9 +85,10 @@ import GSASIIstruct as G2str
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class MyHelp(wx.Menu):
-    def __init__(self,title=''):
+    def __init__(self,title='',helpType='this item'):
         wx.Menu.__init__(self,title)
-        self.Append(help='Help on this item',id=wxID_HELP, kind=wx.ITEM_NORMAL,
+        self.helpType = helpType            #there must be some way to get this
+        self.Append(help='Help on '+helpType,id=wxID_HELP, kind=wx.ITEM_NORMAL,
             text='Help')                            
 
 class DataFrame(wx.Frame):
@@ -96,75 +97,75 @@ class DataFrame(wx.Frame):
         
     def _init_coll_AtomsMenu(self,parent):
         parent.Append(menu=self.AtomEdit, title='Edit')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Atoms'),title='Help')
         
     def _init_coll_ConstraintMenu(self,parent):
         parent.Append(menu=self.ConstraintEdit, title='Edit')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Constraints'),title='Help')
         
     def _init_coll_RestraintMenu(self,parent):
         parent.Append(menu=self.RestraintEdit, title='Edit')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Restraints'),title='Help')
         
     def _init_coll_DataMenu(self,parent):
         parent.Append(menu=self.DataEdit, title='Edit')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Data'),title='Help')
         
     def _init_coll_DrawAtomsMenu(self,parent):
         parent.Append(menu=self.DrawAtomEdit, title='Edit')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Draw Atoms'),title='Help')
 
     def _init_coll_PawleyMenu(self,parent):
         parent.Append(menu=self.PawleyEdit,title='Operations')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Pawley'),title='Help')
       
     def _init_coll_IndPeaksMenu(self,parent):
         parent.Append(menu=self.IndPeaksEdit,title='Operations')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Index Peaks'),title='Help')
                    
     def _init_coll_ImageMenu(self,parent):
         parent.Append(menu=self.ImageEdit, title='Operations')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Images'),title='Help')
         
     def _init_coll_BackMenu(self,parent):
         parent.Append(menu=self.BackEdit, title='File')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Background'),title='Help')
         
     def _init_coll_LimitMenu(self,parent):
         parent.Append(menu=self.LimitEdit, title='File')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Limits'),title='Help')
         
     def _init_coll_InstMenu(self,parent):
         parent.Append(menu=self.InstEdit, title='Operations')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Instrument Parameters'),title='Help')
         
     def _init_coll_MaskMenu(self,parent):
         parent.Append(menu=self.MaskEdit, title='Operations')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Image Masks'),title='Help')
         
     def _init_coll_SampleMenu(self,parent):
         parent.Append(menu=self.SampleEdit, title='File')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Sample Parameters'),title='Help')
         
     def _init_coll_PeakMenu(self,parent):
         parent.Append(menu=self.PeakEdit, title='Peak Fitting')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Powder Peaks'),title='Help')
 
     def _init_coll_IndexMenu(self,parent):
         parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Cell Indexing/Refine'),title='Help')
         
     def _init_coll_ReflMenu(self,parent):
         parent.Append(menu=self.ReflEdit, title='Reflection List')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Reflection List'),title='Help')
 
     def _init_coll_TextureMenu(self,parent):
         parent.Append(menu=self.TextureEdit, title='Texture')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='Texture'),title='Help')
 
     def _init_coll_PDFMenu(self,parent):
         parent.Append(menu=self.PDFEdit, title='PDF Controls')
-        parent.Append(menu=MyHelp(),title='Help' )
+        parent.Append(menu=MyHelp(helpType='PDF Controls'),title='Help')
 
     def _init_coll_Atom_Items(self,parent):
         parent.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
@@ -676,9 +677,8 @@ def UpdateControls(self,data):
             for i in sel: names.append(choices[i])
             if 'All' in names:
                 names = choices[1:]
-                
+            data['Seq Data'] = names                
         dlg.Destroy()
-        data['Seq Data'] = names
         reverseSel.Enable(True)
         
     def OnReverse(event):
@@ -794,6 +794,8 @@ def UpdateSeqResults(self,data):
             sigList = data[name]['sig']
             if colLabels[parm] in atomList:
                 sigData.append(sigList[colLabels.index(atomList[colLabels[parm]])])
+            elif colLabels[parm] in cellList:
+                sigData.append(sigList[colLabels.index(cellList[colLabels[parm]])])
             else:
                 sigData.append(sigList[parm])
         return sigData
@@ -817,6 +819,11 @@ def UpdateSeqResults(self,data):
                
     if self.dataDisplay:
         self.dataDisplay.Destroy()
+    cellList = {}
+    newCellDict = data[histNames[0]]['newCellDict']
+    for item in newCellDict:
+        if item in data['varyList']:
+            cellList[newCellDict[item][0]] = item
     atomList = {}
     newAtomDict = data[histNames[0]]['newAtomDict']
     for item in newAtomDict:
@@ -826,13 +833,15 @@ def UpdateSeqResults(self,data):
     self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
     self.dataFrame.SetLabel('Sequental refinement results')
     self.dataFrame.CreateStatusBar()
-    colLabels = data['varyList']+atomList.keys()
-    Types = len(data['varyList']+atomList.keys())*[wg.GRID_VALUE_FLOAT,]
+    colLabels = data['varyList']+atomList.keys()+cellList.keys()
+    Types = len(data['varyList']+atomList.keys()+cellList.keys())*[wg.GRID_VALUE_FLOAT,]
     seqList = [list(data[name]['variables']) for name in histNames]
     
     for i,item in enumerate(seqList):
         newAtomDict = data[histNames[i]]['newAtomDict']
+        newCellDict = data[histNames[i]]['newCellDict']
         item += [newAtomDict[atomList[parm]][1] for parm in atomList.keys()]
+        item += [newCellDict[cellList[parm]][1] for parm in cellList.keys()]
     self.SeqTable = Table(seqList,colLabels=colLabels,rowLabels=histNames,types=Types)
     self.dataDisplay = GSGrid(parent=self.dataFrame)
     self.dataDisplay.SetTable(self.SeqTable, True)
@@ -1567,9 +1576,7 @@ def OnHelp(event):
     line = 'Help on '+Obj.GetTitle()
     for child in Obj.GetChildren():
         if 'NoteBook' in str(type(child)):
-            page = child.GetCurrentPage()
-            notebook = page.GetParent()
-            num = notebook.GetSelection()
-            line = 'Help on '+notebook.GetPageText(num)
+            notebook = child.GetCurrentPage().GetParent()
+            line = 'Help on '+notebook.GetPageText(notebook.GetSelection())
     print line
     print 'Real help will come here as HTML pages'

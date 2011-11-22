@@ -904,6 +904,7 @@ class GSASII(wx.Frame):
                 'SGData':SGData,
                 'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
                 'Pawley dmin':1.0,
+                'Data plot type':'Microstrain',
                 'SH Texture':{
                     'Order':0,
                     'Model':'cylindrical',

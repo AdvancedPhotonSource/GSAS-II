@@ -1064,6 +1064,20 @@ def UpdateUnitCellsGrid(self, data):
             G2plt.PlotPowderLines(self)
         else:
             G2plt.PlotPatterns(self)
+            
+    def OnSortCells(event):
+        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
+        c =  event.GetCol()
+        if colLabels[c] == 'M20':
+            cells = G2indx.sortM20(cells)
+        elif colLabels[c] == 'Volume':
+            cells = G2indx.sortVolume(cells)
+        else:
+            return
+        data = [controls,bravais,cells,dmin]
+        self.PatternTree.SetItemPyData(UnitCellsId,data)
+        UpdateUnitCellsGrid(self,data)
+
         
     def CopyUnitCell(event):
         controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
@@ -1382,6 +1396,7 @@ def UpdateUnitCellsGrid(self, data):
         gridDisplay.SetTable(UnitCellsTable, True)
         self.dataFrame.CopyCell.Enable(True)
         gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
+        gridDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnSortCells)
         gridDisplay.SetMargins(0,0)
         gridDisplay.SetRowLabelSize(0)
         gridDisplay.AutoSizeColumns(False)

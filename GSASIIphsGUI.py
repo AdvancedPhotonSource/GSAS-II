@@ -149,6 +149,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
         generalData['Isotopes'] = {}
         if 'Isotope' not in generalData:
             generalData['Isotope'] = {}
+        if 'Data plot type' not in generalData:
+            generalData['Data plot type'] = 'Microstrain'
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
@@ -2109,6 +2111,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
         keyList.sort()
         Indx = {}
         
+        def OnPlotSel(event):
+            generalData['Data plot type'] = plotSel.GetStringSelection()
+        
         def OnShowData(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -2561,6 +2566,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
         dataDisplay = wx.Panel(DData)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        plotSizer = wx.BoxSizer(wx.HORIZONTAL)
+        choice = ['Microstrain','Size','Preferred orientation']
+        plotSel = wx.RadioBox(dataDisplay,-1,'Select plot type:',choices=choice,
+            majorDimension=3,style=wx.RA_SPECIFY_COLS)
+        plotSel.SetStringSelection(generalData['Data plot type'])
+        plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
+        plotSizer.Add(plotSel)
+        mainSizer.Add(plotSizer)
         for item in keyList:
             histData = UseList[item]
             mainSizer.Add((5,5),0)

@@ -191,6 +191,19 @@ def sortM20(cells):
         X.append(D[key])
     return X
                 
+def sortVolume(cells):
+    #cells is M20,X20,Bravais,a,b,c,alp,bet,gam,volume
+    #sort smallest volume 1st
+    T = []
+    for i,M in enumerate(cells):
+        T.append((M[9],i))
+    D = dict(zip(T,cells))
+    T.sort()
+    X = []
+    for key in T:
+        X.append(D[key])
+    return X
+                
 def IndexPeaks(peaks,HKL):
     import bisect
     N = len(HKL)
@@ -205,6 +218,9 @@ def IndexPeaks(peaks,HKL):
             dp = hklds[i]-peak[7]
             pos = N-i                                       # reverse the order
             if dp > dm: pos += 1                            # closer to upper than lower
+            if pos >= N:
+                print pos,N
+                break
             hkl = HKL[pos]                                 # put in hkl
             if hkl[4] >= 0:                                 # peak already assigned - test if this one better
                 opeak = peaks[hkl[4]]
@@ -381,10 +397,9 @@ def refinePeaks(peaks,ibrav,A):
         H = Peaks[4:7]
         try:
             Peaks[8] = 1./np.sqrt(G2lat.calc_rDsq(H,A))
+            peaks = Peaks.T
         except FloatingPointError:
-            print G2lat.calc_rDsq(H,A)
-            Peaks[8] = 1.0
-        peaks = Peaks.T
+            A = oldA
         
     M20,X20 = calc_M20(peaks,HKL)
     return len(HKL),M20,X20,A

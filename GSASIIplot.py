@@ -588,9 +588,10 @@ def PlotPatterns(self,newPlot=False):
     if self.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
         Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
         HKL = []
-        for peak in Phases[self.RefList]:
-            HKL.append(peak[:6])
-        HKL = np.array(HKL)
+        if Phases:
+            for peak in Phases[self.RefList]:
+                HKL.append(peak[:6])
+            HKL = np.array(HKL)
     else:
         HKL = np.array(self.HKL)
     for Pattern in PlotList:
@@ -680,7 +681,7 @@ def PlotPatterns(self,newPlot=False):
                     Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='clip')
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
-    if PickId:
+    if PickId and not self.Contour:
         Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1::2]
         Parms = dict(zip(Names,Values))
         try:
@@ -1178,7 +1179,8 @@ def PlotStrain(self,data):
             Y = np.outer(npcosd(PHI),npsind(PSI))
             Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
             if muStrain[0] == 'isotropic':
-                muiso = muStrain[1][0]*math.pi/0.018      #centidegrees to radians!
+#                muiso = muStrain[1][0]*math.pi/0.018      #centidegrees to radians!
+                muiso = muStrain[1][0]
                 X *= muiso
                 Y *= muiso
                 Z *= muiso                
@@ -1190,7 +1192,8 @@ def PlotStrain(self,data):
                     sp = np.sqrt(1.-cp**2)
                     R = muiso*muaniso/np.sqrt((muiso*cp)**2+(muaniso*sp)**2)
 #                    S = muiso+muaniso*cp           #old GSAS - wrong math!!
-                    return R*xyz*math.pi/0.018      #centidegrees to radians!
+#                    return R*xyz*math.pi/0.018      #centidegrees to radians!
+                    return R*xyz
                 muiso,muaniso = muStrain[1][:2]
                 axes = np.inner(A,np.array(muStrain[3]))
                 axes /= nl.norm(axes)

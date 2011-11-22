@@ -11,6 +11,9 @@ import wx.grid as wg
 import time
 import cPickle
 import numpy as np
+import os.path
+import wx.html        # could postpone this for quicker startup
+import webbrowser     # could postpone this for quicker startup
 import GSASIIpath
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
@@ -18,6 +21,16 @@ import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 import GSASIIstruct as G2str
 #import GSASIImapvars as G2mv
+
+# globals we will use later
+__version__ = None # gets overridden in GSASII.py
+path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this file
+helpLocDict = {}
+htmlPanel = None
+htmlFrame = None
+helpMode = 'internal'    # need a global control to set this
+#helpMode = 'browser'    # need a global control to set this
+htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSTESTADD, wxID_ATONTESTINSERT,
@@ -79,17 +92,126 @@ import GSASIIstruct as G2str
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
 ] = [wx.NewId() for _init_coll_PDF_Items in range(7)]
 
-[ wxID_HELP,
-] = [wx.NewId() for _init_coll_Help_Items in range(1)]
-
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class MyHelp(wx.Menu):
-    def __init__(self,title='',helpType='this item'):
+    '''This class creates the contents of a help menu.
+    The menu will start with two entries:
+      'Help on <helpType>': where helpType is a reference to an HTML page to
+      be opened
+      About: opens an About dialog using OnHelpAbout. N.B. on the Mac this
+      gets moved to the App menu to be consistent with Apple style.
+    NOTE: the title for this menu should be '&Help' so the wx handles
+    it correctly. BHT
+    '''
+    def __init__(self,frame,title='',helpType=None):
         wx.Menu.__init__(self,title)
-        self.helpType = helpType            #there must be some way to get this
-        self.Append(help='Help on '+helpType,id=wxID_HELP, kind=wx.ITEM_NORMAL,
-            text='Help')                            
+        self.helpType = helpType
+        self.frame = frame
+        # add a help item only when helpType is specified
+        if helpType is not None:
+            helpobj = self.Append(text='Help on '+helpType,
+                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+            frame.Bind(wx.EVT_MENU, self.OnHelp, helpobj)
+        self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
+                    text='&About GSAS-II')
+        frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
+
+    def OnHelp(self,event):
+        '''Called when Help on... is pressed in a menu. Brings up
+        a web page for documentation.
+        '''
+        global helpLocDict
+        global helpMode
+        # look up a definition for help info from dict
+        helplink = helpLocDict.get(self.helpType)
+        if helplink is None:
+            # no defined link to use, create a default based on key
+            helplink = 'gsasII.html#' + self.helpType
+        helplink = os.path.join(path2GSAS2,'help',helplink)
+        if helpMode == 'internal':
+            global htmlPanel, htmlFrame
+            try:
+                htmlPanel.LoadFile(helplink)
+            except:
+                htmlFrame = wx.Frame(self.frame, -1, size=(610, 380))
+                htmlFrame.Show(True)
+                htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
+                htmlPanel = MyHtmlPanel(htmlFrame,-1)
+                htmlPanel.LoadFile(helplink)
+        else:
+            global htmlFirstUse
+            #import webbrowser
+            if htmlFirstUse:
+                webbrowser.open_new("file://"+helplink)
+                htmlFirstUse = False
+            else:
+                webbrowser.open("file://"+helplink, new=0, autoraise=True)
+
+    def OnHelpAbout(self, event):
+        "Display an 'About GSAS-II' box"
+        global __version__
+        info = wx.AboutDialogInfo()
+        info.Name = 'GSAS-II'
+        info.Version = __version__
+        info.Copyright = '''
+Robert B. Von Dreele
+Argonne National Laboratory(C)
+This product includes software developed
+by the UChicago Argonne, LLC, as 
+Operator of Argonne National Laboratory.         '''
+        info.Description = '''
+General Structure Analysis System - II
+'''
+        wx.AboutBox(info)
+
+class MyHtmlPanel(wx.Panel):
+    '''Defines a panel to display Help information'''
+    def __init__(self, frame, id):
+        self.frame = frame
+        wx.Panel.__init__(self, frame, id)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        back = wx.Button(self, -1, "Back")
+        back.Bind(wx.EVT_BUTTON, self.OnBack)
+        sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
+
+        #self.htmlwin = wx.html.HtmlWindow(self, id, size=(602,310))
+        self.htmlwin = G2HtmlWindow(self, id, size=(602,310))
+        sizer.Add(self.htmlwin, 1, wx.GROW|wx.ALL, 0)
+        self.SetSizer(sizer)
+        sizer.Fit(frame)        
+    def OnBack(self, event):
+        self.htmlwin.HistoryBack()
+    def LoadFile(self,file):
+        pos = file.rfind('#')
+        if pos != -1:
+            helpfile = file[:pos]
+            helpanchor = file[pos+1:]
+        else:
+            helpfile = file
+            helpanchor = None
+        self.htmlwin.LoadPage(helpfile)
+        if helpanchor is not None:
+            self.htmlwin.ScrollToAnchor(helpanchor)
+
+class G2HtmlWindow(wx.html.HtmlWindow):
+    '''Displays help information in a primitive HTML browser type window
+    '''
+    def __init__(self, parent, *args, **kwargs):
+        self.parent = parent
+        wx.html.HtmlWindow.__init__(self, parent, *args, **kwargs)
+    def LoadPage(self, *args, **kwargs):
+        wx.html.HtmlWindow.LoadPage(self, *args, **kwargs)
+        self.TitlePage()
+    def OnLinkClicked(self, *args, **kwargs):
+        wx.html.HtmlWindow.OnLinkClicked(self, *args, **kwargs)
+        self.TitlePage()
+    def HistoryBack(self, *args, **kwargs):
+        wx.html.HtmlWindow.HistoryBack(self, *args, **kwargs)
+        self.TitlePage()
+    def TitlePage(self):
+        self.parent.frame.SetTitle(self.GetOpenedPage() + ' -- ' + 
+                                   self.GetOpenedPageTitle())
 
 class DataFrame(wx.Frame):
     def _init_coll_BlankMenu(self,parent):
@@ -97,75 +219,75 @@ class DataFrame(wx.Frame):
         
     def _init_coll_AtomsMenu(self,parent):
         parent.Append(menu=self.AtomEdit, title='Edit')
-        parent.Append(menu=MyHelp(helpType='Atoms'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Atoms'),title='&Help')
         
     def _init_coll_ConstraintMenu(self,parent):
         parent.Append(menu=self.ConstraintEdit, title='Edit')
-        parent.Append(menu=MyHelp(helpType='Constraints'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Constraints'),title='&Help')
         
     def _init_coll_RestraintMenu(self,parent):
         parent.Append(menu=self.RestraintEdit, title='Edit')
-        parent.Append(menu=MyHelp(helpType='Restraints'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Restraints'),title='&Help')
         
     def _init_coll_DataMenu(self,parent):
         parent.Append(menu=self.DataEdit, title='Edit')
-        parent.Append(menu=MyHelp(helpType='Data'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Data'),title='&Help')
         
     def _init_coll_DrawAtomsMenu(self,parent):
         parent.Append(menu=self.DrawAtomEdit, title='Edit')
-        parent.Append(menu=MyHelp(helpType='Draw Atoms'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Draw Atoms'),title='&Help')
 
     def _init_coll_PawleyMenu(self,parent):
         parent.Append(menu=self.PawleyEdit,title='Operations')
-        parent.Append(menu=MyHelp(helpType='Pawley'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Pawley'),title='&Help')
       
     def _init_coll_IndPeaksMenu(self,parent):
         parent.Append(menu=self.IndPeaksEdit,title='Operations')
-        parent.Append(menu=MyHelp(helpType='Index Peaks'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Index Peaks'),title='&Help')
                    
     def _init_coll_ImageMenu(self,parent):
         parent.Append(menu=self.ImageEdit, title='Operations')
-        parent.Append(menu=MyHelp(helpType='Images'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Images'),title='&Help')
         
     def _init_coll_BackMenu(self,parent):
         parent.Append(menu=self.BackEdit, title='File')
-        parent.Append(menu=MyHelp(helpType='Background'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Background'),title='&Help')
         
     def _init_coll_LimitMenu(self,parent):
         parent.Append(menu=self.LimitEdit, title='File')
-        parent.Append(menu=MyHelp(helpType='Limits'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Limits'),title='&Help')
         
     def _init_coll_InstMenu(self,parent):
         parent.Append(menu=self.InstEdit, title='Operations')
-        parent.Append(menu=MyHelp(helpType='Instrument Parameters'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Instrument Parameters'),title='&Help')
         
     def _init_coll_MaskMenu(self,parent):
         parent.Append(menu=self.MaskEdit, title='Operations')
-        parent.Append(menu=MyHelp(helpType='Image Masks'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Image Masks'),title='&Help')
         
     def _init_coll_SampleMenu(self,parent):
         parent.Append(menu=self.SampleEdit, title='File')
-        parent.Append(menu=MyHelp(helpType='Sample Parameters'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Sample Parameters'),title='&Help')
         
     def _init_coll_PeakMenu(self,parent):
         parent.Append(menu=self.PeakEdit, title='Peak Fitting')
-        parent.Append(menu=MyHelp(helpType='Powder Peaks'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Powder Peaks'),title='&Help')
 
     def _init_coll_IndexMenu(self,parent):
         parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
-        parent.Append(menu=MyHelp(helpType='Cell Indexing/Refine'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Cell Indexing/Refine'),title='&Help')
         
     def _init_coll_ReflMenu(self,parent):
         parent.Append(menu=self.ReflEdit, title='Reflection List')
-        parent.Append(menu=MyHelp(helpType='Reflection List'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Reflection List'),title='&Help')
 
     def _init_coll_TextureMenu(self,parent):
         parent.Append(menu=self.TextureEdit, title='Texture')
-        parent.Append(menu=MyHelp(helpType='Texture'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='Texture'),title='&Help')
 
     def _init_coll_PDFMenu(self,parent):
         parent.Append(menu=self.PDFEdit, title='PDF Controls')
-        parent.Append(menu=MyHelp(helpType='PDF Controls'),title='Help')
+        parent.Append(menu=MyHelp(self,helpType='PDF Controls'),title='&Help')
 
     def _init_coll_Atom_Items(self,parent):
         parent.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
@@ -1378,9 +1500,8 @@ def MovePatternTreeToGrid(self,item):
         self.dataFrame.Clear()
         self.dataFrame.SetLabel('')
     else:
-        #it all starts here for dataFrame; universal Bind to the Help is here also
+        #create the frame for the data item window
         self.dataFrame = DataFrame(parent=self.mainPanel)
-        self.dataFrame.Bind(wx.EVT_MENU, OnHelp, id=wxID_HELP)
 
     self.dataFrame.Raise()            
     self.PickId = 0

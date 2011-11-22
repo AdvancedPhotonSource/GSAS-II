@@ -47,6 +47,8 @@ try:
 except:
     print "MKL module not present"
 __version__ = '0.1.5'
+G2gd.__version__ = __version__
+print "This is GSAS-II version:     ",__version__
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -79,9 +81,6 @@ wxID_IMPORTCIF, wxID_IMPORTPDB,
 wxID_EXPORTCIF, wxID_EXPORTPEAKLIST, wxID_EXPORTPDF,
 ] = [wx.NewId() for _init_coll_Export_Items in range(7)]
 
-[wxID_HELPABOUT, wxID_HELPHELP,
-] = [wx.NewId() for _init_coll_Help_Items in range(2)]
-
 class GSASII(wx.Frame):
     
     def _init_coll_GSASIIMenu_Menus(self, parent):
@@ -90,7 +89,7 @@ class GSASII(wx.Frame):
         parent.Append(menu=self.Calculate, title='Calculate')
         parent.Append(menu=self.Import, title='Import')
         parent.Append(menu=self.Export, title='Export')
-        parent.Append(menu=self.Help, title='Help')
+        parent.Append(menu=G2gd.MyHelp(self,helpType='Data tree'),title='&Help' )
 
     def _init_coll_File_Items(self, parent):
         parent.Append(help='Open a gsasii project file (*.gpx)', id=wxID_FILEOPEN,
@@ -204,14 +203,6 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExportPhase, id=wxID_EXPORTPHASE)
         self.Bind(wx.EVT_MENU, self.OnExportCIF, id=wxID_EXPORTCIF)
                
-    def _init_coll_Help_Items(self, parent):
-        parent.Append(help='', id=wxID_HELPHELP, kind=wx.ITEM_NORMAL,
-            text='Help')
-        parent.Append(help='', id=wxID_HELPABOUT, kind=wx.ITEM_NORMAL,
-            text='About')
-        self.Bind(wx.EVT_MENU, self.OnHelpHelp, id=wxID_HELPHELP)
-        self.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wxID_HELPABOUT)
-
     def _init_utils(self):
         self.GSASIIMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
@@ -219,7 +210,6 @@ class GSASII(wx.Frame):
         self.Calculate = wx.Menu(title='')        
         self.Import = wx.Menu(title='')        
         self.Export = wx.Menu(title='')        
-        self.Help = wx.Menu(title='')
 
         self._init_coll_GSASIIMenu_Menus(self.GSASIIMenu)
         self._init_coll_File_Items(self.File)
@@ -227,7 +217,6 @@ class GSASII(wx.Frame):
         self._init_coll_Calculate_Items(self.Calculate)
         self._init_coll_Import_Items(self.Import)
         self._init_coll_Export_Items(self.Export)
-        self._init_coll_Help_Items(self.Help)
         
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,
@@ -1598,22 +1587,7 @@ class GSASII(wx.Frame):
 
     def OnHelpHelp(self, event):
         event.Skip()
-        
-    def OnHelpAbout(self, event):
-        info = wx.AboutDialogInfo()
-        info.Name = 'GSAS-II'
-        info.Version = __version__
-        info.Copyright = '''
-Robert B. Von Dreele
-Argonne National Laboratory(C)
-This product includes software developed
-by the UChicago Argonne, LLC, as 
-Operator of Argonne National Laboratory.         '''
-        info.Description = '''
-General Structure Analysis System - II
-        '''
-        wx.AboutBox(info)
-        
+                
 class GSASIImain(wx.App):
     def OnInit(self):
         self.main = GSASII(None)

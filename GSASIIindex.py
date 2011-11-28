@@ -288,25 +288,29 @@ def FitHKL(ibrav,peaks,A,Pwr):
     A = Values2A(ibrav,result[0])
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result
            
-def FitHKLZ(wave,ibrav,peaks,A,Z,Pwr):
+def FitHKLZ(wave,ibrav,peaks,A,Z,Zref,Pwr):
     
-    def errFit(values,ibrav,d,H,tth,wave,Pwr):
-        A = Values2A(ibrav,values[:-1])
-        Z = values[-1]
+    def errFit(values,ibrav,d,H,tth,wave,Zref,Pwr):
+        Zero = Z
+        if Zref:    
+            Zero = values[-1]
+        A = Values2A(ibrav,values[:6])
         Qo = 1./d**2
-        Qc = G2lat.calc_rDsqZ(H,A,Z,tth,wave)
+        Qc = G2lat.calc_rDsqZ(H,A,Zero,tth,wave)
         return (Qo-Qc)*d**Pwr
     
     Peaks = np.array(peaks).T
     
     values = A2values(ibrav,A)
-    values.append(Z)
-    result = so.leastsq(errFit,values,full_output=True,ftol=0.001,
-        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Pwr))
-    A = Values2A(ibrav,result[0][:-1])
-    Z = result[0][-1]
+    if Zref:
+        values.append(Z)
+    result = so.leastsq(errFit,values,full_output=True,ftol=0.0001,factor=0.001,
+        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Zref,Pwr))
+    A = Values2A(ibrav,result[0][:6])
+    if Zref:
+        Z = result[0][-1]
     
-    return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Pwr)**2),A,Z,result
+    return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Zref,Pwr)**2),A,Z,result
                
 def rotOrthoA(A):
     return [A[1],A[2],A[0],0,0,0]
@@ -348,14 +352,13 @@ def getDmin(peaks):
 def getDmax(peaks):
     return peaks[0][7]
     
-def refinePeaksZ(peaks,wave,ibrav,A,Zero):
+def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
     dmin = getDmin(peaks)
-    OK,smin,Aref,Z,result = FitHKLZ(wave,ibrav,peaks,A,Zero,2)
+    OK,smin,Aref,Z,result = FitHKLZ(wave,ibrav,peaks,A,Zero,ZeroRef,0)
     Peaks = np.array(peaks).T
     H = Peaks[4:7]
     Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqZ(H,Aref,Z,Peaks[0],wave))
-    peaks = Peaks.T
-    
+    peaks = Peaks.T    
     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
     M20,X20 = calc_M20(peaks,HKL)
     return len(HKL),M20,X20,Aref,Z
@@ -500,15 +503,10 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
     Nm  = [1,1,1,   1,1,  1,1,     1,1,1,1,   2,2,   4]
     Nobs = len(peaks)
     wave = inst[1]
-    if len(inst) > 10:
-        zero = inst[3]
-    else:
-        zero = inst[2]
-    print "%s %8.5f %6.3f" % ('wavelength, zero =',wave,zero)
-    print "%s %8.3f %8.3f" % ('lattice parameter range = ',amin,amax)
-    ifzero,maxzero,ncno = controls[:3]
+    zero,ncno = controls[1:3]
     ncMax = Nobs*ncno
-    print "%s %d %s %d %s %d" % ('change zero =',ifzero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs)
+    print "%s %8.3f %8.3f" % ('lattice parameter range = ',amin,amax)
+    print "%s %8.5f %s %.4f %s %d %s %d" % ('Wavelength =',wave,'Zero =',zero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs)
     cells = []
     for ibrav in range(14):
         begin = time.time()

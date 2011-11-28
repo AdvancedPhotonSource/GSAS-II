@@ -29,7 +29,7 @@ helpLocDict = {}
 htmlPanel = None
 htmlFrame = None
 helpMode = 'internal'    # need a global control to set this
-#helpMode = 'browser'    # need a global control to set this
+helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 

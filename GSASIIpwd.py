@@ -729,18 +729,19 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
     while True:
         try:
             pos = parmDict['pos'+str(iPeak)]
+            theta = (pos-parmDict['Zero'])/2.0
             intens = parmDict['int'+str(iPeak)]
             sigName = 'sig'+str(iPeak)
             if sigName in varyList:
                 sig = parmDict[sigName]
             else:
-                sig = U*tand(pos/2.0)**2+V*tand(pos/2.0)+W
+                sig = U*tand(theta)**2+V*tand(theta)+W
             sig = max(sig,0.001)          #avoid neg sigma
             gamName = 'gam'+str(iPeak)
             if gamName in varyList:
                 gam = parmDict[gamName]
             else:
-                gam = X/cosd(pos/2.0)+Y*tand(pos/2.0)
+                gam = X/cosd(theta)+Y*tand(theta)
             gam = max(gam,0.001)             #avoid neg gamma
             Wd,fmin,fmax = getWidths(pos,sig,gam,shl)
             iBeg = np.searchsorted(xdata,pos-fmin)
@@ -791,10 +792,11 @@ def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
     while True:
         try:
             pos = parmDict['pos'+str(iPeak)]
+            theta = (pos-parmDict['Zero'])/2.0
             intens = parmDict['int'+str(iPeak)]
             sigName = 'sig'+str(iPeak)
-            tanth = tand(pos/2.0)
-            costh = cosd(pos/2.0)
+            tanth = tand(theta)
+            costh = cosd(theta)
             if sigName in varyList:
                 sig = parmDict[sigName]
             else:

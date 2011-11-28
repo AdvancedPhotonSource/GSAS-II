@@ -618,7 +618,7 @@ def UpdateInstrumentGrid(self,data):
                 else:
                     instSizer.Add((5,5),0)
             for item in ['Zero','Polariz.']:
-                fmt = '%10.3f'
+                fmt = '%10.4f'
                 Fmt = ' %s: ('+fmt+')'
                 if item in insDef:
                     instSizer.Add(wx.StaticText(self.dataDisplay,-1,Fmt%(item,insDef[item])),
@@ -849,6 +849,12 @@ def UpdateSampleGrid(self,data):
                 
 def UpdateIndexPeaksGrid(self, data):
     IndexId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List')
+    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))
+    Inst = dict(zip(inst[3],inst[1]))
+    try:
+        wave = Inst['Lam']
+    except KeyError:
+        wave = Inst['Lam1']
     
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
@@ -866,7 +872,7 @@ def UpdateIndexPeaksGrid(self, data):
         data = []
         peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
         for peak in peaks:
-            dsp = inst[1]/(2.0*sind(peak[0]/2.0))
+            dsp = wave/(2.0*sind((peak[0]-Inst['Zero'])/2.0))
             data.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
         self.PatternTree.SetItemPyData(IndexId,data)
         UpdateIndexPeaksGrid(self,data)
@@ -898,7 +904,6 @@ def UpdateIndexPeaksGrid(self, data):
     if 'PWD' in self.PatternTree.GetItemText(self.PatternId):
         self.dataFrame.SetMenuBar(self.dataFrame.IndPeaksMenu)
         self.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
-    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
     self.dataFrame.IndexPeaks.Enable(False)
     self.IndexPeaksTable = []
     if data:
@@ -915,7 +920,7 @@ def UpdateIndexPeaksGrid(self, data):
                     self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
                     G2indx.IndexPeaks(data,self.HKL)
                     for hkl in self.HKL:
-                        hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
+                        hkl.append(2.0*asind(wave/(2.*hkl[3]))+Inst['Zero'])             
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
     colLabels = ['position','intensity','use','indexed','h','k','l','d-obs','d-calc']
@@ -945,6 +950,12 @@ def UpdateUnitCellsGrid(self, data):
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R -3 H','P 6/m m m','I 4/m m m',
         'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
+    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))
+    Inst = dict(zip(inst[3],inst[1]))
+    if 'Lam' in Inst:
+        wave = Inst['Lam']
+    else:
+        wave = Inst['Lam1']
         
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
@@ -983,7 +994,7 @@ def UpdateUnitCellsGrid(self, data):
         
     def OnZero(event):
         try:
-            Zero = min(0.1,max(-0.1,float(zero.GetValue())))
+            Zero = min(5.0,max(-5.0,float(zero.GetValue())))
         except ValueError:
             Zero = 0.0
         controls[1] = Zero
@@ -1050,16 +1061,10 @@ def UpdateUnitCellsGrid(self, data):
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-        inst = dict(zip(inst[3],inst[1]))
-        if 'Lam' in inst:
-            wave = inst['Lam']
-        else:
-            wave = inst['Lam1']
         dmin = wave/(2.0*sind(limits[1]/2.0))
         self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
         for hkl in self.HKL:
-            hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1])             
+            hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
         if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
             G2plt.PlotPowderLines(self)
         else:
@@ -1117,7 +1122,6 @@ def UpdateUnitCellsGrid(self, data):
             self.ErrorDialog('No peaks!', 'Nothing to refine!')
             return        
         print 'Refine cell'
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
         controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
@@ -1125,11 +1129,8 @@ def UpdateUnitCellsGrid(self, data):
         dmin = G2indx.getDmin(peaks)-0.005
         self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
         G2indx.IndexPeaks(peaks,self.HKL)
-        if controls[0]:
-            Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,inst[1],ibrav,A,controls[1])            
-            controls[1] = Zero
-        else:
-            Lhkl,M20,X20,Aref = G2indx.refinePeaks(peaks,ibrav,A)
+        Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,wave,ibrav,A,controls[1],controls[0])            
+        controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
         data = [controls,bravais,cells,dmin]
@@ -1144,7 +1145,7 @@ def UpdateUnitCellsGrid(self, data):
         print 'unindexed lines = ',X20
         cellPrint(ibrav,Aref)
         for hkl in self.HKL:
-            hkl.append(2.0*asind(inst[1]/(2.*hkl[3]))+controls[1])             
+            hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
         if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
             G2plt.PlotPowderLines(self)
         else:
@@ -1152,11 +1153,6 @@ def UpdateUnitCellsGrid(self, data):
         
     def IndexPeaks(event):
         PatternId = self.PatternId    
-#        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
-#        if not peaks:
-#            self.ErrorDialog('No peaks!', 'Nothing to index!')
-#            return
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1]
         print 'Peak Indexing'
         try:
             controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
@@ -1169,7 +1165,7 @@ def UpdateUnitCellsGrid(self, data):
             return
         self.dataFrame.CopyCell.Enable(False)
         self.dataFrame.RefineCell.Enable(False)
-        OK,dmin,cells = G2indx.DoIndexPeaks(peaks,inst,controls,bravais)
+        OK,dmin,cells = G2indx.DoIndexPeaks(peaks,inst[1],controls,bravais)
         if OK:
             data = [controls,bravais,cells,dmin]
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
@@ -1178,7 +1174,7 @@ def UpdateUnitCellsGrid(self, data):
             if bestCell[0] > 10.:
                 self.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
                 for hkl in self.HKL:
-                    hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))             
+                    hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
                 if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
                     G2plt.PlotPowderLines(self)
                 else:
@@ -1203,7 +1199,7 @@ def UpdateUnitCellsGrid(self, data):
                 A = G2lat.cell2A(cells[r][3:9])
                 self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
                 for hkl in self.HKL:
-                    hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))
+                    hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
                 if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
                     G2plt.PlotPowderLines(self)
                 else:
@@ -1249,7 +1245,6 @@ def UpdateUnitCellsGrid(self, data):
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     self.PatternTree.SetItemPyData(UnitCellsId,data)            #update with volume
-    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1]
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic']
@@ -1329,7 +1324,7 @@ def UpdateUnitCellsGrid(self, data):
     zeroVar.SetValue(controls[0])
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
-    hklShow = wx.Button(self.dataDisplay,label="  Show hkl positions")
+    hklShow = wx.Button(self.dataDisplay,label="Show refined hkl positions + Zero offset")
     hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
     littleSizer.Add(hklShow,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
@@ -1364,8 +1359,7 @@ def UpdateUnitCellsGrid(self, data):
             topSize[1] += 230
         else:
             topSize[1] += 200
-    self.dataFrame.setSizePosLeft(topSize)
-    
+    self.dataFrame.setSizePosLeft(topSize)    
     
     if cells:
         bottomSize = self.bottom.GetSize()
@@ -1388,7 +1382,7 @@ def UpdateUnitCellsGrid(self, data):
                 A = G2lat.cell2A(cell[3:9])
                 self.HKL = G2lat.GenHBravais(dmin,cell[2],A)
                 for hkl in self.HKL:
-                    hkl.append(2.0*asind(inst[1]/(2.*hkl[3])))
+                    hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
             table.append(row)
         UnitCellsTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         gridDisplay = G2gd.GSGrid(self.bottom)

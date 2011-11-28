@@ -1110,7 +1110,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 if ext:
                     continue
                 if 'C' in inst['Type']:
-                    pos = 2.0*asind(wave/(2.0*d))
+                    pos = 2.0*asind(wave/(2.0*d))+Zero
                     if limits[0] < pos < limits[1]:
                         refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0])
                 else:
@@ -1972,6 +1972,7 @@ def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
     h,k,l = refl[:3]
     dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
     d = np.sqrt(dsq)
+
     refl[4] = d
     pos = 2.0*asind(wave/(2.0*d))+parmDict[hfx+'Zero']
     const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns

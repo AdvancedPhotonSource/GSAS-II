@@ -127,7 +127,8 @@ class MyHelp(wx.Menu):
         helplink = helpLocDict.get(self.helpType)
         if helplink is None:
             # no defined link to use, create a default based on key
-            helplink = 'gsasII.html#' + self.helpType
+            helplink = 'gsasII.html#'+self.helpType.replace(' ','_')
+            print helplink
         helplink = os.path.join(path2GSAS2,'help',helplink)
         if helpMode == 'internal':
             global htmlPanel, htmlFrame
@@ -275,7 +276,7 @@ class DataFrame(wx.Frame):
 
     def _init_coll_IndexMenu(self,parent):
         parent.Append(menu=self.IndexEdit, title='Cell Index/Refine')
-        parent.Append(menu=MyHelp(self,helpType='Cell Indexing/Refine'),title='&Help')
+        parent.Append(menu=MyHelp(self,helpType='Cell Indexing Refine'),title='&Help')
         
     def _init_coll_ReflMenu(self,parent):
         parent.Append(menu=self.ReflEdit, title='Reflection List')
@@ -1056,7 +1057,7 @@ def UpdateConstraints(self,data):
                 return [constr+[0.0,False]]         #just one constraint
             else:       #'constraint'
                 constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
-                return [constr+[0.0,None]]          #just one constraint
+                return [constr+[1.0,None]]          #just one constraint - default sum to one
         return []
              
     def OnAddHold(event):
@@ -1692,12 +1693,12 @@ def MovePatternTreeToGrid(self,item):
         G2pdG.UpdateReflectionGrid(self,data)
         G2plt.PlotPatterns(self)
      
-def OnHelp(event):
-    Obj = event.GetEventObject()
-    line = 'Help on '+Obj.GetTitle()
-    for child in Obj.GetChildren():
-        if 'NoteBook' in str(type(child)):
-            notebook = child.GetCurrentPage().GetParent()
-            line = 'Help on '+notebook.GetPageText(notebook.GetSelection())
-    print line
-    print 'Real help will come here as HTML pages'
+#def OnHelp(event):
+#    Obj = event.GetEventObject()
+#    line = 'Help on '+Obj.GetTitle()
+#    for child in Obj.GetChildren():
+#        if 'NoteBook' in str(type(child)):
+#            notebook = child.GetCurrentPage().GetParent()
+#            line = 'Help on '+notebook.GetPageText(notebook.GetSelection())
+#    print line
+#    print 'Real help will come here as HTML pages'

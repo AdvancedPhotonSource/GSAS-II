@@ -438,7 +438,8 @@ def GetESDdata(filename,Pos,Bank,DataType):
 def GetSTDdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
     cons = Bank.split()
-    Nch = cons[2]
+    print cons
+    Nch = int(cons[2])
     if DataType[2] == 'C':
         start = float(cons[5])/100.0               #CW: from centidegrees to degrees
         step = float(cons[6])/100.0
@@ -457,18 +458,20 @@ def GetSTDdata(filename,Pos,Bank,DataType):
             ni = max(sint(S[i:i+2]),1)
             yi = max(sfloat(S[i+2:i+8]),0.0)
             if yi:
-                ei = yi/ni
+                vi = yi/ni
             else:
                 yi = 0.0
-                ei = 1.0
+                vi = 1.0
             j += 1
             if j < Nch:
                 x.append(xi)
                 y.append(yi)
-                w.append(1.0/ei)
+                w.append(1.0/vi)
+            print '%8.3f %8.0f %d %8g'%(xi,yi,ni,1./vi)
         S = File.readline()
     File.close()
     N = len(x)
+    print N
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
 def CheckImageFile(self,imagefile):

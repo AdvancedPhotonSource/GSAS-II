@@ -32,6 +32,7 @@ from  OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from OpenGL.GLE import *
+from matplotlib.backends.backend_wx import _load_bitmap
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
@@ -57,7 +58,7 @@ class G2PlotMpl(wx.Panel):
         mpl.rcParams['legend.fontsize'] = 10
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,7))
         self.canvas = Canvas(self,-1,self.figure)
-        self.toolbar = Toolbar(self.canvas)
+        self.toolbar = GSASIItoolbar(self.canvas)
 
         self.toolbar.Realize()
         
@@ -80,7 +81,7 @@ class G2Plot3D(wx.Panel):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(6,6))
         self.canvas = Canvas(self,-1,self.figure)
-        self.toolbar = Toolbar(self.canvas)
+        self.toolbar = GSASIItoolbar(self.canvas)
 
         self.toolbar.Realize()
         
@@ -155,6 +156,21 @@ class G2PlotNoteBook(wx.Panel):
         if self.plotList:
             self.status.SetStatusText('Better to select this from GSAS-II data tree',1)
         self.status.DestroyChildren()                           #get rid of special stuff on status bar
+        
+class GSASIItoolbar(Toolbar):
+    ON_MPL_HELP = wx.NewId()
+    def __init__(self,plotCanvas):
+        Toolbar.__init__(self,plotCanvas)
+        POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6
+        self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
+        help = os.path.join(os.path.split(sys.argv[0])[0],'help.ico')
+        self.AddSimpleTool(self.ON_MPL_HELP,_load_bitmap(help),'Help on','Show help on')
+        wx.EVT_TOOL(self,self.ON_MPL_HELP,self.OnHelp)
+    def OnHelp(self,event):
+        Page = self.GetParent().GetParent()
+        pageNo = Page.GetSelection()
+        
+        print 'Matplotlib help on '+Page.GetPageText(pageNo)
         
 def PlotSngl(self,newPlot=False):
     '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional
@@ -1136,100 +1152,136 @@ def PlotPeakWidths(self):
     Plot.legend(loc='best')
     Page.canvas.draw()
     
-def PlotStrain(self,data):
-    '''Plot 3D microstrain figure. In this instance data is for a phase
+def PlotSizeStrainPO(self,data,Start=False):
+    '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
+    
     PatternId = self.PatternId
     generalData = data['General']
     SGData = generalData['SGData']
+    SGLaue = SGData['SGLaue']
+    if Start:                   #initialize the spherical harmonics qlmn arrays
+        ptx.pyqlmninit()
+        Start = False
     MuStrKeys = G2spc.MustrainNames(SGData)
     cell = generalData['Cell'][1:]
     A,B = G2lat.cell2AB(cell[:6])
     Vol = cell[6]
     useList = data['Histograms']
+    phase = generalData['Name']
+    plotType = generalData['Data plot type']
+    plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.'}
+    for ptype in plotDict:
+        self.G2plotNB.Delete(ptype)        
+
     for item in useList:
         if useList[item]['Show']:
             break
     else:
-        self.G2plotNB.Delete('Microstrain')
         return            #nothing to show!!
     
     numPlots = len(useList)
-    
-    try:
-        plotNum = self.G2plotNB.plotList.index('Microstrain')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
-        Page.figure.clf()
-        Plot = mp3d.Axes3D(Page.figure)
-        if not Page.IsShown():
-            Page.Show()
-    except ValueError:
-        Plot = mp3d.Axes3D(self.G2plotNB.add3D('Microstrain'))
-        plotNum = self.G2plotNB.plotList.index('Microstrain')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+
+    if plotType in ['Mustrain','Size']:
+        Plot = mp3d.Axes3D(self.G2plotNB.add3D(plotType))
+    else:
+        Plot = self.G2plotNB.addMpl(plotType).gca()        
+    plotNum = self.G2plotNB.plotList.index(plotType)
+    Page = self.G2plotNB.nb.GetPage(plotNum)
     Page.SetFocus()
     self.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
+    if not Page.IsShown():
+        Page.Show()
     
     for item in useList:
         if useList[item]['Show']:
-            muStrain = useList[item]['Mustrain']
             PHI = np.linspace(0.,360.,30,True)
             PSI = np.linspace(0.,180.,30,True)
             X = np.outer(npsind(PHI),npsind(PSI))
             Y = np.outer(npcosd(PHI),npsind(PSI))
             Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
-            if muStrain[0] == 'isotropic':
-#                muiso = muStrain[1][0]*math.pi/0.018      #centidegrees to radians!
-                muiso = muStrain[1][0]
-                X *= muiso
-                Y *= muiso
-                Z *= muiso                
-                
-            elif muStrain[0] == 'uniaxial':
-                def uniaxMustrain(xyz,muiso,muaniso,axes):
-                    Z = np.array(axes)
-                    cp = abs(np.dot(xyz,Z))
-                    sp = np.sqrt(1.-cp**2)
-                    R = muiso*muaniso/np.sqrt((muiso*cp)**2+(muaniso*sp)**2)
-#                    S = muiso+muaniso*cp           #old GSAS - wrong math!!
-#                    return R*xyz*math.pi/0.018      #centidegrees to radians!
-                    return R*xyz
-                muiso,muaniso = muStrain[1][:2]
-                axes = np.inner(A,np.array(muStrain[3]))
-                axes /= nl.norm(axes)
-                Shkl = np.array(muStrain[1])
-                Shape = X.shape[0]
-                XYZ = np.dstack((X,Y,Z))
-                XYZ = np.nan_to_num(np.apply_along_axis(uniaxMustrain,2,XYZ,muiso,muaniso,axes))
-                X,Y,Z = np.dsplit(XYZ,3)
-                X = X[:,:,0]
-                Y = Y[:,:,0]
-                Z = Z[:,:,0]
-                
-            elif muStrain[0] == 'generalized':
-                def genMustrain(xyz,SGData,A,Shkl):
-                    uvw = np.inner(A.T,xyz)
-                    Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
-                    sum = np.sum(np.multiply(Shkl,Strm))
-                    sum = np.where(sum > 0.01,sum,0.01)
-                    sum = np.sqrt(sum)*math.pi/0.018      #centidegrees to radians!
-                    return sum*xyz
-                Shkl = np.array(muStrain[4])
-                if np.any(Shkl):
+            coeff = useList[item][plotDict[plotType]]
+            if plotType in ['Mustrain','Size']:
+                if coeff[0] == 'isotropic':
+                    X *= coeff[1][0]
+                    Y *= coeff[1][0]
+                    Z *= coeff[1][0]                                
+                elif coeff[0] == 'uniaxial':
+                    
+                    def uniaxCalc(xyz,iso,aniso,axes):
+                        Z = np.array(axes)
+                        cp = abs(np.dot(xyz,Z))
+                        sp = np.sqrt(1.-cp**2)
+                        R = iso*aniso/np.sqrt((iso*cp)**2+(aniso*sp)**2)
+                        return R*xyz
+                        
+                    iso,aniso = coeff[1][:2]
+                    axes = np.inner(A,np.array(coeff[3]))
+                    axes /= nl.norm(axes)
+                    Shkl = np.array(coeff[1])
                     Shape = X.shape[0]
                     XYZ = np.dstack((X,Y,Z))
-                    XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,A,Shkl))
+                    XYZ = np.nan_to_num(np.apply_along_axis(uniaxCalc,2,XYZ,iso,aniso,axes))
                     X,Y,Z = np.dsplit(XYZ,3)
                     X = X[:,:,0]
                     Y = Y[:,:,0]
                     Z = Z[:,:,0]
-                    
-            if np.any(X) and np.any(Y) and np.any(Z):
-                Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
                 
-            Plot.set_xlabel('X')
-            Plot.set_ylabel('Y')
-            Plot.set_zlabel('Z')
+                elif coeff[0] == 'generalized':
+                    
+                    def genMustrain(xyz,SGData,A,Shkl):
+                        uvw = np.inner(A.T,xyz)
+                        Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
+                        sum = np.sum(np.multiply(Shkl,Strm))
+                        sum = np.where(sum > 0.01,sum,0.01)
+                        sum = np.sqrt(sum)*math.pi/0.018      #centidegrees to radians!
+                        return sum*xyz
+                        
+                    Shkl = np.array(coeff[4])
+                    if np.any(Shkl):
+                        Shape = X.shape[0]
+                        XYZ = np.dstack((X,Y,Z))
+                        XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,A,Shkl))
+                        X,Y,Z = np.dsplit(XYZ,3)
+                        X = X[:,:,0]
+                        Y = Y[:,:,0]
+                        Z = Z[:,:,0]
+                            
+                elif coeff[0] == 'ellipsoidal':
+                    print 'ellipsoid plot'
+                    
+                if np.any(X) and np.any(Y) and np.any(Z):
+                    Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+                if plotType == 'Size':
+                    Plot.set_title('Crystallite size for '+phase)
+                    Plot.set_xlabel(r'X, $\mu$m')
+                    Plot.set_ylabel(r'Y, $\mu$m')
+                    Plot.set_zlabel(r'Z, $\mu$m')
+                else:    
+                    Plot.set_title(r'$\mu$strain for '+phase)
+                    Plot.set_xlabel(r'X, $\mu$strain')
+                    Plot.set_ylabel(r'Y, $\mu$strain')
+                    Plot.set_zlabel(r'Z, $\mu$strain')
+            else:
+                h,k,l = generalData['POhkl']
+                if coeff[0] == 'MD':
+                    print 'March-Dollase preferred orientation plot'
+                
+                else:
+                    PH = np.array(generalData['POhkl'])
+                    phi,beta = G2lat.CrsAng(PH,cell[:6],SGData)
+                    SHCoef = {}
+                    for item in coeff[5]:
+                        L,N = eval(item.strip('C'))
+                        SHCoef['C%d,0,%d'%(L,N)] = coeff[5][item]                        
+                    ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+                    X = np.linspace(0,90.0,26)
+                    Y = G2lat.polfcal(ODFln,'0',X,0.0)
+                    Plot.plot(X,Y,color='k',label=str(PH))
+                    Plot.legend(loc='best')
+                    Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase)
+                    Plot.set_xlabel(r'$\psi$',fontsize=16)
+                    Plot.set_ylabel('MRD',fontsize=14)
     Page.canvas.draw()
     
 def PlotTexture(self,data,newPlot=False,Start=False):
@@ -1245,8 +1297,8 @@ def PlotTexture(self,data,newPlot=False,Start=False):
     generalData = data['General']
     SGData = generalData['SGData']
     textureData = generalData['SH Texture']
+    self.G2plotNB.Delete('Texture')
     if not textureData['Order']:
-        self.G2plotNB.Delete('Texture')
         return                  #no plot!!
     SHData = generalData['SH Texture']
     SHCoef = SHData['SH Coeff'][1]
@@ -1276,7 +1328,7 @@ def PlotTexture(self,data,newPlot=False,Start=False):
                     y,x,z = list(xyz/np.max(np.abs(xyz)))
                     
                     self.G2plotNB.status.SetFields(['',
-                        'psi =%9.3f, beta =%9.3f, MRD =%9.3f xyz=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z)])
+                        'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z)])
                                     
             elif 'Axial' in SHData['PlotType']:
                 pass
@@ -1292,18 +1344,10 @@ def PlotTexture(self,data,newPlot=False,Start=False):
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     self.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
                     
-    try:
-        plotNum = self.G2plotNB.plotList.index('Texture')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
-        Page.figure.clf()
-        Plot = Page.figure.gca()
-        if not Page.IsShown():
-            Page.Show()
-    except ValueError:
-        Plot = self.G2plotNB.addMpl('Texture').gca()
-        plotNum = self.G2plotNB.plotList.index('Texture')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
-        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Plot = self.G2plotNB.addMpl('Texture').gca()
+    plotNum = self.G2plotNB.plotList.index('Texture')
+    Page = self.G2plotNB.nb.GetPage(plotNum)
+    Page.canvas.mpl_connect('motion_notify_event', OnMotion)
 
     Page.SetFocus()
     self.G2plotNB.status.SetFields(['',''])    

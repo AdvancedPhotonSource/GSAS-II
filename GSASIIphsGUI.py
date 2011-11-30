@@ -150,7 +150,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
         if 'Isotope' not in generalData:
             generalData['Isotope'] = {}
         if 'Data plot type' not in generalData:
-            generalData['Data plot type'] = 'Microstrain'
+            generalData['Data plot type'] = 'Mustrain'
+        if 'POhkl' not in generalData:
+            generalData['POhkl'] = [0,0,1]
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
@@ -446,7 +448,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
                 Indx[isoSel.GetId()] = elem
-                elemSizer.Add(isoSel,1,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(isoSel,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
             elemSizer.Add(wx.StaticText(dataDisplay,label='No. per cell'),0,wx.ALIGN_CENTER_VERTICAL)
             for elem in generalData['AtomTypes']:
                 numbTxt = wx.TextCtrl(dataDisplay,value='%.1f'%(generalData['NoAtoms'][elem]),
@@ -1980,11 +1982,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 textureData['PFhkl'] = hkl
             else:
                 try:
-                    hkl = [float(Saxis[i]) for i in range(3)]
+                    xyz = [float(Saxis[i]) for i in range(3)]
                 except (ValueError,IndexError):
-                    hkl = textureData['PFxyz']
-                if not np.any(np.array(hkl)):       #can't be all zeros!
-                    hkl = textureData['PFxyz']
+                    xyz = textureData['PFxyz']
+                if not np.any(np.array(xyz)):       #can't be all zeros!
+                    xyz = textureData['PFxyz']
                 Obj.SetValue('%3.1f %3.1f %3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
             G2plt.PlotTexture(self,data)
@@ -2112,14 +2114,31 @@ def UpdatePhaseData(self,Item,data,oldPage):
         Indx = {}
         
         def OnPlotSel(event):
-            generalData['Data plot type'] = plotSel.GetStringSelection()
+            Obj = event.GetEventObject()
+            generalData['Data plot type'] = Obj.GetStringSelection()
+            UpdateDData()
+            G2plt.PlotSizeStrainPO(self,data)
+            
+        def OnPOhkl(event):
+            Obj = event.GetEventObject()
+            Saxis = Obj.GetValue().split()
+            try:
+                hkl = [int(Saxis[i]) for i in range(3)]
+            except (ValueError,IndexError):
+                hkl = generalData['POhkl']
+            if not np.any(np.array(hkl)):
+                hkl = generalData['POhkl']
+            generalData['POhkl'] = hkl
+            h,k,l = hkl
+            Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
+            G2plt.PlotSizeStrainPO(self,data)
         
         def OnShowData(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Show'] = Obj.GetValue()
             UpdateDData()
-            G2plt.PlotStrain(self,data)
+            G2plt.PlotSizeStrainPO(self,data)
             
         def OnCopyData(event):
             #how about HKLF data? This is only for PWDR data
@@ -2216,7 +2235,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             hist = Indx[Obj.GetId()]
             UseList[hist]['Mustrain'][0] = Obj.GetValue()
             UpdateDData()
-            G2plt.PlotStrain(self,data)
+            G2plt.PlotSizeStrainPO(self,data)
             
         def OnStrainRef(event):
             Obj = event.GetEventObject()
@@ -2246,7 +2265,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 Obj.SetValue("%.3f"%(UseList[hist]['Mustrain'][4][pid]))          #reset in case of error
             else:
                 Obj.SetValue("%.1f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
-            G2plt.PlotStrain(self,data)
+            G2plt.PlotSizeStrainPO(self,data)
             
         def OnStrainAxis(event):
             Obj = event.GetEventObject()
@@ -2261,7 +2280,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             UseList[hist]['Mustrain'][3] = hkl
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-            G2plt.PlotStrain(self,data)
+            G2plt.PlotSizeStrainPO(self,data)
             
         def OnHstrainRef(event):
             Obj = event.GetEventObject()
@@ -2354,6 +2373,25 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 return False
             return axis
             
+        def PlotSizer():
+            plotSizer = wx.BoxSizer(wx.VERTICAL)
+            choice = ['Mustrain','Size','Preferred orientation']
+            plotSel = wx.RadioBox(dataDisplay,-1,'Select plot type:',choices=choice,
+                majorDimension=3,style=wx.RA_SPECIFY_COLS)
+            plotSel.SetStringSelection(generalData['Data plot type'])
+            plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
+            plotSizer.Add(plotSel)
+            if generalData['Data plot type'] == 'Preferred orientation':
+                POhklSizer = wx.BoxSizer(wx.HORIZONTAL)
+                POhklSizer.Add(wx.StaticText(dataDisplay,-1,' Plot preferred orientation for H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+                h,k,l = generalData['POhkl']
+                poAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+                poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOhkl)
+                poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOhkl)
+                POhklSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
+                plotSizer.Add(POhklSizer)            
+            return plotSizer
+           
         def ScaleSizer():
             scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
             scaleRef = wx.CheckBox(dataDisplay,-1,label=' Phase fraction: ')
@@ -2566,14 +2604,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
         dataDisplay = wx.Panel(DData)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
-        plotSizer = wx.BoxSizer(wx.HORIZONTAL)
-        choice = ['Microstrain','Size','Preferred orientation']
-        plotSel = wx.RadioBox(dataDisplay,-1,'Select plot type:',choices=choice,
-            majorDimension=3,style=wx.RA_SPECIFY_COLS)
-        plotSel.SetStringSelection(generalData['Data plot type'])
-        plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
-        plotSizer.Add(plotSel)
-        mainSizer.Add(plotSizer)
+        mainSizer.Add(PlotSizer())            
+            
         for item in keyList:
             histData = UseList[item]
             mainSizer.Add((5,5),0)
@@ -2893,7 +2925,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
             self.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
             UpdateDData()
-            G2plt.PlotStrain(self,data)
+            G2plt.PlotSizeStrainPO(self,data,Start=True)
         elif text == 'Draw Options':
             self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
             UpdateDrawOptions()

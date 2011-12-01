@@ -1253,15 +1253,17 @@ def PlotSizeStrainPO(self,data,Start=False):
                 if np.any(X) and np.any(Y) and np.any(Z):
                     Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
                 if plotType == 'Size':
-                    Plot.set_title('Crystallite size for '+phase)
+                    Plot.set_title('Crystallite size for '+phase+'\n'+coeff[0]+' model')
                     Plot.set_xlabel(r'X, $\mu$m')
                     Plot.set_ylabel(r'Y, $\mu$m')
                     Plot.set_zlabel(r'Z, $\mu$m')
+                    Plot.set_aspect('equal')
                 else:    
-                    Plot.set_title(r'$\mu$strain for '+phase)
+                    Plot.set_title(r'$\mu$strain for '+phase+'\n'+coeff[0]+' model')
                     Plot.set_xlabel(r'X, $\mu$strain')
                     Plot.set_ylabel(r'Y, $\mu$strain')
                     Plot.set_zlabel(r'Z, $\mu$strain')
+                    Plot.set_aspect('equal')
             else:
                 h,k,l = generalData['POhkl']
                 if coeff[0] == 'MD':

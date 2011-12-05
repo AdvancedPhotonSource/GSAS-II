@@ -2029,11 +2029,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         pfType.Bind(wx.EVT_COMBOBOX,OnPfType)
         PTSizer.Add(pfType,0,wx.ALIGN_CENTER_VERTICAL)
-        PTSizer.Add(wx.StaticText(dataDisplay,-1,' Projection type: '),0,wx.ALIGN_CENTER_VERTICAL)
-        projSel = wx.ComboBox(dataDisplay,-1,value=self.Projection,choices=['equal area','stereographic'],
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
-        PTSizer.Add(projSel,0,wx.ALIGN_CENTER_VERTICAL)
+        if 'Axial' not in textureData['PlotType']:
+            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Projection type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            projSel = wx.ComboBox(dataDisplay,-1,value=self.Projection,choices=['equal area','stereographic','3D display'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
+            PTSizer.Add(projSel,0,wx.ALIGN_CENTER_VERTICAL)
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
             PTSizer.Add(wx.StaticText(dataDisplay,-1,' Pole figure HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
             PH = textureData['PFhkl']
@@ -2045,13 +2046,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
         PTSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
-        PTSizer.Add(wx.StaticText(dataDisplay,-1,' Color scheme'),0,wx.ALIGN_CENTER_VERTICAL)
-        choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
-        choice.sort()
-        colorSel = wx.ComboBox(dataDisplay,-1,value=self.ContourColor,choices=choice,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
-        PTSizer.Add(colorSel,0,wx.ALIGN_CENTER_VERTICAL)        
+        if 'Axial' not in textureData['PlotType']:
+            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Color scheme'),0,wx.ALIGN_CENTER_VERTICAL)
+            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice.sort()
+            colorSel = wx.ComboBox(dataDisplay,-1,value=self.ContourColor,choices=choice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
+            PTSizer.Add(colorSel,0,wx.ALIGN_CENTER_VERTICAL)        
         mainSizer.Add(PTSizer,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:
@@ -2186,6 +2188,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Size'][0] = Obj.GetValue()
+            G2plt.PlotSizeStrainPO(self,data)
             UpdateDData()
             
         def OnSizeRef(event):
@@ -2197,15 +2200,18 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 UseList[hist]['Size'][2][pid] = Obj.GetValue()
             
         def OnSizeVal(event):
+            print 'new val event'
             Obj = event.GetEventObject()
             hist,pid = Indx[Obj.GetId()]
             if UseList[hist]['Size'][0] == 'ellipsoidal':
                 try:
                     size = float(Obj.GetValue())
                     if pid < 3 and size <= 0.01:            #10A lower limit!
-                        raise ValueError                    
+                        raise ValueError
+                    UseList[hist]['Size'][4][pid] = size                    
                 except ValueError:
                     pass
+                Obj.SetValue("%.3f"%(UseList[hist]['Size'][4][pid]))          #reset in case of error
             else:
                 try:
                     size = float(Obj.GetValue())
@@ -2214,7 +2220,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     UseList[hist]['Size'][1][pid] = size
                 except ValueError:
                     pass
-            Obj.SetValue("%.3f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
+                Obj.SetValue("%.3f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
+            G2plt.PlotSizeStrainPO(self,data)
             
         def OnSizeAxis(event):            
             Obj = event.GetEventObject()
@@ -2234,8 +2241,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Mustrain'][0] = Obj.GetValue()
-            UpdateDData()
             G2plt.PlotSizeStrainPO(self,data)
+            UpdateDData()
             
         def OnStrainRef(event):
             Obj = event.GetEventObject()
@@ -2600,9 +2607,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
             return extSizer
                                     
-        DData.DestroyChildren()
-        dataDisplay = wx.Panel(DData)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if DData.GetChildren():
+            dataDisplay = DData.GetChildren()[0]
+            mainSizer = dataDisplay.GetSizer()
+            mainSizer.Clear()
+        else:
+            dataDisplay = wx.Panel(DData)
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(PlotSizer())            
             
@@ -2628,54 +2639,51 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 mainSizer.Add((0,5),0)
                 
             if item[:4] == 'PWDR' and UseList[item]['Show']:
-                sizeSizer = wx.BoxSizer(wx.VERTICAL)
                 if UseList[item]['Size'][0] == 'isotropic':
                     isoSizer = wx.BoxSizer(wx.HORIZONTAL)
                     isoSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     isoSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.3f',
                         OnSizeVal,OnSizeRef),0,wx.ALIGN_CENTER_VERTICAL)
-                    sizeSizer.Add(isoSizer)
+                    mainSizer.Add(isoSizer)
                 elif UseList[item]['Size'][0] == 'uniaxial':
                     uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                     uniSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
-                    sizeSizer.Add(uniSizer)
-                    sizeSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
+                    mainSizer.Add(uniSizer)
+                    mainSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
                 elif UseList[item]['Size'][0] == 'ellipsoidal':
                     ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                     ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     ellSizer.Add(wx.StaticText(dataDisplay,-1,u' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
-                    sizeSizer.Add(ellSizer)
-                    sizeSizer.Add(EllSizeDataSizer())
-                mainSizer.Add(sizeSizer)
+                    mainSizer.Add(ellSizer)
+                    mainSizer.Add(EllSizeDataSizer())
                 mainSizer.Add((0,5),0)                    
                 
-                strainSizer = wx.BoxSizer(wx.VERTICAL)
                 if UseList[item]['Mustrain'][0] == 'isotropic':
                     isoSizer = wx.BoxSizer(wx.HORIZONTAL)
                     isoSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     isoSizer.Add(IsoSizer(' microstrain: ','Mustrain','%.1f',
                         OnStrainVal,OnStrainRef),0,wx.ALIGN_CENTER_VERTICAL)                   
-                    strainSizer.Add(isoSizer)
+                    mainSizer.Add(isoSizer)
+                    mainSizer.Add((0,5),0)
                 elif UseList[item]['Mustrain'][0] == 'uniaxial':
                     uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                     uniSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(UniSizer('Mustrain',OnStrainAxis),0,wx.ALIGN_CENTER_VERTICAL)
-                    sizeSizer.Add(uniSizer)
-                    sizeSizer.Add(UniDataSizer('mustrain: ','Mustrain','%.1f',OnStrainVal,OnStrainRef))
+                    mainSizer.Add(uniSizer)
+                    mainSizer.Add(UniDataSizer('mustrain: ','Mustrain','%.1f',OnStrainVal,OnStrainRef))
                 elif UseList[item]['Mustrain'][0] == 'generalized':
                     genSizer = wx.BoxSizer(wx.HORIZONTAL)
                     genSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     genSizer.Add(wx.StaticText(dataDisplay,-1,' Coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
-                    strainSizer.Add(genSizer)
-                    strainSizer.Add(GenStrainDataSizer())                        
-                mainSizer.Add(strainSizer)
+                    mainSizer.Add(genSizer)
+                    mainSizer.Add(GenStrainDataSizer())                        
                 mainSizer.Add((0,5),0)
                 
                 mainSizer.Add(wx.StaticText(dataDisplay,-1,' Hydrostatic/elastic strain:'))
@@ -2760,7 +2768,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         pId = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
-                            'Size':['isotropic',[4.,4.,],[False,False],[0,0,1],6*[0.0,],6*[False,]],
+                            'Size':['isotropic',[4.,4.,],[False,False],[0,0,1],[4.,4.,4.,0.,0.,0.],6*[False,]],
                             'Mustrain':['isotropic',[1000.0,1000.0],[False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          

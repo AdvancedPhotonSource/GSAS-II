@@ -1219,7 +1219,6 @@ def PlotSizeStrainPO(self,data,Start=False):
                     axes = np.inner(A,np.array(coeff[3]))
                     axes /= nl.norm(axes)
                     Shkl = np.array(coeff[1])
-                    Shape = X.shape[0]
                     XYZ = np.dstack((X,Y,Z))
                     XYZ = np.nan_to_num(np.apply_along_axis(uniaxCalc,2,XYZ,iso,aniso,axes))
                     X,Y,Z = np.dsplit(XYZ,3)
@@ -1227,6 +1226,22 @@ def PlotSizeStrainPO(self,data,Start=False):
                     Y = Y[:,:,0]
                     Z = Z[:,:,0]
                 
+                elif coeff[0] == 'ellipsoidal':
+                    
+                    def ellipseCalc(xyz,E,R):
+                        XYZ = xyz*E.T
+                        return np.inner(XYZ.T,R)
+                        
+                    S6 = coeff[4]
+                    Sij = G2lat.U6toUij(S6)
+                    E,R = nl.eigh(Sij)
+                    XYZ = np.dstack((X,Y,Z))
+                    XYZ = np.nan_to_num(np.apply_along_axis(ellipseCalc,2,XYZ,E,R))
+                    X,Y,Z = np.dsplit(XYZ,3)
+                    X = X[:,:,0]
+                    Y = Y[:,:,0]
+                    Z = Z[:,:,0]
+                    
                 elif coeff[0] == 'generalized':
                     
                     def genMustrain(xyz,SGData,A,Shkl):
@@ -1239,7 +1254,6 @@ def PlotSizeStrainPO(self,data,Start=False):
                         
                     Shkl = np.array(coeff[4])
                     if np.any(Shkl):
-                        Shape = X.shape[0]
                         XYZ = np.dstack((X,Y,Z))
                         XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,A,Shkl))
                         X,Y,Z = np.dsplit(XYZ,3)
@@ -1247,23 +1261,26 @@ def PlotSizeStrainPO(self,data,Start=False):
                         Y = Y[:,:,0]
                         Z = Z[:,:,0]
                             
-                elif coeff[0] == 'ellipsoidal':
-                    print 'ellipsoid plot'
-                    
                 if np.any(X) and np.any(Y) and np.any(Z):
+                    errFlags = np.seterr(all='ignore')
                     Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+                    np.seterr(all='ignore')
+                    xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+                    XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+                    Plot.set_xlim3d(XYZlim)
+                    Plot.set_ylim3d(XYZlim)
+                    Plot.set_zlim3d(XYZlim)
+                    Plot.set_aspect('equal')
                 if plotType == 'Size':
                     Plot.set_title('Crystallite size for '+phase+'\n'+coeff[0]+' model')
                     Plot.set_xlabel(r'X, $\mu$m')
                     Plot.set_ylabel(r'Y, $\mu$m')
                     Plot.set_zlabel(r'Z, $\mu$m')
-                    Plot.set_aspect('equal')
                 else:    
                     Plot.set_title(r'$\mu$strain for '+phase+'\n'+coeff[0]+' model')
                     Plot.set_xlabel(r'X, $\mu$strain')
                     Plot.set_ylabel(r'Y, $\mu$strain')
                     Plot.set_zlabel(r'Z, $\mu$strain')
-                    Plot.set_aspect('equal')
             else:
                 h,k,l = generalData['POhkl']
                 if coeff[0] == 'MD':
@@ -1287,9 +1304,8 @@ def PlotSizeStrainPO(self,data,Start=False):
     Page.canvas.draw()
     
 def PlotTexture(self,data,newPlot=False,Start=False):
-    '''Pole figure, inverse pole figure(?), 3D pole distribution and 3D inverse pole distribution(?)
-    plotting; Need way to select  
-    pole figure or pole distribution to be displayed - do in key enter menu
+    '''Pole figure, inverse pole figure, 3D pole distribution and 3D inverse pole distribution
+    plotting.
     dict generalData contains all phase info needed which is in data
     '''
 
@@ -1345,11 +1361,17 @@ def PlotTexture(self,data,newPlot=False,Start=False):
                         r,p = 2.*npatand(z),npatan2d(ypos,xpos)
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     self.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
-                    
-    Plot = self.G2plotNB.addMpl('Texture').gca()
+    
+    if self.Projection == '3D display' and 'Axial'  not in SHData['PlotType']:               
+        Plot = mp3d.Axes3D(self.G2plotNB.add3D('Texture'))
+    else:
+        Plot = self.G2plotNB.addMpl('Texture').gca()
     plotNum = self.G2plotNB.plotList.index('Texture')
     Page = self.G2plotNB.nb.GetPage(plotNum)
-    Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    if self.Projection == '3D display':
+        pass
+    else:
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
 
     Page.SetFocus()
     self.G2plotNB.status.SetFields(['',''])    

@@ -707,7 +707,24 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
 #    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     sumDf = np.sum(Df)
     return Df,dFdp,dFds,dFdg,dFdsh
-    
+
+def ellipseSize(H,Sij,GB):
+    HX = np.inner(H.T,GB)
+    lenHX = np.sqrt(np.sum(HX**2))
+    Esize,Rsize = nl.eigh(G2lat.U6toUij(Sij))            
+    R = np.inner(HX/lenHX,Rsize)*Esize         #want column length for hkl in crystal
+    lenR = np.sqrt(np.sum(R**2))
+    return lenR
+
+def ellipseSizeDerv(H,Sij,GB):
+    lenR = ellipseSize(H,Sij,GB)
+    delt = 0.001
+    dRdS = np.zeros(6)
+    for i in range(6):
+        dSij = Sij[:]
+        dSij[i] += delt
+        dRdS[i] = (ellipseSize(H,dSij,GB)-lenR)/delt
+    return lenR,dRdS
 
 def getPeakProfile(parmDict,xdata,varyList,bakType):
     

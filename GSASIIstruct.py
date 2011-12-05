@@ -1894,7 +1894,7 @@ def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
             dFdSA[i] /= odfCor
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA
         
-def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
+def GetSampleGam(refl,wave,G,GB,phfx,calcControls,parmDict):
     costh = cosd(refl[5]/2.)
     #crystallite size
     if calcControls[phfx+'SizeType'] == 'isotropic':
@@ -1905,9 +1905,11 @@ def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
         gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']*costh)
         gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)
-    else:           #ellipsoidal crystallites - wrong not make sense
+    else:           #ellipsoidal crystallites
+        Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
         H = np.array(refl[:3])
-        gam += 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
+        lenR = G2pwd.ellipseSize(H,Sij,GB)
+        gam = 1.8*wave/(np.pi*costh*lenR)
     #microstrain                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
         gam += 0.018*parmDict[phfx+'Mustrain:0']*tand(refl[5]/2.)/np.pi
@@ -1926,7 +1928,7 @@ def GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
         gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum            
     return gam
         
-def GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
+def GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
     gamDict = {}
     costh = cosd(refl[5]/2.)
     tanth = tand(refl[5]/2.)
@@ -1939,14 +1941,18 @@ def GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse):
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
         Si = parmDict[phfx+'Size:0']
         Sa = parmDict[phfx+'Size:1']
-        gami = (1.80*wave/np.pi)/(Si*Sa)
+        gami = (1.8*wave/np.pi)/(Si*Sa)
         sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
         gam = gami*sqtrm/costh            
         gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
         gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa         
-    else:           #ellipsoidal crystallites - do numerically? - not right not make sense
+    else:           #ellipsoidal crystallites
+        const = 1.8*wave/(np.pi*costh)
+        Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
         H = np.array(refl[:3])
-        gam = 1.8*wave/(np.pi*costh*np.inner(H,np.inner(sizeEllipse,H)))
+        R,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
+        for i,item in enumerate([phfx+'Size:%d'%(j) for j in range(6)]):
+            gamDict[item] = -(const/R**2)*dRdS[i]
     #microstrain derivatives                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
         gamDict[phfx+'Mustrain:0'] =  0.018*tanth/np.pi            
@@ -2081,7 +2087,7 @@ def GetFprime(controlDict,Histograms):
             
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
-    def GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse):
+    def GetReflSIgGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
         U = parmDict[hfx+'U']
         V = parmDict[hfx+'V']
         W = parmDict[hfx+'W']
@@ -2090,7 +2096,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         tanPos = tand(refl[5]/2.0)
         sig = U*tanPos**2+V*tanPos+W        #save peak sigma
         sig = max(0.001,sig)
-        gam = X/cosd(refl[5]/2.0)+Y*tanPos+GetSampleGam(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse) #save peak gamma
+        gam = X/cosd(refl[5]/2.0)+Y*tanPos+GetSampleGam(refl,wave,G,GB,phfx,calcControls,parmDict) #save peak gamma
         gam = max(0.001,gam)
         return sig,gam
                 
@@ -2123,19 +2129,17 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         SGData = Phase['General']['SGData']
         A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+        GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
         if 'Pawley' not in Phase['General']['Type']:
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
-        sizeEllipse = []
-        if calcControls[phfx+'SizeType'] == 'ellipsoidal':
-            sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
         for refl in refList:
             if 'C' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
                 refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
-                refl[6:8] = GetReflSIgGam(refl,wave,G,hfx,phfx,calcControls,parmDict,sizeEllipse)    #peak sig & gam
+                refl[6:8] = GetReflSIgGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict)    #peak sig & gam
                 GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)    #puts corrections in refl[13]
                 refl[13] *= Vst*Lorenz
                 if 'Pawley' in Phase['General']['Type']:
@@ -2290,11 +2294,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         phfx = '%d:%d:'%(pId,hId)
         A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+        GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         if 'Pawley' not in Phase['General']['Type']:
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
-        sizeEllipse = []
-        if calcControls[phfx+'SizeType'] == 'ellipsoidal':
-            sizeEllipse = G2lat.U6toUij([parmDIct[phfx+'Size:%d'%(i)] for i in range(6)])
         for iref,refl in enumerate(refList):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
@@ -2383,7 +2385,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         dMdv[varylist.index(name)] += dDijDict[name]*dervDict['pos']
                     elif name in dependentVars:
                         depDerivDict[name] += dDijDict[name]*dervDict['pos']
-                gamDict = GetSampleGamDerv(refl,wave,G,phfx,calcControls,parmDict,sizeEllipse)
+                gamDict = GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict)
                 for name in gamDict:
                     if name in varylist:
                         dMdv[varylist.index(name)] += gamDict[name]*dervDict['gam']
@@ -2594,17 +2596,17 @@ def Refine(GPXfile,dlg):
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
 #for testing purposes!!!
-#    file = open('structTestdata.dat','wb')
-#    cPickle.dump(parmDict,file,1)
-#    cPickle.dump(varyList,file,1)
-#    for histogram in Histograms:
-#        if 'PWDR' in histogram[:4]:
-#            Histogram = Histograms[histogram]
-#    cPickle.dump(Histogram,file,1)
-#    cPickle.dump(Phases,file,1)
-#    cPickle.dump(calcControls,file,1)
-#    cPickle.dump(pawleyLookup,file,1)
-#    file.close()
+    file = open('structTestdata.dat','wb')
+    cPickle.dump(parmDict,file,1)
+    cPickle.dump(varyList,file,1)
+    for histogram in Histograms:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+    cPickle.dump(Histogram,file,1)
+    cPickle.dump(Phases,file,1)
+    cPickle.dump(calcControls,file,1)
+    cPickle.dump(pawleyLookup,file,1)
+    file.close()
 
 def SeqRefine(GPXfile,dlg):
     import cPickle

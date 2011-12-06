@@ -2596,17 +2596,17 @@ def Refine(GPXfile,dlg):
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
 #for testing purposes!!!
-    file = open('structTestdata.dat','wb')
-    cPickle.dump(parmDict,file,1)
-    cPickle.dump(varyList,file,1)
-    for histogram in Histograms:
-        if 'PWDR' in histogram[:4]:
-            Histogram = Histograms[histogram]
-    cPickle.dump(Histogram,file,1)
-    cPickle.dump(Phases,file,1)
-    cPickle.dump(calcControls,file,1)
-    cPickle.dump(pawleyLookup,file,1)
-    file.close()
+#    file = open('structTestdata.dat','wb')
+#    cPickle.dump(parmDict,file,1)
+#    cPickle.dump(varyList,file,1)
+#    for histogram in Histograms:
+#        if 'PWDR' in histogram[:4]:
+#            Histogram = Histograms[histogram]
+#    cPickle.dump(Histogram,file,1)
+#    cPickle.dump(Phases,file,1)
+#    cPickle.dump(calcControls,file,1)
+#    cPickle.dump(pawleyLookup,file,1)
+#    file.close()
 
 def SeqRefine(GPXfile,dlg):
     import cPickle

@@ -2606,14 +2606,25 @@ def UpdatePhaseData(self,Item,data,oldPage):
             extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
             extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
             return extSizer
-                                    
-        if DData.GetChildren():
-            dataDisplay = DData.GetChildren()[0]
-            mainSizer = dataDisplay.GetSizer()
-            mainSizer.Clear()
-        else:
-            dataDisplay = wx.Panel(DData)
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
+#1 DData must be global but still this didn't work!                                     
+#        pageNo = self.dataDisplay.GetSelection()
+#        if self.dataDisplay.GetPageText(pageNo) == 'Data':
+#            self.dataDisplay.DeletePage(pageNo)
+#            DData = wx.ScrolledWindow(self.dataDisplay)
+#            self.dataDisplay.InsertPage(pageNo,DData,'Data')
+#            self.dataDisplay.ChangeSelection(pageNo)
+#2 This works but overwrites new sizer stuff on top of old stuff  both still active
+#        if DData.GetChildren():
+#            dataDisplay = DData.GetChildren()[0]
+#            mainSizer = dataDisplay.GetSizer()
+#            mainSizer.Clear()
+#        else:
+#            dataDisplay = wx.Panel(DData)
+#            mainSizer = wx.BoxSizer(wx.VERTICAL)
+
+#        DData.DestroyChildren()        #not doing this is equiv to #2 above
+        dataDisplay = wx.Panel(DData)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(PlotSizer())            
             
@@ -2708,7 +2719,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         mainSizer.Add((5,5),0)
 
         dataDisplay.SetSizer(mainSizer,True)
-        mainSizer.FitInside(self.dataFrame)
+        mainSizer.Fit(self.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20

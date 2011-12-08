@@ -132,7 +132,7 @@ c
           Emin = Acosd(tmp)
           tmp1 = tmp2*(1.0 - tmp2*(1.0-sin2THETA2))
         else
-            print *,'tmp > 1.0'
+C            print *,'tmp > 1.0'
           tmp1 = 0.0
           if (tmp .gt. 0.0) then
             Emin = 0.0

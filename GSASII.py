@@ -20,6 +20,7 @@ import numpy as np
 import scipy as sp
 import wx
 import matplotlib as mpl
+import wx.lib.inspection as wxeye
 
 # load the GSAS routines
 import GSASIIpath
@@ -32,6 +33,9 @@ import GSASIIstruct as G2str
 import GSASIImapvars as G2mv
 import GSASIIsolve as G2sol
 import OpenGL as ogl
+
+#wx inspector - use as needed
+#wxeye.InspectionTool().Show()
 
 # print versions
 print "Available python module versions for GSASII:"

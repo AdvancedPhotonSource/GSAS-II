@@ -692,6 +692,7 @@ def UpdateSampleGrid(self,data):
                 copyNames += ['DisplaceX','DisplaceY','Absorption']
             else:       #Bragg-Brentano
                 copyNames += ['Shift','Transparency']
+        copyNames += ['Omega','Chi','Phi']
         copyDict = {}
         for parm in copyNames:
             copyDict[parm] = data[parm]

@@ -1910,14 +1910,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             textureData['Order'] = int(Obj.GetValue())
             textureData['SH Coeff'][1] = SetSHCoef()
-            UpdateTexture()
+            wx.CallAfter(UpdateTexture)
             G2plt.PlotTexture(self,data,newPlot=False)
                         
         def OnShModel(event):
             Obj = event.GetEventObject()
             textureData['Model'] = Obj.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
-            UpdateTexture()
+            wx.CallAfter(UpdateTexture)
             G2plt.PlotTexture(self,data,newPlot=False)
             
         def OnSHRefine(event):
@@ -1927,7 +1927,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnSHShow(event):
             Obj = event.GetEventObject()
             textureData['SHShow'] = Obj.GetValue()
-            UpdateTexture()
+            wx.CallAfter(UpdateTexture)
             
         def OnProjSel(event):
             Obj = event.GetEventObject()
@@ -1965,7 +1965,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnPfType(event):
             Obj = event.GetEventObject()
             textureData['PlotType'] = Obj.GetValue()
-            UpdateTexture()
+            wx.CallAfter(UpdateTexture)
             G2plt.PlotTexture(self,data)
             
         def OnPFValue(event):
@@ -2118,7 +2118,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnPlotSel(event):
             Obj = event.GetEventObject()
             generalData['Data plot type'] = Obj.GetStringSelection()
-            UpdateDData()
+            wx.CallAfter(UpdateDData)
             G2plt.PlotSizeStrainPO(self,data)
             
         def OnPOhkl(event):
@@ -2139,7 +2139,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Show'] = Obj.GetValue()
-            UpdateDData()
+            wx.CallAfter(UpdateDData)
             G2plt.PlotSizeStrainPO(self,data)
             
         def OnCopyData(event):
@@ -2166,7 +2166,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             copyList = keyList[1:]
                         for item in copyList:
                             UseList[item].update(copy.deepcopy(copyDict))
-                        UpdateDData()
+                        wx.CallAfter(UpdateDData)
                 finally:
                     dlg.Destroy()
             
@@ -2189,7 +2189,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             hist = Indx[Obj.GetId()]
             UseList[hist]['Size'][0] = Obj.GetValue()
             G2plt.PlotSizeStrainPO(self,data)
-            UpdateDData()
+            wx.CallAfter(UpdateDData)
             
         def OnSizeRef(event):
             Obj = event.GetEventObject()
@@ -2200,7 +2200,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 UseList[hist]['Size'][2][pid] = Obj.GetValue()
             
         def OnSizeVal(event):
-            print 'new val event'
             Obj = event.GetEventObject()
             hist,pid = Indx[Obj.GetId()]
             if UseList[hist]['Size'][0] == 'ellipsoidal':
@@ -2242,7 +2241,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             hist = Indx[Obj.GetId()]
             UseList[hist]['Mustrain'][0] = Obj.GetValue()
             G2plt.PlotSizeStrainPO(self,data)
-            UpdateDData()
+            wx.CallAfter(UpdateDData)
             
         def OnStrainRef(event):
             Obj = event.GetEventObject()
@@ -2312,7 +2311,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 UseList[hist]['Pref.Ori.'][0] = 'MD'
             else:
                 UseList[hist]['Pref.Ori.'][0] = 'SH'
-            UpdateDData()            
+            wx.CallAfter(UpdateDData)            
 
         def OnPORef(event):
             Obj = event.GetEventObject()
@@ -2350,7 +2349,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Order = int(Obj.GetValue())
             UseList[hist]['Pref.Ori.'][4] = Order
             UseList[hist]['Pref.Ori.'][5] = SetPOCoef(Order,hist)
-            UpdateDData()
+            wx.CallAfter(UpdateDData)
 
         def SetPOCoef(Order,hist):
             cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
@@ -2420,6 +2419,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             sizeType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=UseList[item][parm][0],choices=choices,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             sizeType.Bind(wx.EVT_COMBOBOX, OnType)
+#            wx.CallAfter(OnType)
             Indx[sizeType.GetId()] = item
             topSizer.Add(sizeType)
             topSizer.Add((5,0),0)
@@ -2606,23 +2606,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
             extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
             extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
             return extSizer
-#1 DData must be global but still this didn't work!                                     
-#        pageNo = self.dataDisplay.GetSelection()
-#        if self.dataDisplay.GetPageText(pageNo) == 'Data':
-#            self.dataDisplay.DeletePage(pageNo)
-#            DData = wx.ScrolledWindow(self.dataDisplay)
-#            self.dataDisplay.InsertPage(pageNo,DData,'Data')
-#            self.dataDisplay.ChangeSelection(pageNo)
-#2 This works but overwrites new sizer stuff on top of old stuff  both still active
-#        if DData.GetChildren():
-#            dataDisplay = DData.GetChildren()[0]
-#            mainSizer = dataDisplay.GetSizer()
-#            mainSizer.Clear()
-#        else:
-#            dataDisplay = wx.Panel(DData)
-#            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            
 
-#        DData.DestroyChildren()        #not doing this is equiv to #2 above
+        DData.DestroyChildren()
         dataDisplay = wx.Panel(DData)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
@@ -2630,7 +2616,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         for item in keyList:
             histData = UseList[item]
-            mainSizer.Add((5,5),0)
             
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             showData = wx.CheckBox(dataDisplay,-1,label=' Show '+item)
@@ -2642,6 +2627,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Indx[copyData.GetId()] = item
             copyData.Bind(wx.EVT_BUTTON,OnCopyData)
             showSizer.Add(copyData,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
             mainSizer.Add(showSizer,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
             
@@ -2709,6 +2695,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 else:           #'SH'
                     if POData[4]:       #SH order > 0
                         poSizer.Add(SHDataSizer(POData))
+                        
                 mainSizer.Add(poSizer)
                 mainSizer.Add((0,5),0)                
                 #Extinction  'Extinction':[0.0,False]
@@ -2719,7 +2706,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         mainSizer.Add((5,5),0)
 
         dataDisplay.SetSizer(mainSizer,True)
-        mainSizer.Fit(self.dataFrame)
+        mainSizer.FitInside(self.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20

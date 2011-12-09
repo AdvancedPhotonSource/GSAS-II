@@ -85,8 +85,8 @@ htmlFirstUse = True
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for _init_coll_Refl_Items in range(1)]
 
-[ wxID_CLEARTEXTURE,
-] = [wx.NewId() for _init_coll_Texture_Items in range(1)]
+[ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
+] = [wx.NewId() for _init_coll_Texture_Items in range(2)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -345,7 +345,9 @@ class DataFrame(wx.Frame):
             help='Delete histograms from use for this phase')
 
     def _init_coll_Texture_Items(self,parent):
-        self.ClearPeaks = parent.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
+        self.RefineTexture = parent.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
+            help='Refine the texture coefficients from sequential Pawley results')
+        self.ClearTexture = parent.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
             help='Clear the texture coefficients' )
             
     def _init_coll_DrawAtom_Items(self,parent):
@@ -542,6 +544,8 @@ class DataFrame(wx.Frame):
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)
         self.MakeNewPhase.Enable(False)
+        self.RefineTexture.Enable(False)
+        self.ClearTexture.Enable(False)             #doesn't do anything!
         
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,

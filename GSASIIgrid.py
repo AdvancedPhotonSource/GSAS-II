@@ -1018,10 +1018,22 @@ def UpdateConstraints(self,data):
         phlegend = '\n In p:h:name'
         for phase in Phases:
             plegend += '\n p:: = '+str(Phases[phase]['pId'])+':: for '+phase
+            count = 0
             for histogram in Phases[phase]['Histograms']:
-                phlegend += '\n p:h: = '+str(Phases[phase]['pId'])+':'+str(Histograms[histogram]['hId'])+': for '+phase+' in '+histogram
+                if count < 3:
+                    phlegend += '\n p:h: = '+str(Phases[phase]['pId'])+':'+str(Histograms[histogram]['hId'])+': for '+phase+' in '+histogram
+                else:
+                    phlegend += '\n ... etc.'
+                    break
+                count += 1
+        count = 0
         for histogram in Histograms:
-            hlegend += '\n :h: = :'+str(Histograms[histogram]['hId'])+': for '+histogram
+            if count < 3:
+                hlegend += '\n :h: = :'+str(Histograms[histogram]['hId'])+': for '+histogram
+            else:
+                hlegend += '\n ... etc.'
+                break
+            count += 1
         return plegend,hlegend,phlegend
         
     def FindEquivVarb(name,nameList):

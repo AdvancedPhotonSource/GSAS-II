@@ -1067,14 +1067,14 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             for item in ['Mustrain','Size']:
                 controlDict[pfx+item+'Type'] = hapData[item][0]
                 if hapData[item][0] in ['isotropic','uniaxial']:
-                    hapDict[pfx+item+':0'] = hapData[item][1][0]
+                    hapDict[pfx+item+':i'] = hapData[item][1][0]
                     if hapData[item][2][0]:
-                        hapVary.append(pfx+item+':0')
+                        hapVary.append(pfx+item+':i')
                     if hapData[item][0] == 'uniaxial':
                         controlDict[pfx+item+'Axis'] = hapData[item][3]
-                        hapDict[pfx+item+':1'] = hapData[item][1][1]
+                        hapDict[pfx+item+':a'] = hapData[item][1][1]
                         if hapData[item][2][1]:
-                            hapVary.append(pfx+item+':1')
+                            hapVary.append(pfx+item+':a')
                 else:       #generalized for mustrain or ellipsoidal for size
                     if item == 'Mustrain':
                         names = G2spc.MustrainNames(SGData)
@@ -1256,17 +1256,17 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 'HStrain':{}}                  
             for item in ['Mustrain','Size']:
                 if hapData[item][0] in ['isotropic','uniaxial']:                    
-                    hapData[item][1][0] = parmDict[pfx+item+':0']
+                    hapData[item][1][0] = parmDict[pfx+item+':i']
                     if item == 'Size':
                         hapData[item][1][0] = min(10.,max(0.01,hapData[item][1][0]))
-                    if pfx+item+':0' in sigDict: 
-                        SizeMuStrSig[item][0][0] = sigDict[pfx+item+':0']
+                    if pfx+item+':i' in sigDict: 
+                        SizeMuStrSig[item][0][0] = sigDict[pfx+item+':i']
                     if hapData[item][0] == 'uniaxial':
-                        hapData[item][1][1] = parmDict[pfx+item+':1']
+                        hapData[item][1][1] = parmDict[pfx+item+':a']
                         if item == 'Size':
                             hapData[item][1][1] = min(10.,max(0.01,hapData[item][1][1]))                        
-                        if pfx+item+':1' in sigDict:
-                            SizeMuStrSig[item][0][1] = sigDict[pfx+item+':1']
+                        if pfx+item+':a' in sigDict:
+                            SizeMuStrSig[item][0][1] = sigDict[pfx+item+':a']
                 else:       #generalized for mustrain or ellipsoidal for size
                     for i in range(len(hapData[item][4])):
                         sfx = ':'+str(i)
@@ -1898,13 +1898,13 @@ def GetSampleGam(refl,wave,G,GB,phfx,calcControls,parmDict):
     costh = cosd(refl[5]/2.)
     #crystallite size
     if calcControls[phfx+'SizeType'] == 'isotropic':
-        gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:0']*costh)
+        gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:i']*costh)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']*costh)
-        gam *= np.sqrt((sinP*parmDict[phfx+'Size:1'])**2+(cosP*parmDict[phfx+'Size:0'])**2)
+        gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:i']*parmDict[phfx+'Size:a']*costh)
+        gam *= np.sqrt((sinP*parmDict[phfx+'Size:a'])**2+(cosP*parmDict[phfx+'Size:i'])**2)
     else:           #ellipsoidal crystallites
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
         H = np.array(refl[:3])
@@ -1912,13 +1912,13 @@ def GetSampleGam(refl,wave,G,GB,phfx,calcControls,parmDict):
         gam = 1.8*wave/(np.pi*costh*lenR)
     #microstrain                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
-        gam += 0.018*parmDict[phfx+'Mustrain:0']*tand(refl[5]/2.)/np.pi
+        gam += 0.018*parmDict[phfx+'Mustrain:i']*tand(refl[5]/2.)/np.pi
     elif calcControls[phfx+'MustrainType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'MustrainAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        Si = parmDict[phfx+'Mustrain:0']
-        Sa = parmDict[phfx+'Mustrain:1']
+        Si = parmDict[phfx+'Mustrain:i']
+        Sa = parmDict[phfx+'Mustrain:a']
         gam += 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
     else:       #generalized - P.W. Stephens model
         pwrs = calcControls[phfx+'MuPwrs']
@@ -1934,18 +1934,18 @@ def GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
     tanth = tand(refl[5]/2.)
     #crystallite size derivatives
     if calcControls[phfx+'SizeType'] == 'isotropic':
-        gamDict[phfx+'Size:0'] = -1.80*wave/(np.pi*costh)
+        gamDict[phfx+'Size:i'] = -1.80*wave/(np.pi*costh)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        Si = parmDict[phfx+'Size:0']
-        Sa = parmDict[phfx+'Size:1']
+        Si = parmDict[phfx+'Size:i']
+        Sa = parmDict[phfx+'Size:a']
         gami = (1.8*wave/np.pi)/(Si*Sa)
         sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
         gam = gami*sqtrm/costh            
-        gamDict[phfx+'Size:0'] = gami*Si*cosP**2/(sqtrm*costh)-gam/Si
-        gamDict[phfx+'Size:1'] = gami*Sa*sinP**2/(sqtrm*costh)-gam/Sa         
+        gamDict[phfx+'Size:i'] = gami*Si*cosP**2/(sqtrm*costh)-gam/Si
+        gamDict[phfx+'Size:a'] = gami*Sa*sinP**2/(sqtrm*costh)-gam/Sa         
     else:           #ellipsoidal crystallites
         const = 1.8*wave/(np.pi*costh)
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
@@ -2607,6 +2607,7 @@ def Refine(GPXfile,dlg):
 #    cPickle.dump(calcControls,file,1)
 #    cPickle.dump(pawleyLookup,file,1)
 #    file.close()
+    return Rwp
 
 def SeqRefine(GPXfile,dlg):
     import cPickle

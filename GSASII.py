@@ -1508,11 +1508,12 @@ class GSASII(wx.Frame):
         Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         dlg.SetSize(Size)
+        Rwp = 100.00
         try:
-            G2str.Refine(self.GSASprojectfile,dlg)
+            Rwp = G2str.Refine(self.GSASprojectfile,dlg)
         finally:
             dlg.Destroy()        
-        dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
+        dlg = wx.MessageDialog(self,'Load new result?','Refinement results, Rwp =%.3f'%(Rwp),wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 Id = 0

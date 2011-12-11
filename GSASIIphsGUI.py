@@ -1992,82 +1992,82 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 Obj.SetValue('%3.1f %3.1f %3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
             G2plt.PlotTexture(self,data)
-                
-        Texture.DestroyChildren()
-        dataDisplay = wx.Panel(Texture)
+
+        if Texture.GetSizer():
+            Texture.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        titleSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
-        titleSizer.Add(wx.StaticText(dataDisplay,-1,
+        titleSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        titleSizer.Add(wx.StaticText(Texture,-1,
             ' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
             0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(titleSizer,0)
         mainSizer.Add((0,5),0)
         shSizer = wx.FlexGridSizer(1,6,5,5)
-        shSizer.Add(wx.StaticText(dataDisplay,-1,'Texture model: '),0,wx.ALIGN_CENTER_VERTICAL)
-        shModel = wx.ComboBox(dataDisplay,-1,value=textureData['Model'],choices=shModels,
+        shSizer.Add(wx.StaticText(Texture,-1,'Texture model: '),0,wx.ALIGN_CENTER_VERTICAL)
+        shModel = wx.ComboBox(Texture,-1,value=textureData['Model'],choices=shModels,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         shModel.Bind(wx.EVT_COMBOBOX,OnShModel)
         shSizer.Add(shModel,0,wx.ALIGN_CENTER_VERTICAL)
-        shSizer.Add(wx.StaticText(dataDisplay,-1,'  Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
-        shOrder = wx.ComboBox(dataDisplay,-1,value=str(textureData['Order']),choices=[str(2*i) for i in range(18)],
+        shSizer.Add(wx.StaticText(Texture,-1,'  Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
+        shOrder = wx.ComboBox(Texture,-1,value=str(textureData['Order']),choices=[str(2*i) for i in range(18)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         shOrder.Bind(wx.EVT_COMBOBOX,OnShOrder)
         shSizer.Add(shOrder,0,wx.ALIGN_CENTER_VERTICAL)
-        shRef = wx.CheckBox(dataDisplay,-1,label=' Refine texture?')
+        shRef = wx.CheckBox(Texture,-1,label=' Refine texture?')
         shRef.SetValue(textureData['SH Coeff'][0])
         shRef.Bind(wx.EVT_CHECKBOX, OnSHRefine)
         shSizer.Add(shRef,0,wx.ALIGN_CENTER_VERTICAL)
-        shShow = wx.CheckBox(dataDisplay,-1,label=' Show coeff.?')
+        shShow = wx.CheckBox(Texture,-1,label=' Show coeff.?')
         shShow.SetValue(textureData['SHShow'])
         shShow.Bind(wx.EVT_CHECKBOX, OnSHShow)
         shSizer.Add(shShow,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(shSizer,0,0)
         mainSizer.Add((0,5),0)
         PTSizer = wx.FlexGridSizer(2,4,5,5)
-        PTSizer.Add(wx.StaticText(dataDisplay,-1,' Texture plot type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        PTSizer.Add(wx.StaticText(Texture,-1,' Texture plot type: '),0,wx.ALIGN_CENTER_VERTICAL)
         choices = ['Axial pole distribution','Pole figure','Inverse pole figure']            
-        pfType = wx.ComboBox(dataDisplay,-1,value=str(textureData['PlotType']),choices=choices,
+        pfType = wx.ComboBox(Texture,-1,value=str(textureData['PlotType']),choices=choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         pfType.Bind(wx.EVT_COMBOBOX,OnPfType)
         PTSizer.Add(pfType,0,wx.ALIGN_CENTER_VERTICAL)
         if 'Axial' not in textureData['PlotType']:
-            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Projection type: '),0,wx.ALIGN_CENTER_VERTICAL)
-            projSel = wx.ComboBox(dataDisplay,-1,value=self.Projection,choices=['equal area','stereographic','3D display'],
+            PTSizer.Add(wx.StaticText(Texture,-1,' Projection type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            projSel = wx.ComboBox(Texture,-1,value=self.Projection,choices=['equal area','stereographic','3D display'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
             PTSizer.Add(projSel,0,wx.ALIGN_CENTER_VERTICAL)
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
-            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Pole figure HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
             PH = textureData['PFhkl']
-            pfVal = wx.TextCtrl(dataDisplay,-1,'%d %d %d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
+            pfVal = wx.TextCtrl(Texture,-1,'%d %d %d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
         else:
-            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Inverse pole figure XYZ: '),0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(wx.StaticText(Texture,-1,' Inverse pole figure XYZ: '),0,wx.ALIGN_CENTER_VERTICAL)
             PX = textureData['PFxyz']
-            pfVal = wx.TextCtrl(dataDisplay,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
+            pfVal = wx.TextCtrl(Texture,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
         PTSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
         if 'Axial' not in textureData['PlotType']:
-            PTSizer.Add(wx.StaticText(dataDisplay,-1,' Color scheme'),0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(wx.StaticText(Texture,-1,' Color scheme'),0,wx.ALIGN_CENTER_VERTICAL)
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()
-            colorSel = wx.ComboBox(dataDisplay,-1,value=self.ContourColor,choices=choice,
+            colorSel = wx.ComboBox(Texture,-1,value=self.ContourColor,choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
             PTSizer.Add(colorSel,0,wx.ALIGN_CENTER_VERTICAL)        
         mainSizer.Add(PTSizer,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:
-            mainSizer.Add(wx.StaticText(dataDisplay,-1,'Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
             ODFSizer = wx.FlexGridSizer(2,8,2,2)
             ODFIndx = {}
             ODFkeys = textureData['SH Coeff'][1].keys()
             ODFkeys.sort()
             for item in ODFkeys:
-                ODFSizer.Add(wx.StaticText(dataDisplay,-1,item),0,wx.ALIGN_CENTER_VERTICAL)
-                ODFval = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%8.3f'%(textureData['SH Coeff'][1][item]),style=wx.TE_PROCESS_ENTER)
+                ODFSizer.Add(wx.StaticText(Texture,-1,item),0,wx.ALIGN_CENTER_VERTICAL)
+                ODFval = wx.TextCtrl(Texture,wx.ID_ANY,'%8.3f'%(textureData['SH Coeff'][1][item]),style=wx.TE_PROCESS_ENTER)
                 ODFIndx[ODFval.GetId()] = item
                 ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
                 ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
@@ -2075,30 +2075,30 @@ def UpdatePhaseData(self,Item,data,oldPage):
             mainSizer.Add(ODFSizer,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
         mainSizer.Add((0,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Sample orientation angles: '),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(wx.StaticText(Texture,-1,'Sample orientation angles: '),0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((0,5),0)
         angSizer = wx.BoxSizer(wx.HORIZONTAL)
         angIndx = {}
         valIndx = {}
         for item in ['Sample omega','Sample chi','Sample phi']:
-            angRef = wx.CheckBox(dataDisplay,-1,label=item+': ')
+            angRef = wx.CheckBox(Texture,-1,label=item+': ')
             angRef.SetValue(textureData[item][0])
             angIndx[angRef.GetId()] = item
             angRef.Bind(wx.EVT_CHECKBOX, OnAngRef)
             angSizer.Add(angRef,0,wx.ALIGN_CENTER_VERTICAL)
-            angVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%8.2f'%(textureData[item][1]),style=wx.TE_PROCESS_ENTER)
+            angVal = wx.TextCtrl(Texture,wx.ID_ANY,'%8.2f'%(textureData[item][1]),style=wx.TE_PROCESS_ENTER)
             valIndx[angVal.GetId()] = item
             angVal.Bind(wx.EVT_TEXT_ENTER,OnAngValue)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnAngValue)
             angSizer.Add(angVal,0,wx.ALIGN_CENTER_VERTICAL)
             angSizer.Add((5,0),0)
         mainSizer.Add(angSizer,0,wx.ALIGN_CENTER_VERTICAL)
-        dataDisplay.SetSizer(mainSizer,True)
+        Texture.SetSizer(mainSizer,True)
         mainSizer.Fit(self.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20
-        dataDisplay.SetSize(Size)
+        Texture.SetSize(Size)
         Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
         self.dataFrame.setSizePosLeft(Size)
@@ -2384,16 +2384,16 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def PlotSizer():
             plotSizer = wx.BoxSizer(wx.VERTICAL)
             choice = ['Mustrain','Size','Preferred orientation']
-            plotSel = wx.RadioBox(dataDisplay,-1,'Select plot type:',choices=choice,
+            plotSel = wx.RadioBox(DData,-1,'Select plot type:',choices=choice,
                 majorDimension=3,style=wx.RA_SPECIFY_COLS)
             plotSel.SetStringSelection(generalData['Data plot type'])
             plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
             plotSizer.Add(plotSel)
             if generalData['Data plot type'] == 'Preferred orientation':
                 POhklSizer = wx.BoxSizer(wx.HORIZONTAL)
-                POhklSizer.Add(wx.StaticText(dataDisplay,-1,' Plot preferred orientation for H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+                POhklSizer.Add(wx.StaticText(DData,-1,' Plot preferred orientation for H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
                 h,k,l = generalData['POhkl']
-                poAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+                poAxis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
                 poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOhkl)
                 poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOhkl)
                 POhklSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
@@ -2402,12 +2402,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
            
         def ScaleSizer():
             scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
-            scaleRef = wx.CheckBox(dataDisplay,-1,label=' Phase fraction: ')
+            scaleRef = wx.CheckBox(DData,-1,label=' Phase fraction: ')
             scaleRef.SetValue(UseList[item]['Scale'][1])
             Indx[scaleRef.GetId()] = item
             scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
             scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
-            scaleVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+            scaleVal = wx.TextCtrl(DData,wx.ID_ANY,
                 '%.4f'%(UseList[item]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
             Indx[scaleVal.GetId()] = item
             scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
@@ -2417,8 +2417,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def TopSizer(name,choices,parm,OnType):
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(dataDisplay,-1,name),0,wx.ALIGN_CENTER_VERTICAL)
-            sizeType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=UseList[item][parm][0],choices=choices,
+            topSizer.Add(wx.StaticText(DData,-1,name),0,wx.ALIGN_CENTER_VERTICAL)
+            sizeType = wx.ComboBox(DData,wx.ID_ANY,value=UseList[item][parm][0],choices=choices,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             sizeType.Bind(wx.EVT_COMBOBOX, OnType)
             Indx[sizeType.GetId()] = item
@@ -2428,13 +2428,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def IsoSizer(name,parm,fmt,OnVal,OnRef):
             isoSizer = wx.BoxSizer(wx.HORIZONTAL)
-            sizeRef = wx.CheckBox(dataDisplay,-1,label=name)
+            sizeRef = wx.CheckBox(DData,-1,label=name)
             sizeRef.thisown = False
             sizeRef.SetValue(UseList[item][parm][2][0])
             Indx[sizeRef.GetId()] = [item,0]
             sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
             isoSizer.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
-            sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+            sizeVal = wx.TextCtrl(DData,wx.ID_ANY,
                 fmt%(UseList[item][parm][1][0]),style=wx.TE_PROCESS_ENTER)
             Indx[sizeVal.GetId()] = [item,0]
             sizeVal.Bind(wx.EVT_TEXT_ENTER,OnVal)
@@ -2444,9 +2444,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def UniSizer(parm,OnAxis):
             uniSizer = wx.BoxSizer(wx.HORIZONTAL)
-            uniSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+            uniSizer.Add(wx.StaticText(DData,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
             h,k,l = UseList[item][parm][3]
-            Axis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+            Axis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
             Indx[Axis.GetId()] = item
             Axis.Bind(wx.EVT_TEXT_ENTER,OnAxis)
             Axis.Bind(wx.EVT_KILL_FOCUS,OnAxis)
@@ -2458,13 +2458,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             parms = zip([' Equatorial '+parmName,' Axial '+parmName],
                 UseList[item][parm][1],UseList[item][parm][2],range(2))
             for Pa,val,ref,id in parms:
-                sizeRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                sizeRef = wx.CheckBox(DData,-1,label=Pa)
                 sizeRef.thisown = False
                 sizeRef.SetValue(ref)
                 Indx[sizeRef.GetId()] = [item,id]
                 sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
                 dataSizer.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
-                sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,fmt%(val),style=wx.TE_PROCESS_ENTER)
+                sizeVal = wx.TextCtrl(DData,wx.ID_ANY,fmt%(val),style=wx.TE_PROCESS_ENTER)
                 Indx[sizeVal.GetId()] = [item,id]
                 sizeVal.Bind(wx.EVT_TEXT_ENTER,OnVal)
                 sizeVal.Bind(wx.EVT_KILL_FOCUS,OnVal)
@@ -2477,13 +2477,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 UseList[item]['Size'][5],range(6))
             dataSizer = wx.FlexGridSizer(1,6,5,5)
             for Pa,val,ref,id in parms:
-                sizeRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                sizeRef = wx.CheckBox(DData,-1,label=Pa)
                 sizeRef.thisown = False
                 sizeRef.SetValue(ref)
                 Indx[sizeRef.GetId()] = [item,id]
                 sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
                 dataSizer.Add(sizeRef,0,wx.ALIGN_CENTER_VERTICAL)
-                sizeVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
+                sizeVal = wx.TextCtrl(DData,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
                 Indx[sizeVal.GetId()] = [item,id]
                 sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
                 sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
@@ -2499,13 +2499,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             parms = zip(Snames,UseList[item]['Mustrain'][4],UseList[item]['Mustrain'][5],range(numb))
             dataSizer = wx.FlexGridSizer(1,6,5,5)
             for Pa,val,ref,id in parms:
-                strainRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                strainRef = wx.CheckBox(DData,-1,label=Pa)
                 strainRef.thisown = False
                 strainRef.SetValue(ref)
                 Indx[strainRef.GetId()] = [item,id]
                 strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
                 dataSizer.Add(strainRef,0,wx.ALIGN_CENTER_VERTICAL)
-                strainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
+                strainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                 Indx[strainVal.GetId()] = [item,id]
                 strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
                 strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -2517,13 +2517,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Hsnames = G2spc.HStrainNames(SGData)
             parms = zip(Hsnames,UseList[item]['HStrain'][0],UseList[item]['HStrain'][1],range(len(Hsnames)))
             for Pa,val,ref,id in parms:
-                hstrainRef = wx.CheckBox(dataDisplay,-1,label=Pa)
+                hstrainRef = wx.CheckBox(DData,-1,label=Pa)
                 hstrainRef.thisown = False
                 hstrainRef.SetValue(ref)
                 Indx[hstrainRef.GetId()] = [item,id]
                 hstrainRef.Bind(wx.EVT_CHECKBOX, OnHstrainRef)
                 hstrainSizer.Add(hstrainRef,0,wx.ALIGN_CENTER_VERTICAL)
-                hstrainVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
+                hstrainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                 Indx[hstrainVal.GetId()] = [item,id]
                 hstrainVal.Bind(wx.EVT_TEXT_ENTER,OnHstrainVal)
                 hstrainVal.Bind(wx.EVT_KILL_FOCUS,OnHstrainVal)
@@ -2534,20 +2534,20 @@ def UpdatePhaseData(self,Item,data,oldPage):
             poSizer = wx.FlexGridSizer(1,6,5,5)
             choice = ['March-Dollase','Spherical harmonics']
             POtype = choice[['MD','SH'].index(POData[0])]
-            poSizer.Add(wx.StaticText(dataDisplay,-1,' Preferred orientation model '),0,wx.ALIGN_CENTER_VERTICAL)
-            POType = wx.ComboBox(dataDisplay,wx.ID_ANY,value=POtype,choices=choice,
+            poSizer.Add(wx.StaticText(DData,-1,' Preferred orientation model '),0,wx.ALIGN_CENTER_VERTICAL)
+            POType = wx.ComboBox(DData,wx.ID_ANY,value=POtype,choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[POType.GetId()] = item
             POType.Bind(wx.EVT_COMBOBOX, OnPOType)
             poSizer.Add(POType)
             if POData[0] == 'SH':
-                poSizer.Add(wx.StaticText(dataDisplay,-1,' Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
-                poOrder = wx.ComboBox(dataDisplay,wx.ID_ANY,value=str(POData[4]),choices=[str(2*i) for i in range(18)],
+                poSizer.Add(wx.StaticText(DData,-1,' Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
+                poOrder = wx.ComboBox(DData,wx.ID_ANY,value=str(POData[4]),choices=[str(2*i) for i in range(18)],
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 Indx[poOrder.GetId()] = item
                 poOrder.Bind(wx.EVT_COMBOBOX,OnPOOrder)
                 poSizer.Add(poOrder,0,wx.ALIGN_CENTER_VERTICAL)
-                poRef = wx.CheckBox(dataDisplay,-1,label=' Refine? ')
+                poRef = wx.CheckBox(DData,-1,label=' Refine? ')
                 poRef.SetValue(POData[2])
                 Indx[poRef.GetId()] = item
                 poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
@@ -2556,20 +2556,20 @@ def UpdatePhaseData(self,Item,data,oldPage):
            
         def MDDataSizer(POData):
             poSizer = wx.BoxSizer(wx.HORIZONTAL)
-            poRef = wx.CheckBox(dataDisplay,-1,label=' March-Dollase ratio: ')
+            poRef = wx.CheckBox(DData,-1,label=' March-Dollase ratio: ')
             poRef.SetValue(POData[2])
             Indx[poRef.GetId()] = item
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
             poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
-            poVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+            poVal = wx.TextCtrl(DData,wx.ID_ANY,
                 '%.3f'%(POData[1]),style=wx.TE_PROCESS_ENTER)
             Indx[poVal.GetId()] = item
             poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
             poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
             poSizer.Add(poVal,0,wx.ALIGN_CENTER_VERTICAL)
-            poSizer.Add(wx.StaticText(dataDisplay,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+            poSizer.Add(wx.StaticText(DData,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
             h,k,l =POData[3]
-            poAxis = wx.TextCtrl(dataDisplay,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+            poAxis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
             Indx[poAxis.GetId()] = item
             poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
@@ -2578,15 +2578,15 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def SHDataSizer(POData):
             textJ = G2lat.textureIndex(POData[5])
-            mainSizer.Add(wx.StaticText(dataDisplay,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ)),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(DData,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ)),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
             ODFSizer = wx.FlexGridSizer(2,8,2,2)
             ODFIndx = {}
             ODFkeys = POData[5].keys()
             ODFkeys.sort()
             for odf in ODFkeys:
-                ODFSizer.Add(wx.StaticText(dataDisplay,-1,odf),0,wx.ALIGN_CENTER_VERTICAL)
-                ODFval = wx.TextCtrl(dataDisplay,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
+                ODFSizer.Add(wx.StaticText(DData,-1,odf),0,wx.ALIGN_CENTER_VERTICAL)
+                ODFval = wx.TextCtrl(DData,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
                 ODFIndx[ODFval.GetId()] = odf
 #                ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
 #                ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
@@ -2595,12 +2595,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def ExtSizer():            
             extSizer = wx.BoxSizer(wx.HORIZONTAL)
-            extRef = wx.CheckBox(dataDisplay,-1,label=' Extinction: ')
+            extRef = wx.CheckBox(DData,-1,label=' Extinction: ')
             extRef.SetValue(UseList[item]['Extinction'][1])
             Indx[extRef.GetId()] = item
             extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
             extSizer.Add(extRef,0,wx.ALIGN_CENTER_VERTICAL)
-            extVal = wx.TextCtrl(dataDisplay,wx.ID_ANY,
+            extVal = wx.TextCtrl(DData,wx.ID_ANY,
                 '%.2f'%(UseList[item]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
             Indx[extVal.GetId()] = item
             extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
@@ -2608,23 +2608,22 @@ def UpdatePhaseData(self,Item,data,oldPage):
             extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
             return extSizer
             
-
-        DData.DestroyChildren()
-        dataDisplay = wx.Panel(DData)
+        if DData.GetSizer():
+            DData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(wx.StaticText(DData,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(PlotSizer())            
             
         for item in keyList:
             histData = UseList[item]
             
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
-            showData = wx.CheckBox(dataDisplay,-1,label=' Show '+item)
+            showData = wx.CheckBox(DData,-1,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
             Indx[showData.GetId()] = item
             showData.Bind(wx.EVT_CHECKBOX, OnShowData)
             showSizer.Add(showData,0,wx.ALIGN_CENTER_VERTICAL)
-            copyData = wx.Button(dataDisplay,-1,label=' Copy?')
+            copyData = wx.Button(DData,-1,label=' Copy?')
             Indx[copyData.GetId()] = item
             copyData.Bind(wx.EVT_BUTTON,OnCopyData)
             showSizer.Add(copyData,wx.ALIGN_CENTER_VERTICAL)
@@ -2655,7 +2654,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                     ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
-                    ellSizer.Add(wx.StaticText(dataDisplay,-1,u' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
+                    ellSizer.Add(wx.StaticText(DData,-1,u' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(ellSizer)
                     mainSizer.Add(EllSizeDataSizer())
                 mainSizer.Add((0,5),0)                    
@@ -2679,12 +2678,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     genSizer = wx.BoxSizer(wx.HORIZONTAL)
                     genSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
-                    genSizer.Add(wx.StaticText(dataDisplay,-1,' Coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    genSizer.Add(wx.StaticText(DData,-1,' Coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(genSizer)
                     mainSizer.Add(GenStrainDataSizer())                        
                 mainSizer.Add((0,5),0)
                 
-                mainSizer.Add(wx.StaticText(dataDisplay,-1,' Hydrostatic/elastic strain:'))
+                mainSizer.Add(wx.StaticText(DData,-1,' Hydrostatic/elastic strain:'))
                 mainSizer.Add(HstrainSizer())
                     
                 #texture  'Pref. Ori.':['MD',1.0,False,[0,0,1],0,[]] last two for 'SH' are SHorder & coeff
@@ -2706,12 +2705,12 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 pass
         mainSizer.Add((5,5),0)
 
-        dataDisplay.SetSizer(mainSizer,True)
+        DData.SetSizer(mainSizer,True)
         mainSizer.FitInside(self.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20
-        dataDisplay.SetSize(Size)
+        DData.SetSize(Size)
         DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
         self.dataFrame.setSizePosLeft(Size)

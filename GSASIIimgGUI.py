@@ -16,6 +16,7 @@ import GSASIIimage as G2img
 import GSASIIplot as G2plt
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
+import numpy as np
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
@@ -196,7 +197,7 @@ def UpdateImageControls(self,data,masks):
         else:
             data['fullIntegrate'] = True
             data['LRazimuth'] = [Lazm,Lazm+360]
-        wx.CallAfter(UpdateImageControls,self,data,masks)
+        UpdateImageControls(self,data,masks)
         G2plt.PlotExposedImage(self,event=event)
         
     def OnLRazim(event):
@@ -234,7 +235,7 @@ def UpdateImageControls(self,data,masks):
         
     def OnRecalibrate(event):
         G2img.ImageRecalibrate(self,data)
-        wx.CallAfter(UpdateImageControls,self,data,masks)
+        UpdateImageControls(self,data,masks)
         
     def OnIntegrate(event):
         
@@ -244,7 +245,9 @@ def UpdateImageControls(self,data,masks):
             id = G2gd.GetPatternTreeItemId(self, self.root, backImg)
             Npix,imagefile = self.PatternTree.GetItemPyData(id)
             backImage = G2IO.GetImageData(self,imagefile,True)*backScale
-            self.Integrate = G2img.ImageIntegrate(self.ImageZ+backImage,data,masks)
+            sumImage = self.ImageZ+backImage
+            print sumImage.shape,np.min(sumImage),np.max(sumImage)
+            self.Integrate = G2img.ImageIntegrate(sumImage,data,masks)
         else:
             self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
         G2plt.PlotIntegration(self,newPlot=True)
@@ -398,7 +401,7 @@ def UpdateImageControls(self,data,masks):
                         save[key] = eval(val)
                     S = File.readline()
                 data.update(save)
-                wx.CallAfter(UpdateImageControls,self,data,masks)
+                UpdateImageControls(self,data,masks)
                 G2plt.PlotExposedImage(self,event=event)
                 
                 File.close()
@@ -708,7 +711,7 @@ def UpdateMasks(self,data):
     def OnDeleteSpot(event):
         Obj = event.GetEventObject()
         del(data['Points'][delSpotId.index(Obj)])
-        wx.CallAfter(UpdateMasks,self,data)
+        UpdateMasks(self,data)
         G2plt.PlotExposedImage(self,event=event)
         
     def OnRingThickness(event):
@@ -724,7 +727,7 @@ def UpdateMasks(self,data):
     def OnDeleteRing(event):
         Obj = event.GetEventObject()
         del(data['Rings'][delRingId.index(Obj)])
-        wx.CallAfter(UpdateMasks,self,data)
+        UpdateMasks(self,data)
         G2plt.PlotExposedImage(self,event=event)
 
     def OnArcThickness(event):
@@ -740,13 +743,13 @@ def UpdateMasks(self,data):
     def OnDeleteArc(event):
         Obj = event.GetEventObject()
         del(data['Arcs'][delArcId.index(Obj)])
-        wx.CallAfter(UpdateMasks,self,data)
+        UpdateMasks(self,data)
         G2plt.PlotExposedImage(self,event=event)
 
     def OnDeletePoly(event):
         Obj = event.GetEventObject()
         del(data['Polygons'][delPolyId.index(Obj)])
-        wx.CallAfter(UpdateMasks,self,data)
+        UpdateMasks(self,data)
         G2plt.PlotExposedImage(self,event=event)
 
     def OnCopyMask(event):
@@ -822,7 +825,7 @@ def UpdateMasks(self,data):
                         save[key] = eval(val)
                     S = File.readline()
                 data.update(save)
-                wx.CallAfter(UpdateMasks,self,data)
+                UpdateMasks(self,data)
                 G2plt.PlotExposedImage(self,event=event)
                 
                 File.close()

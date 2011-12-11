@@ -97,8 +97,7 @@ def UpdatePeakGrid(self, data):
                 peaks = []
         finally:
             dlg.Destroy()
-        wx.CallAfter(UpdatePeakGrid,self,peaks)
-#        UpdatePeakGrid(self,peaks)
+        UpdatePeakGrid(self,peaks)
         G2plt.PlotPatterns(self)
         
     def OnPeakFit(FitPgm,oneCycle=False):
@@ -122,8 +121,7 @@ def UpdatePeakGrid(self, data):
             G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data,oneCycle,controls)
         finally:
             wx.EndBusyCursor()    
-        wx.CallAfter(UpdatePeakGrid,self,peaks)
-#        UpdatePeakGrid(self,peaks)
+        UpdatePeakGrid(self,peaks)
         G2plt.PlotPatterns(self)
         print 'finished'
         return
@@ -142,8 +140,7 @@ def UpdatePeakGrid(self, data):
             if Inst['Type'] in ['PXC','PNC']:
                 peak[4] = Inst['U']*tand(peak[0]/2.0)**2+Inst['V']*tand(peak[0]/2.0)+Inst['W']
                 peak[6] = Inst['X']/cosd(peak[0]/2.0)+Inst['Y']*tand(peak[0]/2.0)
-        wx.CallAfter(UpdatePeakGrid,self,peaks)
-#        UpdatePeakGrid(self,peaks)
+        UpdatePeakGrid(self,peaks)
                 
     def RefreshPeakGrid(event):
         r,c =  event.GetRow(),event.GetCol()
@@ -279,8 +276,7 @@ def UpdateBackgroundGrid(self,data):
             for i in range(N,M):
                 del(item[-1])
         self.PatternTree.SetItemPyData(BackId,data)
-        wx.CallAfter(UpdateBackgroundGrid,self,data)
-#        UpdateBackgroundGrid(self,data)
+        UpdateBackgroundGrid(self,data)
         
     def OnBakVal(event):
         Obj = event.GetEventObject()
@@ -455,8 +451,7 @@ def UpdateInstrumentGrid(self,data):
         insVal.update(insDef)
         data = updateData(insVal,insRef)
         RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
-        wx.CallAfter(UpdateInstrumentGrid,self,data)
-#        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(self,data)
         
     def OnInstCopy(event):
         histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
@@ -493,22 +488,19 @@ def UpdateInstrumentGrid(self,data):
             data[1] = data[1][:2]+data[1][4:]
             data[2] = data[2][:2]+data[2][4:]
             data[3] = data[3][:1]+['Lam',]+data[3][4:]            
-        wx.CallAfter(UpdateInstrumentGrid,self,data)
-#        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(self,data)
                 
     def OnNewType(event):
         insVal['Type'] = typePick.GetValue()
         data = updateData(insVal,insRef)
-        wx.CallAfter(UpdateInstrumentGrid,self,data)
-#        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(self,data)
         
     def OnLamPick(event):
         lamType = lamPick.GetValue()
         insVal['Lam1'] = waves[lamType][0]
         insVal['Lam2'] = waves[lamType][1]
         data = updateData(insVal,insRef)
-        wx.CallAfter(UpdateInstrumentGrid,self,data)
-#        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(self,data)
                  
     def OnRatValue(event):
         try:
@@ -785,8 +777,7 @@ def UpdateSampleGrid(self,data):
             data['Shift'] = [0.0,False]
             data['Transparency'] = [0.0,False]
         self.dataDisplay.Destroy()
-        wx.CallAfter(UpdateSampleGrid,self,data)
-#        UpdateSampleGrid(self,data)
+        UpdateSampleGrid(self,data)
         
     def OnParmRef(event):
         Obj = event.GetEventObject()
@@ -884,8 +875,7 @@ def UpdateIndexPeaksGrid(self, data):
             dsp = wave/(2.0*sind((peak[0]-Inst['Zero'])/2.0))
             data.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
         self.PatternTree.SetItemPyData(IndexId,data)
-        wx.CallAfter(UpdateIndexPeaksGrid,self,data)
-#        UpdateIndexPeaksGrid(self,data)
+        UpdateIndexPeaksGrid(self,data)
         
     def KeyEditPickGrid(event):
         colList = self.dataDisplay.GetSelectedCols()
@@ -1015,8 +1005,7 @@ def UpdateUnitCellsGrid(self, data):
         
     def OnBravSel(event):
         controls[5] = bravSel.GetString(bravSel.GetSelection())       
-        wx.CallAfter(UpdateUnitCellsGrid,self,data)
-#        UpdateUnitCellsGrid(self,data)
+        UpdateUnitCellsGrid(self,data)
         
     def OnCellChange(event):
         ibrav = bravaisSymb.index(controls[5])
@@ -1092,8 +1081,7 @@ def UpdateUnitCellsGrid(self, data):
             return
         data = [controls,bravais,cells,dmin]
         self.PatternTree.SetItemPyData(UnitCellsId,data)
-        wx.CallAfter(UpdateUnitCellsGrid,self,data)
-#        UpdateUnitCellsGrid(self,data)
+        UpdateUnitCellsGrid(self,data)
         
     def CopyUnitCell(event):
         controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
@@ -1106,8 +1094,7 @@ def UpdateUnitCellsGrid(self, data):
         controls[6:12] = cell[1:8]
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
-        wx.CallAfter(UpdateUnitCellsGrid,self,data)
-#        UpdateUnitCellsGrid(self,data)
+        UpdateUnitCellsGrid(self,data)
         
         self.dataFrame.RefineCell.Enable(True)
                 
@@ -1152,8 +1139,7 @@ def UpdateUnitCellsGrid(self, data):
         cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,])
         self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
         self.HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
-        wx.CallAfter(UpdateUnitCellsGrid,self,data)
-#        UpdateUnitCellsGrid(self,data)
+        UpdateUnitCellsGrid(self,data)
         print "%s%10.3f" % ('refinement M20 = ',M20)
         print 'unindexed lines = ',X20
         cellPrint(ibrav,Aref)
@@ -1195,8 +1181,7 @@ def UpdateUnitCellsGrid(self, data):
             self.dataFrame.CopyCell.Enable(True)
             self.dataFrame.IndexPeaks.Enable(True)
             self.dataFrame.MakeNewPhase.Enable(True)
-            wx.CallAfter(UpdateUnitCellsGrid,self,data)
-#            UpdateUnitCellsGrid(self,data)
+            UpdateUnitCellsGrid(self,data)
                 
     def RefreshUnitCellsGrid(event):
         cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)[2:]
@@ -1491,8 +1476,7 @@ def UpdatePDFGrid(self,data):
                 value = Obj.GetValue()
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
-            wx.CallAfter(UpdatePDFGrid,self,data)
-#            UpdatePDFGrid(self,data)
+            UpdatePDFGrid(self,data)
         
         def OnValueChange(event):
             Obj = event.GetEventObject()
@@ -1777,8 +1761,7 @@ def UpdatePDFGrid(self,data):
                 data['ElList'][El] = ElData
             data['Form Vol'] = max(10.0,SumElementVolumes())
         PE.Destroy()
-        wx.CallAfter(UpdatePDFGrid,self,data)
-#        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(self,data)
         
     def OnDeleteElement(event):
         ElList = data['ElList']
@@ -1787,8 +1770,7 @@ def UpdatePDFGrid(self,data):
         if dlg.ShowModal() == wx.ID_OK:
             del ElList[dlg.GetDeleteElement()]
         dlg.Destroy()
-        wx.CallAfter(UpdatePDFGrid,self,data)
-#        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(self,data)
                 
     def ComputePDF(Data):
         xydata = {}

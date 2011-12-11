@@ -213,7 +213,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
             if not generalData['AtomTypes']:             #can change only if no atoms!
                 generalData['Type'] = TypeTxt.GetValue()
                 dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-#                wx.CallAfter(UpdateGeneral)        doesn't work here
                 UpdateGeneral()         #must use this way!
                 if generalData['Type'] == 'Pawley':
                     if self.dataDisplay.FindPage('Atoms'):
@@ -244,7 +243,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 Text += line+'\n'
             wx.MessageBox(Text,caption=msg,style=Style)
             dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-            wx.CallAfter(UpdateGeneral)
+            UpdateGeneral()
             
         def OnCellRef(event):
             generalData['Cell'][0] = cellRef.GetValue()
@@ -322,7 +321,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             volVal.SetValue("%.3f"%(cell[7]))
             generalData['Cell'] = cell
             dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-            wx.CallAfter(UpdateGeneral)
+            UpdateGeneral()
                         
         def OnPawleyVal(event):
             try:
@@ -340,7 +339,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             generalData['Isotope'][item] = isotope
             indx = generalData['AtomTypes'].index(item)
             data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
-            wx.CallAfter(UpdateGeneral)
+            UpdateGeneral()
                                                
         cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
         [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],
@@ -1156,7 +1155,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             atomData[r][c] = color
                             drawingData['Atoms'][r][c] = color
                             drawAtoms.SetAttr(r,c,attr)
-                        wx.CallAfter(UpdateDrawAtoms)
+                        UpdateDrawAtoms()
                     dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Residue':
                     SetChoice('Residue',c,3)
@@ -1194,7 +1193,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         drawAtoms.SetAttr(i,cs+2,attr)
                     dlg.Destroy()
                     event.StopPropagation()
-                    wx.CallAfter(UpdateDrawAtoms)
+                    UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
                     
         def RowSelect(event):
@@ -1345,7 +1344,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         for atom in atomData:            
             atNum = generalData['AtomTypes'].index(atom[ct])
             atom[cs+2] = list(generalData['Color'][atNum])
-        wx.CallAfter(UpdateDrawAtoms)
+        UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(self,data)        
         
@@ -1449,7 +1448,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     data['Drawing']['Atoms'] = atomData
             finally:
                 dlg.Destroy()
-            wx.CallAfter(UpdateDrawAtoms)
+            UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
@@ -1492,7 +1491,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                                 newAtom[cx+3] = G2spc.StringOpsProd(oprB,newOp,SGData)
                                 atomData.append(newAtom)
             data['Drawing']['Atoms'] = atomData
-            wx.CallAfter(UpdateDrawAtoms)
+            UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
@@ -1545,7 +1544,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                                 atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
                                 atomData.append(atom[:])               
                 data['Drawing']['Atoms'] = atomData
-            wx.CallAfter(UpdateDrawAtoms)
+            UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
             
@@ -1654,14 +1653,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
             indx.reverse()
             for ind in indx:
                 del atomData[ind]
-            wx.CallAfter(UpdateDrawAtoms)
+            UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
         event.StopPropagation()
         
     def OnReloadDrawAtoms(event):
         data['Drawing']['Atoms'] = []
-        wx.CallAfter(UpdateDrawAtoms)
+        UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(self,data)
         event.StopPropagation()
@@ -2854,7 +2853,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         finally:
             wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks
-        wx.CallAfter(FillPawleyReflectionsGrid)
+        FillPawleyReflectionsGrid()
         
     def OnPawleyEstimate(event):
         try:
@@ -2889,7 +2888,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 ref[6] = xdata[1][indx]
             except IndexError:
                 pass
-        wx.CallAfter(FillPawleyReflectionsGrid)
+        FillPawleyReflectionsGrid()
                             
     def OnPawleyDelete(event):
         dlg = wx.MessageDialog(self,'Do you really want to delete Pawley reflections?','Delete', 
@@ -2900,7 +2899,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             dlg.Destroy()
         if result == wx.ID_YES: 
             data['Pawley ref'] = []
-            wx.CallAfter(FillPawleyReflectionsGrid)
+            FillPawleyReflectionsGrid()
     
     def OnTextureRefine(event):
         event.Skip()        

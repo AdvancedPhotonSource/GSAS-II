@@ -1904,7 +1904,7 @@ def GetSampleGam(refl,wave,G,GB,phfx,calcControls,parmDict):
         P = np.array(calcControls[phfx+'SizeAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
         gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:0']*parmDict[phfx+'Size:1']*costh)
-        gam *= np.sqrt((cosP*parmDict[phfx+'Size:1'])**2+(sinP*parmDict[phfx+'Size:0'])**2)
+        gam *= np.sqrt((sinP*parmDict[phfx+'Size:1'])**2+(cosP*parmDict[phfx+'Size:0'])**2)
     else:           #ellipsoidal crystallites
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
         H = np.array(refl[:3])
@@ -1942,10 +1942,10 @@ def GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
         Si = parmDict[phfx+'Size:0']
         Sa = parmDict[phfx+'Size:1']
         gami = (1.8*wave/np.pi)/(Si*Sa)
-        sqtrm = np.sqrt((cosP*Sa)**2+(sinP*Si)**2)
+        sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
         gam = gami*sqtrm/costh            
-        gamDict[phfx+'Size:0'] = gami*Si*sinP**2/(sqtrm*costh)-gam/Si
-        gamDict[phfx+'Size:1'] = gami*Sa*cosP**2/(sqtrm*costh)-gam/Sa         
+        gamDict[phfx+'Size:0'] = gami*Si*cosP**2/(sqtrm*costh)-gam/Si
+        gamDict[phfx+'Size:1'] = gami*Sa*sinP**2/(sqtrm*costh)-gam/Sa         
     else:           #ellipsoidal crystallites
         const = 1.8*wave/(np.pi*costh)
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]

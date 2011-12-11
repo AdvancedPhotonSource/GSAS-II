@@ -1200,7 +1200,10 @@ def PlotSizeStrainPO(self,data,Start=False):
             X = np.outer(npsind(PHI),npsind(PSI))
             Y = np.outer(npcosd(PHI),npsind(PSI))
             Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
-            coeff = useList[item][plotDict[plotType]]
+            try:        #temp patch instead of 'mustrain' for old files with 'microstrain'
+                coeff = useList[item][plotDict[plotType]]
+            except KeyError:
+                break
             if plotType in ['Mustrain','Size']:
                 if coeff[0] == 'isotropic':
                     X *= coeff[1][0]

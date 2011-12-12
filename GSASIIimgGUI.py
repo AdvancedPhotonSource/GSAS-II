@@ -10,6 +10,7 @@ import wx
 import matplotlib as mpl
 import math
 import time
+import copy
 import cPickle
 import GSASIIpath
 import GSASIIimage as G2img
@@ -240,14 +241,17 @@ def UpdateImageControls(self,data,masks):
     def OnIntegrate(event):
         
         if data['background image'][0]:
+            maskCopy = copy.deepcopy(masks)
             backImg = data['background image'][0]
             backScale = data['background image'][1]
             id = G2gd.GetPatternTreeItemId(self, self.root, backImg)
             Npix,imagefile = self.PatternTree.GetItemPyData(id)
             backImage = G2IO.GetImageData(self,imagefile,True)*backScale
             sumImage = self.ImageZ+backImage
-            print sumImage.shape,np.min(sumImage),np.max(sumImage)
-            self.Integrate = G2img.ImageIntegrate(sumImage,data,masks)
+            sumMin = np.min(sumImage)
+            sumMax = np.max(sumImage)
+            maskCopy['Thresholds'] = [(sumMin,sumMax),[sumMin,sumMax]]
+            self.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy)
         else:
             self.Integrate = G2img.ImageIntegrate(self.ImageZ,data,masks)
         G2plt.PlotIntegration(self,newPlot=True)

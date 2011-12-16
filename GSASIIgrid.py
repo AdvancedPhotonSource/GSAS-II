@@ -217,11 +217,7 @@ class G2HtmlWindow(wx.html.HtmlWindow):
 class DataFrame(wx.Frame):
     def _init_coll_BlankMenu(self,parent):
         parent.Append(menu=self.Blank,title='')
-        
-    def _init_coll_AtomsMenu(self,parent):
-        parent.Append(menu=self.AtomEdit, title='Edit')
-        parent.Append(menu=MyHelp(self,helpType='Atoms'),title='&Help')
-        
+                
     def _init_coll_ConstraintMenu(self,parent):
         parent.Append(menu=self.ConstraintEdit, title='Edit')
         parent.Append(menu=MyHelp(self,helpType='Constraints'),title='&Help')
@@ -289,26 +285,6 @@ class DataFrame(wx.Frame):
     def _init_coll_PDFMenu(self,parent):
         parent.Append(menu=self.PDFEdit, title='PDF Controls')
         parent.Append(menu=MyHelp(self,helpType='PDF Controls'),title='&Help')
-
-    def _init_coll_Atom_Items(self,parent):
-        parent.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
-            help='Inserted as an H atom')
-        parent.Append(id=wxID_ATOMSTESTADD, kind=wx.ITEM_NORMAL,text='Append test point',
-            help='Inserted as an H atom')
-        parent.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
-            help='Select atom row to insert before; inserted as an H atom')
-        parent.Append(id=wxID_ATONTESTINSERT, kind=wx.ITEM_NORMAL,text='Insert test point',
-            help='Select atom row to insert before; inserted as an H atom')
-        parent.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
-            help='Select atoms to delete first')
-        parent.Append(id=wxID_ATOMSREFINE, kind=wx.ITEM_NORMAL,text='Set atom refinement flags',
-            help='Select atoms to refine first')
-        parent.Append(id=wxID_ATOMSMODIFY, kind=wx.ITEM_NORMAL,text='Modify atom parameters',
-            help='Select atoms to modify first')
-        parent.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
-            help='Select atoms to transform first')
-        parent.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
-            help='Reload atom drawing list')
             
     def _init_coll_Constraint_Items(self,parent):
         parent.Append(id=wxID_HOLDADD, kind=wx.ITEM_NORMAL,text='Add hold',
@@ -465,7 +441,6 @@ class DataFrame(wx.Frame):
     def _init_utils(self):
         self.BlankMenu = wx.MenuBar()
         
-        self.AtomsMenu = wx.MenuBar()
         self.ConstraintMenu = wx.MenuBar()
         self.RestraintMenu = wx.MenuBar()
         self.DataMenu = wx.MenuBar()
@@ -483,7 +458,6 @@ class DataFrame(wx.Frame):
         self.IndexMenu = wx.MenuBar()
         self.ReflMenu = wx.MenuBar()
         self.PDFMenu = wx.MenuBar()
-        self.AtomEdit = wx.Menu(title='')
         self.ConstraintEdit = wx.Menu(title='')
         self.RestraintEdit = wx.Menu(title='')
         self.DataEdit = wx.Menu(title='')
@@ -501,8 +475,7 @@ class DataFrame(wx.Frame):
         self.IndexEdit = wx.Menu(title='')
         self.ReflEdit = wx.Menu(title='')
         self.PDFEdit = wx.Menu(title='')
-        self._init_coll_AtomsMenu(self.AtomsMenu)
-        self._init_coll_Atom_Items(self.AtomEdit)
+
         self._init_coll_ConstraintMenu(self.ConstraintMenu)
         self._init_coll_Constraint_Items(self.ConstraintEdit)
         self._init_coll_RestraintMenu(self.RestraintMenu)
@@ -546,6 +519,39 @@ class DataFrame(wx.Frame):
         self.MakeNewPhase.Enable(False)
         self.RefineTexture.Enable(False)
         self.ClearTexture.Enable(False)             #doesn't do anything!
+        ############################################################
+        # refactored Menu creation
+        ############################################################
+        # menu for Data Editing Window / Phase / Atoms tab
+        self.AtomsMenu = wx.MenuBar()
+        self.AtomEdit = wx.Menu(title='')
+        self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit')
+        self.AtomsMenu.Append(menu=MyHelp(self,helpType='Atoms'),title='&Help')
+        self.AtomsMenu.Append(menu=MyHelp(self,helpType='Atoms'),title='&Help')
+        self.AtomEdit.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
+            help='Inserted as an H atom')
+        self.AtomEdit.Append(id=wxID_ATOMSTESTADD, kind=wx.ITEM_NORMAL,text='Append test point',
+            help='Inserted as an H atom')
+        self.AtomEdit.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
+            help='Select atom row to insert before; inserted as an H atom')
+        self.AtomEdit.Append(id=wxID_ATONTESTINSERT, kind=wx.ITEM_NORMAL,text='Insert test point',
+            help='Select atom row to insert before; inserted as an H atom')
+        self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
+            help='Select atoms to delete first')
+        self.AtomEdit.Append(id=wxID_ATOMSREFINE, kind=wx.ITEM_NORMAL,text='Set atom refinement flags',
+            help='Select atoms to refine first')
+        self.AtomEdit.Append(id=wxID_ATOMSMODIFY, kind=wx.ITEM_NORMAL,text='Modify atom parameters',
+            help='Select atoms to modify first')
+        self.AtomEdit.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
+            help='Select atoms to transform first')
+        self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
+            help='Reload atom drawing list')
+        # menu for Data Editing Window / Phase / General tab
+        self.DataGeneral = wx.MenuBar()
+        self.DataGeneral.Append(menu=MyHelp(self,helpType='General'),title='&Help')
+        # menu for Data Editing Window / Phase / Draw Options tab
+        self.DataDrawOptions = wx.MenuBar()
+        self.DataDrawOptions.Append(menu=MyHelp(self,helpType='Draw Options'),title='&Help')
         
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,

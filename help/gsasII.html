@@ -442,7 +442,7 @@ h4
 	mso-pagination:widow-orphan lines-together;
 	page-break-after:avoid;
 	mso-outline-level:4;
-	font-size:12.0pt;
+	font-size:13.0pt;
 	font-family:"Cambria","serif";
 	mso-ascii-font-family:Cambria;
 	mso-ascii-theme-font:major-latin;
@@ -467,6 +467,23 @@ a:visited, span.MsoHyperlinkFollowed
 	color:purple;
 	text-decoration:underline;
 	text-underline:single;}
+h5
+	{mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 5 Char";
+	mso-margin-top-alt:auto;
+	margin-right:0in;
+	mso-margin-bottom-alt:auto;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	mso-outline-level:5;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	color:#4F4FFF;
+	font-weight:bold;}
 p
 	{mso-style-noshow:yes;
 	mso-style-priority:99;
@@ -1057,9 +1074,19 @@ align=right alt="GSAS-II logo" v:shapes="Picture_x0020_2"><![endif]><span
 style='mso-fareast-font-family:"Times New Roman"'>Help for GSAS-II<o:p></o:p></span></h1>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-is where to find help on various GSAS-II windows and plots. <o:p></o:p></span></p>
+is where to find help on various GSAS-II windows and plots.
+Note that GSAS-II operates with three windows: the main <a href="#Data_tree">
+GSAS-II data tree</A> window, which provides a hierarchical view of
+  the current project; the <a href="#Data_Frame">
+GSAS-II data editing</A> window, which shows the contents of a
+  particular section of the project, where values can be examined and
+changed; and the <a href="#Plots">
+GSAS-II Plots</A> window, which shows graphical representations of the results.
+  <o:p></o:p></span></p>
 
-<h2><a name="Data_tree"><span style='mso-fareast-font-family:"Times New Roman"'>GSAS-II
+<P><hr><hr>
+  <h2><a name="Data_tree"><span style='mso-fareast-font-family:"Times
+  New Roman"'>1. GSAS-II
 data tree</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h2>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
@@ -1069,8 +1096,9 @@ viewed or edited. For example, the <a href="#Sample_Parameters">&quot;Sample
 Parameters&quot;</a> item contains information about how data were collected,
 such as the sample temperature <a href="#Sample_Parameters">(see below)</a>. <o:p></o:p></span></p>
 
-<h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
-
+<h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
+The menus associated with this window provide access to many features
+of GSAS-II, as outlined below:
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l3 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Menu
@@ -1307,8 +1335,17 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'>Export CIF&#8230;</b> - </p>
 
-<h3><a name=Notebook><span style='mso-fareast-font-family:"Times New Roman"'>Notebook</span></a><span
-style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<P><hr><hr>
+<h2><a name="Data_Frame"><span style='mso-fareast-font-family:"Times
+New Roman"'>2. GSAS-II
+Data Editing Window</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h2>
+Different information is displayed in the Data Editing Window,
+depending on which section of the <a href="#Data_tree">data tree</A>
+is selected. For example, clicking on the "Notebook" entry of the tree
+brings up the Notebook editing window described below.
+
+<h4><a name=Notebook><span style='mso-fareast-font-family:"Times New Roman"'>Notebook</span></a><span
+style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window provides a place for you to enter whatever text commentary you wish.
@@ -1318,8 +1355,8 @@ refinement completes (it will contain refinement results with residuals, new
 values &amp; <span class=SpellE>esds</span>) and paste it into this Notebook
 window so it becomes a part of your project file.<o:p></o:p></span></p>
 
-<h3><a name=Controls><span style='mso-fareast-font-family:"Times New Roman"'>Controls</span></a><span
-style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<h4><a name=Controls><span style='mso-fareast-font-family:"Times New Roman"'>Controls</span></a><span
+style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window provides the main controls for the major calculations in GSAS-II. At
@@ -1336,7 +1373,7 @@ algorithm as written by </span>Burton S. <span class=SpellE>Garbow</span>,
 Kenneth E. <span class=SpellE>Hillstrom</span>, <span class=GramE>Jorge</span>
 J. <span class=GramE>More (Argonne National Laboratory, 1980).</span></p>
 
-<h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
+<h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l4 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
@@ -1374,13 +1411,13 @@ style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></spa
 style='mso-fareast-font-family:"Times New Roman"'>Select data for sequential
 refinement; the data sets may be done in &#8216;reverse order&#8217;. <o:p></o:p></span></p>
 
-<h3><span style='mso-fareast-font-family:"Times New Roman"'>Covariance<o:p></o:p></span></h3>
+<h4><span style='mso-fareast-font-family:"Times New Roman"'>Covariance<o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window is blank; the GSASII Plots window &#8216;<a href="#Covariance">Covariance&#8217;</a>
 shows a graphical representation of the variance-covariance matrix <o:p></o:p></span></p>
 
-<h3><a name=Constraints><span style='mso-fareast-font-family:"Times New Roman"'>Constraints<o:p></o:p></span></a></h3>
+<h4><a name=Constraints><span style='mso-fareast-font-family:"Times New Roman"'>Constraints<o:p></o:p></span></a></h4>
 
 <span style='mso-bookmark:Constraints'></span>
 
@@ -1397,7 +1434,7 @@ and crystallite size parameters). &#8216;Histogram constraints&#8217; are those
 that depend only on the data set (e.g. profile coefficients U<span class=GramE>,V,W,X</span>
 and Y).<o:p></o:p></span></p>
 
-<h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
+<h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l5 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
@@ -1479,14 +1516,14 @@ the result of the sum can be varied in the refinement. The keyword
 indicates your choice to refine the result of the sum. A Delete button can be
 used to remove it.<o:p></o:p></span></p>
 
-<h3><a name=Restraints><span style='mso-fareast-font-family:"Times New Roman"'>Restraints</span></a><span
-style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<h4><a name=Restraints><span style='mso-fareast-font-family:"Times New Roman"'>Restraints</span></a><span
+style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window... <o:p></o:p></span></p>
 
-<h3><a name=Limits><span style='mso-fareast-font-family:"Times New Roman"'>Limits</span></a><span
-style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<h4><a name=Limits><span style='mso-fareast-font-family:"Times New Roman"'>Limits</span></a><span
+style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window shows the limits in position to be used in any fitting for this powder
@@ -1494,7 +1531,7 @@ pattern. The &#8216;original&#8217; values are obtained from the minimum &amp;
 maximum values in the powder pattern. You can modify &#8216;changed&#8217; as
 needed.<o:p></o:p></span></p>
 
-<h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
+<h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l0 level1 lfo8'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
@@ -1519,138 +1556,20 @@ vertical bar will appear in the value), then enter the new value and press
 Enter or click the mouse elsewhere in the Background window. This will set the
 new value.<o:p></o:p></span></p>
 
-<h3><a name=Background><span style='mso-fareast-font-family:"Times New Roman"'>Background</span></a><span
-style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
 
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window shows the choice of background function and coefficients to be used in
-fitting this powder pattern.<o:p></o:p></span></p>
-
-<h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
-
-<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>Menu &#8216;<b
-style='mso-bidi-font-weight:normal'>File</b>&#8217; &#8211; <b
-style='mso-bidi-font-weight:normal'>Copy</b> &#8211; this copies the background
-parameters shown to other selected powder patterns. If used, a dialog box (Copy
-Parameters) will appear showing the list of available powder patterns, you can
-copy the background parameters to any or all of them; select &#8216;All&#8217;
-to copy them to all patterns. Then select &#8216;OK&#8217; to do the copy;
-&#8216;Cancel&#8217; to cancel the operation.<o:p></o:p></span></p>
-
-<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>You can select a different
-Background function from the pull down tab.<o:p></o:p></span></p>
-
-<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>You can choose to refine/not
-refine the background coefficients.<o:p></o:p></span></p>
-
-<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>You can select the number of
-background coefficients to be used (1-36).<o:p></o:p></span></p>
-
-<p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>5.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>You can change individual
-background coefficient values. Enter the value then press Enter or click the
-mouse elsewhere in the Background window. This will set the new value.<o:p></o:p></span></p>
-
-<h3><a name="Instrument_Parameters"><span style='mso-fareast-font-family:"Times New Roman"'>Instrument
-Parameters</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<h4><span style='mso-fareast-font-family:"Times New Roman"'>Texture Control
+Window<o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window... <o:p></o:p></span></p>
 
-<h3><a name="Sample_Parameters"><span style='mso-fareast-font-family:"Times New Roman"'>Sample
-Parameters</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<h4><span style='mso-fareast-font-family:"Times New Roman"'>Image Masks<o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window... <o:p></o:p></span></p>
 
-<h3><a name="Powder_Peaks"></a><a name="Peak_List"><span style='mso-bookmark:
-Powder_Peaks'><span style='mso-fareast-font-family:"Times New Roman"'>Peak List</span></span></a><span
-style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
-
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window shows the list of peaks that will be used by the peak fitting refinement.
-It is filled by picking peaks in the powder pattern displayed in the GSASII
-Plots window as a sequence of &#8216;+&#8217; marks. See <a
-href="#Powder_Patterns">Powder Patterns</a> below for details for what can be
-done on this plot.<o:p></o:p></span></p>
-
-<h3><a name="Index_Peaks"><span style='mso-fareast-font-family:"Times New Roman"'>Index
-Peak List</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
-
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window shows the list of peaks that will be used for indexing (see </span><a
-href="#Unit_Cells_List"><span style='mso-fareast-font-family:"Times New Roman"'>Unit
-Cells List</span></a><span style='mso-fareast-font-family:"Times New Roman"'>).
-It must be filled before indexing can proceed. When indexing is completed, this
-display will show the resulting <span class=SpellE>hkl</span> values for every
-indexed reflection along with the calculated d-spacing (&#8216;d-<span
-class=SpellE>calc</span>&#8217;) for the selected unit cell in </span><a
-href="#Unit_Cells_List"><span style='mso-fareast-font-family:"Times New Roman"'>Unit
-Cells List</span></a><span style='mso-fareast-font-family:"Times New Roman"'>.<o:p></o:p></span></p>
-
-<h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
-
-<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l2 level1 lfo12'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>Menu &#8216;<b
-style='mso-bidi-font-weight:normal'>Operations</b>&#8217; &#8211; <b
-style='mso-bidi-font-weight:normal'>Load/Reload</b> &#8211; loads the peak
-positions &amp; intensities from the </span><a href="#Peak_List"><span
-style='mso-fareast-font-family:"Times New Roman"'>Peak List</span></a><span
-style='mso-fareast-font-family:"Times New Roman"'> to make them available for
-the indexing routine. The d-<span class=SpellE>obs</span> is obtained from
-Bragg&#8217;s Law after applying the Zero correction shown on the </span><a
-href="#Instrument_Parameters"><span style='mso-fareast-font-family:"Times New Roman"'>Instrument
-Parameters</span></a><span style='mso-fareast-font-family:"Times New Roman"'>
-table to the position shown here.<o:p></o:p></span></p>
-
-<p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l2 level1 lfo12'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>You may deselect individual
-peaks from indexing by <span class=SpellE>unchecking</span> the corresponding
-&#8216;use&#8217; box.<o:p></o:p></span></p>
-
-<h3><a name="Cell_Indexing_Refine"><span style='mso-fareast-font-family:"Times New Roman"'>Unit
-Cells List</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
-
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window... <o:p></o:p></span></p>
-
-<h3><a name="Reflection_List"><span style='mso-fareast-font-family:"Times New Roman"'>Reflection
-List</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
-
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window... <o:p></o:p></span></p>
-
-<h3><span style='mso-fareast-font-family:"Times New Roman"'>Texture Control
-Window<o:p></o:p></span></h3>
-
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window... <o:p></o:p></span></p>
-
-<h3><span style='mso-fareast-font-family:"Times New Roman"'>Image Masks<o:p></o:p></span></h3>
-
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window... <o:p></o:p></span></p>
-
-<h3><span style='mso-fareast-font-family:"Times New Roman"'>Atoms Control
-Window<o:p></o:p></span></h3>
+<h4><span style='mso-fareast-font-family:"Times New Roman"'>Atoms Control
+Window<o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window... <o:p></o:p></span></p>
@@ -1689,8 +1608,157 @@ window... <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'><o:p>&nbsp;</o:p></span></p>
 
-<h2><a name=Plots><span style='mso-fareast-font-family:"Times New Roman"'>GSASII
-Plots</span></a><span style='mso-bookmark:Plots'></span><span style='mso-fareast-font-family:
+<H3>Phase Windows</H3>
+When a phase is selected from the <a href="#Data_tree">data tree</A>,
+parameters are show from that selected phase in a tabbed
+window. Clicking on the tab raises the windows listed below.
+<blockquote>
+<A name="General"><H4><U>General</U> Phase Parameters</H4></A>
+This is used for overall parameters describing the phase such as the
+space group, the unit cell parameters and overall parameters for
+the atom present in the phase.
+<A name="Data"><H4>Sample <U>Data</U></H4></A>
+<A name="Texture"><H4><U>Texture</U> Parameters</H4></A>
+<A name="Atoms"><H4><U>Atom</U> Parameter<U>s</U></H4></A>
+<A name="Draw_Options"><H4><U>Draw Options</U></H4></A>
+<A name="Draw_Atoms"><H4><U>Draw Atoms</U></H4></A>
+
+</blockquote>
+
+<H3>Powder Histogram Windows</H3>
+When a powder diffraction data set (histogram) is selected from the
+<a href="#Data_tree">data tree</A>, a variety of subcategories in the
+tree are shown. The items that are shown depend on the data set type.
+Selecting a subcategory raises the window listed below.
+<blockquote>
+<A name=""><H4><U></U></H4></A>
+<A name="Comments"><H4><U>Comments</U></H4></A>
+
+<h4><a name=Background><span style='mso-fareast-font-family:"Times New Roman"'>Background</span></a><span
+style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
+window shows the choice of background function and coefficients to be used in
+fitting this powder pattern.<o:p></o:p></span></p>
+
+<h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
+style='mso-fareast-font-family:"Times New Roman"'>Menu &#8216;<b
+style='mso-bidi-font-weight:normal'>File</b>&#8217; &#8211; <b
+style='mso-bidi-font-weight:normal'>Copy</b> &#8211; this copies the background
+parameters shown to other selected powder patterns. If used, a dialog box (Copy
+Parameters) will appear showing the list of available powder patterns, you can
+copy the background parameters to any or all of them; select &#8216;All&#8217;
+to copy them to all patterns. Then select &#8216;OK&#8217; to do the copy;
+&#8216;Cancel&#8217; to cancel the operation.<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
+style='mso-fareast-font-family:"Times New Roman"'>You can select a different
+Background function from the pull down tab.<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
+style='mso-fareast-font-family:"Times New Roman"'>You can choose to refine/not
+refine the background coefficients.<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
+style='mso-fareast-font-family:"Times New Roman"'>You can select the number of
+background coefficients to be used (1-36).<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l6 level1 lfo10'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>5.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
+style='mso-fareast-font-family:"Times New Roman"'>You can change individual
+background coefficient values. Enter the value then press Enter or click the
+mouse elsewhere in the Background window. This will set the new value.<o:p></o:p></span></p>
+
+<h4><a name="Instrument_Parameters"><span style='mso-fareast-font-family:"Times New Roman"'>Instrument
+Parameters</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
+window... <o:p></o:p></span></p>
+
+<h4><a name="Sample_Parameters"><span style='mso-fareast-font-family:"Times New Roman"'>Sample
+Parameters</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
+window... <o:p></o:p></span></p>
+
+<h4><a name="Powder_Peaks"></a><a name="Peak_List"><span style='mso-bookmark:
+Powder_Peaks'><span style='mso-fareast-font-family:"Times New Roman"'>Peak List</span></span></a><span
+style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
+window shows the list of peaks that will be used by the peak fitting refinement.
+It is filled by picking peaks in the powder pattern displayed in the GSASII
+Plots window as a sequence of &#8216;+&#8217; marks. See <a
+href="#Powder_Patterns">Powder Patterns</a> below for details for what can be
+done on this plot.<o:p></o:p></span></p>
+
+<h4><a name="Index_Peaks"><span style='mso-fareast-font-family:"Times New Roman"'>Index
+Peak List</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
+window shows the list of peaks that will be used for indexing (see </span><a
+href="#Unit_Cells_List"><span style='mso-fareast-font-family:"Times New Roman"'>Unit
+Cells List</span></a><span style='mso-fareast-font-family:"Times New Roman"'>).
+It must be filled before indexing can proceed. When indexing is completed, this
+display will show the resulting <span class=SpellE>hkl</span> values for every
+indexed reflection along with the calculated d-spacing (&#8216;d-<span
+class=SpellE>calc</span>&#8217;) for the selected unit cell in </span><a
+href="#Unit_Cells_List"><span style='mso-fareast-font-family:"Times New Roman"'>Unit
+Cells List</span></a><span style='mso-fareast-font-family:"Times New Roman"'>.<o:p></o:p></span></p>
+
+<h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l2 level1 lfo12'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
+style='mso-fareast-font-family:"Times New Roman"'>Menu &#8216;<b
+style='mso-bidi-font-weight:normal'>Operations</b>&#8217; &#8211; <b
+style='mso-bidi-font-weight:normal'>Load/Reload</b> &#8211; loads the peak
+positions &amp; intensities from the </span><a href="#Peak_List"><span
+style='mso-fareast-font-family:"Times New Roman"'>Peak List</span></a><span
+style='mso-fareast-font-family:"Times New Roman"'> to make them available for
+the indexing routine. The d-<span class=SpellE>obs</span> is obtained from
+Bragg&#8217;s Law after applying the Zero correction shown on the </span><a
+href="#Instrument_Parameters"><span style='mso-fareast-font-family:"Times New Roman"'>Instrument
+Parameters</span></a><span style='mso-fareast-font-family:"Times New Roman"'>
+table to the position shown here.<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l2 level1 lfo12'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
+style='mso-fareast-font-family:"Times New Roman"'>You may deselect individual
+peaks from indexing by <span class=SpellE>unchecking</span> the corresponding
+&#8216;use&#8217; box.<o:p></o:p></span></p>
+
+<h4><a name="Cell_Indexing_Refine"><span style='mso-fareast-font-family:"Times New Roman"'>Unit
+Cells List</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
+window... <o:p></o:p></span></p>
+
+<h4><a name="Reflection_List"><span style='mso-fareast-font-family:"Times New Roman"'>Reflection
+List</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
+window... <o:p></o:p></span></p>
+
+</blockquote>
+
+<P><hr><hr>
+<h2><a name=Plots><span style='mso-fareast-font-family:"Times New
+Roman"'>3. GSAS-II
+Plots Window</span></a><span style='mso-bookmark:Plots'></span><span style='mso-fareast-font-family:
 "Times New Roman";font-weight:normal'> </span><span style='mso-fareast-font-family:
 "Times New Roman"'><o:p></o:p></span></h2>
 
@@ -1700,13 +1768,8 @@ utilizing the <span class=SpellE>matplotlib</span> python package. Each page
 has a tool bar (at bottom in Windows) with the controls<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman";
-mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_3" o:spid="_x0000_i1026"
- type="#_x0000_t75" style='width:168.75pt;height:23.25pt;visibility:visible;
- mso-wrap-style:square'>
- <v:imagedata src="gsasII_files/image001.png" o:title="" croptop="44118f"
-  cropbottom="18773f" cropleft="22405f" cropright="32288f"/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=225 height=31
-src="gsasII_files/image002.jpg" v:shapes="Picture_x0020_3"><![endif]></span><span
+mso-no-proof:yes'><img border=0 width=225 height=31
+src="graphbar.jpg" align="middle"></span><span
 style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>These
@@ -1729,8 +1792,8 @@ over the plot region.<o:p></o:p></span></p>
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>The
 specific types of plots that are pages in the GSASII Plots windows are next.<o:p></o:p></span></p>
 
-<h3><a name="Powder_Patterns"><span style='mso-fareast-font-family:"Times New Roman"'>Powder
-Patterns</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<h4><a name="Powder_Patterns"><span style='mso-fareast-font-family:"Times New Roman"'>Powder
+Patterns</span></a><span style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>The
 powder patterns that are part of your project are shown on this page. They can
@@ -1739,8 +1802,8 @@ contour image of the peak intensities. What can be done here will depend on
 which is displayed and on which item in the GSAS-II data tree you have
 selected.<o:p></o:p></span></p>
 
-<h3><a name=Covariance><span style='mso-fareast-font-family:"Times New Roman"'>Covariance</span></a><span
-style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h3>
+<h4><a name=Covariance><span style='mso-fareast-font-family:"Times New Roman"'>Covariance</span></a><span
+style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>The
 variance-covariance matrix as a color coded array is shown on this page. The
@@ -1748,7 +1811,7 @@ color bar to the right shows the range of <span class=SpellE>covariances</span>
 (-1 to 1) and corresponding colors. The parameter names are to the right and
 the parameter numbers are below the plot.<o:p></o:p></span></p>
 
-<h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
+<h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l1 level1 lfo14'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span

@@ -197,6 +197,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
         'Atoms':[]
         'Drawing':{}
         '''
+        self.dataFrame.SetMenuBar(self.dataFrame.DataGeneral) # do this here, since this is called from all over
+        
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
         SetupGeneral()
         generalData = data['General']
@@ -2924,7 +2926,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
             FillAtomsGrid()
         elif text == 'General':
             UpdateGeneral()
-            self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
         elif text == 'Data':
             self.dataFrame.SetMenuBar(self.dataFrame.DataMenu)
             self.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
@@ -2933,7 +2934,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             UpdateDData()
             G2plt.PlotSizeStrainPO(self,data,Start=True)
         elif text == 'Draw Options':
-            self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+            self.dataFrame.SetMenuBar(self.dataFrame.DataDrawOptions)
             UpdateDrawOptions()
             G2plt.PlotStructure(self,data)
         elif text == 'Draw Atoms':

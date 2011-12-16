@@ -1258,13 +1258,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 if hapData[item][0] in ['isotropic','uniaxial']:                    
                     hapData[item][1][0] = parmDict[pfx+item+':i']
                     if item == 'Size':
-                        hapData[item][1][0] = min(10.,max(0.01,hapData[item][1][0]))
+                        hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
                     if pfx+item+':i' in sigDict: 
                         SizeMuStrSig[item][0][0] = sigDict[pfx+item+':i']
                     if hapData[item][0] == 'uniaxial':
                         hapData[item][1][1] = parmDict[pfx+item+':a']
                         if item == 'Size':
-                            hapData[item][1][1] = min(10.,max(0.01,hapData[item][1][1]))                        
+                            hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
                         if pfx+item+':a' in sigDict:
                             SizeMuStrSig[item][0][1] = sigDict[pfx+item+':a']
                 else:       #generalized for mustrain or ellipsoidal for size
@@ -1286,13 +1286,29 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
 def GetHistogramData(Histograms,Print=True):
     
     def GetBackgroundParms(hId,Background):
-        bakType,bakFlag = Background[:2]
-        backVals = Background[3:]
+        Back = Background[0]
+        Debye = Background[1]
+        bakType,bakFlag = Back[:2]
+        backVals = Back[3:]
         backNames = [':'+str(hId)+':Back:'+str(i) for i in range(len(backVals))]
-        if bakFlag:                                 #returns backNames as varyList = backNames
-            return bakType,dict(zip(backNames,backVals)),backNames
-        else:                                       #no background varied; varyList = []
-            return bakType,dict(zip(backNames,backVals)),[]
+        backDict = dict(zip(backNames,backVals))
+        backVary = []
+        if bakFlag:
+            backVary = backNames
+        backDict[':'+str(hId)+':nDebye'] = Debye['nDebye']
+        debyeDict = {}
+        debyeList = []
+        for i in range(Debye['nDebye']):
+            debyeNames = [':'+str(hId)+':DebyeA:'+str(i),':'+str(hId)+':DebyeR:'+str(i),':'+str(hId)+':DebyeU:'+str(i)]
+            debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2])))
+            debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2])
+        debyeVary = []
+        for item in debyeList:
+            if item[1]:
+                debyeVary.append(item[0])
+        backDict.update(debyeDict)
+        backVary += debyeVary    
+        return bakType,backDict,backVary            
         
     def GetInstParms(hId,Inst):
         insVals,insFlags,insNames = Inst[1:4]
@@ -1305,8 +1321,8 @@ def GetHistogramData(Histograms,Print=True):
             instDict[insName] = insVals[i]
             if flag:
                 insVary.append(insName)
-        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.01)
-        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.01)
+        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.001)
+        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.001)
         instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.0005)
         return dataType,instDict,insVary
         
@@ -1329,13 +1345,27 @@ def GetHistogramData(Histograms,Print=True):
         return Type,sampDict,sampVary
         
     def PrintBackground(Background):
-        print '\n Background function: ',Background[0],' Refine?',bool(Background[1])
+        Back = Background[0]
+        Debye = Background[1]
+        print '\n Background function: ',Back[0],' Refine?',bool(Back[1])
         line = ' Coefficients: '
-        for i,back in enumerate(Background[3:]):
+        for i,back in enumerate(Back[3:]):
             line += '%10.3f'%(back)
             if i and not i%10:
                 line += '\n'+15*' '
-        print line 
+        print line
+        if Debye['nDebye']:
+            print '\n Debye diffuse scattering coefficients'
+            parms = ['DebyeA','DebyeR','DebyeU']
+            line = ' names :'
+            for parm in parms:
+                line += '%16s'%(parm)
+            print line
+            for j,term in enumerate(Debye['debyeTerms']):
+                line = ' term'+'%2d'%(j)+':'
+                for i in range(3):
+                    line += '%10.4f %5s'%(term[2*i],bool(term[2*i+1]))                    
+                print line
         
     def PrintInstParms(Inst):
         print '\n Instrument Parameters:'
@@ -1387,7 +1417,7 @@ def GetHistogramData(Histograms,Print=True):
         pfx = ':'+str(hId)+':'
         controlDict[pfx+'Limits'] = Histogram['Limits'][1]
         
-        Background = Histogram['Background'][0]
+        Background = Histogram['Background']
         Type,bakDict,bakVary = GetBackgroundParms(hId,Background)
         controlDict[pfx+'bakType'] = Type
         histDict.update(bakDict)
@@ -1426,12 +1456,21 @@ def GetHistogramData(Histograms,Print=True):
 def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
-        lenBack = len(Background[3:])
-        backSig = [0 for i in range(lenBack)]
+        Back = Background[0]
+        Debye = Background[1]
+        lenBack = len(Back[3:])
+        backSig = [0 for i in range(lenBack+3*Debye['nDebye'])]
         for i in range(lenBack):
-            Background[3+i] = parmDict[pfx+'Back:'+str(i)]
+            Back[3+i] = parmDict[pfx+'Back:'+str(i)]
             if pfx+'Back:'+str(i) in sigDict:
                 backSig[i] = sigDict[pfx+'Back:'+str(i)]
+        if Debye['nDebye']:
+            for i in range(Debye['nDebye']):
+                names = [pfx+'DebyeA:'+str(i),pfx+'DebyeR:'+str(i),pfx+'DebyeU:'+str(i)]
+                for j,name in enumerate(names):
+                    Debye['debyeTerms'][i][2*j] = parmDict[name]
+                    if name in sigDict:
+                        backSig[lenBack+3*i+j] = sigDict[name]            
         return backSig
         
     def SetInstParms(pfx,Inst,parmDict,sigDict):
@@ -1460,17 +1499,37 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
         return sampSig
         
     def PrintBackgroundSig(Background,backSig):
-        print '\n Background function: ',Background[0]
+        Back = Background[0]
+        Debye = Background[1]
+        lenBack = len(Back[3:])
+        print '\n Background function: ',Back[0]
         valstr = ' value : '
         sigstr = ' sig   : '
-        for i,back in enumerate(Background[3:]):
+        for i,back in enumerate(Back[3:]):
             valstr += '%10.4f'%(back)
-            if Background[1]:
+            if Back[1]:
                 sigstr += '%10.4f'%(backSig[i])
             else:
                 sigstr += 10*' '
         print valstr
         print sigstr 
+        if Debye['nDebye']:
+            ifAny = False
+            ptfmt = "%12.5f"
+            names =  ' names :'
+            ptstr =  ' values:'
+            sigstr = ' esds  :'
+            for item in sigDict:
+                if 'Debye' in item:
+                    ifAny = True
+                    names += '%12s'%(item)
+                    ptstr += ptfmt%(parmDict[item])
+                    sigstr += ptfmt%(sigDict[item])
+            if ifAny:
+                print '\n Debye diffuse scattering coefficients'
+                print names
+                print ptstr
+                print sigstr
         
     def PrintInstParmsSig(Inst,instSig):
         print '\n Instrument Parameters:'
@@ -1521,7 +1580,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             pfx = ':'+str(hId)+':'
-            Background = Histogram['Background'][0]
+            Background = Histogram['Background']
             backSig = SetBackgroundParms(pfx,Background,parmDict,sigDict)
             
             Inst = Histogram['Instrument Parameters']
@@ -1955,18 +2014,18 @@ def GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
             gamDict[item] = -(const/R**2)*dRdS[i]
     #microstrain derivatives                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
-        gamDict[phfx+'Mustrain:0'] =  0.018*tanth/np.pi            
+        gamDict[phfx+'Mustrain:i'] =  0.018*tanth/np.pi            
     elif calcControls[phfx+'MustrainType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'MustrainAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        Si = parmDict[phfx+'Mustrain:0']
-        Sa = parmDict[phfx+'Mustrain:1']
+        Si = parmDict[phfx+'Mustrain:i']
+        Sa = parmDict[phfx+'Mustrain:a']
         gami = 0.018*Si*Sa*tanth/np.pi
         sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
         gam = gami/sqtrm
-        gamDict[phfx+'Mustrain:0'] = gam/Si-gami*Si*cosP**2/sqtrm**3
-        gamDict[phfx+'Mustrain:1'] = gam/Sa-gami*Sa*sinP**2/sqtrm**3
+        gamDict[phfx+'Mustrain:i'] = gam/Si-gami*Si*cosP**2/sqtrm**3
+        gamDict[phfx+'Mustrain:a'] = gam/Sa-gami*Sa*sinP**2/sqtrm**3
     else:       #generalized - P.W. Stephens model
         pwrs = calcControls[phfx+'MuPwrs']
         const = 0.018*refl[4]**2*tanth
@@ -2266,11 +2325,17 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
+    dMdb,dMddb = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,x)
     if hfx+'Back:0' in varylist: # for now assume that Back:x vars to not appear in constraints
-        dMdb = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,x)
         bBpos =varylist.index(hfx+'Back:0')
         dMdv[bBpos:bBpos+len(dMdb)] = dMdb
-        
+    names = [hfx+'DebyeA',hfx+'DebyeR',hfx+'DebyeU']
+    for name in varylist:
+        if 'Debye' in name:
+            id = int(name.split(':')[-1])
+            parm = name[:int(name.rindex(':'))]
+            ip = names.index(parm)
+            dMdv[varylist.index(name)] = dMddb[3*id+ip]
     if 'C' in calcControls[hfx+'histType']:    
         dx = x[1]-x[0]
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -2415,6 +2480,7 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
+    nvar = len(varylist)
     dMdv = np.empty(0)
     for histogram in Histograms:
         if 'PWDR' in histogram[:4]:
@@ -2584,7 +2650,6 @@ def Refine(GPXfile,dlg):
 #    print 'test2'
     sigDict = dict(zip(varyList,sig))
     newCellDict = GetNewCellParms(parmDict,varyList)
-    print newCellDict
     newAtomDict = ApplyXYZshifts(parmDict,varyList)
     covData = {'variables':result[0],'varyList':varyList,'sig':sig,
         'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}

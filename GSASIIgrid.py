@@ -1647,7 +1647,7 @@ def MovePatternTreeToGrid(self,item):
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
-        G2pdG.UpdateBackgroundGrid(self,data)
+        G2pdG.UpdateBackground(self,data)
         G2plt.PlotPatterns(self)
     elif self.PatternTree.GetItemText(item) == 'Limits':
         self.PatternId = self.PatternTree.GetItemParent(item)

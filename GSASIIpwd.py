@@ -646,6 +646,24 @@ def getBackground(pfx,parmDict,bakType,xdata):
                 bakVals[i] = parmDict[pfx+'Back:'+str(i)]
             bakInt = si.interp1d(bakPos,bakVals,'linear')
             yb = bakInt(xdata)
+    iD = 0        
+    try:
+        wave = parmDict[pfx+'Lam']
+    except KeyError:
+        wave = parmDict[pfx+'Lam1']
+    q = 4.0*np.pi*npsind(xdata/2.0)/wave
+    SQ = (q/(4*np.pi))**2
+    FF = G2elem.GetFormFactorCoeff('Si')[0]
+    ff = np.array(G2elem.ScatFac(FF,SQ)[0])**2
+    while True:
+        try:
+            dbA = parmDict[pfx+'DebyeA:'+str(iD)]
+            dbR = parmDict[pfx+'DebyeR:'+str(iD)]
+            dbU = parmDict[pfx+'DebyeU:'+str(iD)]
+            yb += ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
+            iD += 1       
+        except KeyError:
+            break    
     return yb
     
 def getBackgroundDerv(pfx,parmDict,bakType,xdata):
@@ -657,6 +675,7 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
         else:
             break
     dydb = np.zeros(shape=(nBak,len(xdata)))
+    dyddb = np.zeros(shape=(3*parmDict[pfx+'nDebye'],len(xdata)))
 
     if bakType in ['chebyschev','cosine']:
         for iBak in range(nBak):    
@@ -691,7 +710,30 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
                     dydb[i] = np.where(xdata>bakPos[i],
                         np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/(bakPos[i+1]-bakPos[i]),0.),
                         np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/(bakPos[i]-bakPos[i-1]),0.))
-    return dydb
+    iD = 0        
+    try:
+        wave = parmDict[pfx+'Lam']
+    except KeyError:
+        wave = parmDict[pfx+'Lam1']
+    q = 4.0*np.pi*npsind(xdata/2.0)/wave
+    SQ = (q/(4*np.pi))**2
+    FF = G2elem.GetFormFactorCoeff('Si')[0]
+    ff = np.array(G2elem.ScatFac(FF,SQ)[0])
+    while True:
+        try:
+            dbA = parmDict[pfx+'DebyeA:'+str(iD)]
+            dbR = parmDict[pfx+'DebyeR:'+str(iD)]
+            dbU = parmDict[pfx+'DebyeU:'+str(iD)]
+            sqr = np.sin(q*dbR)/(q*dbR)
+            cqr = np.cos(q*dbR)
+            temp = np.exp(-dbU*q**2)
+            dyddb[3*iD] = ff*sqr*temp
+            dyddb[3*iD+1] = ff*dbA*temp*(cqr-sqr)/dbR 
+            dyddb[3*iD+2] = -ff*dbA*sqr*temp*q**2
+            iD += 1       
+        except KeyError:
+            break
+    return dydb,dyddb
 
 #use old fortran routine
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
@@ -789,10 +831,15 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
 def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
 # needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
+    dMdb,dMddb = getBackgroundDerv('',parmDict,bakType,xdata)
     if 'Back:0' in varyList:            #background derivs are in front if present
-        dMdb = getBackgroundDerv('',parmDict,bakType,xdata)
         dMdv[0:len(dMdb)] = dMdb
-        
+    names = ['DebyeA','DebyeR','DebyeU']
+    for name in varyList:
+        if 'Debye' in name:
+            ih,parm,id = name.split(':')
+            ip = names.index(parm)
+            dMdv[varyList.index(name)] = dMddb[3*int(id)+ip]
     dx = xdata[1]-xdata[0]
     U = parmDict['U']
     V = parmDict['V']
@@ -900,38 +947,82 @@ def Values2Dict(parmdict, varylist, values):
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=None):
     
     def SetBackgroundParms(Background):
-        bakType,bakFlag = Background[:2]
-        backVals = Background[3:]
+        if len(Background) == 1:            # fix up old backgrounds
+            BackGround.append({'nDebye':0,'debyeTerms':[]})
+        bakType,bakFlag = Background[0][:2]
+        backVals = Background[0][3:]
         backNames = ['Back:'+str(i) for i in range(len(backVals))]
-        if bakFlag: #returns backNames as varyList = backNames
-            return bakType,dict(zip(backNames,backVals)),backNames
-        else:       #no background varied; varyList = []
-            return bakType,dict(zip(backNames,backVals)),[]
+        Debye = Background[1]
+        backDict = dict(zip(backNames,backVals))
+        backVary = []
+        if bakFlag:
+            backVary = backNames
+        backDict['nDebye'] = Debye['nDebye']
+        debyeDict = {}
+        debyeList = []
+        for i in range(Debye['nDebye']):
+            debyeNames = ['DebyeA:'+str(i),'DebyeR:'+str(i),'DebyeU:'+str(i)]
+            debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2])))
+            debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2])
+        debyeVary = []
+        for item in debyeList:
+            if item[1]:
+                debyeVary.append(item[0])
+        backDict.update(debyeDict)
+        backVary += debyeVary    
+        return bakType,backDict,backVary            
         
     def GetBackgroundParms(parmList,Background):
         iBak = 0
         while True:
             try:
                 bakName = 'Back:'+str(iBak)
-                Background[iBak+3] = parmList[bakName]
+                Background[0][iBak+3] = parmList[bakName]
                 iBak += 1
+            except KeyError:
+                break
+        iDb = 0
+        while True:
+            names = ['DebyeA:','DebyeR:','DebyeU:']
+            try:
+                for i,name in enumerate(names):
+                    val = parmList[name+str(iDb)]
+                    Background[1]['debyeTerms'][iDb][2*i] = val
+                iDb += 1
             except KeyError:
                 break
                 
     def BackgroundPrint(Background,sigDict):
-        if Background[1]:
-            print 'Background coefficients for',Background[0],'function'
+        if Background[0][1]:
+            print 'Background coefficients for',Background[0][0],'function'
             ptfmt = "%12.5f"
             ptstr =  'values:'
             sigstr = 'esds  :'
-            for i,back in enumerate(Background[3:]):
+            for i,back in enumerate(Background[0][3:]):
                 ptstr += ptfmt % (back)
                 sigstr += ptfmt % (sigDict['Back:'+str(i)])
             print ptstr
             print sigstr
         else:
             print 'Background not refined'
-            
+        if Background[1]['nDebye']:
+            parms = ['DebyeA','DebyeR','DebyeU']
+            print 'Debye diffuse scattering coefficients'
+            ptfmt = "%12.5f"
+            names =   'names :'
+            ptstr =  'values:'
+            sigstr = 'esds  :'
+            for item in sigDict:
+                if 'Debye' in item:
+                    names += '%12s'%(item)
+                    sigstr += ptfmt%(sigDict[item])
+                    parm,id = item.split(':')
+                    ip = parms.index(parm)
+                    ptstr += ptfmt%(Background[1]['debyeTerms'][int(id)][2*ip])
+            print names
+            print ptstr
+            print sigstr
+                            
     def SetInstParms(Inst):
         insVals,insFlags,insNames = Inst[1:4]
         dataType = insVals[0]

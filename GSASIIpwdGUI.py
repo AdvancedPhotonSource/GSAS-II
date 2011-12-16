@@ -67,7 +67,7 @@ def UpdatePeakGrid(self, data):
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
             if self.dataDisplay.GetName() == item:
                 if item == 'Background':
-                    UpdateBackgroundGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+                    UpdateBackground(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
                 elif item == 'Instrument Parameters':
                     UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
                 elif item == 'Peak List':
@@ -112,7 +112,7 @@ def UpdatePeakGrid(self, data):
         if not peaks:
             self.ErrorDialog('No peaks!','Nothing to fit!')
             return
-        background = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Background'))[0]
+        background = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Background'))
         limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
         inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
         data = self.PatternTree.GetItemPyData(PatternId)[1]
@@ -255,39 +255,11 @@ def UpdatePeakGrid(self, data):
     self.dataDisplay.AutoSizeColumns(False)
     self.dataFrame.setSizePosLeft([535,350])
         
-def UpdateBackgroundGrid(self,data):
+def UpdateBackground(self,data):
+    if len(data) < 2:       #add Debye diffuse scattering here
+        data.append({'nDebye':0,'debyeTerms':[]})
     ValObj = {}
-    
-    def OnNewType(event):
-        data[0][0] = bakType.GetValue()
-        
-    def OnBakRef(event):
-        data[0][1] = bakRef.GetValue()
-        
-    def OnBakTerms(event):
-        data[0][2] = int(bakTerms.GetValue())
-        M = len(data[0])
-        N = data[0][2]+3
-        item = data[0]
-        if N > M:       #add terms
-            for i in range(M,N): 
-                item.append(0.0)
-        elif N < M:     #delete terms
-            for i in range(N,M):
-                del(item[-1])
-        self.PatternTree.SetItemPyData(BackId,data)
-        UpdateBackgroundGrid(self,data)
-        
-    def OnBakVal(event):
-        Obj = event.GetEventObject()
-        item = ValObj[Obj.GetId()][0]
-        try:
-            value = float(Obj.GetValue())
-        except ValueError:
-            value = data[0][item]
-        data[0][item] = value
-        Obj.SetValue('%10.4f'%(value))
-        
+            
     def OnBackCopy(event):
         histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
         copyList = []
@@ -308,7 +280,126 @@ def UpdateBackgroundGrid(self,data):
         finally:
             dlg.Destroy()
         
+    def BackSizer():
         
+        def OnNewType(event):
+            data[0][0] = bakType.GetValue()
+            
+        def OnBakRef(event):
+            data[0][1] = bakRef.GetValue()
+            
+        def OnBakTerms(event):
+            data[0][2] = int(bakTerms.GetValue())
+            M = len(data[0])
+            N = data[0][2]+3
+            item = data[0]
+            if N > M:       #add terms
+                for i in range(M,N): 
+                    item.append(0.0)
+            elif N < M:     #delete terms
+                for i in range(N,M):
+                    del(item[-1])
+            self.PatternTree.SetItemPyData(BackId,data)
+            UpdateBackground(self,data)
+            
+        def OnBakVal(event):
+            Obj = event.GetEventObject()
+            item = ValObj[Obj.GetId()][0]
+            try:
+                value = float(Obj.GetValue())
+            except ValueError:
+                value = data[0][item]
+            data[0][item] = value
+            Obj.SetValue('%10.4f'%(value))
+        
+        backSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background function: '),0,wx.ALIGN_CENTER_VERTICAL)
+        bakType = wx.ComboBox(self.dataDisplay,value=data[0][0],
+                choices=Choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        bakType.Bind(wx.EVT_COMBOBOX, OnNewType)
+        topSizer.Add(bakType)
+        topSizer.Add((5,0),0)
+        bakRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
+        bakRef.SetValue(bool(data[0][1]))
+        bakRef.Bind(wx.EVT_CHECKBOX, OnBakRef)
+        topSizer.Add(bakRef,0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
+        bakTerms = wx.ComboBox(self.dataDisplay,-1,value=str(data[0][2]),choices=[str(i+1) for i in range(36)],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        bakTerms.Bind(wx.EVT_COMBOBOX,OnBakTerms)
+        topSizer.Add(bakTerms,0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add((5,0),0)
+        backSizer.Add(topSizer)
+        backSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
+        bakSizer = wx.FlexGridSizer(1,5,5,5)
+        for i,value in enumerate(data[0][3:]):
+            bakVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.4f'%(value),style=wx.TE_PROCESS_ENTER)
+            bakSizer.Add(bakVal,0,wx.ALIGN_CENTER_VERTICAL)
+            ValObj[bakVal.GetId()] = [i+3]
+            bakVal.Bind(wx.EVT_TEXT_ENTER,OnBakVal)
+            bakVal.Bind(wx.EVT_KILL_FOCUS,OnBakVal)
+        backSizer.Add(bakSizer)
+        return backSizer
+        
+    def DebyeSizer():
+        
+        def OnDebTerms(event):
+            data[1]['nDebye'] = int(debTerms.GetValue())
+            M = len(data[1]['debyeTerms'])
+            N = data[1]['nDebye']
+            if N > M:       #add terms
+                for i in range(M,N): 
+                    data[1]['debyeTerms'].append([1.0,False,1.0,False,0.010,False])
+            elif N < M:     #delete terms
+                for i in range(N,M):
+                    del(data[1]['debyeTerms'][-1])
+            UpdateBackground(self,data)
+
+        def KeyEditPeakGrid(event):
+            colList = debyeGrid.GetSelectedCols()
+            if event.GetKeyCode() == wx.WXK_RETURN:
+                event.Skip(True)
+            elif event.GetKeyCode() == wx.WXK_CONTROL:
+                event.Skip(True)
+            elif event.GetKeyCode() == wx.WXK_SHIFT:
+                event.Skip(True)
+            elif colList:
+                debyeGrid.ClearSelection()
+                key = event.GetKeyCode()
+                for col in colList:
+                    if debyeTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
+                        if key == 89: #'Y'
+                            for row in range(debyeGrid.GetNumberRows()): data[1]['debyeTerms'][row][col]=True
+                        elif key == 78:  #'N'
+                            for row in range(debyeGrid.GetNumberRows()): data[1]['debyeTerms'][row][col]=False
+        
+        debSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Debye scattering: '),0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
+        debTerms = wx.ComboBox(self.dataDisplay,-1,value=str(data[1]['nDebye']),choices=[str(i) for i in range(12)],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        debTerms.Bind(wx.EVT_COMBOBOX,OnDebTerms)
+        topSizer.Add(debTerms,0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add((5,0),0)
+        debSizer.Add(topSizer)
+        if data[1]['nDebye']:
+            debSizer.Add(wx.StaticText(self.dataDisplay,-1,' Debye diffuse terms:'),0,wx.ALIGN_CENTER_VERTICAL)       
+            rowLabels = []
+            for i in range(len(data[1]['debyeTerms'])): rowLabels.append(str(i))
+            colLabels = ['A','refine','R','refine','U','refine']
+            Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+            debyeTable = G2gd.Table(data[1]['debyeTerms'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            debyeGrid = G2gd.GSGrid(parent=self.dataDisplay)
+            debyeGrid.SetTable(debyeTable, True)
+            debyeGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+            debyeGrid.AutoSizeColumns(False)
+            debSizer.Add(debyeGrid)        
+        return debSizer      
+                
     if self.dataDisplay:
         self.dataFrame.Clear()
     self.dataDisplay = wx.Panel(self.dataFrame)
@@ -320,33 +411,9 @@ def UpdateBackgroundGrid(self,data):
     BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
     Choices = ['chebyschev','cosine','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background function: '),0,wx.ALIGN_CENTER_VERTICAL)
-    bakType = wx.ComboBox(self.dataDisplay,value=data[0][0],
-            choices=Choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    bakType.Bind(wx.EVT_COMBOBOX, OnNewType)
-    topSizer.Add(bakType)
-    topSizer.Add((5,0),0)
-    bakRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
-    bakRef.SetValue(bool(data[0][1]))
-    bakRef.Bind(wx.EVT_CHECKBOX, OnBakRef)
-    topSizer.Add(bakRef,0,wx.ALIGN_CENTER_VERTICAL)
-    topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
-    bakTerms = wx.ComboBox(self.dataDisplay,-1,value=str(data[0][2]),choices=[str(i+1) for i in range(36)],
-        style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    bakTerms.Bind(wx.EVT_COMBOBOX,OnBakTerms)
-    topSizer.Add(bakTerms,0,wx.ALIGN_CENTER_VERTICAL)
-    topSizer.Add((5,0),0)
-    mainSizer.Add(topSizer)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
-    bakSizer = wx.FlexGridSizer(1,5,5,5)
-    for i,value in enumerate(data[0][3:]):
-        bakVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.4f'%(value),style=wx.TE_PROCESS_ENTER)
-        bakSizer.Add(bakVal,0,wx.ALIGN_CENTER_VERTICAL)
-        ValObj[bakVal.GetId()] = [i+3]
-        bakVal.Bind(wx.EVT_TEXT_ENTER,OnBakVal)
-        bakVal.Bind(wx.EVT_KILL_FOCUS,OnBakVal)        
-    mainSizer.Add(bakSizer)
+    mainSizer.Add(BackSizer())
+    mainSizer.Add((0,5),0)
+    mainSizer.Add(DebyeSizer())
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))

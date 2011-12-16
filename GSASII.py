@@ -729,7 +729,7 @@ class GSASII(wx.Frame):
                         data = DataList[i]
                         if scale:
                             Comments.append("%10.3f %s" % (scale,' * '+name))
-                            x,y,w,yc,yb,yd = data
+                            x,y,w,yc,yb,yd = data   #numpy arrays!
                             v = 1./w
                             if lenX:
                                 if lenX != len(x):
@@ -770,7 +770,8 @@ class GSASII(wx.Frame):
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = G2pdG.SetDefaultSample()
-                        self.PatternTree.SetItemPyData(Id,[[''],[Xsum,Ysum,Wsum,YCsum,YBsum,YDsum]])
+                        self.PatternTree.SetItemPyData(Id,[[''],[np.array(Xsum),np.array(Ysum),np.array(Wsum),
+                            np.array(YCsum),np.array(YBsum),np.array(YDsum)]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])

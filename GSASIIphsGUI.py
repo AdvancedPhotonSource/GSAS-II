@@ -2206,7 +2206,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             if UseList[hist]['Size'][0] == 'ellipsoidal':
                 try:
                     size = float(Obj.GetValue())
-                    if pid < 3 and size <= 0.01:            #10A lower limit!
+                    if pid < 3 and size <= 0.001:            #10A lower limit!
                         raise ValueError
                     UseList[hist]['Size'][4][pid] = size                    
                 except ValueError:
@@ -2215,7 +2215,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             else:
                 try:
                     size = float(Obj.GetValue())
-                    if size <= 0.01:            #10A lower limit!
+                    if size <= 0.001:            #10A lower limit!
                         raise ValueError
                     UseList[hist]['Size'][1][pid] = size
                 except ValueError:

@@ -230,10 +230,6 @@ class DataFrame(wx.Frame):
         parent.Append(menu=self.DataEdit, title='Edit')
         parent.Append(menu=MyHelp(self,helpType='Data'),title='&Help')
         
-    def _init_coll_DrawAtomsMenu(self,parent):
-        parent.Append(menu=self.DrawAtomEdit, title='Edit')
-        parent.Append(menu=MyHelp(self,helpType='Draw Atoms'),title='&Help')
-
     def _init_coll_PawleyMenu(self,parent):
         parent.Append(menu=self.PawleyEdit,title='Operations')
         parent.Append(menu=MyHelp(self,helpType='Pawley'),title='&Help')
@@ -326,28 +322,6 @@ class DataFrame(wx.Frame):
         self.ClearTexture = parent.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
             help='Clear the texture coefficients' )
             
-    def _init_coll_DrawAtom_Items(self,parent):
-        parent.Append(id=wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
-            help='Select atoms first')
-        parent.Append(id=wxID_DRAWATOMLABEL, kind=wx.ITEM_NORMAL,text='Atom label',
-            help='Select atoms first')
-        parent.Append(id=wxID_DRAWATOMCOLOR, kind=wx.ITEM_NORMAL,text='Atom color',
-            help='Select atoms first')
-        parent.Append(id=wxID_DRAWATOMRESETCOLOR, kind=wx.ITEM_NORMAL,text='Reset atom colors',
-            help='Resets all atom colors to defaults')
-        parent.Append(id=wxID_DRAWVIEWPOINT, kind=wx.ITEM_NORMAL,text='View point',
-            help='View point is 1st atom selected')
-        parent.Append(id=wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',
-            help='Add symmetry & cell equivalents to drawing set from selected atoms')
-        parent.Append(id=wxID_DRAWTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
-            help='Transform selected atoms by symmetry & cell translations')
-        parent.Append(id=wxID_DRAWFILLCOORD, kind=wx.ITEM_NORMAL,text='Fill CN-sphere',
-            help='Fill coordination sphere for selected atoms')            
-        parent.Append(id=wxID_DRAWFILLCELL, kind=wx.ITEM_NORMAL,text='Fill unit cell',
-            help='Fill unit cell with selected atoms')
-        parent.Append(id=wxID_DRAWDELETE, kind=wx.ITEM_NORMAL,text='Delete atoms',
-            help='Delete atoms from drawing set')
-
     def _init_coll_Pawley_Items(self,parent):
         parent.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
             help='Initialize Pawley reflection list')
@@ -445,7 +419,6 @@ class DataFrame(wx.Frame):
         self.RestraintMenu = wx.MenuBar()
         self.DataMenu = wx.MenuBar()
         self.TextureMenu = wx.MenuBar()
-        self.DrawAtomsMenu = wx.MenuBar()
         self.PawleyMenu = wx.MenuBar()
         self.ImageMenu = wx.MenuBar()
         self.MaskMenu = wx.MenuBar()
@@ -462,7 +435,6 @@ class DataFrame(wx.Frame):
         self.RestraintEdit = wx.Menu(title='')
         self.DataEdit = wx.Menu(title='')
         self.TextureEdit = wx.Menu(title='')
-        self.DrawAtomEdit = wx.Menu(title='')
         self.PawleyEdit = wx.Menu(title='')
         self.ImageEdit = wx.Menu(title='')
         self.MaskEdit = wx.Menu(title='')
@@ -484,8 +456,6 @@ class DataFrame(wx.Frame):
         self._init_coll_Data_Items(self.DataEdit)
         self._init_coll_TextureMenu(self.TextureMenu)
         self._init_coll_Texture_Items(self.TextureEdit)
-        self._init_coll_DrawAtomsMenu(self.DrawAtomsMenu)
-        self._init_coll_DrawAtom_Items(self.DrawAtomEdit)
         self._init_coll_PawleyMenu(self.PawleyMenu)
         self._init_coll_Pawley_Items(self.PawleyEdit)
         self._init_coll_ImageMenu(self.ImageMenu)
@@ -552,6 +522,32 @@ class DataFrame(wx.Frame):
         # menu for Data Editing Window / Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
         self.DataDrawOptions.Append(menu=MyHelp(self,helpType='Draw Options'),title='&Help')
+        # menu for Data Editing Window / Phase / Draw Atoms tab
+        self.DrawAtomsMenu = wx.MenuBar()
+        self.DrawAtomEdit = wx.Menu(title='')
+        self.DrawAtomsMenu.Append(menu=self.DrawAtomEdit, title='Edit')
+        self.DrawAtomsMenu.Append(menu=MyHelp(self,helpType='Draw Atoms'),title='&Help')
+        self.DrawAtomEdit.Append(id=wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
+            help='Select atoms first')
+        self.DrawAtomEdit.Append(id=wxID_DRAWATOMLABEL, kind=wx.ITEM_NORMAL,text='Atom label',
+            help='Select atoms first')
+        self.DrawAtomEdit.Append(id=wxID_DRAWATOMCOLOR, kind=wx.ITEM_NORMAL,text='Atom color',
+            help='Select atoms first')
+        self.DrawAtomEdit.Append(id=wxID_DRAWATOMRESETCOLOR, kind=wx.ITEM_NORMAL,text='Reset atom colors',
+            help='Resets all atom colors to defaults')
+        self.DrawAtomEdit.Append(id=wxID_DRAWVIEWPOINT, kind=wx.ITEM_NORMAL,text='View point',
+            help='View point is 1st atom selected')
+        self.DrawAtomEdit.Append(id=wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',
+            help='Add symmetry & cell equivalents to drawing set from selected atoms')
+        self.DrawAtomEdit.Append(id=wxID_DRAWTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
+            help='Transform selected atoms by symmetry & cell translations')
+        self.DrawAtomEdit.Append(id=wxID_DRAWFILLCOORD, kind=wx.ITEM_NORMAL,text='Fill CN-sphere',
+            help='Fill coordination sphere for selected atoms')            
+        self.DrawAtomEdit.Append(id=wxID_DRAWFILLCELL, kind=wx.ITEM_NORMAL,text='Fill unit cell',
+            help='Fill unit cell with selected atoms')
+        self.DrawAtomEdit.Append(id=wxID_DRAWDELETE, kind=wx.ITEM_NORMAL,text='Delete atoms',
+            help='Delete atoms from drawing set')
+
         
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,

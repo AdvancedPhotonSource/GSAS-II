@@ -652,7 +652,7 @@ def getBackground(pfx,parmDict,bakType,xdata):
     except KeyError:
         wave = parmDict[pfx+'Lam1']
     q = 4.0*np.pi*npsind(xdata/2.0)/wave
-    SQ = (q/(4*np.pi))**2
+    SQ = (q/(4.*np.pi))**2
     FF = G2elem.GetFormFactorCoeff('Si')[0]
     ff = np.array(G2elem.ScatFac(FF,SQ)[0])**2
     while True:
@@ -837,7 +837,7 @@ def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
     names = ['DebyeA','DebyeR','DebyeU']
     for name in varyList:
         if 'Debye' in name:
-            ih,parm,id = name.split(':')
+            parm,id = name.split(':')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMddb[3*int(id)+ip]
     dx = xdata[1]-xdata[0]

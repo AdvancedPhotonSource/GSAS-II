@@ -204,7 +204,7 @@ def ImageLocalMax(image,w,Xpix,Ypix):
         Zmin = np.argmin(Z)
         xpix += Zmax%w2-w
         ypix += Zmax/w2-w
-        return xpix,ypix,np.ravel(Z)[Zmax],np.ravel(Z)[Zmin]
+        return xpix,ypix,np.ravel(Z)[Zmax],max(0.0001,np.ravel(Z)[Zmin])   #avoid neg/zero minimum
     else:
         return 0,0,0,0      
     

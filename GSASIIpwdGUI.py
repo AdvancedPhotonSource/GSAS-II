@@ -256,8 +256,10 @@ def UpdatePeakGrid(self, data):
     self.dataFrame.setSizePosLeft([535,350])
         
 def UpdateBackground(self,data):
-    if len(data) < 2:       #add Debye diffuse scattering here
-        data.append({'nDebye':0,'debyeTerms':[]})
+    if len(data) < 2:       #add Debye diffuse & peaks scattering here
+        data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
+    if 'nPeaks' not in data[1]:
+        data[1].update({'nPeaks':0,'peaksList':[]})
     ValObj = {}
             
     def OnBackCopy(event):
@@ -373,6 +375,7 @@ def UpdateBackground(self,data):
                             for row in range(debyeGrid.GetNumberRows()): data[1]['debyeTerms'][row][col]=True
                         elif key == 78:  #'N'
                             for row in range(debyeGrid.GetNumberRows()): data[1]['debyeTerms'][row][col]=False
+
         
         debSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -398,7 +401,66 @@ def UpdateBackground(self,data):
             debyeGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             debyeGrid.AutoSizeColumns(False)
             debSizer.Add(debyeGrid)        
-        return debSizer      
+        return debSizer
+      
+    def PeaksSizer():
+
+        def OnPeaks(event):
+            data[1]['nPeaks'] = int(peaks.GetValue())
+            M = len(data[1]['peaksList'])
+            N = data[1]['nPeaks']
+            if N > M:       #add terms
+                for i in range(M,N): 
+                    data[1]['peaksList'].append([1.0,False,1.0,False,0.10,False,0.10,False])
+            elif N < M:     #delete terms
+                for i in range(N,M):
+                    del(data[1]['peaksList'][-1])
+            UpdateBackground(self,data)
+
+        def KeyEditPeakGrid(event):
+            colList = peaksGrid.GetSelectedCols()
+            if event.GetKeyCode() == wx.WXK_RETURN:
+                event.Skip(True)
+            elif event.GetKeyCode() == wx.WXK_CONTROL:
+                event.Skip(True)
+            elif event.GetKeyCode() == wx.WXK_SHIFT:
+                event.Skip(True)
+            elif colList:
+                peaksGrid.ClearSelection()
+                key = event.GetKeyCode()
+                for col in colList:
+                    if peaksTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
+                        if key == 89: #'Y'
+                            for row in range(peaksGrid.GetNumberRows()): data[1]['peaksList'][row][col]=True
+                        elif key == 78:  #'N'
+                            for row in range(peaksGrid.GetNumberRows()): data[1]['peaksList'][row][col]=False
+
+        peaksSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Peaks in background: '),0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. peaks: '),0,wx.ALIGN_CENTER_VERTICAL)
+        peaks = wx.ComboBox(self.dataDisplay,-1,value=str(data[1]['nPeaks']),choices=[str(i) for i in range(12)],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        peaks.Bind(wx.EVT_COMBOBOX,OnPeaks)
+        topSizer.Add(peaks,0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add((5,0),0)
+        peaksSizer.Add(topSizer)
+        if data[1]['nPeaks']:
+            peaksSizer.Add(wx.StaticText(self.dataDisplay,-1,' Peak list:'),0,wx.ALIGN_CENTER_VERTICAL)       
+            rowLabels = []
+            for i in range(len(data[1]['peaksList'])): rowLabels.append(str(i))
+            colLabels = ['pos','refine','int','refine','sig','refine','gam','refine']
+            Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+            peaksTable = G2gd.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            peaksGrid = G2gd.GSGrid(parent=self.dataDisplay)
+            peaksGrid.SetTable(peaksTable, True)
+            peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+            peaksGrid.AutoSizeColumns(False)
+            peaksSizer.Add(peaksGrid)        
+        return peaksSizer
                 
     if self.dataDisplay:
         self.dataFrame.Clear()
@@ -414,6 +476,8 @@ def UpdateBackground(self,data):
     mainSizer.Add(BackSizer())
     mainSizer.Add((0,5),0)
     mainSizer.Add(DebyeSizer())
+    mainSizer.Add((0,5),0)
+    mainSizer.Add(PeaksSizer())
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))

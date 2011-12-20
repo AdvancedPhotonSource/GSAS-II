@@ -952,11 +952,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         bakType,bakFlag = Background[0][:2]
         backVals = Background[0][3:]
         backNames = ['Back:'+str(i) for i in range(len(backVals))]
-        Debye = Background[1]
+        Debye = Background[1]           #also has background peaks stuff
         backDict = dict(zip(backNames,backVals))
         backVary = []
         if bakFlag:
             backVary = backNames
+
         backDict['nDebye'] = Debye['nDebye']
         debyeDict = {}
         debyeList = []
@@ -969,7 +970,20 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
             if item[1]:
                 debyeVary.append(item[0])
         backDict.update(debyeDict)
-        backVary += debyeVary    
+        backVary += debyeVary 
+   
+        peaksDict = {}
+        peaksList = []
+        for i in range(Debye['nPeaks']):
+            peaksNames = ['BkPkpos:'+str(i),'BkPkint:'+str(i),'BkPksig:'+str(i),'BkPkgam:'+str(i)]
+            peaksDict.update(dict(zip(peaksNames,Debye['peaksList'][i][::2])))
+            peaksList += zip(peaksNames,Debye['peaksList'][i][1::2])
+        peaksVary = []
+        for item in peaksList:
+            if item[1]:
+                peaksVary.append(item[0])
+        backDict.update(peaksDict)
+        backVary += peaksVary    
         return bakType,backDict,backVary            
         
     def GetBackgroundParms(parmList,Background):
@@ -988,6 +1002,16 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
                 for i,name in enumerate(names):
                     val = parmList[name+str(iDb)]
                     Background[1]['debyeTerms'][iDb][2*i] = val
+                iDb += 1
+            except KeyError:
+                break
+        iDb = 0
+        while True:
+            names = ['BkPkpos:','BkPkint:','BkPksig:','BkPkgam:']
+            try:
+                for i,name in enumerate(names):
+                    val = parmList[name+str(iDb)]
+                    Background[1]['peaksList'][iDb][2*i] = val
                 iDb += 1
             except KeyError:
                 break
@@ -1019,6 +1043,23 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
                     parm,id = item.split(':')
                     ip = parms.index(parm)
                     ptstr += ptfmt%(Background[1]['debyeTerms'][int(id)][2*ip])
+            print names
+            print ptstr
+            print sigstr
+        if Background[1]['nPeaks']:
+            parms = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
+            print 'Peaks in background coefficients'
+            ptfmt = "%12.5f"
+            names =   'names :'
+            ptstr =  'values:'
+            sigstr = 'esds  :'
+            for item in sigDict:
+                if 'BkPk' in item:
+                    names += '%12s'%(item)
+                    sigstr += ptfmt%(sigDict[item])
+                    parm,id = item.split(':')
+                    ip = parms.index(parm)
+                    ptstr += ptfmt%(Background[1]['peaksList'][int(id)][2*ip])
             print names
             print ptstr
             print sigstr

@@ -1592,9 +1592,6 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
 
-    def OnHelpHelp(self, event):
-        event.Skip()
-                
 class GSASIImain(wx.App):
     def OnInit(self):
         self.main = GSASII(None)

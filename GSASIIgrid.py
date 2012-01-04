@@ -10,6 +10,7 @@ import wx
 import wx.grid as wg
 import time
 import cPickle
+import sys
 import numpy as np
 import os.path
 import wx.html        # could postpone this for quicker startup
@@ -28,8 +29,10 @@ path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this
 helpLocDict = {}
 htmlPanel = None
 htmlFrame = None
-helpMode = 'internal'    # need a global control to set this
-helpMode = 'browser'    # need a global control to set this
+if sys.platform.lower().startswith('win'): 
+    helpMode = 'internal'    # need a global control to set this
+else:
+    helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
@@ -94,6 +97,37 @@ htmlFirstUse = True
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
+def ShowHelp(helpType,frame):
+    '''Called to bring up a web page for documentation.'''
+    global helpLocDict
+    global helpMode
+    # look up a definition for help info from dict
+    helplink = helpLocDict.get(helpType)
+    if helplink is None:
+        # no defined link to use, create a default based on key
+        helplink = 'gsasII.html#'+helpType.replace(' ','_')
+        print helplink
+    helplink = os.path.join(path2GSAS2,'help',helplink)
+    if helpMode == 'internal':
+        global htmlPanel, htmlFrame
+        try:
+            htmlPanel.LoadFile(helplink)
+            htmlFrame.Raise()
+        except:
+            htmlFrame = wx.Frame(frame, -1, size=(610, 380))
+            htmlFrame.Show(True)
+            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
+            htmlPanel = MyHtmlPanel(htmlFrame,-1)
+            htmlPanel.LoadFile(helplink)
+    else:
+        global htmlFirstUse
+        #import webbrowser
+        if htmlFirstUse:
+            webbrowser.open_new("file://"+helplink)
+            htmlFirstUse = False
+        else:
+            webbrowser.open("file://"+helplink, new=0, autoraise=True)
+
 class MyHelp(wx.Menu):
     '''This class creates the contents of a help menu.
     The menu will start with two entries:
@@ -121,33 +155,7 @@ class MyHelp(wx.Menu):
         '''Called when Help on... is pressed in a menu. Brings up
         a web page for documentation.
         '''
-        global helpLocDict
-        global helpMode
-        # look up a definition for help info from dict
-        helplink = helpLocDict.get(self.helpType)
-        if helplink is None:
-            # no defined link to use, create a default based on key
-            helplink = 'gsasII.html#'+self.helpType.replace(' ','_')
-            print helplink
-        helplink = os.path.join(path2GSAS2,'help',helplink)
-        if helpMode == 'internal':
-            global htmlPanel, htmlFrame
-            try:
-                htmlPanel.LoadFile(helplink)
-            except:
-                htmlFrame = wx.Frame(self.frame, -1, size=(610, 380))
-                htmlFrame.Show(True)
-                htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
-                htmlPanel = MyHtmlPanel(htmlFrame,-1)
-                htmlPanel.LoadFile(helplink)
-        else:
-            global htmlFirstUse
-            #import webbrowser
-            if htmlFirstUse:
-                webbrowser.open_new("file://"+helplink)
-                htmlFirstUse = False
-            else:
-                webbrowser.open("file://"+helplink, new=0, autoraise=True)
+        ShowHelp(self.helpType,self.frame)
 
     def OnHelpAbout(self, event):
         "Display an 'About GSAS-II' box"
@@ -215,8 +223,8 @@ class G2HtmlWindow(wx.html.HtmlWindow):
                                    self.GetOpenedPageTitle())
 
 class DataFrame(wx.Frame):
-    def _init_coll_BlankMenu(self,parent):
-        parent.Append(menu=self.Blank,title='')
+    #def _init_coll_BlankMenu(self,parent):
+    #    parent.Append(menu=self.Blank,title='')
                 
     def _init_coll_ConstraintMenu(self,parent):
         parent.Append(menu=self.ConstraintEdit, title='Edit')
@@ -492,11 +500,22 @@ class DataFrame(wx.Frame):
         ############################################################
         # refactored Menu creation
         ############################################################
+        # menu for Data Editing Window / Controls
+        self.ControlsMenu = wx.MenuBar()
+        self.ControlsMenu.Append(menu=MyHelp(self,helpType='Controls'),title='&Help')
+        # menu for Data Editing Window / Notebook
+        self.DataNotebookMenu = wx.MenuBar()
+        self.DataNotebookMenu.Append(menu=MyHelp(self,helpType='Notebook'),title='&Help')
+        # menu for Data Editing Window / Comments
+        self.DataCommentsMenu = wx.MenuBar()
+        self.DataCommentsMenu.Append(menu=MyHelp(self,helpType='Comments'),title='&Help')
+        # menu for Data Editing Window / Controls
+        self.ControlsMenu = wx.MenuBar()
+        self.ControlsMenu.Append(menu=MyHelp(self,helpType='Controls'),title='&Help')
         # menu for Data Editing Window / Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
         self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit')
-        self.AtomsMenu.Append(menu=MyHelp(self,helpType='Atoms'),title='&Help')
         self.AtomsMenu.Append(menu=MyHelp(self,helpType='Atoms'),title='&Help')
         self.AtomEdit.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
             help='Inserted as an H atom')
@@ -820,7 +839,7 @@ def UpdateControls(self,data):
     SetStatusLine('')
     self.dataFrame.SetLabel('Controls')
     self.dataDisplay = wx.Panel(self.dataFrame)
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    self.dataFrame.SetMenuBar(self.dataFrame.ControlsMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1508,12 +1527,12 @@ def MovePatternTreeToGrid(self,item):
             self.dataDisplay.Clear() 
             Id = GetPatternTreeItemId(self,self.root, 'Comments')
             if Id: self.PatternTree.SetItemPyData(Id,data)
-        if self.dataFrame.GetLabel() == 'Notebook':
+        elif self.dataFrame.GetLabel() == 'Notebook':
             data = [self.dataDisplay.GetValue()]
             self.dataDisplay.Clear() 
             Id = GetPatternTreeItemId(self,self.root, 'Notebook')
             if Id: self.PatternTree.SetItemPyData(Id,data)
-        if 'Phase Data for' in self.dataFrame.GetLabel():
+        elif 'Phase Data for' in self.dataFrame.GetLabel():
             if self.dataDisplay: 
                 oldPage = self.dataDisplay.GetSelection()
         self.dataFrame.Clear()
@@ -1532,6 +1551,7 @@ def MovePatternTreeToGrid(self,item):
         self.PatternId = item
         self.PickId = item
         if self.PatternTree.GetItemText(item) == 'Notebook':
+            self.dataFrame.SetMenuBar(self.dataFrame.DataNotebookMenu)
             self.PatternId = 0
             self.ExportPattern.Enable(False)
             data = self.PatternTree.GetItemPyData(item)
@@ -1558,6 +1578,8 @@ def MovePatternTreeToGrid(self,item):
             UpdateSeqResults(self,data)            
         elif self.PatternTree.GetItemText(item) == 'Covariance':
             data = self.PatternTree.GetItemPyData(item)
+            wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+                        value='See plot window for covariance display')
             G2plt.PlotCovariance(self)
         elif self.PatternTree.GetItemText(item) == 'Constraints':
             data = self.PatternTree.GetItemPyData(item)
@@ -1572,6 +1594,9 @@ def MovePatternTreeToGrid(self,item):
             G2plt.PlotPowderLines(self)
         elif 'PWDR' in self.PatternTree.GetItemText(item):
             self.ExportPattern.Enable(True)
+            wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+                        style=wx.TE_MULTILINE,
+                        value='See plot window for powder data display\nor select a data item in histogram')
             G2plt.PlotPatterns(self,newPlot=True)
         elif 'HKLF' in self.PatternTree.GetItemText(item):
             self.Sngl = item
@@ -1580,6 +1605,9 @@ def MovePatternTreeToGrid(self,item):
             self.PatternId = item
             self.ExportPDF.Enable(True)
             G2plt.PlotISFG(self,type='S(Q)')
+        elif self.PatternTree.GetItemText(item) == 'Phases':
+            wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+                        value='Select one phase to see its parameters')
             
     elif 'I(Q)' in self.PatternTree.GetItemText(item):
         self.PickId = item
@@ -1602,6 +1630,7 @@ def MovePatternTreeToGrid(self,item):
         data = self.PatternTree.GetItemPyData(item)            
         G2phG.UpdatePhaseData(self,item,data,oldPage)
     elif self.PatternTree.GetItemText(item) == 'Comments':
+        self.dataFrame.SetMenuBar(self.dataFrame.DataCommentsMenu)
         self.PatternId = self.PatternTree.GetItemParent(item)
         self.PickId = item
         data = self.PatternTree.GetItemPyData(item)
@@ -1710,13 +1739,3 @@ def MovePatternTreeToGrid(self,item):
             self.RefList = data.keys()[0]
         G2pdG.UpdateReflectionGrid(self,data)
         G2plt.PlotPatterns(self)
-     
-#def OnHelp(event):
-#    Obj = event.GetEventObject()
-#    line = 'Help on '+Obj.GetTitle()
-#    for child in Obj.GetChildren():
-#        if 'NoteBook' in str(type(child)):
-#            notebook = child.GetCurrentPage().GetParent()
-#            line = 'Help on '+notebook.GetPageText(notebook.GetSelection())
-#    print line
-#    print 'Real help will come here as HTML pages'

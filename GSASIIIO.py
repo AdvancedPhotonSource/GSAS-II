@@ -767,6 +767,15 @@ def GetTifData(filename,imageOnly=False):
             if not imageOnly:
                 print 'Read MAR CCD tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    elif sizexy == [4096,4096]:
+        if IFD[273][2][0] == 8:
+            if IFD[258][2][0] == 16:
+                tifType = 'scanCCD'
+                pixy = (9,9)
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read APS scanCCD tiff file: ',filename
+                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
 #        pixy = (200,200)

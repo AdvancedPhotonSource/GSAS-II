@@ -632,7 +632,7 @@ def UpdateImageControls(self,data,masks):
     comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
     comboSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Calib lines to skip   '),0,
         wx.ALIGN_CENTER_VERTICAL)
-    calibSkip  = wx.ComboBox(parent=self.dataDisplay,value=str(data['calibskip']),choices=['0','1','2','3','4','5','6','7','8','9','10'],
+    calibSkip  = wx.ComboBox(parent=self.dataDisplay,value=str(data['calibskip']),choices=[str(i) for i in range(25)],
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     calibSkip.Bind(wx.EVT_COMBOBOX, OnCalibSkip)
     comboSizer.Add(calibSkip,0,wx.ALIGN_CENTER_VERTICAL)

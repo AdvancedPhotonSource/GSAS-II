@@ -1904,7 +1904,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                 AM = np.where(AM>0,np.log(AM),0)
                 Imin,Imax = [np.amin(A),np.amax(A)]
             ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
-                interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Xmax,0])
+                interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
             Img = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
             if self.setPoly:

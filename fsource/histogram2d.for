@@ -20,7 +20,7 @@ Cf2py intent(in,out) hst
 Cf2py depend(nxbins,nybins) hst
 
       IMPLICIT NONE
-      INTEGER*4   N
+      INTEGER*8   N
       REAL*4      X(0:N-1),Y(0:N-1),Z(0:N-1)
       INTEGER*8   NXBINS,NYBINS
       REAL*8      XLIM(0:1),YLIM(0:1)
@@ -32,8 +32,12 @@ Cf2py depend(nxbins,nybins) hst
       DO K=0,N-1
         I = INT((X(K)-XLIM(0))/DX)
         J = INT((Y(K)-YLIM(0))/DY)
+C        if ( j.ge.500 )
+C     1    print *,k,x(k),y(k),i,j,xlim(0),dx,ylim(0),dy,nxbins,nybins
         IF ( (I .GE. 0 .AND. I .LT. NXBINS) .AND.
      1     (J .GE. 0 .AND. J .LT. NYBINS) ) THEN
+C          if ( j.ge.500 )
+C     1      print *,i,j,nst(i,j),hst(i,j),z(k)
           NST(I,J) = NST(I,J)+1.0
           HST(I,J) = HST(I,J)+Z(K)
         END IF

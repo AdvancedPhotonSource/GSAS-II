@@ -28,8 +28,11 @@ class PlotNotebook(wx.Panel):
         sizer.Add(self.nb, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-    def StartEventLoop(self):
+    def Show(self):
         self.frame.Show()
+
+    def StartEventLoop(self):
+        self.Show()
         self.app.MainLoop()
 
 

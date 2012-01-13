@@ -1,5 +1,5 @@
-      SUBROUTINE HISTOGRAM2D(N,X,Y,Z,NXBINS,NYBINS,XLIM,YLIM,DX,DY,
-     1  NST,HST)
+      SUBROUTINE HISTOSIGMA2D(N,X,Y,Z,NXBINS,NYBINS,XLIM,YLIM,DX,DY,
+     1  NST,HST,AMAT,QMAT)
 
 Cf2py intent(in) n
 Cf2py intent(in) x
@@ -18,6 +18,10 @@ Cf2py intent(in,out) nst
 Cf2py depend(nxbins,nybins) nst
 Cf2py intent(in,out) hst
 Cf2py depend(nxbins,nybins) hst
+Cf2py intent(in,out) amat
+Cf2py depend(nxbins,nybins) amat
+Cf2py intent(in,out) qmat
+Cf2py depend(nxbins,nybins) qmat
 
       IMPLICIT NONE
       INTEGER*8   N
@@ -26,13 +30,13 @@ Cf2py depend(nxbins,nybins) hst
       REAL*8      XLIM(0:1),YLIM(0:1)
       REAL*4      NST(0:NXBINS-1,0:NYBINS-1)
       REAL*4      HST(0:NXBINS-1,0:NYBINS-1)
+      REAL*4      AMAT(0:NXBINS-1,0:NYBINS-1)
+      REAL*4      QMAT(0:NXBINS-1,0:NYBINS-1)
 
       INTEGER*4   I,J,K
       REAL*8      DX,DY
-      REAL*4      DDX,DDY
+      REAL*4      DDX,DDY,AOLD
       DO K=0,N-1
-C        if ( mod(k,8000) .eq. 0 )
-C     1    print *,k,x(k),xlim,y(k),ylim
         IF ( ( X(K).GE.XLIM(0) .AND. X(K).LT.XLIM(1) ) .AND.
      1    ( Y(K).GE.YLIM(0) .AND. Y(K).LT.YLIM(1) )) THEN
           DDX = (X(K)-XLIM(0))/DX
@@ -41,8 +45,9 @@ C     1    print *,k,x(k),xlim,y(k),ylim
           J = INT(DDY)
           NST(I,J) = NST(I,J)+1.0
           HST(I,J) = HST(I,J)+Z(K)
-C          if ( mod(k,8000) .eq. 0 )
-C     1      print *,i,j,nst(i,j),hst(i,j)
+          AOLD = AMAT(I,J)
+          AMAT(I,J) = AOLD+(Z(K)-AOLD)/NST(I,J)
+          QMAT(I,J) = QMAT(I,J)+(Z(K)-AOLD)*(Z(K)-AMAT(I,J))
         END IF
       END DO
       RETURN

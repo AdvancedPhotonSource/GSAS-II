@@ -1364,7 +1364,7 @@ def GetHistogramData(Histograms,Print=True):
             for j,term in enumerate(Debye['debyeTerms']):
                 line = ' term'+'%2d'%(j)+':'
                 for i in range(3):
-                    line += '%10.4f %5s'%(term[2*i],bool(term[2*i+1]))                    
+                    line += '%10.4g %5s'%(term[2*i],bool(term[2*i+1]))                    
                 print line
         
     def PrintInstParms(Inst):
@@ -1506,9 +1506,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
         valstr = ' value : '
         sigstr = ' sig   : '
         for i,back in enumerate(Back[3:]):
-            valstr += '%10.4f'%(back)
+            valstr += '%10.4g'%(back)
             if Back[1]:
-                sigstr += '%10.4f'%(backSig[i])
+                sigstr += '%10.4g'%(backSig[i])
             else:
                 sigstr += 10*' '
         print valstr

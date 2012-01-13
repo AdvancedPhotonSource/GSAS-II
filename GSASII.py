@@ -369,7 +369,8 @@ class GSASII(wx.Frame):
                             Tmin = min(data[0])
                             Tmax = max(data[0])
                             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[(Tmin,Tmax),[Tmin,Tmax]])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
+                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+                                {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
         
                             data = [DataType,]
                             if 'C' in DataType:
@@ -774,7 +775,8 @@ class GSASII(wx.Frame):
                             np.array(YCsum),np.array(YBsum),np.array(YDsum)]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+                            {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),Inst)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])

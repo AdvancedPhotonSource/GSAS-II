@@ -746,6 +746,8 @@ def PlotPatterns(self,newPlot=False):
     else:
         Page.canvas.draw()
     self.Pwdr = True
+    if self.oldFocus:
+        self.SetFocus()
     
 def PlotISFG(self,newPlot=False,type=''):
     ''' PLotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 

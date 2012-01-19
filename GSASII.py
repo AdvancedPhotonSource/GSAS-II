@@ -245,6 +245,8 @@ class GSASII(wx.Frame):
             self.OnPatternTreeItemExpanded, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_DELETE_ITEM,
             self.OnPatternTreeItemDelete, id=wxID_PATTERNTREE)
+        self.PatternTree.Bind(wx.EVT_TREE_KEY_DOWN,
+            self.OnPatternTreeKeyDown, id=wxID_PATTERNTREE)
         self.root = self.PatternTree.AddRoot('Loaded Data: ')
         
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
@@ -258,6 +260,7 @@ class GSASII(wx.Frame):
         self._init_ctrls(parent)
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
         # various defaults
+        self.oldFocus = None
         self.GSASprojectfile = ''
         self.dirname = ''
         self.undofile = ''
@@ -332,6 +335,16 @@ class GSASII(wx.Frame):
 
     def OnPatternTreeItemActivated(self, event):
         event.Skip()
+        
+    def OnPatternTreeKeyDown(self,event):
+        key = event.GetKeyCode()
+        item = self.PickId
+        if key == wx.WXK_UP:
+            self.oldFocus = self.mainPanel
+            next = self.PatternTree.GetPrevSibling(item)
+        elif key == wx.WXK_DOWN:
+            self.oldFocus = self.mainPanel
+            self.PatternTree.SelectItem(item)
                 
     def OnPwdrRead(self, event):
         self.CheckNotebook()

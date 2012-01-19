@@ -1205,14 +1205,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
             Size = dlg.GetSize()
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
             try:
-                if derivType == 'analytic':
-                    result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
-                        args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
-                    ncyc = int(result[2]['nfev']/2)
-                else:
-                    result = so.leastsq(errPeakProfile,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,
-                        args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
-                    ncyc = int(result[2]['nfev']/len(varyList))
+                result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
+                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
+                ncyc = int(result[2]['nfev']/2)
             finally:
                 dlg.Destroy()
             runtime = time.time()-begin    

@@ -20,6 +20,7 @@ import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIpwd as G2pwd
 import GSASIImapvars as G2mv
+import GSASIImath as G2mth
 import scipy.optimize as so
 
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -1023,7 +1024,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
         cell = Phases[phase]['General']['Cell'][1:7]
         A = G2lat.cell2A(cell)
         pId = Phases[phase]['pId']
-        for histogram in HistoPhase:
+        histoList = HistoPhase.keys()
+        histoList.sort()
+        for histogram in histoList:
             try:
                 Histogram = Histograms[histogram]
             except KeyError:                        
@@ -1122,17 +1125,20 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
     
     def PrintSizeAndSig(hapData,sizeSig):
         line = '\n Size model:     %9s'%(hapData[0])
+        refine = False
         if hapData[0] in ['isotropic','uniaxial']:
             line += ' equatorial:%12.3f'%(hapData[1][0])
             if sizeSig[0][0]:
                 line += ', sig: %8.3f'%(sizeSig[0][0])
+                refine = True
             if hapData[0] == 'uniaxial':
                 line += ' axial:%12.3f'%(hapData[1][1])
                 if sizeSig[0][1]:
+                    refine = True
                     line += ', sig: %8.3f'%(sizeSig[0][1])
-            print line
+            if refine:
+                print line
         else:
-            print line
             Snames = ['S11','S22','S33','S12','S13','S23']
             ptlbls = ' name  :'
             ptstr =  ' value :'
@@ -1141,26 +1147,31 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.6f' % (hapData[4][i])
                 if sizeSig[1][i]:
+                    refine = True
                     sigstr += '%12.6f' % (sizeSig[1][i])
                 else:
                     sigstr += 12*' '
-            print ptlbls
-            print ptstr
-            print sigstr
+            if refine:
+                print line
+                print ptlbls
+                print ptstr
+                print sigstr
         
     def PrintMuStrainAndSig(hapData,mustrainSig,SGData):
         line = '\n Mustrain model: %9s'%(hapData[0])
+        refine = False
         if hapData[0] in ['isotropic','uniaxial']:
             line += ' equatorial:%12.1f'%(hapData[1][0])
             if mustrainSig[0][0]:
                 line += ', sig: %8.1f'%(mustrainSig[0][0])
+                refine = True
             if hapData[0] == 'uniaxial':
                 line += ' axial:%12.1f'%(hapData[1][1])
                 if mustrainSig[0][1]:
                      line += ', sig: %8.1f'%(mustrainSig[0][1])
-            print line
+            if refine:
+                print line
         else:
-            print line
             Snames = G2spc.MustrainNames(SGData)
             ptlbls = ' name  :'
             ptstr =  ' value :'
@@ -1169,29 +1180,35 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.6f' % (hapData[4][i])
                 if mustrainSig[1][i]:
+                    refine = True
                     sigstr += '%12.6f' % (mustrainSig[1][i])
                 else:
                     sigstr += 12*' '
-            print ptlbls
-            print ptstr
-            print sigstr
+            if refine:
+                print line
+                print ptlbls
+                print ptstr
+                print sigstr
             
     def PrintHStrainAndSig(hapData,strainSig,SGData):
-        print '\n Hydrostatic/elastic strain: '
         Hsnames = G2spc.HStrainNames(SGData)
         ptlbls = ' name  :'
         ptstr =  ' value :'
         sigstr = ' sig   :'
+        refine = False
         for i,name in enumerate(Hsnames):
             ptlbls += '%12s' % (name)
             ptstr += '%12.6g' % (hapData[0][i])
             if name in strainSig:
+                refine = True
                 sigstr += '%12.6g' % (strainSig[name])
             else:
                 sigstr += 12*' '
-        print ptlbls
-        print ptstr
-        print sigstr
+        if refine:
+            print '\n Hydrostatic/elastic strain: '
+            print ptlbls
+            print ptstr
+            print sigstr
         
     def PrintSHPOAndSig(hapData,POsig):
         print '\n Spherical harmonics preferred orientation: Order:'+str(hapData[4])
@@ -1213,7 +1230,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
         HistoPhase = Phases[phase]['Histograms']
         SGData = Phases[phase]['General']['SGData']
         pId = Phases[phase]['pId']
-        for histogram in HistoPhase:
+        histoList = HistoPhase.keys()
+        histoList.sort()
+        for histogram in histoList:
             try:
                 Histogram = Histograms[histogram]
             except KeyError:                        
@@ -1411,7 +1430,9 @@ def GetHistogramData(Histograms,Print=True):
     histDict = {}
     histVary = []
     controlDict = {}
-    for histogram in Histograms:
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
         Histogram = Histograms[histogram]
         hId = Histogram['hId']
         pfx = ':'+str(hId)+':'
@@ -1502,17 +1523,20 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
         Back = Background[0]
         Debye = Background[1]
         lenBack = len(Back[3:])
-        print '\n Background function: ',Back[0]
         valstr = ' value : '
         sigstr = ' sig   : '
+        refine = False
         for i,back in enumerate(Back[3:]):
             valstr += '%10.4g'%(back)
             if Back[1]:
+                refine = True
                 sigstr += '%10.4g'%(backSig[i])
             else:
                 sigstr += 10*' '
-        print valstr
-        print sigstr 
+        if refine:
+            print '\n Background function: ',Back[0]
+            print valstr
+            print sigstr 
         if Debye['nDebye']:
             ifAny = False
             ptfmt = "%12.5f"
@@ -1532,32 +1556,36 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                 print sigstr
         
     def PrintInstParmsSig(Inst,instSig):
-        print '\n Instrument Parameters:'
         ptlbls = ' names :'
         ptstr =  ' value :'
         sigstr = ' sig   :'
         instNames = Inst[3][1:]
+        refine = False
         for i,name in enumerate(instNames):
             ptlbls += '%12s' % (name)
             ptstr += '%12.6f' % (Inst[1][i+1])
             if instSig[i+1]:
+                refine = True
                 sigstr += '%12.6f' % (instSig[i+1])
             else:
                 sigstr += 12*' '
-        print ptlbls
-        print ptstr
-        print sigstr
+        if refine:
+            print '\n Instrument Parameters:'
+            print ptlbls
+            print ptstr
+            print sigstr
         
     def PrintSampleParmsSig(Sample,sampleSig):
-        print '\n Sample Parameters:'
         ptlbls = ' names :'
         ptstr =  ' values:'
         sigstr = ' sig   :'
+        refine = False
         if 'Bragg' in Sample['Type']:
             for i,item in enumerate(['Scale','Shift','Transparency']):
                 ptlbls += '%14s'%(item)
                 ptstr += '%14.4f'%(Sample[item][0])
                 if sampleSig[i]:
+                    refine = True
                     sigstr += '%14.4f'%(sampleSig[i])
                 else:
                     sigstr += 14*' '
@@ -1567,15 +1595,20 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                 ptlbls += '%14s'%(item)
                 ptstr += '%14.4f'%(Sample[item][0])
                 if sampleSig[i]:
+                    refine = True
                     sigstr += '%14.4f'%(sampleSig[i])
                 else:
                     sigstr += 14*' '
 
-        print ptlbls
-        print ptstr
-        print sigstr
+        if refine:
+            print '\n Sample Parameters:'
+            print ptlbls
+            print ptstr
+            print sigstr
         
-    for histogram in Histograms:
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
         if 'PWDR' in histogram:
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
@@ -2132,7 +2165,9 @@ def GetFprime(controlDict,Histograms):
     FFtables = controlDict['FFtables']
     if not FFtables:
         return
-    for histogram in Histograms:
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
@@ -2231,7 +2266,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     return yc,yb
     
 def GetFobsSq(Histograms,Phases,parmDict,calcControls):
-    for histogram in Histograms:
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
@@ -2482,7 +2519,9 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
     Histograms,Phases = HistoPhases
     nvar = len(varylist)
     dMdv = np.empty(0)
-    for histogram in Histograms:
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
@@ -2499,6 +2538,36 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 dMdv = dMdvh
     return dMdv
 
+def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
+    parmdict.update(zip(varylist,values))
+    G2mv.Dict2Map(parmdict,varylist)
+    Histograms,Phases = HistoPhases
+    nvar = len(varylist)
+    Hess = np.empty(0)
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            Limits = calcControls[hfx+'Limits']
+            x,y,w,yc,yb,yd = Histogram['Data']
+            dy = y-yc
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])
+            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
+                varylist,Histogram,Phases,calcControls,pawleyLookup)
+            if dlg:
+                dlg.Update(Histogram['wRp'],newmsg='Hessian for histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
+            if len(Hess):
+                Vec += np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
+                Hess += np.inner(dMdvh,dMdvh)
+            else:
+                Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
+                Hess = np.inner(dMdvh,dMdvh)
+    return Vec,Hess
+
 def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
     parmdict.update(zip(varylist,values))
     Values2Dict(parmdict, varylist, values)
@@ -2507,7 +2576,9 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     M = np.empty(0)
     sumwYo = 0
     Nobs = 0
-    for histogram in Histograms:
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
@@ -2530,6 +2601,8 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
             wdy = -np.sqrt(w[xB:xF])*(yd[xB:xF])
             Histogram['wRp'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
+            if dlg:
+                dlg.Update(Histogram['wRp'],newmsg='For histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
             M = np.concatenate((M,wdy))
     Histograms['sumwYo'] = sumwYo
     Histograms['Nobs'] = Nobs
@@ -2583,15 +2656,13 @@ def Refine(GPXfile,dlg):
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
     except:
         print ' *** ERROR - your constraints are internally inconsistent ***'
-        print ' *** Refine aborted ***'
-        raise Exception
+        raise Exception(' *** Refine aborted ***')
     # check to see which generated parameters are fully varied
     msg = G2mv.SetVaryFlags(varyList)
     if msg:
         print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
         print msg
-        print ' *** Refine aborted ***'
-        raise Exception        
+        raise Exception(' *** Refine aborted ***')
     G2mv.Map2Dict(parmDict,varyList)
 #    print G2mv.VarRemapShow(varyList)
 
@@ -2600,11 +2671,16 @@ def Refine(GPXfile,dlg):
         values =  np.array(Dict2Values(parmDict, varyList))
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
-        if Controls['deriv type'] == 'analytic':
+        maxCyc = Controls['max cyc']
+        if 'Jacobian' in Controls['deriv type']:            
             result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-            ncyc = int(result[2]['nfev']/2)                
+            ncyc = int(result[2]['nfev']/2)
+        elif 'Hessian' in Controls['deriv type']:
+            result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            ncyc = result[2]['num cyc']+1                           
         else:           #'numeric'
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
@@ -2621,7 +2697,7 @@ def Refine(GPXfile,dlg):
         print '\n Refinement results:'
         print 135*'-'
         print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
-        print ' Refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+        print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
         print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
         try:
             covMatrix = result[1]*GOF
@@ -2633,12 +2709,17 @@ def Refine(GPXfile,dlg):
             break                   #refinement succeeded - finish up!
         except TypeError:          #result[1] is None on singular matrix
             print '**** Refinement failed - singular matrix ****'
-            Ipvt = result[2]['ipvt']
-            for i,ipvt in enumerate(Ipvt):
-                if not np.sum(result[2]['fjac'],axis=1)[i]:
-                    print 'Removing parameter: ',varyList[ipvt-1]
-                    del(varyList[ipvt-1])
-                    break
+            if 'Hessian' in Controls['deriv type']:
+                for i in result[2]['psing'].reverse():
+                        print 'Removing parameter: ',varyList[i]
+                        del(varyList[i])                    
+            else:
+                Ipvt = result[2]['ipvt']
+                for i,ipvt in enumerate(Ipvt):
+                    if not np.sum(result[2]['fjac'],axis=1)[i]:
+                        print 'Removing parameter: ',varyList[ipvt-1]
+                        del(varyList[ipvt-1])
+                        break
 
 #    print 'dependentParmList: ',G2mv.dependentParmList
 #    print 'arrayList: ',G2mv.arrayList
@@ -2672,7 +2753,8 @@ def Refine(GPXfile,dlg):
 #    cPickle.dump(calcControls,file,1)
 #    cPickle.dump(pawleyLookup,file,1)
 #    file.close()
-    return Rwp
+    if dlg:
+        return Rwp
 
 def SeqRefine(GPXfile,dlg):
     import cPickle
@@ -2756,15 +2838,24 @@ def SeqRefine(GPXfile,dlg):
             values =  np.array(Dict2Values(parmDict, varyList))
             Ftol = Controls['min dM/M']
             Factor = Controls['shift factor']
-            if Controls['deriv type'] == 'analytic':
+            maxCyc = Controls['max cyc']
+
+            if 'Jacobian' in Controls['deriv type']:            
                 result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                     ftol=Ftol,col_deriv=True,factor=Factor,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-                ncyc = int(result[2]['nfev']/2)                
+                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = int(result[2]['nfev']/2)
+            elif 'Hessian' in Controls['deriv type']:
+                result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
+                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                ncyc = result[2]['num cyc']+1                           
             else:           #'numeric'
                 result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/len(varyList))
+
+
+
             runtime = time.time()-begin
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
@@ -2775,7 +2866,7 @@ def SeqRefine(GPXfile,dlg):
             print '\n Refinement results for histogram: v'+histogram
             print 135*'-'
             print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histo['Nobs'],' Number of parameters: ',len(varyList)
-            print ' Refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+            print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
             print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
             try:
                 covMatrix = result[1]*GOF
@@ -2786,12 +2877,17 @@ def SeqRefine(GPXfile,dlg):
                 break                   #refinement succeeded - finish up!
             except TypeError:          #result[1] is None on singular matrix
                 print '**** Refinement failed - singular matrix ****'
-                Ipvt = result[2]['ipvt']
-                for i,ipvt in enumerate(Ipvt):
-                    if not np.sum(result[2]['fjac'],axis=1)[i]:
-                        print 'Removing parameter: ',varyList[ipvt-1]
-                        del(varyList[ipvt-1])
-                        break
+                if 'Hessian' in Controls['deriv type']:
+                    for i in result[2]['psing'].reverse():
+                            print 'Removing parameter: ',varyList[i]
+                            del(varyList[i])                    
+                else:
+                    Ipvt = result[2]['ipvt']
+                    for i,ipvt in enumerate(Ipvt):
+                        if not np.sum(result[2]['fjac'],axis=1)[i]:
+                            print 'Removing parameter: ',varyList[ipvt-1]
+                            del(varyList[ipvt-1])
+                            break
     
         GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))

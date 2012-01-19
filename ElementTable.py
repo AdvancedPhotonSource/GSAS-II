@@ -1,4 +1,4 @@
-#Element table for building periodic table with valences & JMOL colors
+#Element table for building periodic table with valences & JMOL colors 
 import wx        
 #Need these in case go back to this periodic table coloring scheme
 REcolor = wx.Colour(128, 128, 255)

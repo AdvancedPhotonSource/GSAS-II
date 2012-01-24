@@ -35,7 +35,7 @@ import GSASIIsolve as G2sol
 import OpenGL as ogl
 
 #wx inspector - use as needed
-#wxeye.InspectionTool().Show()
+wxInspector = False
 
 # print versions
 print "Available python module versions for GSASII:"
@@ -323,6 +323,8 @@ class GSASII(wx.Frame):
                 pltPlot = pltPage.figure
             item = event.GetItem()
             G2gd.MovePatternTreeToGrid(self,item)
+            if self.oldFocus:
+                self.oldFocus.SetFocus()
         
     def OnPatternTreeItemCollapsed(self, event):
         event.Skip()
@@ -339,12 +341,17 @@ class GSASII(wx.Frame):
     def OnPatternTreeKeyDown(self,event):
         key = event.GetKeyCode()
         item = self.PickId
+        if type(item) is int: return # is this the toplevel in tree?
         if key == wx.WXK_UP:
-            self.oldFocus = self.mainPanel
+            self.oldFocus = wx.Window.FindFocus()
             next = self.PatternTree.GetPrevSibling(item)
+            if next.IsOk(): # test if there is a previous item
+                self.PatternTree.SelectItem(next)
         elif key == wx.WXK_DOWN:
-            self.oldFocus = self.mainPanel
-            self.PatternTree.SelectItem(item)
+            self.oldFocus = wx.Window.FindFocus()
+            next = self.PatternTree.GetNextSibling(item)
+            if next.IsOk(): # test if there is a next item
+                self.PatternTree.SelectItem(next)
                 
     def OnPwdrRead(self, event):
         self.CheckNotebook()
@@ -1616,6 +1623,8 @@ class GSASIImain(wx.App):
 
 def main():
     application = GSASIImain(0)
+    if wxInspector: wxeye.InspectionTool().Show()
+
     #application.main.OnRefine(None)
     application.MainLoop()
     

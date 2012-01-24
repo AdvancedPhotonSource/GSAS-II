@@ -34,7 +34,7 @@ def GetFormFactorCoeff(El):
     """
     ElS = El.upper()
     ElS = ElS.rjust(2)
-    filename = os.path.join(os.path.split(sys.argv[0])[0],'atmdata.dat')
+    filename = os.path.join(os.path.split(__file__)[0],'atmdata.dat')
     try:
         FFdata = open(filename,'Ur')
     except:
@@ -84,7 +84,7 @@ def GetAtomInfo(El):
         ElS = El.upper()[:2].rjust(2)
     else:
         ElS = El.upper()[:1].rjust(2)
-    filename = os.path.join(os.path.split(sys.argv[0])[0],'atmdata.dat')
+    filename = os.path.join(os.path.split(__file__)[0],'atmdata.dat')
     try:
         FFdata = open(filename,'Ur')
     except:
@@ -146,7 +146,7 @@ def GetXsectionCoeff(El):
     C1 = 0.02721
     ElS = El.upper()
     ElS = ElS.ljust(2)
-    filename = os.path.join(os.path.split(sys.argv[0])[0],'Xsect.dat')
+    filename = os.path.join(os.path.split(__file__)[0],'Xsect.dat')
     try:
         xsec = open(filename,'Ur')
     except:
@@ -221,7 +221,7 @@ def GetMagFormFacCoeff(El):
     """
     ElS = El.upper()
     ElS = ElS.rjust(2)
-    filename = os.path.join(os.path.split(sys.argv[0])[0],'atmdata.dat')
+    filename = os.path.join(os.path.split(__file__)[0],'atmdata.dat')
     try:
         FFdata = open(filename,'Ur')
     except:

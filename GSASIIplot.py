@@ -163,7 +163,7 @@ class GSASIItoolbar(Toolbar):
         Toolbar.__init__(self,plotCanvas)
         POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6
         self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
-        help = os.path.join(os.path.split(sys.argv[0])[0],'help.ico')
+        help = os.path.join(os.path.split(__file__)[0],'help.ico')
         self.AddSimpleTool(self.ON_MPL_HELP,_load_bitmap(help),'Help on','Show help on')
         wx.EVT_TOOL(self,self.ON_MPL_HELP,self.OnHelp)
     def OnHelp(self,event):
@@ -746,8 +746,6 @@ def PlotPatterns(self,newPlot=False):
     else:
         Page.canvas.draw()
     self.Pwdr = True
-    if self.oldFocus:
-        self.SetFocus()
     
 def PlotISFG(self,newPlot=False,type=''):
     ''' PLotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 

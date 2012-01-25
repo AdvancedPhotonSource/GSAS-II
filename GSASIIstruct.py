@@ -7,14 +7,12 @@
 # $Id$
 ########### SVN repository information ###################
 import sys
-import os
-import os.path as ospath
 import numpy as np
 import numpy.linalg as nl
-import cPickle
 import time
 import math
 import GSASIIpath
+import GSASIIIO as G2IO
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -38,348 +36,11 @@ def ShowBanner():
     print '            as Operator of Argonne National Laboratory.'
     print 80*'*','\n'
 
-def GetControls(GPXfile):
-    ''' Returns dictionary of control items found in GSASII gpx file
-    input:
-        GPXfile = .gpx full file name
-    return:
-        Controls = dictionary of control items
-    '''
-    Controls = {'deriv type':'analytical','min dM/M':0.0001,'shift factor':1.}
-    file = open(GPXfile,'rb')
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Controls':
-            Controls.update(datum[1])
-    file.close()
-    return Controls
-    
 def ShowControls(Controls):
     print ' Least squares controls:'
     print ' Derivative type: ',Controls['deriv type']
     print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
     print ' Initial shift factor: ','%.3f'%(Controls['shift factor'])
-    
-def GetConstraints(GPXfile):
-    constList = []
-    file = open(GPXfile,'rb')
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Constraints':
-            constDict = datum[1]
-            for item in constDict:
-                constList += constDict[item]
-    file.close()
-    constDict = []
-    constFlag = []
-    fixedList = []
-    for item in constList:
-        if item[-2]:
-            fixedList.append(str(item[-2]))
-        else:
-            fixedList.append('0')
-        if item[-1]:
-            constFlag.append(['VARY'])
-        else:
-            constFlag.append([])
-        itemDict = {}
-        for term in item[:-2]:
-            itemDict[term[1]] = term[0]
-        constDict.append(itemDict)
-    return constDict,constFlag,fixedList
-    
-def GetPhaseNames(GPXfile):
-    ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
-    input: 
-        GPXfile = gpx full file name
-    return: 
-        PhaseNames = list of phase names
-    '''
-    file = open(GPXfile,'rb')
-    PhaseNames = []
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        if 'Phases' == datum[0]:
-            for datus in data[1:]:
-                PhaseNames.append(datus[0])
-    file.close()
-    return PhaseNames
-
-def GetAllPhaseData(GPXfile,PhaseName):
-    ''' Returns the entire dictionary for PhaseName from GSASII gpx file
-    input:
-        GPXfile = gpx full file name
-        PhaseName = phase name
-    return:
-        phase dictionary
-    '''        
-    file = open(GPXfile,'rb')
-    General = {}
-    Atoms = []
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        if 'Phases' == datum[0]:
-            for datus in data[1:]:
-                if datus[0] == PhaseName:
-                    break
-    file.close()
-    return datus[1]
-    
-def GetHistograms(GPXfile,hNames):
-    """ Returns a dictionary of histograms found in GSASII gpx file
-    input: 
-        GPXfile = .gpx full file name
-        hNames = list of histogram names 
-    return: 
-        Histograms = dictionary of histograms (types = PWDR & HKLF)
-    """
-    file = open(GPXfile,'rb')
-    Histograms = {}
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        hist = datum[0]
-        if hist in hNames:
-            if 'PWDR' in hist[:4]:
-                PWDRdata = {}
-                PWDRdata['Data'] = datum[1][1]          #powder data arrays
-                PWDRdata[data[2][0]] = data[2][1]       #Limits
-                PWDRdata[data[3][0]] = data[3][1]       #Background
-                PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
-                PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
-                try:
-                    PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
-                except IndexError:
-                    PWDRdata['Reflection lists'] = {}
-    
-                Histograms[hist] = PWDRdata
-            elif 'HKLF' in hist[:4]:
-                HKLFdata = []
-                datum = data[0]
-                HKLFdata = datum[1:][0]
-                Histograms[hist] = HKLFdata           
-    file.close()
-    return Histograms
-    
-def GetHistogramNames(GPXfile,hType):
-    """ Returns a list of histogram names found in GSASII gpx file
-    input: 
-        GPXfile = .gpx full file name
-        hType = list ['PWDR','HKLF'] 
-    return: 
-        HistogramNames = list of histogram names (types = PWDR & HKLF)
-    """
-    file = open(GPXfile,'rb')
-    HistogramNames = []
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0][:4] in hType:
-            HistogramNames.append(datum[0])
-    file.close()
-    return HistogramNames
-    
-def GetUsedHistogramsAndPhases(GPXfile):
-    ''' Returns all histograms that are found in any phase
-    and any phase that uses a histogram
-    input:
-        GPXfile = .gpx full file name
-    return:
-        Histograms = dictionary of histograms as {name:data,...}
-        Phases = dictionary of phases that use histograms
-    '''
-    phaseNames = GetPhaseNames(GPXfile)
-    histoList = GetHistogramNames(GPXfile,['PWDR','HKLF'])
-    allHistograms = GetHistograms(GPXfile,histoList)
-    phaseData = {}
-    for name in phaseNames: 
-        phaseData[name] =  GetAllPhaseData(GPXfile,name)
-    Histograms = {}
-    Phases = {}
-    for phase in phaseData:
-        Phase = phaseData[phase]
-        if Phase['Histograms']:
-            if phase not in Phases:
-                pId = phaseNames.index(phase)
-                Phase['pId'] = pId
-                Phases[phase] = Phase
-            for hist in Phase['Histograms']:
-                if hist not in Histograms:
-                    Histograms[hist] = allHistograms[hist]
-                    #future restraint, etc. histograms here            
-                    hId = histoList.index(hist)
-                    Histograms[hist]['hId'] = hId
-    return Histograms,Phases
-    
-def GPXBackup(GPXfile,makeBack=True):
-    import distutils.file_util as dfu
-    GPXpath,GPXname = ospath.split(GPXfile)
-    if GPXpath == '': GPXpath = '.'
-    Name = ospath.splitext(GPXname)[0]
-    files = os.listdir(GPXpath)
-    last = 0
-    for name in files:
-        name = name.split('.')
-        if len(name) == 3 and name[0] == Name and 'bak' in name[1]:
-            if makeBack:
-                last = max(last,int(name[1].strip('bak'))+1)
-            else:
-                last = max(last,int(name[1].strip('bak')))
-    GPXback = ospath.join(GPXpath,ospath.splitext(GPXname)[0]+'.bak'+str(last)+'.gpx')
-    dfu.copy_file(GPXfile,GPXback)
-    return GPXback
-        
-def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
-    ''' Updates gpxfile from all histograms that are found in any phase
-    and any phase that used a histogram
-    input:
-        GPXfile = .gpx full file name
-        Histograms = dictionary of histograms as {name:data,...}
-        Phases = dictionary of phases that use histograms
-        CovData = dictionary of refined variables, varyList, & covariance matrix
-        makeBack = True if new backup of .gpx file is to be made; else use the last one made
-    '''
-                        
-    GPXback = GPXBackup(GPXfile,makeBack)
-    print '\n',135*'-'
-    print 'Read from file:',GPXback
-    print 'Save to file  :',GPXfile
-    infile = open(GPXback,'rb')
-    outfile = open(GPXfile,'wb')
-    while True:
-        try:
-            data = cPickle.load(infile)
-        except EOFError:
-            break
-        datum = data[0]
-#        print 'read: ',datum[0]
-        if datum[0] == 'Phases':
-            for iphase in range(len(data)):
-                if data[iphase][0] in Phases:
-                    phaseName = data[iphase][0]
-                    data[iphase][1].update(Phases[phaseName])
-        elif datum[0] == 'Covariance':
-            data[0][1] = CovData
-        try:
-            histogram = Histograms[datum[0]]
-#            print 'found ',datum[0]
-            data[0][1][1] = histogram['Data']
-            for datus in data[1:]:
-#                print '    read: ',datus[0]
-                if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
-                    datus[1] = histogram[datus[0]]
-        except KeyError:
-            pass
-                                
-        cPickle.dump(data,outfile,1)
-    infile.close()
-    outfile.close()
-    print 'refinement save successful'
-    
-def SetSeqResult(GPXfile,Histograms,SeqResult):
-    GPXback = GPXBackup(GPXfile)
-    print '\n',135*'-'
-    print 'Read from file:',GPXback
-    print 'Save to file  :',GPXfile
-    infile = open(GPXback,'rb')
-    outfile = open(GPXfile,'wb')
-    while True:
-        try:
-            data = cPickle.load(infile)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Sequental results':
-            data[0][1] = SeqResult
-        try:
-            histogram = Histograms[datum[0]]
-            data[0][1][1] = histogram['Data']
-            for datus in data[1:]:
-                if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
-                    datus[1] = histogram[datus[0]]
-        except KeyError:
-            pass
-                                
-        cPickle.dump(data,outfile,1)
-    infile.close()
-    outfile.close()
-    print 'refinement save successful'
-    
-                    
-def GetPWDRdata(GPXfile,PWDRname):
-    ''' Returns powder data from GSASII gpx file
-    input: 
-        GPXfile = .gpx full file name
-        PWDRname = powder histogram name as obtained from GetHistogramNames
-    return: 
-        PWDRdata = powder data dictionary with:
-            Data - powder data arrays, Limits, Instrument Parameters, Sample Parameters
-        
-    '''
-    file = open(GPXfile,'rb')
-    PWDRdata = {}
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == PWDRname:
-            PWDRdata['Data'] = datum[1][1]          #powder data arrays
-            PWDRdata[data[2][0]] = data[2][1]       #Limits
-            PWDRdata[data[3][0]] = data[3][1]       #Background
-            PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
-            PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
-            try:
-                PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
-            except IndexError:
-                PWDRdata['Reflection lists'] = {}
-    file.close()
-    return PWDRdata
-    
-def GetHKLFdata(GPXfile,HKLFname):
-    ''' Returns single crystal data from GSASII gpx file
-    input: 
-        GPXfile = .gpx full file name
-        HKLFname = single crystal histogram name as obtained from GetHistogramNames
-    return: 
-        HKLFdata = single crystal data list of reflections: for each reflection:
-            HKLF = [np.array([h,k,l]),FoSq,sigFoSq,FcSq,Fcp,Fcpp,phase]
-    '''
-    file = open(GPXfile,'rb')
-    HKLFdata = []
-    while True:
-        try:
-            data = cPickle.load(file)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == HKLFname:
-            HKLFdata = datum[1:][0]
-    file.close()
-    return HKLFdata
     
 def GetFFtable(General):
     ''' returns a dictionary of form factor data for atom types found in General
@@ -464,8 +125,7 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',pfx+'A3']                       
     elif SGData['SGLaue'] in ['m3m','m3']:
         return [pfx+'A0',]
-        
-            
+                    
 def GetPhaseData(PhaseData,Print=True):
             
     def PrintFFtable(FFtable):
@@ -654,16 +314,6 @@ def GetPhaseData(PhaseData,Print=True):
                 
     return Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables
     
-def getVCov(varyNames,varyList,covMatrix):
-    vcov = np.zeros((len(varyNames),len(varyNames)))
-    for i1,name1 in enumerate(varyNames):
-        for i2,name2 in enumerate(varyNames):
-            try:
-                vcov[i1][i2] = covMatrix[varyList.index(name1)][varyList.index(name2)]
-            except ValueError:
-                vcov[i1][i2] = 0.0
-    return vcov
-    
 def cellFill(pfx,SGData,parmDict,sigDict): 
     if SGData['SGLaue'] in ['-1',]:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
@@ -720,7 +370,7 @@ def getCellEsd(pfx,SGData,A,covData):
     RMnames = [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
     varyList = covData['varyList']
     covMatrix = covData['covMatrix']
-    vcov = getVCov(RMnames,varyList,covMatrix)
+    vcov = G2mth.getVCov(RMnames,varyList,covMatrix)
     Ax = np.array(A)
     Ax[3:] /= 2.
     drVdA = np.array([Ax[1]*Ax[2]-Ax[5]**2,Ax[0]*Ax[2]-Ax[4]**2,Ax[0]*Ax[1]-Ax[3]**2,
@@ -2616,7 +2266,6 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     
                     
 def Refine(GPXfile,dlg):
-    import cPickle
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
@@ -2625,10 +2274,10 @@ def Refine(GPXfile,dlg):
     parmDict = {}
     calcControls = {}
     G2mv.InitVars()    
-    Controls = GetControls(GPXfile)
+    Controls = G2IO.GetControls(GPXfile)
     ShowControls(Controls)            
-    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
-    Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
+    constrDict,constrFlag,fixedList = G2IO.GetConstraints(GPXfile)
+    Histograms,Phases = G2IO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
         print ' *** Refine aborted ***'
@@ -2740,8 +2389,10 @@ def Refine(GPXfile,dlg):
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict)
-    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
+    G2IO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
+    
 #for testing purposes!!!
+#    import cPickle
 #    file = open('structTestdata.dat','wb')
 #    cPickle.dump(parmDict,file,1)
 #    cPickle.dump(varyList,file,1)
@@ -2753,21 +2404,21 @@ def Refine(GPXfile,dlg):
 #    cPickle.dump(calcControls,file,1)
 #    cPickle.dump(pawleyLookup,file,1)
 #    file.close()
+
     if dlg:
         return Rwp
 
 def SeqRefine(GPXfile,dlg):
-    import cPickle
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
     ShowBanner()
     print ' Sequential Refinement'
     G2mv.InitVars()    
-    Controls = GetControls(GPXfile)
+    Controls = G2IO.GetControls(GPXfile)
     ShowControls(Controls)            
-    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
-    Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
+    constrDict,constrFlag,fixedList = G2IO.GetConstraints(GPXfile)
+    Histograms,Phases = G2IO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
         print ' *** Refine aborted ***'
@@ -2780,7 +2431,7 @@ def SeqRefine(GPXfile,dlg):
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:
-        histNames = GetHistogramNames(GPXfile,['PWDR',])
+        histNames = G2IO.GetHistogramNames(GPXfile,['PWDR',])
     if 'Reverse Seq' in Controls:
         if Controls['Reverse Seq']:
             histNames.reverse()
@@ -2898,10 +2549,115 @@ def SeqRefine(GPXfile,dlg):
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint)
         SeqResult[histogram] = covData
-        SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,covData,makeBack)
+        G2IO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,covData,makeBack)
         makeBack = False
-    SetSeqResult(GPXfile,Histograms,SeqResult)
+    G2IO.SetSeqResult(GPXfile,Histograms,SeqResult)
 
+def DistAngle(DisAglData):
+    import numpy.ma as ma
+    
+    def ShowBanner(name):
+        print 80*'*'
+        print '   Interatomic Distances and Angles for phase '+name
+        print 80*'*','\n'
+
+    ShowBanner(DisAglData['Name'])
+    SGData = DisAglData['SGData']
+    SGtext = G2spc.SGPrint(SGData)
+    for line in SGtext: print line
+    Cell = DisAglData['Cell']
+    
+    Amat,Bmat = G2lat.cell2AB(Cell[:6])
+    if 'covData' in DisAglData:   
+        covData = DisAglData['covData']
+        pfx = str(DisAglData['pId'])+'::'
+        A = G2lat.cell2A(Cell[:6])
+        cellSig = getCellEsd(pfx,SGData,A,covData)
+        names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
+        valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
+        line = '\n Unit cell:'
+        for name,vals in zip(names,valEsd):
+            line += name+vals  
+        print line
+    else:
+        print '\n Unit cell: a = ','%.5f'%(Cell[0]),' b = ','%.5f'%(Cell[1]),' c = ','%.5f'%(Cell[2]), \
+            ' alpha = ','%.3f'%(Cell[3]),' beta = ','%.3f'%(Cell[4]),' gamma = ', \
+            '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
+    Factor = DisAglData['Factors']
+    Radii = dict(zip(DisAglData['AtomTypes'],zip(DisAglData['BondRadii'],DisAglData['AngleRadii'])))
+    Units = np.array([                   #is there a nicer way to make this?
+        [-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
+        [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,0],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
+        [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]])
+    origAtoms = zip(DisAglData['OrigIndx'],DisAglData['OrigAtoms'])
+    targAtoms = DisAglData['TargAtoms']
+    for Oatom in origAtoms:
+        Dist = []
+        Vect = []
+        for Tatom in targAtoms:
+            result = G2spc.GenAtom(Tatom[2:5],SGData,False)
+            BsumR = (Radii[Oatom[1][1]][0]+Radii[Tatom[1]][0])*Factor[0]
+            AsumR = (Radii[Oatom[1][1]][1]+Radii[Tatom[1]][1])*Factor[1]
+            for Txyz,Top,Tunit in result:
+                Dx = (Txyz-np.array(Oatom[1][2:5]))+Units
+                dx = np.inner(Amat,Dx)
+                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+                IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
+                IndA = ma.nonzero(ma.masked_greater(dist-AsumR,0.))
+                if np.any(IndB):
+                    for indb in IndB:
+                        Dist.append([Oatom[1][0],Tatom[0],Tunit,Top,ma.getdata(dist[indb])])
+                        Vect += dx.T[indb]
+        
+        for dist in Dist:
+            print dist
+            
+        for vect in Vect:
+            print vect
+            
+                 
+
+#    def FindBonds():                    #uses numpy & masks - very fast even for proteins!
+#        import numpy.ma as ma
+#        atomData = data['Atoms']
+#        generalData = data['General']
+#        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+#        radii = generalData['BondRadii']
+#        atomTypes = generalData['AtomTypes']
+#        try:
+#            indH = atomTypes.index('H')
+#            radii[indH] = 0.5
+#        except:
+#            pass            
+#        for atom in atomData:
+#            atom[-2] = []               #clear out old bond/angle tables
+#            atom[-1] = []
+#        Indx = range(len(atomData))
+#        Atoms = []
+#        Radii = []
+#        for atom in atomData:
+#            Atoms.append(np.array(atom[cx:cx+3]))
+#            try:
+#                if not hydro and atom[ct] == 'H':
+#                    Radii.append(0.0)
+#                else:
+#                    Radii.append(radii[atomTypes.index(atom[ct])])
+#            except ValueError:          #changed atom type!
+#                Radii.append(0.20)
+#        Atoms = np.array(Atoms)
+#        Radii = np.array(Radii)
+#        IASR = zip(Indx,Atoms,Radii)
+#        for atomA in IASR:
+#                Dx = Atoms-atomA[1]
+#                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of self & disorder "bonds" < 0.5A
+#                sumR = atomA[3]+Radii
+#                IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR,0.))                 #get indices of bonded atoms
+#                i = atomA[0]
+#                for j in IndB[0]:
+#                    if j > i:
+#                        atomData[i][-2].append(Dx[j]*Radii[i]/sumR[j])
+#                        atomData[j][-2].append(-Dx[j]*Radii[j]/sumR[j])
+#                        
 
 def main():
     arg = sys.argv

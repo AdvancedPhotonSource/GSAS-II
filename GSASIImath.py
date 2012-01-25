@@ -132,3 +132,36 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
         psing = list(np.where(np.diag(nl.gr(Amat)[1]) < 1.e-14)[0])
         return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}] 
     
+def getVCov(varyNames,varyList,covMatrix):
+    vcov = np.zeros((len(varyNames),len(varyNames)))
+    for i1,name1 in enumerate(varyNames):
+        for i2,name2 in enumerate(varyNames):
+            try:
+                vcov[i1][i2] = covMatrix[varyList.index(name1)][varyList.index(name2)]
+            except ValueError:
+                vcov[i1][i2] = 0.0
+    return vcov
+    
+def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
+    # returns value(esd) string; nTZ=True for no trailing zeros
+    # use esd < 0 for level of precision shown e.g. esd=-0.01 gives 2 places beyond decimal
+    #get the 2 significant digits in the esd 
+    edig = lambda esd: int(round(10**(math.log10(esd) % 1+1)))
+    #get the number of digits to represent them 
+    epl = lambda esd: 2+int(1.545-math.log10(10*edig(esd)))
+    
+    mdec = lambda esd: -int(round(math.log10(abs(esd))))+1
+    ndec = lambda esd: int(1.545-math.log10(abs(esd)))
+    if esd > 0:
+        fmt = '"%.'+str(ndec(esd))+'f(%d)"'
+        return str(fmt%(value,int(round(esd*10**(mdec(esd)))))).strip('"')
+    elif esd < 0:
+         return str(round(value,mdec(esd)))
+    else:
+        text = str("%f"%(value))
+        if nTZ:
+            return text.rstrip('0')
+        else:
+            return text
+
+    

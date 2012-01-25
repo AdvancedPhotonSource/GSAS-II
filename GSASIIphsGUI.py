@@ -22,6 +22,7 @@ import GSASIIElem as G2elem
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
+import GSASIIstruct as G2str
 import numpy as np
 import numpy.linalg as nl
 
@@ -131,6 +132,72 @@ class SymOpDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
         self.Destroy()
 
+class DisAglDialog(wx.Dialog):
+    def __init__(self,parent,data):
+        wx.Dialog.__init__(self,parent,-1,'Distance Angle Controls', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.data = data
+        panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(panel,-1,'Controls for phase '+data['Name']),
+            0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
+        mainSizer.Add((10,10),1)
+        
+        radiiSizer = wx.FlexGridSizer(2,3,5,5)
+        radiiSizer.Add(wx.StaticText(panel,-1,' Type'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(panel,-1,'Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(panel,-1,'Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
+        self.objList = {}
+        for id,item in enumerate(self.data['AtomTypes']):
+            radiiSizer.Add(wx.StaticText(panel,-1,' '+item),0,wx.ALIGN_CENTER_VERTICAL)
+            bRadii = wx.TextCtrl(panel,-1,value='%.3f'%(data['BondRadii'][id]),style=wx.TE_PROCESS_ENTER)
+            self.objList[bRadii.GetId()] = ['BondRadii',id]
+            bRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
+            bRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
+            radiiSizer.Add(bRadii,0,wx.ALIGN_CENTER_VERTICAL)
+            aRadii = wx.TextCtrl(panel,-1,value='%.3f'%(data['AngleRadii'][id]),style=wx.TE_PROCESS_ENTER)
+            self.objList[aRadii.GetId()] = ['AngleRadii',id]
+            aRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
+            aRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
+            radiiSizer.Add(aRadii,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(radiiSizer,0,wx.EXPAND)
+        factorSizer = wx.FlexGridSizer(2,2,5,5)
+        Names = ['Bond','Angle']
+        for i,name in enumerate(Names):
+            factorSizer.Add(wx.StaticText(panel,-1,name+' search factor'),0,wx.ALIGN_CENTER_VERTICAL)
+            bondFact = wx.TextCtrl(panel,-1,value='%.3f'%(data['Factors'][i]),style=wx.TE_PROCESS_ENTER)
+            self.objList[bondFact.GetId()] = ['Factors',i]
+            bondFact.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
+            bondFact.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
+            factorSizer.Add(bondFact)
+        mainSizer.Add(factorSizer,0,wx.EXPAND)
+        
+        OkBtn = wx.Button(panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        panel.SetSizer(mainSizer)
+        panel.Fit()
+        self.Fit()
+    
+    def OnRadiiVal(self,event):
+        Obj = event.GetEventObject()
+        item = self.objList[Obj.GetId()]
+        try:
+            self.data[item[0]][item[1]] = float(Obj.GetValue())
+        except ValueError:
+            pass
+        Obj.SetValue("%.3f"%(self.data[item[0]][item[1]]))          #reset in case of error
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        self.Destroy()
+        
 def UpdatePhaseData(self,Item,data,oldPage):
 
     Atoms = []
@@ -713,7 +780,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
-                    FindBonds()
+                    FindBondsDraw()
                     
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -928,6 +995,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
     def AtomTransform(event):
         indx = Atoms.GetSelectedRows()
         if indx:
+            generalData = data['General']
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             cx = colLabels.index('x')
             cuia = colLabels.index('I/A')
@@ -970,6 +1038,38 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 FillAtomsGrid()
             else:
                 Atoms.ForceRefresh()
+
+    def OnDistAngle(event):
+        indx = Atoms.GetSelectedRows()
+        Oxyz = []
+        xyz = []
+        DisAglData = {}
+        if indx:
+            generalData = data['General']
+            DisAglData['OrigIndx'] = indx
+            DisAglData['Name'] = generalData['Name']
+            DisAglData['Factors'] = [0.85,0.85]
+            DisAglData['AtomTypes'] = generalData['AtomTypes']
+            DisAglData['BondRadii'] = generalData['BondRadii']
+            DisAglData['AngleRadii'] = generalData['AngleRadii']
+            DisAglDialog(self,DisAglData).ShowModal()
+            atomData = data['Atoms']
+            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            cx = colLabels.index('x')
+            cn = colLabels.index('Name')
+            for i,atom in enumerate(atomData):
+                xyz.append(atom[cn:cn+2]+atom[cx:cx+3])
+                if i in indx:
+                    Oxyz.append(atom[cn:cn+2]+atom[cx:cx+3])
+            DisAglData['OrigAtoms'] = Oxyz
+            DisAglData['TargAtoms'] = xyz
+            generalData = data['General']
+            DisAglData['SGData'] = generalData['SGData']
+            DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
+            if 'pId' in data:
+                DisAglData['pId'] = data['pId']
+                DisAglData['covData'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
+            G2str.DistAngle(DisAglData)
                 
 #Structure drawing GUI stuff                
 
@@ -1134,7 +1234,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         for r in range(len(atomData)):
                             atomData[r][c] = parms
                             drawAtoms.SetCellValue(r,c,parms)
-                        FindBonds()
+                        FindBondsDraw()
                         G2plt.PlotStructure(self,data)
                     dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Label':
@@ -1176,7 +1276,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             else:
                 if drawAtoms.GetColLabelValue(c) in ['Style','Label']:
                     atomData[r][c] = drawAtoms.GetCellValue(r,c)
-                    FindBonds()
+                    FindBondsDraw()
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
                     color = atomData[r][c]
                     colors = wx.ColourData()
@@ -1254,7 +1354,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 drawAtoms.SetColAttr(c,attr)
         self.dataFrame.setSizePosLeft([600,300])
         
-        FindBonds()
+        FindBondsDraw()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(self,data)
 
@@ -1276,7 +1376,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     atomData[r][cs] = parms
                     drawAtoms.SetCellValue(r,cs,parms)
             dlg.Destroy()
-            FindBonds()
+            FindBondsDraw()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(self,data)
 
@@ -1583,7 +1683,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             atomData[i][-1].append(Dx*atomA[3]/sumR)
                             atomData[j][-1].append(-Dx*atomB[3]/sumR)
                     
-    def FindBonds():                    #uses numpy & masks - very fast even for proteins!
+    def FindBondsDraw():                    #uses numpy & masks - very fast even for proteins!
         import numpy.ma as ma
         cx,ct,cs = data['Drawing']['atomPtrs']
         hydro = data['Drawing']['showHydrogen']
@@ -1750,7 +1850,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
 
         def OnShowHyd(event):
             drawingData['showHydrogen'] = showHydrogen.GetValue()
-            FindBonds()
+            FindBondsDraw()
             G2plt.PlotStructure(self,data)
 
         def OnSizeHatoms(event):
@@ -1769,7 +1869,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 value = 0.85
             drawingData['radiusFactor'] = value
             radFactor.SetValue("%.2f"%(value))
-            FindBonds()
+            FindBondsDraw()
             G2plt.PlotStructure(self,data)
 
         dataDisplay = wx.Panel(drawOptions)
@@ -2923,6 +3023,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
             self.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
             self.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
+            self.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
             FillAtomsGrid()
         elif text == 'General':
             UpdateGeneral()

@@ -725,8 +725,6 @@ def UpdateControls(self,data):
     #Fourier controls
     'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
     'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],
-    #distance/angle controls
-    'distMax':0.0,'angleMax':0.0,'useMapPeaks':False}
     '''
     def SeqSizer():
         
@@ -841,9 +839,6 @@ def UpdateControls(self,data):
         
     mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Density Map Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
 
-    mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Distance/angle Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
-        
     mainSizer.Layout()    
     self.dataDisplay.SetSizer(mainSizer)
     self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))

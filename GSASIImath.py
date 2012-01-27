@@ -15,6 +15,7 @@ import cPickle
 import time
 import math
 import GSASIIpath
+import GSASIIspc as G2spc
 import scipy.optimize as so
 import scipy.linalg as sl
 
@@ -22,6 +23,7 @@ sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
+acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
@@ -141,6 +143,102 @@ def getVCov(varyNames,varyList,covMatrix):
             except ValueError:
                 vcov[i1][i2] = 0.0
     return vcov
+    
+def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
+    
+    def calcDist(Ox,Tx,U,inv,C,M,T,Amat):
+        TxT = inv*(np.inner(M,Tx)+T)+C
+        TxT = G2spc.MoveToUnitCell(TxT)+U
+        return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
+        
+    inv = 1
+    if Top < 0:
+        inv = -1
+    cent = abs(Top)/100
+    op = abs(Top)%100-1
+    M,T = SGData['SGOps'][op]
+    C = SGData['SGCen'][cent]
+    dx = .00001
+    deriv = np.zeros(6)
+    for i in [0,1,2]:
+        Oxyz[i] += dx
+        d0 = calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)
+        Oxyz[i] -= 2*dx
+        deriv[i] = (calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)-d0)/(2.*dx)
+        Oxyz[i] += dx
+        Txyz[i] += dx
+        d0 = calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)
+        Txyz[i] -= 2*dx
+        deriv[i+3] = (calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)-d0)/(2.*dx)
+        Txyz[i] += dx
+    return deriv
+    
+def getAngSig(VA,VB,Amat,SGData,covData={}):
+    
+    def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
+        TxT = inv*(np.inner(M,Tx)+T)+C
+        TxT = G2spc.MoveToUnitCell(TxT)+U
+        return np.inner(Amat,(TxT-Ox))
+        
+    def calcAngle(Ox,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat):
+        VecA = calcVec(Ox,TxA,unitA,invA,CA,MA,TA,Amat)
+        VecA /= np.sqrt(np.sum(VecA**2))
+        VecB = calcVec(Ox,TxB,unitB,invB,CB,MB,TB,Amat)
+        VecB /= np.sqrt(np.sum(VecB**2))
+        edge = VecB-VecA
+        edge = np.sum(edge**2)
+        angle = (2.-edge)/2.
+        angle = max(angle,-1.)
+        return acosd(angle)
+        
+    OxAN,OxA,TxAN,TxA,unitA,TopA = VA
+    OxBN,OxB,TxBN,TxB,unitB,TopB = VB
+    invA = invB = 1
+    if TopA < 0:
+        invA = -1
+    if TopB < 0:
+        invB = -1
+    centA = abs(TopA)/100
+    centB = abs(TopB)/100
+    opA = abs(TopA)%100-1
+    opB = abs(TopB)%100-1
+    MA,TA = SGData['SGOps'][opA]
+    MB,TB = SGData['SGOps'][opB]
+    CA = SGData['SGCen'][centA]
+    CB = SGData['SGCen'][centB]
+    if 'covMatrix' in covData:
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        AngVcov = getVCov(OxAN+TxAN+TxBN,varyList,covMatrix)
+        dx = .00001
+        dadx = np.zeros(9)
+        Ang = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
+        for i in [0,1,2]:
+            OxA[i] += dx
+            a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
+            OxA[i] -= 2*dx
+            dadx[i] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/dx
+            OxA[i] += dx
+            
+            TxA[i] += dx
+            a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
+            TxA[i] -= 2*dx
+            dadx[i+3] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/dx
+            TxA[i] += dx
+            
+            TxB[i] += dx
+            a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
+            TxB[i] -= 2*dx
+            dadx[i+6] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/dx
+            TxB[i] += dx
+            
+        sigAng = np.sqrt(np.inner(dadx,np.inner(AngVcov,dadx)))
+        if sigAng < 0.01:
+            sigAng = 0.0
+        return Ang,sigAng
+    else:
+        return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
+        
     
 def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
     # returns value(esd) string; nTZ=True for no trailing zeros

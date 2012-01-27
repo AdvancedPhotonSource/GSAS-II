@@ -25,6 +25,7 @@ sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
+acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 
@@ -2568,8 +2569,11 @@ def DistAngle(DisAglData):
     Cell = DisAglData['Cell']
     
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
+    covData = {}
     if 'covData' in DisAglData:   
         covData = DisAglData['covData']
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
         pfx = str(DisAglData['pId'])+'::'
         A = G2lat.cell2A(Cell[:6])
         cellSig = getCellEsd(pfx,SGData,A,covData)
@@ -2579,7 +2583,7 @@ def DistAngle(DisAglData):
         for name,vals in zip(names,valEsd):
             line += name+vals  
         print line
-    else:
+    else: 
         print '\n Unit cell: a = ','%.5f'%(Cell[0]),' b = ','%.5f'%(Cell[1]),' c = ','%.5f'%(Cell[2]), \
             ' alpha = ','%.3f'%(Cell[3]),' beta = ','%.3f'%(Cell[4]),' gamma = ', \
             '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
@@ -2589,76 +2593,87 @@ def DistAngle(DisAglData):
         [-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
         [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,0],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
         [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]])
-    origAtoms = zip(DisAglData['OrigIndx'],DisAglData['OrigAtoms'])
+    origAtoms = DisAglData['OrigAtoms']
     targAtoms = DisAglData['TargAtoms']
     for Oatom in origAtoms:
+        OxyzNames = ''
+        IndBlist = []
         Dist = []
         Vect = []
+        VectA = []
+        angles = []
         for Tatom in targAtoms:
-            result = G2spc.GenAtom(Tatom[2:5],SGData,False)
-            BsumR = (Radii[Oatom[1][1]][0]+Radii[Tatom[1]][0])*Factor[0]
-            AsumR = (Radii[Oatom[1][1]][1]+Radii[Tatom[1]][1])*Factor[1]
+            Xvcov = []
+            TxyzNames = ''
+            if 'covData' in DisAglData:
+                OxyzNames = [pfx+'dAx:%d'%(Oatom[0]),pfx+'dAy:%d'%(Oatom[0]),pfx+'dAz:%d'%(Oatom[0])]
+                TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
+                Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
+            result = G2spc.GenAtom(Tatom[3:6],SGData,False)
+            BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]
+            AsumR = (Radii[Oatom[2]][1]+Radii[Tatom[2]][1])*Factor[1]
             for Txyz,Top,Tunit in result:
-                Dx = (Txyz-np.array(Oatom[1][2:5]))+Units
+                Dx = (Txyz-np.array(Oatom[3:6]))+Units
                 dx = np.inner(Amat,Dx)
                 dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
                 IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
-                IndA = ma.nonzero(ma.masked_greater(dist-AsumR,0.))
                 if np.any(IndB):
                     for indb in IndB:
-                        Dist.append([Oatom[1][0],Tatom[0],Tunit,Top,ma.getdata(dist[indb])])
-                        Vect += dx.T[indb]
+                        for i in range(len(indb)):
+                            if str(dx.T[indb][i]) not in IndBlist:
+                                IndBlist.append(str(dx.T[indb][i]))
+                                unit = Units[indb][i]
+                                tunit = '[%2d%2d%2d]'%(unit[0],unit[1],unit[2])
+                                pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
+                                sig = 0.0
+                                if len(Xvcov):
+                                    sig = np.sqrt(np.inner(pdpx,np.inner(Xvcov,pdpx)))
+                                Dist.append([Oatom[1],Tatom[1],tunit,Top,ma.getdata(dist[indb])[i],sig])
+                                if (Dist[-1][-1]-AsumR) <= 0.:
+                                    Vect.append(dx.T[indb][i]/Dist[-1][-2])
+                                    VectA.append([OxyzNames,np.array(Oatom[3:6]),TxyzNames,np.array(Tatom[3:6]),unit,Top])
+                                else:
+                                    Vect.append([0.,0.,0.])
+                                    VectA.append([])
+        Vect = np.array(Vect)
+        angles = np.zeros((len(Vect),len(Vect)))
+        angsig = np.zeros((len(Vect),len(Vect)))
+        for i,veca in enumerate(Vect):
+            if np.any(veca):
+                for j,vecb in enumerate(Vect):
+                    if np.any(vecb):
+                        angles[i][j],angsig[i][j] = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
+        line = ''
+        for i,x in enumerate(Oatom[3:6]):
+            if len(Xvcov):
+                line += '%12s'%(G2mth.ValEsd(x,np.sqrt(Xvcov[i][i]),True))
+            else:
+                line += '%12.5f'%(x)
+        print '\n Distances & angles for ',Oatom[1],' at ',line
+        print 80*'*'
+        line = ''
+        for dist in Dist[:-1]:
+            line += '%12s'%(dist[1].center(12))
+        print '  To       cell +(sym. op.)      dist.  ',line
+        for i,dist in enumerate(Dist):
+            line = ''
+            for j,angle in enumerate(angles[i][0:i]):
+                sig = angsig[i][j]
+                if angle:
+                    if sig:
+                        line += '%12s'%(G2mth.ValEsd(angle,sig,True).center(12))
+                    else:
+                        val = '%.3f'%(angle)
+                        line += '%12s'%(val.center(12))
+                else:
+                    line += 12*' '
+            if dist[5]:            #sig exists!
+                val = G2mth.ValEsd(dist[4],dist[5])
+            else:
+                val = '%8.4f'%(dist[4])
+            print '  %8s%10s+(%4d) %12s'%(dist[1].ljust(8),dist[2].ljust(10),dist[3],val.center(12)),line
         
-        for dist in Dist:
-            print dist
             
-        for vect in Vect:
-            print vect
-            
-                 
-
-#    def FindBonds():                    #uses numpy & masks - very fast even for proteins!
-#        import numpy.ma as ma
-#        atomData = data['Atoms']
-#        generalData = data['General']
-#        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-#        radii = generalData['BondRadii']
-#        atomTypes = generalData['AtomTypes']
-#        try:
-#            indH = atomTypes.index('H')
-#            radii[indH] = 0.5
-#        except:
-#            pass            
-#        for atom in atomData:
-#            atom[-2] = []               #clear out old bond/angle tables
-#            atom[-1] = []
-#        Indx = range(len(atomData))
-#        Atoms = []
-#        Radii = []
-#        for atom in atomData:
-#            Atoms.append(np.array(atom[cx:cx+3]))
-#            try:
-#                if not hydro and atom[ct] == 'H':
-#                    Radii.append(0.0)
-#                else:
-#                    Radii.append(radii[atomTypes.index(atom[ct])])
-#            except ValueError:          #changed atom type!
-#                Radii.append(0.20)
-#        Atoms = np.array(Atoms)
-#        Radii = np.array(Radii)
-#        IASR = zip(Indx,Atoms,Radii)
-#        for atomA in IASR:
-#                Dx = Atoms-atomA[1]
-#                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of self & disorder "bonds" < 0.5A
-#                sumR = atomA[3]+Radii
-#                IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR,0.))                 #get indices of bonded atoms
-#                i = atomA[0]
-#                for j in IndB[0]:
-#                    if j > i:
-#                        atomData[i][-2].append(Dx[j]*Radii[i]/sumR[j])
-#                        atomData[j][-2].append(-Dx[j]*Radii[j]/sumR[j])
-#                        
-
 def main():
     arg = sys.argv
     if len(arg) > 1:

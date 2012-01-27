@@ -192,6 +192,9 @@ class DisAglDialog(wx.Dialog):
             pass
         Obj.SetValue("%.3f"%(self.data[item[0]][item[1]]))          #reset in case of error
         
+    def getData(self):
+        return self.Data
+        
     def OnOk(self,event):
         parent = self.GetParent()
         parent.Raise()
@@ -1058,9 +1061,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
             cx = colLabels.index('x')
             cn = colLabels.index('Name')
             for i,atom in enumerate(atomData):
-                xyz.append(atom[cn:cn+2]+atom[cx:cx+3])
+                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
                 if i in indx:
-                    Oxyz.append(atom[cn:cn+2]+atom[cx:cx+3])
+                    Oxyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
             DisAglData['OrigAtoms'] = Oxyz
             DisAglData['TargAtoms'] = xyz
             generalData = data['General']

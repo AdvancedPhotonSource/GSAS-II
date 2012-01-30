@@ -133,29 +133,47 @@ class SymOpDialog(wx.Dialog):
         self.Destroy()
 
 class DisAglDialog(wx.Dialog):
-    def __init__(self,parent,data):
+    
+    def __default__(self,data,default):
+        if data:
+            self.data = data
+        else:
+            self.data = {}
+            self.data['Name'] = default['Name']
+            self.data['Factors'] = [0.85,0.85]
+            self.data['AtomTypes'] = default['AtomTypes']
+            self.data['BondRadii'] = default['BondRadii']
+            self.data['AngleRadii'] = default['AngleRadii']
+        
+    def __init__(self,parent,data,default):
         wx.Dialog.__init__(self,parent,-1,'Distance Angle Controls', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-        self.data = data
-        panel = wx.Panel(self)
+        self.default = default
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.__default__(data,self.default)
+        self.Draw(self.data)
+                
+    def Draw(self,data):
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(panel,-1,'Controls for phase '+data['Name']),
+        mainSizer.Add(wx.StaticText(self.panel,-1,'Controls for phase '+data['Name']),
             0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
         mainSizer.Add((10,10),1)
         
         radiiSizer = wx.FlexGridSizer(2,3,5,5)
-        radiiSizer.Add(wx.StaticText(panel,-1,' Type'),0,wx.ALIGN_CENTER_VERTICAL)
-        radiiSizer.Add(wx.StaticText(panel,-1,'Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
-        radiiSizer.Add(wx.StaticText(panel,-1,'Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,' Type'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,'Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,'Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
         self.objList = {}
         for id,item in enumerate(self.data['AtomTypes']):
-            radiiSizer.Add(wx.StaticText(panel,-1,' '+item),0,wx.ALIGN_CENTER_VERTICAL)
-            bRadii = wx.TextCtrl(panel,-1,value='%.3f'%(data['BondRadii'][id]),style=wx.TE_PROCESS_ENTER)
+            radiiSizer.Add(wx.StaticText(self.panel,-1,' '+item),0,wx.ALIGN_CENTER_VERTICAL)
+            bRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['BondRadii'][id]),style=wx.TE_PROCESS_ENTER)
             self.objList[bRadii.GetId()] = ['BondRadii',id]
             bRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
             bRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
             radiiSizer.Add(bRadii,0,wx.ALIGN_CENTER_VERTICAL)
-            aRadii = wx.TextCtrl(panel,-1,value='%.3f'%(data['AngleRadii'][id]),style=wx.TE_PROCESS_ENTER)
+            aRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['AngleRadii'][id]),style=wx.TE_PROCESS_ENTER)
             self.objList[aRadii.GetId()] = ['AngleRadii',id]
             aRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
             aRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
@@ -164,23 +182,26 @@ class DisAglDialog(wx.Dialog):
         factorSizer = wx.FlexGridSizer(2,2,5,5)
         Names = ['Bond','Angle']
         for i,name in enumerate(Names):
-            factorSizer.Add(wx.StaticText(panel,-1,name+' search factor'),0,wx.ALIGN_CENTER_VERTICAL)
-            bondFact = wx.TextCtrl(panel,-1,value='%.3f'%(data['Factors'][i]),style=wx.TE_PROCESS_ENTER)
+            factorSizer.Add(wx.StaticText(self.panel,-1,name+' search factor'),0,wx.ALIGN_CENTER_VERTICAL)
+            bondFact = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['Factors'][i]),style=wx.TE_PROCESS_ENTER)
             self.objList[bondFact.GetId()] = ['Factors',i]
             bondFact.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
             bondFact.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
             factorSizer.Add(bondFact)
         mainSizer.Add(factorSizer,0,wx.EXPAND)
         
-        OkBtn = wx.Button(panel,-1,"Ok")
+        OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        ResetBtn = wx.Button(self.panel,-1,'Reset')
+        ResetBtn.Bind(wx.EVT_BUTTON, self.OnReset)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
         btnSizer.Add(OkBtn)
-        btnSizer.Add((20,20),1)        
+        btnSizer.Add(ResetBtn)
+        btnSizer.Add((20,20),1)
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-        panel.SetSizer(mainSizer)
-        panel.Fit()
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
         self.Fit()
     
     def OnRadiiVal(self,event):
@@ -192,14 +213,19 @@ class DisAglDialog(wx.Dialog):
             pass
         Obj.SetValue("%.3f"%(self.data[item[0]][item[1]]))          #reset in case of error
         
-    def getData(self):
-        return self.Data
+    def GetData(self):
+        return self.data
         
     def OnOk(self,event):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)              
         self.Destroy()
+        
+    def OnReset(self,event):
+        data = {}
+        self.__default__(data,self.default)
+        self.Draw(self.data)
         
 def UpdatePhaseData(self,Item,data,oldPage):
 
@@ -1047,15 +1073,23 @@ def UpdatePhaseData(self,Item,data,oldPage):
         Oxyz = []
         xyz = []
         DisAglData = {}
+        DisAglCtls = {}
         if indx:
             generalData = data['General']
             DisAglData['OrigIndx'] = indx
-            DisAglData['Name'] = generalData['Name']
-            DisAglData['Factors'] = [0.85,0.85]
-            DisAglData['AtomTypes'] = generalData['AtomTypes']
-            DisAglData['BondRadii'] = generalData['BondRadii']
-            DisAglData['AngleRadii'] = generalData['AngleRadii']
-            DisAglDialog(self,DisAglData).ShowModal()
+            if 'DisAglCtls' in generalData:
+                DisAglCtls = generalData['DisAglCtls']
+#            else:
+#                DisAglCtls['Name'] = generalData['Name']
+#                DisAglCtls['Factors'] = [0.85,0.85]
+#                DisAglCtls['AtomTypes'] = generalData['AtomTypes']
+#                DisAglCtls['BondRadii'] = generalData['BondRadii']
+#                DisAglCtls['AngleRadii'] = generalData['AngleRadii']
+            dlg = DisAglDialog(self,DisAglCtls,generalData)
+            if dlg.ShowModal() == wx.ID_OK:
+                DisAglCtls = dlg.GetData()
+            dlg.Destroy()
+            generalData['DisAglCtls'] = DisAglCtls
             atomData = data['Atoms']
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             cx = colLabels.index('x')
@@ -1072,8 +1106,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
             if 'pId' in data:
                 DisAglData['pId'] = data['pId']
                 DisAglData['covData'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
-            G2str.DistAngle(DisAglData)
-                
+            G2str.DistAngle(DisAglCtls,DisAglData)
+            
 #Structure drawing GUI stuff                
 
     def SetupDrawingData():
@@ -1796,6 +1830,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
         indx = FindAtomIndexByIDs(atomData,IDs)
         for ind in indx:
             atomData[ind][col] = value
+                
+    def OnDrawTorsion(event):
+        indx = drawAtoms.GetSelectedRows()
+        print 'Future torsion calc for atoms',indx
+        
+    def OnDrawDistAngle(event):
+        indx = drawAtoms.GetSelectedRows()
+        print 'Future bond dist/angles for atoms',indx
                 
     def UpdateDrawOptions():
         import copy
@@ -3053,6 +3095,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
             self.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
             self.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
+            self.dataFrame.Bind(wx.EVT_MENU, OnDrawDistAngle, id=G2gd.wxID_DRAWDISAGL)
+            self.dataFrame.Bind(wx.EVT_MENU, OnDrawTorsion, id=G2gd.wxID_DRAWTORSION)
             UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
         elif text == 'Pawley reflections':

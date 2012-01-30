@@ -2554,7 +2554,7 @@ def SeqRefine(GPXfile,dlg):
         makeBack = False
     G2IO.SetSeqResult(GPXfile,Histograms,SeqResult)
 
-def DistAngle(DisAglData):
+def DistAngle(DisAglCtls,DisAglData):
     import numpy.ma as ma
     
     def ShowBanner(name):
@@ -2562,7 +2562,7 @@ def DistAngle(DisAglData):
         print '   Interatomic Distances and Angles for phase '+name
         print 80*'*','\n'
 
-    ShowBanner(DisAglData['Name'])
+    ShowBanner(DisAglCtls['Name'])
     SGData = DisAglData['SGData']
     SGtext = G2spc.SGPrint(SGData)
     for line in SGtext: print line
@@ -2587,8 +2587,8 @@ def DistAngle(DisAglData):
         print '\n Unit cell: a = ','%.5f'%(Cell[0]),' b = ','%.5f'%(Cell[1]),' c = ','%.5f'%(Cell[2]), \
             ' alpha = ','%.3f'%(Cell[3]),' beta = ','%.3f'%(Cell[4]),' gamma = ', \
             '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
-    Factor = DisAglData['Factors']
-    Radii = dict(zip(DisAglData['AtomTypes'],zip(DisAglData['BondRadii'],DisAglData['AngleRadii'])))
+    Factor = DisAglCtls['Factors']
+    Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
     Units = np.array([                   #is there a nicer way to make this?
         [-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
         [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,0],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
@@ -2623,7 +2623,7 @@ def DistAngle(DisAglData):
                             if str(dx.T[indb][i]) not in IndBlist:
                                 IndBlist.append(str(dx.T[indb][i]))
                                 unit = Units[indb][i]
-                                tunit = '[%2d%2d%2d]'%(unit[0],unit[1],unit[2])
+                                tunit = '[%2d%2d%2d]'%(unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
                                 pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
                                 sig = 0.0
                                 if len(Xvcov):

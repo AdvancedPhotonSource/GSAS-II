@@ -292,7 +292,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[]):
                     if np.allclose(newX,X,atol=0.0002):
                         idup = False
                 else:
-                    if True in [np.allclose(newX,X,atol=0.0002) for oldX in XYZEquiv]:
+                    if True in [np.allclose(newX,oldX,atol=0.0002) for oldX in XYZEquiv]:
                         idup = False
                 if All or idup:
                     XYZEquiv.append(newX)

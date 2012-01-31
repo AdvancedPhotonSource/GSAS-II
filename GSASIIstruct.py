@@ -2672,7 +2672,105 @@ def DistAngle(DisAglCtls,DisAglData):
             else:
                 val = '%8.4f'%(dist[4])
             print '  %8s%10s+(%4d) %12s'%(dist[1].ljust(8),dist[2].ljust(10),dist[3],val.center(12)),line
+
+def Torsion(TorsionData):
+
+    def ShowBanner(name):
+        print 80*'*'
+        print '   Torsion angle for phase '+name
+        print 80*'*','\n'
+
+    ShowBanner(TorsionData['Name'])
+    SGData = TorsionData['SGData']
+    SGtext = G2spc.SGPrint(SGData)
+    for line in SGtext: print line
+    Cell = TorsionData['Cell']
+    
+    Amat,Bmat = G2lat.cell2AB(Cell[:6])
+    covData = {}
+    if 'covData' in TorsionData:   
+        covData = TorsionData['covData']
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        pfx = str(TorsionData['pId'])+'::'
+        A = G2lat.cell2A(Cell[:6])
+        cellSig = getCellEsd(pfx,SGData,A,covData)
+        names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
+        valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
+        line = '\n Unit cell:'
+        for name,vals in zip(names,valEsd):
+            line += name+vals  
+        print line
+    else: 
+        print '\n Unit cell: a = ','%.5f'%(Cell[0]),' b = ','%.5f'%(Cell[1]),' c = ','%.5f'%(Cell[2]), \
+            ' alpha = ','%.3f'%(Cell[3]),' beta = ','%.3f'%(Cell[4]),' gamma = ', \
+            '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
+    for atom in TorsionData['Atoms']:
+        print atom
         
+def BestPlane(PlaneData):
+
+    def ShowBanner(name):
+        print 80*'*'
+        print '   Best plane result for phase '+name
+        print 80*'*','\n'
+
+    ShowBanner(PlaneData['Name'])
+
+#    Cell = PlaneData['Cell']    
+#    Amat,Bmat = G2lat.cell2AB(Cell[:6])
+#        
+#    Atoms = PlaneData['Atoms']
+#    sumXYZ = np.zeros(3)
+#    XYZ = []
+#    Natoms = len(Atoms)
+#    for atom in Atoms:
+#        xyz = np.array(atom[3:6])
+#        XYZ.append(xyz)
+#        sumXYZ += xyz
+#    sumXYZ /= Natoms
+#    XYZ = np.array(XYZ)-sumXYZ
+#    XYZ = np.inner(Amat,XYZ).T
+#    Zmat = np.zeros((3,3))
+#    print ' Selected atoms: Cartesian coordinates centered at',sumXYZ
+#    Evec,Emat = nl.eig(Zmat)
+#    Evec = np.sqrt(Evec)/(Natoms-3)
+#    Order = np.argsort(Evec)
+#    print [Evec[Order[i]] for i in [2,1,0]]   
+#    XYZ = np.inner(XYZ,Emat.T).T
+#    XYZ = np.array([XYZ[Order[2]],XYZ[Order[1]],XYZ[Order[0]]]).T
+#    print ' Atoms in Cartesian best plane coordinates:'
+#    for i,xyz in enumerate(XYZ):
+#        print Atoms[i][1],xyz
+
+    Cell = PlaneData['Cell']    
+    Amat,Bmat = G2lat.cell2AB(Cell[:6])        
+    Atoms = PlaneData['Atoms']
+    sumXYZ = np.zeros(3)
+    XYZ = []
+    Natoms = len(Atoms)
+    for atom in Atoms:
+        xyz = np.array(atom[3:6])
+        XYZ.append(xyz)
+        sumXYZ += xyz
+    sumXYZ /= Natoms
+    XYZ = np.array(XYZ)-sumXYZ
+    XYZ = np.inner(Amat,XYZ).T
+    Zmat = np.zeros((3,3))
+    for i,xyz in enumerate(XYZ):
+        Zmat += np.outer(xyz.T,xyz)
+    print ' Selected atoms centered at %10.5f %10.5f %10.5f'%(sumXYZ[0],sumXYZ[1],sumXYZ[2])
+    Evec,Emat = nl.eig(Zmat)
+    Evec = np.sqrt(Evec)/(Natoms-3)
+    Order = np.argsort(Evec)
+    XYZ = np.inner(XYZ,Emat.T).T
+    XYZ = np.array([XYZ[Order[2]],XYZ[Order[1]],XYZ[Order[0]]]).T
+    print ' Atoms in Cartesian best plane coordinates:'
+    print ' Name         X         Y         Z'
+    for i,xyz in enumerate(XYZ):
+        print ' %6s%10.3f%10.3f%10.3f'%(Atoms[i][1].ljust(6),xyz[0],xyz[1],xyz[2])
+    print '\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]])   
+
             
 def main():
     arg = sys.argv

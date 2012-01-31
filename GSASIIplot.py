@@ -2183,28 +2183,41 @@ def PlotStructure(self,data):
         cb.SetValue(' Save as:')
         self.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
     
-    def GetTruePosition(xy):
+    def GetTruePosition(xy,Add=False):
         View = glGetIntegerv(GL_VIEWPORT)
         Proj = glGetDoublev(GL_PROJECTION_MATRIX)
         Model = glGetDoublev(GL_MODELVIEW_MATRIX)
         Zmax = 1.
+        if Add:
+            Indx = GetSelectedAtoms()
         for i,atom in enumerate(drawAtoms):
             x,y,z = atom[cx:cx+3]
             X,Y,Z = gluProject(x,y,z,Model,Proj,View)
             XY = [int(X),int(View[3]-Y)]
             if np.allclose(xy,XY,atol=10) and Z < Zmax:
                 Zmax = Z
-                SetSelectedAtoms(i)
+                try:
+                    Indx.remove(i)
+                    ClearSelectedAtoms()
+                    for id in Indx:
+                        SetSelectedAtoms(id,Add)
+                except:
+                    SetSelectedAtoms(i,Add)
                     
     def OnMouseDown(event):
         xy = event.GetPosition()
         if event.ShiftDown():
-            GetTruePosition(xy)
+            if event.LeftIsDown():
+                GetTruePosition(xy)
+            elif event.RightIsDown():
+                GetTruePosition(xy,True)
         else:
             drawingData['Rotation'][3] = xy
         Draw()
         
     def OnMouseMove(event):
+        if event.ShiftDown():
+            return        
         newxy = event.GetPosition()
         page = getSelection()
         if event.ControlDown() and drawingData['showABC']:
@@ -2216,8 +2229,7 @@ def PlotStructure(self,data):
                 SetTestRotZ(newxy)
             x,y,z = drawingData['testPos'][0]
             self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
-                
-                
+                                
         if event.Dragging() and not event.ControlDown():
             if event.LeftIsDown():
                 SetRotation(newxy)
@@ -2234,6 +2246,8 @@ def PlotStructure(self,data):
         Draw()
         
     def OnMouseWheel(event):
+        if event.ShiftDown():
+            return
         drawingData['cameraPos'] += event.GetWheelRotation()/24
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
         self.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(drawingData['cameraPos']),1)
@@ -2270,11 +2284,11 @@ def PlotStructure(self,data):
             elif self.dataDisplay.GetPageText(page) == 'Atoms':
                 self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
                     
-    def SetSelectedAtoms(ind):
+    def SetSelectedAtoms(ind,Add=False):
         page = getSelection()
         if page:
             if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
-                self.dataDisplay.GetPage(page).SelectRow(ind)      #this is the Atoms grid in Draw Atoms
+                self.dataDisplay.GetPage(page).SelectRow(ind,Add)      #this is the Atoms grid in Draw Atoms
             elif self.dataDisplay.GetPageText(page) == 'Atoms':
                 Id = drawAtoms[ind][-2]
                 for i,atom in enumerate(atomData):

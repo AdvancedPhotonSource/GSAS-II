@@ -1079,12 +1079,6 @@ def UpdatePhaseData(self,Item,data,oldPage):
             DisAglData['OrigIndx'] = indx
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
-#            else:
-#                DisAglCtls['Name'] = generalData['Name']
-#                DisAglCtls['Factors'] = [0.85,0.85]
-#                DisAglCtls['AtomTypes'] = generalData['AtomTypes']
-#                DisAglCtls['BondRadii'] = generalData['BondRadii']
-#                DisAglCtls['AngleRadii'] = generalData['AngleRadii']
             dlg = DisAglDialog(self,DisAglCtls,generalData)
             if dlg.ShowModal() == wx.ID_OK:
                 DisAglCtls = dlg.GetData()
@@ -1833,8 +1827,50 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 
     def OnDrawTorsion(event):
         indx = drawAtoms.GetSelectedRows()
-        print 'Future torsion calc for atoms',indx
+        if len(indx) != 4:
+            print '**** ERROR - need 4 atoms for torsion calculation'
+            return
+        TorsionData = {}
+        drawingData = data['Drawing']
+        atomData = drawingData['Atoms']
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        cn = colLabels.index('Name')
+        xyz = []
+        for i,atom in enumerate(atomData):
+            if i in indx:
+                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
+        TorsionData['Atoms'] = xyz
+        generalData = data['General']
+        TorsionData['Name'] = generalData['Name']
+        TorsionData['SGData'] = generalData['SGData']
+        TorsionData['Cell'] = generalData['Cell'][1:] #+ volume
+        if 'pId' in data:
+            TorsionData['pId'] = data['pId']
+            TorsionData['covData'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
+        G2str.Torsion(TorsionData)
         
+    def OnDrawPlane(event):
+        indx = drawAtoms.GetSelectedRows()
+        if len(indx) < 3:
+            print '**** ERROR - need 3+ atoms for plane calculation'
+            return
+        PlaneData = {}
+        drawingData = data['Drawing']
+        atomData = drawingData['Atoms']
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        cn = colLabels.index('Name')
+        xyz = []
+        for i,atom in enumerate(atomData):
+            if i in indx:
+                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+        generalData = data['General']
+        PlaneData['Name'] = generalData['Name']
+        PlaneData['Atoms'] = xyz
+        PlaneData['Cell'] = generalData['Cell'][1:] #+ volume
+        G2str.BestPlane(PlaneData)
+    
     def OnDrawDistAngle(event):
         indx = drawAtoms.GetSelectedRows()
         print 'Future bond dist/angles for atoms',indx
@@ -3097,6 +3133,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             self.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
             self.dataFrame.Bind(wx.EVT_MENU, OnDrawDistAngle, id=G2gd.wxID_DRAWDISAGL)
             self.dataFrame.Bind(wx.EVT_MENU, OnDrawTorsion, id=G2gd.wxID_DRAWTORSION)
+            self.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
             UpdateDrawAtoms()
             G2plt.PlotStructure(self,data)
         elif text == 'Pawley reflections':

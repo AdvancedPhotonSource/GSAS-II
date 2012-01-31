@@ -45,8 +45,8 @@ htmlFirstUse = True
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
-    wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGL, wxID_DRAWTORSION,
-] = [wx.NewId() for _init_coll_DrawAtom_Items in range(12)]
+    wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGL, wxID_DRAWTORSION, wxID_DRAWPLANE,
+] = [wx.NewId() for _init_coll_DrawAtom_Items in range(13)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
@@ -508,8 +508,10 @@ class DataFrame(wx.Frame):
             help='Delete atoms from drawing set')
         self.DrawAtomCompute.Append(id=wxID_DRAWDISAGL, kind=wx.ITEM_NORMAL,text='Distances & Angles',
             help='Compute distances & angles for selected atoms')   
-        self.DrawAtomCompute.Append(id=wxID_DRAWTORSION, kind=wx.ITEM_NORMAL,text='Torsions',
+        self.DrawAtomCompute.Append(id=wxID_DRAWTORSION, kind=wx.ITEM_NORMAL,text='Torsion angle',
             help='Compute torsion angle for 4 selected atoms')   
+        self.DrawAtomCompute.Append(id=wxID_DRAWPLANE, kind=wx.ITEM_NORMAL,text='Best plane',
+            help='Compute best plane for 3+ selected atoms')   
             
 # end of GSAS-II menu definitions
         

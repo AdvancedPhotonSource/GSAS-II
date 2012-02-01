@@ -681,7 +681,7 @@ def GetTifData(filename,imageOnly=False):
         head = Meta.readlines()
         for line in head:
             line = line.strip()
-            if 'dataType' in line:
+            if 'dataType=' in line:
                 dataType = int(line.split('=')[1])
         Meta.close()
     except IOError:

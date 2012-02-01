@@ -1990,6 +1990,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             colorBar = Page.figure.colorbar(Img)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)
+        Plot.invert_yaxis()
         if not newPlot and xylim:
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])

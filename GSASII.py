@@ -262,7 +262,7 @@ class GSASII(wx.Frame):
         # various defaults
         self.oldFocus = None
         self.GSASprojectfile = ''
-        self.dirname = ''
+        self.dirname = os.getcwd()
         self.undofile = ''
         self.TreeItemDelete = False
         self.Offset = [0.0,0.0]
@@ -302,6 +302,7 @@ class GSASII(wx.Frame):
         if len(arg) > 1:
             self.GSASprojectfile = arg[1]
             self.dirname = ospath.dirname(arg[1])
+            os.chdir(self.dirname)
             G2IO.ProjFileOpen(self)
             self.PatternTree.Expand(self.root)
             self.Refine.Enable(True)
@@ -357,13 +358,13 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose files', '.', '', 
             'GSAS fxye files (*.fxye)|*.fxye|GSAS fxy files (*.fxy)|*.fxy|Topas xye files (*.xye)|*.xye|All files (*.*)|*.*', 
-            wx.OPEN | wx.MULTIPLE)
-        if self.dirname: dlg.SetDirectory(self.dirname)
+            wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR)
+#        if self.dirname: dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filenames = dlg.GetPaths()
                 filenames.sort()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 for filename in filenames:
                     Data,Iparm,Comments,Temperature = G2IO.SelectPowderData(self, filename)              #Data: list of tuples (filename,Pos,Bank)
                     if not Data:                                                    #if Data rejected by user - go to next one
@@ -436,14 +437,14 @@ class GSASII(wx.Frame):
         Cuka = 1.54052
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose file with peak list', '.', '', 
-            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.HKL = []
                 self.powderfile = dlg.GetPath()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 comments,peaks = G2IO.GetPowderPeaks(self.powderfile)
                 Id = self.PatternTree.AppendItem(parent=self.root,text='PKS '+ospath.basename(self.powderfile))
                 data = ['PKS',Cuka,0.0]
@@ -469,12 +470,12 @@ class GSASII(wx.Frame):
         ADSC Image (*.img)|*.img|\
         GSAS-II Image (*.G2img)|*.G2img|\
         All files (*.*)|*.*',
-        wx.OPEN | wx.MULTIPLE)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+        wx.OPEN | wx.MULTIPLE|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 imagefiles = dlg.GetPaths()
                 imagefiles.sort()
                 for imagefile in imagefiles:
@@ -535,12 +536,12 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose file', '.', '', 
             'hkl files (*.hkl)|*.hkl|All files (*.*)|*.*', 
-            wx.OPEN)
-        if self.dirname: dlg.SetDirectory(self.dirname)
+            wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname: dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 wx.BeginBusyCursor()
                 try:
                     Data = {}
@@ -879,10 +880,10 @@ class GSASII(wx.Frame):
                     if Id:
                         dlg = wx.FileDialog(self, 'Choose sum image filename', '.', '', 
                             'G2img files (*.G2img)|*.G2img', 
-                            wx.SAVE|wx.FD_OVERWRITE_PROMPT)
-                        if self.dirname: dlg.SetDirectory(self.dirname)
+                            wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+#                        if self.dirname: dlg.SetDirectory(self.dirname)
                         if dlg.ShowModal() == wx.ID_OK:
-                            self.dirname = dlg.GetDirectory()
+#                            self.dirname = dlg.GetDirectory()
                             newimagefile = dlg.GetPath()
                             G2IO.PutG2Image(newimagefile,Comments,Data,Npix,newImage)
                             Imax = np.amax(newImage)
@@ -1092,8 +1093,8 @@ class GSASII(wx.Frame):
         if result != wx.ID_CANCEL:    
             if self.dataDisplay: self.dataDisplay.Destroy()
             dlg = wx.FileDialog(self, 'Choose GSAS-II project file', '.', '', 
-                'GSAS-II project file (*.gpx)|*.gpx',wx.OPEN)
-            if self.dirname: dlg.SetDirectory(self.dirname)
+                'GSAS-II project file (*.gpx)|*.gpx',wx.OPEN|wx.CHANGE_DIR)
+#            if self.dirname: dlg.SetDirectory(self.dirname)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     self.GSASprojectfile = dlg.GetPath()
@@ -1149,9 +1150,9 @@ class GSASII(wx.Frame):
 
     def OnFileSaveas(self, event):
         dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', '.', '', 
-            'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GSASprojectfile = dlg.GetPath()
@@ -1174,38 +1175,38 @@ class GSASII(wx.Frame):
         
     def OnImportPattern(self,event):
         dlg = wx.FileDialog(self, 'Choose nonGSAS powder file', '.', '', 
-            '(*.*)|*.*',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            '(*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.powderfile = dlg.GetPath()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
         finally:
             dlg.Destroy()
             
     def OnImportHKL(self,event):
         dlg = wx.FileDialog(self, 'Choose structure factor file', '.', '', 
-            '(*.*)|*.*',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            '(*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.HKLfile = dlg.GetPath()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
         finally:
             dlg.Destroy()
         
     def OnImportPhase(self,event):
         dlg = wx.FileDialog(self, 'Choose GSAS EXP file', '.', '', 
-            'EXP file (*.EXP)|*.EXP',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'EXP file (*.EXP)|*.EXP',wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             Phase = {}
             if dlg.ShowModal() == wx.ID_OK:
                 EXPfile = dlg.GetPath()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 Phase = G2IO.ReadEXPPhase(self,EXPfile)
         finally:
             dlg.Destroy()
@@ -1220,13 +1221,13 @@ class GSASII(wx.Frame):
             
     def OnImportPDB(self,event):
         dlg = wx.FileDialog(self, 'Choose PDB file', '.', '', 
-            'PDB file (*.pdb,*.ent)|*.pdb;*.ent|All files (*.*)|*.*',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'PDB file (*.pdb,*.ent)|*.pdb;*.ent|All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 PDBfile = dlg.GetPath()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 Phase = G2IO.ReadPDBPhase(PDBfile)
         finally:
             dlg.Destroy()
@@ -1241,13 +1242,13 @@ class GSASII(wx.Frame):
         
     def OnImportCIF(self,event):
         dlg = wx.FileDialog(self, 'Choose CIF file', '.', '', 
-            'CIF file (*.cif)|*.cif',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'CIF file (*.cif)|*.cif',wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 CIFfile = dlg.GetPath()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 Phase = G2IO.ReadCIFPhase(CIFfile)
         finally:
             dlg.Destroy()
@@ -1282,9 +1283,9 @@ class GSASII(wx.Frame):
         if exports:
             dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
                 'GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye',
-                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-            if self.dirname:
-                dlg.SetDirectory(self.dirname)
+                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+#            if self.dirname:
+#                dlg.SetDirectory(self.dirname)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     powderfile = dlg.GetPath()
@@ -1292,15 +1293,15 @@ class GSASII(wx.Frame):
                         G2IO.powderFxyeSave(self,exports,powderfile)
                     else:       #just xye
                         G2IO.powderXyeSave(self,exports,powderfile)
-                    self.dirname = dlg.GetDirectory()
+#                    self.dirname = dlg.GetDirectory()
             finally:
                 dlg.Destroy()
         
     def OnExportPeakList(self,event):
         dlg = wx.FileDialog(self, 'Choose output peak list file name', '.', '', 
-            '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.peaklistfile = dlg.GetPath()
@@ -1321,7 +1322,7 @@ class GSASII(wx.Frame):
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
         finally:
             dlg.Destroy()
         
@@ -1493,8 +1494,7 @@ class GSASII(wx.Frame):
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(parmTable)
             panel.SetSizer(mainSizer)
-                
-            
+                            
     def OnViewLSParms(self,event):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()

@@ -143,12 +143,13 @@ Change wavelength in Instrument Parameters if needed''','Data type?',
 
 def GetInstrumentFile(self,filename):
     import os.path as op
-    dlg = wx.FileDialog(self,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', wx.OPEN)
-    if self.dirname: 
-        dlg.SetDirectory(self.dirname)
-        Tname = filename[:filename.index('.')]+'.prm'
-        if op.exists(Tname):
-            self.IparmName = Tname        
+    dlg = wx.FileDialog(self,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
+        wx.OPEN|wx.CHANGE_DIR)
+#    if self.dirname: 
+#        dlg.SetDirectory(self.dirname)
+    Tname = filename[:filename.index('.')]+'.prm'
+    if op.exists(Tname):
+        self.IparmName = Tname        
     if self.IparmName: dlg.SetFilename(self.IparmName)
     filename = ''
     try:
@@ -481,13 +482,13 @@ def CheckImageFile(self,imagefile):
         MAR file (*.mar*)|*.mar*|\
         GE Image (*.avg;*.sum)|*.avg;*.sum|\
         ADSC Image (*.img)|*.img|\
-        All files (*.*)|*.*',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+        All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+#        if self.dirname:
+#            dlg.SetDirectory(self.dirname)
         try:
             dlg.SetFilename(ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
-                self.dirname = dlg.GetDirectory()
+#                self.dirname = dlg.GetDirectory()
                 imagefile = dlg.GetPath()
             else:
                 imagefile = False

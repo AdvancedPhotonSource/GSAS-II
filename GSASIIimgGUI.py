@@ -358,9 +358,7 @@ def UpdateImageControls(self,data,masks):
                 
     def OnSaveControls(event):
         dlg = wx.FileDialog(self, 'Choose image controls file', '.', '', 
-            'image control files (*.imctrl)|*.imctrl',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'image control files (*.imctrl)|*.imctrl',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -379,9 +377,7 @@ def UpdateImageControls(self,data,masks):
         cntlList = ['wavelength','distance','tilt','rotation',
             'fullIntegrate','outAzimuths','LRazimuth','IOtth']
         dlg = wx.FileDialog(self, 'Choose image controls file', '.', '', 
-            'image control files (*.imctrl)|*.imctrl',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'image control files (*.imctrl)|*.imctrl',wx.OPEN|wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -794,9 +790,7 @@ def UpdateMasks(self,data):
                 
     def OnSaveMask(event):
         dlg = wx.FileDialog(self, 'Choose image mask file', '.', '', 
-            'image mask files (*.immask)|*.immask',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'image mask files (*.immask)|*.immask',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -811,9 +805,7 @@ def UpdateMasks(self,data):
         
     def OnLoadMask(event):
         dlg = wx.FileDialog(self, 'Choose image mask file', '.', '', 
-            'image mask files (*.immask)|*.immask',wx.OPEN)
-        if self.dirname:
-            dlg.SetDirectory(self.dirname)
+            'image mask files (*.immask)|*.immask',wx.OPEN|wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()

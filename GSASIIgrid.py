@@ -530,7 +530,6 @@ class DataFrame(wx.Frame):
         Size = self.GetSize()
         xPos = clientSize[2]-Size[0]
         self.SetPosition(wx.Point(xPos,clientSize[1]+250))
-        self.dirname = ''
         self.AtomGrid = []
         self.selectedRow = 0
         

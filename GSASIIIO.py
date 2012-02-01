@@ -145,8 +145,6 @@ def GetInstrumentFile(self,filename):
     import os.path as op
     dlg = wx.FileDialog(self,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
         wx.OPEN|wx.CHANGE_DIR)
-#    if self.dirname: 
-#        dlg.SetDirectory(self.dirname)
     Tname = filename[:filename.index('.')]+'.prm'
     if op.exists(Tname):
         self.IparmName = Tname        
@@ -483,12 +481,9 @@ def CheckImageFile(self,imagefile):
         GE Image (*.avg;*.sum)|*.avg;*.sum|\
         ADSC Image (*.img)|*.img|\
         All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
-#        if self.dirname:
-#            dlg.SetDirectory(self.dirname)
         try:
             dlg.SetFilename(ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
-#                self.dirname = dlg.GetDirectory()
                 imagefile = dlg.GetPath()
             else:
                 imagefile = False
@@ -1223,7 +1218,8 @@ def SaveIntegration(self,PickId,data):
         if Id:
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
+            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+                            {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'),[tuple(parms),parms[:],codes,names])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Peak List'),[])
             self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
@@ -1233,7 +1229,8 @@ def SaveIntegration(self,PickId,data):
             Id = self.PatternTree.AppendItem(parent=self.root,text=name+" Azm= %.2f"%(Azms[i]))
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0]])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+                            {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms[:],codes,names])
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])

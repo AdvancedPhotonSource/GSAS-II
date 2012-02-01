@@ -1151,8 +1151,8 @@ class GSASII(wx.Frame):
     def OnFileSaveas(self, event):
         dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', '.', '', 
             'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
-#        if self.dirname:
-#            dlg.SetDirectory(self.dirname)
+        if self.dirname:
+            dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GSASprojectfile = dlg.GetPath()

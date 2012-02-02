@@ -300,7 +300,7 @@ def PlotSngl(self,newPlot=False):
     else:
         Page.canvas.draw()
        
-def PlotPatterns(self,newPlot=False):
+def PlotPatterns(G2frame,newPlot=False):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
     2-theta or q (future TOF). Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
@@ -308,7 +308,7 @@ def PlotPatterns(self,newPlot=False):
     global HKL
     
     def OnKeyBox(event):
-        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('Powder Patterns'):
+        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('Powder Patterns'):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
             OnPlotKeyPress(event)
@@ -316,86 +316,86 @@ def PlotPatterns(self,newPlot=False):
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w':
-            if self.Weight:
-                self.Weight = False
+            if G2frame.Weight:
+                G2frame.Weight = False
             else:
-                self.Weight = True
-            print 'plot weighting:',self.Weight
+                G2frame.Weight = True
+            print 'plot weighting:',G2frame.Weight
         elif event.key == 'n':
-            if self.Contour:
+            if G2frame.Contour:
                 pass
             else:
-                if self.logPlot:
-                    self.logPlot = False
+                if G2frame.logPlot:
+                    G2frame.logPlot = False
                 else:
-                    self.Offset[0] = 0
-                    self.logPlot = True
+                    G2frame.Offset[0] = 0
+                    G2frame.logPlot = True
         elif event.key == 'u':
-            if self.Contour:
-                self.Cmax = min(1.0,self.Cmax*1.2)
-            elif self.logPlot:
+            if G2frame.Contour:
+                G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
+            elif G2frame.logPlot:
                 pass
-            elif self.Offset[0] < 100.:
-                self.Offset[0] += 1.
+            elif G2frame.Offset[0] < 100.:
+                G2frame.Offset[0] += 1.
         elif event.key == 'd':
-            if self.Contour:
-                self.Cmax = max(0.0,self.Cmax*0.8)
-            elif self.logPlot:
+            if G2frame.Contour:
+                G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
+            elif G2frame.logPlot:
                 pass
-            elif self.Offset[0] > 0.:
-                self.Offset[0] -= 1.
+            elif G2frame.Offset[0] > 0.:
+                G2frame.Offset[0] -= 1.
         elif event.key == 'l':
-            self.Offset[1] -= 1.
+            G2frame.Offset[1] -= 1.
         elif event.key == 'r':
-            self.Offset[1] += 1.
+            G2frame.Offset[1] += 1.
         elif event.key == 'o':
-            self.Offset = [0,0]
+            G2frame.Offset = [0,0]
         elif event.key == 'c':
             newPlot = True
-            if self.Contour:
-                self.Contour = False
+            if G2frame.Contour:
+                G2frame.Contour = False
             else:
-                self.Contour = True
-                self.SinglePlot = False
-                self.Offset = [0.,0.]
+                G2frame.Contour = True
+                G2frame.SinglePlot = False
+                G2frame.Offset = [0.,0.]
         elif event.key == 'q':
             newPlot = True
-            if self.qPlot:
-                self.qPlot = False
+            if G2frame.qPlot:
+                G2frame.qPlot = False
             else:
-                self.qPlot = True
+                G2frame.qPlot = True
         elif event.key == 's':
-            if self.Contour:
+            if G2frame.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
                 choice.sort()
-                dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
+                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelection()
-                    self.ContourColor = choice[sel]
+                    G2frame.ContourColor = choice[sel]
                 else:
-                    self.ContourColor = 'Paired'
+                    G2frame.ContourColor = 'Paired'
                 dlg.Destroy()
             else:                
-                if self.SinglePlot:
-                    self.SinglePlot = False
+                if G2frame.SinglePlot:
+                    G2frame.SinglePlot = False
                 else:
-                    self.SinglePlot = True
+                    G2frame.SinglePlot = True
         elif event.key == '+':
-            if self.PickId:
-                self.PickId = False
+            if G2frame.PickId:
+                G2frame.PickId = False
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
                'mitchell','sinc','lanczos']
-            dlg = wx.SingleChoiceDialog(self,'Select','Interpolation',choice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Interpolation',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
-                self.Interpolate = choice[sel]
+                G2frame.Interpolate = choice[sel]
             else:
-                self.Interpolate = 'nearest'
+                G2frame.Interpolate = 'nearest'
             dlg.Destroy()
             
-        PlotPatterns(self,newPlot=newPlot)
+        PlotPatterns(G2frame,newPlot=newPlot)
         
     def OnMotion(event):
         xpos = event.xdata
@@ -403,26 +403,26 @@ def PlotPatterns(self,newPlot=False):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
+                Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[1::2]
                 Parms = dict(zip(Names,Values))
                 try:
                     wave = Parms['Lam']
                 except KeyError:
                     wave = Parms['Lam1']
-                if self.qPlot:
+                if G2frame.qPlot:
                     xpos = 2.0*asind(xpos*wave/(4*math.pi))
                 dsp = 0.0
                 if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                     dsp = wave/(2.*sind(abs(xpos)/2.0))
-                if self.Contour:
-                    self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
+                if G2frame.Contour:
+                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
                 else:
-                    self.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
-                if self.itemPicked:
+                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
+                if G2frame.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
-                if self.PickId:
+                if G2frame.PickId:
                     found = []
-                    if self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List','Reflection Lists']:
+                    if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List','Reflection Lists']:
                         if len(HKL):
                             view = Page.toolbar._views.forward()[0][:2]
                             wid = view[1]-view[0]
@@ -434,13 +434,13 @@ def PlotPatterns(self,newPlot=False):
                             Page.canvas.SetToolTipString('')
 
             except TypeError:
-                self.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',1)
                                                    
     def OnPick(event):
-        if self.itemPicked is not None: return
-        PatternId = self.PatternId
+        if G2frame.itemPicked is not None: return
+        PatternId = G2frame.PatternId
         try:
-            Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
+            Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[1::2]
         except TypeError:
             return
         Parms = dict(zip(Names,Values))
@@ -448,101 +448,101 @@ def PlotPatterns(self,newPlot=False):
             wave = Parms['Lam']
         except KeyError:
             wave = Parms['Lam1']
-        PickId = self.PickId
+        PickId = G2frame.PickId
         pick = event.artist
         mouse = event.mouseevent       
         xpos = pick.get_xdata()
         ypos = pick.get_ydata()
         ind = event.ind
         xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
-        if self.PatternTree.GetItemText(PickId) == 'Peak List':
+        if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
                     ins = [Parms[x] for x in ['U','V','W','X','Y']]
-                    if self.qPlot:                              #qplot - convert back to 2-theta
+                    if G2frame.qPlot:                              #qplot - convert back to 2-theta
                         xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                     sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
                     gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
-                    data = self.PatternTree.GetItemPyData(self.PickId)
+                    data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
                     XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
                 data.append(XY)
-                G2pdG.UpdatePeakGrid(self,data)
-                PlotPatterns(self)
+                G2pdG.UpdatePeakGrid(G2frame,data)
+                PlotPatterns(G2frame)
             else:                                                   #picked a peak list line
-                self.itemPicked = pick
-        elif self.PatternTree.GetItemText(PickId) == 'Limits':
+                G2frame.itemPicked = pick
+        elif G2frame.PatternTree.GetItemText(PickId) == 'Limits':
             if ind.all() != [0]:                                    #picked a data point
-                LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
-                data = self.PatternTree.GetItemPyData(LimitId)
+                LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
+                data = G2frame.PatternTree.GetItemPyData(LimitId)
                 if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
-                    if self.qPlot:                              #qplot - convert back to 2-theta
+                    if G2frame.qPlot:                              #qplot - convert back to 2-theta
                         xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                 if mouse.button==1:
                     data[1][0] = min(xy[0],data[1][1])
                 if mouse.button==3:
                     data[1][1] = max(xy[0],data[1][0])
-                self.PatternTree.SetItemPyData(LimitId,data)
-                G2pdG.UpdateLimitsGrid(self,data)
-                PlotPatterns(self)
+                G2frame.PatternTree.SetItemPyData(LimitId,data)
+                G2pdG.UpdateLimitsGrid(G2frame,data)
+                PlotPatterns(G2frame)
             else:                                                   #picked a limit line
-                self.itemPicked = pick
-        elif self.PatternTree.GetItemText(PickId) == 'Reflection Lists':
-            self.itemPicked = pick
+                G2frame.itemPicked = pick
+        elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists':
+            G2frame.itemPicked = pick
             pick = str(pick)
         
     def OnRelease(event):
-        if self.itemPicked is None: return
-        Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))[1::2]
+        if G2frame.itemPicked is None: return
+        Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[1::2]
         Parms = dict(zip(Names,Values))
         try:
             wave = Parms['Lam']
         except KeyError:
             wave = Parms['Lam1']
         xpos = event.xdata
-        PickId = self.PickId
-        if self.PatternTree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
+        PickId = G2frame.PickId
+        if G2frame.PatternTree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
             lines = []
-            for line in self.Lines: lines.append(line.get_xdata()[0])
-            lineNo = lines.index(self.itemPicked.get_xdata()[0])
+            for line in G2frame.Lines: lines.append(line.get_xdata()[0])
+            lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
             if  lineNo in [0,1]:
-                LimitId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Limits')
-                data = self.PatternTree.GetItemPyData(LimitId)
-                if self.qPlot:
+                LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
+                data = G2frame.PatternTree.GetItemPyData(LimitId)
+                if G2frame.qPlot:
                     data[1][lineNo] = 2.0*asind(wave*xpos/(4*math.pi))
                 else:
                     data[1][lineNo] = xpos
-                self.PatternTree.SetItemPyData(LimitId,data)
-                if self.PatternTree.GetItemText(self.PickId) == 'Limits':
-                    G2pdG.UpdateLimitsGrid(self,data)
+                G2frame.PatternTree.SetItemPyData(LimitId,data)
+                if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
+                    G2pdG.UpdateLimitsGrid(G2frame,data)
             else:
-                PeakId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List')
-                data = self.PatternTree.GetItemPyData(PeakId)
+                PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
+                data = G2frame.PatternTree.GetItemPyData(PeakId)
 #                print 'peaks',xpos
                 if event.button == 3:
                     del data[lineNo-2]
                 else:
-                    if self.qPlot:
+                    if G2frame.qPlot:
                         data[lineNo-2][0] = 2.0*asind(wave*xpos/(4*math.pi))
                     else:
                         data[lineNo-2][0] = xpos
-                self.PatternTree.SetItemPyData(PeakId,data)
-                G2pdG.UpdatePeakGrid(self,data)
-        elif self.PatternTree.GetItemText(PickId) == 'Reflection Lists' and xpos:
-            Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
-            pick = str(self.itemPicked).split('(')[1].strip(')')
+                G2frame.PatternTree.SetItemPyData(PeakId,data)
+                G2pdG.UpdatePeakGrid(G2frame,data)
+        elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' and xpos:
+            Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            pick = str(G2frame.itemPicked).split('(')[1].strip(')')
             if 'Line' not in pick:       #avoid data points, etc.
                 num = Phases.keys().index(pick)
                 if num:
-                    self.refDelt = -(event.ydata-self.refOffset)/(num*Ymax)
+                    G2frame.refDelt = -(event.ydata-G2frame.refOffset)/(num*Ymax)
                 else:       #1st row of refl ticks
-                    self.refOffset = event.ydata
-        PlotPatterns(self)
-        self.itemPicked = None    
+                    G2frame.refOffset = event.ydata
+        PlotPatterns(G2frame)
+        G2frame.itemPicked = None    
 
     xylim = []
     try:
-        plotNum = self.G2plotNB.plotList.index('Powder Patterns')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()          #get previous powder plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
@@ -550,95 +550,95 @@ def PlotPatterns(self,newPlot=False):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
         newPlot = True
-        self.Cmax = 1.0
-        Plot = self.G2plotNB.addMpl('Powder Patterns').gca()
-        plotNum = self.G2plotNB.plotList.index('Powder Patterns')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        G2frame.Cmax = 1.0
+        Plot = G2frame.G2plotNB.addMpl('Powder Patterns').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
     Page.SetFocus()
-    self.G2plotNB.status.DestroyChildren()
-    if self.Contour:
+    G2frame.G2plotNB.status.DestroyChildren()
+    if G2frame.Contour:
         Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        if self.logPlot:
+        if G2frame.logPlot:
             Choice = (' key press','n: log(I) off','l: offset left','r: offset right',
                 'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
             Choice = (' key press','l: offset left','r: offset right','d: offset down',
                 'u: offset up','o: reset offset','n: log(I) on','c: contour on',
                 'q: toggle q plot','s: toggle single plot','+: no selection')
-    cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' key press')
     
-    PickId = self.PickId
-    PatternId = self.PatternId
+    PickId = G2frame.PickId
+    PatternId = G2frame.PatternId
     colors=['b','g','r','c','m','k']
     Lines = []
-    if self.SinglePlot:
-        Pattern = self.PatternTree.GetItemPyData(PatternId)
-        Pattern.append(self.PatternTree.GetItemText(PatternId))
+    if G2frame.SinglePlot:
+        Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
+        Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
         PlotList = [Pattern,]
-        ParmList = [self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,
-            self.PatternId, 'Instrument Parameters'))[1],]
+        ParmList = [G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId, 'Instrument Parameters'))[1],]
     else:        
         PlotList = []
         ParmList = []
-        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
-            if 'PWDR' in self.PatternTree.GetItemText(item):
-                Pattern = self.PatternTree.GetItemPyData(item)
+            if 'PWDR' in G2frame.PatternTree.GetItemText(item):
+                Pattern = G2frame.PatternTree.GetItemPyData(item)
                 if len(Pattern) < 3:                    # put name on end if needed
-                    Pattern.append(self.PatternTree.GetItemText(item))
+                    Pattern.append(G2frame.PatternTree.GetItemText(item))
                 PlotList.append(Pattern)
-                ParmList.append(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,
+                ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
                     item,'Instrument Parameters'))[1])
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
     Ymax = 1.0
     lenX = 0
-    if self.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
-        Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
+    if G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
+        Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
         HKL = []
         if Phases:
-            for peak in Phases[self.RefList]:
+            for peak in Phases[G2frame.RefList]:
                 HKL.append(peak[:6])
             HKL = np.array(HKL)
     else:
-        HKL = np.array(self.HKL)
+        HKL = np.array(G2frame.HKL)
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
-    offset = self.Offset[0]*Ymax/100.0
-    Title = 'Powder Patterns: '+os.path.split(self.GSASprojectfile)[1]
-    if self.logPlot:
+    offset = G2frame.Offset[0]*Ymax/100.0
+    Title = 'Powder Patterns: '+os.path.split(G2frame.GSASprojectfile)[1]
+    if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)
-    if self.qPlot:
+    if G2frame.qPlot:
         Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
     else:        
         Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
     Plot.set_ylabel('Intensity',fontsize=12)
-    if self.Contour:
+    if G2frame.Contour:
         ContourZ = []
         ContourY = []
         Nseq = 0
     if len(PlotList) < 2:
-        self.Contour = False
+        G2frame.Contour = False
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         ifpicked = False
         LimitId = 0
         xye = np.array(Pattern[1])
         if PickId:
-            ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
-            LimitId = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
-        if self.qPlot:
-            Id = G2gd.GetPatternTreeItemId(self,self.root, Pattern[2])
+            ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
+            LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
+        if G2frame.qPlot:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             X = 4*np.pi*npsind(xye[0]/2.0)/Parms[1]
         else:
             X = xye[0]
@@ -646,12 +646,12 @@ def PlotPatterns(self,newPlot=False):
             lenX = len(X)           
         Y = xye[1]+offset*N
         if LimitId:
-            limits = np.array(self.PatternTree.GetItemPyData(LimitId))
-            if self.qPlot:
+            limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
+            if G2frame.qPlot:
                 limits = 4*np.pi*npsind(limits/2.0)/Parms[1]
             Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
-        if self.Contour:
+        if G2frame.Contour:
             
             if lenX == len(X):
                 ContourY.append(N)
@@ -660,15 +660,15 @@ def PlotPatterns(self,newPlot=False):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X += self.Offset[1]*.005*N
+            X += G2frame.Offset[1]*.005*N
             if ifpicked:
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
-                D = xye[5]-Ymax*self.delOffset
-                if self.Weight:
+                D = xye[5]-Ymax*G2frame.delOffset
+                if G2frame.Weight:
                     W2 = np.sqrt(xye[2])
-                    D *= W2-Ymax*self.delOffset
-                if self.logPlot:
+                    D *= W2-Ymax*G2frame.delOffset
+                if G2frame.logPlot:
                     Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
                     Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
                     Plot.semilogy(X,W,colors[(N+2)%6],picker=False,nonposy='mask')
@@ -679,63 +679,63 @@ def PlotPatterns(self,newPlot=False):
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
                 Page.canvas.SetToolTipString('')
-                if self.PatternTree.GetItemText(PickId) == 'Peak List':
+                if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
                     tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                     Page.canvas.SetToolTipString(tip)
-                    data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
+                    data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
                     for item in data:
-                        if self.qPlot:
+                        if G2frame.qPlot:
                             Lines.append(Plot.axvline(4*math.pi*sind(item[0]/2.)/Parms[1],color=colors[N%6],picker=2.))
                         else:
                             Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
-                if self.PatternTree.GetItemText(PickId) == 'Limits':
+                if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
                     tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                     Page.canvas.SetToolTipString(tip)
-                    data = self.LimitsTable.GetData()
+                    data = G2frame.LimitsTable.GetData()
             else:
-                if self.logPlot:
+                if G2frame.logPlot:
                     Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='clip')
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
-    if PickId and not self.Contour:
-        Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))[1::2]
+    if PickId and not G2frame.Contour:
+        Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))[1::2]
         Parms = dict(zip(Names,Values))
         try:
             wave = Parms['Lam']
         except KeyError:
             wave = Parms['Lam1']
-        if self.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
-            peaks = np.array((self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))))
+        if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
+            peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))
             for peak in peaks:
-                if self.qPlot:
+                if G2frame.qPlot:
                     Plot.axvline(4*np.pi*sind(peak[0]/2.0)/wave,color='b')
                 else:
                     Plot.axvline(peak[0],color='b')
-            for hkl in self.HKL:
-                if self.qPlot:
+            for hkl in G2frame.HKL:
+                if G2frame.qPlot:
                     Plot.axvline(4*np.pi*sind(hkl[5]/2.0)/wave,color='r',dashes=(5,5))
                 else:
                     Plot.axvline(hkl[5],color='r',dashes=(5,5))
-        elif self.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
-            Phases = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Reflection Lists'))
+        elif G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
+            Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
                 peaks = Phases[phase]
                 peak = np.array([[peak[4],peak[5]] for peak in peaks])
-                pos = self.refOffset-pId*Ymax*self.refDelt*np.ones_like(peak)
-                if self.qPlot:
+                pos = G2frame.refOffset-pId*Ymax*G2frame.refDelt*np.ones_like(peak)
+                if G2frame.qPlot:
                     Plot.plot(2*np.pi/peak.T[0],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
                 else:
                     Plot.plot(peak.T[1],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
             handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
             Plot.legend(handles[::2],legends[::2],title='Phases',loc='best')    #skip every other one
             
-    if self.Contour:
-        acolor = mpl.cm.get_cmap(self.ContourColor)
-        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation=self.Interpolate, 
+    if G2frame.Contour:
+        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
     else:
-        self.Lines = Lines
+        G2frame.Lines = Lines
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -745,14 +745,14 @@ def PlotPatterns(self,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-    self.Pwdr = True
+    G2frame.Pwdr = True
     
-def PlotISFG(self,newPlot=False,type=''):
+def PlotISFG(G2frame,newPlot=False,type=''):
     ''' PLotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
     if not type:
-        type = self.G2plotNB.plotList[self.G2plotNB.nb.GetSelection()]
+        type = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
     if type not in ['I(Q)','S(Q)','F(Q)','G(R)']:
         return
     superMinusOne = unichr(0xaf)+unichr(0xb9)
@@ -760,67 +760,67 @@ def PlotISFG(self,newPlot=False,type=''):
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'u':
-            if self.Contour:
-                self.Cmax = min(1.0,self.Cmax*1.2)
-            elif self.Offset[0] < 100.:
-                self.Offset[0] += 1.
+            if G2frame.Contour:
+                G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
+            elif G2frame.Offset[0] < 100.:
+                G2frame.Offset[0] += 1.
         elif event.key == 'd':
-            if self.Contour:
-                self.Cmax = max(0.0,self.Cmax*0.8)
-            elif self.Offset[0] > 0.:
-                self.Offset[0] -= 1.
+            if G2frame.Contour:
+                G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
+            elif G2frame.Offset[0] > 0.:
+                G2frame.Offset[0] -= 1.
         elif event.key == 'l':
-            self.Offset[1] -= 1.
+            G2frame.Offset[1] -= 1.
         elif event.key == 'r':
-            self.Offset[1] += 1.
+            G2frame.Offset[1] += 1.
         elif event.key == 'o':
-            self.Offset = [0,0]
+            G2frame.Offset = [0,0]
         elif event.key == 'c':
             newPlot = True
-            if self.Contour:
-                self.Contour = False
+            if G2frame.Contour:
+                G2frame.Contour = False
             else:
-                self.Contour = True
-                self.SinglePlot = False
-                self.Offset = [0.,0.]
+                G2frame.Contour = True
+                G2frame.SinglePlot = False
+                G2frame.Offset = [0.,0.]
         elif event.key == 's':
-            if self.Contour:
+            if G2frame.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
                 choice.sort()
-                dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
+                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelection()
-                    self.ContourColor = choice[sel]
+                    G2frame.ContourColor = choice[sel]
                 else:
-                    self.ContourColor = 'Paired'
+                    G2frame.ContourColor = 'Paired'
                 dlg.Destroy()
             else:                
-                if self.SinglePlot:
-                    self.SinglePlot = False
+                if G2frame.SinglePlot:
+                    G2frame.SinglePlot = False
                 else:
-                    self.SinglePlot = True
+                    G2frame.SinglePlot = True
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
                'mitchell','sinc','lanczos']
-            dlg = wx.SingleChoiceDialog(self,'Select','Interpolation',choice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Interpolation',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
-                self.Interpolate = choice[sel]
+                G2frame.Interpolate = choice[sel]
             else:
-                self.Interpolate = 'nearest'
+                G2frame.Interpolate = 'nearest'
             dlg.Destroy()
-        elif event.key == 't' and not self.Contour:
-            if self.Legend:
-                self.Legend = False
+        elif event.key == 't' and not G2frame.Contour:
+            if G2frame.Legend:
+                G2frame.Legend = False
             else:
-                self.Legend = True
+                G2frame.Legend = True
             
             
-        PlotISFG(self,newPlot=newPlot,type=type)
+        PlotISFG(G2frame,newPlot=newPlot,type=type)
         
     def OnKeyBox(event):
-        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index(type):
+        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index(type):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
             OnPlotKeyPress(event)
@@ -831,17 +831,17 @@ def PlotISFG(self,newPlot=False,type=''):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                if self.Contour:
-                    self.G2plotNB.status.SetStatusText('R =%.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
+                if G2frame.Contour:
+                    G2frame.G2plotNB.status.SetStatusText('R =%.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
                 else:
-                    self.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,type,ypos),1)                   
+                    G2frame.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,type,ypos),1)                   
             except TypeError:
-                self.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
     
     xylim = []
     try:
-        plotNum = self.G2plotNB.plotList.index(type)
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()          #get previous plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
@@ -849,27 +849,27 @@ def PlotISFG(self,newPlot=False,type=''):
         Plot = Page.figure.gca()
     except ValueError:
         newPlot = True
-        self.Cmax = 1.0
-        Plot = self.G2plotNB.addMpl(type).gca()
-        plotNum = self.G2plotNB.plotList.index(type)
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        G2frame.Cmax = 1.0
+        Plot = G2frame.G2plotNB.addMpl(type).gca()
+        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
     Page.SetFocus()
-    self.G2plotNB.status.DestroyChildren()
-    if self.Contour:
+    G2frame.G2plotNB.status.DestroyChildren()
+    if G2frame.Contour:
         Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
         Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
             'o: reset offset','t: toggle legend','c: contour on','s: toggle single plot')
-    cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' key press')
-    PatternId = self.PatternId
-    PickId = self.PickId
+    PatternId = G2frame.PatternId
+    PickId = G2frame.PickId
     Plot.set_title(type)
     if type == 'G(R)':
         Plot.set_xlabel(r'$R,\AA$',fontsize=14)
@@ -877,29 +877,29 @@ def PlotISFG(self,newPlot=False,type=''):
         Plot.set_xlabel(r'$Q,\AA$'+superMinusOne,fontsize=14)
     Plot.set_ylabel(r''+type,fontsize=14)
     colors=['b','g','r','c','m','k']
-    name = self.PatternTree.GetItemText(PatternId)[4:]
+    name = G2frame.PatternTree.GetItemText(PatternId)[4:]
     Pattern = []    
-    if self.SinglePlot:
-        name = self.PatternTree.GetItemText(PatternId)
+    if G2frame.SinglePlot:
+        name = G2frame.PatternTree.GetItemText(PatternId)
         name = type+name[4:]
-        Id = G2gd.GetPatternTreeItemId(self,PatternId,name)
-        Pattern = self.PatternTree.GetItemPyData(Id)
+        Id = G2gd.GetPatternTreeItemId(G2frame,PatternId,name)
+        Pattern = G2frame.PatternTree.GetItemPyData(Id)
         if Pattern:
             Pattern.append(name)
         PlotList = [Pattern,]
     else:
         PlotList = []
-        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
-            if 'PDF' in self.PatternTree.GetItemText(item):
-                name = type+self.PatternTree.GetItemText(item)[4:]
-                Id = G2gd.GetPatternTreeItemId(self,item,name)
-                Pattern = self.PatternTree.GetItemPyData(Id)
+            if 'PDF' in G2frame.PatternTree.GetItemText(item):
+                name = type+G2frame.PatternTree.GetItemText(item)[4:]
+                Id = G2gd.GetPatternTreeItemId(G2frame,item,name)
+                Pattern = G2frame.PatternTree.GetItemPyData(Id)
                 if Pattern:
                     Pattern.append(name)
                     PlotList.append(Pattern)
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-    PDFdata = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'PDF Controls'))
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+    PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     Xb = [0.,10.]
     Yb = [0.,-40.*np.pi*numbDen]
@@ -908,20 +908,20 @@ def PlotISFG(self,newPlot=False,type=''):
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
-    offset = self.Offset[0]*Ymax/100.0
-    if self.Contour:
+    offset = G2frame.Offset[0]*Ymax/100.0
+    if G2frame.Contour:
         ContourZ = []
         ContourY = []
         Nseq = 0
     for N,Pattern in enumerate(PlotList):
         xye = Pattern[1]
         if PickId:
-            ifpicked = Pattern[2] == self.PatternTree.GetItemText(PatternId)
+            ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
         X = xye[0]
         if not lenX:
             lenX = len(X)           
         Y = xye[1]+offset*N
-        if self.Contour:
+        if G2frame.Contour:
             if lenX == len(X):
                 ContourY.append(N)
                 ContourZ.append(Y)
@@ -929,12 +929,12 @@ def PlotISFG(self,newPlot=False,type=''):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X = xye[0]+self.Offset[1]*.005*N
+            X = xye[0]+G2frame.Offset[1]*.005*N
             if ifpicked:
                 Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                 Page.canvas.SetToolTipString('')
             else:
-                if self.Legend:
+                if G2frame.Legend:
                     Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
@@ -944,12 +944,12 @@ def PlotISFG(self,newPlot=False,type=''):
                 Plot.axhline(0.,color=wx.BLACK)
             elif type == 'S(Q)':
                 Plot.axhline(1.,color=wx.BLACK)
-    if self.Contour:
-        acolor = mpl.cm.get_cmap(self.ContourColor)
-        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*self.Cmax,interpolation=self.Interpolate, 
+    if G2frame.Contour:
+        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
-    elif self.Legend:
+    elif G2frame.Legend:
         Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
@@ -961,7 +961,7 @@ def PlotISFG(self,newPlot=False,type=''):
     else:
         Page.canvas.draw()
         
-def PlotXY(self,XY,newPlot=False,type=''):
+def PlotXY(G2frame,XY,newPlot=False,type=''):
     '''simple plot of xy data, used for diagnostic purposes
     '''
     def OnMotion(event):
@@ -970,13 +970,13 @@ def PlotXY(self,XY,newPlot=False,type=''):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                self.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,type,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,type,ypos),1)                   
             except TypeError:
-                self.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
 
     try:
-        plotNum = self.G2plotNB.plotList.index(type)
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()
             xylim = Plot.get_xlim(),Plot.get_ylim()
@@ -984,13 +984,13 @@ def PlotXY(self,XY,newPlot=False,type=''):
         Plot = Page.figure.gca()
     except ValueError:
         newPlot = True
-        Plot = self.G2plotNB.addMpl(type).gca()
-        plotNum = self.G2plotNB.plotList.index(type)
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl(type).gca()
+        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
     Page.SetFocus()
-    self.G2plotNB.status.DestroyChildren()
+    G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(type)
     Plot.set_xlabel(r'X',fontsize=14)
     Plot.set_ylabel(r''+type,fontsize=14)
@@ -1010,7 +1010,7 @@ def PlotXY(self,XY,newPlot=False,type=''):
     else:
         Page.canvas.draw()
 
-def PlotPowderLines(self):
+def PlotPowderLines(G2frame):
     ''' plotting of powder lines (i.e. no powder pattern) as sticks
     '''
     global HKL
@@ -1019,8 +1019,8 @@ def PlotPowderLines(self):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
-            self.G2plotNB.status.SetFields(['','2-theta =%9.3f '%(xpos,)])
-            if self.PickId and self.PatternTree.GetItemText(self.PickId) in ['Index Peak List','Unit Cells List']:
+            G2frame.G2plotNB.status.SetFields(['','2-theta =%9.3f '%(xpos,)])
+            if G2frame.PickId and G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
                 found = []
                 if len(HKL):
                     view = Page.toolbar._views.forward()[0][:2]
@@ -1033,26 +1033,26 @@ def PlotPowderLines(self):
                     Page.canvas.SetToolTipString('')
 
     try:
-        plotNum = self.G2plotNB.plotList.index('Powder Lines')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('Powder Lines')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
     except ValueError:
-        Plot = self.G2plotNB.addMpl('Powder Lines').gca()
-        plotNum = self.G2plotNB.plotList.index('Powder Lines')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('Powder Lines').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Powder Lines')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         
     Page.SetFocus()
     Plot.set_title('Powder Pattern Lines')
     Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
-    PickId = self.PickId
-    PatternId = self.PatternId
-    peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
+    PickId = G2frame.PickId
+    PatternId = G2frame.PatternId
+    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
     for peak in peaks:
         Plot.axvline(peak[0],color='b')
-    HKL = np.array(self.HKL)
-    for hkl in self.HKL:
+    HKL = np.array(G2frame.HKL)
+    for hkl in G2frame.HKL:
         Plot.axvline(hkl[5],color='r',dashes=(5,5))
     xmin = peaks[0][0]
     xmax = peaks[-1][0]
@@ -1062,39 +1062,39 @@ def PlotPowderLines(self):
     Page.canvas.draw()
     Page.toolbar.push_current()
 
-def PlotPeakWidths(self):
+def PlotPeakWidths(G2frame):
     ''' Plotting of instrument broadening terms as function of 2-theta (future TOF)
     Seen when "Instrument Parameters" chosen from powder pattern data tree
     '''
-    PatternId = self.PatternId
-    limitID = G2gd.GetPatternTreeItemId(self,PatternId, 'Limits')
+    PatternId = G2frame.PatternId
+    limitID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
     if limitID:
-        limits = self.PatternTree.GetItemPyData(limitID)
+        limits = G2frame.PatternTree.GetItemPyData(limitID)
     else:
         return
-    instParms = self.PatternTree.GetItemPyData( \
-        G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
+    instParms = G2frame.PatternTree.GetItemPyData( \
+        G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
     if instParms[0][0] in ['PXC','PNC']:
         lam = instParms[1][1]
         if len(instParms[1]) == 13:
             GU,GV,GW,LX,LY = instParms[0][6:11]
         else:
             GU,GV,GW,LX,LY = instParms[0][4:9]
-    peakID = G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List')
+    peakID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List')
     if peakID:
-        peaks = self.PatternTree.GetItemPyData(peakID)
+        peaks = G2frame.PatternTree.GetItemPyData(peakID)
     else:
         peaks = []
     
     try:
-        plotNum = self.G2plotNB.plotList.index('Peak Widths')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
     except ValueError:
-        Plot = self.G2plotNB.addMpl('Peak Widths').gca()
-        plotNum = self.G2plotNB.plotList.index('Peak Widths')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('Peak Widths').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
     Page.SetFocus()
     
     Page.canvas.SetToolTipString('')
@@ -1152,11 +1152,11 @@ def PlotPeakWidths(self):
     Plot.legend(loc='best')
     Page.canvas.draw()
     
-def PlotSizeStrainPO(self,data,Start=False):
+def PlotSizeStrainPO(G2frame,data,Start=False):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
     
-    PatternId = self.PatternId
+    PatternId = G2frame.PatternId
     generalData = data['General']
     SGData = generalData['SGData']
     SGLaue = SGData['SGLaue']
@@ -1172,7 +1172,7 @@ def PlotSizeStrainPO(self,data,Start=False):
     plotType = generalData['Data plot type']
     plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.'}
     for ptype in plotDict:
-        self.G2plotNB.Delete(ptype)        
+        G2frame.G2plotNB.Delete(ptype)        
 
     for item in useList:
         if useList[item]['Show']:
@@ -1183,13 +1183,13 @@ def PlotSizeStrainPO(self,data,Start=False):
     numPlots = len(useList)
 
     if plotType in ['Mustrain','Size']:
-        Plot = mp3d.Axes3D(self.G2plotNB.add3D(plotType))
+        Plot = mp3d.Axes3D(G2frame.G2plotNB.add3D(plotType))
     else:
-        Plot = self.G2plotNB.addMpl(plotType).gca()        
-    plotNum = self.G2plotNB.plotList.index(plotType)
-    Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl(plotType).gca()        
+    plotNum = G2frame.G2plotNB.plotList.index(plotType)
+    Page = G2frame.G2plotNB.nb.GetPage(plotNum)
     Page.SetFocus()
-    self.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
+    G2frame.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
     if not Page.IsShown():
         Page.Show()
     
@@ -1306,7 +1306,7 @@ def PlotSizeStrainPO(self,data,Start=False):
                     Plot.set_ylabel('MRD',fontsize=14)
     Page.canvas.draw()
     
-def PlotTexture(self,data,newPlot=False,Start=False):
+def PlotTexture(G2frame,data,newPlot=False,Start=False):
     '''Pole figure, inverse pole figure, 3D pole distribution and 3D inverse pole distribution
     plotting.
     dict generalData contains all phase info needed which is in data
@@ -1314,11 +1314,11 @@ def PlotTexture(self,data,newPlot=False,Start=False):
 
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-    PatternId = self.PatternId
+    PatternId = G2frame.PatternId
     generalData = data['General']
     SGData = generalData['SGData']
     textureData = generalData['SH Texture']
-    self.G2plotNB.Delete('Texture')
+    G2frame.G2plotNB.Delete('Texture')
     if not textureData['Order']:
         return                  #no plot!!
     SHData = generalData['SH Texture']
@@ -1340,7 +1340,7 @@ def PlotTexture(self,data,newPlot=False,Start=False):
             if 'Inverse' in SHData['PlotType']:
                 r = xpos**2+ypos**2
                 if r <= 1.0:
-                    if 'equal' in self.Projection: 
+                    if 'equal' in G2frame.Projection: 
                         r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(ypos,xpos)
                     else:
                         r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)
@@ -1348,7 +1348,7 @@ def PlotTexture(self,data,newPlot=False,Start=False):
                     xyz = np.inner(Amat.T,np.array([rp2xyz(r,p)]))
                     y,x,z = list(xyz/np.max(np.abs(xyz)))
                     
-                    self.G2plotNB.status.SetFields(['',
+                    G2frame.G2plotNB.status.SetFields(['',
                         'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z)])
                                     
             elif 'Axial' in SHData['PlotType']:
@@ -1358,26 +1358,26 @@ def PlotTexture(self,data,newPlot=False,Start=False):
                 z = xpos**2+ypos**2
                 if z <= 1.0:
                     z = np.sqrt(z)
-                    if 'equal' in self.Projection: 
+                    if 'equal' in G2frame.Projection: 
                         r,p = 2.*npasind(z*sq2),npatan2d(ypos,xpos)
                     else:
                         r,p = 2.*npatand(z),npatan2d(ypos,xpos)
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
-                    self.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
+                    G2frame.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
     
-    if self.Projection == '3D display' and 'Axial'  not in SHData['PlotType']:               
-        Plot = mp3d.Axes3D(self.G2plotNB.add3D('Texture'))
+    if G2frame.Projection == '3D display' and 'Axial'  not in SHData['PlotType']:               
+        Plot = mp3d.Axes3D(G2frame.G2plotNB.add3D('Texture'))
     else:
-        Plot = self.G2plotNB.addMpl('Texture').gca()
-    plotNum = self.G2plotNB.plotList.index('Texture')
-    Page = self.G2plotNB.nb.GetPage(plotNum)
-    if self.Projection == '3D display':
+        Plot = G2frame.G2plotNB.addMpl('Texture').gca()
+    plotNum = G2frame.G2plotNB.plotList.index('Texture')
+    Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+    if G2frame.Projection == '3D display':
         pass
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
 
     Page.SetFocus()
-    self.G2plotNB.status.SetFields(['',''])    
+    G2frame.G2plotNB.status.SetFields(['',''])    
     PH = np.array(SHData['PFhkl'])
     phi,beta = G2lat.CrsAng(PH,cell,SGData)
     ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
@@ -1401,7 +1401,7 @@ def PlotTexture(self,data,newPlot=False,Start=False):
         if 'Inverse' in SHData['PlotType']:
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
-            if 'equal' in self.Projection:
+            if 'equal' in G2frame.Projection:
                 R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
             else:
                 R = np.where(R <= 1.,2.*npatand(R),0.0)
@@ -1411,19 +1411,19 @@ def PlotTexture(self,data,newPlot=False,Start=False):
             CS = Plot.contour(Y,X,Z,aspect='equal')
             Plot.clabel(CS,fontsize=9,inline=1)
             try:
-                Img = Plot.imshow(Z.T,aspect='equal',cmap=self.ContourColor,extent=[-1,1,-1,1])
+                Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             except ValueError:
                 pass
             if newPlot:
 #                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
                 newPlot = False
             Plot.set_title('Inverse pole figure for XYZ='+str(SHData['PFxyz']))
-            Plot.set_xlabel(self.Projection.capitalize()+' projection')
+            Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
                         
         else:
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
-            if 'equal' in self.Projection:
+            if 'equal' in G2frame.Projection:
                 R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
             else:
                 R = np.where(R <= 1.,2.*npatand(R),0.0)
@@ -1435,18 +1435,18 @@ def PlotTexture(self,data,newPlot=False,Start=False):
                 Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass
-            Img = Plot.imshow(Z.T,aspect='equal',cmap=self.ContourColor,extent=[-1,1,-1,1])
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             if newPlot:
 #                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
                 newPlot = False
             Plot.set_title('Pole figure for HKL='+str(SHData['PFhkl']))
-            Plot.set_xlabel(self.Projection.capitalize()+' projection')
+            Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
     Page.canvas.draw()
 
-def PlotCovariance(self,Data={}):
+def PlotCovariance(G2frame,Data={}):
     if not Data:
-        Data = self.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
+        Data = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
     if not Data:
         print 'No covariance matrix available'
         return
@@ -1465,14 +1465,14 @@ def PlotCovariance(self,Data={}):
         if event.key == 's':
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()
-            dlg = wx.SingleChoiceDialog(self,'Select','Color scheme',choice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
-                self.VcovColor = choice[sel]
+                G2frame.VcovColor = choice[sel]
             else:
-                self.VcovColor = 'RdYlGn'
+                G2frame.VcovColor = 'RdYlGn'
             dlg.Destroy()
-        PlotCovariance(self)
+        PlotCovariance(G2frame)
 
     def OnMotion(event):
         if event.button:
@@ -1494,24 +1494,24 @@ def PlotCovariance(self,Data={}):
                 else:
                     msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
                 Page.canvas.SetToolTipString(msg)
-                self.G2plotNB.status.SetFields(['Key: s to change colors',msg])
+                G2frame.G2plotNB.status.SetFields(['Key: s to change colors',msg])
     try:
-        plotNum = self.G2plotNB.plotList.index('Covariance')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('Covariance')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
         if not Page.IsShown():
             Page.Show()
     except ValueError:
-        Plot = self.G2plotNB.addMpl('Covariance').gca()
-        plotNum = self.G2plotNB.plotList.index('Covariance')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('Covariance').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Covariance')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
 
     Page.SetFocus()
-    self.G2plotNB.status.SetFields(['',''])    
-    acolor = mpl.cm.get_cmap(self.VcovColor)
+    G2frame.G2plotNB.status.SetFields(['',''])    
+    acolor = mpl.cm.get_cmap(G2frame.VcovColor)
     Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower')
     imgAx = Img.get_axes()
     ytics = imgAx.get_yticks()
@@ -1523,35 +1523,35 @@ def PlotCovariance(self,Data={}):
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()
     
-def PlotSeq(self,SeqData,SeqSig,SeqNames,sampleParm):
+def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
     
     def OnKeyPress(event):
         if event.key == 's' and sampleParm:
-            if self.xAxis:
-                self.xAxis = False
+            if G2frame.xAxis:
+                G2frame.xAxis = False
             else:
-                self.xAxis = True
+                G2frame.xAxis = True
             Draw(False)
     try:
-        plotNum = self.G2plotNB.plotList.index('Sequential refinement')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
         if not Page.IsShown():
             Page.Show()
     except ValueError:
-        Plot = self.G2plotNB.addMpl('Sequential refinement').gca()
-        plotNum = self.G2plotNB.plotList.index('Sequential refinement')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('Sequential refinement').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
-        self.xAxis = False
+        G2frame.xAxis = False
         
     def Draw(newPlot):
         Page.SetFocus()
-        self.G2plotNB.status.SetFields(['','press s to toggle x-axis = sample environment parameter'])
+        G2frame.G2plotNB.status.SetFields(['','press s to toggle x-axis = sample environment parameter'])
         if len(SeqData):
             Plot.clear()
-            if self.xAxis:    
+            if G2frame.xAxis:    
                 xName = sampleParm.keys()[0]
                 X = sampleParm[xName]
             else:
@@ -1565,16 +1565,16 @@ def PlotSeq(self,SeqData,SeqSig,SeqNames,sampleParm):
             Page.canvas.draw()            
     Draw(True)
             
-def PlotExposedImage(self,newPlot=False,event=None):
+def PlotExposedImage(G2frame,newPlot=False,event=None):
     '''General access module for 2D image plotting
     '''
-    plotNo = self.G2plotNB.nb.GetSelection()
-    if self.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
-        PlotImage(self,newPlot,event,newImage=True)
-    elif self.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
-        PlotIntegration(self,newPlot,event)
+    plotNo = G2frame.G2plotNB.nb.GetSelection()
+    if G2frame.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
+        PlotImage(G2frame,newPlot,event,newImage=True)
+    elif G2frame.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
+        PlotIntegration(G2frame,newPlot,event)
 
-def PlotImage(self,newPlot=False,event=None,newImage=True):
+def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''Plot of 2D detector images as contoured plot. Also plot calibration ellipses,
     masks, etc.
     '''
@@ -1583,21 +1583,21 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
     Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
     global Data,Masks
     colors=['b','g','r','c','m','k']
-    Data = self.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-    Masks = self.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Masks'))
+    Data = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+    Masks = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
 
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
         if event.xdata and event.ydata:                 #avoid out of frame errors
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
-            item = self.itemPicked
+            item = G2frame.itemPicked
             pixelSize = Data['pixelSize']
             scalex = 1000./pixelSize[0]
             scaley = 1000./pixelSize[1]
-            if item and self.PatternTree.GetItemText(self.PickId) == 'Image Controls':
+            if item and G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Image Controls':
                 if 'Text' in str(item):
                     Page.canvas.SetToolTipString('%8.3f %8.3fmm'%(event.xdata,event.ydata))
                 else:
@@ -1616,18 +1616,18 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                 ypix = ypos*scaley
                 Int = 0
                 if (0 <= xpix <= sizexy[0]) and (0 <= ypix <= sizexy[1]):
-                    Int = self.ImageZ[ypix][xpix]
+                    Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
-                if self.setPoly:
-                    self.G2plotNB.status.SetFields(['','Polygon mask pick - LB next point, RB close polygon'])
+                if G2frame.setPoly:
+                    G2frame.G2plotNB.status.SetFields(['','Polygon mask pick - LB next point, RB close polygon'])
                 else:
-                    self.G2plotNB.status.SetFields(\
+                    G2frame.G2plotNB.status.SetFields(\
                         ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
 
     def OnImPlotKeyPress(event):
         try:
-            PickName = self.PatternTree.GetItemText(self.PickId)
+            PickName = G2frame.PatternTree.GetItemText(G2frame.PickId)
         except TypeError:
             return
         if PickName == 'Masks':
@@ -1645,63 +1645,63 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                 azm = int(azm)                
                 Masks['Arcs'].append([tth,[azm-5,azm+5],0.1])
             elif event.key == 'p':
-                self.setPoly = True
+                G2frame.setPoly = True
                 Masks['Polygons'].append([])
-                self.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
-            G2imG.UpdateMasks(self,Masks)
+                G2frame.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
+            G2imG.UpdateMasks(G2frame,Masks)
         elif PickName == 'Image Controls':
             if event.key == 'c':
                 Xpos = event.xdata
                 if not Xpos:            #got point out of frame
                     return
                 Ypos = event.ydata
-                dlg = wx.MessageDialog(self,'Are you sure you want to change the center?',
+                dlg = wx.MessageDialog(G2frame,'Are you sure you want to change the center?',
                     'Center change',style=wx.OK|wx.CANCEL)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         print 'move center to: ',Xpos,Ypos
                         Data['center'] = [Xpos,Ypos]
-                        G2imG.UpdateImageControls(self,Data,Masks)
+                        G2imG.UpdateImageControls(G2frame,Data,Masks)
                 finally:
                     dlg.Destroy()
             elif event.key == 'l':
-                if self.logPlot:
-                    self.logPlot = False
+                if G2frame.logPlot:
+                    G2frame.logPlot = False
                 else:
-                    self.logPlot = True
-        PlotImage(self,newImage=True)
+                    G2frame.logPlot = True
+        PlotImage(G2frame,newImage=True)
             
     def OnKeyBox(event):
-        if self.G2plotNB.nb.GetSelection() == self.G2plotNB.plotList.index('2D Powder Image'):
+        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('2D Powder Image'):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
             if event.key in 'l':
                 OnImPlotKeyPress(event)
                         
     def OnImPick(event):
-        if self.PatternTree.GetItemText(self.PickId) not in ['Image Controls','Masks']:
+        if G2frame.PatternTree.GetItemText(G2frame.PickId) not in ['Image Controls','Masks']:
             return
-        if self.setPoly:
+        if G2frame.setPoly:
             polygon = Masks['Polygons'][-1]
             xpos,ypos = event.mouseevent.xdata,event.mouseevent.ydata
             if xpos and ypos:                       #point inside image
                 if len(polygon) > 2 and event.mouseevent.button == 3:
                     x0,y0 = polygon[0]
                     polygon.append([x0,y0])
-                    self.setPoly = False
-                    self.G2plotNB.status.SetFields(['','Polygon closed - RB drag a vertex to change shape'])
+                    G2frame.setPoly = False
+                    G2frame.G2plotNB.status.SetFields(['','Polygon closed - RB drag a vertex to change shape'])
                 else:
-                    self.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(xpos,ypos)])
+                    G2frame.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(xpos,ypos)])
                     polygon.append([xpos,ypos])
-                G2imG.UpdateMasks(self,Masks)
+                G2imG.UpdateMasks(G2frame,Masks)
         else:
-            if self.itemPicked is not None: return
-            self.itemPicked = event.artist
-            self.mousePicked = event.mouseevent
+            if G2frame.itemPicked is not None: return
+            G2frame.itemPicked = event.artist
+            G2frame.mousePicked = event.mouseevent
         
     def OnImRelease(event):
         try:
-            PickName = self.PatternTree.GetItemText(self.PickId)
+            PickName = G2frame.PatternTree.GetItemText(G2frame.PickId)
         except TypeError:
             return
         if PickName not in ['Image Controls','Masks']:
@@ -1710,17 +1710,17 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
         pixLimit = Data['pixLimit']
-        if self.itemPicked is None and PickName == 'Image Controls':
+        if G2frame.itemPicked is None and PickName == 'Image Controls':
 #            sizexy = Data['size']
             Xpos = event.xdata
-            if not (Xpos and self.ifGetRing):                   #got point out of frame
+            if not (Xpos and G2frame.ifGetRing):                   #got point out of frame
                 return
             Ypos = event.ydata
             if Ypos and not Page.toolbar._active:         #make sure zoom/pan not selected
                 if event.button == 1:
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
-                    xpos,ypos,I,J = G2img.ImageLocalMax(self.ImageZ,pixLimit,Xpix,Ypix)
+                    xpos,ypos,I,J = G2img.ImageLocalMax(G2frame.ImageZ,pixLimit,Xpix,Ypix)
                     if I and J:
                         xpos += .5                              #shift to pixel center
                         ypos += .5
@@ -1728,23 +1728,23 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                         ypos /= scaley
                         Data['ring'].append([xpos,ypos])
                 elif event.button == 3:
-                    self.dataFrame.GetStatusBar().SetStatusText('Calibrating...')
-                    if G2img.ImageCalibrate(self,Data):
-                        self.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check')
+                    G2frame.dataFrame.GetStatusBar().SetStatusText('Calibrating...')
+                    if G2img.ImageCalibrate(G2frame,Data):
+                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check')
                         print 'Calibration successful'
                     else:
-                        self.dataFrame.GetStatusBar().SetStatusText('Calibration failed - Show ring picks to diagnose')
+                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration failed - Show ring picks to diagnose')
                         print 'Calibration failed'
-                    self.ifGetRing = False
-                    G2imG.UpdateImageControls(self,Data,Masks)
+                    G2frame.ifGetRing = False
+                    G2imG.UpdateImageControls(G2frame,Data,Masks)
                     return
-                PlotImage(self,newImage=False)
+                PlotImage(G2frame,newImage=False)
             return
         else:
             xpos = event.xdata
             if xpos:                                        #avoid out of frame mouse position
                 ypos = event.ydata
-                if self.ifGetRing:                          #delete a calibration ring pick
+                if G2frame.ifGetRing:                          #delete a calibration ring pick
                     xypos = [xpos,ypos]
                     rings = Data['ring']
                     for ring in rings:
@@ -1752,7 +1752,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                             rings.remove(ring)                                                                       
                 else:
                     tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
-                    itemPicked = str(self.itemPicked)
+                    itemPicked = str(G2frame.itemPicked)
                     if 'Line2D' in itemPicked and PickName == 'Image Controls':
                         if 'line1' in itemPicked:
                             Data['IOtth'][0] = max(tth,0.001)
@@ -1776,10 +1776,10 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                         if  Data['IOtth'][0] > Data['IOtth'][1]:
                             Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
                             
-                        self.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
-                        self.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
-                        self.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
-                        self.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
+                        G2frame.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
+                        G2frame.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
+                        G2frame.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
+                        G2frame.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
                     elif 'Circle' in itemPicked and PickName == 'Masks':
                         spots = Masks['Points']
                         newPos = itemPicked.split(')')[0].split('(')[2].split(',')
@@ -1787,20 +1787,20 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                         for spot in spots:
                             if np.allclose(np.array([spot[:2]]),newPos):
                                 spot[:2] = xpos,ypos
-                        G2imG.UpdateMasks(self,Masks)
+                        G2imG.UpdateMasks(G2frame,Masks)
                     elif 'Line2D' in itemPicked and PickName == 'Masks':
-                        Obj = self.itemPicked.findobj()
+                        Obj = G2frame.itemPicked.findobj()
                         rings = Masks['Rings']
                         arcs = Masks['Arcs']
                         polygons = Masks['Polygons']
-                        for ring in self.ringList:
+                        for ring in G2frame.ringList:
                             if Obj == ring[0]:
                                 rN = ring[1]
                                 if ring[2] == 'o':
                                     rings[rN][0] = G2img.GetTth(xpos,ypos,Data)-rings[rN][1]/2.
                                 else:
                                     rings[rN][0] = G2img.GetTth(xpos,ypos,Data)+rings[rN][1]/2.
-                        for arc in self.arcList:
+                        for arc in G2frame.arcList:
                             if Obj == arc[0]:
                                 aN = arc[1]
                                 if arc[2] == 'o':
@@ -1811,23 +1811,23 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                                     arcs[aN][1][0] = int(G2img.GetAzm(xpos,ypos,Data))
                                 else:
                                     arcs[aN][1][1] = int(G2img.GetAzm(xpos,ypos,Data))
-                        for poly in self.polyList:
+                        for poly in G2frame.polyList:
                             if Obj == poly[0]:
-                                ind = self.itemPicked.contains(self.mousePicked)[1]['ind'][0]
-                                oldPos = np.array([self.mousePicked.xdata,self.mousePicked.ydata])
+                                ind = G2frame.itemPicked.contains(G2frame.mousePicked)[1]['ind'][0]
+                                oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
                                 pN = poly[1]
                                 for i,xy in enumerate(polygons[pN]):
                                     if np.allclose(np.array([xy]),oldPos,atol=1.0):
                                         polygons[pN][i] = xpos,ypos
-                        G2imG.UpdateMasks(self,Masks)
+                        G2imG.UpdateMasks(G2frame,Masks)
 #                    else:                  #keep for future debugging
-#                        print str(self.itemPicked),event.xdata,event.ydata,event.button
-                PlotImage(self,newImage=True)
-            self.itemPicked = None
+#                        print str(G2frame.itemPicked),event.xdata,event.ydata,event.button
+                PlotImage(G2frame,newImage=True)
+            G2frame.itemPicked = None
             
     try:
-        plotNum = self.G2plotNB.plotList.index('2D Powder Image')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()          #get previous powder plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
@@ -1836,9 +1836,9 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
             Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError:
-        Plot = self.G2plotNB.addMpl('2D Powder Image').gca()
-        plotNum = self.G2plotNB.plotList.index('2D Powder Image')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('2D Powder Image').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnImPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnImMotion)
         Page.canvas.mpl_connect('pick_event', OnImPick)
@@ -1846,36 +1846,36 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
         xylim = []
     if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
         Page.SetFocus()
-    Title = self.PatternTree.GetItemText(self.Image)[4:]
-    self.G2plotNB.status.DestroyChildren()
-    if self.logPlot:
+    Title = G2frame.PatternTree.GetItemText(G2frame.Image)[4:]
+    G2frame.G2plotNB.status.DestroyChildren()
+    if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)
     try:
-        if self.PatternTree.GetItemText(self.PickId) in ['Image Controls',]:
+        if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             Choice = (' key press','l: log(I) on',)
-            if self.logPlot:
+            if G2frame.logPlot:
                 Choice[1] = 'l: log(I) off'
-            cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
+            cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
                 choices=Choice)
             cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
             cb.SetValue(' key press')
     except TypeError:
         pass
-    size,imagefile = self.PatternTree.GetItemPyData(self.Image)
-    if imagefile != self.oldImagefile:
-        imagefile = G2IO.CheckImageFile(self,imagefile)
+    size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
+    if imagefile != G2frame.oldImagefile:
+        imagefile = G2IO.CheckImageFile(G2frame,imagefile)
         if not imagefile:
-            self.G2plotNB.Delete('2D Powder Image')
+            G2frame.G2plotNB.Delete('2D Powder Image')
             return
-        self.PatternTree.SetItemPyData(self.Image,[size,imagefile])
-        self.ImageZ = G2IO.GetImageData(self,imagefile,imageOnly=True)
-#        print self.ImageZ.shape,self.ImageZ.size,Data['size'] #might be useful debugging line
-        self.oldImagefile = imagefile
+        G2frame.PatternTree.SetItemPyData(G2frame.Image,[size,imagefile])
+        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,imageOnly=True)
+#        print G2frame.ImageZ.shape,G2frame.ImageZ.size,Data['size'] #might be useful debugging line
+        G2frame.oldImagefile = imagefile
 
     imScale = 1
-    if len(self.ImageZ) > 1024:
-        imScale = len(self.ImageZ)/1024
+    if len(G2frame.ImageZ) > 1024:
+        imScale = len(G2frame.ImageZ)/1024
     sizexy = Data['size']
     pixelSize = Data['pixelSize']
     scalex = 1000./pixelSize[0]
@@ -1895,11 +1895,11 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
     try:
             
         if newImage:                    
-            MA = ma.masked_greater(ma.masked_less(self.ImageZ,Zlim[0]),Zlim[1])
+            MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])
             MaskA = ma.getmaskarray(MA)
             A = G2img.ImageCompress(MA,imScale)
             AM = G2img.ImageCompress(MaskA,imScale)
-            if self.logPlot:
+            if G2frame.logPlot:
                 A = np.where(A>0,np.log(A),0)
                 AM = np.where(AM>0,np.log(AM),0)
                 Imin,Imax = [np.amin(A),np.amax(A)]
@@ -1907,7 +1907,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
             Img = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
-            if self.setPoly:
+            if G2frame.setPoly:
                 Img.set_picker(True)
     
         Plot.plot(xcent,ycent,'x')
@@ -1965,26 +1965,26 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
         polygons = Masks['Polygons']
         for x,y,d in spots:
             Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
-        self.ringList = []
+        G2frame.ringList = []
         for iring,(tth,thick) in enumerate(rings):
             wave = Data['wavelength']
             x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data))),2)
             x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data))),2)
-            self.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
-            self.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
-        self.arcList = []
+            G2frame.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
+            G2frame.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
+        G2frame.arcList = []
         for iarc,(tth,azm,thick) in enumerate(arcs):            
             wave = Data['wavelength']
             x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
             x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(max(0.01,tth-thick/2.),wave),Data),azm)),2)
-            self.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
-            self.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
-            self.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
-            self.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
-        self.polyList = []
+            G2frame.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
+            G2frame.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
+            G2frame.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
+            G2frame.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
+        G2frame.polyList = []
         for ipoly,polygon in enumerate(polygons):
             x,y = np.hsplit(np.array(polygon),2)
-            self.polyList.append([Plot.plot(x,y,'r+',picker=10),ipoly])
+            G2frame.polyList.append([Plot.plot(x,y,'r+',picker=10),ipoly])
             Plot.plot(x,y,'r')            
         if newImage:
             colorBar = Page.figure.colorbar(Img)
@@ -2003,7 +2003,7 @@ def PlotImage(self,newPlot=False,event=None,newImage=True):
     finally:
         wx.EndBusyCursor()
         
-def PlotIntegration(self,newPlot=False,event=None):
+def PlotIntegration(G2frame,newPlot=False,event=None):
     '''Plot of 2D image after image integration with 2-theta and azimuth as coordinates
     '''
             
@@ -2013,12 +2013,12 @@ def PlotIntegration(self,newPlot=False,event=None):
         azm = event.ydata
         tth = event.xdata
         if azm and tth:
-            self.G2plotNB.status.SetFields(\
+            G2frame.G2plotNB.status.SetFields(\
                 ['','Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm)])
                                 
     try:
-        plotNum = self.G2plotNB.plotList.index('2D Integration')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('2D Integration')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()          #get previous plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
@@ -2026,23 +2026,23 @@ def PlotIntegration(self,newPlot=False,event=None):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError:
-        Plot = self.G2plotNB.addMpl('2D Integration').gca()
-        plotNum = self.G2plotNB.plotList.index('2D Integration')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('2D Integration').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('2D Integration')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
         view = False
     if not event:
         Page.SetFocus()
         
-    Data = self.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
-    image = self.Integrate[0]
-    xsc = self.Integrate[1]
-    ysc = self.Integrate[2]
+    Data = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+    image = G2frame.Integrate[0]
+    xsc = G2frame.Integrate[1]
+    ysc = G2frame.Integrate[2]
     Imin,Imax = Data['range'][1]
     acolor = mpl.cm.get_cmap(Data['color'])
-    Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
+    Plot.set_title(G2frame.PatternTree.GetItemText(G2frame.Image)[4:])
     Plot.set_ylabel('azimuth',fontsize=12)
     Plot.set_xlabel('2-theta',fontsize=12)
     Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
@@ -2065,7 +2065,7 @@ def PlotIntegration(self,newPlot=False,event=None):
     else:
         Page.canvas.draw()
                 
-def PlotTRImage(self,tax,tay,taz,newPlot=False):
+def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     '''a test plot routine - not normally used
     ''' 
             
@@ -2075,12 +2075,12 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         azm = event.xdata
         tth = event.ydata
         if azm and tth:
-            self.G2plotNB.status.SetFields(\
+            G2frame.G2plotNB.status.SetFields(\
                 ['','Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm)])
                                 
     try:
-        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('2D Transformed Powder Image')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()          #get previous plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
@@ -2088,21 +2088,21 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         
     except ValueError:
-        Plot = self.G2plotNB.addMpl('2D Transformed Powder Image').gca()
-        plotNum = self.G2plotNB.plotList.index('2D Transformed Powder Image')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('2D Transformed Powder Image').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('2D Transformed Powder Image')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
         view = False
     Page.SetFocus()
         
-    Data = self.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(self,self.Image, 'Image Controls'))
+    Data = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
     Imin,Imax = Data['range'][1]
     step = (Imax-Imin)/5.
     V = np.arange(Imin,Imax,step)
     acolor = mpl.cm.get_cmap(Data['color'])
-    Plot.set_title(self.PatternTree.GetItemText(self.Image)[4:])
+    Plot.set_title(G2frame.PatternTree.GetItemText(G2frame.Image)[4:])
     Plot.set_xlabel('azimuth',fontsize=12)
     Plot.set_ylabel('2-theta',fontsize=12)
     Plot.contour(tax,tay,taz,V,cmap=acolor)
@@ -2138,7 +2138,7 @@ def PlotTRImage(self,tax,tay,taz,newPlot=False):
     else:
         Page.canvas.draw()
         
-def PlotStructure(self,data):
+def PlotStructure(G2frame,data):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra
     '''
@@ -2182,7 +2182,7 @@ def PlotStructure(self,data):
         im.fromstring(Pix)
         im.save(Fname,mode)
         cb.SetValue(' Save as:')
-        self.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
+        G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
     
     def GetTruePosition(xy,Add=False):
         View = glGetIntegerv(GL_VIEWPORT)
@@ -2229,21 +2229,21 @@ def PlotStructure(self,data):
             elif event.MiddleIsDown():
                 SetTestRotZ(newxy)
             x,y,z = drawingData['testPos'][0]
-            self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
+            G2frame.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
                                 
         if event.Dragging() and not event.ControlDown():
             if event.LeftIsDown():
                 SetRotation(newxy)
                 angX,angY,angZ = drawingData['Rotation'][:3]
-                self.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f ,%.2f'%(angX,angY,angZ),1)
+                G2frame.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f ,%.2f'%(angX,angY,angZ),1)
             elif event.RightIsDown():
                 SetTranslation(newxy)
                 Tx,Ty,Tz = drawingData['viewPoint'][0]
-                self.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
+                G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
                 angX,angY,angZ = drawingData['Rotation'][:3]
-                self.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f, %.2f'%(angX,angY,angZ),1)
+                G2frame.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f, %.2f'%(angX,angY,angZ),1)
         Draw()
         
     def OnMouseWheel(event):
@@ -2251,11 +2251,11 @@ def PlotStructure(self,data):
             return
         drawingData['cameraPos'] += event.GetWheelRotation()/24
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
-        self.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(drawingData['cameraPos']),1)
+        G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(drawingData['cameraPos']),1)
         page = getSelection()
         if page:
-            if self.dataDisplay.GetPageText(page) == 'Draw Options':
-                panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
+            if G2frame.dataDisplay.GetPageText(page) == 'Draw Options':
+                panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
                 names = [child.GetName() for child in panel]
                 panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
                 panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
@@ -2263,47 +2263,47 @@ def PlotStructure(self,data):
         
     def getSelection():
         try:
-            return self.dataDisplay.GetSelection()
+            return G2frame.dataDisplay.GetSelection()
         except AttributeError:
-            print self.dataDisplay.GetLabel()
-            self.G2plotNB.status.SetStatusText('Select this from Phase data window!')
+            print G2frame.dataDisplay.GetLabel()
+            G2frame.G2plotNB.status.SetStatusText('Select this from Phase data window!')
             return 0
             
     def SetViewPointText(VP):
         page = getSelection()
         if page:
-            if self.dataDisplay.GetPageText(page) == 'Draw Options':
-                panel = self.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
+            if G2frame.dataDisplay.GetPageText(page) == 'Draw Options':
+                panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
                 names = [child.GetName() for child in panel]
                 panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
             
     def ClearSelectedAtoms():
         page = getSelection()
         if page:
-            if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
-                self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
-            elif self.dataDisplay.GetPageText(page) == 'Atoms':
-                self.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
+            if G2frame.dataDisplay.GetPageText(page) == 'Draw Atoms':
+                G2frame.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
+            elif G2frame.dataDisplay.GetPageText(page) == 'Atoms':
+                G2frame.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
                     
     def SetSelectedAtoms(ind,Add=False):
         page = getSelection()
         if page:
-            if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
-                self.dataDisplay.GetPage(page).SelectRow(ind,Add)      #this is the Atoms grid in Draw Atoms
-            elif self.dataDisplay.GetPageText(page) == 'Atoms':
+            if G2frame.dataDisplay.GetPageText(page) == 'Draw Atoms':
+                G2frame.dataDisplay.GetPage(page).SelectRow(ind,Add)      #this is the Atoms grid in Draw Atoms
+            elif G2frame.dataDisplay.GetPageText(page) == 'Atoms':
                 Id = drawAtoms[ind][-2]
                 for i,atom in enumerate(atomData):
                     if atom[-1] == Id:
-                        self.dataDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms
+                        G2frame.dataDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms
                   
     def GetSelectedAtoms():
         page = getSelection()
         Ind = []
         if page:
-            if self.dataDisplay.GetPageText(page) == 'Draw Atoms':
-                Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
-            elif self.dataDisplay.GetPageText(page) == 'Atoms':
-                Ind = self.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
+            if G2frame.dataDisplay.GetPageText(page) == 'Draw Atoms':
+                Ind = G2frame.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
+            elif G2frame.dataDisplay.GetPageText(page) == 'Atoms':
+                Ind = G2frame.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
         return Ind
                                        
     def OnKey(event):           #on key UP!!
@@ -2611,9 +2611,9 @@ def PlotStructure(self,data):
         if drawingData['showABC']:
             x,y,z = drawingData['testPos'][0]
 #            if altDown:
-#                self.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
+#                G2frame.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
 #            else:
-#                self.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
+#                G2frame.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
             RenderUnitVectors(x,y,z)
         Backbone = []
         BackboneColor = []
@@ -2711,17 +2711,17 @@ def PlotStructure(self,data):
         Draw()
         
     try:
-        plotNum = self.G2plotNB.plotList.index(generalData['Name'])
-        Page = self.G2plotNB.nb.GetPage(plotNum)        
+        plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
     except ValueError:
-        Plot = self.G2plotNB.addOgl(generalData['Name'])
-        plotNum = self.G2plotNB.plotList.index(generalData['Name'])
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addOgl(generalData['Name'])
+        plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.views = False
         view = False
         altDown = False
     Page.SetFocus()
-    cb = wx.ComboBox(self.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=(' save as:','jpeg','tiff','bmp'))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as:')

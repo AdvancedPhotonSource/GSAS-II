@@ -35,7 +35,7 @@ def sint(S):
     else:
         return 0
 
-def SelectPowderData(self, filename):
+def SelectPowderData(G2frame, filename):
     """Selects banks of data from a filename of any GSAS powder data format
     Input - filename: any GSAS powder data formatted file (currently STD, FXYE, FXY & ESD)
     Returns - a list of banks to be read; each entry in list is a tuple containing:
@@ -47,7 +47,7 @@ def SelectPowderData(self, filename):
     Title = '''
 First line of this file:
 '''+File.readline()
-    dlg = wx.MessageDialog(self, Title, 'Is this the file you want?', 
+    dlg = wx.MessageDialog(G2frame, Title, 'Is this the file you want?', 
         wx.YES_NO | wx.ICON_QUESTION)
     try:
         result = dlg.ShowModal()
@@ -57,7 +57,7 @@ First line of this file:
     Temperature = 300
     
     if '.xye' in filename:      #Topas style xye file (e.g. 2-th, I, sig) - no iparm file/no BANK record
-        dlg = wx.MessageDialog(self,'''Is this laboratory Cu Ka1/Ka2 data? 
+        dlg = wx.MessageDialog(G2frame,'''Is this laboratory Cu Ka1/Ka2 data? 
 (No = 0.6A wavelength synchrotron data)
 Change wavelength in Instrument Parameters if needed''','Data type?',
             wx.YES_NO | wx.ICON_QUESTION)
@@ -83,9 +83,9 @@ Change wavelength in Instrument Parameters if needed''','Data type?',
                         
         
     else:                       #GSAS style fxye or fxy file (e.g. 100*2-th, I, sig)
-        self.IparmName = GetInstrumentFile(self,filename)
-        if self.IparmName:
-            Iparm = GetInstrumentData(self.IparmName)
+        G2frame.IparmName = GetInstrumentFile(G2frame,filename)
+        if G2frame.IparmName:
+            Iparm = GetInstrumentData(G2frame.IparmName)
         else:
             Iparm = {}                                               #Assume CuKa lab data if no iparm file
             Iparm['INS   HTYPE '] = 'PXC '
@@ -123,7 +123,7 @@ Change wavelength in Instrument Parameters if needed''','Data type?',
     if Banks:
         result = [0]
         if len(Banks) >= 2:
-            dlg = wx.MultiChoiceDialog(self, 'Which scans do you want?', 'Select scans', Banks, wx.CHOICEDLG_STYLE)
+            dlg = wx.MultiChoiceDialog(G2frame, 'Which scans do you want?', 'Select scans', Banks, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
@@ -134,21 +134,21 @@ Change wavelength in Instrument Parameters if needed''','Data type?',
         for i in result:
             FoundData.append((filename,Pos[i],Banks[i]))
     else:
-        dlg = wx.MessageDialog(self, 'ERROR - this is not a GSAS powder data file', 'No BANK records', wx.OK | wx.ICON_ERROR)
+        dlg = wx.MessageDialog(G2frame, 'ERROR - this is not a GSAS powder data file', 'No BANK records', wx.OK | wx.ICON_ERROR)
         try:
             result = dlg.ShowModal()
         finally:
             dlg.Destroy()
     return FoundData,Iparm,Comments,Temperature
 
-def GetInstrumentFile(self,filename):
+def GetInstrumentFile(G2frame,filename):
     import os.path as op
-    dlg = wx.FileDialog(self,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
+    dlg = wx.FileDialog(G2frame,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
         wx.OPEN|wx.CHANGE_DIR)
     Tname = filename[:filename.index('.')]+'.prm'
     if op.exists(Tname):
-        self.IparmName = Tname        
-    if self.IparmName: dlg.SetFilename(self.IparmName)
+        G2frame.IparmName = Tname        
+    if G2frame.IparmName: dlg.SetFilename(G2frame.IparmName)
     filename = ''
     try:
         if dlg.ShowModal() == wx.ID_OK:
@@ -471,9 +471,9 @@ def GetSTDdata(filename,Pos,Bank,DataType):
     N = len(x)
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
-def CheckImageFile(self,imagefile):
+def CheckImageFile(G2frame,imagefile):
     if not ospath.exists(imagefile):
-        dlg = wx.FileDialog(self, 'Bad image file name; choose name', '.', '',\
+        dlg = wx.FileDialog(G2frame, 'Bad image file name; choose name', '.', '',\
         'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
         |*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|\
         Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
@@ -491,7 +491,7 @@ def CheckImageFile(self,imagefile):
             dlg.Destroy()
     return imagefile
         
-def GetImageData(self,imagefile,imageOnly=False):        
+def GetImageData(G2frame,imagefile,imageOnly=False):        
     ext = ospath.splitext(imagefile)[1]
     Comments = []
     if ext == '.tif' or ext == '.tiff':
@@ -794,9 +794,9 @@ def GetTifData(filename,imageOnly=False):
     else:
         return head,data,Npix,image
     
-def ProjFileOpen(self):
-    file = open(self.GSASprojectfile,'rb')
-    print 'load from file: ',self.GSASprojectfile
+def ProjFileOpen(G2frame):
+    file = open(G2frame.GSASprojectfile,'rb')
+    print 'load from file: ',G2frame.GSASprojectfile
     wx.BeginBusyCursor()
     try:
         while True:
@@ -806,42 +806,42 @@ def ProjFileOpen(self):
                 break
             datum = data[0]
             
-            Id = self.PatternTree.AppendItem(parent=self.root,text=datum[0])
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=datum[0])
             if 'PWDR' in datum[0]:                
-                self.PatternTree.SetItemPyData(Id,datum[1][:3])     #temp. trim off junk
+                G2frame.PatternTree.SetItemPyData(Id,datum[1][:3])     #temp. trim off junk
             else:
-                self.PatternTree.SetItemPyData(Id,datum[1])
+                G2frame.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
-                sub = self.PatternTree.AppendItem(Id,datus[0])
-                self.PatternTree.SetItemPyData(sub,datus[1])
+                sub = G2frame.PatternTree.AppendItem(Id,datus[0])
+                G2frame.PatternTree.SetItemPyData(sub,datus[1])
             if 'IMG' in datum[0]:                   #retreive image default flag & data if set
-                Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))
+                Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
-                    self.imageDefault = Data                
+                    G2frame.imageDefault = Data                
         file.close()
         
     finally:
         wx.EndBusyCursor()
     print 'project load successful'
-    self.NewPlot = True
+    G2frame.NewPlot = True
     
-def ProjFileSave(self):
-    if not self.PatternTree.IsEmpty():
-        file = open(self.GSASprojectfile,'wb')
-        print 'save to file: ',self.GSASprojectfile
+def ProjFileSave(G2frame):
+    if not G2frame.PatternTree.IsEmpty():
+        file = open(G2frame.GSASprojectfile,'wb')
+        print 'save to file: ',G2frame.GSASprojectfile
         wx.BeginBusyCursor()
         try:
-            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while item:
                 data = []
-                name = self.PatternTree.GetItemText(item)
-                data.append([name,self.PatternTree.GetItemPyData(item)])
-                item2, cookie2 = self.PatternTree.GetFirstChild(item)
+                name = G2frame.PatternTree.GetItemText(item)
+                data.append([name,G2frame.PatternTree.GetItemPyData(item)])
+                item2, cookie2 = G2frame.PatternTree.GetFirstChild(item)
                 while item2:
-                    name = self.PatternTree.GetItemText(item2)
-                    data.append([name,self.PatternTree.GetItemPyData(item2)])
-                    item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
-                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
+                    name = G2frame.PatternTree.GetItemText(item2)
+                    data.append([name,G2frame.PatternTree.GetItemPyData(item2)])
+                    item2, cookie2 = G2frame.PatternTree.GetNextChild(item, cookie2)                            
+                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                            
                 cPickle.dump(data,file,1)
             file.close()
         finally:
@@ -1046,12 +1046,12 @@ def GPXBackup(GPXfile,makeBack=True):
     last = 0
     for name in files:
         name = name.split('.')
-        if len(name) == 3 and name[0] == Name and 'bak' in name[1]:
+        if len(name) >= 3 and name[0] == Name and 'bak' in name[-2]:
             if makeBack:
-                last = max(last,int(name[1].strip('bak'))+1)
+                last = max(last,int(name[-2].strip('bak'))+1)
             else:
-                last = max(last,int(name[1].strip('bak')))
-    GPXback = ospath.join(GPXpath,ospath.splitext(GPXname)[0]+'.bak'+str(last)+'.gpx')
+                last = max(last,int(name[-2].strip('bak')))
+    GPXback = ospath.join(GPXpath,GPXname.rstrip('.'.join(name[-2:]))+'.bak'+str(last)+'.gpx')
     dfu.copy_file(GPXfile,GPXback)
     return GPXback
         
@@ -1185,15 +1185,15 @@ def GetHKLFdata(GPXfile,HKLFname):
     file.close()
     return HKLFdata
     
-def SaveIntegration(self,PickId,data):
-    azms = self.Integrate[1]
-    X = self.Integrate[2][:-1]
+def SaveIntegration(G2frame,PickId,data):
+    azms = G2frame.Integrate[1]
+    X = G2frame.Integrate[2][:-1]
     Xminmax = [X[0],X[-1]]
     N = len(X)
-    Id = self.PatternTree.GetItemParent(PickId)
-    name = self.PatternTree.GetItemText(Id)
+    Id = G2frame.PatternTree.GetItemParent(PickId)
+    name = G2frame.PatternTree.GetItemText(Id)
     name = name.replace('IMG ','PWDR ')
-    Comments = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'))
+    Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'))
     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
     codes = [0 for i in range(11)]
     LRazm = data['LRazimuth']
@@ -1204,45 +1204,45 @@ def SaveIntegration(self,PickId,data):
         for i,azm in enumerate(azms[:-1]):
             Azms.append((azms[i+1]+azm)/2.)
     for i,azm in enumerate(azms[:-1]):
-        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         Id = 0
         while item:
-            Name = self.PatternTree.GetItemText(item)
+            Name = G2frame.PatternTree.GetItemText(item)
             if name == Name:
                 Id = item
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
-        Y = self.Integrate[0][i]
+        Y = G2frame.Integrate[0][i]
         W = 1./Y                    #probably not true
         Sample = G2pdG.SetDefaultSample()
         if Id:
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id, 'Comments'),Comments)                    
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),[tuple(Xminmax),Xminmax])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'),Comments)                    
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'),[tuple(parms),parms[:],codes,names])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Peak List'),[])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Index Peak List'),[])
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Unit Cells List'),[])             
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'),{})             
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'),[tuple(parms),parms[:],codes,names])
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),[])
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Index Peak List'),[])
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Unit Cells List'),[])             
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'),{})             
         else:
-            Id = self.PatternTree.AppendItem(parent=self.root,text=name+" Azm= %.2f"%(Azms[i]))
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=name+" Azm= %.2f"%(Azms[i]))
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms[:],codes,names])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
-            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Reflection Lists'),{})             
-        self.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
-    self.PatternTree.SelectItem(Id)
-    self.PatternTree.Expand(Id)
-    self.PatternId = Id
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms[:],codes,names])
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[])
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})             
+        G2frame.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
+    G2frame.PatternTree.SelectItem(Id)
+    G2frame.PatternTree.Expand(Id)
+    G2frame.PatternId = Id
             
-def powderFxyeSave(self,exports,powderfile):
+def powderFxyeSave(G2frame,exports,powderfile):
     head,tail = ospath.split(powderfile)
     name,ext = tail.split('.')
     wx.BeginBusyCursor()
@@ -1250,8 +1250,8 @@ def powderFxyeSave(self,exports,powderfile):
         filename = ospath.join(head,name+'-%03d.'%(i)+ext)
         prmname = filename.strip(ext)+'prm'
         prm = open(prmname,'w')      #old style GSAS parm file
-        PickId = G2gd.GetPatternTreeItemId(self, self.root, export)
-        Values,Names = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self, \
+        PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
+        Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
             PickId, 'Instrument Parameters'))[1::2]     #get values & names
         Inst = dict(zip(Names,Values))
         print Inst['Type']
@@ -1273,7 +1273,7 @@ def powderFxyeSave(self,exports,powderfile):
         file = open(filename,'w')
         print 'save powder pattern to file: ',filename
         try:
-            x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(PickId)[1]
+            x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
             file.write(powderfile+'\n')
             file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
                 100.*x[0],100.*(x[1]-x[0])))
@@ -1286,18 +1286,18 @@ def powderFxyeSave(self,exports,powderfile):
             wx.EndBusyCursor()
         print 'powder pattern file written'
         
-def powderXyeSave(self,exports,powderfile):
+def powderXyeSave(G2frame,exports,powderfile):
     head,tail = ospath.split(powderfile)
     name,ext = tail.split('.')
     for i,export in enumerate(exports):
         filename = ospath.join(head,name+'-%03d.'%(i)+ext)
-        PickId = G2gd.GetPatternTreeItemId(self, self.root, export)
+        PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         file = open(filename,'w')
         file.write('#%s\n'%(export))
         print 'save powder pattern to file: ',filename
         wx.BeginBusyCursor()
         try:
-            x,y,w,yc,yb,yd = self.PatternTree.GetItemPyData(PickId)[1]
+            x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
             s = list(np.sqrt(1./np.array(w)))        
             XYW = zip(x,y,s)
             for X,Y,W in XYW:
@@ -1307,17 +1307,17 @@ def powderXyeSave(self,exports,powderfile):
             wx.EndBusyCursor()
         print 'powder pattern file written'
         
-def PDFSave(self,exports):    
+def PDFSave(G2frame,exports):    
     for export in exports:
-        PickId = G2gd.GetPatternTreeItemId(self, self.root, export)
+        PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         SQname = 'S(Q)'+export[4:]
         GRname = 'G(R)'+export[4:]
-        sqfilename = ospath.join(self.dirname,export.replace(' ','_')[5:]+'.sq')
-        grfilename = ospath.join(self.dirname,export.replace(' ','_')[5:]+'.gr')
-        sqId = G2gd.GetPatternTreeItemId(self, PickId, SQname)
-        grId = G2gd.GetPatternTreeItemId(self, PickId, GRname)
-        sqdata = np.array(self.PatternTree.GetItemPyData(sqId)[1][:2]).T
-        grdata = np.array(self.PatternTree.GetItemPyData(grId)[1][:2]).T
+        sqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.sq')
+        grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
+        sqId = G2gd.GetPatternTreeItemId(G2frame, PickId, SQname)
+        grId = G2gd.GetPatternTreeItemId(G2frame, PickId, GRname)
+        sqdata = np.array(G2frame.PatternTree.GetItemPyData(sqId)[1][:2]).T
+        grdata = np.array(G2frame.PatternTree.GetItemPyData(grId)[1][:2]).T
         sqfile = open(sqfilename,'w')
         grfile = open(grfilename,'w')
         sqfile.write('#T S(Q) %s\n'%(export))
@@ -1331,10 +1331,10 @@ def PDFSave(self,exports):
             grfile.write("%15.6g %15.6g\n" % (r,gr))
         grfile.close()
     
-def PeakListSave(self,file,peaks):
-    print 'save peak list to file: ',self.peaklistfile
+def PeakListSave(G2frame,file,peaks):
+    print 'save peak list to file: ',G2frame.peaklistfile
     if not peaks:
-        dlg = wx.MessageDialog(self, 'No peaks!', 'Nothing to save!', wx.OK)
+        dlg = wx.MessageDialog(G2frame, 'No peaks!', 'Nothing to save!', wx.OK)
         try:
             result = dlg.ShowModal()
         finally:
@@ -1345,13 +1345,13 @@ def PeakListSave(self,file,peaks):
             (peak[0],peak[2],peak[4],peak[6]))
     print 'peak list saved'
               
-def IndexPeakListSave(self,peaks):
-    file = open(self.peaklistfile,'wa')
-    print 'save index peak list to file: ',self.peaklistfile
+def IndexPeakListSave(G2frame,peaks):
+    file = open(G2frame.peaklistfile,'wa')
+    print 'save index peak list to file: ',G2frame.peaklistfile
     wx.BeginBusyCursor()
     try:
         if not peaks:
-            dlg = wx.MessageDialog(self, 'No peaks!', 'Nothing to save!', wx.OK)
+            dlg = wx.MessageDialog(G2frame, 'No peaks!', 'Nothing to save!', wx.OK)
             try:
                 result = dlg.ShowModal()
             finally:
@@ -1364,7 +1364,7 @@ def IndexPeakListSave(self,peaks):
         wx.EndBusyCursor()
     print 'index peak list saved'
     
-def ReadEXPPhase(self,filename):
+def ReadEXPPhase(G2frame,filename):
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     textureData = {'Order':0,'Model':'cylindrical','Sample omega':[False,0.0],
         'Sample chi':[False,0.0],'Sample phi':[False,0.0],'SH Coeff':[False,{}],
@@ -1389,7 +1389,7 @@ def ReadEXPPhase(self,filename):
             key = 'CRS'+str(n+1)+'    PNAM'
             PNames.append(Expr[n][key])
     if Num < 8:
-        dlg = wx.SingleChoiceDialog(self, 'Which phase to read?', 'Read phase data', PNames, wx.CHOICEDLG_STYLE)
+        dlg = wx.SingleChoiceDialog(G2frame, 'Which phase to read?', 'Read phase data', PNames, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelection()

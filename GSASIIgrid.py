@@ -707,16 +707,16 @@ class Table(wg.PyGridTableBase):
                 self.data[row][col] = value
         innerSetValue(row, col, value)
                 
-def UpdateNotebook(self,data):        
+def UpdateNotebook(G2frame,data):        
     if data:
-        self.dataFrame.SetLabel('Notebook')
-        self.dataDisplay = wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+        G2frame.dataFrame.SetLabel('Notebook')
+        G2frame.dataDisplay = wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
         for line in data:
-            self.dataDisplay.AppendText(line+"\n")
-            self.dataDisplay.AppendText('Notebook entry @ '+time.ctime()+"\n")
+            G2frame.dataDisplay.AppendText(line+"\n")
+            G2frame.dataDisplay.AppendText('Notebook entry @ '+time.ctime()+"\n")
             
-def UpdateControls(self,data):
+def UpdateControls(G2frame,data):
     #patch
     if 'deriv type' not in data:
         data = {}
@@ -736,13 +736,13 @@ def UpdateControls(self,data):
     def SeqSizer():
         
         def OnSelectData(event):
-            choices = ['All',]+GetPatternTreeDataNames(self,['PWDR',])
+            choices = ['All',]+GetPatternTreeDataNames(G2frame,['PWDR',])
             sel = []
             if 'Seq Data' in data:
                 for item in data['Seq Data']:
                     sel.append(choices.index(item))
             names = []
-            dlg = wx.MultiChoiceDialog(self,'Select data:','Sequential refinement',choices)
+            dlg = wx.MultiChoiceDialog(G2frame,'Select data:','Sequential refinement',choices)
             dlg.SetSelections(sel)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
@@ -757,12 +757,12 @@ def UpdateControls(self,data):
             data['Reverse Seq'] = reverseSel.GetValue()
                     
         seqSizer = wx.BoxSizer(wx.HORIZONTAL)
-        seqSizer.Add(wx.StaticText(self.dataDisplay,label=' Sequential Refinement Powder Data: '),0,wx.ALIGN_CENTER_VERTICAL)
-        selSeqData = wx.Button(self.dataDisplay,-1,label=' Select data')
+        seqSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sequential Refinement Powder Data: '),0,wx.ALIGN_CENTER_VERTICAL)
+        selSeqData = wx.Button(G2frame.dataDisplay,-1,label=' Select data')
         selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
         seqSizer.Add(selSeqData,0,wx.ALIGN_CENTER_VERTICAL)
         seqSizer.Add((5,0),0)
-        reverseSel = wx.CheckBox(self.dataDisplay,-1,label=' Reverse order?')
+        reverseSel = wx.CheckBox(G2frame.dataDisplay,-1,label=' Reverse order?')
         reverseSel.Bind(wx.EVT_CHECKBOX,OnReverse)
         if 'Seq Data' not in data:
             reverseSel.Enable(False)
@@ -776,7 +776,7 @@ def UpdateControls(self,data):
         def OnDerivType(event):
             data['deriv type'] = derivSel.GetValue()
             derivSel.SetValue(data['deriv type'])
-            wx.CallAfter(UpdateControls,self,data)
+            wx.CallAfter(UpdateControls,G2frame,data)
             
         def OnConvergence(event):
             try:
@@ -799,69 +799,69 @@ def UpdateControls(self,data):
             Factr.SetValue('%.5f'%(value))
         
         LSSizer = wx.FlexGridSizer(cols=6,vgap=5,hgap=5)
-        LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
+        LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
         Choice=['analytic Jacobian','numeric','analytic Hessian']
-        derivSel = wx.ComboBox(parent=self.dataDisplay,value=data['deriv type'],choices=Choice,
+        derivSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['deriv type'],choices=Choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         derivSel.SetValue(data['deriv type'])
         derivSel.Bind(wx.EVT_COMBOBOX, OnDerivType)
             
         LSSizer.Add(derivSel,0,wx.ALIGN_CENTER_VERTICAL)
-        LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Min delta-M/M: '),0,wx.ALIGN_CENTER_VERTICAL)
-        Cnvrg = wx.TextCtrl(self.dataDisplay,-1,value='%.2g'%(data['min dM/M']),style=wx.TE_PROCESS_ENTER)
+        LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min delta-M/M: '),0,wx.ALIGN_CENTER_VERTICAL)
+        Cnvrg = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2g'%(data['min dM/M']),style=wx.TE_PROCESS_ENTER)
         Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
         Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
         LSSizer.Add(Cnvrg,0,wx.ALIGN_CENTER_VERTICAL)
         if 'Hessian' in data['deriv type']:
-            LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Max cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
             Choice = ['0','1','2','3','5','10','15','20']
-            maxCyc = wx.ComboBox(parent=self.dataDisplay,value=str(data['max cyc']),choices=Choice,
+            maxCyc = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['max cyc']),choices=Choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             maxCyc.SetValue(str(data['max cyc']))
             maxCyc.Bind(wx.EVT_COMBOBOX, OnMaxCycles)
             LSSizer.Add(maxCyc,0,wx.ALIGN_CENTER_VERTICAL)
         else:
-            LSSizer.Add(wx.StaticText(self.dataDisplay,label=' Initial shift factor: '),0,wx.ALIGN_CENTER_VERTICAL)
-            Factr = wx.TextCtrl(self.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
+            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial shift factor: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Factr = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
             Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
             Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
             LSSizer.Add(Factr,0,wx.ALIGN_CENTER_VERTICAL)
         return LSSizer
         
-    if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
         Status.SetStatusText('')
-    self.dataFrame.SetLabel('Controls')
-    self.dataDisplay = wx.Panel(self.dataFrame)
-    self.dataFrame.SetMenuBar(self.dataFrame.ControlsMenu)
+    G2frame.dataFrame.SetLabel('Controls')
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ControlsMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)    
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)    
     mainSizer.Add(LSSizer())
     mainSizer.Add((5,5),0)
     mainSizer.Add(SeqSizer())
     mainSizer.Add((5,5),0)
         
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Density Map Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Density Map Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
 
     mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
+    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
      
-def UpdateComments(self,data):                   
-    self.dataFrame.SetLabel('Comments')
-    self.dataDisplay = wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+def UpdateComments(G2frame,data):                   
+    G2frame.dataFrame.SetLabel('Comments')
+    G2frame.dataDisplay = wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
         style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
     for line in data:
         if line[-1] == '\n':
-            self.dataDisplay.AppendText(line)
+            G2frame.dataDisplay.AppendText(line)
         else:
-            self.dataDisplay.AppendText(line+'\n')
+            G2frame.dataDisplay.AppendText(line+'\n')
             
-def UpdateSeqResults(self,data):
+def UpdateSeqResults(G2frame,data):
     """ 
     input:
         data - dictionary
@@ -885,8 +885,8 @@ def UpdateSeqResults(self,data):
         sampleParmDict = {'Temperature':[],'Pressure':[],'Humidity':[],'Voltage':[],'Force':[],}
         sampleParm = {}
         for name in histNames:
-            Id = GetPatternTreeItemId(self,self.root,name)
-            sampleData = self.PatternTree.GetItemPyData(GetPatternTreeItemId(self,Id,'Sample Parameters'))
+            Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
+            sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
             for item in sampleParmDict:
                 sampleParmDict[item].append(sampleData[item])
         for item in sampleParmDict:
@@ -908,24 +908,24 @@ def UpdateSeqResults(self,data):
         return sigData
     
     def Select(event):
-        cols = self.dataDisplay.GetSelectedCols()
-        rows = self.dataDisplay.GetSelectedRows()
+        cols = G2frame.dataDisplay.GetSelectedCols()
+        rows = G2frame.dataDisplay.GetSelectedRows()
         if cols:
             plotData = []
             plotSig = []
             plotNames = []
             for col in cols:
-                plotData.append(self.SeqTable.GetColValues(col))
+                plotData.append(G2frame.SeqTable.GetColValues(col))
                 plotSig.append(GetSigData(col))
-                plotNames.append(self.SeqTable.GetColLabelValue(col))
+                plotNames.append(G2frame.SeqTable.GetColLabelValue(col))
             plotData = np.array(plotData)
-            G2plt.PlotSeq(self,plotData,plotSig,plotNames,sampleParms)
+            G2plt.PlotSeq(G2frame,plotData,plotSig,plotNames,sampleParms)
         elif rows:
             name = histNames[rows[0]]
-            G2plt.PlotCovariance(self,Data=data[name])
+            G2plt.PlotCovariance(G2frame,Data=data[name])
                
-    if self.dataDisplay:
-        self.dataDisplay.Destroy()
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
     cellList = {}
     newCellDict = data[histNames[0]]['newCellDict']
     for item in newCellDict:
@@ -937,9 +937,9 @@ def UpdateSeqResults(self,data):
         if item in data['varyList']:
             atomList[newAtomDict[item][0]] = item
     sampleParms = GetSampleParms()
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    self.dataFrame.SetLabel('Sequental refinement results')
-    self.dataFrame.CreateStatusBar()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+    G2frame.dataFrame.SetLabel('Sequental refinement results')
+    G2frame.dataFrame.CreateStatusBar()
     colLabels = data['varyList']+atomList.keys()+cellList.keys()
     Types = len(data['varyList']+atomList.keys()+cellList.keys())*[wg.GRID_VALUE_FLOAT,]
     seqList = [list(data[name]['variables']) for name in histNames]
@@ -949,21 +949,21 @@ def UpdateSeqResults(self,data):
         newCellDict = data[histNames[i]]['newCellDict']
         item += [newAtomDict[atomList[parm]][1] for parm in atomList.keys()]
         item += [newCellDict[cellList[parm]][1] for parm in cellList.keys()]
-    self.SeqTable = Table(seqList,colLabels=colLabels,rowLabels=histNames,types=Types)
-    self.dataDisplay = GSGrid(parent=self.dataFrame)
-    self.dataDisplay.SetTable(self.SeqTable, True)
-    self.dataDisplay.EnableEditing(False)
-    self.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, Select)
-    self.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
-    self.dataDisplay.SetMargins(0,0)
-    self.dataDisplay.AutoSizeColumns(True)
-    self.dataFrame.setSizePosLeft([700,350])
+    G2frame.SeqTable = Table(seqList,colLabels=colLabels,rowLabels=histNames,types=Types)
+    G2frame.dataDisplay = GSGrid(parent=G2frame.dataFrame)
+    G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
+    G2frame.dataDisplay.EnableEditing(False)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, Select)
+    G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
+    G2frame.dataDisplay.SetMargins(0,0)
+    G2frame.dataDisplay.AutoSizeColumns(True)
+    G2frame.dataFrame.setSizePosLeft([700,350])
     
-def UpdateConstraints(self,data):             
+def UpdateConstraints(G2frame,data):             
 #    data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
     if not data:
         data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
-    Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
     Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)
     phaseList = []
@@ -990,7 +990,7 @@ def UpdateConstraints(self,data):
     histList.sort()
     Indx = {}
     scope = {}                          #filled out later
-    self.Page = [0,'phs']
+    G2frame.Page = [0,'phs']
     
     def GetPHlegends(Phases,Histograms):
         plegend = '\n In p::name'
@@ -1033,9 +1033,9 @@ def UpdateConstraints(self,data):
         #future -  add 'all:all:name', '0:all:name', etc. to the varList
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in varList]
-            dlg = wx.MultiChoiceDialog(self,'Select more variables:'+legend,FrstVarb+' and:',atchoice)
+            dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,FrstVarb+' and:',atchoice)
         else:
-            dlg = wx.MultiChoiceDialog(self,'Select more variables:'+legend,FrstVarb+' and:',varList)
+            dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,FrstVarb+' and:',varList)
         varbs = [FrstVarb,]
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
@@ -1061,13 +1061,13 @@ def UpdateConstraints(self,data):
             Phase = Phases[phase]
             Atoms = Phase['Atoms']
         constr = []
-        page = self.Page
+        page = G2frame.Page
         choice = scope[page[1]]
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
         else:    
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
@@ -1077,13 +1077,13 @@ def UpdateConstraints(self,data):
         
     def OnAddEquivalence(event):
         constr = []
-        page = self.Page
+        page = G2frame.Page
         choice = scope[page[1]]
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
         else:    
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
@@ -1096,13 +1096,13 @@ def UpdateConstraints(self,data):
    
     def OnAddFunction(event):
         constr = []
-        page = self.Page
+        page = G2frame.Page
         choice = scope[page[1]]
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
         else:    
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
@@ -1115,13 +1115,13 @@ def UpdateConstraints(self,data):
                         
     def OnAddConstraint(event):
         constr = []
-        page = self.Page
+        page = G2frame.Page
         choice = scope[page[1]]
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],atchoice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
         else:    
-            dlg = wx.SingleChoiceDialog(self,'Select 1st variable:'+choice[1],choice[0],choice[2])
+            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
@@ -1197,7 +1197,7 @@ def UpdateConstraints(self,data):
             items = data[name][Id][:-2]+[[],]
             constType = 'Equivalence'
             extra = '; sum = 0'
-        dlg = self.SumDialog(self,constType,'Enter value for each term in constraint'+extra,'',items)
+        dlg = G2frame.SumDialog(G2frame,constType,'Enter value for each term in constraint'+extra,'',items)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetData()
@@ -1223,7 +1223,7 @@ def UpdateConstraints(self,data):
         HAPDisplay.SetSize(Size)
         HAPConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],250)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateHistConstr():
         HistConstr.DestroyChildren()
@@ -1238,7 +1238,7 @@ def UpdateConstraints(self,data):
         HistDisplay.SetSize(Size)
         HistConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],250)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdatePhaseConstr():
         PhaseConstr.DestroyChildren()
@@ -1253,23 +1253,23 @@ def UpdateConstraints(self,data):
         PhaseDisplay.SetSize(Size)
         PhaseConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],250)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
     
     def OnPageChanged(event):
         if event:       #page change event!
             page = event.GetSelection()
         else:
-            page = self.dataDisplay.GetSelection()
-        oldPage = self.dataDisplay.ChangeSelection(page)
-        text = self.dataDisplay.GetPageText(page)
+            page = G2frame.dataDisplay.GetSelection()
+        oldPage = G2frame.dataDisplay.ChangeSelection(page)
+        text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Histogram/Phase constraints':
-            self.Page = [page,'hap']
+            G2frame.Page = [page,'hap']
             UpdateHAPConstr()
         elif text == 'Histogram constraints':
-            self.Page = [page,'hst']
+            G2frame.Page = [page,'hst']
             UpdateHistConstr()
         elif text == 'Phase constraints':
-            self.Page = [page,'phs']
+            G2frame.Page = [page,'phs']
             UpdatePhaseConstr()
 
     def SetStatusLine(text):
@@ -1279,37 +1279,37 @@ def UpdateConstraints(self,data):
     scope = {'hst':['Histogram variables:',hlegend,histList,'Hist',UpdateHistConstr],
         'hap':['HAP variables:',phlegend,hapList,'HAP',UpdateHAPConstr],
         'phs':['Phase variables:',plegend,phaseList,'Phase',UpdatePhaseConstr]}
-    if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
-    self.dataFrame.SetLabel('Constraints')
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ConstraintMenu)
+    G2frame.dataFrame.SetLabel('Constraints')
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
     SetStatusLine('')
     
-    self.dataFrame.SetMenuBar(self.dataFrame.ConstraintMenu)
-    self.dataFrame.Bind(wx.EVT_MENU, OnAddConstraint, id=wxID_CONSTRAINTADD)
-    self.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=wxID_FUNCTADD)
-    self.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=wxID_EQUIVADD)
-    self.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=wxID_HOLDADD)
-    self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ConstraintMenu)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddConstraint, id=wxID_CONSTRAINTADD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=wxID_FUNCTADD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=wxID_EQUIVADD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=wxID_HOLDADD)
+    G2frame.dataDisplay = GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     
-    PhaseConstr = wx.ScrolledWindow(self.dataDisplay)
-    self.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
-    HAPConstr = wx.ScrolledWindow(self.dataDisplay)
-    self.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
-    HistConstr = wx.ScrolledWindow(self.dataDisplay)
-    self.dataDisplay.AddPage(HistConstr,'Histogram constraints')
+    PhaseConstr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
+    HAPConstr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
+    HistConstr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(HistConstr,'Histogram constraints')
     UpdatePhaseConstr()
 
-    self.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
     
-def UpdateRestraints(self,data):
+def UpdateRestraints(G2frame,data):
 
     def OnAddRestraint(event):
-        page = self.dataDisplay.GetSelection()
-        print self.dataDisplay.GetPageText(page)
+        page = G2frame.dataDisplay.GetSelection()
+        print G2frame.dataDisplay.GetPageText(page)
 
     def UpdateAtomRestr():
         AtomRestr.DestroyChildren()
@@ -1321,10 +1321,10 @@ def UpdateRestraints(self,data):
 
 
         dataDisplay.SetSizer(mainSizer)
-        Size = mainSizer.Fit(self.dataFrame)
+        Size = mainSizer.Fit(G2frame.dataFrame)
         Size[1] += 26                           #compensate for status bar
         dataDisplay.SetSize(Size)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdatePhaseRestr():
         PhaseRestr.DestroyChildren()
@@ -1336,67 +1336,67 @@ def UpdateRestraints(self,data):
 
 
         dataDisplay.SetSizer(mainSizer)
-        Size = mainSizer.Fit(self.dataFrame)
+        Size = mainSizer.Fit(G2frame.dataFrame)
         Size[1] += 26                           #compensate for status bar
         dataDisplay.SetSize(Size)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
     
     def OnPageChanged(event):
         page = event.GetSelection()
-        text = self.dataDisplay.GetPageText(page)
+        text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Atom restraints':
-            self.dataFrame.SetMenuBar(self.dataFrame.RestraintMenu)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
             UpdateAtomRestr()
         elif text == 'Phase restraints':
             UpdatePhaseRestr()
-            self.dataFrame.SetMenuBar(self.dataFrame.RestraintMenu)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
         event.Skip()
 
-    if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    self.dataFrame.SetMenuBar(self.dataFrame.RestraintMenu)
-    self.dataFrame.SetLabel('restraints')
-    self.dataFrame.CreateStatusBar()
-    self.dataFrame.Bind(wx.EVT_MENU, OnAddRestraint, id=wxID_RESTRAINTADD)
-    self.dataDisplay = GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
+    G2frame.dataFrame.SetLabel('restraints')
+    G2frame.dataFrame.CreateStatusBar()
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRestraint, id=wxID_RESTRAINTADD)
+    G2frame.dataDisplay = GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     
-    PhaseRestr = wx.ScrolledWindow(self.dataDisplay)
-    self.dataDisplay.AddPage(PhaseRestr,'Phase restraints')
-    AtomRestr = wx.ScrolledWindow(self.dataDisplay)
-    self.dataDisplay.AddPage(AtomRestr,'Atom restraints')
+    PhaseRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(PhaseRestr,'Phase restraints')
+    AtomRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(AtomRestr,'Atom restraints')
     UpdatePhaseRestr()
 #    AtomRestrData = data['AtomRestr']
 
-    self.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)        
+    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)        
              
-def UpdateHKLControls(self,data):
+def UpdateHKLControls(G2frame,data):
     
     def OnScaleSlider(event):
         scale = int(scaleSel.GetValue())/1000.
         scaleSel.SetValue(int(scale*1000.))
         data['Scale'] = scale*10.
-        G2plt.PlotSngl(self)
+        G2plt.PlotSngl(G2frame)
         
     def OnLayerSlider(event):
         layer = layerSel.GetValue()
         data['Layer'] = layer
-        G2plt.PlotSngl(self)
+        G2plt.PlotSngl(G2frame)
         
     def OnSelZone(event):
         data['Zone'] = zoneSel.GetValue()
-        G2plt.PlotSngl(self,newPlot=True)
+        G2plt.PlotSngl(G2frame,newPlot=True)
         
     def OnSelType(event):
         data['Type'] = typeSel.GetValue()
-        G2plt.PlotSngl(self)
+        G2plt.PlotSngl(G2frame)
         
     def SetStatusLine():
         Status.SetStatusText("look at me!!!")
                                       
-    if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
     SetStatusLine()
     zones = ['100','010','001']
     HKLmax = data['HKLmax']
@@ -1405,15 +1405,15 @@ def UpdateHKLControls(self,data):
         typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
     else:
         typeChoices = ['Fosq','Fo']
-    self.dataDisplay = wx.Panel(self.dataFrame)
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
     
     scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    scaleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Scale'),0,
+    scaleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Scale'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-    scaleSel = wx.Slider(parent=self.dataDisplay,maxValue=1000,minValue=100,
+    scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=100,
         style=wx.SL_HORIZONTAL,value=int(data['Scale']*100))
     scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
     scaleSel.SetLineSize(100)
@@ -1422,15 +1422,15 @@ def UpdateHKLControls(self,data):
     mainSizer.Add(scaleSizer,1,wx.EXPAND|wx.RIGHT)
     
     zoneSizer = wx.BoxSizer(wx.HORIZONTAL)
-    zoneSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Zone  '),0,
+    zoneSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Zone  '),0,
         wx.ALIGN_CENTER_VERTICAL)
-    zoneSel = wx.ComboBox(parent=self.dataDisplay,value=data['Zone'],choices=['100','010','001'],
+    zoneSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['Zone'],choices=['100','010','001'],
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     zoneSel.Bind(wx.EVT_COMBOBOX, OnSelZone)
     zoneSizer.Add(zoneSel,0,wx.ALIGN_CENTER_VERTICAL)
-    zoneSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Plot type  '),0,
+    zoneSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Plot type  '),0,
         wx.ALIGN_CENTER_VERTICAL)        
-    typeSel = wx.ComboBox(parent=self.dataDisplay,value=data['Type'],choices=typeChoices,
+    typeSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['Type'],choices=typeChoices,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     typeSel.Bind(wx.EVT_COMBOBOX, OnSelType)
     zoneSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1439,9 +1439,9 @@ def UpdateHKLControls(self,data):
         
     izone = zones.index(data['Zone'])
     layerSizer = wx.BoxSizer(wx.HORIZONTAL)
-    layerSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Layer'),0,
+    layerSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Layer'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-    layerSel = wx.Slider(parent=self.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
+    layerSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
         style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
     layerSel.SetLineSize(1)
     layerSel.SetLineSize(5)
@@ -1452,74 +1452,74 @@ def UpdateHKLControls(self,data):
 
         
     mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    self.dataDisplay.SetSize(mainSizer.Fit(self.dataFrame))
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
+    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
 
-def GetPatternTreeDataNames(self,dataTypes):
+def GetPatternTreeDataNames(G2frame,dataTypes):
     names = []
-    item, cookie = self.PatternTree.GetFirstChild(self.root)        
+    item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        
     while item:
-        name = self.PatternTree.GetItemText(item)
+        name = G2frame.PatternTree.GetItemText(item)
         if name[:4] in dataTypes:
             names.append(name)
-        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
     return names
                           
-def GetPatternTreeItemId(self, parentId, itemText):
-    item, cookie = self.PatternTree.GetFirstChild(parentId)
+def GetPatternTreeItemId(G2frame, parentId, itemText):
+    item, cookie = G2frame.PatternTree.GetFirstChild(parentId)
     while item:
-        if self.PatternTree.GetItemText(item) == itemText:
+        if G2frame.PatternTree.GetItemText(item) == itemText:
             return item
-        item, cookie = self.PatternTree.GetNextChild(parentId, cookie)
+        item, cookie = G2frame.PatternTree.GetNextChild(parentId, cookie)
     return 0                
 
-def MovePatternTreeToGrid(self,item):
+def MovePatternTreeToGrid(G2frame,item):
     
-#    print self.PatternTree.GetItemText(item)
+#    print G2frame.PatternTree.GetItemText(item)
     
     oldPage = 0
-    if self.dataFrame:
-        self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-        if self.dataFrame.GetLabel() == 'Comments':
-            data = [self.dataDisplay.GetValue()]
-            self.dataDisplay.Clear() 
-            Id = GetPatternTreeItemId(self,self.root, 'Comments')
-            if Id: self.PatternTree.SetItemPyData(Id,data)
-        elif self.dataFrame.GetLabel() == 'Notebook':
-            data = [self.dataDisplay.GetValue()]
-            self.dataDisplay.Clear() 
-            Id = GetPatternTreeItemId(self,self.root, 'Notebook')
-            if Id: self.PatternTree.SetItemPyData(Id,data)
-        elif 'Phase Data for' in self.dataFrame.GetLabel():
-            if self.dataDisplay: 
-                oldPage = self.dataDisplay.GetSelection()
-        self.dataFrame.Clear()
-        self.dataFrame.SetLabel('')
+    if G2frame.dataFrame:
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+        if G2frame.dataFrame.GetLabel() == 'Comments':
+            data = [G2frame.dataDisplay.GetValue()]
+            G2frame.dataDisplay.Clear() 
+            Id = GetPatternTreeItemId(G2frame,G2frame.root, 'Comments')
+            if Id: G2frame.PatternTree.SetItemPyData(Id,data)
+        elif G2frame.dataFrame.GetLabel() == 'Notebook':
+            data = [G2frame.dataDisplay.GetValue()]
+            G2frame.dataDisplay.Clear() 
+            Id = GetPatternTreeItemId(G2frame,G2frame.root, 'Notebook')
+            if Id: G2frame.PatternTree.SetItemPyData(Id,data)
+        elif 'Phase Data for' in G2frame.dataFrame.GetLabel():
+            if G2frame.dataDisplay: 
+                oldPage = G2frame.dataDisplay.GetSelection()
+        G2frame.dataFrame.Clear()
+        G2frame.dataFrame.SetLabel('')
     else:
         #create the frame for the data item window
-        self.dataFrame = DataFrame(parent=self.mainPanel)
+        G2frame.dataFrame = DataFrame(parent=G2frame.mainPanel)
 
-    self.dataFrame.Raise()            
-    self.PickId = 0
-    parentID = self.root
-    self.ExportPattern.Enable(False)
+    G2frame.dataFrame.Raise()            
+    G2frame.PickId = 0
+    parentID = G2frame.root
+    G2frame.ExportPattern.Enable(False)
     defWid = [250,150]
-    if item != self.root:
-        parentID = self.PatternTree.GetItemParent(item)
-    if self.PatternTree.GetItemParent(item) == self.root:
-        self.PatternId = item
-        self.PickId = item
-        if self.PatternTree.GetItemText(item) == 'Notebook':
-            self.dataFrame.SetMenuBar(self.dataFrame.DataNotebookMenu)
-            self.PatternId = 0
-            self.ExportPattern.Enable(False)
-            data = self.PatternTree.GetItemPyData(item)
-            UpdateNotebook(self,data)
-        elif self.PatternTree.GetItemText(item) == 'Controls':
-            self.PatternId = 0
-            self.ExportPattern.Enable(False)
-            data = self.PatternTree.GetItemPyData(item)
+    if item != G2frame.root:
+        parentID = G2frame.PatternTree.GetItemParent(item)
+    if G2frame.PatternTree.GetItemParent(item) == G2frame.root:
+        G2frame.PatternId = item
+        G2frame.PickId = item
+        if G2frame.PatternTree.GetItemText(item) == 'Notebook':
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataNotebookMenu)
+            G2frame.PatternId = 0
+            G2frame.ExportPattern.Enable(False)
+            data = G2frame.PatternTree.GetItemPyData(item)
+            UpdateNotebook(G2frame,data)
+        elif G2frame.PatternTree.GetItemText(item) == 'Controls':
+            G2frame.PatternId = 0
+            G2frame.ExportPattern.Enable(False)
+            data = G2frame.PatternTree.GetItemPyData(item)
             if not data:           #fill in defaults
                 data = {
                     #least squares controls
@@ -1529,175 +1529,175 @@ def MovePatternTreeToGrid(self,item):
                     'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],
                     #distance/angle controls
                     'distMax':0.0,'angleMax':0.0,'useMapPeaks':False}
-                self.PatternTree.SetItemPyData(item,data)                             
-            self.Refine.Enable(True)
-            self.SeqRefine.Enable(True)
-            UpdateControls(self,data)
-        elif self.PatternTree.GetItemText(item) == 'Sequental results':
-            data = self.PatternTree.GetItemPyData(item)
-            UpdateSeqResults(self,data)            
-        elif self.PatternTree.GetItemText(item) == 'Covariance':
-            data = self.PatternTree.GetItemPyData(item)
-            self.dataFrame.setSizePosLeft(defWid)
-            wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+                G2frame.PatternTree.SetItemPyData(item,data)                             
+            G2frame.Refine.Enable(True)
+            G2frame.SeqRefine.Enable(True)
+            UpdateControls(G2frame,data)
+        elif G2frame.PatternTree.GetItemText(item) == 'Sequental results':
+            data = G2frame.PatternTree.GetItemPyData(item)
+            UpdateSeqResults(G2frame,data)            
+        elif G2frame.PatternTree.GetItemText(item) == 'Covariance':
+            data = G2frame.PatternTree.GetItemPyData(item)
+            G2frame.dataFrame.setSizePosLeft(defWid)
+            wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
                         value='See plot window for covariance display')
-            G2plt.PlotCovariance(self)
-        elif self.PatternTree.GetItemText(item) == 'Constraints':
-            data = self.PatternTree.GetItemPyData(item)
-            UpdateConstraints(self,data)
-        elif self.PatternTree.GetItemText(item) == 'Restraints':
-            data = self.PatternTree.GetItemPyData(item)
-            UpdateRestraints(self,data)
-        elif 'IMG' in self.PatternTree.GetItemText(item):
-            self.Image = item
-            G2plt.PlotImage(self,newPlot=True)
-        elif 'PKS' in self.PatternTree.GetItemText(item):
-            G2plt.PlotPowderLines(self)
-        elif 'PWDR' in self.PatternTree.GetItemText(item):
-            self.ExportPattern.Enable(True)
-            self.dataFrame.setSizePosLeft(defWid)
-            wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+            G2plt.PlotCovariance(G2frame)
+        elif G2frame.PatternTree.GetItemText(item) == 'Constraints':
+            data = G2frame.PatternTree.GetItemPyData(item)
+            UpdateConstraints(G2frame,data)
+        elif G2frame.PatternTree.GetItemText(item) == 'Restraints':
+            data = G2frame.PatternTree.GetItemPyData(item)
+            UpdateRestraints(G2frame,data)
+        elif 'IMG' in G2frame.PatternTree.GetItemText(item):
+            G2frame.Image = item
+            G2plt.PlotImage(G2frame,newPlot=True)
+        elif 'PKS' in G2frame.PatternTree.GetItemText(item):
+            G2plt.PlotPowderLines(G2frame)
+        elif 'PWDR' in G2frame.PatternTree.GetItemText(item):
+            G2frame.ExportPattern.Enable(True)
+            G2frame.dataFrame.setSizePosLeft(defWid)
+            wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
                 style=wx.TE_MULTILINE,
                 value='See plot window for powder data display\nor select a data item in histogram')
-            G2plt.PlotPatterns(self,newPlot=True)
-        elif 'HKLF' in self.PatternTree.GetItemText(item):
-            self.Sngl = item
-            G2plt.PlotSngl(self,newPlot=True)
-        elif 'PDF' in self.PatternTree.GetItemText(item):
-            self.PatternId = item
-            self.ExportPDF.Enable(True)
-            G2plt.PlotISFG(self,type='S(Q)')
-        elif self.PatternTree.GetItemText(item) == 'Phases':
-            self.dataFrame.setSizePosLeft(defWid)
-            wx.TextCtrl(parent=self.dataFrame,size=self.dataFrame.GetClientSize(),
+            G2plt.PlotPatterns(G2frame,newPlot=True)
+        elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
+            G2frame.Sngl = item
+            G2plt.PlotSngl(G2frame,newPlot=True)
+        elif 'PDF' in G2frame.PatternTree.GetItemText(item):
+            G2frame.PatternId = item
+            G2frame.ExportPDF.Enable(True)
+            G2plt.PlotISFG(G2frame,type='S(Q)')
+        elif G2frame.PatternTree.GetItemText(item) == 'Phases':
+            G2frame.dataFrame.setSizePosLeft(defWid)
+            wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
                 value='Select one phase to see its parameters')            
-    elif 'I(Q)' in self.PatternTree.GetItemText(item):
-        self.PickId = item
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        G2plt.PlotISFG(self,type='I(Q)',newPlot=True)
-    elif 'S(Q)' in self.PatternTree.GetItemText(item):
-        self.PickId = item
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        G2plt.PlotISFG(self,type='S(Q)',newPlot=True)
-    elif 'F(Q)' in self.PatternTree.GetItemText(item):
-        self.PickId = item
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        G2plt.PlotISFG(self,type='F(Q)',newPlot=True)
-    elif 'G(R)' in self.PatternTree.GetItemText(item):
-        self.PickId = item
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        G2plt.PlotISFG(self,type='G(R)',newPlot=True)            
-    elif self.PatternTree.GetItemText(parentID) == 'Phases':
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)            
-        G2phG.UpdatePhaseData(self,item,data,oldPage)
-    elif self.PatternTree.GetItemText(item) == 'Comments':
-        self.dataFrame.SetMenuBar(self.dataFrame.DataCommentsMenu)
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        UpdateComments(self,data)
-    elif self.PatternTree.GetItemText(item) == 'Image Controls':
-        self.dataFrame.SetTitle('Image Controls')
-        self.PickId = item
-        self.Image = self.PatternTree.GetItemParent(item)
-        masks = self.PatternTree.GetItemPyData(
-            GetPatternTreeItemId(self,self.Image, 'Masks'))
-        data = self.PatternTree.GetItemPyData(item)
-        G2imG.UpdateImageControls(self,data,masks)
-        G2plt.PlotImage(self)
-    elif self.PatternTree.GetItemText(item) == 'Masks':
-        self.dataFrame.SetTitle('Masks')
-        self.PickId = item
-        self.Image = self.PatternTree.GetItemParent(item)
-        data = self.PatternTree.GetItemPyData(item)
-        G2imG.UpdateMasks(self,data)
-        G2plt.PlotImage(self)
-    elif self.PatternTree.GetItemText(item) == 'HKL Plot Controls':
-        self.PickId = item
-        self.Sngl = self.PatternTree.GetItemParent(item)
-        data = self.PatternTree.GetItemPyData(item)
-        UpdateHKLControls(self,data)
-        G2plt.PlotSngl(self)
-    elif self.PatternTree.GetItemText(item) == 'PDF Controls':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.ExportPDF.Enable(True)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        G2pdG.UpdatePDFGrid(self,data)
-        G2plt.PlotISFG(self,type='I(Q)')
-        G2plt.PlotISFG(self,type='S(Q)')
-        G2plt.PlotISFG(self,type='F(Q)')
-        G2plt.PlotISFG(self,type='G(R)')
-    elif self.PatternTree.GetItemText(item) == 'Peak List':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.ExportPeakList.Enable(True)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        G2pdG.UpdatePeakGrid(self,data)
-        G2plt.PlotPatterns(self)
-    elif self.PatternTree.GetItemText(item) == 'Background':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        G2pdG.UpdateBackground(self,data)
-        G2plt.PlotPatterns(self)
-    elif self.PatternTree.GetItemText(item) == 'Limits':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        G2pdG.UpdateLimitsGrid(self,data)
-        G2plt.PlotPatterns(self)
-    elif self.PatternTree.GetItemText(item) == 'Instrument Parameters':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        G2pdG.UpdateInstrumentGrid(self,data)
-        G2plt.PlotPeakWidths(self)
-    elif self.PatternTree.GetItemText(item) == 'Sample Parameters':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
+    elif 'I(Q)' in G2frame.PatternTree.GetItemText(item):
+        G2frame.PickId = item
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2plt.PlotISFG(G2frame,type='I(Q)',newPlot=True)
+    elif 'S(Q)' in G2frame.PatternTree.GetItemText(item):
+        G2frame.PickId = item
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2plt.PlotISFG(G2frame,type='S(Q)',newPlot=True)
+    elif 'F(Q)' in G2frame.PatternTree.GetItemText(item):
+        G2frame.PickId = item
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2plt.PlotISFG(G2frame,type='F(Q)',newPlot=True)
+    elif 'G(R)' in G2frame.PatternTree.GetItemText(item):
+        G2frame.PickId = item
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2plt.PlotISFG(G2frame,type='G(R)',newPlot=True)            
+    elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)            
+        G2phG.UpdatePhaseData(G2frame,item,data,oldPage)
+    elif G2frame.PatternTree.GetItemText(item) == 'Comments':
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataCommentsMenu)
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        UpdateComments(G2frame,data)
+    elif G2frame.PatternTree.GetItemText(item) == 'Image Controls':
+        G2frame.dataFrame.SetTitle('Image Controls')
+        G2frame.PickId = item
+        G2frame.Image = G2frame.PatternTree.GetItemParent(item)
+        masks = G2frame.PatternTree.GetItemPyData(
+            GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2imG.UpdateImageControls(G2frame,data,masks)
+        G2plt.PlotImage(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Masks':
+        G2frame.dataFrame.SetTitle('Masks')
+        G2frame.PickId = item
+        G2frame.Image = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2imG.UpdateMasks(G2frame,data)
+        G2plt.PlotImage(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'HKL Plot Controls':
+        G2frame.PickId = item
+        G2frame.Sngl = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(item)
+        UpdateHKLControls(G2frame,data)
+        G2plt.PlotSngl(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.ExportPDF.Enable(True)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdatePDFGrid(G2frame,data)
+        G2plt.PlotISFG(G2frame,type='I(Q)')
+        G2plt.PlotISFG(G2frame,type='S(Q)')
+        G2plt.PlotISFG(G2frame,type='F(Q)')
+        G2plt.PlotISFG(G2frame,type='G(R)')
+    elif G2frame.PatternTree.GetItemText(item) == 'Peak List':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.ExportPeakList.Enable(True)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdatePeakGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Background':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdateBackground(G2frame,data)
+        G2plt.PlotPatterns(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Limits':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdateLimitsGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Instrument Parameters':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdateInstrumentGrid(G2frame,data)
+        G2plt.PlotPeakWidths(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Sample Parameters':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
 
         if 'Temperature' not in data:           #temp fix for old gpx files
             data = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
                 'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,
                 'Force':0.0,'Gonio. radius':200.0}
-            self.PatternTree.SetItemPyData(item,data)
+            G2frame.PatternTree.SetItemPyData(item,data)
     
-        G2pdG.UpdateSampleGrid(self,data)
-        G2plt.PlotPatterns(self)
-    elif self.PatternTree.GetItemText(item) == 'Index Peak List':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.ExportPeakList.Enable(True)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        G2pdG.UpdateIndexPeaksGrid(self,data)
-        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
-            G2plt.PlotPowderLines(self)
+        G2pdG.UpdateSampleGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Index Peak List':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.ExportPeakList.Enable(True)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdateIndexPeaksGrid(G2frame,data)
+        if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+            G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(self)
-    elif self.PatternTree.GetItemText(item) == 'Unit Cells List':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
+            G2plt.PlotPatterns(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Unit Cells List':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
         if not data:
             data.append([0,0.0,4,25.0,0,'P1',1,1,1,90,90,90]) #zero error flag, zero value, max Nc/No, start volume
             data.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0])      #Bravais lattice flags
             data.append([])                                 #empty cell list
             data.append([])                                 #empty dmin
-            self.PatternTree.SetItemPyData(item,data)                             
-        G2pdG.UpdateUnitCellsGrid(self,data)
-        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
-            G2plt.PlotPowderLines(self)
+            G2frame.PatternTree.SetItemPyData(item,data)                             
+        G2pdG.UpdateUnitCellsGrid(G2frame,data)
+        if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+            G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(self)
-    elif self.PatternTree.GetItemText(item) == 'Reflection Lists':
-        self.PatternId = self.PatternTree.GetItemParent(item)
-        self.PickId = item
-        data = self.PatternTree.GetItemPyData(item)
-        self.RefList = ''
+            G2plt.PlotPatterns(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Reflection Lists':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2frame.RefList = ''
         if len(data):
-            self.RefList = data.keys()[0]
-        G2pdG.UpdateReflectionGrid(self,data)
-        G2plt.PlotPatterns(self)
+            G2frame.RefList = data.keys()[0]
+        G2pdG.UpdateReflectionGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame)

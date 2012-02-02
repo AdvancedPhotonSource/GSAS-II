@@ -30,16 +30,16 @@ tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
     
-def IsHistogramInAnyPhase(self,histoName):
-    phases = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+def IsHistogramInAnyPhase(G2frame,histoName):
+    phases = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
     if phases:
-        item, cookie = self.PatternTree.GetFirstChild(phases)
+        item, cookie = G2frame.PatternTree.GetFirstChild(phases)
         while item:
-            data = self.PatternTree.GetItemPyData(item)
+            data = G2frame.PatternTree.GetItemPyData(item)
             histoList = data['Histograms'].keys()
             if histoName in histoList:
                 return True
-            item, cookie = self.PatternTree.GetNextChild(phases, cookie)
+            item, cookie = G2frame.PatternTree.GetNextChild(phases, cookie)
         return False
     else:
         return False
@@ -51,102 +51,104 @@ def SetDefaultSample():
         'Voltage':0.0,'Force':0.0,'Gonio. radius':200.0,
         'Omega':0.0,'Chi':0.0,'Phi':0.0}    
        
-def UpdatePeakGrid(self, data):
-    if self.dataDisplay:
-        self.dataFrame.Clear()
+def UpdatePeakGrid(G2frame, data):
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
     
     def OnUnDo(event):
         DoUnDo()
-        self.dataFrame.UnDo.Enable(False)
+        G2frame.dataFrame.UnDo.Enable(False)
         
     def DoUnDo():
         print 'Undo last refinement'
-        file = open(self.undofile,'rb')
-        PatternId = self.PatternId
+        file = open(G2frame.undofile,'rb')
+        PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item),cPickle.load(file))
-            if self.dataDisplay.GetName() == item:
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item),cPickle.load(file))
+            if G2frame.dataDisplay.GetName() == item:
                 if item == 'Background':
-                    UpdateBackground(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+                    UpdateBackground(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
                 elif item == 'Instrument Parameters':
-                    UpdateInstrumentGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+                    UpdateInstrumentGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
                 elif item == 'Peak List':
-                    UpdatePeakGrid(self,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, item)))
+                    UpdatePeakGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
             print item,' recovered'
         file.close()
         
     def SaveState():
-        self.undofile = self.dirname+'\\GSASII.save'
-        file = open(self.undofile,'wb')
-        PatternId = self.PatternId
+        G2frame.undofile = G2frame.dirname+'\\GSASII.save'
+        file = open(G2frame.undofile,'wb')
+        PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
-            cPickle.dump(self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,item)),file,1)
+            cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,item)),file,1)
         file.close()
-        self.dataFrame.UnDo.Enable(True)
+        G2frame.dataFrame.UnDo.Enable(True)
         
     def OnLSQPeakFit(event):
+        if not G2frame.GSASprojectfile:            #force a save of the gpx file so SaveState can wirte in the same directory
+            G2frame.OnFileSaveas(event)
         OnPeakFit('LSQ')
         
     def OnOneCycle(event):
         OnPeakFit('LSQ',oneCycle=True)
         
     def OnClearPeaks(event):
-        dlg = wx.MessageDialog(self,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
+        dlg = wx.MessageDialog(G2frame,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 peaks = []
         finally:
             dlg.Destroy()
-        UpdatePeakGrid(self,peaks)
-        G2plt.PlotPatterns(self)
+        UpdatePeakGrid(G2frame,peaks)
+        G2plt.PlotPatterns(G2frame)
         
     def OnPeakFit(FitPgm,oneCycle=False):
         SaveState()
-        controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
+        controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
         if not controls:
             controls = {'deriv type':'analytic','min dM/M':0.0001,}     #fill in defaults if needed
         print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
-        PatternId = self.PatternId
-        PickId = self.PickId
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
+        PatternId = G2frame.PatternId
+        PickId = G2frame.PickId
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
         if not peaks:
-            self.ErrorDialog('No peaks!','Nothing to fit!')
+            G2frame.ErrorDialog('No peaks!','Nothing to fit!')
             return
-        background = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Background'))
-        limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
-        data = self.PatternTree.GetItemPyData(PatternId)[1]
+        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
+        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         wx.BeginBusyCursor()
         try:
             G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data,oneCycle,controls)
         finally:
             wx.EndBusyCursor()    
-        UpdatePeakGrid(self,peaks)
-        G2plt.PlotPatterns(self)
+        UpdatePeakGrid(G2frame,peaks)
+        G2plt.PlotPatterns(G2frame)
         print 'finished'
         return
         
     def OnResetSigGam(event):
-        PatternId = self.PatternId
-        PickId = self.PickId
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Peak List'))
+        PatternId = G2frame.PatternId
+        PickId = G2frame.PickId
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
         if not peaks:
-            self.ErrorDialog('No peaks!','Nothing to do!')
+            G2frame.ErrorDialog('No peaks!','Nothing to do!')
             return
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Instrument Parameters'))
+        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         Inst = dict(zip(inst[3],inst[1]))
         print len(Inst['Type'])
         for peak in peaks:
             if Inst['Type'] in ['PXC','PNC']:
                 peak[4] = Inst['U']*tand(peak[0]/2.0)**2+Inst['V']*tand(peak[0]/2.0)+Inst['W']
                 peak[6] = Inst['X']/cosd(peak[0]/2.0)+Inst['Y']*tand(peak[0]/2.0)
-        UpdatePeakGrid(self,peaks)
+        UpdatePeakGrid(G2frame,peaks)
                 
     def RefreshPeakGrid(event):
         r,c =  event.GetRow(),event.GetCol()
         
         event.StopPropagation()
-        data = self.PeakTable.GetData()
+        data = G2frame.PeakTable.GetData()
         T = []
         for peak in data:T.append(peak[0])
         D = dict(zip(T,data))
@@ -156,19 +158,19 @@ def UpdatePeakGrid(self, data):
         data = X        
         
     def setBackgroundColors():
-       for r in range(self.dataDisplay.GetNumberRows()):
-           for c in range(self.dataDisplay.GetNumberCols()):
-               if self.dataDisplay.GetColLabelValue(c) in ['position','intensity','sigma','gamma']:
-                   if float(self.dataDisplay.GetCellValue(r,c)) < 0.:
-                       self.dataDisplay.SetCellBackgroundColour(r,c,wx.RED)
+       for r in range(G2frame.dataDisplay.GetNumberRows()):
+           for c in range(G2frame.dataDisplay.GetNumberCols()):
+               if G2frame.dataDisplay.GetColLabelValue(c) in ['position','intensity','sigma','gamma']:
+                   if float(G2frame.dataDisplay.GetCellValue(r,c)) < 0.:
+                       G2frame.dataDisplay.SetCellBackgroundColour(r,c,wx.RED)
                    else:
-                       self.dataDisplay.SetCellBackgroundColour(r,c,wx.WHITE)
+                       G2frame.dataDisplay.SetCellBackgroundColour(r,c,wx.WHITE)
                                                   
     def KeyEditPeakGrid(event):
-        rowList = self.dataDisplay.GetSelectedRows()
-        colList = self.dataDisplay.GetSelectedCols()
-        selectList = self.dataDisplay.GetSelectedCells()
-        data = self.PatternTree.GetItemPyData(self.PickId)
+        rowList = G2frame.dataDisplay.GetSelectedRows()
+        colList = G2frame.dataDisplay.GetSelectedCols()
+        selectList = G2frame.dataDisplay.GetSelectedCells()
+        data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
         if event.GetKeyCode() == wx.WXK_RETURN:
             event.Skip(True)
         elif event.GetKeyCode() == wx.WXK_CONTROL:
@@ -176,58 +178,58 @@ def UpdatePeakGrid(self, data):
         elif event.GetKeyCode() == wx.WXK_SHIFT:
             event.Skip(True)
         elif rowList:
-            self.dataDisplay.ClearSelection()
+            G2frame.dataDisplay.ClearSelection()
             if event.GetKeyCode() == wx.WXK_DELETE:
-                self.dataDisplay.ClearGrid()
+                G2frame.dataDisplay.ClearGrid()
                 rowList.reverse()
                 nDel = 0
                 for row in rowList:
-                    self.PeakTable.DeleteRow(row)
+                    G2frame.PeakTable.DeleteRow(row)
                     nDel += 1
                 if nDel:
-                    msg = wg.GridTableMessage(self.PeakTable, 
+                    msg = wg.GridTableMessage(G2frame.PeakTable, 
                         wg.GRIDTABLE_NOTIFY_ROWS_DELETED,0,nDel)
-                    self.dataDisplay.ProcessTableMessage(msg)
-                data = self.PeakTable.GetData()
-                self.PatternTree.SetItemPyData(self.PickId,data[:-nDel])
-                self.dataDisplay.ForceRefresh()
+                    G2frame.dataDisplay.ProcessTableMessage(msg)
+                data = G2frame.PeakTable.GetData()
+                G2frame.PatternTree.SetItemPyData(G2frame.PickId,data[:-nDel])
+                G2frame.dataDisplay.ForceRefresh()
                 setBackgroundColors()
-                if not len(self.PatternTree.GetItemPyData(self.PickId)): 
-                    self.dataFrame.PeakFit.Enable(False)
+                if not len(G2frame.PatternTree.GetItemPyData(G2frame.PickId)): 
+                    G2frame.dataFrame.PeakFit.Enable(False)
                         
         elif colList:
-            self.dataDisplay.ClearSelection()
+            G2frame.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for col in colList:
-                if self.PeakTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
+                if G2frame.PeakTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
                     if key == 89: #'Y'
-                        for row in range(self.PeakTable.GetNumberRows()): data[row][col]=True
+                        for row in range(G2frame.PeakTable.GetNumberRows()): data[row][col]=True
                     elif key == 78:  #'N'
-                        for row in range(self.PeakTable.GetNumberRows()): data[row][col]=False
+                        for row in range(G2frame.PeakTable.GetNumberRows()): data[row][col]=False
         elif selectList:
-            self.dataDisplay.ClearSelection()
+            G2frame.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for row,col in selectList:
-                if self.PeakTable.GetTypeName(row,col) == wg.GRID_VALUE_BOOL:
+                if G2frame.PeakTable.GetTypeName(row,col) == wg.GRID_VALUE_BOOL:
                     if key == 89: #'Y'
                         data[row][col]=True
                     elif key == 78:  #'N'
                         data[row][col]=False
-        G2plt.PlotPatterns(self)
+        G2plt.PlotPatterns(G2frame)
             
-    self.dataFrame.SetMenuBar(self.dataFrame.PeakMenu)
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
-    self.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
-    self.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
-    self.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
-    self.Bind(wx.EVT_MENU, OnClearPeaks, id=G2gd.wxID_CLEARPEAKS)
-    self.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
-    self.dataFrame.PeakFit.Enable(False)
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.PeakMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
+    G2frame.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
+    G2frame.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
+    G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2gd.wxID_CLEARPEAKS)
+    G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
+    G2frame.dataFrame.PeakFit.Enable(False)
     if data:
-        self.dataFrame.PeakFit.Enable(True)
-        self.dataFrame.PFOneCycle.Enable(True)
-    self.PickTable = []
+        G2frame.dataFrame.PeakFit.Enable(True)
+        G2frame.dataFrame.PFOneCycle.Enable(True)
+    G2frame.PickTable = []
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
     colLabels = ['position','refine','intensity','refine','sigma','refine','gamma','refine']
@@ -243,19 +245,19 @@ def UpdatePeakGrid(self, data):
     X = []
     for key in T: X.append(D[key])
     data = X        
-    self.PatternTree.SetItemPyData(self.PickId,data)
-    self.PeakTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    self.dataFrame.SetLabel('Peak List')
-    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)
-    self.dataDisplay.SetTable(self.PeakTable, True)
+    G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
+    G2frame.PeakTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.dataFrame.SetLabel('Peak List')
+    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
+    G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
     setBackgroundColors()                         
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
-    self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
-    self.dataDisplay.SetMargins(0,0)
-    self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([535,350])
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
+    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+    G2frame.dataDisplay.SetMargins(0,0)
+    G2frame.dataDisplay.AutoSizeColumns(False)
+    G2frame.dataFrame.setSizePosLeft([535,350])
         
-def UpdateBackground(self,data):
+def UpdateBackground(G2frame,data):
     if len(data) < 2:       #add Debye diffuse & peaks scattering here
         data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
     if 'nPeaks' not in data[1]:
@@ -263,9 +265,9 @@ def UpdateBackground(self,data):
     ValObj = {}
             
     def OnBackCopy(event):
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         copyList = []
-        dlg = wx.MultiChoiceDialog(self, 
+        dlg = wx.MultiChoiceDialog(G2frame, 
             'Copy parameters to which histograms?', 'Copy parameters', 
             histList, wx.CHOICEDLG_STYLE)
         try:
@@ -276,8 +278,8 @@ def UpdateBackground(self,data):
                 if 'All' in copyList: 
                     copyList = histList[1:]
             for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
-                self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Background'),
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),
                     copy.copy(data))
         finally:
             dlg.Destroy()
@@ -301,8 +303,8 @@ def UpdateBackground(self,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(item[-1])
-            self.PatternTree.SetItemPyData(BackId,data)
-            UpdateBackground(self,data)
+            G2frame.PatternTree.SetItemPyData(BackId,data)
+            UpdateBackground(G2frame,data)
             
         def OnBakVal(event):
             Obj = event.GetEventObject()
@@ -316,27 +318,27 @@ def UpdateBackground(self,data):
         
         backSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background function: '),0,wx.ALIGN_CENTER_VERTICAL)
-        bakType = wx.ComboBox(self.dataDisplay,value=data[0][0],
+        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background function: '),0,wx.ALIGN_CENTER_VERTICAL)
+        bakType = wx.ComboBox(G2frame.dataDisplay,value=data[0][0],
                 choices=Choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         bakType.Bind(wx.EVT_COMBOBOX, OnNewType)
         topSizer.Add(bakType)
         topSizer.Add((5,0),0)
-        bakRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
+        bakRef = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
         bakRef.SetValue(bool(data[0][1]))
         bakRef.Bind(wx.EVT_CHECKBOX, OnBakRef)
         topSizer.Add(bakRef,0,wx.ALIGN_CENTER_VERTICAL)
-        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
-        bakTerms = wx.ComboBox(self.dataDisplay,-1,value=str(data[0][2]),choices=[str(i+1) for i in range(36)],
+        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
+        bakTerms = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[0][2]),choices=[str(i+1) for i in range(36)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         bakTerms.Bind(wx.EVT_COMBOBOX,OnBakTerms)
         topSizer.Add(bakTerms,0,wx.ALIGN_CENTER_VERTICAL)
         topSizer.Add((5,0),0)
         backSizer.Add(topSizer)
-        backSizer.Add(wx.StaticText(self.dataDisplay,-1,' Background coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
         bakSizer = wx.FlexGridSizer(1,5,5,5)
         for i,value in enumerate(data[0][3:]):
-            bakVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.4f'%(value),style=wx.TE_PROCESS_ENTER)
+            bakVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.4f'%(value),style=wx.TE_PROCESS_ENTER)
             bakSizer.Add(bakVal,0,wx.ALIGN_CENTER_VERTICAL)
             ValObj[bakVal.GetId()] = [i+3]
             bakVal.Bind(wx.EVT_TEXT_ENTER,OnBakVal)
@@ -356,7 +358,7 @@ def UpdateBackground(self,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(data[1]['debyeTerms'][-1])
-            UpdateBackground(self,data)
+            UpdateBackground(G2frame,data)
 
         def KeyEditPeakGrid(event):
             colList = debyeGrid.GetSelectedCols()
@@ -379,16 +381,16 @@ def UpdateBackground(self,data):
         
         debSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Debye scattering: '),0,wx.ALIGN_CENTER_VERTICAL)
-        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
-        debTerms = wx.ComboBox(self.dataDisplay,-1,value=str(data[1]['nDebye']),choices=[str(i) for i in range(12)],
+        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Debye scattering: '),0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' No. coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
+        debTerms = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[1]['nDebye']),choices=[str(i) for i in range(12)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         debTerms.Bind(wx.EVT_COMBOBOX,OnDebTerms)
         topSizer.Add(debTerms,0,wx.ALIGN_CENTER_VERTICAL)
         topSizer.Add((5,0),0)
         debSizer.Add(topSizer)
         if data[1]['nDebye']:
-            debSizer.Add(wx.StaticText(self.dataDisplay,-1,' Debye diffuse terms:'),0,wx.ALIGN_CENTER_VERTICAL)       
+            debSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Debye diffuse terms:'),0,wx.ALIGN_CENTER_VERTICAL)       
             rowLabels = []
             for i in range(len(data[1]['debyeTerms'])): rowLabels.append(str(i))
             colLabels = ['A','refine','R','refine','U','refine']
@@ -396,7 +398,7 @@ def UpdateBackground(self,data):
             wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
             debyeTable = G2gd.Table(data[1]['debyeTerms'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            debyeGrid = G2gd.GSGrid(parent=self.dataDisplay)
+            debyeGrid = G2gd.GSGrid(parent=G2frame.dataDisplay)
             debyeGrid.SetTable(debyeTable, True)
             debyeGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             debyeGrid.AutoSizeColumns(False)
@@ -415,7 +417,7 @@ def UpdateBackground(self,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(data[1]['peaksList'][-1])
-            UpdateBackground(self,data)
+            UpdateBackground(G2frame,data)
 
         def KeyEditPeakGrid(event):
             colList = peaksGrid.GetSelectedCols()
@@ -437,16 +439,16 @@ def UpdateBackground(self,data):
 
         peaksSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' Peaks in background: '),0,wx.ALIGN_CENTER_VERTICAL)
-        topSizer.Add(wx.StaticText(self.dataDisplay,-1,' No. peaks: '),0,wx.ALIGN_CENTER_VERTICAL)
-        peaks = wx.ComboBox(self.dataDisplay,-1,value=str(data[1]['nPeaks']),choices=[str(i) for i in range(12)],
+        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Peaks in background: '),0,wx.ALIGN_CENTER_VERTICAL)
+        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' No. peaks: '),0,wx.ALIGN_CENTER_VERTICAL)
+        peaks = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[1]['nPeaks']),choices=[str(i) for i in range(12)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         peaks.Bind(wx.EVT_COMBOBOX,OnPeaks)
         topSizer.Add(peaks,0,wx.ALIGN_CENTER_VERTICAL)
         topSizer.Add((5,0),0)
         peaksSizer.Add(topSizer)
         if data[1]['nPeaks']:
-            peaksSizer.Add(wx.StaticText(self.dataDisplay,-1,' Peak list:'),0,wx.ALIGN_CENTER_VERTICAL)       
+            peaksSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Peak list:'),0,wx.ALIGN_CENTER_VERTICAL)       
             rowLabels = []
             for i in range(len(data[1]['peaksList'])): rowLabels.append(str(i))
             colLabels = ['pos','refine','int','refine','sig','refine','gam','refine']
@@ -455,22 +457,22 @@ def UpdateBackground(self,data):
             wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
             peaksTable = G2gd.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            peaksGrid = G2gd.GSGrid(parent=self.dataDisplay)
+            peaksGrid = G2gd.GSGrid(parent=G2frame.dataDisplay)
             peaksGrid.SetTable(peaksTable, True)
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             peaksGrid.AutoSizeColumns(False)
             peaksSizer.Add(peaksGrid)        
         return peaksSizer
                 
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    self.dataDisplay = wx.Panel(self.dataFrame)
-    self.dataFrame.SetMenuBar(self.dataFrame.BackMenu)
-    self.dataFrame.SetLabel('Background')
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
-    self.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
-    BackId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Background')
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BackMenu)
+    G2frame.dataFrame.SetLabel('Background')
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
+    BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
     Choices = ['chebyschev','cosine','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(BackSizer())
@@ -479,27 +481,27 @@ def UpdateBackground(self,data):
     mainSizer.Add((0,5),0)
     mainSizer.Add(PeaksSizer())
     mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
         
-def UpdateLimitsGrid(self, data):
-    if self.dataDisplay:
-        self.dataFrame.Clear()
+def UpdateLimitsGrid(G2frame, data):
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
         
     def RefreshLimitsGrid(event):
         event.StopPropagation()
-        data = self.LimitsTable.GetData()
+        data = G2frame.LimitsTable.GetData()
         old = data[0]
         new = data[1]
         new[0] = max(old[0],new[0])
         new[1] = max(new[0],min(old[1],new[1]))
         data = [old,new]
-        G2plt.PlotPatterns(self)
+        G2plt.PlotPatterns(G2frame)
         
     def OnLimitCopy(event):
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         copyList = []
-        dlg = wx.MultiChoiceDialog(self, 
+        dlg = wx.MultiChoiceDialog(G2frame, 
             'Copy limits to which histograms?', 'Copy limits', 
             histList, wx.CHOICEDLG_STYLE)
         try:
@@ -510,30 +512,30 @@ def UpdateLimitsGrid(self, data):
                 if 'All' in copyList: 
                     copyList = histList[1:]
             for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
-                self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Limits'),
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),
                     copy.copy(data))
         finally:
             dlg.Destroy()
         
-    self.LimitsTable = []
+    G2frame.LimitsTable = []
     colLabels = ['Tmin','Tmax']
     rowLabels = ['original','changed']
     Types = 2*[wg.GRID_VALUE_FLOAT+':10,3',]
-    self.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    self.dataFrame.SetLabel('Limits')
-    self.dataFrame.SetMenuBar(self.dataFrame.LimitMenu)
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
-    self.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
-    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)
-    self.dataDisplay.SetTable(self.LimitsTable, True)
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
-    self.dataDisplay.SetMargins(0,0)
-    self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([230,160])
+    G2frame.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.dataFrame.SetLabel('Limits')
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.LimitMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
+    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
+    G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
+    G2frame.dataDisplay.SetMargins(0,0)
+    G2frame.dataDisplay.AutoSizeColumns(False)
+    G2frame.dataFrame.setSizePosLeft([230,160])
     
-def UpdateInstrumentGrid(self,data):
+def UpdateInstrumentGrid(G2frame,data):
     if len(data) > 3:                   #powder data
         insVal = dict(zip(data[3],data[1]))
         insDef = dict(zip(data[3],data[0]))
@@ -567,12 +569,12 @@ def UpdateInstrumentGrid(self,data):
         return data
         
     def updateData(inst,ref):
-        return inst2data(inst,ref,self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,
-            self.PatternId,'Instrument Parameters')))        
+        return inst2data(inst,ref,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId,'Instrument Parameters')))        
     
     def RefreshInstrumentGrid(event,doAnyway=False):
         if doAnyway or event.GetRow() == 1:
-            peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
+            peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
             if 'P' in insVal['Type']:                                       #update powder peak parameters
                 for peak in peaks:
                     peak[4] = insVal['U']*tand(peak[0]/2.0)**2+insVal['V']*tand(peak[0]/2.0)+insVal['W']
@@ -582,12 +584,12 @@ def UpdateInstrumentGrid(self,data):
         insVal.update(insDef)
         data = updateData(insVal,insRef)
         RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
-        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(G2frame,data)
         
     def OnInstCopy(event):
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(self,['PWDR',])
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         copyList = []
-        dlg = wx.MultiChoiceDialog(self, 
+        dlg = wx.MultiChoiceDialog(G2frame, 
             'Copy parameters to which histograms?', 'Copy parameters', 
             histList, wx.CHOICEDLG_STYLE)
         try:
@@ -598,8 +600,8 @@ def UpdateInstrumentGrid(self,data):
                 if 'All' in copyList: 
                     copyList = histList[1:]
             for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
-                instData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Instrument Parameters'))
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))
                 if len(data) == len(instData):                          #don't mix lam & lam1/lam2 parms!
                     for i,item in enumerate(data[1:]):                  #skip default values in tuple
                         instData[i+1][:-1] = copy.copy(item[:-1])       #skip azimuth at end
@@ -619,19 +621,19 @@ def UpdateInstrumentGrid(self,data):
             data[1] = data[1][:2]+data[1][4:]
             data[2] = data[2][:2]+data[2][4:]
             data[3] = data[3][:1]+['Lam',]+data[3][4:]            
-        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(G2frame,data)
                 
     def OnNewType(event):
         insVal['Type'] = typePick.GetValue()
         data = updateData(insVal,insRef)
-        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(G2frame,data)
         
     def OnLamPick(event):
         lamType = lamPick.GetValue()
         insVal['Lam1'] = waves[lamType][0]
         insVal['Lam2'] = waves[lamType][1]
         data = updateData(insVal,insRef)
-        UpdateInstrumentGrid(self,data)
+        UpdateInstrumentGrid(G2frame,data)
                  
     def OnRatValue(event):
         try:
@@ -680,23 +682,23 @@ def UpdateInstrumentGrid(self,data):
         insRef[item] = Obj.GetValue()
         data = updateData(insVal,insRef)
                 
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    histoName = self.PatternTree.GetItemPyData(self.PatternId)[-1]
-    ifHisto = IsHistogramInAnyPhase(self,histoName)
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    self.dataFrame.SetLabel('Instrument Parameters')
-    self.dataDisplay = wx.Panel(self.dataFrame)
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    histoName = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[-1]
+    ifHisto = IsHistogramInAnyPhase(G2frame,histoName)
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+    G2frame.dataFrame.SetLabel('Instrument Parameters')
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     instSizer = wx.FlexGridSizer(2,6,5,5)
-    instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Histogram Type:'),0,wx.ALIGN_CENTER_VERTICAL)
+    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Histogram Type:'),0,wx.ALIGN_CENTER_VERTICAL)
     if 'P' in insVal['Type']:                   #powder data
-        self.dataFrame.SetMenuBar(self.dataFrame.InstMenu)
-        if not self.dataFrame.GetStatusBar():
-            Status = self.dataFrame.CreateStatusBar()
-        self.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
-        self.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
-        self.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
-        typePick = wx.ComboBox(self.dataDisplay,value=insVal['Type'],
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.InstMenu)
+        if not G2frame.dataFrame.GetStatusBar():
+            Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
+        G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
+        G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
+        typePick = wx.ComboBox(G2frame.dataDisplay,value=insVal['Type'],
             choices=['PXC','PNC','PNT'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
         typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
         instSizer.Add(typePick,0,wx.ALIGN_CENTER_VERTICAL)
@@ -707,42 +709,42 @@ def UpdateInstrumentGrid(self,data):
                 insDef['Azimuth'] = 0.0
                 insRef['Azimuth'] = False
             #end of patch
-            instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Azimuth: %7.2f'%(insVal['Azimuth'])),0,wx.ALIGN_CENTER_VERTICAL)
+            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Azimuth: %7.2f'%(insVal['Azimuth'])),0,wx.ALIGN_CENTER_VERTICAL)
             if 'Lam1' in insVal:
                 instSizer.Add((5,5),0)
                 instSizer.Add((5,5),0)
                 instSizer.Add((5,5),0)
-                instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Ka1/Ka2:'),
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Ka1/Ka2:'),
                         0,wx.ALIGN_CENTER_VERTICAL)
-                instSizer.Add(wx.StaticText(self.dataDisplay,-1,'%8.6f/%8.6f'%(insVal['Lam1'],insVal['Lam2'])),
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'%8.6f/%8.6f'%(insVal['Lam1'],insVal['Lam2'])),
                         0,wx.ALIGN_CENTER_VERTICAL)
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
-                waveSizer.Add(wx.StaticText(self.dataDisplay,-1,'Select:'),0,wx.ALIGN_CENTER_VERTICAL)
+                waveSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'Select:'),0,wx.ALIGN_CENTER_VERTICAL)
                 choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
-                lamPick = wx.ComboBox(self.dataDisplay,value=' ',choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                lamPick = wx.ComboBox(G2frame.dataDisplay,value=' ',choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
                 waveSizer.Add(lamPick,0)
                 instSizer.Add(waveSizer,0)
-                instSizer.Add(wx.StaticText(self.dataDisplay,-1,' I(L2)/I(L1): (%10.4f)'%(insDef['I(L2)/I(L1)'])),
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' I(L2)/I(L1): (%10.4f)'%(insDef['I(L2)/I(L1)'])),
                         0,wx.ALIGN_CENTER_VERTICAL)
-                ratVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.4f'%(insVal['I(L2)/I(L1)']),style=wx.TE_PROCESS_ENTER)
+                ratVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.4f'%(insVal['I(L2)/I(L1)']),style=wx.TE_PROCESS_ENTER)
                 ratVal.Bind(wx.EVT_TEXT_ENTER,OnRatValue)
                 ratVal.Bind(wx.EVT_KILL_FOCUS,OnRatValue)
                 instSizer.Add(ratVal,0)
-                ratRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
+                ratRef = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
                 ratRef.SetValue(bool(insRef['I(L2)/I(L1)']))
                 ratRef.Bind(wx.EVT_CHECKBOX, OnRatRef)
                 instSizer.Add(ratRef,0,wx.ALIGN_CENTER_VERTICAL)
                 
             else:
-                instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Lam: (%10.6f)'%(insDef['Lam'])),
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Lam: (%10.6f)'%(insDef['Lam'])),
                     0,wx.ALIGN_CENTER_VERTICAL)
-                waveVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
+                waveVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
                 waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)
                 waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveValue)
                 instSizer.Add(waveVal,0,wx.ALIGN_CENTER_VERTICAL)
                 if ifHisto:
-                    waveRef = wx.CheckBox(self.dataDisplay,label=' Refine?')
+                    waveRef = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
                     waveRef.SetValue(bool(insRef['Lam']))
                     waveRef.Bind(wx.EVT_CHECKBOX, OnWaveRef)
                     instSizer.Add(waveRef,0,wx.ALIGN_CENTER_VERTICAL)
@@ -752,15 +754,15 @@ def UpdateInstrumentGrid(self,data):
                 fmt = '%10.4f'
                 Fmt = ' %s: ('+fmt+')'
                 if item in insDef:
-                    instSizer.Add(wx.StaticText(self.dataDisplay,-1,Fmt%(item,insDef[item])),
+                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,Fmt%(item,insDef[item])),
                             0,wx.ALIGN_CENTER_VERTICAL)
-                    itemVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
+                    itemVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
                     ValObj[itemVal.GetId()] = [item,fmt]
                     itemVal.Bind(wx.EVT_TEXT_ENTER,OnItemValue)
                     itemVal.Bind(wx.EVT_KILL_FOCUS,OnItemValue)
                     instSizer.Add(itemVal,0,wx.ALIGN_CENTER_VERTICAL)
                     if ifHisto:
-                        itemRef = wx.CheckBox(self.dataDisplay,wx.ID_ANY,label=' Refine?')
+                        itemRef = wx.CheckBox(G2frame.dataDisplay,wx.ID_ANY,label=' Refine?')
                         itemRef.SetValue(bool(insRef[item]))
                         RefObj[itemRef.GetId()] = item
                         itemRef.Bind(wx.EVT_CHECKBOX, OnItemRef)
@@ -776,14 +778,14 @@ def UpdateInstrumentGrid(self,data):
                 if item == 'SH/L':
                     fmt = '%10.5f'
                 Fmt = ' %s: ('+fmt+')'
-                instSizer.Add(wx.StaticText(self.dataDisplay,-1,Fmt%(item,insDef[item])),
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,Fmt%(item,insDef[item])),
                         0,wx.ALIGN_CENTER_VERTICAL)
-                itemVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
+                itemVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
                 ValObj[itemVal.GetId()] = [item,fmt]
                 itemVal.Bind(wx.EVT_TEXT_ENTER,OnItemValue)
                 itemVal.Bind(wx.EVT_KILL_FOCUS,OnItemValue)
                 instSizer.Add(itemVal,0,wx.ALIGN_CENTER_VERTICAL)
-                itemRef = wx.CheckBox(self.dataDisplay,wx.ID_ANY,label=' Refine?')
+                itemRef = wx.CheckBox(G2frame.dataDisplay,wx.ID_ANY,label=' Refine?')
                 itemRef.SetValue(bool(insRef[item]))
                 RefObj[itemRef.GetId()] = item
                 itemRef.Bind(wx.EVT_CHECKBOX, OnItemRef)
@@ -794,12 +796,12 @@ def UpdateInstrumentGrid(self,data):
         
 
     else:                       #single crystal data
-        typePick = wx.ComboBox(self.dataDisplay,value=insVal['Type'],
+        typePick = wx.ComboBox(G2frame.dataDisplay,value=insVal['Type'],
             choices=['SXC','SNC','SNT'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
         typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
         instSizer.Add(typePick,0,wx.ALIGN_CENTER_VERTICAL)
         if 'C' in insVal['Type']:               #constant wavelength
-            instSizer.Add(wx.StaticText(self.dataDisplay,-1,' Lam: %10.6f'%(insDef['Lam'])),
+            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Lam: %10.6f'%(insDef['Lam'])),
                     0,wx.ALIGN_CENTER_VERTICAL)
         else:                                   #time of flight (neutrons)
             pass                                #for now
@@ -807,13 +809,13 @@ def UpdateInstrumentGrid(self,data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(instSizer,0)
     mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    self.dataFrame.setSizePosLeft(mainSizer.Fit(self.dataFrame))
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
     
-def UpdateSampleGrid(self,data):
+def UpdateSampleGrid(G2frame,data):
     
     def OnSampleCopy(event):
-        histName = self.PatternTree.GetItemText(self.PatternId)
+        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         copyNames = ['Scale',]
         dataType = data['Type']
         histType = 'HKLF'
@@ -828,16 +830,16 @@ def UpdateSampleGrid(self,data):
         for parm in copyNames:
             copyDict[parm] = data[parm]
         histList = ['All '+histType,]
-        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
-            name = self.PatternTree.GetItemText(item)
+            name = G2frame.PatternTree.GetItemText(item)
             if histType in name and name != histName:
                 histList.append(name)
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         if len(histList) == 1:      #nothing to copy to!
             return
         copyList = []
-        dlg = wx.MultiChoiceDialog(self,'Copy parameters from\n'+histName,
+        dlg = wx.MultiChoiceDialog(G2frame,'Copy parameters from\n'+histName,
             'Copy parameters to which histograms?',histList,wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -847,20 +849,20 @@ def UpdateSampleGrid(self,data):
                 if 'All '+histType in copyList: 
                     copyList = histList[1:]
             for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(self,self.root,item)
-                sampleData = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,Id,'Sample Parameters'))
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
                 sampleData.update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()
 
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    self.dataFrame.SetMenuBar(self.dataFrame.SampleMenu)
-    self.dataFrame.SetLabel('Sample Parameters')
-    self.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()    
-    self.dataDisplay = wx.Panel(self.dataFrame)
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.SampleMenu)
+    G2frame.dataFrame.SetLabel('Sample Parameters')
+    G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()    
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
 
 #patch
     if not 'Gonio. radius' in data:
@@ -907,8 +909,8 @@ def UpdateSampleGrid(self,data):
         if data['Type'] == 'Bragg-Brentano' and 'Shift' not in data:    #set up defaults for new type(s)
             data['Shift'] = [0.0,False]
             data['Transparency'] = [0.0,False]
-        self.dataDisplay.Destroy()
-        UpdateSampleGrid(self,data)
+        G2frame.dataDisplay.Destroy()
+        UpdateSampleGrid(G2frame,data)
         
     def OnParmRef(event):
         Obj = event.GetEventObject()
@@ -931,21 +933,21 @@ def UpdateSampleGrid(self,data):
             Obj.SetValue(parm[2]%(data[parm[0]]))          #reset in case of error
                 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Sample parameters: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample parameters: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
     parmSizer = wx.FlexGridSizer(9,2,5,0)
-    scaleRef = wx.CheckBox(self.dataDisplay,label=' Histogram scale factor: ')
+    scaleRef = wx.CheckBox(G2frame.dataDisplay,label=' Histogram scale factor: ')
     scaleRef.SetValue(data['Scale'][1])
     scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
     parmSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
-    scaleVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
+    scaleVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,
         '%.4f'%(data['Scale'][0]),style=wx.TE_PROCESS_ENTER)
     scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
     scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
     parmSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
     typeSizer = wx.BoxSizer(wx.HORIZONTAL)
     choices = ['Debye-Scherrer','Bragg-Brentano',]
-    histoType = wx.ComboBox(self.dataDisplay,wx.ID_ANY,value=data['Type'],choices=choices,
+    histoType = wx.ComboBox(G2frame.dataDisplay,wx.ID_ANY,value=data['Type'],choices=choices,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     histoType.Bind(wx.EVT_COMBOBOX, OnHistoType)
     parmSizer.Add(histoType)
@@ -953,17 +955,17 @@ def UpdateSampleGrid(self,data):
     
     for parm in parms:
         if 'list' in str(type(data[parm[0]])):
-            parmRef = wx.CheckBox(self.dataDisplay,label=parm[1])
+            parmRef = wx.CheckBox(G2frame.dataDisplay,label=parm[1])
             objList[parmRef.GetId()] = parm[0]
             parmRef.SetValue(data[parm[0]][1])
             parmRef.Bind(wx.EVT_CHECKBOX, OnParmRef)
             parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL)
-            parmVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
+            parmVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,
                 parm[2]%(data[parm[0]][0]),style=wx.TE_PROCESS_ENTER)
         else:
-            parmSizer.Add(wx.StaticText(self.dataDisplay,label=parm[1]),
+            parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=parm[1]),
                 0,wx.ALIGN_CENTER_VERTICAL)
-            parmVal = wx.TextCtrl(self.dataDisplay,wx.ID_ANY,
+            parmVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,
                 parm[2]%(data[parm[0]]),style=wx.TE_PROCESS_ENTER)        
         objList[parmVal.GetId()] = parm
         parmVal.Bind(wx.EVT_TEXT_ENTER,OnParmVal)
@@ -973,14 +975,14 @@ def UpdateSampleGrid(self,data):
     mainSizer.Add((0,5),0)    
     
     mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    Size = mainSizer.Fit(self.dataFrame)
-    self.dataDisplay.SetSize(Size)
-    self.dataFrame.setSizePosLeft(Size)
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    G2frame.dataDisplay.SetSize(Size)
+    G2frame.dataFrame.setSizePosLeft(Size)
                 
-def UpdateIndexPeaksGrid(self, data):
-    IndexId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List')
-    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))
+def UpdateIndexPeaksGrid(G2frame, data):
+    IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
+    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
     Inst = dict(zip(inst[3],inst[1]))
     try:
         wave = Inst['Lam']
@@ -989,29 +991,29 @@ def UpdateIndexPeaksGrid(self, data):
     
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
-        data = self.IndexPeaksTable.GetData()
+        data = G2frame.IndexPeaksTable.GetData()
         if c == 2:
             if data[r][c]:
                 data[r][c] = False
             else:
                 data[r][c] = True
-            self.IndexPeaksTable.SetData(data)
-            self.PatternTree.SetItemPyData(IndexId,data)
-            self.dataDisplay.ForceRefresh()
+            G2frame.IndexPeaksTable.SetData(data)
+            G2frame.PatternTree.SetItemPyData(IndexId,data)
+            G2frame.dataDisplay.ForceRefresh()
             
     def OnReload(event):
         data = []
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Peak List'))
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         for peak in peaks:
             dsp = wave/(2.0*sind((peak[0]-Inst['Zero'])/2.0))
             data.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
-        self.PatternTree.SetItemPyData(IndexId,data)
-        UpdateIndexPeaksGrid(self,data)
+        G2frame.PatternTree.SetItemPyData(IndexId,data)
+        UpdateIndexPeaksGrid(G2frame,data)
         
     def KeyEditPickGrid(event):
-        colList = self.dataDisplay.GetSelectedCols()
-        rowList = self.dataDisplay.GetSelectedRows()
-        data = self.PatternTree.GetItemPyData(IndexId)
+        colList = G2frame.dataDisplay.GetSelectedCols()
+        rowList = G2frame.dataDisplay.GetSelectedRows()
+        data = G2frame.PatternTree.GetItemPyData(IndexId)
         if event.GetKeyCode() == wx.WXK_RETURN:
             event.Skip(True)
         elif event.GetKeyCode() == wx.WXK_CONTROL:
@@ -1019,38 +1021,38 @@ def UpdateIndexPeaksGrid(self, data):
         elif event.GetKeyCode() == wx.WXK_SHIFT:
             event.Skip(True)
         elif colList:
-            self.dataDisplay.ClearSelection()
+            G2frame.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for col in colList:
-                if self.IndexPeaksTable.GetColLabelValue(col) in ['use','refine']:
+                if G2frame.IndexPeaksTable.GetColLabelValue(col) in ['use','refine']:
                     if key == 89: #'Y'
-                        for row in range(self.IndexPeaksTable.GetNumberRows()): data[row][col]=True
+                        for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[row][col]=True
                     elif key == 78:  #'N'
-                        for row in range(self.IndexPeaksTable.GetNumberRows()): data[row][col]=False
+                        for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[row][col]=False
             
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
-    if 'PWD' in self.PatternTree.GetItemText(self.PatternId):
-        self.dataFrame.SetMenuBar(self.dataFrame.IndPeaksMenu)
-        self.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
-    self.dataFrame.IndexPeaks.Enable(False)
-    self.IndexPeaksTable = []
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    if 'PWD' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.IndPeaksMenu)
+        G2frame.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
+    G2frame.dataFrame.IndexPeaks.Enable(False)
+    G2frame.IndexPeaksTable = []
     if data:
-        self.dataFrame.IndexPeaks.Enable(True)
-        cells = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List'))
+        G2frame.dataFrame.IndexPeaks.Enable(True)
+        cells = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
         if cells:
             cellist = cells[2]
             dmin = cells[3]
-            self.HKL = []
+            G2frame.HKL = []
             for i,cell in enumerate(cellist):
                 if cell[-1]:
                     ibrav = cell[2]
                     A = G2lat.cell2A(cell[3:9])
-                    self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
-                    G2indx.IndexPeaks(data,self.HKL)
-                    for hkl in self.HKL:
+                    G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+                    G2indx.IndexPeaks(data,G2frame.HKL)
+                    for hkl in G2frame.HKL:
                         hkl.append(2.0*asind(wave/(2.*hkl[3]))+Inst['Zero'])             
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
@@ -1058,30 +1060,30 @@ def UpdateIndexPeaksGrid(self, data):
     Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
         wg.GRID_VALUE_BOOL,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,
         wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5']
-    self.PatternTree.SetItemPyData(IndexId,data)
-    self.IndexPeaksTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    self.dataFrame.SetLabel('Index Peak List')
-    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)                
-    self.dataDisplay.SetTable(self.IndexPeaksTable, True)
-    for r in range(self.dataDisplay.GetNumberRows()):
-        for c in range(self.dataDisplay.GetNumberCols()):
+    G2frame.PatternTree.SetItemPyData(IndexId,data)
+    G2frame.IndexPeaksTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.dataFrame.SetLabel('Index Peak List')
+    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)                
+    G2frame.dataDisplay.SetTable(G2frame.IndexPeaksTable, True)
+    for r in range(G2frame.dataDisplay.GetNumberRows()):
+        for c in range(G2frame.dataDisplay.GetNumberCols()):
             if c == 2:
-                self.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
+                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
             else:
-                self.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
-    self.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
-    self.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
-    self.dataDisplay.SetMargins(0,0)
-    self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([490,300])
+                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
+    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
+    G2frame.dataDisplay.SetMargins(0,0)
+    G2frame.dataDisplay.AutoSizeColumns(False)
+    G2frame.dataFrame.setSizePosLeft([490,300])
   
-def UpdateUnitCellsGrid(self, data):
-    UnitCellsId = G2gd.GetPatternTreeItemId(self,self.PatternId, 'Unit Cells List')
+def UpdateUnitCellsGrid(G2frame, data):
+    UnitCellsId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R -3 H','P 6/m m m','I 4/m m m',
         'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
-    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Instrument Parameters'))
+    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
     Inst = dict(zip(inst[3],inst[1]))
     if 'Lam' in Inst:
         wave = Inst['Lam']
@@ -1136,7 +1138,7 @@ def UpdateUnitCellsGrid(self, data):
         
     def OnBravSel(event):
         controls[5] = bravSel.GetString(bravSel.GetSelection())       
-        UpdateUnitCellsGrid(self,data)
+        UpdateUnitCellsGrid(G2frame,data)
         
     def OnCellChange(event):
         ibrav = bravaisSymb.index(controls[5])
@@ -1185,24 +1187,24 @@ def UpdateUnitCellsGrid(self, data):
         volVal.SetValue("%.3f"%(controls[12]))
         
     def OnHklShow(event):
-        PatternId = self.PatternId
-        PickId = self.PickId    
-        limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Limits'))[1]
-        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
+        PatternId = G2frame.PatternId
+        PickId = G2frame.PickId    
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
+        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
         dmin = wave/(2.0*sind(limits[1]/2.0))
-        self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
-        for hkl in self.HKL:
+        G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+        for hkl in G2frame.HKL:
             hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
-        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
-            G2plt.PlotPowderLines(self)
+        if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+            G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(self)
+            G2plt.PlotPatterns(G2frame)
             
     def OnSortCells(event):
-        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(UnitCellsId)
         c =  event.GetCol()
         if colLabels[c] == 'M20':
             cells = G2indx.sortM20(cells)
@@ -1211,11 +1213,11 @@ def UpdateUnitCellsGrid(self, data):
         else:
             return
         data = [controls,bravais,cells,dmin]
-        self.PatternTree.SetItemPyData(UnitCellsId,data)
-        UpdateUnitCellsGrid(self,data)
+        G2frame.PatternTree.SetItemPyData(UnitCellsId,data)
+        UpdateUnitCellsGrid(G2frame,data)
         
     def CopyUnitCell(event):
-        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(UnitCellsId)
         for Cell in cells:
             if Cell[-1]:
                 break
@@ -1224,10 +1226,10 @@ def UpdateUnitCellsGrid(self, data):
         controls[5] = bravaisSymb[cell[0]]
         controls[6:12] = cell[1:8]
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
-        self.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
-        UpdateUnitCellsGrid(self,data)
+        G2frame.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
+        UpdateUnitCellsGrid(G2frame,data)
         
-        self.dataFrame.RefineCell.Enable(True)
+        G2frame.dataFrame.RefineCell.Enable(True)
                 
     def RefineCell(event):
         def cellPrint(ibrav,A):
@@ -1245,77 +1247,77 @@ def UpdateUnitCellsGrid(self, data):
                 print "%s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2])
                 print "%s%8.3f %s%8.3f %s%8.3f %s%12.3f" % ('alpha =',cell[3],'beta =',cell[4],'gamma =',cell[5],' volume =',Vol)
              
-        PatternId = self.PatternId
-        PickId = self.PickId    
-        peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Index Peak List'))
+        PatternId = G2frame.PatternId
+        PickId = G2frame.PickId    
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
         if not peaks:
-            self.ErrorDialog('No peaks!', 'Nothing to refine!')
+            G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
             return        
         print 'Refine cell'
-        controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
+        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
         dmin = G2indx.getDmin(peaks)-0.005
-        self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
-        G2indx.IndexPeaks(peaks,self.HKL)
+        G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+        G2indx.IndexPeaks(peaks,G2frame.HKL)
         Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,wave,ibrav,A,controls[1],controls[0])            
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
         data = [controls,bravais,cells,dmin]
-        cells = self.PatternTree.GetItemPyData(UnitCellsId)[2]
+        cells = G2frame.PatternTree.GetItemPyData(UnitCellsId)[2]
         for cell in cells:
             cell[-1] = False
         cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,])
-        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
-        self.HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
-        UpdateUnitCellsGrid(self,data)
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
+        G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
+        UpdateUnitCellsGrid(G2frame,data)
         print "%s%10.3f" % ('refinement M20 = ',M20)
         print 'unindexed lines = ',X20
         cellPrint(ibrav,Aref)
-        for hkl in self.HKL:
+        for hkl in G2frame.HKL:
             hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
-        if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
-            G2plt.PlotPowderLines(self)
+        if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+            G2plt.PlotPowderLines(G2frame)
         else:
-            G2plt.PlotPatterns(self)
+            G2plt.PlotPatterns(G2frame)
         
     def IndexPeaks(event):
-        PatternId = self.PatternId    
+        PatternId = G2frame.PatternId    
         print 'Peak Indexing'
         try:
-            controls,bravais,cells,dmin = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'))
+            controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
             cells = []
         except ValueError:
-            self.ErrorDialog('Error','Need to set controls in Unit Cell List first')
+            G2frame.ErrorDialog('Error','Need to set controls in Unit Cell List first')
             return
         if True not in bravais:
-            self.ErrorDialog('Error','No Bravais lattices selected')
+            G2frame.ErrorDialog('Error','No Bravais lattices selected')
             return
-        self.dataFrame.CopyCell.Enable(False)
-        self.dataFrame.RefineCell.Enable(False)
+        G2frame.dataFrame.CopyCell.Enable(False)
+        G2frame.dataFrame.RefineCell.Enable(False)
         OK,dmin,cells = G2indx.DoIndexPeaks(peaks,inst[1],controls,bravais)
         if OK:
             data = [controls,bravais,cells,dmin]
-            self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId, 'Unit Cells List'),data)
-            UpdateUnitCellsGrid(self,data)
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
+            UpdateUnitCellsGrid(G2frame,data)
             bestCell = cells[0]
             if bestCell[0] > 10.:
-                self.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
-                for hkl in self.HKL:
+                G2frame.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
+                for hkl in G2frame.HKL:
                     hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
-                if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
-                    G2plt.PlotPowderLines(self)
+                if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+                    G2plt.PlotPowderLines(G2frame)
                 else:
-                    G2plt.PlotPatterns(self)
-            self.dataFrame.CopyCell.Enable(True)
-            self.dataFrame.IndexPeaks.Enable(True)
-            self.dataFrame.MakeNewPhase.Enable(True)
-            UpdateUnitCellsGrid(self,data)
+                    G2plt.PlotPatterns(G2frame)
+            G2frame.dataFrame.CopyCell.Enable(True)
+            G2frame.dataFrame.IndexPeaks.Enable(True)
+            G2frame.dataFrame.MakeNewPhase.Enable(True)
+            UpdateUnitCellsGrid(G2frame,data)
                 
     def RefreshUnitCellsGrid(event):
-        cells,dmin = self.PatternTree.GetItemPyData(UnitCellsId)[2:]
+        cells,dmin = G2frame.PatternTree.GetItemPyData(UnitCellsId)[2:]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
             if c == 2:
@@ -1327,33 +1329,33 @@ def UpdateUnitCellsGrid(self, data):
                 cells[r][-1] = True
                 ibrav = cells[r][2]
                 A = G2lat.cell2A(cells[r][3:9])
-                self.HKL = G2lat.GenHBravais(dmin,ibrav,A)
-                for hkl in self.HKL:
+                G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+                for hkl in G2frame.HKL:
                     hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
-                if 'PKS' in self.PatternTree.GetItemText(self.PatternId):
-                    G2plt.PlotPowderLines(self)
+                if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+                    G2plt.PlotPowderLines(G2frame)
                 else:
-                    G2plt.PlotPatterns(self)
+                    G2plt.PlotPatterns(G2frame)
         
     def MakeNewPhase(event):
-        if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
-            sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+        if not G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'):
+            sub = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Phases')
         else:
-            sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+            sub = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
         PhaseName = ''
         dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
             style=wx.OK)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 PhaseName = dlg.GetValue()
-                cells = self.PatternTree.GetItemPyData(UnitCellsId)[2]
+                cells = G2frame.PatternTree.GetItemPyData(UnitCellsId)[2]
                 for Cell in cells:
                     if Cell[-1]:
                         break
                 cell = Cell[2:10]        
-                sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+                sub = G2frame.PatternTree.AppendItem(parent=sub,text=PhaseName)
                 E,SGData = G2spc.SpcGroup(spaceGroups[cell[0]])
-                self.PatternTree.SetItemPyData(sub, \
+                G2frame.PatternTree.SetItemPyData(sub, \
                     {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,
                     'Cell':[False,]+cell[1:],
                     'Pawley dmin':1.00},'Atoms':[],'Drawing':{},'Histograms':{}})
@@ -1361,20 +1363,20 @@ def UpdateUnitCellsGrid(self, data):
         finally:
             dlg.Destroy()
             
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    self.dataFrame.SetMenuBar(self.dataFrame.IndexMenu)
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()
-    self.Bind(wx.EVT_MENU, IndexPeaks, id=G2gd.wxID_INDEXPEAKS)
-    self.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
-    self.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
-    self.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.IndexMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    G2frame.Bind(wx.EVT_MENU, IndexPeaks, id=G2gd.wxID_INDEXPEAKS)
+    G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
+    G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
+    G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)
     
     controls,bravais,cells,dmin = data
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
-    self.PatternTree.SetItemPyData(UnitCellsId,data)            #update with volume
+    G2frame.PatternTree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic']
@@ -1388,48 +1390,48 @@ def UpdateUnitCellsGrid(self, data):
         ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
         [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
     
-    self.dataFrame.SetLabel('Unit Cells List')
-    self.sp = wx.SplitterWindow(self.dataFrame)
-    self.dataDisplay = wx.Panel(self.sp, style=wx.SUNKEN_BORDER)
-    self.dataFrame.IndexPeaks.Enable(False)
-    peaks = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.PatternId, 'Index Peak List'))
+    G2frame.dataFrame.SetLabel('Unit Cells List')
+    G2frame.sp = wx.SplitterWindow(G2frame.dataFrame)
+    G2frame.dataDisplay = wx.Panel(G2frame.sp, style=wx.SUNKEN_BORDER)
+    G2frame.dataFrame.IndexPeaks.Enable(False)
+    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
     if peaks:
-        self.dataFrame.IndexPeaks.Enable(True)
-    self.dataFrame.RefineCell.Enable(False)
+        G2frame.dataFrame.IndexPeaks.Enable(True)
+    G2frame.dataFrame.RefineCell.Enable(False)
     if controls[12] > 1.0:                               #if a "real" volume (i.e. not default)
-        self.dataFrame.RefineCell.Enable(True)    
-    self.dataFrame.CopyCell.Enable(False)
-    self.dataFrame.MakeNewPhase.Enable(False)        
+        G2frame.dataFrame.RefineCell.Enable(True)    
+    G2frame.dataFrame.CopyCell.Enable(False)
+    G2frame.dataFrame.MakeNewPhase.Enable(False)        
     if cells:
-        self.bottom = wx.Panel(self.sp, style=wx.SUNKEN_BORDER)
-        self.sp.SplitHorizontally(self.dataDisplay,self.bottom,0)
-        self.dataFrame.CopyCell.Enable(True)
-        self.dataFrame.MakeNewPhase.Enable(True)        
+        G2frame.bottom = wx.Panel(G2frame.sp, style=wx.SUNKEN_BORDER)
+        G2frame.sp.SplitHorizontally(G2frame.dataDisplay,G2frame.bottom,0)
+        G2frame.dataFrame.CopyCell.Enable(True)
+        G2frame.dataFrame.MakeNewPhase.Enable(True)        
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Indexing controls: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Indexing controls: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(2,5,5,5)
-    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Max Nc/Nobs '),0,wx.ALIGN_CENTER_VERTICAL)
-    NcNo = wx.SpinCtrl(self.dataDisplay)
+    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max Nc/Nobs '),0,wx.ALIGN_CENTER_VERTICAL)
+    NcNo = wx.SpinCtrl(G2frame.dataDisplay)
     NcNo.SetRange(1,6)
     NcNo.SetValue(controls[2])
     NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
     littleSizer.Add(NcNo,0,wx.ALIGN_CENTER_VERTICAL)
-    littleSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Start Volume '),0,wx.ALIGN_CENTER_VERTICAL)
-    startVol = wx.TextCtrl(self.dataDisplay,value=str('%d'%(controls[3])),style=wx.TE_PROCESS_ENTER)
+    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Start Volume '),0,wx.ALIGN_CENTER_VERTICAL)
+    startVol = wx.TextCtrl(G2frame.dataDisplay,value=str('%d'%(controls[3])),style=wx.TE_PROCESS_ENTER)
     startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
     startVol.Bind(wx.EVT_KILL_FOCUS,OnStartVol)
     littleSizer.Add(startVol,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Select Bravais Lattices for indexing: '),
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Select Bravais Lattices for indexing: '),
         0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(2,7,5,5)
     bravList = []
     bravs = zip(bravais,bravaisNames)
     for brav,bravName in bravs:
-        bravCk = wx.CheckBox(self.dataDisplay,label=bravName)
+        bravCk = wx.CheckBox(G2frame.dataDisplay,label=bravName)
         bravList.append(bravCk.GetId())
         bravCk.SetValue(brav)
         bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
@@ -1437,24 +1439,24 @@ def UpdateUnitCellsGrid(self, data):
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' Cell Refinement: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Cell Refinement: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Bravais lattice "),0,wx.ALIGN_CENTER_VERTICAL)
-    bravSel = wx.Choice(self.dataDisplay,choices=bravaisSymb)
+    littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Bravais lattice "),0,wx.ALIGN_CENTER_VERTICAL)
+    bravSel = wx.Choice(G2frame.dataDisplay,choices=bravaisSymb)
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,wx.ALIGN_CENTER_VERTICAL)
-    littleSizer.Add(wx.StaticText(self.dataDisplay,label=" Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
-    zero = wx.TextCtrl(self.dataDisplay,value="%.4f"%(controls[1]),style=wx.TE_PROCESS_ENTER)
+    littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Zero offset"),0,wx.ALIGN_CENTER_VERTICAL)
+    zero = wx.TextCtrl(G2frame.dataDisplay,value="%.4f"%(controls[1]),style=wx.TE_PROCESS_ENTER)
     zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
     zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
     littleSizer.Add(zero,0,wx.ALIGN_CENTER_VERTICAL)
-    zeroVar = wx.CheckBox(self.dataDisplay,label="Refine?")
+    zeroVar = wx.CheckBox(G2frame.dataDisplay,label="Refine?")
     zeroVar.SetValue(controls[0])
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,wx.ALIGN_CENTER_VERTICAL)
-    hklShow = wx.Button(self.dataDisplay,label="Show refined hkl positions + Zero offset")
+    hklShow = wx.Button(G2frame.dataDisplay,label="Show refined hkl positions + Zero offset")
     hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
     littleSizer.Add(hklShow,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
@@ -1467,37 +1469,37 @@ def UpdateUnitCellsGrid(self, data):
     cellList = []
     littleSizer = wx.FlexGridSizer(2,useGUI[1],5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
-        littleSizer.Add(wx.StaticText(self.dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
         if ifEdit:          #a,b,c,etc.
-            cellVal = wx.TextCtrl(self.dataDisplay,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
+            cellVal = wx.TextCtrl(G2frame.dataDisplay,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
             cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
             cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
             littleSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
             cellList.append(cellVal.GetId())
         else:               #volume
-            volVal = wx.TextCtrl(self.dataDisplay,value=(fmt%(controls[12])),style=wx.TE_READONLY)
+            volVal = wx.TextCtrl(G2frame.dataDisplay,value=(fmt%(controls[12])),style=wx.TE_READONLY)
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(littleSizer,0)
         
     mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    topSize = mainSizer.Fit(self.dataFrame)
-    self.dataDisplay.SetSize(topSize)
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    topSize = mainSizer.Fit(G2frame.dataFrame)
+    G2frame.dataDisplay.SetSize(topSize)
     if cells:
         if ibrav == 13:
             topSize[1] += 230
         else:
             topSize[1] += 200
-    self.dataFrame.setSizePosLeft(topSize)    
+    G2frame.dataFrame.setSizePosLeft(topSize)    
     
     if cells:
-        bottomSize = self.bottom.GetSize()
+        bottomSize = G2frame.bottom.GetSize()
         if ibrav == 13:
             bottomSize[1] -= 240
         else:
             bottomSize[1] -= 210
-        wx.StaticText(parent=self.bottom,label=' Indexing Result ')
+        wx.StaticText(parent=G2frame.bottom,label=' Indexing Result ')
         rowLabels = []
         colLabels = ['M20','X20','use','Bravais','a','b','c','alpha','beta','gamma','Volume']
         Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]+ \
@@ -1510,15 +1512,15 @@ def UpdateUnitCellsGrid(self, data):
             row = cell[0:2]+[cell[-1]]+[bravaisSymb[cell[2]]]+cell[3:10]
             if cell[-1]:
                 A = G2lat.cell2A(cell[3:9])
-                self.HKL = G2lat.GenHBravais(dmin,cell[2],A)
-                for hkl in self.HKL:
+                G2frame.HKL = G2lat.GenHBravais(dmin,cell[2],A)
+                for hkl in G2frame.HKL:
                     hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'])             
             table.append(row)
         UnitCellsTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        gridDisplay = G2gd.GSGrid(self.bottom)
+        gridDisplay = G2gd.GSGrid(G2frame.bottom)
         gridDisplay.SetPosition(wx.Point(0,20))                
         gridDisplay.SetTable(UnitCellsTable, True)
-        self.dataFrame.CopyCell.Enable(True)
+        G2frame.dataFrame.CopyCell.Enable(True)
         gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
         gridDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnSortCells)
         gridDisplay.SetMargins(0,0)
@@ -1532,55 +1534,55 @@ def UpdateUnitCellsGrid(self, data):
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         gridDisplay.SetSize(bottomSize)
 
-def UpdateReflectionGrid(self,data):
+def UpdateReflectionGrid(G2frame,data):
     if not data:
         print 'No phases, no reflections'
         return
     phases = data.keys()
     
     def OnSelectPhase(event):
-        dlg = wx.SingleChoiceDialog(self,'Select','Phase',phases)
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',phases)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
-                self.RefList = phases[sel]
-                UpdateReflectionGrid(self,data)
+                G2frame.RefList = phases[sel]
+                UpdateReflectionGrid(G2frame,data)
         finally:
             dlg.Destroy()
-        G2plt.PlotPatterns(self)
+        G2plt.PlotPatterns(G2frame)
         
         
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    self.dataFrame.SetMenuBar(self.dataFrame.ReflMenu)
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()    
-    self.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
-    self.dataFrame.SelectPhase.Enable(False)
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ReflMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()    
+    G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
+    G2frame.dataFrame.SelectPhase.Enable(False)
     if len(data) > 1:
-        self.dataFrame.SelectPhase.Enable(True)
+        G2frame.dataFrame.SelectPhase.Enable(True)
     rowLabels = []
-    refList = [refl[:11] for refl in data[self.RefList]]
+    refList = [refl[:11] for refl in data[G2frame.RefList]]
     for i in range(len(refList)): rowLabels.append(str(i))
     colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase',]
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]
-    self.PeakTable = G2gd.Table(refList,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    self.dataFrame.SetLabel('Reflection List for '+self.RefList)
-    self.dataDisplay = G2gd.GSGrid(parent=self.dataFrame)
-    self.dataDisplay.SetTable(self.PeakTable, True)
-    self.dataDisplay.EnableEditing(False)
-    self.dataDisplay.SetMargins(0,0)
-    self.dataDisplay.AutoSizeColumns(False)
-    self.dataFrame.setSizePosLeft([555,350])
+    G2frame.PeakTable = G2gd.Table(refList,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.dataFrame.SetLabel('Reflection List for '+G2frame.RefList)
+    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
+    G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
+    G2frame.dataDisplay.EnableEditing(False)
+    G2frame.dataDisplay.SetMargins(0,0)
+    G2frame.dataDisplay.AutoSizeColumns(False)
+    G2frame.dataFrame.setSizePosLeft([555,350])
 
-def UpdatePDFGrid(self,data):
+def UpdatePDFGrid(G2frame,data):
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
-    dataFile = self.PatternTree.GetItemText(self.PatternId)
+    dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     powName = 'PWDR'+dataFile[4:]
-    powId = G2gd.GetPatternTreeItemId(self,self.root, powName)
-    fullLimits,limits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,powId, 'Limits'))
-    inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,powId, 'Instrument Parameters'))
+    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
+    fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))
+    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))
     inst = dict(zip(inst[3],inst[1]))
     if 'Lam' in inst:
         keV = 12.397639/inst['Lam']
@@ -1607,7 +1609,7 @@ def UpdatePDFGrid(self,data):
                 value = Obj.GetValue()
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
-            UpdatePDFGrid(self,data)
+            UpdatePDFGrid(G2frame,data)
         
         def OnValueChange(event):
             Obj = event.GetEventObject()
@@ -1619,24 +1621,24 @@ def UpdatePDFGrid(self,data):
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
             auxPlot = ComputePDF(data)
-            G2plt.PlotISFG(self,newPlot=True)
+            G2plt.PlotISFG(G2frame,newPlot=True)
                         
         item = data[key]
         fileList = np.array(GetFileList('PWDR')).T[1]
-        fileSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' '+key+' file:'),0,wx.ALIGN_CENTER_VERTICAL)
-        fileName = wx.ComboBox(self.dataDisplay,value=item['Name'],choices=fileList,
+        fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,wx.ALIGN_CENTER_VERTICAL)
+        fileName = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=fileList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         itemDict[fileName.GetId()] = [key,'Name','%s']
         fileName.Bind(wx.EVT_COMBOBOX,OnSelectFile)        
         fileSizer.Add(fileName,0,)
-        fileSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Multiplier:'),0,wx.ALIGN_CENTER_VERTICAL)
-        mult = wx.TextCtrl(self.dataDisplay,value='%.3f'%(item['Mult']),style=wx.TE_PROCESS_ENTER)
+        fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Multiplier:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mult = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(item['Mult']),style=wx.TE_PROCESS_ENTER)
         itemDict[mult.GetId()] = [key,'Mult','%.3f']
         mult.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
         mult.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
         fileSizer.Add(mult,0,)
-        fileSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Add:'),0,wx.ALIGN_CENTER_VERTICAL)
-        add = wx.TextCtrl(self.dataDisplay,value='%.0f'%(item['Add']),style=wx.TE_PROCESS_ENTER)
+        fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Add:'),0,wx.ALIGN_CENTER_VERTICAL)
+        add = wx.TextCtrl(G2frame.dataDisplay,value='%.0f'%(item['Add']),style=wx.TE_PROCESS_ENTER)
         itemDict[add.GetId()] = [key,'Add','%.0f']
         add.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
         add.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
@@ -1650,7 +1652,7 @@ def UpdatePDFGrid(self,data):
             sumVol += Avol*ElList[El]['FormulaNo']
         return sumVol
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(G2frame,newPlot=True)        
         
     def FillElemSizer(elemSizer,ElData):
         
@@ -1663,31 +1665,31 @@ def UpdatePDFGrid(self,data):
             ElData['FormulaNo'] = value
             data['Form Vol'] = max(10.0,SumElementVolumes())
             formVol.SetValue('%.2f'%(data['Form Vol']))
-            UpdatePDFGrid(self,data)
+            UpdatePDFGrid(G2frame,data)
             auxPlot = ComputePDF(data)
-            G2plt.PlotISFG(self,newPlot=True)        
+            G2plt.PlotISFG(G2frame,newPlot=True)        
         
-        elemSizer.Add(wx.StaticText(parent=self.dataDisplay,
+        elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
             label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,wx.ALIGN_CENTER_VERTICAL)
-        num = wx.TextCtrl(self.dataDisplay,value='%.3f'%(ElData['FormulaNo']),style=wx.TE_PROCESS_ENTER)
+        num = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(ElData['FormulaNo']),style=wx.TE_PROCESS_ENTER)
         num.Bind(wx.EVT_TEXT_ENTER,OnFractionChange)        
         num.Bind(wx.EVT_KILL_FOCUS,OnFractionChange)
         elemSizer.Add(num,0,wx.ALIGN_CENTER_VERTICAL)
-        elemSizer.Add(wx.StaticText(parent=self.dataDisplay,
+        elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
             label="f': %.3f"%(ElData['fp'])+' f": %.3f'%(ElData['fpp'])+' mu: %.2f barns'%(ElData['mu']) ),
             0,wx.ALIGN_CENTER_VERTICAL)
             
     def OnGeometry(event):
         data['Geometry'] = geometry.GetValue()
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(G2frame,newPlot=True)        
         
     def OnDetType(event):
         data['DetType'] = detType.GetValue()
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(G2frame,newPlot=True)        
         
     def OnFormVol(event):
         try:
@@ -1697,9 +1699,9 @@ def UpdatePDFGrid(self,data):
         except ValueError:
             value = data['Form Vol']
         data['Form Vol'] = value
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)        
+        G2plt.PlotISFG(G2frame,newPlot=False)        
         
     def OnDiameter(event):
         try:
@@ -1709,9 +1711,9 @@ def UpdatePDFGrid(self,data):
         except ValueError:
             value = data['Diam']
         data['Diam'] = value
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)
+        G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnPolaVal(event):
         try:
@@ -1722,9 +1724,9 @@ def UpdatePDFGrid(self,data):
             value = inst['Polariz.']
         inst['Polariz.'] = value
         polaVal.SetValue('%.2f'%(inst['Polariz.']))
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)
+        G2plt.PlotISFG(G2frame,newPlot=False)
                 
     def OnAzimVal(event):
         try:
@@ -1735,9 +1737,9 @@ def UpdatePDFGrid(self,data):
             value = inst['Azimuth']
         inst['Azimuth'] = value
         azimVal.SetValue('%.1f'%(inst['Azimuth']))
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)
+        G2plt.PlotISFG(G2frame,newPlot=False)
                         
     def OnObliqCoeff(event):
         try:
@@ -1751,7 +1753,7 @@ def UpdatePDFGrid(self,data):
         data['ObliqCoeff'] = value
         obliqCoeff.SetValue('%.3f'%(value))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)
+        G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnRulandWdt(event):
         try:
@@ -1765,19 +1767,19 @@ def UpdatePDFGrid(self,data):
         data['Ruland'] = value
         rulandWdt.SetValue('%.3f'%(value))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)
+        G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnRulSlider(event):
         value = int(rulandSldr.GetValue())/1000.
         data['Ruland'] = max(0.001,value)
         rulandWdt.SetValue('%.3f'%(data['Ruland']))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)
+        G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnLorch(event):
         data['Lorch'] = lorch.GetValue()
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)        
+        G2plt.PlotISFG(G2frame,newPlot=False)        
                         
     def OnPacking(event):
         try:
@@ -1787,9 +1789,9 @@ def UpdatePDFGrid(self,data):
         except ValueError:
             value = data['Pack']
         data['Pack'] = value
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=False)        
+        G2plt.PlotISFG(G2frame,newPlot=False)        
                 
     def OnSQmin(event):
         try:
@@ -1801,7 +1803,7 @@ def UpdatePDFGrid(self,data):
         data['QScaleLim'][0] = value
         SQmin.SetValue('%.1f'%(value))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(G2frame,newPlot=True)        
         
     def OnSQmax(event):
         try:
@@ -1816,7 +1818,7 @@ def UpdatePDFGrid(self,data):
             SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
         SQmax.SetValue('%.1f'%(value))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)
+        G2plt.PlotISFG(G2frame,newPlot=True)
         
     def OnResetQ(event):
         resetQ.SetValue(False)
@@ -1825,20 +1827,20 @@ def UpdatePDFGrid(self,data):
         data['QScaleLim'][0] = 0.9*qLimits[1]
         SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(self,newPlot=True)        
+        G2plt.PlotISFG(G2frame,newPlot=True)        
 
     def GetFileList(fileType,skip=None):
         fileList = [[False,'',0]]
         Source = ''
-        id, cookie = self.PatternTree.GetFirstChild(self.root)
+        id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while id:
-            name = self.PatternTree.GetItemText(id)
+            name = G2frame.PatternTree.GetItemText(id)
             if fileType in name:
                 if id == skip:
                     Source = name
                 else:
                     fileList.append([False,name,id])
-            id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         if skip:
             return fileList,Source
         else:
@@ -1846,12 +1848,12 @@ def UpdatePDFGrid(self,data):
         
     def OnCopyPDFControls(event):
         import copy
-        TextList,Source = GetFileList('PDF',skip=self.PatternId)
+        TextList,Source = GetFileList('PDF',skip=G2frame.PatternId)
         TextList[0] = [False,'All PDF',0]
         if len(TextList) == 1:
-            self.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
+            G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
             return
-        dlg = self.CopyDialog(self,'Copy PDF controls','Copy controls from '+Source+' to:',TextList)
+        dlg = G2frame.CopyDialog(G2frame,'Copy PDF controls','Copy controls from '+Source+' to:',TextList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetData()
@@ -1861,11 +1863,11 @@ def UpdatePDFGrid(self,data):
                 for i,item in enumerate(result):
                     ifcopy,name,id = item
                     if ifcopy:
-                        olddata = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'PDF Controls'))
+                        olddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'))
                         sample = olddata['Sample']
                         olddata.update(copy.deepcopy(data))
                         olddata['Sample'] = sample
-                        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,id, 'PDF Controls'),olddata)
+                        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'),olddata)
                 Status.SetStatusText('PDF controls copied')
         finally:
             dlg.Destroy()
@@ -1878,7 +1880,7 @@ def UpdatePDFGrid(self,data):
         
     def OnAddElement(event):
         ElList = data['ElList']
-        PE = G2elem.PickElement(self,oneOnly=True)
+        PE = G2elem.PickElement(G2frame,oneOnly=True)
         if PE.ShowModal() == wx.ID_OK:
             El = PE.Elem
             if El not in ElList:
@@ -1892,34 +1894,34 @@ def UpdatePDFGrid(self,data):
                 data['ElList'][El] = ElData
             data['Form Vol'] = max(10.0,SumElementVolumes())
         PE.Destroy()
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
         
     def OnDeleteElement(event):
         ElList = data['ElList']
         choice = ElList.keys()
-        dlg = G2elem.DeleteElement(self,choice=choice)
+        dlg = G2elem.DeleteElement(G2frame,choice=choice)
         if dlg.ShowModal() == wx.ID_OK:
             del ElList[dlg.GetDeleteElement()]
         dlg.Destroy()
-        UpdatePDFGrid(self,data)
+        UpdatePDFGrid(G2frame,data)
                 
     def ComputePDF(Data):
         xydata = {}
         for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
             name = Data[key]['Name']
             if name:
-                xydata[key] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root,name))
+                xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
                 PDFname = name
         powName = xydata['Sample'][2]
-        powId = G2gd.GetPatternTreeItemId(self,self.root,powName)
-        inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,powId,'Instrument Parameters'))
+        powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
+        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))
         inst = dict(zip(inst[3],inst[1]))
         auxPlot = G2pwd.CalcPDF(Data,inst,xydata)
-        PDFId = G2gd.GetPatternTreeItemId(self,self.root,'PDF '+powName[4:])
-        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'I(Q)'+powName[4:]),xydata['IofQ'])
-        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'S(Q)'+powName[4:]),xydata['SofQ'])
-        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'F(Q)'+powName[4:]),xydata['FofQ'])
-        self.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(self,PDFId,'G(R)'+powName[4:]),xydata['GofR'])
+        PDFId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PDF '+powName[4:])
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'I(Q)'+powName[4:]),xydata['IofQ'])
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'S(Q)'+powName[4:]),xydata['SofQ'])
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'F(Q)'+powName[4:]),xydata['FofQ'])
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'G(R)'+powName[4:]),xydata['GofR'])
         return auxPlot
         
     def OnComputePDF(event):
@@ -1928,56 +1930,56 @@ def UpdatePDFGrid(self,data):
         print 'Done calculating PDF:'
         Status.SetStatusText('PDF computed')
         for plot in auxPlot:
-            G2plt.PlotXY(self,plot[:2],type=plot[2])
+            G2plt.PlotXY(G2frame,plot[:2],type=plot[2])
         
-        G2plt.PlotISFG(self,newPlot=True,type='I(Q)')
-        G2plt.PlotISFG(self,newPlot=True,type='S(Q)')
-        G2plt.PlotISFG(self,newPlot=True,type='F(Q)')
-        G2plt.PlotISFG(self,newPlot=True,type='G(R)')
+        G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
+        G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
+        G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
+        G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
         
     def OnComputeAllPDF(event):
         print 'Calculating PDFs:'
-        if self.PatternTree.GetCount():
-            id, cookie = self.PatternTree.GetFirstChild(self.root)
+        if G2frame.PatternTree.GetCount():
+            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
-                Name = self.PatternTree.GetItemText(id)
+                Name = G2frame.PatternTree.GetItemText(id)
                 if 'PDF' in Name:
-                    Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'PDF Controls'))
+                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
                     auxPlot = ComputePDF(Data)                    
-                id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             Status.SetStatusText('All PDFs computed')
-            G2plt.PlotISFG(self,newPlot=True,type='G(R)')
+            G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
             print ' Done calculating PDFs:'
         
-    def OnShowTip(self,tip):
+    def OnShowTip(G2frame,tip):
         print tip    
                 
-    if self.dataDisplay:
-        self.dataFrame.Clear()
-    self.dataFrame.SetMenuBar(self.dataFrame.PDFMenu)
-    if not self.dataFrame.GetStatusBar():
-        Status = self.dataFrame.CreateStatusBar()    
-    self.dataDisplay = wx.Panel(self.dataFrame)
-    self.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
-    self.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
-    self.dataFrame.Bind(wx.EVT_MENU, OnLoadPDFControls, id=G2gd.wxID_PDFLOADCONTROLS)
-    self.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_PDFADDELEMENT)
-    self.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
-    self.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
-    self.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.PDFMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()    
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadPDFControls, id=G2gd.wxID_PDFLOADCONTROLS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_PDFADDELEMENT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' PDF data files: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
     str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=str),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,wx.ALIGN_CENTER_VERTICAL)
 #    dataSizer = wx.BoxSizer(wx.HORIZONTAL)
-#    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Azimuth'),0,wx.ALIGN_CENTER_VERTICAL)
-#    azimVal = wx.TextCtrl(self.dataDisplay,value='%.2f'%(inst['Azimuth']))
+#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Azimuth'),0,wx.ALIGN_CENTER_VERTICAL)
+#    azimVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Azimuth']))
 #    azimVal.Bind(wx.EVT_TEXT_ENTER,OnAzimVal)        
 #    azimVal.Bind(wx.EVT_KILL_FOCUS,OnAzimVal)
 #    dataSizer.Add(azimVal,0)    
-#    dataSizer.Add(wx.StaticText(parent=self.dataDisplay,label='Polarization'),0,wx.ALIGN_CENTER_VERTICAL)
-#    polaVal = wx.TextCtrl(self.dataDisplay,value='%.2f'%(inst['Polariz.']))
+#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Polarization'),0,wx.ALIGN_CENTER_VERTICAL)
+#    polaVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Polariz.']))
 #    polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)        
 #    polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
 #    dataSizer.Add(polaVal,0)    
@@ -1991,7 +1993,7 @@ def UpdatePDFGrid(self,data):
         FillFileSizer(fileSizer,key)
     mainSizer.Add(fileSizer,0)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(self.dataDisplay,label=' Sample information: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)    
 
     ElList = data['ElList']
@@ -2003,95 +2005,95 @@ def UpdatePDFGrid(self,data):
     mainSizer.Add(elemSizer,0)
     mainSizer.Add((5,5),0)    
     midSizer = wx.BoxSizer(wx.HORIZONTAL)
-    midSizer.Add(wx.StaticText(self.dataDisplay,label=' Formula volume: '),0,wx.ALIGN_CENTER_VERTICAL)
-    formVol = wx.TextCtrl(self.dataDisplay,value='%.2f'%(data['Form Vol']))
+    midSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Formula volume: '),0,wx.ALIGN_CENTER_VERTICAL)
+    formVol = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(data['Form Vol']))
     formVol.Bind(wx.EVT_TEXT_ENTER,OnFormVol)        
     formVol.Bind(wx.EVT_KILL_FOCUS,OnFormVol)
     midSizer.Add(formVol,0)
-    midSizer.Add(wx.StaticText(self.dataDisplay,
+    midSizer.Add(wx.StaticText(G2frame.dataDisplay,
         label=' Theoretical absorption: %.4f cm-1 Sample absorption: %.4f cm-1'%(Abs,Abs*data['Pack'])),
         0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(midSizer,0)
     mainSizer.Add((5,5),0)    
 
     geoBox = wx.BoxSizer(wx.HORIZONTAL)
-    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Sample geometry: '),0,wx.ALIGN_CENTER_VERTICAL)
+    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample geometry: '),0,wx.ALIGN_CENTER_VERTICAL)
     choice = ['Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate']
-    geometry = wx.ComboBox(self.dataDisplay,value=data['Geometry'],choices=choice,
+    geometry = wx.ComboBox(G2frame.dataDisplay,value=data['Geometry'],choices=choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
     geometry.Bind(wx.EVT_COMBOBOX, OnGeometry)
     geoBox.Add(geometry,0)
-    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Sample diameter/thickness, mm: '),0,wx.ALIGN_CENTER_VERTICAL)
-    diam = wx.TextCtrl(self.dataDisplay,value='%.3f'%(data['Diam']))
+    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample diameter/thickness, mm: '),0,wx.ALIGN_CENTER_VERTICAL)
+    diam = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['Diam']))
     diam.Bind(wx.EVT_TEXT_ENTER,OnDiameter)        
     diam.Bind(wx.EVT_KILL_FOCUS,OnDiameter)
-#    diam.Bind(wx.EVT_SET_FOCUS,OnShowTip(self,'tip')) #this doesn't work - what would????
+#    diam.Bind(wx.EVT_SET_FOCUS,OnShowTip(G2frame,'tip')) #this doesn't work - what would????
     geoBox.Add(diam,0)
     mainSizer.Add(geoBox,0)
     mainSizer.Add((5,5),0)    
     geoBox = wx.BoxSizer(wx.HORIZONTAL)
-    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Packing: '),0,wx.ALIGN_CENTER_VERTICAL)
-    pack = wx.TextCtrl(self.dataDisplay,value='%.2f'%(data['Pack']))
+    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Packing: '),0,wx.ALIGN_CENTER_VERTICAL)
+    pack = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(data['Pack']))
     pack.Bind(wx.EVT_TEXT_ENTER,OnPacking)        
     pack.Bind(wx.EVT_KILL_FOCUS,OnPacking)
     geoBox.Add(pack,0)
-    geoBox.Add(wx.StaticText(self.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,wx.ALIGN_CENTER_VERTICAL)    
+    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,wx.ALIGN_CENTER_VERTICAL)    
     mainSizer.Add(geoBox,0)
     mainSizer.Add((5,5),0)    
         
-    mainSizer.Add(wx.StaticText(parent=self.dataDisplay,label=' S(Q)->F(Q)->G(R) controls: '),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' S(Q)->F(Q)->G(R) controls: '),0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    sqBox.Add(wx.StaticText(self.dataDisplay,label=' Detector type: '),0,wx.ALIGN_CENTER_VERTICAL)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,wx.ALIGN_CENTER_VERTICAL)
     choice = ['Image plate','Point detector']
-    detType = wx.ComboBox(self.dataDisplay,value=data['DetType'],choices=choice,
+    detType = wx.ComboBox(G2frame.dataDisplay,value=data['DetType'],choices=choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
     detType.Bind(wx.EVT_COMBOBOX, OnDetType)
     sqBox.Add(detType,0)
     if data['DetType'] == 'Image plate':
-        sqBox.Add(wx.StaticText(self.dataDisplay,label=' IP transmission coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
-        obliqCoeff = wx.TextCtrl(self.dataDisplay,value='%.3f'%(data['ObliqCoeff']))
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' IP transmission coeff.: '),0,wx.ALIGN_CENTER_VERTICAL)
+        obliqCoeff = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['ObliqCoeff']))
         obliqCoeff.Bind(wx.EVT_TEXT_ENTER,OnObliqCoeff)        
         obliqCoeff.Bind(wx.EVT_KILL_FOCUS,OnObliqCoeff)
         sqBox.Add(obliqCoeff,0)
     mainSizer.Add(sqBox,0)
         
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    sqBox.Add(wx.StaticText(self.dataDisplay,label=' Ruland width: '),0,wx.ALIGN_CENTER_VERTICAL)    
-    rulandSldr = wx.Slider(parent=self.dataDisplay,style=wx.SL_HORIZONTAL,
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Ruland width: '),0,wx.ALIGN_CENTER_VERTICAL)    
+    rulandSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
         value=int(1000*data['Ruland']))
     sqBox.Add(rulandSldr,1,wx.EXPAND)
     rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
-    rulandWdt = wx.TextCtrl(self.dataDisplay,value='%.3f'%(data['Ruland']))
+    rulandWdt = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['Ruland']))
     rulandWdt.Bind(wx.EVT_TEXT_ENTER,OnRulandWdt)        
     rulandWdt.Bind(wx.EVT_KILL_FOCUS,OnRulandWdt)
     sqBox.Add(rulandWdt,0,wx.ALIGN_CENTER_VERTICAL)    
     mainSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
     
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    lorch = wx.CheckBox(parent=self.dataDisplay,label='Lorch damping?')
+    lorch = wx.CheckBox(parent=G2frame.dataDisplay,label='Lorch damping?')
     lorch.SetValue(data['Lorch'])
     lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
     sqBox.Add(lorch,0,wx.ALIGN_CENTER_VERTICAL)
-    sqBox.Add(wx.StaticText(self.dataDisplay,label=' Scaling q-range: '),0,wx.ALIGN_CENTER_VERTICAL)
-    SQmin = wx.TextCtrl(self.dataDisplay,value='%.1f'%(data['QScaleLim'][0]))
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,wx.ALIGN_CENTER_VERTICAL)
+    SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]))
     SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        
     SQmin.Bind(wx.EVT_KILL_FOCUS,OnSQmin)    
     sqBox.Add(SQmin,0)
-    sqBox.Add(wx.StaticText(self.dataDisplay,label=' to '),0,wx.ALIGN_CENTER_VERTICAL)
-    SQmax = wx.TextCtrl(self.dataDisplay,value='%.1f'%(data['QScaleLim'][1]))
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to '),0,wx.ALIGN_CENTER_VERTICAL)
+    SQmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][1]))
     SQmax.Bind(wx.EVT_TEXT_ENTER,OnSQmax)        
     SQmax.Bind(wx.EVT_KILL_FOCUS,OnSQmax)
     sqBox.Add(SQmax,0)
-    resetQ = wx.CheckBox(parent=self.dataDisplay,label='Reset?')
+    resetQ = wx.CheckBox(parent=G2frame.dataDisplay,label='Reset?')
     sqBox.Add(resetQ,0)
     resetQ.Bind(wx.EVT_CHECKBOX, OnResetQ)
     
     mainSizer.Add(sqBox,0)
 
     mainSizer.Layout()    
-    self.dataDisplay.SetSizer(mainSizer)
-    Size = mainSizer.Fit(self.dataFrame)
-    self.dataDisplay.SetSize(Size)
-    self.dataFrame.setSizePosLeft(Size)
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    G2frame.dataDisplay.SetSize(Size)
+    G2frame.dataFrame.setSizePosLeft(Size)
     

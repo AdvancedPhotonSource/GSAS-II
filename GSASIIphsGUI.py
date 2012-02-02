@@ -227,16 +227,16 @@ class DisAglDialog(wx.Dialog):
         self.__default__(data,self.default)
         self.Draw(self.data)
         
-def UpdatePhaseData(self,Item,data,oldPage):
+def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     Atoms = []
-    if self.dataDisplay:
-        self.dataDisplay.Destroy()
-    PhaseName = self.PatternTree.GetItemText(Item)
-    self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
-    self.dataFrame.SetLabel('Phase Data for '+PhaseName)
-    self.dataFrame.CreateStatusBar()
-    self.dataDisplay = G2gd.GSNoteBook(parent=self.dataFrame,size=self.dataFrame.GetClientSize())
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    PhaseName = G2frame.PatternTree.GetItemText(Item)
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+    G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
+    G2frame.dataFrame.CreateStatusBar()
+    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
 
     def SetupGeneral():
         generalData = data['General']
@@ -255,7 +255,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         generalData['vdWRadii'] = []
         generalData['AtomMass'] = []
         generalData['Color'] = []
-        generalData['Mydir'] = self.dirname
+        generalData['Mydir'] = G2frame.dirname
         cx,ct,cs,cia = [3,1,7,9]
         generalData['AtomPtrs'] = [cx,ct,cs,cia]
         if generalData['Type'] =='macromolecular':
@@ -293,7 +293,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         'Atoms':[]
         'Drawing':{}
         '''
-        self.dataFrame.SetMenuBar(self.dataFrame.DataGeneral) # do this here, since this is called from all over
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral) # do this here, since this is called from all over
         
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
         SetupGeneral()
@@ -302,9 +302,9 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnPhaseName(event):
             oldName = generalData['Name']
             generalData['Name'] = NameTxt.GetValue()
-            self.G2plotNB.Rename(oldName,generalData['Name'])
-            self.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
-            self.PatternTree.SetItemText(Item,generalData['Name'])
+            G2frame.G2plotNB.Rename(oldName,generalData['Name'])
+            G2frame.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
+            G2frame.PatternTree.SetItemText(Item,generalData['Name'])
             #Hmm, need to change phase name key in Reflection Lists for each histogram
                         
         def OnPhaseType(event):
@@ -313,13 +313,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
                 UpdateGeneral()         #must use this way!
                 if generalData['Type'] == 'Pawley':
-                    if self.dataDisplay.FindPage('Atoms'):
-                        self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Atoms'))
-                        self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Options'))
-                        self.dataDisplay.DeletePage(self.dataDisplay.FindPage('Draw Atoms'))
-                    if not self.dataDisplay.FindPage('Pawley reflections'):
-                        self.PawleyRefl = G2gd.GSGrid(self.dataDisplay)      
-                        self.dataDisplay.AddPage(self.PawleyRefl,'Pawley reflections')
+                    if G2frame.dataDisplay.FindPage('Atoms'):
+                        G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Atoms'))
+                        G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Options'))
+                        G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Atoms'))
+                    if not G2frame.dataDisplay.FindPage('Pawley reflections'):
+                        G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)      
+                        G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
             else:
                 TypeTxt.SetValue(generalData['Type'])                
                 
@@ -590,24 +590,24 @@ def UpdatePhaseData(self,Item,data,oldPage):
             mainSizer.Add(pawlSizer)
 
         dataDisplay.SetSizer(mainSizer)
-        Size = mainSizer.Fit(self.dataFrame)
+        Size = mainSizer.Fit(G2frame.dataFrame)
         Size[1] += 26                           #compensate for status bar
         dataDisplay.SetSize(Size)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
 
     def FillAtomsGrid():
 
-        self.dataFrame.setSizePosLeft([700,300])
+        G2frame.dataFrame.setSizePosLeft([700,300])
         generalData = data['General']
         atomData = data['Atoms']
         Items = [G2gd.wxID_ATOMSEDITINSERT, G2gd.wxID_ATOMSEDITDELETE, G2gd.wxID_ATOMSREFINE, 
             G2gd.wxID_ATOMSMODIFY, G2gd.wxID_ATOMSTRANSFORM, G2gd.wxID_ATONTESTINSERT]
         if atomData:
             for item in Items:    
-                self.dataFrame.AtomsMenu.Enable(item,True)
+                G2frame.dataFrame.AtomsMenu.Enable(item,True)
         else:
             for item in Items:
-                self.dataFrame.AtomsMenu.Enable(item,False)            
+                G2frame.dataFrame.AtomsMenu.Enable(item,False)            
             
         AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
@@ -643,7 +643,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters']
                     elif Type in ['magnetic',]:
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']
-                    dlg = wx.MultiChoiceDialog(self,'Select','Refinement controls',choice)
+                    dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelections()
                         parms = ''
@@ -652,14 +652,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'I/A':
                     choice = ['Isotropic','Anisotropic']
-                    dlg = wx.SingleChoiceDialog(self,'Select','Thermal Motion',choice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Thermal Motion',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = choice[sel][0]
                     dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'Type':
                     choice = generalData['AtomTypes']
-                    dlg = wx.SingleChoiceDialog(self,'Select','Atom types',choice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom types',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = choice[sel]
@@ -674,7 +674,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         if str(atomData[r][c]) not in choice:
                             choice.append(str(atomData[r][c]))
                     choice.sort()
-                    dlg = wx.SingleChoiceDialog(self,'Select','Residue',choice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Residue',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = choice[sel]
@@ -688,7 +688,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     for r in range(Atoms.GetNumberRows()):
                         if str(atomData[r][c]) not in choice:
                             choice.append(str(atomData[r][c]))
-                    dlg = wx.SingleChoiceDialog(self,'Select','Residue no.',choice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Residue no.',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = choice[sel]
@@ -702,7 +702,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     for r in range(Atoms.GetNumberRows()):
                         if atomData[r][c] not in choice:
                             choice.append(atomData[r][c])
-                    dlg = wx.SingleChoiceDialog(self,'Select','Chain',choice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Chain',choice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = choice[sel]
@@ -814,7 +814,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
             if Atoms.GetColLabelValue(c) == 'Type':
-                PE = G2elem.PickElement(self)
+                PE = G2elem.PickElement(G2frame)
                 if PE.ShowModal() == wx.ID_OK:
                     atomData[r][c] = PE.Elem.strip()
                     name = atomData[r][c]
@@ -868,7 +868,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         
         SGData = data['General']['SGData']
         if SGData['SGPolax']:
-            self.dataFrame.SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'])
+            G2frame.dataFrame.SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'])
         table = []
         rowLabels = []
         for i,atom in enumerate(atomData):
@@ -943,7 +943,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
     def OnAtomInsert(event):
         AtomInsert(0,0,0)
@@ -989,7 +989,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             if 'Atoms' in data['Drawing']:
                 DrawAtomsDeleteByIDs(IDs)
                 FillAtomsGrid()
-                G2plt.PlotStructure(self,data)
+                G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
 
     def AtomRefine(event):
@@ -1004,7 +1004,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 choice = ['F - site fraction','X - coordinates','U - thermal parameters']
             elif Type == 'magnetic':
                 choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']
-            dlg = wx.MultiChoiceDialog(self,'Select','Refinement controls',choice)
+            dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
                 parms = ''
@@ -1033,7 +1033,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             atomData = data['Atoms']
             generalData = data['General']
             SGData = generalData['SGData']
-            dlg = SymOpDialog(self,SGData,True)
+            dlg = SymOpDialog(G2frame,SGData,True)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New = dlg.GetSelection()
@@ -1079,7 +1079,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             DisAglData['OrigIndx'] = indx
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
-            dlg = DisAglDialog(self,DisAglCtls,generalData)
+            dlg = DisAglDialog(G2frame,DisAglCtls,generalData)
             if dlg.ShowModal() == wx.ID_OK:
                 DisAglCtls = dlg.GetData()
             dlg.Destroy()
@@ -1099,7 +1099,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
             if 'pId' in data:
                 DisAglData['pId'] = data['pId']
-                DisAglData['covData'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
+                DisAglData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
             G2str.DistAngle(DisAglCtls,DisAglData)
             
 #Structure drawing GUI stuff                
@@ -1229,7 +1229,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             choice.append(str(atomData[r][c]))
                 choice.sort()
 
-                dlg = wx.MultiChoiceDialog(self,'Select',name,choice)
+                dlg = wx.MultiChoiceDialog(G2frame,'Select',name,choice)
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelections()
                     parms = []
@@ -1245,7 +1245,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                         if  test in parms:
                             drawAtoms.SelectRow(row,True)
                             drawingData['selectedAtoms'].append(row)
-                    G2plt.PlotStructure(self,data)                    
+                    G2plt.PlotStructure(G2frame,data)                    
                 dlg.Destroy()
                 
             r,c =  event.GetRow(),event.GetCol()
@@ -1258,7 +1258,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 Parms = False
                 noSkip = True
                 if drawAtoms.GetColLabelValue(c) == 'Style':
-                    dlg = wx.SingleChoiceDialog(self,'Select','Atom drawing style',styleChoice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',styleChoice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = styleChoice[sel]
@@ -1266,10 +1266,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             atomData[r][c] = parms
                             drawAtoms.SetCellValue(r,c,parms)
                         FindBondsDraw()
-                        G2plt.PlotStructure(self,data)
+                        G2plt.PlotStructure(G2frame,data)
                     dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Label':
-                    dlg = wx.SingleChoiceDialog(self,'Select','Atom labelling style',labelChoice)
+                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom labelling style',labelChoice)
                     if dlg.ShowModal() == wx.ID_OK:
                         sel = dlg.GetSelection()
                         parms = labelChoice[sel]
@@ -1278,7 +1278,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                             drawAtoms.SetCellValue(r,c,parms)
                     dlg.Destroy()                    
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
-                    dlg = wx.ColourDialog(self)
+                    dlg = wx.ColourDialog(G2frame)
                     if dlg.ShowModal() == wx.ID_OK:
                         color = dlg.GetColourData().GetColour()
                         attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
@@ -1314,7 +1314,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     colors.SetChooseFull(True)
                     colors.SetCustomColour(0,color)
                     colors.SetColour(color)
-                    dlg = wx.ColourDialog(self,colors)
+                    dlg = wx.ColourDialog(G2frame,colors)
                     dlg.GetColourData().SetCustomColour(0,color)
                     if dlg.ShowModal() == wx.ID_OK:
                         color = dlg.GetColourData().GetColour()
@@ -1327,7 +1327,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     dlg.Destroy()
                     event.StopPropagation()
                     UpdateDrawAtoms()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
                     
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -1348,7 +1348,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     drawAtoms.SelectRow(r,True)                
             drawingData['selectedAtoms'] = []
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
-            G2plt.PlotStructure(self,data)                    
+            G2plt.PlotStructure(G2frame,data)                    
                 
         table = []
         rowLabels = []
@@ -1383,11 +1383,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
            attr.SetBackgroundColour(VERY_LIGHT_GREY)
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
-        self.dataFrame.setSizePosLeft([600,300])
+        G2frame.dataFrame.setSizePosLeft([600,300])
         
         FindBondsDraw()
         drawAtoms.ClearSelection()
-        G2plt.PlotStructure(self,data)
+        G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomStyle(event):
         indx = drawAtoms.GetSelectedRows()
@@ -1399,7 +1399,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             if generalData['Type'] == 'macromolecular':
                 styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
                 'backbone','ribbons','schematic']
-            dlg = wx.SingleChoiceDialog(self,'Select','Atom drawing style',styleChoice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',styleChoice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
                 parms = styleChoice[sel]
@@ -1409,7 +1409,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             dlg.Destroy()
             FindBondsDraw()
             drawAtoms.ClearSelection()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomLabel(event):
         indx = drawAtoms.GetSelectedRows()
@@ -1420,7 +1420,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             styleChoice = [' ','type','name','number']
             if generalData['Type'] == 'macromolecular':
                 styleChoice = [' ','type','name','number','residue','1-letter','chain']
-            dlg = wx.SingleChoiceDialog(self,'Select','Atom label style',styleChoice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom label style',styleChoice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
                 parms = styleChoice[sel]
@@ -1429,16 +1429,16 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     drawAtoms.SetCellValue(r,cs+1,parms)
             dlg.Destroy()
             drawAtoms.ClearSelection()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
     def DrawAtomColor(event):
 
         indx = drawAtoms.GetSelectedRows()
         if indx:
             if len(indx) > 1:
-                self.dataFrame.SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK')
+                G2frame.dataFrame.SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK')
             else:
-                self.dataFrame.SetStatusText('Change color, Add to Custom Colors, then OK')
+                G2frame.dataFrame.SetStatusText('Change color, Add to Custom Colors, then OK')
             generalData = data['General']
             atomData = data['Drawing']['Atoms']
             cx,ct,cs = data['Drawing']['atomPtrs']
@@ -1454,7 +1454,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             colors.SetChooseFull(True)
             for i,color in enumerate(atmColors):
                 colors.SetCustomColour(i,color)
-            dlg = wx.ColourDialog(self,colors)
+            dlg = wx.ColourDialog(G2frame,colors)
             if dlg.ShowModal() == wx.ID_OK:
                 for i in range(len(atmColors)):                    
                     atmColors[i] = dlg.GetColourData().GetCustomColour(i)
@@ -1468,7 +1468,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     data['Drawing']['Atoms'][r][cs+2] = color
             drawAtoms.ClearSelection()
             dlg.Destroy()
-            self.dataFrame.SetStatusText('')
+            G2frame.dataFrame.SetStatusText('')
             
     def ResetAtomColors(event):
         generalData = data['General']
@@ -1479,7 +1479,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             atom[cs+2] = list(generalData['Color'][atNum])
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
-        G2plt.PlotStructure(self,data)        
+        G2plt.PlotStructure(G2frame,data)        
         
     def SetViewPoint(event):
         indx = drawAtoms.GetSelectedRows()
@@ -1488,7 +1488,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             cx = data['Drawing']['atomPtrs'][0]
             data['Drawing']['viewPoint'] = [atomData[indx[0]][cx:cx+3],[indx[0],0]]
             drawAtoms.ClearSelection()                                  #do I really want to do this?
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
     def noDuplicate(xyz,atomData):                  #be careful where this is used - it's slow
         cx = data['Drawing']['atomPtrs'][0]
@@ -1508,7 +1508,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
             SGData = generalData['SGData']
-            dlg = SymOpDialog(self,SGData,False)
+            dlg = SymOpDialog(G2frame,SGData,False)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New = dlg.GetSelection()
@@ -1539,7 +1539,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 dlg.Destroy()
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
     def TransformSymEquiv(event):
         indx = drawAtoms.GetSelectedRows()
@@ -1553,7 +1553,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
             SGData = generalData['SGData']
-            dlg = SymOpDialog(self,SGData,False)
+            dlg = SymOpDialog(G2frame,SGData,False)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New = dlg.GetSelection()
@@ -1583,7 +1583,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 dlg.Destroy()
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
     def FillCoordSphere(event):
         generalData = data['General']
@@ -1626,7 +1626,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             data['Drawing']['Atoms'] = atomData
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
     def FillUnitCell(event):
         indx = drawAtoms.GetSelectedRows()
@@ -1679,7 +1679,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 data['Drawing']['Atoms'] = atomData
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
     def FindBondsToo():                         #works but slow for large structures - keep as reference
         cx,ct,cs = data['Drawing']['atomPtrs']
@@ -1751,7 +1751,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         for atomA in IASR:
             if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
                 Dx = Atoms-atomA[1]
-                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of self & disorder "bonds" < 0.5A
+                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of G2frame & disorder "bonds" < 0.5A
                 sumR = atomA[3]+Radii
                 IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
                 i = atomA[0]
@@ -1788,14 +1788,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 del atomData[ind]
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
         
     def OnReloadDrawAtoms(event):
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
-        G2plt.PlotStructure(self,data)
+        G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
         
     def FindAtomIndexByIDs(atomData,IDs):
@@ -1847,7 +1847,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         TorsionData['Cell'] = generalData['Cell'][1:] #+ volume
         if 'pId' in data:
             TorsionData['pId'] = data['pId']
-            TorsionData['covData'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Covariance'))
+            TorsionData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
         G2str.Torsion(TorsionData)
         
     def OnDrawPlane(event):
@@ -1889,50 +1889,50 @@ def UpdatePhaseData(self,Item,data,oldPage):
         def OnZclip(event):
             drawingData['Zclip'] = Zclip.GetValue()
             ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
         def OnCameraPos(event):
             drawingData['cameraPos'] = cameraPos.GetValue()
             cameraPosTxt.SetLabel('Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
             ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnBackColor(event):
             drawingData['backColor'] = event.GetValue()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnBallScale(event):
             drawingData['ballScale'] = ballScale.GetValue()/100.
             ballScaleTxt.SetLabel('Ball scale: '+'%.2f'%(drawingData['ballScale']))
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnVdWScale(event):
             drawingData['vdwScale'] = vdwScale.GetValue()/100.
             vdwScaleTxt.SetLabel('van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnEllipseProb(event):
             drawingData['ellipseProb'] = ellipseProb.GetValue()
             ellipseProbTxt.SetLabel('Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnBondRadius(event):
             drawingData['bondRadius'] = bondRadius.GetValue()/100.
             bondRadiusTxt.SetLabel('Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnShowABC(event):
             drawingData['showABC'] = showABC.GetValue()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnShowUnitCell(event):
             drawingData['unitCellBox'] = unitCellBox.GetValue()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnShowHyd(event):
             drawingData['showHydrogen'] = showHydrogen.GetValue()
             FindBondsDraw()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         def OnSizeHatoms(event):
             try:
@@ -1941,7 +1941,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 value = 0.5
             drawingData['sizeH'] = value
             sizeH.SetValue("%.2f"%(value))
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
             
         def OnRadFactor(event):
             try:
@@ -1951,7 +1951,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             drawingData['radiusFactor'] = value
             radFactor.SetValue("%.2f"%(value))
             FindBondsDraw()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
 
         dataDisplay = wx.Panel(drawOptions)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2054,10 +2054,10 @@ def UpdatePhaseData(self,Item,data,oldPage):
         mainSizer.Add(flexSizer,0,)
 
         dataDisplay.SetSizer(mainSizer)
-        Size = mainSizer.Fit(self.dataFrame)
+        Size = mainSizer.Fit(G2frame.dataFrame)
         Size[1] += 26                           #compensate for status bar
         dataDisplay.SetSize(Size)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateTexture():
         generalData = data['General']        
@@ -2077,8 +2077,8 @@ def UpdatePhaseData(self,Item,data,oldPage):
             textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-        if generalData['Type'] == 'Pawley' and G2gd.GetPatternTreeItemId(self,self.root,'Sequental results'):
-            self.dataFrame.RefineTexture.Enable(True)
+        if generalData['Type'] == 'Pawley' and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequental results'):
+            G2frame.dataFrame.RefineTexture.Enable(True)
         shAngles = ['omega','chi','phi']
         
         def SetSHCoef():
@@ -2095,14 +2095,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
             textureData['Order'] = int(Obj.GetValue())
             textureData['SH Coeff'][1] = SetSHCoef()
             wx.CallAfter(UpdateTexture)
-            G2plt.PlotTexture(self,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data,newPlot=False)
                         
         def OnShModel(event):
             Obj = event.GetEventObject()
             textureData['Model'] = Obj.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
             wx.CallAfter(UpdateTexture)
-            G2plt.PlotTexture(self,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data,newPlot=False)
             
         def OnSHRefine(event):
             Obj = event.GetEventObject()
@@ -2115,13 +2115,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
             
         def OnProjSel(event):
             Obj = event.GetEventObject()
-            self.Projection = Obj.GetValue()
-            G2plt.PlotTexture(self,data,newPlot=False)
+            G2frame.Projection = Obj.GetValue()
+            G2plt.PlotTexture(G2frame,data,newPlot=False)
             
         def OnColorSel(event):
             Obj = event.GetEventObject()
-            self.ContourColor = Obj.GetValue()
-            G2plt.PlotTexture(self,data,newPlot=False)
+            G2frame.ContourColor = Obj.GetValue()
+            G2plt.PlotTexture(G2frame,data,newPlot=False)
             
         def OnAngRef(event):
             Obj = event.GetEventObject()
@@ -2144,13 +2144,13 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 value = textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]]
             Obj.SetValue('%8.3f'%(value))
             textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]] = value
-            G2plt.PlotTexture(self,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data,newPlot=False)
             
         def OnPfType(event):
             Obj = event.GetEventObject()
             textureData['PlotType'] = Obj.GetValue()
             wx.CallAfter(UpdateTexture)
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(G2frame,data)
             
         def OnPFValue(event):
             Obj = event.GetEventObject()
@@ -2173,7 +2173,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     xyz = textureData['PFxyz']
                 Obj.SetValue('%3.1f %3.1f %3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
-            G2plt.PlotTexture(self,data)
+            G2plt.PlotTexture(G2frame,data)
 
         if Texture.GetSizer():
             Texture.GetSizer().Clear(True)
@@ -2215,7 +2215,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         PTSizer.Add(pfType,0,wx.ALIGN_CENTER_VERTICAL)
         if 'Axial' not in textureData['PlotType']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Projection type: '),0,wx.ALIGN_CENTER_VERTICAL)
-            projSel = wx.ComboBox(Texture,-1,value=self.Projection,choices=['equal area','stereographic','3D display'],
+            projSel = wx.ComboBox(Texture,-1,value=G2frame.Projection,choices=['equal area','stereographic','3D display'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
             PTSizer.Add(projSel,0,wx.ALIGN_CENTER_VERTICAL)
@@ -2234,7 +2234,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             PTSizer.Add(wx.StaticText(Texture,-1,' Color scheme'),0,wx.ALIGN_CENTER_VERTICAL)
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()
-            colorSel = wx.ComboBox(Texture,-1,value=self.ContourColor,choices=choice,
+            colorSel = wx.ComboBox(Texture,-1,value=G2frame.ContourColor,choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
             PTSizer.Add(colorSel,0,wx.ALIGN_CENTER_VERTICAL)        
@@ -2276,23 +2276,23 @@ def UpdatePhaseData(self,Item,data,oldPage):
             angSizer.Add((5,0),0)
         mainSizer.Add(angSizer,0,wx.ALIGN_CENTER_VERTICAL)
         Texture.SetSizer(mainSizer,True)
-        mainSizer.Fit(self.dataFrame)
+        mainSizer.Fit(G2frame.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20
         Texture.SetSize(Size)
         Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateDData():
         UseList = data['Histograms']
         if UseList:
-            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
-            self.Refine.Enable(True)
+            G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
+            G2frame.Refine.Enable(True)
         else:
-            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
-            self.Refine.Enable(False)            
+            G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
+            G2frame.Refine.Enable(False)            
         generalData = data['General']        
         SGData = generalData['SGData']
         keyList = UseList.keys()
@@ -2303,7 +2303,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             generalData['Data plot type'] = Obj.GetStringSelection()
             wx.CallAfter(UpdateDData)
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnPOhkl(event):
             Obj = event.GetEventObject()
@@ -2317,14 +2317,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
             generalData['POhkl'] = hkl
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
         
         def OnShowData(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Show'] = Obj.GetValue()
             wx.CallAfter(UpdateDData)
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnCopyData(event):
             #how about HKLF data? This is only for PWDR data
@@ -2338,7 +2338,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             keyList = ['All',]+UseList.keys()
             if UseList:
                 copyList = []
-                dlg = wx.MultiChoiceDialog(self, 
+                dlg = wx.MultiChoiceDialog(G2frame, 
                     'Copy parameters to which histograms?', 'Copy parameters', 
                     keyList, wx.CHOICEDLG_STYLE)
                 try:
@@ -2372,7 +2372,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Size'][0] = Obj.GetValue()
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             wx.CallAfter(UpdateDData)
             
         def OnSizeRef(event):
@@ -2404,7 +2404,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 except ValueError:
                     pass
                 Obj.SetValue("%.3f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnSizeAxis(event):            
             Obj = event.GetEventObject()
@@ -2424,7 +2424,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Mustrain'][0] = Obj.GetValue()
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             wx.CallAfter(UpdateDData)
             
         def OnStrainRef(event):
@@ -2455,7 +2455,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                 Obj.SetValue("%.3f"%(UseList[hist]['Mustrain'][4][pid]))          #reset in case of error
             else:
                 Obj.SetValue("%.1f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnStrainAxis(event):
             Obj = event.GetEventObject()
@@ -2470,7 +2470,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             UseList[hist]['Mustrain'][3] = hkl
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-            G2plt.PlotSizeStrainPO(self,data)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnHstrainRef(event):
             Obj = event.GetEventObject()
@@ -2888,27 +2888,27 @@ def UpdatePhaseData(self,Item,data,oldPage):
         mainSizer.Add((5,5),0)
 
         DData.SetSizer(mainSizer,True)
-        mainSizer.FitInside(self.dataFrame)
+        mainSizer.FitInside(G2frame.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20
         DData.SetSize(Size)
         DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
-        self.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         
     def OnHklfAdd(event):
         UseList = data['Histograms']
         keyList = UseList.keys()
         TextList = []
-        if self.PatternTree.GetCount():
-            item, cookie = self.PatternTree.GetFirstChild(self.root)
+        if G2frame.PatternTree.GetCount():
+            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while item:
-                name = self.PatternTree.GetItemText(item)
+                name = G2frame.PatternTree.GetItemText(item)
                 if name not in keyList and 'HKLF' in name:
                     TextList.append(name)
-                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                        
-            dlg = wx.MultiChoiceDialog(self, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
+                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                        
+            dlg = wx.MultiChoiceDialog(G2frame, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
@@ -2930,14 +2930,14 @@ def UpdatePhaseData(self,Item,data,oldPage):
         NDij = len(G2spc.HStrainNames(SGData))
         keyList = UseList.keys()
         TextList = ['All PWDR']
-        if self.PatternTree.GetCount():
-            item, cookie = self.PatternTree.GetFirstChild(self.root)
+        if G2frame.PatternTree.GetCount():
+            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while item:
-                name = self.PatternTree.GetItemText(item)
+                name = G2frame.PatternTree.GetItemText(item)
                 if name not in keyList and 'PWDR' in name:
                     TextList.append(name)
-                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-            dlg = wx.MultiChoiceDialog(self, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
+                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            dlg = wx.MultiChoiceDialog(G2frame, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
@@ -2945,7 +2945,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                     if 'All PWDR' in newList:
                         newList = TextList[1:]
                     for histoName in newList:
-                        pId = G2gd.GetPatternTreeItemId(self,self.root,histoName)
+                        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
                             'Size':['isotropic',[4.,4.,],[False,False],[0,0,1],[4.,4.,4.,0.,0.,0.],6*[False,]],
@@ -2953,7 +2953,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False]}
-                        refList = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,pId,'Reflection Lists'))
+                        refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'Reflection Lists'))
                         refList[generalData['Name']] = []                       
                     data['Histograms'] = UseList
                     wx.CallAfter(UpdateDData)
@@ -2967,7 +2967,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         DelList = []
         if UseList:
             DelList = []
-            dlg = wx.MultiChoiceDialog(self, 
+            dlg = wx.MultiChoiceDialog(G2frame, 
                 'Which histogram to delete from this phase?', 'Delete histogram', 
                 keyList, wx.CHOICEDLG_STYLE)
             try:
@@ -2986,7 +2986,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
     def FillPawleyReflectionsGrid():
                         
         def KeyEditPawleyGrid(event):
-            colList = self.PawleyRefl.GetSelectedCols()
+            colList = G2frame.PawleyRefl.GetSelectedCols()
             PawleyPeaks = data['Pawley ref']
             if event.GetKeyCode() == wx.WXK_RETURN:
                 event.Skip(True)
@@ -2995,7 +2995,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
             elif event.GetKeyCode() == wx.WXK_SHIFT:
                 event.Skip(True)
             elif colList:
-                self.PawleyRefl.ClearSelection()
+                G2frame.PawleyRefl.ClearSelection()
                 key = event.GetKeyCode()
                 for col in colList:
                     if PawleyTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
@@ -3013,11 +3013,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
             Types = 4*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
                 2*[wg.GRID_VALUE_FLOAT+':10,2',]
             PawleyTable = G2gd.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            self.PawleyRefl.SetTable(PawleyTable, True)
-            self.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
-            self.PawleyRefl.SetMargins(0,0)
-            self.PawleyRefl.AutoSizeColumns(False)
-            self.dataFrame.setSizePosLeft([500,300])
+            G2frame.PawleyRefl.SetTable(PawleyTable, True)
+            G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
+            G2frame.PawleyRefl.SetMargins(0,0)
+            G2frame.PawleyRefl.AutoSizeColumns(False)
+            G2frame.dataFrame.setSizePosLeft([500,300])
                     
     def OnPawleyLoad(event):
         generalData = data['General']
@@ -3046,11 +3046,11 @@ def UpdatePhaseData(self,Item,data,oldPage):
             print '**** Error - no histograms defined for this phase ****'
             return
         HistoNames = Histograms.keys()
-        PatternId = G2gd.GetPatternTreeItemId(self,self.root,HistoNames[0])
-        xdata = self.PatternTree.GetItemPyData(PatternId)[1]
-        Inst = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Instrument Parameters'))
+        PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
+        xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))
         Inst = dict(zip(Inst[3],Inst[1]))
-        Sample = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PatternId,'Sample Parameters'))
+        Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Sample Parameters'))
         if 'Lam' in Inst:
             wave = Inst['Lam']
         else:
@@ -3074,7 +3074,7 @@ def UpdatePhaseData(self,Item,data,oldPage):
         FillPawleyReflectionsGrid()
                             
     def OnPawleyDelete(event):
-        dlg = wx.MessageDialog(self,'Do you really want to delete Pawley reflections?','Delete', 
+        dlg = wx.MessageDialog(G2frame,'Do you really want to delete Pawley reflections?','Delete', 
             wx.YES_NO | wx.ICON_QUESTION)
         try:
             result = dlg.ShowModal()
@@ -3092,92 +3092,92 @@ def UpdatePhaseData(self,Item,data,oldPage):
 
     def OnPageChanged(event):
         page = event.GetSelection()
-        text = self.dataDisplay.GetPageText(page)
+        text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Atoms':
-            self.dataFrame.SetMenuBar(self.dataFrame.AtomsMenu)
-            self.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
-            self.dataFrame.Bind(wx.EVT_MENU, OnAtomTestAdd, id=G2gd.wxID_ATOMSTESTADD)
-            self.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
-            self.dataFrame.Bind(wx.EVT_MENU, OnAtomTestInsert, id=G2gd.wxID_ATONTESTINSERT)
-            self.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
-            self.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
-            self.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
-            self.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
-            self.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
-            self.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.AtomsMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomTestAdd, id=G2gd.wxID_ATOMSTESTADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomTestInsert, id=G2gd.wxID_ATONTESTINSERT)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
             FillAtomsGrid()
         elif text == 'General':
             UpdateGeneral()
         elif text == 'Data':
-            self.dataFrame.SetMenuBar(self.dataFrame.DataMenu)
-            self.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
-            self.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
-            self.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
             UpdateDData()
-            G2plt.PlotSizeStrainPO(self,data,Start=True)
+            G2plt.PlotSizeStrainPO(G2frame,data,Start=True)
         elif text == 'Draw Options':
-            self.dataFrame.SetMenuBar(self.dataFrame.DataDrawOptions)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataDrawOptions)
             UpdateDrawOptions()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
         elif text == 'Draw Atoms':
-            self.dataFrame.SetMenuBar(self.dataFrame.DrawAtomsMenu)
-            self.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
-            self.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
-            self.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
-            self.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
-            self.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
-            self.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
-            self.dataFrame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2gd.wxID_DRAWTRANSFORM)
-            self.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
-            self.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
-            self.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
-            self.dataFrame.Bind(wx.EVT_MENU, OnDrawDistAngle, id=G2gd.wxID_DRAWDISAGL)
-            self.dataFrame.Bind(wx.EVT_MENU, OnDrawTorsion, id=G2gd.wxID_DRAWTORSION)
-            self.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DrawAtomsMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2gd.wxID_DRAWTRANSFORM)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
+            G2frame.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDistAngle, id=G2gd.wxID_DRAWDISAGL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawTorsion, id=G2gd.wxID_DRAWTORSION)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
             UpdateDrawAtoms()
-            G2plt.PlotStructure(self,data)
+            G2plt.PlotStructure(G2frame,data)
         elif text == 'Pawley reflections':
-            self.dataFrame.SetMenuBar(self.dataFrame.PawleyMenu)
-            self.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
-            self.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
-            self.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.PawleyMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
             FillPawleyReflectionsGrid()
         elif text == 'Texture':
-            self.dataFrame.SetMenuBar(self.dataFrame.TextureMenu)
-            self.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
-            self.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.TextureMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
             UpdateTexture()                        
-            G2plt.PlotTexture(self,data,Start=True)
+            G2plt.PlotTexture(G2frame,data,Start=True)
         else:
-            self.dataFrame.SetMenuBar(self.dataFrame.BlankMenu)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
         event.Skip()
         
-    General = wx.Window(self.dataDisplay)
-    self.dataDisplay.AddPage(General,'General')
+    General = wx.Window(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(General,'General')
     SetupGeneral()
     GeneralData = data['General']
     UpdateGeneral()
 
     if GeneralData['Type'] == 'Pawley':
-        DData = wx.ScrolledWindow(self.dataDisplay)
-        self.dataDisplay.AddPage(DData,'Data')
-        self.PawleyRefl = G2gd.GSGrid(self.dataDisplay)
-        self.dataDisplay.AddPage(self.PawleyRefl,'Pawley reflections')
-        Texture = wx.ScrolledWindow(self.dataDisplay)
-        self.dataDisplay.AddPage(Texture,'Texture')
+        DData = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(DData,'Data')
+        G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
+        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(Texture,'Texture')
     else:
-        DData = wx.ScrolledWindow(self.dataDisplay)
-        self.dataDisplay.AddPage(DData,'Data')
-        Texture = wx.ScrolledWindow(self.dataDisplay)
-        self.dataDisplay.AddPage(Texture,'Texture')
-        Atoms = G2gd.GSGrid(self.dataDisplay)
-        self.dataDisplay.AddPage(Atoms,'Atoms')
-        drawOptions = wx.Window(self.dataDisplay)
-        self.dataDisplay.AddPage(drawOptions,'Draw Options')
-        drawAtoms = G2gd.GSGrid(self.dataDisplay)
-        self.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
+        DData = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(DData,'Data')
+        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(Texture,'Texture')
+        Atoms = G2gd.GSGrid(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(Atoms,'Atoms')
+        drawOptions = wx.Window(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
+        drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
 
-    self.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
-    self.dataDisplay.SetSelection(oldPage)
+    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataDisplay.SetSelection(oldPage)
     
             

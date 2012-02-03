@@ -16,6 +16,9 @@ import math
 import cPickle
 import time
 import copy
+import glob
+import imp
+import inspect
 import numpy as np
 import scipy as sp
 import wx
@@ -77,9 +80,10 @@ wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS, wxID_VIEWLSPARMS, wxID_SEQREFINE,
  wxID_IMSUM, wxID_DATARENAME,
 ] = [wx.NewId() for _init_coll_Data_Items in range(10)]
 
-[wxID_IMPORT, wxID_IMPORTPATTERN, wxID_IMPORTHKL, wxID_IMPORTPHASE,
-wxID_IMPORTCIF, wxID_IMPORTPDB,  
-] = [wx.NewId() for _init_coll_Import_Items in range(6)]
+[wxID_IMPORT, wxID_IMPORTPATTERN, wxID_IMPORTHKL
+#, wxID_IMPORTPHASE,
+#wxID_IMPORTCIF, wxID_IMPORTPDB,  
+] = [wx.NewId() for _init_coll_Import_Items in range(3)]
 
 [wxID_EXPORT, wxID_EXPORTPATTERN, wxID_EXPORTHKL, wxID_EXPORTPHASE,
 wxID_EXPORTCIF, wxID_EXPORTPEAKLIST, wxID_EXPORTPDF,
@@ -164,20 +168,181 @@ class GSASII(wx.Frame):
         self.Solve.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnSolve, id=wxID_SOLVE)
         
+    def _init_Import_Phase(self,parent):
+        '''import all the G2importphase*.py files that are found in the
+        path and configure the Import Phase menus accordingly
+        '''
+
+        path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file
+        pathlist = sys.path[:]
+        if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
+        filelist = []
+        for path in pathlist:
+            for filename in glob.iglob(os.path.join(path, "G2importphase*.py")):
+                filelist.append(filename)    
+                #print 'found',filename
+        filelist = sorted(list(set(filelist))) # remove duplicates
+        self.ImportPhaseReaderlist = []
+        for filename in filelist:
+            path,rootname = os.path.split(filename)
+            pkg = os.path.splitext(rootname)[0]
+            try:
+                fp = None
+                fp, fppath,desc = imp.find_module(pkg,[path,])
+                pkg = imp.load_module(pkg,fp,fppath,desc)
+                for clss in inspect.getmembers(pkg): # find classes defined in package
+                    if clss[0].startswith('_'): continue
+                    if inspect.isclass(clss[1]):
+                        # check if we have the required methods
+                        for m in 'Reader','ExtensionValidator','ContentsValidator':
+                            if not hasattr(clss[1],m): break
+                            if not callable(getattr(clss[1],m)): break
+                        else:
+                            reader = clss[1]() # create a phase import instance
+                            self.ImportPhaseReaderlist.append(reader)
+            except AttributeError:
+                print 'Import_Phase: Attribute Error',filename
+                pass
+            except ImportError:
+                print 'Import_Phase: Error importing file',filename
+                pass
+            finally:
+                if fp: fp.close()
+        item = parent.Append(wx.ID_ANY, help='Import phase data',
+                      kind=wx.ITEM_NORMAL,text='Import Phase (generic)...')
+        self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
+        submenu = wx.Menu()
+        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase (specific)',
+                                 submenu,
+                                 help='Import phase data')
+        self.PhaseImportMenuId = {}
+        for reader in self.ImportPhaseReaderlist:
+            item = submenu.Append(wx.ID_ANY,
+                                  help='Import specific format phase data',
+                                  kind=wx.ITEM_NORMAL,
+                                  text='Import Phase '+reader.formatName+'...')
+            self.PhaseImportMenuId[item.GetId()] = reader
+            self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
+
+    def OnImportPhaseGeneric(self,event):
+        # find out which format was requested
+        reader = self.PhaseImportMenuId.get(event.GetId())
+        if reader is None:
+            #print "use all formats"
+            readerlist = self.ImportPhaseReaderlist
+            choices = "any file (*.*)|*.*"
+            extdict = {}
+            # compile a list of allowed extensions
+            for rd in readerlist:
+                fmt = rd.formatName
+                for extn in rd.extensionlist:
+                    if not extdict.get(extn): extdict[extn] = []
+                    extdict[extn] += [fmt,]
+            for extn in sorted(extdict.keys(),
+                               cmp=lambda x,y: cmp(x.lower(), y.lower())):
+                fmt = ''
+                for f in extdict[extn]:
+                    if fmt != "": fmt += ', '
+                    fmt += f
+                choices += "|" + fmt + " file (*" + extn + ")|*" + extn
+        else:
+            readerlist = [reader,]
+            # compile a list of allowed extensions
+            choices = reader.formatName + " file ("
+            w = ""
+            for extn in reader.extensionlist:
+                if w != "": w += ";"
+                w += "*" + extn
+            choices += w + ")|" + w
+            if not reader.strictExtension:
+                choices += "|any file (*.*)|*.*"
+        # get the file
+        dlg = wx.FileDialog(
+            self, message="Choose phase input file",
+            #defaultDir=os.getcwd(), 
+            defaultFile="",
+            wildcard=choices,
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                file = dlg.GetPath()
+            else: # cancel was pressed
+                return
+        finally:
+            dlg.Destroy()
+        # set what formats are compatible with this file
+        primaryReaders = []
+        secondaryReaders = []
+        for reader in readerlist:
+            flag = reader.ExtensionValidator(file)
+            if flag is None: 
+                secondaryReaders.append(reader)
+            elif flag:
+                primaryReaders.append(reader)
+        if len(secondaryReaders) + len(primaryReaders) == 0:
+            self.ErrorDialog('No matching format for file '+file,'No Format')
+            return
+        
+        fp = None
+        try:
+            fp = open(file,'r')
+            # try the file first with Readers that specify the
+            # files extension and later with ones that allow it
+            for rd in primaryReaders+secondaryReaders:
+                if not rd.ContentsValidator(fp):
+                    continue # rejected on cursory check
+                #flag = rd.Reader(file,fp,self)
+                try:
+                    flag = rd.Reader(file,fp,self)
+                except:
+                    self.ErrorDialog('Error reading file '+file
+                                     +' with format '+ rd.formatName,
+                                     'Read Error')
+                    continue
+                if not flag: continue
+                dlg = wx.TextEntryDialog( # allow editing of phase name
+                    self, 'Enter the name for the new phase',
+                    'Edit phase name', rd.Phase['General']['Name'],
+                    style=wx.OK)
+                #dlg.SetValue("Python is the best!")
+                dlg.CenterOnParent()
+                if dlg.ShowModal() == wx.ID_OK:
+                    rd.Phase['General']['Name'] = dlg.GetValue()
+                dlg.Destroy()
+                PhaseName = rd.Phase['General']['Name']
+                if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+                    sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+                else:
+                    sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+                psub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+                self.PatternTree.SetItemPyData(psub,rd.Phase)
+                self.PatternTree.Expand(self.root) # make sure phases are seen
+                self.PatternTree.Expand(sub) 
+                self.PatternTree.Expand(psub) 
+                return # success
+        except:
+            self.ErrorDialog('Error on open of file '+file,'Open Error')
+        finally:
+            if fp: fp.close()
+
+        return
+        
+
     def _init_coll_Import_Items(self,parent):
-        self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
-            id=wxID_IMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase...')
-        self.ImportPDB = parent.Append(help='Import phase data from PDB file',
-            id=wxID_IMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase...')
-        self.ImportCIF = parent.Append(help='Import phase data from cif file',id=wxID_IMPORTCIF, kind=wx.ITEM_NORMAL,
-            text='Import CIF Phase...')
+#        self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
+#            id=wxID_IMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase...')
+#        self.ImportPDB = parent.Append(help='Import phase data from PDB file',
+#            id=wxID_IMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase...')
+#        self.ImportCIF = parent.Append(help='Import phase data from cif file',id=wxID_IMPORTCIF, kind=wx.ITEM_NORMAL,
+#            text='Import CIF Phase...')
         self.ImportPattern = parent.Append(help='',id=wxID_IMPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Import Powder Pattern...')
         self.ImportHKL = parent.Append(help='',id=wxID_IMPORTHKL, kind=wx.ITEM_NORMAL,
             text='Import HKLs...')
-        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=wxID_IMPORTPHASE)
-        self.Bind(wx.EVT_MENU, self.OnImportPDB, id=wxID_IMPORTPDB)
-        self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_IMPORTCIF)
+#        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=wxID_IMPORTPHASE)
+#        self.Bind(wx.EVT_MENU, self.OnImportPDB, id=wxID_IMPORTPDB)
+#        self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_IMPORTCIF)
         self.Bind(wx.EVT_MENU, self.OnImportPattern, id=wxID_IMPORTPATTERN)
         self.Bind(wx.EVT_MENU, self.OnImportHKL, id=wxID_IMPORTHKL)
 
@@ -219,6 +384,7 @@ class GSASII(wx.Frame):
         self._init_coll_File_Items(self.File)
         self._init_coll_Data_Items(self.Data)
         self._init_coll_Calculate_Items(self.Calculate)
+        self._init_Import_Phase(self.Import)
         self._init_coll_Import_Items(self.Import)
         self._init_coll_Export_Items(self.Export)
         
@@ -1176,6 +1342,7 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         
+    ''' replaced -- delete soon
     def OnImportPhase(self,event):
         dlg = wx.FileDialog(self, 'Choose GSAS EXP file', '.', '', 
             'EXP file (*.EXP)|*.EXP',wx.OPEN|wx.CHANGE_DIR)
@@ -1214,12 +1381,127 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(sub,Phase)        
         
     def OnImportCIF(self,event):
+        def ReadCIFPhase(filename):
+            import random as ran
+            import GSASIIlattice as G2lat
+            anisoNames = ['aniso_u_11','aniso_u_22','aniso_u_33','aniso_u_12','aniso_u_13','aniso_u_23']
+            file = open(filename, 'Ur')
+            Phase = {}
+            Title = ospath.split(filename)[-1]
+            print '\n Reading cif file: ',Title
+            Compnd = ''
+            Atoms = []
+            A = np.zeros(shape=(3,3))
+            S = file.readline()
+            while S:
+                if '_symmetry_space_group_name_H-M' in S:
+                    SpGrp = S.split("_symmetry_space_group_name_H-M")[1].strip().strip('"').strip("'")
+                    E,SGData = G2spc.SpcGroup(SpGrp)
+                    if E:
+                        print ' ERROR in space group symbol ',SpGrp,' in file ',filename
+                        print ' N.B.: make sure spaces separate axial fields in symbol' 
+                        print G2spc.SGErrors(E)
+                        return None
+                    S = file.readline()
+                elif '_cell' in S:
+                    if '_cell_length_a' in S:
+                        a = S.split('_cell_length_a')[1].strip().strip('"').strip("'").split('(')[0]
+                    elif '_cell_length_b' in S:
+                        b = S.split('_cell_length_b')[1].strip().strip('"').strip("'").split('(')[0]
+                    elif '_cell_length_c' in S:
+                        c = S.split('_cell_length_c')[1].strip().strip('"').strip("'").split('(')[0]
+                    elif '_cell_angle_alpha' in S:
+                        alp = S.split('_cell_angle_alpha')[1].strip().strip('"').strip("'").split('(')[0]
+                    elif '_cell_angle_beta' in S:
+                        bet = S.split('_cell_angle_beta')[1].strip().strip('"').strip("'").split('(')[0]
+                    elif '_cell_angle_gamma' in S:
+                        gam = S.split('_cell_angle_gamma')[1].strip().strip('"').strip("'").split('(')[0]
+                    S = file.readline()
+                elif 'loop_' in S:
+                    labels = {}
+                    i = 0
+                    while S:
+                        S = file.readline()
+                        if '_atom_site' in S.strip()[:10]:
+                            labels[S.strip().split('_atom_site_')[1].lower()] = i
+                            i += 1
+                        else:
+                            break
+                    if labels:
+                        if 'aniso_label' not in labels:
+                            while S:
+                                atom = ['','','',0,0,0,1.0,'','','I',0.01,0,0,0,0,0,0]
+                                S.strip()
+                                if len(S.split()) != len(labels):
+                                    if 'loop_' in S:
+                                        break
+                                    S += file.readline().strip()
+                                data = S.split()
+                                if len(data) != len(labels):
+                                    break
+                                for key in labels:
+                                    if key == 'type_symbol':
+                                        atom[1] = data[labels[key]]
+                                    elif key == 'label':
+                                        atom[0] = data[labels[key]]
+                                    elif key == 'fract_x':
+                                        atom[3] = float(data[labels[key]].split('(')[0])
+                                    elif key == 'fract_y':
+                                        atom[4] = float(data[labels[key]].split('(')[0])
+                                    elif key == 'fract_z':
+                                        atom[5] = float(data[labels[key]].split('(')[0])
+                                    elif key == 'occupancy':
+                                        atom[6] = float(data[labels[key]].split('(')[0])
+                                    elif key == 'thermal_displace_type':
+                                        if data[labels[key]].lower() == 'uiso':
+                                            atom[9] = 'I'
+                                            atom[10] = float(data[labels['u_iso_or_equiv']].split('(')[0])
+                                        else:
+                                            atom[9] = 'A'
+                                            atom[10] = 0.0
+
+                                atom[7],atom[8] = G2spc.SytSym(atom[3:6],SGData)
+                                atom.append(ran.randint(0,sys.maxint))
+                                Atoms.append(atom)
+                                S = file.readline()
+                        else:
+                            while S:
+                                S.strip()
+                                data = S.split()
+                                if len(data) != len(labels):
+                                    break
+                                name = data[labels['aniso_label']]
+                                for atom in Atoms:
+                                    if name == atom[0]:
+                                        for i,uname in enumerate(anisoNames):
+                                            atom[i+11] = float(data[labels[uname]].split('(')[0])
+                                S = file.readline()
+
+                else:           
+                    S = file.readline()
+            file.close()
+            if Title:
+                PhaseName = Title
+            else:
+                PhaseName = 'None'
+            SGlines = G2spc.SGPrint(SGData)
+            for line in SGlines: print line
+            cell = [float(a),float(b),float(c),float(alp),float(bet),float(gam)]
+            Volume = G2lat.calc_V(G2lat.cell2A(cell))
+            Phase['General'] = {'Name':PhaseName,'Type':'nuclear','SGData':SGData,
+                'Cell':[False,]+cell+[Volume,]}
+            Phase['Atoms'] = Atoms
+            Phase['Drawing'] = {}
+            Phase['Histograms'] = {}
+
+            return Phase
+
         dlg = wx.FileDialog(self, 'Choose CIF file', '.', '', 
             'CIF file (*.cif)|*.cif',wx.OPEN|wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 CIFfile = dlg.GetPath()
-                Phase = G2IO.ReadCIFPhase(CIFfile)
+                Phase = ReadCIFPhase(CIFfile)
         finally:
             dlg.Destroy()
         if Phase:
@@ -1229,8 +1511,10 @@ class GSASII(wx.Frame):
             else:
                 sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
             sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-            self.PatternTree.SetItemPyData(sub,Phase)        
-        
+            self.PatternTree.SetItemPyData(sub,Phase)
+            print Phase
+'''
+
     def OnExportPatterns(self,event):
         names = ['All']
         exports = []

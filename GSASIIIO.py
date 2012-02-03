@@ -1564,117 +1564,106 @@ def ReadPDBPhase(filename):
     Phase['Histograms'] = {}
     
     return Phase
-    
-def ReadCIFPhase(filename):
-    anisoNames = ['aniso_u_11','aniso_u_22','aniso_u_33','aniso_u_12','aniso_u_13','aniso_u_23']
-    file = open(filename, 'Ur')
-    Phase = {}
-    Title = ospath.split(filename)[-1]
-    print '\n Reading cif file: ',Title
-    Compnd = ''
-    Atoms = []
-    A = np.zeros(shape=(3,3))
-    S = file.readline()
-    while S:
-        if '_symmetry_space_group_name_H-M' in S:
-            SpGrp = S.split("_symmetry_space_group_name_H-M")[1].strip().strip('"').strip("'")
-            E,SGData = G2spc.SpcGroup(SpGrp)
-            if E:
-                print ' ERROR in space group symbol ',SpGrp,' in file ',filename
-                print ' N.B.: make sure spaces separate axial fields in symbol' 
-                print G2spc.SGErrors(E)
-                return None
-            S = file.readline()
-        elif '_cell' in S:
-            if '_cell_length_a' in S:
-                a = S.split('_cell_length_a')[1].strip().strip('"').strip("'").split('(')[0]
-            elif '_cell_length_b' in S:
-                b = S.split('_cell_length_b')[1].strip().strip('"').strip("'").split('(')[0]
-            elif '_cell_length_c' in S:
-                c = S.split('_cell_length_c')[1].strip().strip('"').strip("'").split('(')[0]
-            elif '_cell_angle_alpha' in S:
-                alp = S.split('_cell_angle_alpha')[1].strip().strip('"').strip("'").split('(')[0]
-            elif '_cell_angle_beta' in S:
-                bet = S.split('_cell_angle_beta')[1].strip().strip('"').strip("'").split('(')[0]
-            elif '_cell_angle_gamma' in S:
-                gam = S.split('_cell_angle_gamma')[1].strip().strip('"').strip("'").split('(')[0]
-            S = file.readline()
-        elif 'loop_' in S:
-            labels = {}
-            i = 0
-            while S:
-                S = file.readline()
-                if '_atom_site' in S.strip()[:10]:
-                    labels[S.strip().split('_atom_site_')[1].lower()] = i
-                    i += 1
-                else:
-                    break
-            if labels:
-                if 'aniso_label' not in labels:
-                    while S:
-                        atom = ['','','',0,0,0,1.0,'','','I',0.01,0,0,0,0,0,0]
-                        S.strip()
-                        if len(S.split()) != len(labels):
-                            if 'loop_' in S:
-                                break
-                            S += file.readline().strip()
-                        data = S.split()
-                        if len(data) != len(labels):
-                            break
-                        for key in labels:
-                            if key == 'type_symbol':
-                                atom[1] = data[labels[key]]
-                            elif key == 'label':
-                                atom[0] = data[labels[key]]
-                            elif key == 'fract_x':
-                                atom[3] = float(data[labels[key]].split('(')[0])
-                            elif key == 'fract_y':
-                                atom[4] = float(data[labels[key]].split('(')[0])
-                            elif key == 'fract_z':
-                                atom[5] = float(data[labels[key]].split('(')[0])
-                            elif key == 'occupancy':
-                                atom[6] = float(data[labels[key]].split('(')[0])
-                            elif key == 'thermal_displace_type':
-                                if data[labels[key]].lower() == 'uiso':
-                                    atom[9] = 'I'
-                                    atom[10] = float(data[labels['u_iso_or_equiv']].split('(')[0])
-                                else:
-                                    atom[9] = 'A'
-                                    atom[10] = 0.0
-                                    
-                        atom[7],atom[8] = G2spc.SytSym(atom[3:6],SGData)
-                        atom.append(ran.randint(0,sys.maxint))
-                        Atoms.append(atom)
-                        S = file.readline()
-                else:
-                    while S:
-                        S.strip()
-                        data = S.split()
-                        if len(data) != len(labels):
-                            break
-                        name = data[labels['aniso_label']]
-                        for atom in Atoms:
-                            if name == atom[0]:
-                                for i,uname in enumerate(anisoNames):
-                                    atom[i+11] = float(data[labels[uname]].split('(')[0])
-                        S = file.readline()
-                                                                        
-        else:           
-            S = file.readline()
-    file.close()
-    if Title:
-        PhaseName = Title
-    else:
-        PhaseName = 'None'
-    SGlines = G2spc.SGPrint(SGData)
-    for line in SGlines: print line
-    cell = [float(a),float(b),float(c),float(alp),float(bet),float(gam)]
-    Volume = G2lat.calc_V(G2lat.cell2A(cell))
-    Phase['General'] = {'Name':PhaseName,'Type':'nuclear','SGData':SGData,
-        'Cell':[False,]+cell+[Volume,]}
-    Phase['Atoms'] = Atoms
-    Phase['Drawing'] = {}
-    Phase['Histograms'] = {}
-    
-    return Phase
+
+######################################################################
+# base classes for reading various types of data files
+#   not used directly, only by subclassing
+######################################################################
+E,SGData = G2spc.SpcGroup('P 1') # data structure for default space group
+class ImportPhase(object):
+    '''Defines a base class for the reading of files with coordinates
+    '''
+    def __init__(self,
+                 formatName,
+                 longFormatName=None,
+                 extensionlist=[],
+                 strictExtension=False,
+                 ):
+        self.formatName = formatName # short string naming file type
+        if longFormatName: # longer string naming file type
+            self.longFormatName = longFormatName
+        else:
+            self.longFormatName = formatName
+        # define extensions that are allowed for the file type
+        # for windows, remove any extensions that are duplicate, if case is ignored
+        if sys.platform == 'windows' and extensionlist:
+            extensionlist = list(set([s.lower() for s in extensionlist]))
+        self.extensionlist = extensionlist
+        # If strictExtension is True, the file will not be read, unless
+        # the extension matches one in the extensionlist
+        self.strictExtension = strictExtension
+        # define a default Phase structure
+        self.Phase = {}
+        for i in 'General', 'Atoms', 'Drawing', 'Histograms':
+            self.Phase[i] = {}
+        self.Phase['General']['Name'] = 'default'
+        self.Phase['General']['Type'] = 'nuclear'
+        self.Phase['General']['SGData'] = SGData
+        self.Phase['General']['Cell'] = [
+            False, # refinement flag
+            1.,1.,1.,    # a,b,c
+            90.,90.,90., # alpha, beta, gamma
+            1.           # volume
+            ]
+        self.warnings = ''
+        self.errors = ''
+        #print 'created',self.__class__
+
+    def PhaseSelector(self, ChoiceList, ParentFrame=None,
+                      title='Select a phase', size=None):
+        ''' Provide a wx dialog to select a phase if the file contains more
+        than one
+        '''
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,
+            title,
+            'Phase Selection',
+            ChoiceList,
+            )
+        if size: dlg.SetSize(size)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            dlg.Destroy()
+            return sel
+        else:
+            dlg.Destroy()
+            return None
+
+    def ShowBusy(self):
+        wx.BeginBusyCursor()
+
+    def DoneBusy(self):
+        wx.EndBusyCursor()
+        
+#    def Reader(self, filename, filepointer, ParentFrame=None):
+#        '''This method must be supplied in the child class
+#        it will read the file
+#        '''
+#        return True # if read OK
+#        return False # if an error occurs
+
+    def ExtensionValidator(self, filename):
+        '''This methods checks if the file has the correct extension
+        Return False if this filename will not be supported by this reader
+        Return True if the extension matches the list supplied by the reader
+        Return None if the reader allows un-registered extensions
+        '''
+        if filename:
+            ext = os.path.splitext(filename)[1]
+            if sys.platform == 'windows': ext = ext.lower()
+            if ext in self.extensionlist: return True
+            if self.strictExtension: return False
+        return None
+
+    def ContentsValidator(self, filepointer):
+        '''This routine will attempt to determine if the file can be read
+        with the current format.
+        This will typically be overridden with a method that 
+        takes a quick scan of [some of]
+        the file contents to do a "sanity" check if the file
+        appears to match the selected format. 
+        Expected to be called via self.Validator()
+        '''
+        #filepointer.seek(0) # rewind the file pointer
+        return True
 

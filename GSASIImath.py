@@ -151,9 +151,7 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
         TxT = G2spc.MoveToUnitCell(TxT)+U
         return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
         
-    inv = 1
-    if Top < 0:
-        inv = -1
+    inv = Top/abs(Top)
     cent = abs(Top)/100
     op = abs(Top)%100-1
     M,T = SGData['SGOps'][op]
@@ -194,10 +192,8 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
     OxAN,OxA,TxAN,TxA,unitA,TopA = VA
     OxBN,OxB,TxBN,TxB,unitB,TopB = VB
     invA = invB = 1
-    if TopA < 0:
-        invA = -1
-    if TopB < 0:
-        invB = -1
+    invA = TopA/abs(TopA)
+    invB = TopB/abs(TopB)
     centA = abs(TopA)/100
     centB = abs(TopB)/100
     opA = abs(TopA)%100-1
@@ -238,6 +234,41 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return Ang,sigAng
     else:
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
+        
+def GetTorsionSig(Atoms,Amat,SGData,covData={}):
+    XYZ = []
+    for atom in Atoms:    
+        XYZ.append(np.array(atom[3:6]))
+    XYZ = np.inner(Amat,XYZ).T
+    V1 = XYZ[1]-XYZ[0]
+    V2 = XYZ[2]-XYZ[1]
+    V3 = XYZ[3]-XYZ[2]
+    V1 /= np.sqrt(np.sum(V1**2))
+    V2 /= np.sqrt(np.sum(V2**2))
+    V3 /= np.sqrt(np.sum(V3**2))
+    M = np.array([V1,V2,V3])
+    D = nl.det(M)
+    Ang = 1.0
+    P12 = np.dot(V1,V2)
+    P13 = np.dot(V1,V3)
+    P23 = np.dot(V2,V3)
+    Tors = acosd((P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2)))*D/abs(D)
+    
+    sig = 0.0
+    if 'covMatrix' in covData:
+        for atom in Atoms:
+            xyz = atom[3:6]
+            Op,Unit = atom[-1]
+            inv = Op/abs(Op)
+            M,T = SGData['SGOps'][abs(Op)%100-1]
+            C = SGData['SGCen'][abs(Op)/100]
+            #reverse inv*(np.inner(M,Tx)+T)+C
+            XYZ = np.inner(nl.inv(M),((xyz-C)*inv-T))
+            print Op,Unit,xyz,XYZ
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+    
+    return Tors,sig
         
     
 def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use

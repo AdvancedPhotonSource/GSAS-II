@@ -1832,15 +1832,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return
         TorsionData = {}
         drawingData = data['Drawing']
-        atomData = drawingData['Atoms']
+        atomData = data['Atoms']
+        atomDData = drawingData['Atoms']
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         cx = colLabels.index('x')
         cn = colLabels.index('Name')
         xyz = []
-        for i,atom in enumerate(atomData):
+        for i,atom in enumerate(atomDData):
             if i in indx:
                 xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
-        TorsionData['Atoms'] = xyz
+        TorsionData['Datoms'] = xyz
         generalData = data['General']
         TorsionData['Name'] = generalData['Name']
         TorsionData['SGData'] = generalData['SGData']

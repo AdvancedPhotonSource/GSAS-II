@@ -2705,8 +2705,35 @@ def Torsion(TorsionData):
         print '\n Unit cell: a = ','%.5f'%(Cell[0]),' b = ','%.5f'%(Cell[1]),' c = ','%.5f'%(Cell[2]), \
             ' alpha = ','%.3f'%(Cell[3]),' beta = ','%.3f'%(Cell[4]),' gamma = ', \
             '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
-    for atom in TorsionData['Atoms']:
+    #find one end of 4 atom string - involved in longest distance
+    dist = {}
+    for i,X1 in enumerate(TorsionData['Datoms']):
+        for j,X2 in enumerate(TorsionData['Datoms'][:i]):
+            dist[np.sqrt(np.sum(np.inner(Amat,np.array(X2[3:6])-np.array(X1[3:6]))**2))] = [i,j]
+    sortdist = dist.keys()
+    sortdist.sort()
+    end = dist[sortdist[-1]][0]
+    #order atoms in distance from end - defines sequence of atoms for the torsion angle
+    dist = {}
+    X1 = TorsionData['Datoms'][end]
+    for i,X2 in enumerate(TorsionData['Datoms']):                
+        dist[np.sqrt(np.sum(np.inner(Amat,np.array(X2[3:6])-np.array(X1[3:6]))**2))] = i
+    sortdist = dist.keys()
+    sortdist.sort()
+    Datoms = []
+    for d in sortdist:
+        atom = TorsionData['Datoms'][dist[d]]
+        symop = atom[-1].split('+')
+        if len(symop) == 1:
+            symop.append('0,0,0')        
+        symop[0] = int(symop[0])
+        symop[1] = eval(symop[1])
+        atom[-1] = symop
         print atom
+        Datoms.append(atom)
+    Tors,sig = G2mth.GetTorsionSig(Datoms,Amat,SGData,covData={})
+    print ' Torsion: ',G2mth.ValEsd(Tors,sig)
+        
         
 def BestPlane(PlaneData):
 
@@ -2716,32 +2743,6 @@ def BestPlane(PlaneData):
         print 80*'*','\n'
 
     ShowBanner(PlaneData['Name'])
-
-#    Cell = PlaneData['Cell']    
-#    Amat,Bmat = G2lat.cell2AB(Cell[:6])
-#        
-#    Atoms = PlaneData['Atoms']
-#    sumXYZ = np.zeros(3)
-#    XYZ = []
-#    Natoms = len(Atoms)
-#    for atom in Atoms:
-#        xyz = np.array(atom[3:6])
-#        XYZ.append(xyz)
-#        sumXYZ += xyz
-#    sumXYZ /= Natoms
-#    XYZ = np.array(XYZ)-sumXYZ
-#    XYZ = np.inner(Amat,XYZ).T
-#    Zmat = np.zeros((3,3))
-#    print ' Selected atoms: Cartesian coordinates centered at',sumXYZ
-#    Evec,Emat = nl.eig(Zmat)
-#    Evec = np.sqrt(Evec)/(Natoms-3)
-#    Order = np.argsort(Evec)
-#    print [Evec[Order[i]] for i in [2,1,0]]   
-#    XYZ = np.inner(XYZ,Emat.T).T
-#    XYZ = np.array([XYZ[Order[2]],XYZ[Order[1]],XYZ[Order[0]]]).T
-#    print ' Atoms in Cartesian best plane coordinates:'
-#    for i,xyz in enumerate(XYZ):
-#        print Atoms[i][1],xyz
 
     Cell = PlaneData['Cell']    
     Amat,Bmat = G2lat.cell2AB(Cell[:6])        

@@ -428,7 +428,7 @@ class GSASII(wx.Frame):
         # various defaults
         self.oldFocus = None
         self.GSASprojectfile = ''
-        self.dirname = os.getcwd()
+        self.dirname = ospath.expanduser('~')       #start in the users home directory by default; may be meaningless
         self.undofile = ''
         self.TreeItemDelete = False
         self.Offset = [0.0,0.0]

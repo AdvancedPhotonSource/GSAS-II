@@ -26,6 +26,12 @@ def create(parent):
 [wxID_FILEEXIT, wxID_FILEOPEN, wxID_INTEGRATE, wxID_OUTPUT,
 ] = [wx.NewId() for _init_coll_File_Items in range(4)]
 
+def FileDlgFixExt(dlg,file):            #this is needed to fix a problem in linux wx.FileDialog
+    ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')
+    if ext not in file:
+        file += ext
+    return file
+    
 class scanCCD(wx.Frame):
 
     def _init_ctrls(self, parent):
@@ -264,6 +270,7 @@ class scanCCD(wx.Frame):
             dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
+                print dlg.GetFilename()
                 powderfile = dlg.GetPath()
                 if 'fxye' in powderfile:
                     powderSave(self,powderfile,Fxye=True)

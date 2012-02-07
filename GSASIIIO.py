@@ -1130,8 +1130,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     infile.close()
     outfile.close()
     print 'GPX file save successful'
-    
-                    
+                        
 def GetPWDRdata(GPXfile,PWDRname):
     ''' Returns powder data from GSASII gpx file
     input: 

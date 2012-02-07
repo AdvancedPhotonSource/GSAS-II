@@ -89,6 +89,12 @@ wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS, wxID_VIEWLSPARMS, wxID_SEQREFINE,
 wxID_EXPORTCIF, wxID_EXPORTPEAKLIST, wxID_EXPORTPDF,
 ] = [wx.NewId() for _init_coll_Export_Items in range(7)]
 
+def FileDlgFixExt(dlg,file):            #this is needed to fix a problem in linux wx.FileDialog
+    ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')
+    if ext not in file:
+        file += ext
+    return file
+    
 class GSASII(wx.Frame):
     
     def _init_coll_GSASIIMenu_Menus(self, parent):
@@ -1039,6 +1045,7 @@ class GSASII(wx.Frame):
                             wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
                         if dlg.ShowModal() == wx.ID_OK:
                             newimagefile = dlg.GetPath()
+                            newimagefile = FileDlgFixExt(dlg,newimagefile)
                             G2IO.PutG2Image(newimagefile,Comments,Data,Npix,newImage)
                             Imax = np.amax(newImage)
                             Imin = np.amin(newImage)
@@ -1251,6 +1258,7 @@ class GSASII(wx.Frame):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     self.GSASprojectfile = dlg.GetPath()
+                    self.GSASprojectfile = FileDlgFixExt(dlg,self.GSASprojectfile)
                     self.dirname = dlg.GetDirectory()
                     G2IO.ProjFileOpen(self)
                     self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
@@ -1307,6 +1315,7 @@ class GSASII(wx.Frame):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GSASprojectfile = dlg.GetPath()
+                self.GSASprojectfile = FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
                 G2IO.ProjFileSave(self)
                 self.dirname = dlg.GetDirectory()
@@ -1541,6 +1550,7 @@ class GSASII(wx.Frame):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     powderfile = dlg.GetPath()
+                    powderfile = FileDlgFixExt(dlg,powderfile)
                     if 'fxye' in powderfile:
                         G2IO.powderFxyeSave(self,exports,powderfile)
                     else:       #just xye
@@ -1554,6 +1564,7 @@ class GSASII(wx.Frame):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.peaklistfile = dlg.GetPath()
+                self.peaklistfile = FileDlgFixExt(dlg,self.peaklistfile)
                 file = open(self.peaklistfile,'w')                
                 item, cookie = self.PatternTree.GetFirstChild(self.root)
                 while item:

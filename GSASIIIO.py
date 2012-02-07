@@ -1417,13 +1417,20 @@ def ReadEXPPhase(G2frame,filename):
             SpGrp = EXPphase[key][:15].strip()
             E,SGData = G2spc.SpcGroup(SpGrp)
         elif 'OD    ' in key:
-            SHdata = EXPphase[key].split()
-            textureData['Order'] = int(SHdata[0])
-            textureData['Model'] = shModels[int(SHdata[2])]
-            textureData['Sample omega'] = [False,float(SHdata[6])]
-            textureData['Sample chi'] = [False,float(SHdata[7])]
-            textureData['Sample phi'] = [False,float(SHdata[8])]
-            shNcof = int(SHdata[1])
+            SHdata = EXPphase[key].split() # may not have all 9 values
+            SHvals = 9*[0]
+            for i in range(9):
+                try:
+                    float(SHdata[i])
+                    SHvals[i] = SHdata[i]
+                except:
+                    pass
+            textureData['Order'] = int(SHvals[0])
+            textureData['Model'] = shModels[int(SHvals[2])]
+            textureData['Sample omega'] = [False,float(SHvals[6])]
+            textureData['Sample chi'] = [False,float(SHvals[7])]
+            textureData['Sample phi'] = [False,float(SHvals[8])]
+            shNcof = int(SHvals[1])
     Atoms = []
     if Ptype == 'nuclear':
         for key in keyList:

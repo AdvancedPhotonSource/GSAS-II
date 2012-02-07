@@ -1,5 +1,7 @@
 # a set of short routines to read in phases from various file formats
 # 
+import sys
+import traceback
 import GSASIIIO as G2IO
 
 class PDB_ReaderClass(G2IO.ImportPhase):
@@ -20,7 +22,8 @@ class PDB_ReaderClass(G2IO.ImportPhase):
         try:
             self.Phase = G2IO.ReadPDBPhase(filename)
             return True
-        except:
+        except Exception as detail:
+            print 'PDB read error:',detail # for testing
             return False
 
 class EXP_ReaderClass(G2IO.ImportPhase):
@@ -45,5 +48,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
         try:
             self.Phase = G2IO.ReadEXPPhase(ParentFrame, filename)
             return True
-        except:
+        except Exception as detail:
+            print 'GSAS .EXP read error:',detail # for testing
+            traceback.print_exc(file=sys.stdout)
             return False

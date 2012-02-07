@@ -375,6 +375,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:                    
                 cell[4] = cell[5] = 90.
                 cell[6] = 120.
+                if laue in ['4/m','4/mmm']:
+                    cell[6] = 90.
                 if ObjId == 0:
                     cell[1] = cell[2] = value
                     Obj.SetValue("%.5f"%(cell[1]))
@@ -437,6 +439,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Isotope'][item] = isotope
             indx = generalData['AtomTypes'].index(item)
             data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
+            dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
             UpdateGeneral()
                                                
         cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],

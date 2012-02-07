@@ -1,4 +1,4 @@
-#Element table for building periodic table with valences & JMOL colors 
+#Element table for building periodic table with valences & JMOL colors
 import wx        
 #Need these in case go back to this periodic table coloring scheme
 REcolor = wx.Colour(128, 128, 255)
@@ -10,7 +10,9 @@ SemMetcolor = wx.Colour(128, 255, 0)
 NonMetcolor = wx.Colour(0, 255, 255)
 White = wx.Colour(255, 255, 255)            
 ElTable = [
-    (["H","H-1"],                  0,0, "Hydrogen",    White,           0.0000,wx.Colour(255,255,255)),
+    (["H","H-1","D","D-1","T","T-1"],0,0, "Hydrogen",    White,           0.0000,wx.Colour(255,255,255)),
+    (["D","D-1"],                  0,0, "Deuterium",   White,           0.0000,wx.Colour(255,255,255)),
+    (["T","T-1"],                  0,0, "Tritium",     White,           0.0000,wx.Colour(255,255,255)),
     (["He",],                     17,0, "Helium",      Noblecolor,      0.0000,wx.Colour(217,255,255)),
     (["Li","Li+1"],                0,1, "Lithium",     Alkcolor,        0.0004,wx.Colour(204,128,255)),
     (["Be","Be+2"],                1,1, "Beryllium",   AlkEcolor,       0.0006,wx.Colour(194,255,0)),

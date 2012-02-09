@@ -251,7 +251,7 @@ def Opposite(XYZ,toler=0.0002):
         new.append(np.array(D[key])+np.array(XYZ))
     return new
         
-def GenAtom(XYZ,SGData,All=False,Uij=[]):
+def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     '''
     Generates the equivalent positions for a specified coordinate and space group
     input:  
@@ -272,7 +272,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[]):
     Idup = []
     Cell = []
     X = np.array(XYZ)
-    X = MoveToUnitCell(X)
+    if Move:
+        X = MoveToUnitCell(X)
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):

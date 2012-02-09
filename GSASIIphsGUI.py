@@ -1647,7 +1647,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 XYZ = np.array(atom[cx:cx+3])
                 if atom[cuia] == 'A':
                     Uij = atom[cuij:cuij+6]
-                    result = G2spc.GenAtom(XYZ,SGData,False,Uij)
+                    result = G2spc.GenAtom(XYZ,SGData,False,Uij,False)
                     for item in result:
                         atom = copy.copy(atomData[ind])
                         atom[cx:cx+3] = item[0]
@@ -1664,7 +1664,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
                                 atomData.append(atom[:])
                 else:
-                    result = G2spc.GenAtom(XYZ,SGData,False)
+                    result = G2spc.GenAtom(XYZ,SGData,False,Move=False)
                     for item in result:
                         atom = copy.copy(atomData[ind])
                         atom[cx:cx+3] = item[0]
@@ -1801,10 +1801,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
         
-    def FindAtomIndexByIDs(atomData,IDs):
+    def FindAtomIndexByIDs(atomData,IDs,Draw=True):
         indx = []
         for i,atom in enumerate(atomData):
-            if atom[-2] in IDs:
+            if Draw and atom[-3] in IDs:
+                indx.append(i)
+            elif atom[-1] in IDs:
                 indx.append(i)
         return indx
         
@@ -1834,17 +1836,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print '**** ERROR - need 4 atoms for torsion calculation'
             return
         TorsionData = {}
+        ocx,oct,ocs,cia = data['General']['AtomPtrs']
         drawingData = data['Drawing']
         atomData = data['Atoms']
+#        for atom in atomData: print atom
         atomDData = drawingData['Atoms']
+#        for atom in atomDData: print atom
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         cx = colLabels.index('x')
         cn = colLabels.index('Name')
+        cid = colLabels.index('I/A')+8
         xyz = []
+        Oxyz = []
         for i,atom in enumerate(atomDData):
             if i in indx:
                 xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
+                id = FindAtomIndexByIDs(atomData,[atom[cid],],False)[0]
+                Oxyz.append([id,]+atomData[id][cx+1:cx+4])
         TorsionData['Datoms'] = xyz
+        TorsionData['Oatoms'] = Oxyz
         generalData = data['General']
         TorsionData['Name'] = generalData['Name']
         TorsionData['SGData'] = generalData['SGData']

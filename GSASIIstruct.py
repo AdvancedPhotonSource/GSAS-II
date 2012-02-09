@@ -2609,7 +2609,7 @@ def DistAngle(DisAglCtls,DisAglData):
                 OxyzNames = [pfx+'dAx:%d'%(Oatom[0]),pfx+'dAy:%d'%(Oatom[0]),pfx+'dAz:%d'%(Oatom[0])]
                 TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
                 Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
-            result = G2spc.GenAtom(Tatom[3:6],SGData,False)
+            result = G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False)
             BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]
             AsumR = (Radii[Oatom[2]][1]+Radii[Tatom[2]][1])*Factor[1]
             for Txyz,Top,Tunit in result:
@@ -2678,33 +2678,20 @@ def Torsion(TorsionData):
     def ShowBanner(name):
         print 80*'*'
         print '   Torsion angle for phase '+name
-        print 80*'*','\n'
+        print 80*'*'
 
     ShowBanner(TorsionData['Name'])
     SGData = TorsionData['SGData']
-    SGtext = G2spc.SGPrint(SGData)
-    for line in SGtext: print line
     Cell = TorsionData['Cell']
     
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
+    pfx = ''
     if 'covData' in TorsionData:   
         covData = TorsionData['covData']
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
         pfx = str(TorsionData['pId'])+'::'
-        A = G2lat.cell2A(Cell[:6])
-        cellSig = getCellEsd(pfx,SGData,A,covData)
-        names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
-        valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
-        line = '\n Unit cell:'
-        for name,vals in zip(names,valEsd):
-            line += name+vals  
-        print line
-    else: 
-        print '\n Unit cell: a = ','%.5f'%(Cell[0]),' b = ','%.5f'%(Cell[1]),' c = ','%.5f'%(Cell[2]), \
-            ' alpha = ','%.3f'%(Cell[3]),' beta = ','%.3f'%(Cell[4]),' gamma = ', \
-            '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
     #find one end of 4 atom string - involved in longest distance
     dist = {}
     for i,X1 in enumerate(TorsionData['Datoms']):
@@ -2716,11 +2703,12 @@ def Torsion(TorsionData):
     #order atoms in distance from end - defines sequence of atoms for the torsion angle
     dist = {}
     X1 = TorsionData['Datoms'][end]
-    for i,X2 in enumerate(TorsionData['Datoms']):                
+    for i,X2 in enumerate(TorsionData['Datoms']):
         dist[np.sqrt(np.sum(np.inner(Amat,np.array(X2[3:6])-np.array(X1[3:6]))**2))] = i
     sortdist = dist.keys()
     sortdist.sort()
     Datoms = []
+    Oatoms = []
     for d in sortdist:
         atom = TorsionData['Datoms'][dist[d]]
         symop = atom[-1].split('+')
@@ -2729,12 +2717,17 @@ def Torsion(TorsionData):
         symop[0] = int(symop[0])
         symop[1] = eval(symop[1])
         atom[-1] = symop
-        print atom
         Datoms.append(atom)
-    Tors,sig = G2mth.GetTorsionSig(Datoms,Amat,SGData,covData={})
-    print ' Torsion: ',G2mth.ValEsd(Tors,sig)
-        
-        
+        oatom = TorsionData['Oatoms'][dist[d]]
+        names = ['','','']
+        if pfx:
+            names = [pfx+'dAx:'+str(oatom[0]),pfx+'dAy:'+str(oatom[0]),pfx+'dAz:'+str(oatom[0])]
+        oatom += [names,]
+        Oatoms.append(oatom)
+    Tors,sig = G2mth.GetTorsionSig(Oatoms,Datoms,Amat,SGData,covData)
+    print ' Torsion angle for atom sequence: ',[Datoms[i][1] for i in range(4)],'=',G2mth.ValEsd(Tors,sig)
+    print ' NB: Atom sequence determined by interatomic distances'
+                
 def BestPlane(PlaneData):
 
     def ShowBanner(name):

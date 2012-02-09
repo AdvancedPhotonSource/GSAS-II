@@ -2265,7 +2265,6 @@ def PlotStructure(G2frame,data):
         try:
             return G2frame.dataDisplay.GetSelection()
         except AttributeError:
-            print G2frame.dataDisplay.GetLabel()
             G2frame.G2plotNB.status.SetStatusText('Select this from Phase data window!')
             return 0
             
@@ -2571,7 +2570,6 @@ def PlotStructure(G2frame,data):
         glPopMatrix()
                             
     def Draw():
-        import numpy.linalg as nl
         Ind = GetSelectedAtoms()
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])

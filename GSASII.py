@@ -517,14 +517,10 @@ class GSASII(wx.Frame):
         if type(item) is int: return # is this the toplevel in tree?
         if key == wx.WXK_UP:
             self.oldFocus = wx.Window.FindFocus()
-            next = self.PatternTree.GetPrevSibling(item)
-            if next.IsOk(): # test if there is a previous item
-                self.PatternTree.SelectItem(next)
+            self.PatternTree.GetPrevSibling(item)
         elif key == wx.WXK_DOWN:
             self.oldFocus = wx.Window.FindFocus()
-            next = self.PatternTree.GetNextSibling(item)
-            if next.IsOk(): # test if there is a next item
-                self.PatternTree.SelectItem(next)
+            self.PatternTree.GetNextSibling(item)
                 
     def OnPwdrRead(self, event):
         self.CheckNotebook()

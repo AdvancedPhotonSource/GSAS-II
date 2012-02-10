@@ -361,7 +361,7 @@ class DataFrame(wx.Frame):
         self.ImageEdit.Append(help='Calibrate detector by fitting to calibrant lines', 
             id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
         self.ImageEdit.Append(help='Recalibrate detector by fitting to calibrant lines', 
-            id=wxID_IMRECALIBRATE, kind=wx.ITEM_NORMAL,text='Realibrate')
+            id=wxID_IMRECALIBRATE, kind=wx.ITEM_NORMAL,text='Recalibrate')
         self.ImageEdit.Append(help='Clear calibration data points and rings',id=wxID_IMCLEARCALIB, 
             kind=wx.ITEM_NORMAL,text='Clear calibration')
         self.ImageEdit.Append(help='Integrate selected image',id=wxID_IMINTEGRATE, 

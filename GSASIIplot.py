@@ -2230,6 +2230,7 @@ def PlotStructure(G2frame,data):
                 SetTestRotZ(newxy)
             x,y,z = drawingData['testPos'][0]
             G2frame.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
+            Draw()
                                 
         if event.Dragging() and not event.ControlDown():
             if event.LeftIsDown():
@@ -2244,7 +2245,7 @@ def PlotStructure(G2frame,data):
                 SetRotationZ(newxy)
                 angX,angY,angZ = drawingData['Rotation'][:3]
                 G2frame.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f, %.2f'%(angX,angY,angZ),1)
-        Draw()
+            Draw()
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -2259,7 +2260,7 @@ def PlotStructure(G2frame,data):
                 names = [child.GetName() for child in panel]
                 panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
                 panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
-        Draw()
+            Draw()
         
     def getSelection():
         try:
@@ -2332,6 +2333,7 @@ def PlotStructure(G2frame,data):
                     pI[0] = 0
             drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
             SetViewPointText(drawingData['viewPoint'][0])
+            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
                 
         elif key in ['p','P']:
             drawAtoms = drawingData['Atoms']
@@ -2349,6 +2351,7 @@ def PlotStructure(G2frame,data):
                     pI[0] = len(drawAtoms)-1
             drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
             SetViewPointText(drawingData['viewPoint'][0])            
+            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
         Draw()
             
     def SetBackground():

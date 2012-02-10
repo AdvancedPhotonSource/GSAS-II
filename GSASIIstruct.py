@@ -9,6 +9,7 @@
 import sys
 import numpy as np
 import numpy.linalg as nl
+import os.path as ospath
 import time
 import math
 import GSASIIpath

@@ -85,6 +85,9 @@ htmlFirstUse = True
 [ wxID_RESTRAINTADD,
 ] = [wx.NewId() for _init_coll_Restraint_Items in range(1)]
 
+[ wxID_SAVESEQSEL,
+] = [wx.NewId() for _init_coll_Sequential_Items in range(1)]
+
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for _init_coll_Refl_Items in range(1)]
 
@@ -263,6 +266,14 @@ class DataFrame(wx.Frame):
         self.RestraintMenu.Append(menu=MyHelp(self,helpType='Restraints'),title='&Help')
         self.RestraintEdit.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraint',
             help='restraint dummy menu item')
+            
+# Sequential results
+        self.SequentialMenu = wx.MenuBar()
+        self.SequentialFile = wx.Menu(title='')
+        self.SequentialMenu.Append(menu=self.SequentialFile, title='File')
+        self.SequentialMenu.Append(menu=MyHelp(self,helpType='Sequential'),title='&Help')
+        self.SequentialFile.Append(id=wxID_SAVESEQSEL, kind=wx.ITEM_NORMAL,text='Save...',
+            help='Save selected sequential refinement results')
             
 # PDR / Limits
         self.LimitMenu = wx.MenuBar()
@@ -923,6 +934,29 @@ def UpdateSeqResults(G2frame,data):
         elif rows:
             name = histNames[rows[0]]
             G2plt.PlotCovariance(G2frame,Data=data[name])
+            
+    def OnSaveSelSeq(event):        
+        cols = G2frame.dataDisplay.GetSelectedCols()
+        if cols:
+            numRows = G2frame.SeqTable.GetNumberRows()
+            dataNames = []
+            saveNames = [G2frame.SeqTable.GetRowLabelValue(r) for r in range(numRows)]
+            saveData = []
+            for col in cols:
+                dataNames.append(G2frame.SeqTable.GetColLabelValue(col))
+                saveData.append(zip(G2frame.SeqTable.GetColValues(col),GetSigData(col)))
+            saveData = np.array(saveData)
+            dlg = wx.FileDialog(self, 'Choose text output file for your selection', '.', '', 
+                'Text output file (*.txt)|*.txt',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    SeqTextFile = dlg.GetPath()
+                    SeqTextFile = G2IO.FileDlgFixExt(dlg,SeqTextFile)
+                    SeqFile = open(SeqTextFile,'w')
+            finally:
+                dlg.Destroy()
+            
+            print dataNames,saveData.shape
                
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
@@ -937,9 +971,10 @@ def UpdateSeqResults(G2frame,data):
         if item in data['varyList']:
             atomList[newAtomDict[item][0]] = item
     sampleParms = GetSampleParms()
-    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.SequentialMenu)
     G2frame.dataFrame.SetLabel('Sequental refinement results')
     G2frame.dataFrame.CreateStatusBar()
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
     colLabels = data['varyList']+atomList.keys()+cellList.keys()
     Types = len(data['varyList']+atomList.keys()+cellList.keys())*[wg.GRID_VALUE_FLOAT,]
     seqList = [list(data[name]['variables']) for name in histNames]

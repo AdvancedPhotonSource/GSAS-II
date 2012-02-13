@@ -7,20 +7,21 @@
 # $Id$
 ########### SVN repository information ###################
 import sys
-import numpy as np
-import numpy.linalg as nl
+import os
 import os.path as ospath
 import time
 import math
+import cPickle
+import numpy as np
+import numpy.linalg as nl
+import scipy.optimize as so
 import GSASIIpath
-import GSASIIIO as G2IO
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIpwd as G2pwd
 import GSASIImapvars as G2mv
 import GSASIImath as G2mth
-import scipy.optimize as so
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -30,6 +31,342 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 
+def GetControls(GPXfile):
+    ''' Returns dictionary of control items found in GSASII gpx file
+    input:
+        GPXfile = .gpx full file name
+    return:
+        Controls = dictionary of control items
+    '''
+    Controls = {'deriv type':'analytical','min dM/M':0.0001,'shift factor':1.}
+    file = open(GPXfile,'rb')
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Controls':
+            Controls.update(datum[1])
+    file.close()
+    return Controls
+    
+def GetConstraints(GPXfile):
+    constList = []
+    file = open(GPXfile,'rb')
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Constraints':
+            constDict = datum[1]
+            for item in constDict:
+                constList += constDict[item]
+    file.close()
+    constDict = []
+    constFlag = []
+    fixedList = []
+    for item in constList:
+        if item[-2]:
+            fixedList.append(str(item[-2]))
+        else:
+            fixedList.append('0')
+        if item[-1]:
+            constFlag.append(['VARY'])
+        else:
+            constFlag.append([])
+        itemDict = {}
+        for term in item[:-2]:
+            itemDict[term[1]] = term[0]
+        constDict.append(itemDict)
+    return constDict,constFlag,fixedList
+    
+def GetPhaseNames(GPXfile):
+    ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
+    input: 
+        GPXfile = gpx full file name
+    return: 
+        PhaseNames = list of phase names
+    '''
+    file = open(GPXfile,'rb')
+    PhaseNames = []
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if 'Phases' == datum[0]:
+            for datus in data[1:]:
+                PhaseNames.append(datus[0])
+    file.close()
+    return PhaseNames
+
+def GetAllPhaseData(GPXfile,PhaseName):
+    ''' Returns the entire dictionary for PhaseName from GSASII gpx file
+    input:
+        GPXfile = gpx full file name
+        PhaseName = phase name
+    return:
+        phase dictionary
+    '''        
+    file = open(GPXfile,'rb')
+    General = {}
+    Atoms = []
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if 'Phases' == datum[0]:
+            for datus in data[1:]:
+                if datus[0] == PhaseName:
+                    break
+    file.close()
+    return datus[1]
+    
+def GetHistograms(GPXfile,hNames):
+    """ Returns a dictionary of histograms found in GSASII gpx file
+    input: 
+        GPXfile = .gpx full file name
+        hNames = list of histogram names 
+    return: 
+        Histograms = dictionary of histograms (types = PWDR & HKLF)
+    """
+    file = open(GPXfile,'rb')
+    Histograms = {}
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        hist = datum[0]
+        if hist in hNames:
+            if 'PWDR' in hist[:4]:
+                PWDRdata = {}
+                PWDRdata['Data'] = datum[1][1]          #powder data arrays
+                PWDRdata[data[2][0]] = data[2][1]       #Limits
+                PWDRdata[data[3][0]] = data[3][1]       #Background
+                PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
+                PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
+                try:
+                    PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
+                except IndexError:
+                    PWDRdata['Reflection lists'] = {}
+    
+                Histograms[hist] = PWDRdata
+            elif 'HKLF' in hist[:4]:
+                HKLFdata = []
+                datum = data[0]
+                HKLFdata = datum[1:][0]
+                Histograms[hist] = HKLFdata           
+    file.close()
+    return Histograms
+    
+def GetHistogramNames(GPXfile,hType):
+    """ Returns a list of histogram names found in GSASII gpx file
+    input: 
+        GPXfile = .gpx full file name
+        hType = list ['PWDR','HKLF'] 
+    return: 
+        HistogramNames = list of histogram names (types = PWDR & HKLF)
+    """
+    file = open(GPXfile,'rb')
+    HistogramNames = []
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0][:4] in hType:
+            HistogramNames.append(datum[0])
+    file.close()
+    return HistogramNames
+    
+def GetUsedHistogramsAndPhases(GPXfile):
+    ''' Returns all histograms that are found in any phase
+    and any phase that uses a histogram
+    input:
+        GPXfile = .gpx full file name
+    return:
+        Histograms = dictionary of histograms as {name:data,...}
+        Phases = dictionary of phases that use histograms
+    '''
+    phaseNames = GetPhaseNames(GPXfile)
+    histoList = GetHistogramNames(GPXfile,['PWDR','HKLF'])
+    allHistograms = GetHistograms(GPXfile,histoList)
+    phaseData = {}
+    for name in phaseNames: 
+        phaseData[name] =  GetAllPhaseData(GPXfile,name)
+    Histograms = {}
+    Phases = {}
+    for phase in phaseData:
+        Phase = phaseData[phase]
+        if Phase['Histograms']:
+            if phase not in Phases:
+                pId = phaseNames.index(phase)
+                Phase['pId'] = pId
+                Phases[phase] = Phase
+            for hist in Phase['Histograms']:
+                if hist not in Histograms:
+                    Histograms[hist] = allHistograms[hist]
+                    #future restraint, etc. histograms here            
+                    hId = histoList.index(hist)
+                    Histograms[hist]['hId'] = hId
+    return Histograms,Phases
+    
+def GPXBackup(GPXfile,makeBack=True):
+    import distutils.file_util as dfu
+    GPXpath,GPXname = ospath.split(GPXfile)
+    if GPXpath == '': GPXpath = '.'
+    Name = ospath.splitext(GPXname)[0]
+    files = os.listdir(GPXpath)
+    last = 0
+    for name in files:
+        name = name.split('.')
+        if len(name) >= 3 and name[0] == Name and 'bak' in name[-2]:
+            if makeBack:
+                last = max(last,int(name[-2].strip('bak'))+1)
+            else:
+                last = max(last,int(name[-2].strip('bak')))
+    GPXback = ospath.join(GPXpath,GPXname.rstrip('.'.join(name[-2:]))+'.bak'+str(last)+'.gpx')
+    dfu.copy_file(GPXfile,GPXback)
+    return GPXback
+        
+def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
+    ''' Updates gpxfile from all histograms that are found in any phase
+    and any phase that used a histogram
+    input:
+        GPXfile = .gpx full file name
+        Histograms = dictionary of histograms as {name:data,...}
+        Phases = dictionary of phases that use histograms
+        CovData = dictionary of refined variables, varyList, & covariance matrix
+        makeBack = True if new backup of .gpx file is to be made; else use the last one made
+    '''
+                        
+    GPXback = GPXBackup(GPXfile,makeBack)
+    print '\n',135*'-'
+    print 'Read from file:',GPXback
+    print 'Save to file  :',GPXfile
+    infile = open(GPXback,'rb')
+    outfile = open(GPXfile,'wb')
+    while True:
+        try:
+            data = cPickle.load(infile)
+        except EOFError:
+            break
+        datum = data[0]
+#        print 'read: ',datum[0]
+        if datum[0] == 'Phases':
+            for iphase in range(len(data)):
+                if data[iphase][0] in Phases:
+                    phaseName = data[iphase][0]
+                    data[iphase][1].update(Phases[phaseName])
+        elif datum[0] == 'Covariance':
+            data[0][1] = CovData
+        try:
+            histogram = Histograms[datum[0]]
+#            print 'found ',datum[0]
+            data[0][1][1] = histogram['Data']
+            for datus in data[1:]:
+#                print '    read: ',datus[0]
+                if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
+                    datus[1] = histogram[datus[0]]
+        except KeyError:
+            pass
+                                
+        cPickle.dump(data,outfile,1)
+    infile.close()
+    outfile.close()
+    print 'GPX file save successful'
+    
+def SetSeqResult(GPXfile,Histograms,SeqResult):
+    GPXback = GPXBackup(GPXfile)
+    print '\n',135*'-'
+    print 'Read from file:',GPXback
+    print 'Save to file  :',GPXfile
+    infile = open(GPXback,'rb')
+    outfile = open(GPXfile,'wb')
+    while True:
+        try:
+            data = cPickle.load(infile)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Sequental results':
+            data[0][1] = SeqResult
+        try:
+            histogram = Histograms[datum[0]]
+            data[0][1][1] = histogram['Data']
+            for datus in data[1:]:
+                if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
+                    datus[1] = histogram[datus[0]]
+        except KeyError:
+            pass
+                                
+        cPickle.dump(data,outfile,1)
+    infile.close()
+    outfile.close()
+    print 'GPX file save successful'
+                        
+def GetPWDRdata(GPXfile,PWDRname):
+    ''' Returns powder data from GSASII gpx file
+    input: 
+        GPXfile = .gpx full file name
+        PWDRname = powder histogram name as obtained from GetHistogramNames
+    return: 
+        PWDRdata = powder data dictionary with:
+            Data - powder data arrays, Limits, Instrument Parameters, Sample Parameters
+        
+    '''
+    file = open(GPXfile,'rb')
+    PWDRdata = {}
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == PWDRname:
+            PWDRdata['Data'] = datum[1][1]          #powder data arrays
+            PWDRdata[data[2][0]] = data[2][1]       #Limits
+            PWDRdata[data[3][0]] = data[3][1]       #Background
+            PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
+            PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
+            try:
+                PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
+            except IndexError:
+                PWDRdata['Reflection lists'] = {}
+    file.close()
+    return PWDRdata
+    
+def GetHKLFdata(GPXfile,HKLFname):
+    ''' Returns single crystal data from GSASII gpx file
+    input: 
+        GPXfile = .gpx full file name
+        HKLFname = single crystal histogram name as obtained from GetHistogramNames
+    return: 
+        HKLFdata = single crystal data list of reflections: for each reflection:
+            HKLF = [np.array([h,k,l]),FoSq,sigFoSq,FcSq,Fcp,Fcpp,phase]
+    '''
+    file = open(GPXfile,'rb')
+    HKLFdata = []
+    while True:
+        try:
+            data = cPickle.load(file)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == HKLFname:
+            HKLFdata = datum[1:][0]
+    file.close()
+    return HKLFdata
+    
 def ShowBanner():
     print 80*'*'
     print '   General Structure Analysis System-II Crystal Structure Refinement'
@@ -2276,10 +2613,10 @@ def Refine(GPXfile,dlg):
     parmDict = {}
     calcControls = {}
     G2mv.InitVars()    
-    Controls = G2IO.GetControls(GPXfile)
+    Controls = GetControls(GPXfile)
     ShowControls(Controls)            
-    constrDict,constrFlag,fixedList = G2IO.GetConstraints(GPXfile)
-    Histograms,Phases = G2IO.GetUsedHistogramsAndPhases(GPXfile)
+    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
+    Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
         print ' *** Refine aborted ***'
@@ -2391,7 +2728,7 @@ def Refine(GPXfile,dlg):
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
     SetHistogramData(parmDict,sigDict,Histograms)
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict)
-    G2IO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
+    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
     
 #for testing purposes!!!
 #    import cPickle
@@ -2417,10 +2754,10 @@ def SeqRefine(GPXfile,dlg):
     ShowBanner()
     print ' Sequential Refinement'
     G2mv.InitVars()    
-    Controls = G2IO.GetControls(GPXfile)
+    Controls = GetControls(GPXfile)
     ShowControls(Controls)            
-    constrDict,constrFlag,fixedList = G2IO.GetConstraints(GPXfile)
-    Histograms,Phases = G2IO.GetUsedHistogramsAndPhases(GPXfile)
+    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
+    Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
         print ' *** Refine aborted ***'
@@ -2433,7 +2770,7 @@ def SeqRefine(GPXfile,dlg):
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:
-        histNames = G2IO.GetHistogramNames(GPXfile,['PWDR',])
+        histNames = GetHistogramNames(GPXfile,['PWDR',])
     if 'Reverse Seq' in Controls:
         if Controls['Reverse Seq']:
             histNames.reverse()
@@ -2551,9 +2888,9 @@ def SeqRefine(GPXfile,dlg):
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint)
         SeqResult[histogram] = covData
-        G2IO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,covData,makeBack)
+        SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,covData,makeBack)
         makeBack = False
-    G2IO.SetSeqResult(GPXfile,Histograms,SeqResult)
+    SetSeqResult(GPXfile,Histograms,SeqResult)
 
 def DistAngle(DisAglCtls,DisAglData):
     import numpy.ma as ma

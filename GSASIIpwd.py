@@ -10,7 +10,6 @@
 ########### SVN repository information ###################
 import sys
 import math
-import wx
 import time
 
 import numpy as np
@@ -22,7 +21,6 @@ import scipy.stats as st
 import scipy.optimize as so
 
 import GSASIIpath
-import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIElem as G2elem
 import GSASIIgrid as G2gd
@@ -944,7 +942,7 @@ def Values2Dict(parmdict, varylist, values):
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
     
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=None):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=None,dlg=None):
     
     def SetBackgroundParms(Background):
         if len(Background) == 1:            # fix up old backgrounds
@@ -1199,11 +1197,6 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
         if FitPgm == 'LSQ':
-            dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-            screenSize = wx.ClientDisplayRect()
-            Size = dlg.GetSize()
-            dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
             try:
                 result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
                     args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))

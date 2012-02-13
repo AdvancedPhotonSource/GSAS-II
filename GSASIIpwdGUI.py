@@ -119,8 +119,13 @@ def UpdatePeakGrid(G2frame, data):
         inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         wx.BeginBusyCursor()
+        dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = dlg.GetSize()
+        dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data,oneCycle,controls)
+            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,data,oneCycle,controls,dlg)
         finally:
             wx.EndBusyCursor()    
         UpdatePeakGrid(G2frame,peaks)

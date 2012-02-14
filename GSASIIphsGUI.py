@@ -577,9 +577,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
                 elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
             elemSizer.Add(wx.StaticText(dataDisplay,label='Default color'),0,wx.ALIGN_CENTER_VERTICAL)
-            for color in generalData['Color']:
+            for R,G,B in generalData['Color']:
                 colorTxt = wx.TextCtrl(dataDisplay,value='',style=wx.TE_READONLY)
-                colorTxt.SetBackgroundColour(color)
+                colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
                 elemSizer.Add(colorTxt,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(elemSizer)
             
@@ -1895,6 +1895,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
+        print 'Rotation:',drawingData['Rotation']
         if generalData['Type'] == 'nuclear':
             pickChoice = ['Atoms','Bonds','Torsions','Planes']
         elif generalData['Type'] == 'macromolecular':

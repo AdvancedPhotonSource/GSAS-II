@@ -16,6 +16,7 @@ import os.path
 import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
 import GSASIIpath
+import GSASIIIO as G2IO
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
@@ -945,18 +946,30 @@ def UpdateSeqResults(G2frame,data):
             for col in cols:
                 dataNames.append(G2frame.SeqTable.GetColLabelValue(col))
                 saveData.append(zip(G2frame.SeqTable.GetColValues(col),GetSigData(col)))
-            saveData = np.array(saveData)
-            dlg = wx.FileDialog(self, 'Choose text output file for your selection', '.', '', 
+            lenName = len(saveNames[0])
+            saveData = np.swapaxes(np.array(saveData),0,1)
+            dlg = wx.FileDialog(G2frame, 'Choose text output file for your selection', '.', '', 
                 'Text output file (*.txt)|*.txt',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     SeqTextFile = dlg.GetPath()
                     SeqTextFile = G2IO.FileDlgFixExt(dlg,SeqTextFile)
                     SeqFile = open(SeqTextFile,'w')
+                    line = '  %s  '%('name'.center(lenName))
+                    for item in dataNames:
+                        line += ' %12s %12s '%(item.center(12),'esd'.center(12))
+                    line += '\n'
+                    SeqFile.write(line)
+                    for i,item in enumerate(saveData):
+                        line = " '%s' "%(saveNames[i])
+                        for val,esd in item:
+                            line += ' %12.6f %12.6f '%(val,esd)
+                        line += '\n'
+                        SeqFile.write(line)
+                    SeqFile.close()
             finally:
                 dlg.Destroy()
             
-            print dataNames,saveData.shape
                
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()

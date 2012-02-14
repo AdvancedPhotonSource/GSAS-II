@@ -2213,7 +2213,7 @@ def PlotStructure(G2frame,data):
             elif event.RightIsDown():
                 GetTruePosition(xy,True)
         else:
-            drawingData['Rotation'][3] = xy
+            drawingData['Rotation'][3] = list(xy)
         Draw()
         
     def OnMouseMove(event):
@@ -2379,7 +2379,7 @@ def PlotStructure(G2frame,data):
         Tx -= dxy[0]*0.01
         Ty += dxy[1]*0.01
         Tz -= dxy[2]*0.01
-        drawingData['Rotation'][3] = newxy
+        drawingData['Rotation'][3] = list(newxy)
         drawingData['viewPoint'][0] =  Tx,Ty,Tz
         SetViewPointText([Tx,Ty,Tz])
         
@@ -2394,7 +2394,7 @@ def PlotStructure(G2frame,data):
         Tx += dxy[0]*0.001
         Ty -= dxy[1]*0.001
         Tz += dxy[2]*0.001
-        drawingData['Rotation'][3] = newxy
+        drawingData['Rotation'][3] = list(newxy)
         drawingData['testPos'][0] =  Tx,Ty,Tz
         
     def SetTestRot(newxy):
@@ -2435,14 +2435,14 @@ def PlotStructure(G2frame,data):
         anglex += dxy[1]*.25
         angley += dxy[0]*.25
         oldxy = newxy
-        drawingData['Rotation'] = [anglex,angley,anglez,oldxy]
+        drawingData['Rotation'] = [anglex,angley,anglez,list(oldxy)]
         
     def SetRotationZ(newxy):                        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         dxy = newxy-oldxy
         anglez += (dxy[0]+dxy[1])*.25
         oldxy = newxy
-        drawingData['Rotation'] = [anglex,angley,anglez,oldxy]
+        drawingData['Rotation'] = [anglex,angley,anglez,list(oldxy)]
         
     def RenderBox():
         glEnable(GL_COLOR_MATERIAL)

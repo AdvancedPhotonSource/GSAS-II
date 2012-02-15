@@ -19,6 +19,7 @@ import GSASIIpath
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
+import GSASIIElemGUI as G2elemGUI
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
@@ -817,7 +818,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
             if Atoms.GetColLabelValue(c) == 'Type':
-                PE = G2elem.PickElement(G2frame)
+                PE = G2elemGUI.PickElement(G2frame)
                 if PE.ShowModal() == wx.ID_OK:
                     atomData[r][c] = PE.Elem.strip()
                     name = atomData[r][c]
@@ -1830,44 +1831,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for ind in indx:
             atomData[ind][col] = value
                 
-    def OnDrawTorsion(event):
-        indx = drawAtoms.GetSelectedRows()
-        if len(indx) != 4:
-            print '**** ERROR - need 4 atoms for torsion calculation'
-            return
-        TorsionData = {}
-        ocx,oct,ocs,cia = data['General']['AtomPtrs']
-        drawingData = data['Drawing']
-        atomData = data['Atoms']
-#        for atom in atomData: print atom
-        atomDData = drawingData['Atoms']
-#        for atom in atomDData: print atom
-        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
-        cx = colLabels.index('x')
-        cn = colLabels.index('Name')
-        cid = colLabels.index('I/A')+8
-        xyz = []
-        Oxyz = []
-        for i,atom in enumerate(atomDData):
-            if i in indx:
-                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
-                id = FindAtomIndexByIDs(atomData,[atom[cid],],False)[0]
-                Oxyz.append([id,]+atomData[id][cx+1:cx+4])
-        TorsionData['Datoms'] = xyz
-        TorsionData['Oatoms'] = Oxyz
-        generalData = data['General']
-        TorsionData['Name'] = generalData['Name']
-        TorsionData['SGData'] = generalData['SGData']
-        TorsionData['Cell'] = generalData['Cell'][1:] #+ volume
-        if 'pId' in data:
-            TorsionData['pId'] = data['pId']
-            TorsionData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
-        G2str.Torsion(TorsionData)
-        
     def OnDrawPlane(event):
         indx = drawAtoms.GetSelectedRows()
-        if len(indx) < 3:
-            print '**** ERROR - need 3+ atoms for plane calculation'
+        if len(indx) < 4:
+            print '**** ERROR - need 4+ atoms for plane calculation'
             return
         PlaneData = {}
         drawingData = data['Drawing']
@@ -1885,9 +1852,39 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         PlaneData['Cell'] = generalData['Cell'][1:] #+ volume
         G2str.BestPlane(PlaneData)
     
-    def OnDrawDistAngle(event):
+    def OnDrawDAT(event):
+        #distance, angle, torsion 
         indx = drawAtoms.GetSelectedRows()
-        print 'Future bond dist/angles for atoms',indx
+        if len(indx) not in [2,3,4]:
+            print '**** ERROR - wrong number of atoms for distance, angle or torsion calculation'
+            return
+        DATData = {}
+        ocx,oct,ocs,cia = data['General']['AtomPtrs']
+        drawingData = data['Drawing']
+        atomData = data['Atoms']
+        atomDData = drawingData['Atoms']
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        cn = colLabels.index('Name')
+        cid = colLabels.index('I/A')+8
+        xyz = []
+        Oxyz = []
+        DATData['Natoms'] = len(indx)
+        for i in indx:
+            atom = atomDData[i]
+            xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
+            id = FindAtomIndexByIDs(atomData,[atom[cid],],False)[0]
+            Oxyz.append([id,]+atomData[id][cx+1:cx+4])
+        DATData['Datoms'] = xyz
+        DATData['Oatoms'] = Oxyz
+        generalData = data['General']
+        DATData['Name'] = generalData['Name']
+        DATData['SGData'] = generalData['SGData']
+        DATData['Cell'] = generalData['Cell'][1:] #+ volume
+        if 'pId' in data:
+            DATData['pId'] = data['pId']
+            DATData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
+        G2str.DisAglTor(DATData)
                 
     def UpdateDrawOptions():
         import copy
@@ -3146,8 +3143,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
             G2frame.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDistAngle, id=G2gd.wxID_DRAWDISAGL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawTorsion, id=G2gd.wxID_DRAWTORSION)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2gd.wxID_DRAWDISAGLTOR)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)

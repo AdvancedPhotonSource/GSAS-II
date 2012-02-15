@@ -1,3 +1,10 @@
+########### SVN repository information ###################
+# $Date: 2012-02-13 11:33:35 -0600 (Mon, 13 Feb 2012) $
+# $Author: vondreele & toby $
+# $Revision: 482 $
+# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/G2importphase.py $
+# $Id: G2importphase.py 482 2012-02-13 17:33:35Z vondreele $
+########### SVN repository information ###################
 # a set of short routines to read in phases from various file formats
 # 
 import sys

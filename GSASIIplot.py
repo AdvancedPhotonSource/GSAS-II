@@ -2693,7 +2693,7 @@ def PlotStructure(G2frame,data):
             elif atom[cs+1] == 'name':
                 RenderLabel(x,y,z,atom[ct-1],radius)
             elif atom[cs+1] == 'number':
-                RenderLabel(x,y,z,str(iat+1),radius)
+                RenderLabel(x,y,z,str(iat),radius)
             elif atom[cs+1] == 'residue' and atom[ct-1] == 'CA':
                 RenderLabel(x,y,z,atom[ct-4],radius)
             elif atom[cs+1] == '1-letter' and atom[ct-1] == 'CA':

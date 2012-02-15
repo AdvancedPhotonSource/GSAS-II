@@ -46,8 +46,8 @@ htmlFirstUse = True
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
-    wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGL, wxID_DRAWTORSION, wxID_DRAWPLANE,
-] = [wx.NewId() for _init_coll_DrawAtom_Items in range(13)]
+    wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGLTOR,  wxID_DRAWPLANE,
+] = [wx.NewId() for _init_coll_DrawAtom_Items in range(12)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
@@ -168,13 +168,13 @@ class MyHelp(wx.Menu):
         info.Name = 'GSAS-II'
         info.Version = __version__
         info.Copyright = '''
-Robert B. Von Dreele
+Robert B. Von Dreele & Brian H. Toby
 Argonne National Laboratory(C)
 This product includes software developed
 by the UChicago Argonne, LLC, as 
 Operator of Argonne National Laboratory.         '''
         info.Description = '''
-General Structure Analysis System - II
+General Structure Analysis System - GSAS-II
 '''
         wx.AboutBox(info)
 
@@ -518,12 +518,10 @@ class DataFrame(wx.Frame):
             help='Fill unit cell with selected atoms')
         self.DrawAtomEdit.Append(id=wxID_DRAWDELETE, kind=wx.ITEM_NORMAL,text='Delete atoms',
             help='Delete atoms from drawing set')
-        self.DrawAtomCompute.Append(id=wxID_DRAWDISAGL, kind=wx.ITEM_NORMAL,text='Distances & Angles',
-            help='Compute distances & angles for selected atoms')   
-        self.DrawAtomCompute.Append(id=wxID_DRAWTORSION, kind=wx.ITEM_NORMAL,text='Torsion angle',
-            help='Compute torsion angle for 4 selected atoms')   
+        self.DrawAtomCompute.Append(id=wxID_DRAWDISAGLTOR, kind=wx.ITEM_NORMAL,text='Dist. Ang. Tors.',
+            help='Compute distance, angle or torsion for 2-4 selected atoms')   
         self.DrawAtomCompute.Append(id=wxID_DRAWPLANE, kind=wx.ITEM_NORMAL,text='Best plane',
-            help='Compute best plane for 3+ selected atoms')   
+            help='Compute best plane for 4+ selected atoms')   
             
 # end of GSAS-II menu definitions
         

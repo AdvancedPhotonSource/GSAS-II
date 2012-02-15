@@ -1,7 +1,7 @@
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
 # $Date: 2012-01-13 11:48:53 -0600 (Fri, 13 Jan 2012) $
-# $Author: vondreele $
+# $Author: vondreele & toby $
 # $Revision: 451 $
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
 # $Id: GSASIImath.py 451 2012-01-13 17:48:53Z vondreele $
@@ -233,7 +233,102 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return Ang,sigAng
     else:
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
+
+def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
+
+    def calcDist(Atoms,SyOps,Amat):
+        XYZ = []
+        for i,atom in enumerate(Atoms):
+            Inv,M,T,C,U = SyOps[i]
+            XYZ.append(np.array(atom[1:4]))
+            XYZ[-1] = Inv*(np.inner(M,np.array(XYZ[-1]))+T)+C+U
+            XYZ[-1] = np.inner(Amat,XYZ[-1]).T
+        V1 = XYZ[1]-XYZ[0]
+        return np.sqrt(np.sum(V1**2))
         
+    Inv = []
+    SyOps = []
+    names = []
+    for i,atom in enumerate(Oatoms):
+        names += atom[-1]
+        Op,unit = Atoms[i][-1]
+        inv = Op/abs(Op)
+        m,t = SGData['SGOps'][abs(Op)%100-1]
+        c = SGData['SGCen'][abs(Op)/100]
+        SyOps.append([inv,m,t,c,unit])
+    Dist = calcDist(Oatoms,SyOps,Amat)
+    
+    sig = -0.001
+    if 'covMatrix' in covData:
+        parmNames = []
+        dx = .00001
+        dadx = np.zeros(6)
+        for i in range(6):
+            ia = i/3
+            ix = i%3
+            Oatoms[ia][ix+1] += dx
+            a0 = calcDist(Oatoms,SyOps,Amat)
+            Oatoms[ia][ix+1] -= 2*dx
+            dadx[i] = (calcDist(Oatoms,SyOps,Amat)-a0)/(2.*dx)
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        DistVcov = getVCov(names,varyList,covMatrix)
+        sig = np.sqrt(np.inner(dadx,np.inner(DistVcov,dadx)))
+        if sig < 0.001:
+            sig = -0.001
+    
+    return Dist,sig
+
+def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
+        
+    def calcAngle(Atoms,SyOps,Amat):
+        XYZ = []
+        for i,atom in enumerate(Atoms):
+            Inv,M,T,C,U = SyOps[i]
+            XYZ.append(np.array(atom[1:4]))
+            XYZ[-1] = Inv*(np.inner(M,np.array(XYZ[-1]))+T)+C+U
+            XYZ[-1] = np.inner(Amat,XYZ[-1]).T
+        V1 = XYZ[1]-XYZ[0]
+        V1 /= np.sqrt(np.sum(V1**2))
+        V2 = XYZ[1]-XYZ[2]
+        V2 /= np.sqrt(np.sum(V2**2))
+        V3 = V2-V1
+        cang = min(1.,max((2.-np.sum(V3**2))/2.,-1.))
+        return acosd(cang)
+
+    Inv = []
+    SyOps = []
+    names = []
+    for i,atom in enumerate(Oatoms):
+        names += atom[-1]
+        Op,unit = Atoms[i][-1]
+        inv = Op/abs(Op)
+        m,t = SGData['SGOps'][abs(Op)%100-1]
+        c = SGData['SGCen'][abs(Op)/100]
+        SyOps.append([inv,m,t,c,unit])
+    Angle = calcAngle(Oatoms,SyOps,Amat)
+    
+    sig = -0.01
+    if 'covMatrix' in covData:
+        parmNames = []
+        dx = .00001
+        dadx = np.zeros(9)
+        for i in range(9):
+            ia = i/3
+            ix = i%3
+            Oatoms[ia][ix+1] += dx
+            a0 = calcAngle(Oatoms,SyOps,Amat)
+            Oatoms[ia][ix+1] -= 2*dx
+            dadx[i] = (calcAngle(Oatoms,SyOps,Amat)-a0)/(2.*dx)
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        AngVcov = getVCov(names,varyList,covMatrix)
+        sig = np.sqrt(np.inner(dadx,np.inner(AngVcov,dadx)))
+        if sig < 0.01:
+            sig = -0.01
+    
+    return Angle,sig
+
 def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
     
     def calcTorsion(Atoms,SyOps,Amat):
@@ -276,7 +371,6 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
         parmNames = []
         dx = .00001
         dadx = np.zeros(12)
-        ang = calcTorsion(Oatoms,SyOps,Amat)
         for i in range(12):
             ia = i/3
             ix = i%3
@@ -292,6 +386,107 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
             sig = -0.01
     
     return Tors,sig
+        
+def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
+    
+    def calcDist(Atoms,SyOps,Amat):
+        XYZ = []
+        for i,atom in enumerate(Atoms):
+            Inv,M,T,C,U = SyOps[i]
+            XYZ.append(np.array(atom[1:4]))
+            XYZ[-1] = Inv*(np.inner(M,np.array(XYZ[-1]))+T)+C+U
+            XYZ[-1] = np.inner(Amat,XYZ[-1]).T
+        V1 = XYZ[1]-XYZ[0]
+        return np.sqrt(np.sum(V1**2))
+        
+    def calcAngle(Atoms,SyOps,Amat):
+        XYZ = []
+        for i,atom in enumerate(Atoms):
+            Inv,M,T,C,U = SyOps[i]
+            XYZ.append(np.array(atom[1:4]))
+            XYZ[-1] = Inv*(np.inner(M,np.array(XYZ[-1]))+T)+C+U
+            XYZ[-1] = np.inner(Amat,XYZ[-1]).T
+        V1 = XYZ[1]-XYZ[0]
+        V1 /= np.sqrt(np.sum(V1**2))
+        V2 = XYZ[1]-XYZ[2]
+        V2 /= np.sqrt(np.sum(V2**2))
+        V3 = V2-V1
+        cang = min(1.,max((2.-np.sum(V3**2))/2.,-1.))
+        return acosd(cang)
+
+    def calcTorsion(Atoms,SyOps,Amat):
+        
+        XYZ = []
+        for i,atom in enumerate(Atoms):
+            Inv,M,T,C,U = SyOps[i]
+            XYZ.append(np.array(atom[1:4]))
+            XYZ[-1] = Inv*(np.inner(M,np.array(XYZ[-1]))+T)+C+U
+            XYZ[-1] = np.inner(Amat,XYZ[-1]).T
+        V1 = XYZ[1]-XYZ[0]
+        V2 = XYZ[2]-XYZ[1]
+        V3 = XYZ[3]-XYZ[2]
+        V1 /= np.sqrt(np.sum(V1**2))
+        V2 /= np.sqrt(np.sum(V2**2))
+        V3 /= np.sqrt(np.sum(V3**2))
+        M = np.array([V1,V2,V3])
+        D = nl.det(M)
+        Ang = 1.0
+        P12 = np.dot(V1,V2)
+        P13 = np.dot(V1,V3)
+        P23 = np.dot(V2,V3)
+        Tors = acosd((P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2)))*D/abs(D)
+        return Tors
+            
+    Inv = []
+    SyOps = []
+    names = []
+    for i,atom in enumerate(Oatoms):
+        names += atom[-1]
+        Op,unit = Atoms[i][-1]
+        inv = Op/abs(Op)
+        m,t = SGData['SGOps'][abs(Op)%100-1]
+        c = SGData['SGCen'][abs(Op)/100]
+        SyOps.append([inv,m,t,c,unit])
+    M = len(Oatoms)
+    if M == 2:
+        Val = calcDist(Oatoms,SyOps,Amat)
+    elif M == 3:
+        Val = calcAngle(Oatoms,SyOps,Amat)
+    else:
+        Val = calcTorsion(Oatoms,SyOps,Amat)
+    
+    sigVals = [-0.001,-0.01,-0.01]
+    if 'covMatrix' in covData:
+        parmNames = []
+        dx = .00001
+        N = M*3
+        sig = sigVals[M-3]
+        dadx = np.zeros(N)
+        for i in range(N):
+            ia = i/3
+            ix = i%3
+            Oatoms[ia][ix+1] += dx
+            if M == 2:
+                a0 = calcDist(Oatoms,SyOps,Amat)
+            elif M == 3:
+                a0 = calcAngle(Oatoms,SyOps,Amat)
+            else:
+                a0 = calcTorsion(Oatoms,SyOps,Amat)
+            Oatoms[ia][ix+1] -= 2*dx
+            if M == 2:
+                dadx[i] = (calcDist(Oatoms,SyOps,Amat)-a0)/(2.*dx)                
+            elif M == 3:
+                dadx[i] = (calcAngle(Oatoms,SyOps,Amat)-a0)/(2.*dx)                
+            else:
+                dadx[i] = (calcTorsion(Oatoms,SyOps,Amat)-a0)/(2.*dx)
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        Vcov = getVCov(names,varyList,covMatrix)
+        sig = np.sqrt(np.inner(dadx,np.inner(Vcov,dadx)))
+        if sig < sigVals[M-3]:
+            sig = sigVals[M-3]
+    
+    return Val,sig
         
     
 def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use

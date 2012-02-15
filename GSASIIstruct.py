@@ -370,7 +370,8 @@ def GetHKLFdata(GPXfile,HKLFname):
 def ShowBanner():
     print 80*'*'
     print '   General Structure Analysis System-II Crystal Structure Refinement'
-    print '     by Robert B. Von Dreele, Argonne National Laboratory(C), 2010'
+    print '              by Robert B. Von Dreele & Brian H. Toby'
+    print '                Argonne National Laboratory(C), 2010'
     print ' This product includes software developed by the UChicago Argonne, LLC,' 
     print '            as Operator of Argonne National Laboratory.'
     print 80*'*','\n'
@@ -3011,60 +3012,47 @@ def DistAngle(DisAglCtls,DisAglData):
                 val = '%8.4f'%(dist[4])
             print '  %8s%10s+(%4d) %12s'%(dist[1].ljust(8),dist[2].ljust(10),dist[3],val.center(12)),line
 
-def Torsion(TorsionData):
-
-    def ShowBanner(name):
-        print 80*'*'
-        print '   Torsion angle for phase '+name
-        print 80*'*'
-
-    ShowBanner(TorsionData['Name'])
-    SGData = TorsionData['SGData']
-    Cell = TorsionData['Cell']
+def DisAglTor(DATData):
+    SGData = DATData['SGData']
+    Cell = DATData['Cell']
     
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
     pfx = ''
-    if 'covData' in TorsionData:   
-        covData = TorsionData['covData']
+    if 'covData' in DATData:   
+        covData = DATData['covData']
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
-        pfx = str(TorsionData['pId'])+'::'
-    #find one end of 4 atom string - involved in longest distance
-    dist = {}
-    for i,X1 in enumerate(TorsionData['Datoms']):
-        for j,X2 in enumerate(TorsionData['Datoms'][:i]):
-            dist[np.sqrt(np.sum(np.inner(Amat,np.array(X2[3:6])-np.array(X1[3:6]))**2))] = [i,j]
-    sortdist = dist.keys()
-    sortdist.sort()
-    end = dist[sortdist[-1]][0]
-    #order atoms in distance from end - defines sequence of atoms for the torsion angle
-    dist = {}
-    X1 = TorsionData['Datoms'][end]
-    for i,X2 in enumerate(TorsionData['Datoms']):
-        dist[np.sqrt(np.sum(np.inner(Amat,np.array(X2[3:6])-np.array(X1[3:6]))**2))] = i
-    sortdist = dist.keys()
-    sortdist.sort()
+        pfx = str(DATData['pId'])+'::'
     Datoms = []
     Oatoms = []
-    for d in sortdist:
-        atom = TorsionData['Datoms'][dist[d]]
+    for i,atom in enumerate(DATData['Datoms']):
         symop = atom[-1].split('+')
         if len(symop) == 1:
             symop.append('0,0,0')        
         symop[0] = int(symop[0])
         symop[1] = eval(symop[1])
-        atom[-1] = symop
+        atom.append(symop)
         Datoms.append(atom)
-        oatom = TorsionData['Oatoms'][dist[d]]
+        oatom = DATData['Oatoms'][i]
         names = ['','','']
         if pfx:
             names = [pfx+'dAx:'+str(oatom[0]),pfx+'dAy:'+str(oatom[0]),pfx+'dAz:'+str(oatom[0])]
         oatom += [names,]
         Oatoms.append(oatom)
-    Tors,sig = G2mth.GetTorsionSig(Oatoms,Datoms,Amat,SGData,covData)
-    print ' Torsion angle for atom sequence: ',[Datoms[i][1] for i in range(4)],'=',G2mth.ValEsd(Tors,sig)
-    print ' NB: Atom sequence determined by interatomic distances'
+    atmSeq = [atom[1]+'('+atom[-2]+')' for atom in Datoms]
+    if DATData['Natoms'] == 4:  #torsion
+        Tors,sig = G2mth.GetDATSig(Oatoms,Datoms,Amat,SGData,covData)
+        print ' Torsion angle for '+DATData['Name']+' atom sequence: ',atmSeq,'=',G2mth.ValEsd(Tors,sig)
+        print ' NB: Atom sequence determined by selection order'
+        return      # done with torsion
+    elif DATData['Natoms'] == 3:  #angle
+        Ang,sig = G2mth.GetDATSig(Oatoms,Datoms,Amat,SGData,covData)
+        print ' Angle in '+DATData['Name']+' for atom sequence: ',atmSeq,'=',G2mth.ValEsd(Ang,sig)
+        print ' NB: Atom sequence determined by selection order'
+    else:   #2 atoms - distance
+        Dist,sig = G2mth.GetDATSig(Oatoms,Datoms,Amat,SGData,covData)
+        print ' Distance in '+DATData['Name']+' for atom sequence: ',atmSeq,'=',G2mth.ValEsd(Dist,sig)
                 
 def BestPlane(PlaneData):
 

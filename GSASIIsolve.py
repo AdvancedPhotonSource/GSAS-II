@@ -21,7 +21,8 @@ import GSASIIstruct as G2str
 def ShowBanner():
     print 80*'*'
     print '    General Structure Analysis System-II Crystal Structure Solution'
-    print '     by Robert B. Von Dreele, Argonne National Laboratory(C), 2010'
+    print '              by Robert B. Von Dreele & Brian H. Toby'
+    print '                Argonne National Laboratory(C), 2010'
     print ' This product includes software developed by the UChicago Argonne, LLC,' 
     print '            as Operator of Argonne National Laboratory.'
     print 80*'*','\n'

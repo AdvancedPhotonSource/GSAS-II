@@ -1892,7 +1892,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
-        print 'Rotation:',drawingData['Rotation']
         if generalData['Type'] == 'nuclear':
             pickChoice = ['Atoms','Bonds','Torsions','Planes']
         elif generalData['Type'] == 'macromolecular':

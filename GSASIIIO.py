@@ -1127,7 +1127,7 @@ def ReadEXPPhase(G2frame,filename):
         for key in keyList:
             if 'AT' in key[6:8]:
                 S = EXPphase[key]
-                Atom = [int(S[56:60]),S[50:54].strip().upper(),S[54:56],
+                Atom = [S[56:60],S[50:54].strip().upper(),S[54:56],
                     S[46:51].strip(),S[:8].strip(),'',
                     float(S[16:24]),float(S[24:32]),float(S[32:40]),
                     float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]
@@ -1192,11 +1192,17 @@ def ReadPDBPhase(filename):
             AA,AB = G2lat.cell2AB(cell)
             SpGrp = S[55:65]
             E,SGData = G2spc.SpcGroup(SpGrp)
-            if E: 
-                print ' ERROR in space group symbol ',SpGrp,' in file ',filename
-                print ' N.B.: make sure spaces separate axial fields in symbol' 
+            while E:
                 print G2spc.SGErrors(E)
-                return None
+                dlg = wx.TextEntryDialog(None,
+                    SpGrp[:-1]+' is invalid \nN.B.: make sure spaces separate axial fields in symbol',
+                    'ERROR in space group symbol','',style=wx.OK)
+                if dlg.ShowModal() == wx.ID_OK:
+                    SpGrp = dlg.GetValue()
+                    E,SGData = G2spc.SpcGroup(SpGrp)
+                else:
+                    return None
+                dlg.Destroy()                
             SGlines = G2spc.SGPrint(SGData)
             for line in SGlines: print line
             S = file.readline()
@@ -1207,6 +1213,7 @@ def ReadPDBPhase(filename):
         elif 'ATOM' in S[:4] or 'HETATM' in S[:6]:
             XYZ = [float(S[31:39]),float(S[39:47]),float(S[47:55])]
             XYZ = np.inner(AB,XYZ)
+            XYZ = np.where(abs(XYZ)<0.00001,0,XYZ)
             SytSym,Mult = G2spc.SytSym(XYZ,SGData)
             Uiso = float(S[61:67])/EightPiSq
             Type = S[12:14].upper()

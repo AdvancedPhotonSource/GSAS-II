@@ -17,7 +17,7 @@ class PDB_ReaderClass(G2IO.ImportPhase):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.pdb','.ent','.PDB','.ENT'),
             strictExtension=True,
-            formatName = 'PDF',
+            formatName = 'PDB',
             longFormatName = 'Original Protein Data Bank (.pdb file) import'
             )
     # I don't know enough to validate the contents
@@ -31,6 +31,7 @@ class PDB_ReaderClass(G2IO.ImportPhase):
             return True
         except Exception as detail:
             print 'PDB read error:',detail # for testing
+            traceback.print_exc(file=sys.stdout)
             return False
 
 class EXP_ReaderClass(G2IO.ImportPhase):

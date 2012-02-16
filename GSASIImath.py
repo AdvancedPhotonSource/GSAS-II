@@ -456,11 +456,11 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         Val = calcTorsion(Oatoms,SyOps,Amat)
     
     sigVals = [-0.001,-0.01,-0.01]
+    sig = sigVals[M-3]
     if 'covMatrix' in covData:
         parmNames = []
         dx = .00001
         N = M*3
-        sig = sigVals[M-3]
         dadx = np.zeros(N)
         for i in range(N):
             ia = i/3

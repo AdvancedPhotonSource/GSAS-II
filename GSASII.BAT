@@ -1,6 +1,7 @@
 @echo ========================================================================
 @echo                General Structure Analysis System-II
-@echo      by Robert B. Von Dreele, Argonne National Laboratory(C), 2010
+@echo              by Robert B. Von Dreele & Brian H. Toby
+@echo                Argonne National Laboratory(C), 2010
 @echo  This product includes software developed by the UChicago Argonne, LLC,
 @echo             as Operator of Argonne National Laboratory.'
 @echo ========================================================================

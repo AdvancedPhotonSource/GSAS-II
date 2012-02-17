@@ -92,6 +92,9 @@ htmlFirstUse = True
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for _init_coll_Refl_Items in range(1)]
 
+[ wxID_FOURCALC,
+] = [wx.NewId() for _init_coll_Genrl_Items in range(1)]
+
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for _init_coll_Texture_Items in range(2)]
 
@@ -118,7 +121,7 @@ def ShowHelp(helpType,frame):
             htmlPanel.LoadFile(helplink)
             htmlFrame.Raise()
         except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 380))
+            htmlFrame = wx.Frame(frame, -1, size=(610, 450))
             htmlFrame.Show(True)
             htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
             htmlPanel = MyHtmlPanel(htmlFrame,-1)
@@ -189,7 +192,7 @@ class MyHtmlPanel(wx.Panel):
         sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
 
         #self.htmlwin = wx.html.HtmlWindow(self, id, size=(602,310))
-        self.htmlwin = G2HtmlWindow(self, id, size=(602,310))
+        self.htmlwin = G2HtmlWindow(self, id, size=(602,450))
         sizer.Add(self.htmlwin, 1, wx.GROW|wx.ALL, 0)
         self.SetSizer(sizer)
         sizer.Fit(frame)        
@@ -421,7 +424,11 @@ class DataFrame(wx.Frame):
             
 # Phase / General tab
         self.DataGeneral = wx.MenuBar()
+        self.GeneralCalc = wx.Menu(title='')
+        self.DataGeneral.Append(menu=self.GeneralCalc,title='Compute')
         self.DataGeneral.Append(menu=MyHelp(self,helpType='General'),title='&Help')
+        self.GeneralCalc.Append(help='Compute Fourier maps',id=wxID_FOURCALC, kind=wx.ITEM_NORMAL,
+            text='Fourier maps')
         
 # Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()
@@ -484,8 +491,6 @@ class DataFrame(wx.Frame):
             help='Estimate initial Pawley intensities')
         self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
             help='Delete Pawley reflection list')
-#        self.PawleyEdit.Append(id=wxID_PAWLEYIMPORT, kind=wx.ITEM_NORMAL,text='Pawley import',
-#            help='Import Pawley reflection list')
 
 # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()

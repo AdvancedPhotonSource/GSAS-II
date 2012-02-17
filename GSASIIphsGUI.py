@@ -250,6 +250,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Data plot type'] = 'Mustrain'
         if 'POhkl' not in generalData:
             generalData['POhkl'] = [0,0,1]
+        if 'Map' not in generalData:
+            generalData['Map'] = {'MapType':'','RefList':'','Resolution':4.0}
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
@@ -294,228 +296,266 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         'Atoms':[]
         'Drawing':{}
         '''
-        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral) # do this here, since this is called from all over
         
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
         SetupGeneral()
         generalData = data['General']
+        Map = generalData['Map']  # {'MapType':'','RefList':'','Resolution':4.0}
         
-        def OnPhaseName(event):
-            oldName = generalData['Name']
-            generalData['Name'] = NameTxt.GetValue()
-            G2frame.G2plotNB.Rename(oldName,generalData['Name'])
-            G2frame.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
-            G2frame.PatternTree.SetItemText(Item,generalData['Name'])
-            #Hmm, need to change phase name key in Reflection Lists for each histogram
-                        
-        def OnPhaseType(event):
-            if not generalData['AtomTypes']:             #can change only if no atoms!
-                generalData['Type'] = TypeTxt.GetValue()
-                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-                UpdateGeneral()         #must use this way!
-                if generalData['Type'] == 'Pawley':
-                    if G2frame.dataDisplay.FindPage('Atoms'):
-                        G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Atoms'))
-                        G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Options'))
-                        G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Atoms'))
-                    if not G2frame.dataDisplay.FindPage('Pawley reflections'):
-                        G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)      
-                        G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
-            else:
-                TypeTxt.SetValue(generalData['Type'])                
+        def NameSizer():
+                   
+            def OnPhaseName(event):
+                oldName = generalData['Name']
+                generalData['Name'] = NameTxt.GetValue()
+                G2frame.G2plotNB.Rename(oldName,generalData['Name'])
+                G2frame.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
+                G2frame.PatternTree.SetItemText(Item,generalData['Name'])
+                #Hmm, need to change phase name key in Reflection Lists for each histogram
+                            
+            def OnPhaseType(event):
+                if not generalData['AtomTypes']:             #can change only if no atoms!
+                    generalData['Type'] = TypeTxt.GetValue()
+                    dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
+                    UpdateGeneral()         #must use this way!
+                    if generalData['Type'] == 'Pawley':
+                        if G2frame.dataDisplay.FindPage('Atoms'):
+                            G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Atoms'))
+                            G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Options'))
+                            G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Atoms'))
+                        if not G2frame.dataDisplay.FindPage('Pawley reflections'):
+                            G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)      
+                            G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
+                else:
+                    TypeTxt.SetValue(generalData['Type'])                
                 
-        def OnSpaceGroup(event):
-            SpcGp = SGTxt.GetValue()
-            SGErr,SGData = G2spc.SpcGroup(SpcGp)
-            if SGErr:
-                text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
-                SGTxt.SetValue(generalData['SGData']['SpGrp'])
-                msg = 'Space Group Error'
-                Style = wx.ICON_EXCLAMATION
+            def OnSpaceGroup(event):
+                SpcGp = SGTxt.GetValue()
+                SGErr,SGData = G2spc.SpcGroup(SpcGp)
+                if SGErr:
+                    text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
+                    SGTxt.SetValue(generalData['SGData']['SpGrp'])
+                    msg = 'Space Group Error'
+                    Style = wx.ICON_EXCLAMATION
+                else:
+                    text = G2spc.SGPrint(SGData)
+                    generalData['SGData'] = SGData
+                    msg = 'Space Group Information'
+                    Style = wx.ICON_INFORMATION
+                Text = ''
+                for line in text:
+                    Text += line+'\n'
+                wx.MessageBox(Text,caption=msg,style=Style)
+                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
+                UpdateGeneral()
+                
+            nameSizer = wx.BoxSizer(wx.HORIZONTAL)
+            nameSizer.Add(wx.StaticText(dataDisplay,-1,' Phase name: '),0,wx.ALIGN_CENTER_VERTICAL)
+            NameTxt = wx.TextCtrl(dataDisplay,-1,value=generalData['Name'],style=wx.TE_PROCESS_ENTER)
+            NameTxt.Bind(wx.EVT_TEXT_ENTER,OnPhaseName)
+            NameTxt.Bind(wx.EVT_KILL_FOCUS,OnPhaseName)
+            nameSizer.Add(NameTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(wx.StaticText(dataDisplay,-1,'  Phase type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            if len(data['Atoms']):
+                choices = phaseTypes[:-1]
             else:
-                text = G2spc.SGPrint(SGData)
-                generalData['SGData'] = SGData
-                msg = 'Space Group Information'
-                Style = wx.ICON_INFORMATION
-            Text = ''
-            for line in text:
-                Text += line+'\n'
-            wx.MessageBox(Text,caption=msg,style=Style)
-            dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-            UpdateGeneral()
+                choices = phaseTypes            
+            TypeTxt = wx.ComboBox(dataDisplay,-1,value=generalData['Type'],choices=choices,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            TypeTxt.Bind(wx.EVT_COMBOBOX, OnPhaseType)
+            nameSizer.Add(TypeTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(wx.StaticText(dataDisplay,-1,'  Space group: '),0,wx.ALIGN_CENTER_VERTICAL)
+            SGTxt = wx.TextCtrl(dataDisplay,-1,value=generalData['SGData']['SpGrp'],style=wx.TE_PROCESS_ENTER)
+            SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
+            nameSizer.Add(SGTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            return nameSizer
             
-        def OnCellRef(event):
-            generalData['Cell'][0] = cellRef.GetValue()
+        def CellSizer():
             
-        def OnCellChange(event):
-            SGData = generalData['SGData']
-            laue = SGData['SGLaue']
-            if laue == '2/m':
-                laue += SGData['SGUniq']
-            cell = generalData['Cell']
-            Obj = event.GetEventObject()
-            ObjId = cellList.index(Obj.GetId())
-            try:
-                value = max(1.0,float(Obj.GetValue()))
-            except ValueError:
-                if ObjId < 3:               #bad cell edge - reset
-                    value = controls[6+ObjId]
-                else:                       #bad angle
-                    value = 90.
-            if laue in ['m3','m3m']:
-                cell[1] = cell[2] = cell[3] = value
-                cell[4] = cell[5] = cell[6] = 90.0
-                Obj.SetValue("%.5f"%(cell[1]))
-            elif laue in ['3R','3mR']:
-                if ObjId == 0:
+            cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
+            [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],
+            [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
+            [['mmm'],8,zip([" a = "," b = "," c = "," Vol = "],["%.5f","%.5f","%.5f","%.3f"],
+                [True,True,True,False],[0,1,2,0])],
+            [['2/m'+'a'],10,zip([" a = "," b = "," c = "," alpha = "," Vol = "],
+                ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+            [['2/m'+'b'],10,zip([" a = "," b = "," c = "," beta = "," Vol = "],
+                ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+            [['2/m'+'c'],10,zip([" a = "," b = "," c = "," gamma = "," Vol = "],
+                ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+            [['-1'],8,zip([" a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
+                ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
+                [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
+                
+            def OnCellRef(event):
+                generalData['Cell'][0] = cellRef.GetValue()
+                
+            def OnCellChange(event):
+                SGData = generalData['SGData']
+                laue = SGData['SGLaue']
+                if laue == '2/m':
+                    laue += SGData['SGUniq']
+                cell = generalData['Cell']
+                Obj = event.GetEventObject()
+                ObjId = cellList.index(Obj.GetId())
+                try:
+                    value = max(1.0,float(Obj.GetValue()))
+                except ValueError:
+                    if ObjId < 3:               #bad cell edge - reset
+                        value = controls[6+ObjId]
+                    else:                       #bad angle
+                        value = 90.
+                if laue in ['m3','m3m']:
                     cell[1] = cell[2] = cell[3] = value
+                    cell[4] = cell[5] = cell[6] = 90.0
                     Obj.SetValue("%.5f"%(cell[1]))
-                else:
-                    cell[4] = cell[5] = cell[6] = value
-                    Obj.SetValue("%.5f"%(cell[4]))
-            elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:                    
-                cell[4] = cell[5] = 90.
-                cell[6] = 120.
-                if laue in ['4/m','4/mmm']:
-                    cell[6] = 90.
-                if ObjId == 0:
-                    cell[1] = cell[2] = value
-                    Obj.SetValue("%.5f"%(cell[1]))
-                else:
-                    cell[3] = value
-                    Obj.SetValue("%.5f"%(cell[3]))
-            elif laue in ['mmm']:
-                cell[ObjId+1] = value
-                cell[4] = cell[5] = cell[6] = 90.
-                Obj.SetValue("%.5f"%(cell[ObjId+1]))
-            elif laue in ['2/m'+'a']:
-                cell[5] = cell[6] = 90.
-                if ObjId != 3:
+                elif laue in ['3R','3mR']:
+                    if ObjId == 0:
+                        cell[1] = cell[2] = cell[3] = value
+                        Obj.SetValue("%.5f"%(cell[1]))
+                    else:
+                        cell[4] = cell[5] = cell[6] = value
+                        Obj.SetValue("%.5f"%(cell[4]))
+                elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:                    
+                    cell[4] = cell[5] = 90.
+                    cell[6] = 120.
+                    if laue in ['4/m','4/mmm']:
+                        cell[6] = 90.
+                    if ObjId == 0:
+                        cell[1] = cell[2] = value
+                        Obj.SetValue("%.5f"%(cell[1]))
+                    else:
+                        cell[3] = value
+                        Obj.SetValue("%.5f"%(cell[3]))
+                elif laue in ['mmm']:
                     cell[ObjId+1] = value
+                    cell[4] = cell[5] = cell[6] = 90.
                     Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                elif laue in ['2/m'+'a']:
+                    cell[5] = cell[6] = 90.
+                    if ObjId != 3:
+                        cell[ObjId+1] = value
+                        Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                    else:
+                        cell[4] = value
+                        Obj.SetValue("%.3f"%(cell[4]))
+                elif laue in ['2/m'+'b']:
+                    cell[4] = cell[6] = 90.
+                    if ObjId != 3:
+                        cell[ObjId+1] = value
+                        Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                    else:
+                        cell[5] = value
+                        Obj.SetValue("%.3f"%(cell[5]))
+                elif laue in ['2/m'+'c']:
+                    cell[5] = cell[6] = 90.
+                    if ObjId != 3:
+                        cell[ObjId+1] = value
+                        Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                    else:
+                        cell[6] = value
+                        Obj.SetValue("%.3f"%(cell[6]))
                 else:
-                    cell[4] = value
-                    Obj.SetValue("%.3f"%(cell[4]))
-            elif laue in ['2/m'+'b']:
-                cell[4] = cell[6] = 90.
-                if ObjId != 3:
                     cell[ObjId+1] = value
-                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
-                else:
-                    cell[5] = value
-                    Obj.SetValue("%.3f"%(cell[5]))
-            elif laue in ['2/m'+'c']:
-                cell[5] = cell[6] = 90.
-                if ObjId != 3:
-                    cell[ObjId+1] = value
-                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
-                else:
-                    cell[6] = value
-                    Obj.SetValue("%.3f"%(cell[6]))
-            else:
-                cell[ObjId+1] = value
-                if ObjId < 3:
-                    Obj.SetValue("%.5f"%(cell[1+ObjId]))
-                else:
-                    Obj.SetValue("%.3f"%(cell[1+ObjId]))
-            cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
-            volVal.SetValue("%.3f"%(cell[7]))
-            generalData['Cell'] = cell
-            dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-            UpdateGeneral()
-                        
-        def OnPawleyVal(event):
-            try:
-                dmin = float(pawlVal.GetValue())
-                if 0.25 <= dmin <= 20.:
-                    generalData['Pawley dmin'] = dmin
-            except ValueError:
-                pass
-            pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error       
+                    if ObjId < 3:
+                        Obj.SetValue("%.5f"%(cell[1+ObjId]))
+                    else:
+                        Obj.SetValue("%.3f"%(cell[1+ObjId]))                        
+                cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
+                volVal.SetValue("%.3f"%(cell[7]))
+                generalData['Cell'] = cell
+                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
+                UpdateGeneral()
             
-        def OnIsotope(event):
-            Obj = event.GetEventObject()
-            item = Indx[Obj.GetId()]
-            isotope = Obj.GetValue()
-            generalData['Isotope'][item] = isotope
-            indx = generalData['AtomTypes'].index(item)
-            data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
-            dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-            UpdateGeneral()
-                                               
-        cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
-        [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],
-        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
-        [['mmm'],8,zip([" a = "," b = "," c = "," Vol = "],["%.5f","%.5f","%.5f","%.3f"],
-            [True,True,True,False],[0,1,2,0])],
-        [['2/m'+'a'],10,zip([" a = "," b = "," c = "," alpha = "," Vol = "],
-            ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-        [['2/m'+'b'],10,zip([" a = "," b = "," c = "," beta = "," Vol = "],
-            ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-        [['2/m'+'c'],10,zip([" a = "," b = "," c = "," gamma = "," Vol = "],
-            ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-        [['-1'],8,zip([" a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
-            ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
-            [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
-        
-        General.DestroyChildren()
-        dataDisplay = wx.Panel(General)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'General phase data:'),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add((5,5),0)
-        nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-        nameSizer.Add(wx.StaticText(dataDisplay,-1,' Phase name: '),0,wx.ALIGN_CENTER_VERTICAL)
-        NameTxt = wx.TextCtrl(dataDisplay,-1,value=generalData['Name'],style=wx.TE_PROCESS_ENTER)
-        NameTxt.Bind(wx.EVT_TEXT_ENTER,OnPhaseName)
-        NameTxt.Bind(wx.EVT_KILL_FOCUS,OnPhaseName)
-        nameSizer.Add(NameTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        nameSizer.Add(wx.StaticText(dataDisplay,-1,'  Phase type: '),0,wx.ALIGN_CENTER_VERTICAL)
-        if len(data['Atoms']):
-            choices = phaseTypes[:-1]
-        else:
-            choices = phaseTypes            
-        TypeTxt = wx.ComboBox(dataDisplay,-1,value=generalData['Type'],choices=choices,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        TypeTxt.Bind(wx.EVT_COMBOBOX, OnPhaseType)
-        nameSizer.Add(TypeTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        nameSizer.Add(wx.StaticText(dataDisplay,-1,'  Space group: '),0,wx.ALIGN_CENTER_VERTICAL)
-        SGTxt = wx.TextCtrl(dataDisplay,-1,value=generalData['SGData']['SpGrp'],style=wx.TE_PROCESS_ENTER)
-        SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
-        nameSizer.Add(SGTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(nameSizer,0)
-        mainSizer.Add((5,5),0)
-        cell = generalData['Cell']
-        laue = generalData['SGData']['SGLaue']
-        if laue == '2/m':
-            laue += generalData['SGData']['SGUniq']
-        for cellGUI in cellGUIlist:
-            if laue in cellGUI[0]:
-                useGUI = cellGUI
-        cellList = []
-        cellSizer = wx.FlexGridSizer(2,useGUI[1]+1,5,5)
-        cellRef = wx.CheckBox(dataDisplay,-1,label='Refine unit cell:')
-        cellSizer.Add(cellRef,0,wx.ALIGN_CENTER_VERTICAL)
-        cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
-        cellRef.SetValue(cell[0])
-        for txt,fmt,ifEdit,Id in useGUI[2]:
-            cellSizer.Add(wx.StaticText(dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
-            if ifEdit:          #a,b,c,etc.
-                cellVal = wx.TextCtrl(dataDisplay,value=(fmt%(cell[Id+1])),
-                    style=wx.TE_PROCESS_ENTER)
-                cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
-                cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
-                cellSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
-                cellList.append(cellVal.GetId())
-            else:               #volume
-                volVal = wx.TextCtrl(dataDisplay,value=(fmt%(cell[7])),style=wx.TE_READONLY)
-                volVal.SetBackgroundColour(VERY_LIGHT_GREY)
-                cellSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(cellSizer,0)
-        mainSizer.Add((5,5),0)
-        
-        Indx = {}
-        if len(generalData['AtomTypes']):
+            cell = generalData['Cell']
+            laue = generalData['SGData']['SGLaue']
+            if laue == '2/m':
+                laue += generalData['SGData']['SGUniq']
+            for cellGUI in cellGUIlist:
+                if laue in cellGUI[0]:
+                    useGUI = cellGUI
+            cellSizer = wx.FlexGridSizer(2,useGUI[1]+1,5,5)
+            cellRef = wx.CheckBox(dataDisplay,-1,label='Refine unit cell:')
+            cellSizer.Add(cellRef,0,wx.ALIGN_CENTER_VERTICAL)
+            cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
+            cellRef.SetValue(cell[0])
+            cellList = []
+            for txt,fmt,ifEdit,Id in useGUI[2]:
+                cellSizer.Add(wx.StaticText(dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
+                if ifEdit:          #a,b,c,etc.
+                    cellVal = wx.TextCtrl(dataDisplay,value=(fmt%(cell[Id+1])),
+                        style=wx.TE_PROCESS_ENTER)
+                    cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
+                    cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
+                    cellSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    cellList.append(cellVal.GetId())
+                else:               #volume
+                    volVal = wx.TextCtrl(dataDisplay,value=(fmt%(cell[7])),style=wx.TE_READONLY)
+                    volVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                    cellSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
+            return cellSizer
+            
+        def ElemSizer():
+            
+            def OnIsotope(event):
+                Obj = event.GetEventObject()
+                item = Indx[Obj.GetId()]
+                isotope = Obj.GetValue()
+                generalData['Isotope'][item] = isotope
+                indx = generalData['AtomTypes'].index(item)
+                data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
+                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
+                UpdateGeneral()
+                
+            elemSizer = wx.FlexGridSizer(8,len(generalData['AtomTypes'])+1,1,1)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' Elements'),0,wx.ALIGN_CENTER_VERTICAL)
+            for elem in generalData['AtomTypes']:
+                typTxt = wx.TextCtrl(dataDisplay,value=elem,style=wx.TE_READONLY)
+                typTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(typTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' Isotope'),0,wx.ALIGN_CENTER_VERTICAL)
+            for elem in generalData['AtomTypes']:
+                choices = generalData['Isotopes'][elem].keys()
+                if elem not in generalData['Isotope']:
+                    generalData['Isotope'][elem] = 'Nat. Abund.'
+                isoSel = wx.ComboBox(dataDisplay,-1,value=generalData['Isotope'][elem],choices=choices,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
+                Indx[isoSel.GetId()] = elem
+                elemSizer.Add(isoSel,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' No. per cell'),0,wx.ALIGN_CENTER_VERTICAL)
+            for elem in generalData['AtomTypes']:
+                numbTxt = wx.TextCtrl(dataDisplay,value='%.1f'%(generalData['NoAtoms'][elem]),
+                    style=wx.TE_READONLY)
+                numbTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(numbTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' Atom weight'),0,wx.ALIGN_CENTER_VERTICAL)
+            for wt in generalData['AtomMass']:
+                wtTxt = wx.TextCtrl(dataDisplay,value='%.3f'%(wt),style=wx.TE_READONLY)
+                wtTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(wtTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
+            for rad in generalData['BondRadii']:
+                bondRadii = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
+                bondRadii.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(bondRadii,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
+            for rad in generalData['AngleRadii']:
+                elemTxt = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
+                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' van der Waals radii'),0,wx.ALIGN_CENTER_VERTICAL)
+            for rad in generalData['vdWRadii']:
+                elemTxt = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
+                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
+                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(dataDisplay,label=' Default color'),0,wx.ALIGN_CENTER_VERTICAL)
+            for R,G,B in generalData['Color']:
+                colorTxt = wx.TextCtrl(dataDisplay,value='',style=wx.TE_READONLY)
+                colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
+                elemSizer.Add(colorTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            return elemSizer
+            
+        def DenSizer():
             mass = 0.
             for i,elem in enumerate(generalData['AtomTypes']):
                 mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
@@ -532,66 +572,87 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mattTxt = wx.TextCtrl(dataDisplay,-1,'%.3f'%(Volume/mass),style=wx.TE_READONLY)
                 mattTxt.SetBackgroundColour(VERY_LIGHT_GREY)
                 denSizer.Add(mattTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(denSizer)
-            mainSizer.Add((5,5),0)
+            return denSizer
             
-            elemSizer = wx.FlexGridSizer(8,len(generalData['AtomTypes'])+1,1,1)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='Elements'),0,wx.ALIGN_CENTER_VERTICAL)
-            for elem in generalData['AtomTypes']:
-                typTxt = wx.TextCtrl(dataDisplay,value=elem,style=wx.TE_READONLY)
-                typTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(typTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='Isotope'),0,wx.ALIGN_CENTER_VERTICAL)
-            for elem in generalData['AtomTypes']:
-                choices = generalData['Isotopes'][elem].keys()
-                if elem not in generalData['Isotope']:
-                    generalData['Isotope'][elem] = 'Nat. Abund.'
-                isoSel = wx.ComboBox(dataDisplay,-1,value=generalData['Isotope'][elem],choices=choices,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
-                Indx[isoSel.GetId()] = elem
-                elemSizer.Add(isoSel,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='No. per cell'),0,wx.ALIGN_CENTER_VERTICAL)
-            for elem in generalData['AtomTypes']:
-                numbTxt = wx.TextCtrl(dataDisplay,value='%.1f'%(generalData['NoAtoms'][elem]),
-                    style=wx.TE_READONLY)
-                numbTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(numbTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='Atom weight'),0,wx.ALIGN_CENTER_VERTICAL)
-            for wt in generalData['AtomMass']:
-                wtTxt = wx.TextCtrl(dataDisplay,value='%.3f'%(wt),style=wx.TE_READONLY)
-                wtTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(wtTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
-            for rad in generalData['BondRadii']:
-                bondRadii = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
-                bondRadii.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(bondRadii,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
-            for rad in generalData['AngleRadii']:
-                elemTxt = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
-                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='van der Waals radii'),0,wx.ALIGN_CENTER_VERTICAL)
-            for rad in generalData['vdWRadii']:
-                elemTxt = wx.TextCtrl(dataDisplay,value='%.2f'%(rad),style=wx.TE_READONLY)
-                elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(dataDisplay,label='Default color'),0,wx.ALIGN_CENTER_VERTICAL)
-            for R,G,B in generalData['Color']:
-                colorTxt = wx.TextCtrl(dataDisplay,value='',style=wx.TE_READONLY)
-                colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
-                elemSizer.Add(colorTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(elemSizer)
+        def PawlSizer():
+                        
+            def OnPawleyVal(event):
+                try:
+                    dmin = float(pawlVal.GetValue())
+                    if 0.25 <= dmin <= 20.:
+                        generalData['Pawley dmin'] = dmin
+                except ValueError:
+                    pass
+                pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error
             
-        elif generalData['Type'] == 'Pawley':
             pawlSizer = wx.BoxSizer(wx.HORIZONTAL)
             pawlSizer.Add(wx.StaticText(dataDisplay,label=' Pawley dmin: '),0,wx.ALIGN_CENTER_VERTICAL)
             pawlVal = wx.TextCtrl(dataDisplay,value='%.3f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
             pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
             pawlSizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(pawlSizer)
+            return pawlSizer
+            
+        def MapSizer():
+            
+            def OnMapType(event):
+                Map['MapType'] = mapType.GetValue()
+                
+            def OnRefList(event):
+                Map['RefList'] = refList.GetValue()
+                
+            def OnResVal(event):
+                try:
+                    res = float(mapRes.GetValue())
+                    if 0.25 <= res <= 20.:
+                        Map['Resolution'] = res
+                except ValueError:
+                    pass
+                mapRes.SetValue("%.1f"%(Map['Resolution']))          #reset in case of error
+            
+            mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Patterson']
+            refList = data['Histograms'].keys()
+            if generalData['Type'] == 'Pawley':
+                 mapTypes = ['Patterson',]
+                 Map['MapType'] = 'Patterson'
+            mapSizer = wx.BoxSizer(wx.HORIZONTAL)
+            mapSizer.Add(wx.StaticText(dataDisplay,label=' Fourier map controls: Map type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mapType = wx.ComboBox(dataDisplay,-1,value=Map['MapType'],choices=mapTypes,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            mapType.Bind(wx.EVT_COMBOBOX,OnMapType)
+            mapSizer.Add(mapType,0,wx.ALIGN_CENTER_VERTICAL)
+            mapSizer.Add(wx.StaticText(dataDisplay,label=' Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
+            refList = wx.ComboBox(dataDisplay,-1,value=Map['RefList'],choices=refList,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            refList.Bind(wx.EVT_COMBOBOX,OnRefList)
+            mapSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
+            mapSizer.Add(wx.StaticText(dataDisplay,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mapRes =  wx.TextCtrl(dataDisplay,value='%.1f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
+            mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
+            mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
+            mapSizer.Add(mapRes,0,wx.ALIGN_CENTER_VERTICAL)
+            return mapSizer
+                
+        General.DestroyChildren()
+        dataDisplay = wx.Panel(General)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(NameSizer(),0)
+        mainSizer.Add((5,5),0)        
+        mainSizer.Add(CellSizer(),0)
+        mainSizer.Add((5,5),0)
+        
+        Indx = {}
+        if len(generalData['AtomTypes']):
+            mainSizer.Add(DenSizer())
+            mainSizer.Add((5,5),0)            
+            mainSizer.Add(ElemSizer())
+            
+        elif generalData['Type'] == 'Pawley':
+            mainSizer.Add(PawlSizer())
+            
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(MapSizer())
 
         dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
@@ -1897,172 +1958,184 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif generalData['Type'] == 'macromolecular':
             pickChoice = ['Atoms','Residues','Chains','Bonds','Torsions','Planes','phi/psi']
 
-        def OnZclip(event):
-            drawingData['Zclip'] = Zclip.GetValue()
-            ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
-            G2plt.PlotStructure(G2frame,data)
+        def SlopSizer():
             
-        def OnCameraPos(event):
-            drawingData['cameraPos'] = cameraPos.GetValue()
-            cameraPosTxt.SetLabel('Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
-            ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
-            G2plt.PlotStructure(G2frame,data)
+            def OnCameraPos(event):
+                drawingData['cameraPos'] = cameraPos.GetValue()
+                cameraPosTxt.SetLabel('Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
+                ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                G2plt.PlotStructure(G2frame,data)
 
-        def OnBackColor(event):
-            drawingData['backColor'] = event.GetValue()
-            G2plt.PlotStructure(G2frame,data)
+            def OnZclip(event):
+                drawingData['Zclip'] = Zclip.GetValue()
+                ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnVdWScale(event):
+                drawingData['vdwScale'] = vdwScale.GetValue()/100.
+                vdwScaleTxt.SetLabel('van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
+                G2plt.PlotStructure(G2frame,data)
+    
+            def OnEllipseProb(event):
+                drawingData['ellipseProb'] = ellipseProb.GetValue()
+                ellipseProbTxt.SetLabel('Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
+                G2plt.PlotStructure(G2frame,data)
+    
+            def OnBallScale(event):
+                drawingData['ballScale'] = ballScale.GetValue()/100.
+                ballScaleTxt.SetLabel('Ball scale: '+'%.2f'%(drawingData['ballScale']))
+                G2plt.PlotStructure(G2frame,data)
 
-        def OnBallScale(event):
-            drawingData['ballScale'] = ballScale.GetValue()/100.
-            ballScaleTxt.SetLabel('Ball scale: '+'%.2f'%(drawingData['ballScale']))
-            G2plt.PlotStructure(G2frame,data)
-
-        def OnVdWScale(event):
-            drawingData['vdwScale'] = vdwScale.GetValue()/100.
-            vdwScaleTxt.SetLabel('van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
-            G2plt.PlotStructure(G2frame,data)
-
-        def OnEllipseProb(event):
-            drawingData['ellipseProb'] = ellipseProb.GetValue()
-            ellipseProbTxt.SetLabel('Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
-            G2plt.PlotStructure(G2frame,data)
-
-        def OnBondRadius(event):
-            drawingData['bondRadius'] = bondRadius.GetValue()/100.
-            bondRadiusTxt.SetLabel('Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
-            G2plt.PlotStructure(G2frame,data)
-
-        def OnShowABC(event):
-            drawingData['showABC'] = showABC.GetValue()
-            G2plt.PlotStructure(G2frame,data)
-
-        def OnShowUnitCell(event):
-            drawingData['unitCellBox'] = unitCellBox.GetValue()
-            G2plt.PlotStructure(G2frame,data)
-
-        def OnShowHyd(event):
-            drawingData['showHydrogen'] = showHydrogen.GetValue()
-            FindBondsDraw()
-            G2plt.PlotStructure(G2frame,data)
-
-        def OnSizeHatoms(event):
-            try:
-                value = max(0.1,min(1.2,float(sizeH.GetValue())))
-            except ValueError:
-                value = 0.5
-            drawingData['sizeH'] = value
-            sizeH.SetValue("%.2f"%(value))
-            G2plt.PlotStructure(G2frame,data)
+            def OnBondRadius(event):
+                drawingData['bondRadius'] = bondRadius.GetValue()/100.
+                bondRadiusTxt.SetLabel('Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
+                G2plt.PlotStructure(G2frame,data)
             
-        def OnRadFactor(event):
-            try:
-                value = max(0.1,min(1.2,float(radFactor.GetValue())))
-            except ValueError:
-                value = 0.85
-            drawingData['radiusFactor'] = value
-            radFactor.SetValue("%.2f"%(value))
-            FindBondsDraw()
-            G2plt.PlotStructure(G2frame,data)
+            slopSizer = wx.BoxSizer(wx.HORIZONTAL)
+            slideSizer = wx.FlexGridSizer(6,2)
+            slideSizer.AddGrowableCol(1,1)
+    
+            cameraPosTxt = wx.StaticText(dataDisplay,-1,
+                ' Camera Distance: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
+            slideSizer.Add(cameraPosTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            cameraPos = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
+            cameraPos.SetRange(10,500)
+            cameraPos.Bind(wx.EVT_SLIDER, OnCameraPos)
+            slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
+            
+            ZclipTxt = wx.StaticText(dataDisplay,-1,' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+            slideSizer.Add(ZclipTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            Zclip = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=drawingData['Zclip'])
+            Zclip.SetRange(1,99)
+            Zclip.Bind(wx.EVT_SLIDER, OnZclip)
+            slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
+            
+            vdwScaleTxt = wx.StaticText(dataDisplay,-1,' van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
+            slideSizer.Add(vdwScaleTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            vdwScale = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['vdwScale']))
+            vdwScale.Bind(wx.EVT_SLIDER, OnVdWScale)
+            slideSizer.Add(vdwScale,1,wx.EXPAND|wx.RIGHT)
+    
+            ellipseProbTxt = wx.StaticText(dataDisplay,-1,' Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
+            slideSizer.Add(ellipseProbTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            ellipseProb = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=drawingData['ellipseProb'])
+            ellipseProb.SetRange(1,99)
+            ellipseProb.Bind(wx.EVT_SLIDER, OnEllipseProb)
+            slideSizer.Add(ellipseProb,1,wx.EXPAND|wx.RIGHT)
+    
+            ballScaleTxt = wx.StaticText(dataDisplay,-1,' Ball scale: '+'%.2f'%(drawingData['ballScale']))
+            slideSizer.Add(ballScaleTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            ballScale = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['ballScale']))
+            ballScale.Bind(wx.EVT_SLIDER, OnBallScale)
+            slideSizer.Add(ballScale,1,wx.EXPAND|wx.RIGHT)
+    
+            bondRadiusTxt = wx.StaticText(dataDisplay,-1,' Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
+            slideSizer.Add(bondRadiusTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            bondRadius = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']))
+            bondRadius.SetRange(1,25)
+            bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
+            slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
+            
+            slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
+            slopSizer.Add((10,5),0)
+            slopSizer.SetMinSize(wx.Size(350,10))
+            return slopSizer
+            
+        def ShowSizer():
+            
+            def OnBackColor(event):
+                drawingData['backColor'] = event.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+    
+            def OnShowABC(event):
+                drawingData['showABC'] = showABC.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+    
+            def OnShowUnitCell(event):
+                drawingData['unitCellBox'] = unitCellBox.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+    
+            def OnShowHyd(event):
+                drawingData['showHydrogen'] = showHydrogen.GetValue()
+                FindBondsDraw()
+                G2plt.PlotStructure(G2frame,data)
+                
+            showSizer = wx.FlexGridSizer(5,3,5,0)            
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,-1,' Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
+            backColor = wcs.ColourSelect(dataDisplay, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
+            backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
+            lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
+            showSizer.Add(lineSizer,0,)
+            
+            showSizer.Add(wx.StaticText(dataDisplay,-1,' View Point:  '),0,wx.ALIGN_CENTER_VERTICAL)
+            VP = drawingData['viewPoint'][0]
+            viewPoint = wx.TextCtrl(dataDisplay,value='%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]),
+                style=wx.TE_READONLY,size=wx.Size(120,20),name='viewPoint')
+            viewPoint.SetBackgroundColour(VERY_LIGHT_GREY)
+            showSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
+            
+            showABC = wx.CheckBox(dataDisplay,-1,label=' Show test point?')
+            showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
+            showABC.SetValue(drawingData['showABC'])
+            showSizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
+    
+            unitCellBox = wx.CheckBox(dataDisplay,-1,label=' Show unit cell?')
+            unitCellBox.Bind(wx.EVT_CHECKBOX, OnShowUnitCell)
+            unitCellBox.SetValue(drawingData['unitCellBox'])
+            showSizer.Add(unitCellBox,0,wx.ALIGN_CENTER_VERTICAL)
+    
+            showHydrogen = wx.CheckBox(dataDisplay,-1,label=' Show hydrogens?')
+            showHydrogen.Bind(wx.EVT_CHECKBOX, OnShowHyd)
+            showHydrogen.SetValue(drawingData['showHydrogen'])
+            showSizer.Add(showHydrogen,0,wx.ALIGN_CENTER_VERTICAL)
+            return showSizer
+            
+        def RadSizer():
+            
+            def OnSizeHatoms(event):
+                try:
+                    value = max(0.1,min(1.2,float(sizeH.GetValue())))
+                except ValueError:
+                    value = 0.5
+                drawingData['sizeH'] = value
+                sizeH.SetValue("%.2f"%(value))
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnRadFactor(event):
+                try:
+                    value = max(0.1,min(1.2,float(radFactor.GetValue())))
+                except ValueError:
+                    value = 0.85
+                drawingData['radiusFactor'] = value
+                radFactor.SetValue("%.2f"%(value))
+                FindBondsDraw()
+                G2plt.PlotStructure(G2frame,data)
+            
+            radSizer = wx.BoxSizer(wx.HORIZONTAL)
+            radSizer.Add(wx.StaticText(dataDisplay,-1,' Hydrogen radius, A:  '),0,wx.ALIGN_CENTER_VERTICAL)
+            sizeH = wx.TextCtrl(dataDisplay,-1,value='%.2f'%(drawingData['sizeH']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
+            sizeH.Bind(wx.EVT_TEXT_ENTER,OnSizeHatoms)
+            sizeH.Bind(wx.EVT_KILL_FOCUS,OnSizeHatoms)
+            radSizer.Add(sizeH,0,wx.ALIGN_CENTER_VERTICAL)
+    
+            radSizer.Add(wx.StaticText(dataDisplay,-1,' Bond search factor:  '),0,wx.ALIGN_CENTER_VERTICAL)
+            radFactor = wx.TextCtrl(dataDisplay,value='%.2f'%(drawingData['radiusFactor']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
+            radFactor.Bind(wx.EVT_TEXT_ENTER,OnRadFactor)
+            radFactor.Bind(wx.EVT_KILL_FOCUS,OnRadFactor)
+            radSizer.Add(radFactor,0,wx.ALIGN_CENTER_VERTICAL)
+            return radSizer
 
         dataDisplay = wx.Panel(drawOptions)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Drawing controls:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,' Drawing controls:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)        
+        mainSizer.Add(SlopSizer(),0)
         mainSizer.Add((5,5),0)
-        
-        slopSizer = wx.BoxSizer(wx.HORIZONTAL)
-        slideSizer = wx.FlexGridSizer(6,2)
-        slideSizer.AddGrowableCol(1,1)
-
-        cameraPosTxt = wx.StaticText(dataDisplay,-1,
-            'Camera Distance: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
-        slideSizer.Add(cameraPosTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        cameraPos = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
-        cameraPos.SetRange(10,500)
-        cameraPos.Bind(wx.EVT_SLIDER, OnCameraPos)
-        slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
-        
-        ZclipTxt = wx.StaticText(dataDisplay,-1,'Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
-        slideSizer.Add(ZclipTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        Zclip = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=drawingData['Zclip'])
-        Zclip.SetRange(1,99)
-        Zclip.Bind(wx.EVT_SLIDER, OnZclip)
-        slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
-        
-        vdwScaleTxt = wx.StaticText(dataDisplay,-1,'van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
-        slideSizer.Add(vdwScaleTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        vdwScale = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['vdwScale']))
-        vdwScale.Bind(wx.EVT_SLIDER, OnVdWScale)
-        slideSizer.Add(vdwScale,1,wx.EXPAND|wx.RIGHT)
-
-        ellipseProbTxt = wx.StaticText(dataDisplay,-1,'Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
-        slideSizer.Add(ellipseProbTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        ellipseProb = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=drawingData['ellipseProb'])
-        ellipseProb.SetRange(1,99)
-        ellipseProb.Bind(wx.EVT_SLIDER, OnEllipseProb)
-        slideSizer.Add(ellipseProb,1,wx.EXPAND|wx.RIGHT)
-
-        ballScaleTxt = wx.StaticText(dataDisplay,-1,'Ball scale: '+'%.2f'%(drawingData['ballScale']))
-        slideSizer.Add(ballScaleTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        ballScale = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['ballScale']))
-        ballScale.Bind(wx.EVT_SLIDER, OnBallScale)
-        slideSizer.Add(ballScale,1,wx.EXPAND|wx.RIGHT)
-
-        bondRadiusTxt = wx.StaticText(dataDisplay,-1,'Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
-        slideSizer.Add(bondRadiusTxt,0,wx.ALIGN_CENTER_VERTICAL)
-        bondRadius = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']))
-        bondRadius.SetRange(1,25)
-        bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
-        slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
-        
-        slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
-        slopSizer.Add((10,5),0)
-        slopSizer.SetMinSize(wx.Size(300,10))
-        mainSizer.Add(slopSizer,0)
+        mainSizer.Add(ShowSizer(),0,)
         mainSizer.Add((5,5),0)
-
-        flexSizer = wx.FlexGridSizer(5,2,5,0)
-        flexSizer.Add(wx.StaticText(dataDisplay,-1,'View Point:  '),0,wx.ALIGN_CENTER_VERTICAL)
-        VP = drawingData['viewPoint'][0]
-        viewPoint = wx.TextCtrl(dataDisplay,value='%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]),
-            style=wx.TE_READONLY,size=wx.Size(120,20),name='viewPoint')
-        viewPoint.SetBackgroundColour(VERY_LIGHT_GREY)
-        flexSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
-        
-        showABC = wx.CheckBox(dataDisplay,-1,label='Show test point?')
-        showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
-        showABC.SetValue(drawingData['showABC'])
-        flexSizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
-
-        unitCellBox = wx.CheckBox(dataDisplay,-1,label='Show unit cell?')
-        unitCellBox.Bind(wx.EVT_CHECKBOX, OnShowUnitCell)
-        unitCellBox.SetValue(drawingData['unitCellBox'])
-        flexSizer.Add(unitCellBox,0,wx.ALIGN_CENTER_VERTICAL)
-
-        showHydrogen = wx.CheckBox(dataDisplay,-1,label='Show hydrogens?')
-        showHydrogen.Bind(wx.EVT_CHECKBOX, OnShowHyd)
-        showHydrogen.SetValue(drawingData['showHydrogen'])
-        flexSizer.Add(showHydrogen,0,wx.ALIGN_CENTER_VERTICAL)
-
-        lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-        lineSizer.Add(wx.StaticText(dataDisplay,-1,'Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
-        backColor = wcs.ColourSelect(dataDisplay, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
-        backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
-        lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
-        flexSizer.Add(lineSizer,0,)
-
-        flexSizer.Add(wx.StaticText(dataDisplay,-1,'Hydrogen radius, A:  '),0,wx.ALIGN_CENTER_VERTICAL)
-        sizeH = wx.TextCtrl(dataDisplay,-1,value='%.2f'%(drawingData['sizeH']),style=wx.TE_PROCESS_ENTER)
-        sizeH.Bind(wx.EVT_TEXT_ENTER,OnSizeHatoms)
-        sizeH.Bind(wx.EVT_KILL_FOCUS,OnSizeHatoms)
-        flexSizer.Add(sizeH,0,wx.ALIGN_CENTER_VERTICAL)
-
-        flexSizer.Add(wx.StaticText(dataDisplay,-1,'Bond search factor:  '),0,wx.ALIGN_CENTER_VERTICAL)
-        radFactor = wx.TextCtrl(dataDisplay,value='%.2f'%(drawingData['radiusFactor']),style=wx.TE_PROCESS_ENTER)
-        radFactor.Bind(wx.EVT_TEXT_ENTER,OnRadFactor)
-        radFactor.Bind(wx.EVT_KILL_FOCUS,OnRadFactor)
-        flexSizer.Add(radFactor,0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(flexSizer,0,)
+        mainSizer.Add(RadSizer(),0,)
 
         dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
@@ -3026,6 +3099,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             PawleyTable = G2gd.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             G2frame.PawleyRefl.SetTable(PawleyTable, True)
             G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
+            for r in range(G2frame.PawleyRefl.GetNumberRows()):
+                for c in range(G2frame.PawleyRefl.GetNumberCols()):
+                    if c in [5,6]:
+                        G2frame.PawleyRefl.SetReadOnly(r,c,isReadOnly=False)
+                    else:
+                        G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
             G2frame.dataFrame.setSizePosLeft([500,300])
@@ -3095,10 +3174,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Pawley ref'] = []
             FillPawleyReflectionsGrid()
     
+    def OnFourierMaps(event):
+        generalData = data['General']
+        if not generalData['Map']['MapType']:
+            print '**** ERROR - Fourier map not defined'
+            return
+        print 'Calculate Fourier maps'
+        print generalData['Map']
+        
     def OnTextureRefine(event):
+        print 'refine texture?'
         event.Skip()        
             
     def OnTextureClear(event):
+        print 'clear texture?'
         event.Skip()
 
     def OnPageChanged(event):
@@ -3118,6 +3207,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
             FillAtomsGrid()
         elif text == 'General':
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
             UpdateGeneral()
         elif text == 'Data':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataMenu)
@@ -3164,6 +3255,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     General = wx.Window(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(General,'General')
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
     SetupGeneral()
     GeneralData = data['General']
     UpdateGeneral()
@@ -3173,8 +3266,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataDisplay.AddPage(DData,'Data')
         G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
-        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(Texture,'Texture')
+#        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
+#        G2frame.dataDisplay.AddPage(Texture,'Texture')
     else:
         DData = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(DData,'Data')

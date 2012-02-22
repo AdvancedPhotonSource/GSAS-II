@@ -378,8 +378,11 @@ def ShowBanner():
 
 def ShowControls(Controls):
     print ' Least squares controls:'
-    print ' Derivative type: ',Controls['deriv type']
-    print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
+    print ' Refinement type: ',Controls['deriv type']
+    if 'Hessian' in Controls['deriv type']:
+        print ' Maximum number of cycles:',Controls['max cyc']
+    else:
+        print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
     print ' Initial shift factor: ','%.3f'%(Controls['shift factor'])
     
 def GetFFtable(General):
@@ -615,10 +618,10 @@ def GetPhaseData(PhaseData,Print=True):
 #            elif General['Type'] == 'macromolecular':
 
                 
-            if 'SH Texture' in General:
-                textureData = General['SH Texture']
-                phaseDict[pfx+'SHmodel'] = SamSym[textureData['Model']]
+            textureData = General['SH Texture']
+            if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
+                phaseDict[pfx+'SHmodel'] = SamSym[textureData['Model']]
                 for name in ['omega','chi','phi']:
                     phaseDict[pfx+'SH '+name] = textureData['Sample '+name][1]
                     if textureData['Sample '+name][0]:
@@ -639,8 +642,7 @@ def GetPhaseData(PhaseData,Print=True):
                 print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
                     ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
                     '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
-                if 'SH Texture' in General:
-                    PrintTexture(textureData)
+                PrintTexture(textureData)
                     
         elif PawleyRef:
             pawleyVary = []
@@ -915,21 +917,20 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                                 atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
             PrintAtomsAndSig(General,Atoms,atomsSig)
         
-        if 'SH Texture' in General:
-            textureData = General['SH Texture']    
-            if textureData['Order']:
-                SHtextureSig = {}
-                for name in ['omega','chi','phi']:
-                    aname = pfx+'SH '+name
-                    textureData['Sample '+name][1] = parmDict[aname]
-                    if aname in sigDict:
-                        SHtextureSig['Sample '+name] = sigDict[aname]
-                for name in textureData['SH Coeff'][1]:
-                    aname = pfx+name
-                    textureData['SH Coeff'][1][name] = parmDict[aname]
-                    if aname in sigDict:
-                        SHtextureSig[name] = sigDict[aname]
-                PrintSHtextureAndSig(textureData,SHtextureSig)
+        textureData = General['SH Texture']    
+        if textureData['Order']:
+            SHtextureSig = {}
+            for name in ['omega','chi','phi']:
+                aname = pfx+'SH '+name
+                textureData['Sample '+name][1] = parmDict[aname]
+                if aname in sigDict:
+                    SHtextureSig['Sample '+name] = sigDict[aname]
+            for name in textureData['SH Coeff'][1]:
+                aname = pfx+name
+                textureData['SH Coeff'][1][name] = parmDict[aname]
+                if aname in sigDict:
+                    SHtextureSig[name] = sigDict[aname]
+            PrintSHtextureAndSig(textureData,SHtextureSig)
 
 def GetHistogramPhaseData(Phases,Histograms,Print=True):
     
@@ -1105,7 +1106,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 if 'C' in inst['Type']:
                     pos = 2.0*asind(wave/(2.0*d))+Zero
                     if limits[0] < pos < limits[1]:
-                        refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0])
+                        refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0,{}])
+                        #last item should contain form factor values by atom type
                 else:
                     raise ValueError 
             Histogram['Reflection Lists'][phase] = refList
@@ -1621,7 +1623,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)
 
-def GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict):
+def GetAtomFXU(pfx,calcControls,parmDict):
     Natoms = calcControls['Natoms'][pfx]
     Tdata = Natoms*[' ',]
     Mdata = np.zeros(Natoms)
@@ -1643,10 +1645,20 @@ def GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict):
             parm = pfx+key+str(iatm)
             if parm in parmDict:
                 keys[key][iatm] = parmDict[parm]
-        FFdata.append(FFtables[Tdata[iatm]])
-        BLdata.append(BLtables[Tdata[iatm]][1])
-    return FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
+    return Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
     
+def getFFvalues(FFtables,SQ):
+    FFvals = {}
+    for El in FFtables:
+        FFvals[El] = G2el.ScatFac(FFtables[El],SQ)[0]
+    return FFvals
+    
+def getBLvalues(BLtables):
+    BLvals = {}
+    for El in BLtables:
+        BLvals[El] = BLtables[El][1]
+    return BLvals
+        
 def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     ''' Compute structure factors for all h,k,l for phase
     input:
@@ -1664,12 +1676,13 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
-    FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict)
+    Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+    FF = np.zeros(len(Tdata))
     if 'N' in parmDict[hfx+'Type']:
-        FP,FPP = G2el.BlenRes(BLdata,parmDict[hfx+'Lam'])
+        FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
     else:
-        FP = np.array([El[hfx+'FP'] for El in FFdata])
-        FPP = np.array([El[hfx+'FPP'] for El in FFdata])
+        FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
+        FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
     maxPos = len(SGData['SGOps'])
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1677,10 +1690,13 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         fbs = np.array([0,0])
         H = refl[:3]
         SQ = 1./(2.*refl[4])**2
-        if 'N' in parmDict[hfx+'Type']:
-            FF = np.array([El[1] for El in BLdata])
-        else:       #'X'
-            FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
+        if not len(refl[-1]):                #no form factors
+            if 'N' in parmDict[hfx+'Type']:
+                refl[-1] = getBLvalues(BLtables)
+            else:       #'X'
+                refl[-1] = getFFvalues(FFtables,SQ)
+        for i,El in enumerate(Tdata):            
+            FF[i] = refl[-1][El]           
         SQfactor = 4.0*SQ*twopisq
         Uniq = refl[11]
         phi = refl[12]
@@ -1711,13 +1727,14 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
-    FFdata,BLdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,FFtables,BLtables,calcControls,parmDict)
+    Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+    FF = np.zeros(len(Tdata))
     if 'N' in parmDict[hfx+'Type']:
         FP = 0.
         FPP = 0.
     else:
-        FP = np.array([El[hfx+'FP'] for El in FFdata])
-        FPP = np.array([El[hfx+'FPP'] for El in FFdata])
+        FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
+        FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
     maxPos = len(SGData['SGOps'])       
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1728,11 +1745,9 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdua = np.zeros((len(refList),len(Mdata),6))
     for iref,refl in enumerate(refList):
         H = np.array(refl[:3])
-        SQ = 1./(2.*refl[4])**2          # or (sin(theta)/lambda)**2
-        if 'N' in parmDict[hfx+'Type']:
-            FF = np.array([El[1] for El in BLdata])
-        else:       #'X'
-            FF = np.array([G2el.ScatFac(El,SQ)[0] for El in FFdata])
+        SQ = 1./(2.*refl[4])**2             # or (sin(theta)/lambda)**2
+        for i,El in enumerate(Tdata):            
+            FF[i] = refl[-1][El]           
         SQfactor = 8.0*SQ*np.pi**2
         Uniq = refl[11]
         phi = refl[12]
@@ -1915,20 +1930,24 @@ def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     return odfCor,dFdODF
     
 def GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
+    POcorr = 1.0
     if calcControls[phfx+'poType'] == 'MD':
         MD = parmDict[phfx+'MD']
-        MDAxis = calcControls[phfx+'MDAxis']
-        sumMD = 0
-        for H in refl[11]:            
-            cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
-            A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
-            sumMD += A**3
-        POcorr = sumMD/len(refl[11])
+        if MD != 1.0:
+            MDAxis = calcControls[phfx+'MDAxis']
+            sumMD = 0
+            for H in refl[11]:            
+                cosP,sinP = G2lat.CosSinAngle(H,MDAxis,G)
+                A = 1.0/np.sqrt((MD*cosP)**2+sinP**2/MD)
+                sumMD += A**3
+            POcorr = sumMD/len(refl[11])
     else:   #spherical harmonics
-        POcorr = SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict)
+        if calcControls[pfx+'SHord']:
+            POcorr = SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr
     
 def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
+    POcorr = 1.0
     POderv = {}
     if calcControls[phfx+'poType'] == 'MD':
         MD = parmDict[phfx+'MD']
@@ -1943,7 +1962,8 @@ def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
         POcorr = sumMD/len(refl[11])
         POderv[phfx+'MD'] = sumdMD/len(refl[11])
     else:   #spherical harmonics
-        POcorr,POderv = SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict)
+        if calcControls[pfx+'SHord']:
+            POcorr,POderv = SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr,POderv
     
 def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
@@ -2169,6 +2189,66 @@ def GetFprime(controlDict,Histograms):
                 FFtables[El][hfx+'FP'] = FP
                 FFtables[El][hfx+'FPP'] = FPP                
             
+def GetFobsSq(Histograms,Phases,parmDict,calcControls):
+    histoList = Histograms.keys()
+    histoList.sort()
+    for histogram in histoList:
+        if 'PWDR' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            Limits = calcControls[hfx+'Limits']
+            shl = max(parmDict[hfx+'SH/L'],0.002)
+            Ka2 = False
+            kRatio = 0.0
+            if hfx+'Lam1' in parmDict.keys():
+                Ka2 = True
+                lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
+                kRatio = parmDict[hfx+'I(L2)/I(L1)']
+            x,y,w,yc,yb,yd = Histogram['Data']
+            ymb = np.array(y-yb)
+            ycmb = np.array(yc-yb)
+            ratio = np.where(ycmb!=0.,ymb/ycmb,0.0)            
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])
+            refLists = Histogram['Reflection Lists']
+            for phase in refLists:
+                Phase = Phases[phase]
+                pId = Phase['pId']
+                phfx = '%d:%d:'%(pId,hId)
+                refList = refLists[phase]
+                sumFo = 0.0
+                sumdF = 0.0
+                sumFosq = 0.0
+                sumdFsq = 0.0
+                for refl in refList:
+                    if 'C' in calcControls[hfx+'histType']:
+                        yp = np.zeros_like(yb)
+                        Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
+                        iBeg = np.searchsorted(x[xB:xF],refl[5]-fmin)
+                        iFin = np.searchsorted(x[xB:xF],refl[5]+fmax)
+                        iFin2 = iFin
+                        yp[iBeg:iFin] = refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here                            
+                        if Ka2:
+                            pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                            Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
+                            iBeg2 = np.searchsorted(x,pos2-fmin)
+                            iFin2 = np.searchsorted(x,pos2+fmax)
+                            yp[iBeg2:iFin2] += refl[13]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])        #and here
+                        refl[8] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[13]*(1.+kRatio)),0.0))
+                    elif 'T' in calcControls[hfx+'histType']:
+                        print 'TOF Undefined at present'
+                        raise Exception    #no TOF yet
+                    Fo = np.sqrt(np.abs(refl[8]))
+                    Fc = np.sqrt(np.abs(refl[9]))
+                    sumFo += Fo
+                    sumFosq += refl[8]**2
+                    sumdF += np.abs(Fo-Fc)
+                    sumdFsq += (refl[8]-refl[9])**2
+                Histogram[phfx+'Rf'] = min(100.,(sumdF/sumFo)*100.)
+                Histogram[phfx+'Rf^2'] = min(100.,np.sqrt(sumdFsq/sumFosq)*100.)
+                Histogram[phfx+'Nref'] = len(refList)
+                
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
     def GetReflSIgGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
@@ -2255,66 +2335,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 raise Exception    #no TOF yet
     return yc,yb
     
-def GetFobsSq(Histograms,Phases,parmDict,calcControls):
-    histoList = Histograms.keys()
-    histoList.sort()
-    for histogram in histoList:
-        if 'PWDR' in histogram[:4]:
-            Histogram = Histograms[histogram]
-            hId = Histogram['hId']
-            hfx = ':%d:'%(hId)
-            Limits = calcControls[hfx+'Limits']
-            shl = max(parmDict[hfx+'SH/L'],0.002)
-            Ka2 = False
-            kRatio = 0.0
-            if hfx+'Lam1' in parmDict.keys():
-                Ka2 = True
-                lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
-                kRatio = parmDict[hfx+'I(L2)/I(L1)']
-            x,y,w,yc,yb,yd = Histogram['Data']
-            ymb = np.array(y-yb)
-            ycmb = np.array(yc-yb)
-            ratio = np.where(ycmb!=0.,ymb/ycmb,0.0)            
-            xB = np.searchsorted(x,Limits[0])
-            xF = np.searchsorted(x,Limits[1])
-            refLists = Histogram['Reflection Lists']
-            for phase in refLists:
-                Phase = Phases[phase]
-                pId = Phase['pId']
-                phfx = '%d:%d:'%(pId,hId)
-                refList = refLists[phase]
-                sumFo = 0.0
-                sumdF = 0.0
-                sumFosq = 0.0
-                sumdFsq = 0.0
-                for refl in refList:
-                    if 'C' in calcControls[hfx+'histType']:
-                        yp = np.zeros_like(yb)
-                        Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
-                        iBeg = np.searchsorted(x[xB:xF],refl[5]-fmin)
-                        iFin = np.searchsorted(x[xB:xF],refl[5]+fmax)
-                        iFin2 = iFin
-                        yp[iBeg:iFin] = refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here                            
-                        if Ka2:
-                            pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                            Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
-                            iBeg2 = np.searchsorted(x,pos2-fmin)
-                            iFin2 = np.searchsorted(x,pos2+fmax)
-                            yp[iBeg2:iFin2] += refl[13]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])        #and here
-                        refl[8] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[13]*(1.+kRatio)),0.0))
-                    elif 'T' in calcControls[hfx+'histType']:
-                        print 'TOF Undefined at present'
-                        raise Exception    #no TOF yet
-                    Fo = np.sqrt(np.abs(refl[8]))
-                    Fc = np.sqrt(np.abs(refl[9]))
-                    sumFo += Fo
-                    sumFosq += refl[8]**2
-                    sumdF += np.abs(Fo-Fc)
-                    sumdFsq += (refl[8]-refl[9])**2
-                Histogram[phfx+'Rf'] = min(100.,(sumdF/sumFo)*100.)
-                Histogram[phfx+'Rf^2'] = min(100.,np.sqrt(sumdFsq/sumFosq)*100.)
-                Histogram[phfx+'Nref'] = len(refList)
-                
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
     def cellVaryDerv(pfx,SGData,dpdA): 

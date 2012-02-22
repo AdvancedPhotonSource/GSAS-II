@@ -253,11 +253,12 @@ def ScatFac(El, SQ):
     t = -fb[:,np.newaxis]*SQ
     return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
         
-def BlenRes(BLdata,wave):
-    FP = []
-    FPP = []
+def BlenRes(Elist,BLtables,wave):
+    FP = np.zeros(len(Elist))
+    FPP = np.zeros(len(Elist))
     Emev = 81.80703/wave**2
-    for BL in BLdata:
+    for i,El in enumerate(Elist):
+        BL = BLtables[El]
         if len(BL) >= 6:
             Emev = 81.80703/wave**2
             G2 = BL[5]**2
@@ -275,12 +276,41 @@ def BlenRes(BLdata,wave):
                 D = T**2+G2
                 fp += BL[8]*T/D
                 fpp += BL[8]/D
-            FP.append(BL[2]*fp)
-            FPP.append(-BL[3]*fpp)
+            FP[i] = (BL[2]*fp)
+            FPP[i] = (-BL[3]*fpp)
         else:
-            FP.append(0.0)
-            FPP.append(0.0)
-    return np.array(FP),np.array(FPP)
+            FP[i] = 0.0
+            FPP[i] = 0.0
+    return FP,FPP
+    
+#def BlenRes(BLdata,wave):
+#    FP = []
+#    FPP = []
+#    Emev = 81.80703/wave**2
+#    for BL in BLdata:
+#        if len(BL) >= 6:
+#            Emev = 81.80703/wave**2
+#            G2 = BL[5]**2
+#            T = [Emev-BL[4],0,0]
+#            D = [T**2+G2,0,0]
+#            fp = T/D
+#            fpp = 1.0/D
+#            if len(BL) == 8:
+#                T = Emev-BL[7]
+#                D = T**2+G2
+#                fp += BL[6]*T/D
+#                fpp += BL[6]/D
+#            if len(BL) == 10:
+#                T = Emev-BL[9]
+#                D = T**2+G2
+#                fp += BL[8]*T/D
+#                fpp += BL[8]/D
+#            FP.append(BL[2]*fp)
+#            FPP.append(-BL[3]*fpp)
+#        else:
+#            FP.append(0.0)
+#            FPP.append(0.0)
+#    return np.array(FP),np.array(FPP)
     
 def ComptonFac(El,SQ):
     """compute Compton scattering factor

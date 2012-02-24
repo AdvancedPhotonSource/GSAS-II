@@ -220,26 +220,23 @@ def GetUsedHistogramsAndPhases(GPXfile):
                     Histograms[hist]['hId'] = hId
     return Histograms,Phases
     
-#def GPXBackup(GPXfile,makeBack=True):      #not work correctly
-#    import distutils.file_util as dfu
-#    GPXpath,GPXname = ospath.split(GPXfile)
-#    if GPXpath == '': GPXpath = '.'
-#    Name = ospath.splitext(GPXname)[0]
-#    files = os.listdir(GPXpath)
-#    last = 0
-#    for name in files:
-#        name = name.split('.')
-#        if len(name) >= 3 and name[0] == Name and 'bak' in name[-2]:
-#            if makeBack:
-#                last = max(last,int(name[-2].strip('bak'))+1)
-#            else:
-#                last = max(last,int(name[-2].strip('bak')))
-#    GPXback = ospath.join(GPXpath,GPXname.rstrip('.'.join(name[-2:]))+'.bak'+str(last)+'.gpx')
-#    dfu.copy_file(GPXfile,GPXback)
-#    return GPXback
-#        
-def GPXBackup(GPXfile,makeBack=True):       #recovered old one
-    import distutils.file_util as dfu
+def getBackupName2(GPXfile,makeBack=True):      #not work correctly
+    GPXpath,GPXname = ospath.split(GPXfile)
+    if GPXpath == '': GPXpath = '.'
+    Name = ospath.splitext(GPXname)[0]
+    files = os.listdir(GPXpath)
+    last = 0
+    for name in files:
+        name = name.split('.')
+        if len(name) >= 3 and name[0] == Name and 'bak' in name[-2]:
+            if makeBack:
+                last = max(last,int(name[-2].strip('bak'))+1)
+            else:
+                last = max(last,int(name[-2].strip('bak')))
+    GPXback = ospath.join(GPXpath,GPXname.rstrip('.'.join(name[-2:]))+'.bak'+str(last)+'.gpx')
+    return GPXback
+
+def getBackupName(GPXfile,makeBack):       #recovered old one
     GPXpath,GPXname = ospath.split(GPXfile)
     if GPXpath == '': GPXpath = '.'
     Name = ospath.splitext(GPXname)[0]
@@ -253,6 +250,11 @@ def GPXBackup(GPXfile,makeBack=True):       #recovered old one
             else:
                 last = max(last,int(name[1].strip('bak')))
     GPXback = ospath.join(GPXpath,ospath.splitext(GPXname)[0]+'.bak'+str(last)+'.gpx')
+    return GPXback    
+        
+def GPXBackup(GPXfile,makeBack=True):
+    import distutils.file_util as dfu
+    GPXback = getBackupName(GPXfile,makeBack)
     dfu.copy_file(GPXfile,GPXback)
     return GPXback
 

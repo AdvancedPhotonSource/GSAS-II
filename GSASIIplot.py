@@ -169,8 +169,9 @@ class GSASIItoolbar(Toolbar):
     def OnHelp(self,event):
         Page = self.GetParent().GetParent()
         pageNo = Page.GetSelection()
-        print 'Matplotlib help on '+Page.GetPageText(pageNo)
-        G2gd.ShowHelp(Page.GetPageText(pageNo),self.TopLevelParent)
+        bookmark = Page.GetPageText(pageNo)
+        bookmark = bookmark.strip(')').replace('(','_')
+        G2gd.ShowHelp(bookmark,self.TopLevelParent)
             
 def PlotSngl(self,newPlot=False):
     '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional

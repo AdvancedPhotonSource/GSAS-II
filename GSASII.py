@@ -330,19 +330,10 @@ class GSASII(wx.Frame):
         
 
     def _init_coll_Import_Items(self,parent):
-#        self.ImportPhase = parent.Append(help='Import phase data from GSAS EXP file',
-#            id=wxID_IMPORTPHASE, kind=wx.ITEM_NORMAL,text='Import GSAS EXP Phase...')
-#        self.ImportPDB = parent.Append(help='Import phase data from PDB file',
-#            id=wxID_IMPORTPDB, kind=wx.ITEM_NORMAL,text='Import PDB Phase...')
-#        self.ImportCIF = parent.Append(help='Import phase data from cif file',id=wxID_IMPORTCIF, kind=wx.ITEM_NORMAL,
-#            text='Import CIF Phase...')
         self.ImportPattern = parent.Append(help='',id=wxID_IMPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Import Powder Pattern...')
         self.ImportHKL = parent.Append(help='',id=wxID_IMPORTHKL, kind=wx.ITEM_NORMAL,
             text='Import HKLs...')
-#        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=wxID_IMPORTPHASE)
-#        self.Bind(wx.EVT_MENU, self.OnImportPDB, id=wxID_IMPORTPDB)
-#        self.Bind(wx.EVT_MENU, self.OnImportCIF, id=wxID_IMPORTCIF)
         self.Bind(wx.EVT_MENU, self.OnImportPattern, id=wxID_IMPORTPATTERN)
         self.Bind(wx.EVT_MENU, self.OnImportHKL, id=wxID_IMPORTHKL)
 

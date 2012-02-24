@@ -31,6 +31,7 @@ helpLocDict = {}
 htmlPanel = None
 htmlFrame = None
 if sys.platform.lower().startswith('win'): 
+#    helpMode = 'browser'    # need a global control to set this
     helpMode = 'internal'    # need a global control to set this
 else:
     helpMode = 'browser'    # need a global control to set this
@@ -106,29 +107,23 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 def ShowHelp(helpType,frame):
     '''Called to bring up a web page for documentation.'''
-    global helpLocDict
-    global helpMode
     # look up a definition for help info from dict
     helplink = helpLocDict.get(helpType)
     if helplink is None:
         # no defined link to use, create a default based on key
         helplink = 'gsasII.html#'+helpType.replace(' ','_')
-        print helplink
     helplink = os.path.join(path2GSAS2,'help',helplink)
     if helpMode == 'internal':
-        global htmlPanel, htmlFrame
         try:
             htmlPanel.LoadFile(helplink)
             htmlFrame.Raise()
         except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 450))
+            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
             htmlFrame.Show(True)
             htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
             htmlPanel = MyHtmlPanel(htmlFrame,-1)
             htmlPanel.LoadFile(helplink)
     else:
-        global htmlFirstUse
-        #import webbrowser
         if htmlFirstUse:
             webbrowser.open_new("file://"+helplink)
             htmlFirstUse = False
@@ -152,10 +147,10 @@ class MyHelp(wx.Menu):
         # add a help item only when helpType is specified
         if helpType is not None:
             helpobj = self.Append(text='Help on '+helpType,
-                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+                id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
             frame.Bind(wx.EVT_MENU, self.OnHelp, helpobj)
         self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
-                    text='&About GSAS-II')
+            text='&About GSAS-II')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
 
     def OnHelp(self,event):
@@ -189,13 +184,18 @@ class MyHtmlPanel(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         back = wx.Button(self, -1, "Back")
         back.Bind(wx.EVT_BUTTON, self.OnBack)
-        sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
-
-        #self.htmlwin = wx.html.HtmlWindow(self, id, size=(602,310))
         self.htmlwin = G2HtmlWindow(self, id, size=(602,450))
-        sizer.Add(self.htmlwin, 1, wx.GROW|wx.ALL, 0)
+        sizer.Add(self.htmlwin, 1,wx.EXPAND)
+        sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
         self.SetSizer(sizer)
         sizer.Fit(frame)        
+        self.Bind(wx.EVT_SIZE,self.OnSize)
+    def OnSize(self,event):         #does the job but weirdly!!
+        anchor = self.htmlwin.GetOpenedAnchor()
+        if anchor:            
+            self.htmlwin.ScrollToAnchor(anchor)
+            wx.CallAfter(self.htmlwin.ScrollToAnchor,anchor)
+            event.Skip()
     def OnBack(self, event):
         self.htmlwin.HistoryBack()
     def LoadFile(self,file):
@@ -209,6 +209,8 @@ class MyHtmlPanel(wx.Panel):
         self.htmlwin.LoadPage(helpfile)
         if helpanchor is not None:
             self.htmlwin.ScrollToAnchor(helpanchor)
+            xs,ys = self.htmlwin.GetViewStart()
+            self.htmlwin.Scroll(xs,ys-1)
 
 class G2HtmlWindow(wx.html.HtmlWindow):
     '''Displays help information in a primitive HTML browser type window
@@ -221,6 +223,8 @@ class G2HtmlWindow(wx.html.HtmlWindow):
         self.TitlePage()
     def OnLinkClicked(self, *args, **kwargs):
         wx.html.HtmlWindow.OnLinkClicked(self, *args, **kwargs)
+        xs,ys = self.GetViewStart()
+        self.Scroll(xs,ys-1)
         self.TitlePage()
     def HistoryBack(self, *args, **kwargs):
         wx.html.HtmlWindow.HistoryBack(self, *args, **kwargs)
@@ -319,7 +323,7 @@ class DataFrame(wx.Frame):
         self.PeakMenu = wx.MenuBar()
         self.PeakEdit = wx.Menu(title='')
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
-        self.PeakMenu.Append(menu=MyHelp(self,helpType='Powder Peaks'),title='&Help')
+        self.PeakMenu.Append(menu=MyHelp(self,helpType='Peak List'),title='&Help')
         self.UnDo = self.PeakEdit.Append(help='Undo last least squares refinement', 
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
         self.PeakFit = self.PeakEdit.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='LSQ PeakFit', 
@@ -338,7 +342,7 @@ class DataFrame(wx.Frame):
         self.IndPeaksMenu = wx.MenuBar()
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndPeaksMenu.Append(menu=self.IndPeaksEdit,title='Operations')
-        self.IndPeaksMenu.Append(menu=MyHelp(self,helpType='Index Peaks'),title='&Help')
+        self.IndPeaksMenu.Append(menu=MyHelp(self,helpType='Index Peak List'),title='&Help')
         self.IndPeaksEdit.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
             kind=wx.ITEM_NORMAL,text='Load/Reload')
         
@@ -346,7 +350,7 @@ class DataFrame(wx.Frame):
         self.IndexMenu = wx.MenuBar()
         self.IndexEdit = wx.Menu(title='')
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
-        self.IndexMenu.Append(menu=MyHelp(self,helpType='Cell Indexing Refine'),title='&Help')
+        self.IndexMenu.Append(menu=MyHelp(self,helpType='Unit Cells List'),title='&Help')
         self.IndexPeaks = self.IndexEdit.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
             text='Index Cell')
         self.CopyCell = self.IndexEdit.Append( id=wxID_COPYCELL, kind=wx.ITEM_NORMAL,text='Copy Cell', 
@@ -372,7 +376,7 @@ class DataFrame(wx.Frame):
         self.ImageMenu = wx.MenuBar()
         self.ImageEdit = wx.Menu(title='')
         self.ImageMenu.Append(menu=self.ImageEdit, title='Operations')
-        self.ImageMenu.Append(menu=MyHelp(self,helpType='Images'),title='&Help')
+        self.ImageMenu.Append(menu=MyHelp(self,helpType='Image Controls'),title='&Help')
         self.ImageEdit.Append(help='Calibrate detector by fitting to calibrant lines', 
             id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
         self.ImageEdit.Append(help='Recalibrate detector by fitting to calibrant lines', 
@@ -735,19 +739,15 @@ def UpdateControls(G2frame,data):
     #patch
     if 'deriv type' not in data:
         data = {}
-        data['deriv type'] = 'analytic Jacobian'
+        data['deriv type'] = 'analytic Hessian'
         data['min dM/M'] = 0.0001
         data['shift factor'] = 1.
+        data['max cyc'] = 3        
     if 'shift factor' not in data:
         data['shift factor'] = 1.
     if 'max cyc' not in data:
         data['max cyc'] = 3        
     #end patch
-    '''
-    #Fourier controls
-    'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
-    'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],
-    '''
     def SeqSizer():
         
         def OnSelectData(event):

@@ -12,6 +12,7 @@ import GSASIIIO as G2IO
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import CifFile as cif # PyCifRW from James Hester
+import urllib
 
 class CIFPhaseReader(G2IO.ImportPhase):
     def __init__(self):
@@ -70,7 +71,9 @@ class CIFPhaseReader(G2IO.ImportPhase):
 #### 
 #### end development code
             self.ShowBusy() # this can take a while
-            cf = cif.ReadCif(filename)
+            ciffile = 'file:'+urllib.pathname2url(filename)
+            cf = cif.ReadCif(ciffile)
+            print cf
             # scan blocks for structural info
             str_blklist = []
             for blk in cf.keys():

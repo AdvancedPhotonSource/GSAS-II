@@ -167,18 +167,21 @@ def SGPrint(SGData):
         SGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
     SGText.append('\n'+' The equivalent positions are:')
     if SGData['SGLatt'] != 'P':
-        SGText.append('\n ('+Latt2text(SGData['SGLatt'])+')+')
-    if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
-        Ncol = 2
-    else:
-        Ncol = 3
+        SGText.append('\n ('+Latt2text(SGData['SGLatt'])+')+\n')
+    Ncol = 2
     line = ' '
+    col = 0
     for iop,[M,T] in enumerate(SGData['SGOps']):
-        if iop % Ncol == 0:
+        OPtxt = MT2text(M,T)
+        Fld = '(%2i) '%(iop+1)+OPtxt+'\t'
+        line += Fld
+        if '/' not in Fld:
+            line += '\t'
+        col += 1
+        if col == Ncol:
             SGText.append(line)        
             line = ' '
-        Fld = '(%2i) ' % (iop+1)+MT2text(M,T)+'\t'
-        line += Fld
+            col = 0
     SGText.append(line)        
     return SGText
     
@@ -188,8 +191,8 @@ def MT2text(M,T):
     TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
     Fld = ''
     for j in range(3):
-        IJ = int(round(2*M[j][0]+3*M[j][1]+4*M[j][2]+4)) % 12
-        IK = int(round(T[j]*12)) % 12
+        IJ = int(round(2*M[j][0]+3*M[j][1]+4*M[j][2]+4))%12
+        IK = int(round(T[j]*12))%12
         if IK > 0 and IJ > 4: IJ += 3
         Fld += TRA[IK]+XYZ[IJ]
         if j != 2: Fld += ','

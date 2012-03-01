@@ -38,7 +38,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
     ' Routines to import Phase information from GSAS .EXP files'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
-            extensionlist=('.EXP',),
+            extensionlist=('.EXP','.exp'),
             strictExtension=True,
             formatName = 'GSAS .EXP',
             longFormatName = 'GSAS Experiment (.EXP file) import'

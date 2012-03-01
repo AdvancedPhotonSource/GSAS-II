@@ -1155,15 +1155,14 @@ def ReadEXPPhase(G2frame,filename):
                 'Type':Ptype,
                 'SGData':SGData,
                 'Cell':[False,]+abc+angles+[Volume,],
-                'Pawley dmin':1.0},
+                'Pawley dmin':1.0,
+                'SH Texture':textureData},
             'Atoms':Atoms,
             'Drawing':{},
             'Histograms':{},
             'Pawley ref':[],
             'Models':{},
-            'SH Texture':textureData
             }
-            
     return Phase
        
 def ReadPDBPhase(filename):
@@ -1269,7 +1268,7 @@ class ImportPhase(object):
         else:
             self.longFormatName = formatName
         # define extensions that are allowed for the file type
-        # for windows, remove any extensions that are duplicate, if case is ignored
+        # for windows, remove any extensions that are duplicate, as case is ignored
         if sys.platform == 'windows' and extensionlist:
             extensionlist = list(set([s.lower() for s in extensionlist]))
         self.extensionlist = extensionlist

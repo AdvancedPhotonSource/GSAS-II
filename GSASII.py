@@ -72,8 +72,8 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(1)]
 
 [wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN,  wxID_FILESAVE, wxID_FILESAVEAS, 
-wxID_REFINE, wxID_SOLVE, wxID_MAKEPDFS, wxID_VIEWLSPARMS, wxID_SEQREFINE,
-] = [wx.NewId() for _init_coll_File_Items in range(10)]
+wxID_REFINE,  wxID_MAKEPDFS, wxID_VIEWLSPARMS, wxID_SEQREFINE,
+] = [wx.NewId() for _init_coll_File_Items in range(9)]
 
 [wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
  wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
@@ -163,10 +163,6 @@ class GSASII(wx.Frame):
             text='Sequental refine')
         self.SeqRefine.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=wxID_SEQREFINE)
-        self.Solve = parent.Append(help='', id=wxID_SOLVE, kind=wx.ITEM_NORMAL,
-            text='Solve')
-        self.Solve.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnSolve, id=wxID_SOLVE)
         
     def _init_Import_Phase(self,parent):
         '''import all the G2importphase*.py files that are found in the
@@ -208,19 +204,17 @@ class GSASII(wx.Frame):
                 pass
             finally:
                 if fp: fp.close()
-        item = parent.Append(wx.ID_ANY, help='Import phase data',
-                      kind=wx.ITEM_NORMAL,text='Import Phase (generic)...')
-        self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
+#        item = parent.Append(wx.ID_ANY, help='Import phase data',
+#                      kind=wx.ITEM_NORMAL,text='Import Phase (generic)...')
+#        self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase (specific)',
-                                 submenu,
-                                 help='Import phase data')
+        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase menu',
+            submenu, help='Import phase data')
         self.PhaseImportMenuId = {}
         for reader in self.ImportPhaseReaderlist:
             item = submenu.Append(wx.ID_ANY,
-                                  help='Import specific format phase data',
-                                  kind=wx.ITEM_NORMAL,
-                                  text='Import Phase '+reader.formatName+'...')
+                help='Import specific format phase data',
+                kind=wx.ITEM_NORMAL,text='Import Phase '+reader.formatName+'...')
             self.PhaseImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
 
@@ -238,8 +232,7 @@ class GSASII(wx.Frame):
                 for extn in rd.extensionlist:
                     if not extdict.get(extn): extdict[extn] = []
                     extdict[extn] += [fmt,]
-            for extn in sorted(extdict.keys(),
-                               cmp=lambda x,y: cmp(x.lower(), y.lower())):
+            for extn in sorted(extdict.keys(),cmp=lambda x,y: cmp(x.lower(), y.lower())):
                 fmt = ''
                 for f in extdict[extn]:
                     if fmt != "": fmt += ', '
@@ -297,8 +290,7 @@ class GSASII(wx.Frame):
                     flag = rd.Reader(file,fp,self)
                 except:
                     self.ErrorDialog('Error reading file '+file
-                                     +' with format '+ rd.formatName,
-                                     'Read Error')
+                        +' with format '+ rd.formatName,'Read Error')
                     continue
                 if not flag: continue
                 dlg = wx.TextEntryDialog( # allow editing of phase name
@@ -1255,7 +1247,6 @@ class GSASII(wx.Frame):
                             if data:
                                 self.Refine.Enable(True)
                                 self.SeqRefine.Enable(True)
-                                self.Solve.Enable(True)         #not right but something needed here
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
                         self.PatternTree.SelectItem(Id)
@@ -1657,20 +1648,6 @@ class GSASII(wx.Frame):
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                 if Id:
                     self.PatternTree.SelectItem(Id)
-        finally:
-            dlg.Destroy()
-        
-    def OnSolve(self,event):
-        #works - but it'd be better if it could restore plots
-        G2sol.Solve(self.GSASprojectfile)
-        dlg = wx.MessageDialog(self,'Load new result?','Structure solution results',wx.OK|wx.CANCEL)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                self.PatternTree.DeleteChildren(self.root)
-                if self.HKL: self.HKL = []
-                if self.G2plotNB.plotList:
-                    self.G2plotNB.clear()
-                G2IO.ProjFileOpen(self)
         finally:
             dlg.Destroy()
         

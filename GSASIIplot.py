@@ -321,7 +321,7 @@ def PlotPatterns(G2frame,newPlot=False):
                 G2frame.Weight = False
             else:
                 G2frame.Weight = True
-            print 'plot weighting:',G2frame.Weight
+            print 'error analysis:',G2frame.Weight
         elif event.key == 'n':
             if G2frame.Contour:
                 pass
@@ -571,7 +571,7 @@ def PlotPatterns(G2frame,newPlot=False):
         else:
             Choice = (' key press','l: offset left','r: offset right','d: offset down',
                 'u: offset up','o: reset offset','n: log(I) on','c: contour on',
-                'q: toggle q plot','s: toggle single plot','+: no selection')
+                'q: toggle q plot','s: toggle single plot','w: toggle error analysis','+: no selection')
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -667,8 +667,8 @@ def PlotPatterns(G2frame,newPlot=False):
                 W = xye[4]+offset*N
                 D = xye[5]-Ymax*G2frame.delOffset
                 if G2frame.Weight:
-                    W2 = np.sqrt(xye[2])
-                    D *= W2-Ymax*G2frame.delOffset
+                    DS = xye[5]*np.sqrt(xye[2])
+                    PlotDeltSig(G2frame,[X,DS])
                 if G2frame.logPlot:
                     Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
                     Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
@@ -747,6 +747,28 @@ def PlotPatterns(G2frame,newPlot=False):
     else:
         Page.canvas.draw()
     G2frame.Pwdr = True
+    
+def PlotDeltSig(G2frame,XDS):
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
+    except ValueError:
+        newPlot = True
+        G2frame.Cmax = 1.0
+        Plot = G2frame.G2plotNB.addMpl('Error analysis').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+    Page.SetFocus()
+    G2frame.G2plotNB.status.DestroyChildren()
+    Plot.set_title('Delta/sigma')
+    X,DS = XDS
+    Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    Plot.set_ylabel(r'$\mathsf{\Delta/\sigma}$',fontsize=14)
+    Plot.plot(X,DS,'k',picker=False)
+    Page.canvas.draw()
+    
     
 def PlotISFG(G2frame,newPlot=False,type=''):
     ''' PLotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
@@ -1164,7 +1186,7 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
     if Start:                   #initialize the spherical harmonics qlmn arrays
         ptx.pyqlmninit()
         Start = False
-    MuStrKeys = G2spc.MustrainNames(SGData)
+#    MuStrKeys = G2spc.MustrainNames(SGData)
     cell = generalData['Cell'][1:]
     A,B = G2lat.cell2AB(cell[:6])
     Vol = cell[6]

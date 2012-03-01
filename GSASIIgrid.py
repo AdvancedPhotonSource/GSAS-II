@@ -859,8 +859,6 @@ def UpdateControls(G2frame,data):
     mainSizer.Add(SeqSizer())
     mainSizer.Add((5,5),0)
         
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Density Map Controls:'),0,wx.ALIGN_CENTER_VERTICAL)
-
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
@@ -1574,12 +1572,7 @@ def MovePatternTreeToGrid(G2frame,item):
             if not data:           #fill in defaults
                 data = {
                     #least squares controls
-                    'deriv type':'analytic Jacobian','min dM/M':0.0001,'shift factor':1.0,'max cyc':3,
-                    #Fourier controls
-                    'mapType':'Fobs','d-max':100.,'d-min':0.2,'histograms':[],
-                    'stepSize':[0.5,0.5,0.5],'minX':[0.,0.,0.],'maxX':[1.0,1.0,1.0],
-                    #distance/angle controls
-                    'distMax':0.0,'angleMax':0.0,'useMapPeaks':False}
+                    'deriv type':'analytic Hessian','min dM/M':0.0001,'shift factor':1.0,'max cyc':3}
                 G2frame.PatternTree.SetItemPyData(item,data)                             
             G2frame.Refine.Enable(True)
             G2frame.SeqRefine.Enable(True)
@@ -1590,8 +1583,16 @@ def MovePatternTreeToGrid(G2frame,item):
         elif G2frame.PatternTree.GetItemText(item) == 'Covariance':
             data = G2frame.PatternTree.GetItemPyData(item)
             G2frame.dataFrame.setSizePosLeft(defWid)
+            text = ''
+            if 'Rvals' in data:
+                Nvars = len(data['varyList'])
+                Rvals = data['Rvals']
+                text = '\nFinal residuals: \nRwp = %.3f%% \nchi**2 = %.1f \nGOF = %.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+                text += '\nNobs = %d \nNvals = %d'%(Rvals['Nobs'],Nvars)
+                if 'lamMax' in Rvals:
+                    text += '\nlog10 MaxLambda = %.1f'%(np.log10(Rvals['lamMax']))
             wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
-                        value='See plot window for covariance display')
+                value='See plot window for covariance display'+text,style=wx.TE_MULTILINE)
             G2plt.PlotCovariance(G2frame)
         elif G2frame.PatternTree.GetItemText(item) == 'Constraints':
             data = G2frame.PatternTree.GetItemPyData(item)
@@ -1640,7 +1641,7 @@ def MovePatternTreeToGrid(G2frame,item):
         G2plt.PlotISFG(G2frame,type='G(R)',newPlot=True)            
     elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
         G2frame.PickId = item
-        data = G2frame.PatternTree.GetItemPyData(item)            
+        data = G2frame.PatternTree.GetItemPyData(item)
         G2phG.UpdatePhaseData(G2frame,item,data,oldPage)
     elif G2frame.PatternTree.GetItemText(item) == 'Comments':
         G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataCommentsMenu)

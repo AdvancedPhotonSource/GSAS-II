@@ -252,6 +252,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
             generalData['Map'] = {'MapType':'','RefList':'','Resolution':4.0}
+#        if 'SH Texture' not in generalData:
+#            generalData['SH Texture'] = data['SH Texture']
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
@@ -278,9 +280,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if atom[ct] in generalData['Isotope']:
                     generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]][0])
                 else:
+                    generalData['Isotope'][atom[ct]] = 'Nat. Abund.'
                     generalData['AtomMass'].append(Info['Mass'])
                 generalData['NoAtoms'][atom[ct]] = atom[cs-1]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
+
+################################################################################
+##### General phase routines
+################################################################################
 
     def UpdateGeneral():
         
@@ -515,8 +522,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elemSizer.Add(wx.StaticText(dataDisplay,label=' Isotope'),0,wx.ALIGN_CENTER_VERTICAL)
             for elem in generalData['AtomTypes']:
                 choices = generalData['Isotopes'][elem].keys()
-                if elem not in generalData['Isotope']:
-                    generalData['Isotope'][elem] = 'Nat. Abund.'
                 isoSel = wx.ComboBox(dataDisplay,-1,value=generalData['Isotope'][elem],choices=choices,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
@@ -660,6 +665,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dataDisplay.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
 
+################################################################################
+#####  Atom routines
+################################################################################
+
     def FillAtomsGrid():
 
         G2frame.dataFrame.setSizePosLeft([700,300])
@@ -733,6 +742,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for row in range(Atoms.GetNumberRows()):
                             if parms == atomData[row][c]:
                                 Atoms.SelectRow(row,True)
+                    SetupGeneral()
                 elif Atoms.GetColLabelValue(c) == 'residue':
                     choice = []
                     for r in range(Atoms.GetNumberRows()):
@@ -895,6 +905,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 ID = atomData[r][-1]
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                SetupGeneral()
             else:
                 event.Skip()
 
@@ -1055,6 +1066,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 DrawAtomsDeleteByIDs(IDs)
                 FillAtomsGrid()
                 G2plt.PlotStructure(G2frame,data)
+            SetupGeneral()
         event.StopPropagation()
 
     def AtomRefine(event):
@@ -1254,6 +1266,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         indx = FindAtomIndexByIDs(atomData,IDs)
         for ind in indx:
             atomData[ind] = MakeDrawAtom(atom,atomData[ind])
+
+################################################################################
+##### Atom draw routines
+################################################################################
             
     def UpdateDrawAtoms():
         generalData = data['General']
@@ -2142,6 +2158,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Size[1] += 26                           #compensate for status bar
         dataDisplay.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
+
+################################################################################
+####  Texture routines
+################################################################################
         
     def UpdateTexture():
         generalData = data['General']        
@@ -2368,6 +2388,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
         G2frame.dataFrame.setSizePosLeft(Size)
+
+################################################################################
+##### DData routines
+################################################################################
         
     def UpdateDData():
         UseList = data['Histograms']
@@ -2383,26 +2407,76 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         keyList.sort()
         Indx = {}
         
-        def OnPlotSel(event):
-            Obj = event.GetEventObject()
-            generalData['Data plot type'] = Obj.GetStringSelection()
-            wx.CallAfter(UpdateDData)
-            G2plt.PlotSizeStrainPO(G2frame,data)
+        def PlotSizer():
+
+            def OnPlotSel(event):
+                Obj = event.GetEventObject()
+                generalData['Data plot type'] = Obj.GetStringSelection()
+                wx.CallAfter(UpdateDData)
+                G2plt.PlotSizeStrainPO(G2frame,data)
+                
+            def OnPOhkl(event):
+                Obj = event.GetEventObject()
+                Saxis = Obj.GetValue().split()
+                try:
+                    hkl = [int(Saxis[i]) for i in range(3)]
+                except (ValueError,IndexError):
+                    hkl = generalData['POhkl']
+                if not np.any(np.array(hkl)):
+                    hkl = generalData['POhkl']
+                generalData['POhkl'] = hkl
+                h,k,l = hkl
+                Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
+                G2plt.PlotSizeStrainPO(G2frame,data)
             
-        def OnPOhkl(event):
-            Obj = event.GetEventObject()
-            Saxis = Obj.GetValue().split()
-            try:
-                hkl = [int(Saxis[i]) for i in range(3)]
-            except (ValueError,IndexError):
-                hkl = generalData['POhkl']
-            if not np.any(np.array(hkl)):
-                hkl = generalData['POhkl']
-            generalData['POhkl'] = hkl
-            h,k,l = hkl
-            Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-            G2plt.PlotSizeStrainPO(G2frame,data)
-        
+            plotSizer = wx.BoxSizer(wx.VERTICAL)
+            choice = ['Mustrain','Size','Preferred orientation']
+            plotSel = wx.RadioBox(DData,-1,'Select plot type:',choices=choice,
+                majorDimension=3,style=wx.RA_SPECIFY_COLS)
+            plotSel.SetStringSelection(generalData['Data plot type'])
+            plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
+            plotSizer.Add(plotSel)
+            if generalData['Data plot type'] == 'Preferred orientation':
+                POhklSizer = wx.BoxSizer(wx.HORIZONTAL)
+                POhklSizer.Add(wx.StaticText(DData,-1,' Plot preferred orientation for H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+                h,k,l = generalData['POhkl']
+                poAxis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+                poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOhkl)
+                poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOhkl)
+                POhklSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
+                plotSizer.Add(POhklSizer)            
+            return plotSizer
+           
+        def ScaleSizer():
+            
+            def OnScaleRef(event):
+                Obj = event.GetEventObject()
+                UseList[Indx[Obj.GetId()]]['Scale'][1] = Obj.GetValue()
+                
+            def OnScaleVal(event):
+                Obj = event.GetEventObject()
+                try:
+                    scale = float(Obj.GetValue())
+                    if scale > 0:
+                        UseList[Indx[Obj.GetId()]]['Scale'][0] = scale
+                except ValueError:
+                    pass
+                Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Scale'][0]))          #reset in case of error
+                            
+            scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            scaleRef = wx.CheckBox(DData,-1,label=' Phase fraction: ')
+            scaleRef.SetValue(UseList[item]['Scale'][1])
+            Indx[scaleRef.GetId()] = item
+            scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
+            scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
+            scaleVal = wx.TextCtrl(DData,wx.ID_ANY,
+                '%.4f'%(UseList[item]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
+            Indx[scaleVal.GetId()] = item
+            scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
+            scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
+            scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
+            return scaleSizer
+            
         def OnShowData(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -2438,20 +2512,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 finally:
                     dlg.Destroy()
             
-        def OnScaleRef(event):
+        def OnLGmixRef(event):
             Obj = event.GetEventObject()
-            UseList[Indx[Obj.GetId()]]['Scale'][1] = Obj.GetValue()
+            hist,name = Indx[Obj.GetId()]
+            UseList[hist][name][2][2] = Obj.GetValue()
             
-        def OnScaleVal(event):
+        def OnLGmixVal(event):
             Obj = event.GetEventObject()
+            hist,name = Indx[Obj.GetId()]
             try:
-                scale = float(Obj.GetValue())
-                if scale > 0:
-                    UseList[Indx[Obj.GetId()]]['Scale'][0] = scale
+                value = float(Obj.GetValue())
+                if 0.1 <= value <= 1:
+                    UseList[hist][name][1][2] = value
+                else:
+                    raise ValueError
             except ValueError:
                 pass
-            Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Scale'][0]))          #reset in case of error
-            
+            Obj.SetValue("%.4f"%(UseList[hist][name][1][2]))          #reset in case of error
+
         def OnSizeType(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -2508,8 +2586,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             UseList[hist]['Mustrain'][0] = Obj.GetValue()
-            G2plt.PlotSizeStrainPO(G2frame,data)
             wx.CallAfter(UpdateDData)
+            G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnStrainRef(event):
             Obj = event.GetEventObject()
@@ -2647,40 +2725,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 return False
             return axis
             
-        def PlotSizer():
-            plotSizer = wx.BoxSizer(wx.VERTICAL)
-            choice = ['Mustrain','Size','Preferred orientation']
-            plotSel = wx.RadioBox(DData,-1,'Select plot type:',choices=choice,
-                majorDimension=3,style=wx.RA_SPECIFY_COLS)
-            plotSel.SetStringSelection(generalData['Data plot type'])
-            plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
-            plotSizer.Add(plotSel)
-            if generalData['Data plot type'] == 'Preferred orientation':
-                POhklSizer = wx.BoxSizer(wx.HORIZONTAL)
-                POhklSizer.Add(wx.StaticText(DData,-1,' Plot preferred orientation for H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
-                h,k,l = generalData['POhkl']
-                poAxis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
-                poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOhkl)
-                poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOhkl)
-                POhklSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
-                plotSizer.Add(POhklSizer)            
-            return plotSizer
-           
-        def ScaleSizer():
-            scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
-            scaleRef = wx.CheckBox(DData,-1,label=' Phase fraction: ')
-            scaleRef.SetValue(UseList[item]['Scale'][1])
-            Indx[scaleRef.GetId()] = item
-            scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
-            scaleSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
-            scaleVal = wx.TextCtrl(DData,wx.ID_ANY,
-                '%.4f'%(UseList[item]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
-            Indx[scaleVal.GetId()] = item
-            scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
-            scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
-            scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
-            return scaleSizer
-            
         def TopSizer(name,choices,parm,OnType):
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
             topSizer.Add(wx.StaticText(DData,-1,name),0,wx.ALIGN_CENTER_VERTICAL)
@@ -2692,6 +2736,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             topSizer.Add((5,0),0)
             return topSizer
             
+        def LGmixSizer(name,OnVal,OnRef):
+            lgmixSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lgmixRef = wx.CheckBox(DData,-1,label='LGmix')
+            lgmixRef.thisown = False
+            lgmixRef.SetValue(UseList[item][name][2][2])
+            Indx[lgmixRef.GetId()] = [item,name]
+            lgmixRef.Bind(wx.EVT_CHECKBOX, OnRef)
+            lgmixSizer.Add(lgmixRef,0,wx.ALIGN_CENTER_VERTICAL)
+            lgmixVal = wx.TextCtrl(DData,wx.ID_ANY,
+                '%.4f'%(UseList[item][name][1][2]),style=wx.TE_PROCESS_ENTER)
+            Indx[lgmixVal.GetId()] = [item,name]
+            lgmixVal.Bind(wx.EVT_TEXT_ENTER,OnVal)
+            lgmixVal.Bind(wx.EVT_KILL_FOCUS,OnVal)
+            lgmixSizer.Add(lgmixVal,0,wx.ALIGN_CENTER_VERTICAL)
+            return lgmixSizer
+                        
         def IsoSizer(name,parm,fmt,OnVal,OnRef):
             isoSizer = wx.BoxSizer(wx.HORIZONTAL)
             sizeRef = wx.CheckBox(DData,-1,label=name)
@@ -2882,7 +2942,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         for item in keyList:
             histData = UseList[item]
-            
+###### Patch to add LGmix to Size & Mustrain
+            if len(histData['Size'][1]) == 2:
+                histData['Size'][1].append(0.6667)
+                histData['Size'][2].append(False)
+                histData['Mustrain'][1].append(0.6667)
+                histData['Mustrain'][2].append(False)
+                UseList[item] = histData
+###### end patch
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             showData = wx.CheckBox(DData,-1,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
@@ -2908,12 +2975,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     isoSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.3f',
                         OnSizeVal,OnSizeRef),0,wx.ALIGN_CENTER_VERTICAL)
+                    isoSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(isoSizer)
                 elif UseList[item]['Size'][0] == 'uniaxial':
                     uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                     uniSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
+                    uniSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(uniSizer)
                     mainSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
                 elif UseList[item]['Size'][0] == 'ellipsoidal':
@@ -2921,6 +2990,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     ellSizer.Add(wx.StaticText(DData,-1,u' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
+                    ellSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(ellSizer)
                     mainSizer.Add(EllSizeDataSizer())
                 mainSizer.Add((0,5),0)                    
@@ -2931,6 +3001,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     isoSizer.Add(IsoSizer(' microstrain: ','Mustrain','%.1f',
                         OnStrainVal,OnStrainRef),0,wx.ALIGN_CENTER_VERTICAL)                   
+                    isoSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(isoSizer)
                     mainSizer.Add((0,5),0)
                 elif UseList[item]['Mustrain'][0] == 'uniaxial':
@@ -2938,13 +3009,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     uniSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(UniSizer('Mustrain',OnStrainAxis),0,wx.ALIGN_CENTER_VERTICAL)
+                    uniSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(uniSizer)
                     mainSizer.Add(UniDataSizer('mustrain: ','Mustrain','%.1f',OnStrainVal,OnStrainRef))
                 elif UseList[item]['Mustrain'][0] == 'generalized':
                     genSizer = wx.BoxSizer(wx.HORIZONTAL)
                     genSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
-                    genSizer.Add(wx.StaticText(DData,-1,' Coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    genSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(genSizer)
                     mainSizer.Add(GenStrainDataSizer())                        
                 mainSizer.Add((0,5),0)
@@ -3032,9 +3104,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
-                            'Size':['isotropic',[4.,4.,],[False,False],[0,0,1],[4.,4.,4.,0.,0.,0.],6*[False,]],
-                            'Mustrain':['isotropic',[1000.0,1000.0],[False,False],[0,0,1],
-                                NShkl*[0.01,],NShkl*[False,]],
+                            'Size':['isotropic',[4.,4.,0.66667],[False,False,False],[0,0,1],
+                                [4.,4.,4.,0.,0.,0.],6*[False,]],
+                            'Mustrain':['isotropic',[1000.0,1000.0,0.666667],[False,False,False],[0,0,1],
+                                (NShkl)*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False]}
                         refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'Reflection Lists'))
@@ -3066,6 +3139,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     wx.CallAfter(UpdateDData)
             finally:
                 dlg.Destroy()
+
+################################################################################
+##### Pawley routines
+################################################################################
 
     def FillPawleyReflectionsGrid():
                         
@@ -3173,6 +3250,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if result == wx.ID_YES: 
             data['Pawley ref'] = []
             FillPawleyReflectionsGrid()
+
+################################################################################
+##### End of main routines
+################################################################################
     
     def OnFourierMaps(event):
         generalData = data['General']
@@ -3271,14 +3352,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     else:
         DData = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(DData,'Data')
-        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(Texture,'Texture')
         Atoms = G2gd.GSGrid(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(Atoms,'Atoms')
         drawOptions = wx.Window(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
         drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
+        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(Texture,'Texture')
 
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     G2frame.dataDisplay.SetSelection(oldPage)

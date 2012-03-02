@@ -12,7 +12,6 @@ import os.path as ospath
 import time
 import math
 import cPickle
-import multiprocessing as mp
 import numpy as np
 import numpy.linalg as nl
 import scipy.optimize as so
@@ -30,6 +29,8 @@ tand = lambda x: np.tan(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+    
+ateln2 = 8.0*math.log(2.0)
 
 
 def GetControls(GPXfile):
@@ -403,8 +404,6 @@ def ShowControls(Controls):
     print ' Refinement type: ',Controls['deriv type']
     if 'Hessian' in Controls['deriv type']:
         print ' Maximum number of cycles:',Controls['max cyc']
-        print ' Maximum histogram processes:',Controls['max Hprocess']
-        print ' Maximum reflection processes:',Controls['max Rprocess']
     else:
         print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
     print ' Initial shift factor: ','%.3f'%(Controls['shift factor'])
@@ -641,7 +640,6 @@ def GetPhaseData(PhaseData,Print=True):
 #            elif General['Type'] == 'magnetic':
 #            elif General['Type'] == 'macromolecular':
 
-                
             textureData = General['SH Texture']
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -964,9 +962,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             line += ' equatorial:'+'%12.3f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
             if hapData[0] == 'uniaxial':
                 line += ' axial:'+'%12.3f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
+            line += '\n\t LG mixing coeff.: %12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             print line
         else:
-            print '\n Size model    : %s'%(hapData[0])
+            print '\n Size model    : %s'%(hapData[0])+ \
+                '\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             Snames = ['S11','S22','S33','S12','S13','S23']
             ptlbls = ' names :'
             ptstr =  ' values:'
@@ -985,9 +985,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             line += ' equatorial:'+'%12.1f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
             if hapData[0] == 'uniaxial':
                 line += ' axial:'+'%12.1f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
+            line +='\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             print line
         else:
-            print '\n Mustrain model: %s'%(hapData[0])
+            print '\n Mustrain model: %s'%(hapData[0])+ \
+                '\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             Snames = G2spc.MustrainNames(SGData)
             ptlbls = ' names :'
             ptstr =  ' values:'
@@ -1084,6 +1086,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                         hapVary.append(pfx+item)
             for item in ['Mustrain','Size']:
                 controlDict[pfx+item+'Type'] = hapData[item][0]
+                hapDict[pfx+item+':mx'] = hapData[item][1][2]
+                if hapData[item][2][2]:
+                    hapVary.append(pfx+item+':mx')
                 if hapData[item][0] in ['isotropic','uniaxial']:
                     hapDict[pfx+item+':i'] = hapData[item][1][0]
                     if hapData[item][2][0]:
@@ -1094,6 +1099,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                         if hapData[item][2][1]:
                             hapVary.append(pfx+item+':a')
                 else:       #generalized for mustrain or ellipsoidal for size
+                    Nterms = len(hapData[item][4])
                     if item == 'Mustrain':
                         names = G2spc.MustrainNames(SGData)
                         pwrs = []
@@ -1101,7 +1107,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                             h,k,l = name[1:]
                             pwrs.append([int(h),int(k),int(l)])
                         controlDict[pfx+'MuPwrs'] = pwrs
-                    for i in range(len(hapData[item][4])):
+                    for i in range(Nterms):
                         sfx = ':'+str(i)
                         hapDict[pfx+item+sfx] = hapData[item][4][i]
                         if hapData[item][5][i]:
@@ -1145,16 +1151,22 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
         if hapData[0] in ['isotropic','uniaxial']:
             line += ' equatorial:%12.3f'%(hapData[1][0])
             if sizeSig[0][0]:
-                line += ', sig: %8.3f'%(sizeSig[0][0])
+                line += ', sig:%8.3f'%(sizeSig[0][0])
                 refine = True
             if hapData[0] == 'uniaxial':
                 line += ' axial:%12.3f'%(hapData[1][1])
                 if sizeSig[0][1]:
                     refine = True
-                    line += ', sig: %8.3f'%(sizeSig[0][1])
-            if refine:
-                print line
+                    line += ', sig:%8.3f'%(sizeSig[0][1])
+            line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
+            if sizeSig[0][2]:
+                refine = True
+                line += ', sig:%8.3f'%(sizeSig[0][2])
         else:
+            line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
+            if sizeSig[0][2]:
+                refine = True
+                line += ', sig:%8.3f'%(sizeSig[0][2])
             Snames = ['S11','S22','S33','S12','S13','S23']
             ptlbls = ' name  :'
             ptstr =  ' value :'
@@ -1184,10 +1196,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
             if hapData[0] == 'uniaxial':
                 line += ' axial:%12.1f'%(hapData[1][1])
                 if mustrainSig[0][1]:
-                     line += ', sig: %8.1f'%(mustrainSig[0][1])
-            if refine:
-                print line
+                     line += ', sig:%8.1f'%(mustrainSig[0][1])
+            line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
+            if mustrainSig[0][2]:
+                refine = True
+                line += ', sig:%8.3f'%(mustrainSig[0][2])
         else:
+            line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
+            if mustrainSig[0][2]:
+                refine = True
+                line += ', sig:%8.3f'%(mustrainSig[0][2])
             Snames = G2spc.MustrainNames(SGData)
             ptlbls = ' name  :'
             ptstr =  ' value :'
@@ -1286,10 +1304,14 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                         print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
                 else:
                     PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
-            SizeMuStrSig = {'Mustrain':[[0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
-                'Size':[[0,0],[0 for i in range(len(hapData['Size'][4]))]],
+            SizeMuStrSig = {'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
+                'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
                 'HStrain':{}}                  
             for item in ['Mustrain','Size']:
+                hapData[item][1][2] = parmDict[pfx+item+':mx']
+                hapData[item][1][2] = min(1.,max(0.1,hapData[item][1][2]))
+                if pfx+item+':mx' in sigDict:
+                    SizeMuStrSig[item][0][2] = sigDict[pfx+item+':mx']
                 if hapData[item][0] in ['isotropic','uniaxial']:                    
                     hapData[item][1][0] = parmDict[pfx+item+':i']
                     if item == 'Size':
@@ -1303,7 +1325,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                         if pfx+item+':a' in sigDict:
                             SizeMuStrSig[item][0][1] = sigDict[pfx+item+':a']
                 else:       #generalized for mustrain or ellipsoidal for size
-                    for i in range(len(hapData[item][4])):
+                    Nterms = len(hapData[item][4])
+                    for i in range(Nterms):
                         sfx = ':'+str(i)
                         hapData[item][4][i] = parmDict[pfx+item+sfx]
                         if pfx+item+sfx in sigDict:
@@ -1680,7 +1703,7 @@ def getFFvalues(FFtables,SQ):
 def getBLvalues(BLtables):
     BLvals = {}
     for El in BLtables:
-        BLvals[El] = BLtables[El][1]
+        BLvals[El] = BLtables[El][1][1]
     return BLvals
         
 def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
@@ -1719,7 +1742,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
                 refl[-1] = getBLvalues(BLtables)
             else:       #'X'
                 refl[-1] = getFFvalues(FFtables,SQ)
-        for i,El in enumerate(Tdata):            
+        for i,El in enumerate(Tdata):
             FF[i] = refl[-1][El]           
         SQfactor = 4.0*SQ*twopisq
         Uniq = refl[11]
@@ -2020,47 +2043,53 @@ def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
             dFdSA[i] /= odfCor
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA
         
-def GetSampleGam(refl,wave,G,GB,phfx,calcControls,parmDict):
+def GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict):
     costh = cosd(refl[5]/2.)
     #crystallite size
     if calcControls[phfx+'SizeType'] == 'isotropic':
-        gam = 1.8*wave/(np.pi*parmDict[phfx+'Size:i']*costh)
+        Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size:i']*costh)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        gam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:i']*parmDict[phfx+'Size:a']*costh)
-        gam *= np.sqrt((sinP*parmDict[phfx+'Size:a'])**2+(cosP*parmDict[phfx+'Size:i'])**2)
+        Sgam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:i']*parmDict[phfx+'Size:a']*costh)
+        Sgam *= np.sqrt((sinP*parmDict[phfx+'Size:a'])**2+(cosP*parmDict[phfx+'Size:i'])**2)
     else:           #ellipsoidal crystallites
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
         H = np.array(refl[:3])
         lenR = G2pwd.ellipseSize(H,Sij,GB)
-        gam = 1.8*wave/(np.pi*costh*lenR)
+        Sgam = 1.8*wave/(np.pi*costh*lenR)
     #microstrain                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
-        gam += 0.018*parmDict[phfx+'Mustrain:i']*tand(refl[5]/2.)/np.pi
+        Mgam = 0.018*parmDict[phfx+'Mustrain:i']*tand(refl[5]/2.)/np.pi
     elif calcControls[phfx+'MustrainType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'MustrainAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
         Si = parmDict[phfx+'Mustrain:i']
         Sa = parmDict[phfx+'Mustrain:a']
-        gam += 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
+        Mgam = 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
     else:       #generalized - P.W. Stephens model
         pwrs = calcControls[phfx+'MuPwrs']
         sum = 0
         for i,pwr in enumerate(pwrs):
             sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-        gam += 0.018*refl[4]**2*tand(refl[5]/2.)*sum            
-    return gam
+        Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*sum
+    gam = Sgam*parmDict[phfx+'Size:mx']+Mgam*parmDict[phfx+'Mustrain:mx']
+    sig = (Sgam*(1.-parmDict[phfx+'Size:mx']))**2+(Mgam*(1.-parmDict[phfx+'Mustrain:mx']))**2
+    sig /= ateln2
+    return sig,gam
         
-def GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
+def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
     gamDict = {}
+    sigDict = {}
     costh = cosd(refl[5]/2.)
     tanth = tand(refl[5]/2.)
     #crystallite size derivatives
     if calcControls[phfx+'SizeType'] == 'isotropic':
-        gamDict[phfx+'Size:i'] = -1.80*wave/(np.pi*costh)
+        Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size:i']*costh)
+        gamDict[phfx+'Size:i'] = -1.80*wave*parmDict[phfx+'Size:mx']/(np.pi*costh)
+        sigDict[phfx+'Size:i'] = -3.60*Sgam*wave*(1.-parmDict[phfx+'Size:mx'])**2/(np.pi*costh*ateln2)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])
@@ -2069,19 +2098,31 @@ def GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
         Sa = parmDict[phfx+'Size:a']
         gami = (1.8*wave/np.pi)/(Si*Sa)
         sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
-        gam = gami*sqtrm/costh            
-        gamDict[phfx+'Size:i'] = gami*Si*cosP**2/(sqtrm*costh)-gam/Si
-        gamDict[phfx+'Size:a'] = gami*Sa*sinP**2/(sqtrm*costh)-gam/Sa         
+        Sgam = gami*sqtrm
+        gam = Sgam/costh
+        dsi = (gami*Si*cosP**2/(sqtrm*costh)-gam/Si)
+        dsa = (gami*Sa*sinP**2/(sqtrm*costh)-gam/Sa)
+        gamDict[phfx+'Size:i'] = dsi*parmDict[phfx+'Size:mx']
+        gamDict[phfx+'Size:a'] = dsa*parmDict[phfx+'Size:mx']
+        sigDict[phfx+'Size:i'] = 2.*dsi*Sgam*(1.-parmDict[phfx+'Size:mx'])**2/ateln2
+        sigDict[phfx+'Size:a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size:mx'])**2/ateln2
     else:           #ellipsoidal crystallites
         const = 1.8*wave/(np.pi*costh)
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
         H = np.array(refl[:3])
-        R,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
+        lenR,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
+        Sgam = 1.8*wave/(np.pi*costh*lenR)
         for i,item in enumerate([phfx+'Size:%d'%(j) for j in range(6)]):
-            gamDict[item] = -(const/R**2)*dRdS[i]
+            gamDict[item] = -(const/lenR**2)*dRdS[i]*parmDict[phfx+'Size:mx']
+            sigDict[item] = -2.*Sgam*(const/lenR**2)*dRdS[i]*(1.-parmDict[phfx+'Size:mx'])**2/ateln2
+    gamDict[phfx+'Size:mx'] = Sgam
+    sigDict[phfx+'Size:mx'] = -2.*Sgam**2*(1.-parmDict[phfx+'Size:mx'])/ateln2
+            
     #microstrain derivatives                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
-        gamDict[phfx+'Mustrain:i'] =  0.018*tanth/np.pi            
+        Mgam = 0.018*parmDict[phfx+'Mustrain:i']*tand(refl[5]/2.)/np.pi
+        gamDict[phfx+'Mustrain:i'] =  0.018*tanth*parmDict[phfx+'Mustrain:mx']/np.pi
+        sigDict[phfx+'Mustrain:i'] =  0.036*Mgam*tanth*(1.-parmDict[phfx+'Mustrain:mx'])**2/(np.pi*ateln2)        
     elif calcControls[phfx+'MustrainType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'MustrainAxis'])
@@ -2090,15 +2131,29 @@ def GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
         Sa = parmDict[phfx+'Mustrain:a']
         gami = 0.018*Si*Sa*tanth/np.pi
         sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
-        gam = gami/sqtrm
-        gamDict[phfx+'Mustrain:i'] = gam/Si-gami*Si*cosP**2/sqtrm**3
-        gamDict[phfx+'Mustrain:a'] = gam/Sa-gami*Sa*sinP**2/sqtrm**3
+        Mgam = gami/sqtrm
+        dsi = -gami*Si*cosP**2/sqtrm**3
+        dsa = -gami*Sa*sinP**2/sqtrm**3
+        gamDict[phfx+'Mustrain:i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain:mx']
+        gamDict[phfx+'Mustrain:a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain:mx']
+        sigDict[phfx+'Mustrain:i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain:mx'])**2/ateln2
+        sigDict[phfx+'Mustrain:a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain:mx'])**2/ateln2       
     else:       #generalized - P.W. Stephens model
         pwrs = calcControls[phfx+'MuPwrs']
         const = 0.018*refl[4]**2*tanth
+        sum = 0
         for i,pwr in enumerate(pwrs):
-            gamDict[phfx+'Mustrain:'+str(i)] = const*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-    return gamDict
+            term = refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
+            sum += parmDict[phfx+'Mustrain:'+str(i)]*term
+            gamDict[phfx+'Mustrain:'+str(i)] = const*term*parmDict[phfx+'Mustrain:mx']
+            sigDict[phfx+'Mustrain:'+str(i)] = \
+                2.*const*term*(1.-parmDict[phfx+'Mustrain:mx'])**2/ateln2
+        Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*sum
+        for i in range(len(pwrs)):
+            sigDict[phfx+'Mustrain:'+str(i)] *= Mgam
+    gamDict[phfx+'Mustrain:mx'] = Mgam
+    sigDict[phfx+'Mustrain:mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain:mx'])/ateln2
+    return sigDict,gamDict
         
 def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
     h,k,l = refl[:3]
@@ -2275,16 +2330,17 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     
-    def GetReflSIgGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
+    def GetReflSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
         U = parmDict[hfx+'U']
         V = parmDict[hfx+'V']
         W = parmDict[hfx+'W']
         X = parmDict[hfx+'X']
         Y = parmDict[hfx+'Y']
         tanPos = tand(refl[5]/2.0)
-        sig = U*tanPos**2+V*tanPos+W        #save peak sigma
+        Ssig,Sgam = GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict)
+        sig = U*tanPos**2+V*tanPos+W+Ssig     #save peak sigma
         sig = max(0.001,sig)
-        gam = X/cosd(refl[5]/2.0)+Y*tanPos+GetSampleGam(refl,wave,G,GB,phfx,calcControls,parmDict) #save peak gamma
+        gam = X/cosd(refl[5]/2.0)+Y*tanPos+Sgam     #save peak gamma
         gam = max(0.001,gam)
         return sig,gam
                 
@@ -2327,7 +2383,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
                 refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
-                refl[6:8] = GetReflSIgGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict)    #peak sig & gam
+                refl[6:8] = GetReflSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict)    #peak sig & gam
                 GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)    #puts corrections in refl[13]
                 refl[13] *= Vst*Lorenz
                 if 'Pawley' in Phase['General']['Type']:
@@ -2548,7 +2604,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         depDerivDict[name][iBeg:iFin] += dDijDict[name]*dervDict['pos']
                         if Ka2:
                             depDerivDict[name][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
-                gamDict = GetSampleGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict)
+                sigDict,gamDict = GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict)
                 for name in gamDict:
                     if name in varylist:
                         dMdv[varylist.index(name)][iBeg:iFin] += gamDict[name]*dervDict['gam']
@@ -2558,6 +2614,15 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         depDerivDict[name][iBeg:iFin] += gamDict[name]*dervDict['gam']
                         if Ka2:
                             depDerivDict[name][iBeg2:iFin2] += gamDict[name]*dervDict2['gam']
+                for name in sigDict:
+                    if name in varylist:
+                        dMdv[varylist.index(name)][iBeg:iFin] += sigDict[name]*dervDict['sig']
+                        if Ka2:
+                            dMdv[varylist.index(name)][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
+                    elif name in dependentVars:
+                        depDerivDict[name][iBeg:iFin] += sigDict[name]*dervDict['sig']
+                        if Ka2:
+                            depDerivDict[name][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
                                                
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
@@ -2625,65 +2690,35 @@ def ComputePowderHessian(args):
     Hess = np.inner(dMdvh,dMdvh)
     return Vec,Hess
 
-#def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
-#    parmdict.update(zip(varylist,values))
-#    G2mv.Dict2Map(parmdict,varylist)
-#    Histograms,Phases = HistoPhases
-#    nvar = len(varylist)
-#    Hess = np.empty(0)
-#    histoList = Histograms.keys()
-#    histoList.sort()
-#    for histogram in histoList:
-#        if 'PWDR' in histogram[:4]:
-#            Histogram = Histograms[histogram]
-#            hId = Histogram['hId']
-#            hfx = ':%d:'%(hId)
-#            Limits = calcControls[hfx+'Limits']
-#            x,y,w,yc,yb,yd = Histogram['Data']
-#            dy = y-yc
-#            xB = np.searchsorted(x,Limits[0])
-#            xF = np.searchsorted(x,Limits[1])
-#            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
-#                varylist,Histogram,Phases,calcControls,pawleyLookup)
-#            if dlg:
-#                dlg.Update(Histogram['wRp'],newmsg='Hessian for histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
-#            if len(Hess):
-#                Vec += np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
-#                Hess += np.inner(dMdvh,dMdvh)
-#            else:
-#                Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
-#                Hess = np.inner(dMdvh,dMdvh)
-#    return Vec,Hess
-
 def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
     nvar = len(varylist)
-    HessSum = np.zeros((nvar,nvar))
-    VecSum = np.zeros(nvar)
+    Hess = np.empty(0)
     histoList = Histograms.keys()
     histoList.sort()
-    argList = []
-    MaxProcess = calcControls['max Hprocess']
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
-            argList.append([
-                Histogram,parmdict,varylist,Phases,
-                calcControls,pawleyLookup])
-    if MaxProcess > 1: 
-        mpPool = mp.Pool(processes=MaxProcess)
-        results = mpPool.map(ComputePowderHessian,argList)
-        for Vec,Hess in results:
-            VecSum += Vec
-            HessSum += Hess
-    else:
-        for arg in argList:
-            Vec,Hess = ComputePowderHessian(arg)
-            VecSum += Vec
-            HessSum += Hess
-    return VecSum,HessSum
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            Limits = calcControls[hfx+'Limits']
+            x,y,w,yc,yb,yd = Histogram['Data']
+            dy = y-yc
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])
+            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
+                varylist,Histogram,Phases,calcControls,pawleyLookup)
+            if dlg:
+                dlg.Update(Histogram['wRp'],newmsg='Hessian for histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
+            if len(Hess):
+                Vec += np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
+                Hess += np.inner(dMdvh,dMdvh)
+            else:
+                Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
+                Hess = np.inner(dMdvh,dMdvh)
+    return Vec,Hess
 
 def ComputePowderProfile(args):
     Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup = args
@@ -2698,52 +2733,6 @@ def ComputePowderProfile(args):
                             pawleyLookup)
     return xB,xF,yc,yb,Histogram['Reflection Lists']
 
-#def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
-#    parmdict.update(zip(varylist,values))
-#    Values2Dict(parmdict, varylist, values)
-#    G2mv.Dict2Map(parmdict,varylist)
-#    Histograms,Phases = HistoPhases
-#    M = np.empty(0)
-#    sumwYo = 0
-#    Nobs = 0
-#    histoList = Histograms.keys()
-#    histoList.sort()
-#    for histogram in histoList:
-#        if 'PWDR' in histogram[:4]:
-#            Histogram = Histograms[histogram]
-#            hId = Histogram['hId']
-#            hfx = ':%d:'%(hId)
-#            Limits = calcControls[hfx+'Limits']
-#            x,y,w,yc,yb,yd = Histogram['Data']
-#            yc *= 0.0                           #zero full calcd profiles
-#            yb *= 0.0
-#            yd *= 0.0
-#            xB = np.searchsorted(x,Limits[0])
-#            xF = np.searchsorted(x,Limits[1])
-#            Histogram['Nobs'] = xF-xB
-#            Nobs += Histogram['Nobs']
-#            Histogram['sumwYo'] = np.sum(w[xB:xF]*y[xB:xF]**2)
-#            sumwYo += Histogram['sumwYo']
-#            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmdict,x[xB:xF],
-#                varylist,Histogram,Phases,calcControls,pawleyLookup)
-#            yc[xB:xF] += yb[xB:xF]
-#            yd[xB:xF] = y[xB:xF]-yc[xB:xF]
-#            Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
-#            wdy = -np.sqrt(w[xB:xF])*(yd[xB:xF])
-#            Histogram['wRp'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
-#            if dlg:
-#                dlg.Update(Histogram['wRp'],newmsg='For histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
-#            M = np.concatenate((M,wdy))
-#    Histograms['sumwYo'] = sumwYo
-#    Histograms['Nobs'] = Nobs
-#    Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
-#    if dlg:
-#        GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile Rwp =',Rwp,'%'))[0]
-#        if not GoOn:
-#            parmDict['saved values'] = values
-#            raise Exception         #Abort!!
-#    return M
-#    
 def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
     parmdict.update(zip(varylist,values))
     Values2Dict(parmdict, varylist, values)
@@ -2754,54 +2743,24 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     Nobs = 0
     histoList = Histograms.keys()
     histoList.sort()
-    argList = []
-    MaxProcess = calcControls['max Hprocess']
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
-            argList.append(
-                [Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup]
-                )
-    if MaxProcess > 1: 
-        mpPool = mp.Pool(processes=MaxProcess)
-        results = mpPool.map(ComputePowderProfile,argList)
-        for arg,res in zip(argList,results):
-            xB,xF,ycSect,ybSect,RL = res
-            Histogram = arg[0]
-            Histogram['Reflection Lists'] = RL
-            x,y,w,yc,yb,yd = Histogram['Data']
-            yc *= 0.0                           #zero full calcd profiles
-            yb *= 0.0
-            yd *= 0.0
-            Histogram['Nobs'] = xF-xB
-            Nobs += Histogram['Nobs']
-            Histogram['sumwYo'] = np.sum(w[xB:xF]*y[xB:xF]**2)
-            sumwYo += Histogram['sumwYo']
-            
-            yc[xB:xF] = ycSect
-            yb[xB:xF] = ybSect
-            yc[xB:xF] += yb[xB:xF]
-            yd[xB:xF] = y[xB:xF]-yc[xB:xF]
-            Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
-            wdy = -np.sqrt(w[xB:xF])*(yd[xB:xF])
-            Histogram['wRp'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
-            M = np.concatenate((M,wdy))
-    else:
-        for arg in argList:
-            xB,xF,ycSect,ybSect,RL = ComputePowderProfile(arg)
-            Histogram = arg[0]
             hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            Limits = calcControls[hfx+'Limits']
             x,y,w,yc,yb,yd = Histogram['Data']
             yc *= 0.0                           #zero full calcd profiles
             yb *= 0.0
             yd *= 0.0
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])
             Histogram['Nobs'] = xF-xB
             Nobs += Histogram['Nobs']
             Histogram['sumwYo'] = np.sum(w[xB:xF]*y[xB:xF]**2)
             sumwYo += Histogram['sumwYo']
-            
-            yc[xB:xF] = ycSect
-            yb[xB:xF] = ybSect
+            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmdict,x[xB:xF],
+                varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
             Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
@@ -2810,7 +2769,6 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             if dlg:
                 dlg.Update(Histogram['wRp'],newmsg='For histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
             M = np.concatenate((M,wdy))
-
     Histograms['sumwYo'] = sumwYo
     Histograms['Nobs'] = Nobs
     Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
@@ -2819,8 +2777,8 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
         if not GoOn:
             parmDict['saved values'] = values
             raise Exception         #Abort!!
-    return M        
-                    
+    return M
+                        
 def Refine(GPXfile,dlg):
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
@@ -2871,7 +2829,7 @@ def Refine(GPXfile,dlg):
         raise Exception(' *** Refine aborted ***')
     G2mv.Map2Dict(parmDict,varyList)
 #    print G2mv.VarRemapShow(varyList)
-
+    Rvals = {}
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
@@ -2886,7 +2844,8 @@ def Refine(GPXfile,dlg):
         elif 'Hessian' in Controls['deriv type']:
             result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
-            ncyc = result[2]['num cyc']+1                           
+            ncyc = result[2]['num cyc']+1
+            Rvals['lamMax'] = result[2]['lamMax']                           
         else:           #'numeric'
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
@@ -2894,19 +2853,20 @@ def Refine(GPXfile,dlg):
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
-        chisq = np.sum(result[2]['fvec']**2)
+        Rvals['chisq'] = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict,varyList)
         
-        Rwp = np.sqrt(chisq/Histograms['sumwYo'])*100.      #to %
-        GOF = chisq/(Histograms['Nobs']-len(varyList))
+        Rvals['Nobs'] = Histograms['Nobs']
+        Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
+        Rvals['GOF'] = Rvals['chisq']/(Histograms['Nobs']-len(varyList))
         print '\n Refinement results:'
         print 135*'-'
         print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
         print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
-        print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+        print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
         try:
-            covMatrix = result[1]*GOF
+            covMatrix = result[1]*Rvals['GOF']
             sig = np.sqrt(np.diag(covMatrix))
             if np.any(np.isnan(sig)):
                 print '*** Least squares aborted - some invalid esds possible ***'
@@ -2938,7 +2898,7 @@ def Refine(GPXfile,dlg):
     sigDict = dict(zip(varyList,sig))
     newCellDict = GetNewCellParms(parmDict,varyList)
     newAtomDict = ApplyXYZshifts(parmDict,varyList)
-    covData = {'variables':result[0],'varyList':varyList,'sig':sig,
+    covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
         'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
     # add the uncertainties into the esd dictionary (sigDict)
     sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
@@ -2963,7 +2923,7 @@ def Refine(GPXfile,dlg):
 #    file.close()
 
     if dlg:
-        return Rwp
+        return Rvals['Rwp']
 
 def SeqRefine(GPXfile,dlg):
     import pytexture as ptx
@@ -3040,7 +3000,7 @@ def SeqRefine(GPXfile,dlg):
         groups,parmlist = G2mv.GroupConstraints(constrDict)
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
         G2mv.Map2Dict(parmDict,varyList)
-    
+        Rvals = {}
         while True:
             begin = time.time()
             values =  np.array(Dict2Values(parmDict, varyList))
@@ -3065,17 +3025,18 @@ def SeqRefine(GPXfile,dlg):
 
 
             runtime = time.time()-begin
-            chisq = np.sum(result[2]['fvec']**2)
+            Rvals['chisq'] = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             G2mv.Dict2Map(parmDict,varyList)
             
-            Rwp = np.sqrt(chisq/Histo['sumwYo'])*100.      #to %
-            GOF = chisq/(Histo['Nobs']-len(varyList))
+            Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histo['sumwYo'])*100.      #to %
+            Rvals['GOF'] = Rvals['Rwp']/(Histo['Nobs']-len(varyList))
+            Rvals['Nobs'] = Histo['Nobs']
             print '\n Refinement results for histogram: v'+histogram
             print 135*'-'
             print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histo['Nobs'],' Number of parameters: ',len(varyList)
             print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
-            print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+            print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
             try:
                 covMatrix = result[1]*GOF
                 sig = np.sqrt(np.diag(covMatrix))
@@ -3101,7 +3062,7 @@ def SeqRefine(GPXfile,dlg):
         sigDict = dict(zip(varyList,sig))
         newCellDict = GetNewCellParms(parmDict,varyList)
         newAtomDict = ApplyXYZshifts(parmDict,varyList)
-        covData = {'variables':result[0],'varyList':varyList,'sig':sig,
+        covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
             'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint)

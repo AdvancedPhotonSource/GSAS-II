@@ -2973,23 +2973,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     isoSizer = wx.BoxSizer(wx.HORIZONTAL)
                     isoSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
-                    isoSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.3f',
-                        OnSizeVal,OnSizeRef),0,wx.ALIGN_CENTER_VERTICAL)
                     isoSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(isoSizer)
+                    mainSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.3f',
+                        OnSizeVal,OnSizeRef),0,wx.ALIGN_CENTER_VERTICAL)
                 elif UseList[item]['Size'][0] == 'uniaxial':
                     uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                     uniSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
-                    uniSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
+                    uniSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(uniSizer)
                     mainSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
                 elif UseList[item]['Size'][0] == 'ellipsoidal':
                     ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                     ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
-                    ellSizer.Add(wx.StaticText(DData,-1,u' Coefficients(\xb5m): '),0,wx.ALIGN_CENTER_VERTICAL)
                     ellSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(ellSizer)
                     mainSizer.Add(EllSizeDataSizer())
@@ -2999,17 +2998,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     isoSizer = wx.BoxSizer(wx.HORIZONTAL)
                     isoSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
-                    isoSizer.Add(IsoSizer(' microstrain: ','Mustrain','%.1f',
-                        OnStrainVal,OnStrainRef),0,wx.ALIGN_CENTER_VERTICAL)                   
                     isoSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
                     mainSizer.Add(isoSizer)
+                    mainSizer.Add(IsoSizer(' microstrain: ','Mustrain','%.1f',
+                        OnStrainVal,OnStrainRef),0,wx.ALIGN_CENTER_VERTICAL)                   
                     mainSizer.Add((0,5),0)
                 elif UseList[item]['Mustrain'][0] == 'uniaxial':
                     uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                     uniSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
-                    uniSizer.Add(UniSizer('Mustrain',OnStrainAxis),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
+                    uniSizer.Add(UniSizer('Mustrain',OnStrainAxis),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(uniSizer)
                     mainSizer.Add(UniDataSizer('mustrain: ','Mustrain','%.1f',OnStrainVal,OnStrainRef))
                 elif UseList[item]['Mustrain'][0] == 'generalized':

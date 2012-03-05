@@ -1162,6 +1162,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
             if sizeSig[0][2]:
                 refine = True
                 line += ', sig:%8.3f'%(sizeSig[0][2])
+            if refine:
+                print line
         else:
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if sizeSig[0][2]:
@@ -1201,6 +1203,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
             if mustrainSig[0][2]:
                 refine = True
                 line += ', sig:%8.3f'%(mustrainSig[0][2])
+            if refine:
+                print line
         else:
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if mustrainSig[0][2]:

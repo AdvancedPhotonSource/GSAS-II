@@ -37,71 +37,62 @@ else:
     helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True
 
+[ wxID_FOURCALC,
+] = [wx.NewId() for item in range(1)]
+
+[ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
+] = [wx.NewId() for item in range(3)]
+
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSTESTADD, wxID_ATONTESTINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,
-] = [wx.NewId() for _init_coll_Atom_Items in range(10)]
-
-[ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
-] = [wx.NewId() for _init_coll_Data_Items in range(3)]
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
     wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGLTOR,  wxID_DRAWPLANE,
-] = [wx.NewId() for _init_coll_DrawAtom_Items in range(12)]
+] = [wx.NewId() for item in range(12)]
+
+[ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
+] = [wx.NewId() for item in range(2)]
+
+[ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT, wxID_PAWLEYDELETE, wxID_PAWLEYESTIMATE,
+] = [wx.NewId() for item in range(4)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
-] = [wx.NewId() for _init_coll_IMAGE_Items in range(8)]
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
-] = [wx.NewId() for _init_coll_MASK_Items in range(3)]
+] = [wx.NewId() for item in range(3)]
 
-[ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT, wxID_PAWLEYDELETE, wxID_PAWLEYESTIMATE,
-] = [wx.NewId() for _init_coll_PAWLEY_Items in range(4)]
+[ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY,
-] = [wx.NewId() for _init_coll_INST_Items in range(3)]
-
-[ wxID_INDXRELOAD,
-] = [wx.NewId() for _init_coll_IndPeaks_Items in range(1)]
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,
-] = [wx.NewId() for _init_coll_PEAK_Items in range(5)]
+] = [wx.NewId() for item in range(5)]
 
-[  wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
-] = [wx.NewId() for _init_coll_INDEX_Items in range(4)]
-
-[ wxID_BACKCOPY,
-] = [wx.NewId() for _init_coll_Back_Items in range(1)]
-
-[ wxID_LIMITCOPY,
-] = [wx.NewId() for _init_coll_Limit_Items in range(1)]
-
-[ wxID_SAMPLECOPY,
-] = [wx.NewId() for _init_coll_Sample_Items in range(1)]
+[  wxID_INDXRELOAD, wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
-] = [wx.NewId() for _init_coll_Constraint_Items in range(4)]
+] = [wx.NewId() for item in range(4)]
 
-[ wxID_RESTRAINTADD,
-] = [wx.NewId() for _init_coll_Restraint_Items in range(1)]
+[ wxID_RESTRAINTADD,wxID_PWDANALYSIS,
+] = [wx.NewId() for item in range(2)]
 
 [ wxID_SAVESEQSEL,
-] = [wx.NewId() for _init_coll_Sequential_Items in range(1)]
+] = [wx.NewId() for item in range(1)]
 
 [ wxID_SELECTPHASE,
-] = [wx.NewId() for _init_coll_Refl_Items in range(1)]
-
-[ wxID_FOURCALC,
-] = [wx.NewId() for _init_coll_Genrl_Items in range(1)]
-
-[ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
-] = [wx.NewId() for _init_coll_Texture_Items in range(2)]
+] = [wx.NewId() for item in range(1)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
-] = [wx.NewId() for _init_coll_PDF_Items in range(7)]
+] = [wx.NewId() for item in range(7)]
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
@@ -282,6 +273,14 @@ class DataFrame(wx.Frame):
         self.SequentialMenu.Append(menu=MyHelp(self,helpType='Sequential'),title='&Help')
         self.SequentialFile.Append(id=wxID_SAVESEQSEL, kind=wx.ITEM_NORMAL,text='Save...',
             help='Save selected sequential refinement results')
+            
+# PDR
+        self.ErrorMenu = wx.MenuBar()
+        self.ErrorAnal = wx.Menu(title='')
+        self.ErrorMenu.Append(menu=self.ErrorAnal,title='Analysis')
+        self.ErrorMenu.Append(menu=MyHelp(self,helpType='PWD Analysis'),title='&Help')
+        self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Analyze',
+            help='Error analysis on ppowder pattern')
             
 # PDR / Limits
         self.LimitMenu = wx.MenuBar()
@@ -1416,7 +1415,24 @@ def UpdateRestraints(G2frame,data):
     UpdatePhaseRestr()
 #    AtomRestrData = data['AtomRestr']
 
-    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)        
+    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    
+def UpdatePWDPlot(G2frame,item):
+
+    def OnErrorAnalysis(event):
+        G2plt.PlotDeltSig(G2frame)
+    
+    defWid = [250,150]
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ErrorMenu)
+    G2frame.dataFrame.Bind(wx.EVT_MENU,OnErrorAnalysis, id=wxID_PWDANALYSIS)
+    G2frame.dataFrame.setSizePosLeft(defWid)
+    wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
+        style=wx.TE_MULTILINE,
+        value='See plot window for powder data display\nor select a data item in histogram')
+    G2plt.PlotPatterns(G2frame,newPlot=True)
+           
              
 def UpdateHKLControls(G2frame,data):
     
@@ -1607,11 +1623,7 @@ def MovePatternTreeToGrid(G2frame,item):
             G2plt.PlotPowderLines(G2frame)
         elif 'PWDR' in G2frame.PatternTree.GetItemText(item):
             G2frame.ExportPattern.Enable(True)
-            G2frame.dataFrame.setSizePosLeft(defWid)
-            wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
-                style=wx.TE_MULTILINE,
-                value='See plot window for powder data display\nor select a data item in histogram')
-            G2plt.PlotPatterns(G2frame,newPlot=True)
+            UpdatePWDPlot(G2frame,item)
         elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
             G2frame.Sngl = item
             G2plt.PlotSngl(G2frame,newPlot=True)

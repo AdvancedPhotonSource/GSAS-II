@@ -172,6 +172,10 @@ class GSASIItoolbar(Toolbar):
         bookmark = Page.GetPageText(pageNo)
         bookmark = bookmark.strip(')').replace('(','_')
         G2gd.ShowHelp(bookmark,self.TopLevelParent)
+
+################################################################################
+##### PlotSngl
+################################################################################
             
 def PlotSngl(self,newPlot=False):
     '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional
@@ -301,6 +305,10 @@ def PlotSngl(self,newPlot=False):
     else:
         Page.canvas.draw()
        
+################################################################################
+##### PlotPatterns
+################################################################################
+            
 def PlotPatterns(G2frame,newPlot=False):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
     2-theta or q (future TOF). Can display multiple patterns as "waterfall plots" or contour plots. Log I 
@@ -321,7 +329,8 @@ def PlotPatterns(G2frame,newPlot=False):
                 G2frame.Weight = False
             else:
                 G2frame.Weight = True
-            print 'error analysis:',G2frame.Weight
+                G2frame.SinglePlot = True
+            newPlot = True
         elif event.key == 'n':
             if G2frame.Contour:
                 pass
@@ -381,6 +390,7 @@ def PlotPatterns(G2frame,newPlot=False):
                     G2frame.SinglePlot = False
                 else:
                     G2frame.SinglePlot = True
+            newPlot = True
         elif event.key == '+':
             if G2frame.PickId:
                 G2frame.PickId = False
@@ -571,7 +581,7 @@ def PlotPatterns(G2frame,newPlot=False):
         else:
             Choice = (' key press','l: offset left','r: offset right','d: offset down',
                 'u: offset up','o: reset offset','n: log(I) on','c: contour on',
-                'q: toggle q plot','s: toggle single plot','w: toggle error analysis','+: no selection')
+                'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -623,7 +633,10 @@ def PlotPatterns(G2frame,newPlot=False):
         Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
     else:        
         Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
-    Plot.set_ylabel('Intensity',fontsize=12)
+    if G2frame.Weight:
+        Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=14)
+    else:
+        Plot.set_ylabel('Intensity',fontsize=12)
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
@@ -666,13 +679,19 @@ def PlotPatterns(G2frame,newPlot=False):
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
                 D = xye[5]-Ymax*G2frame.delOffset
-                if G2frame.Weight:
-                    DS = xye[5]*np.sqrt(xye[2])
-                    PlotDeltSig(G2frame,[X,DS])
                 if G2frame.logPlot:
                     Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
                     Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
                     Plot.semilogy(X,W,colors[(N+2)%6],picker=False,nonposy='mask')
+                elif G2frame.Weight:
+                    DY = xye[1]*np.sqrt(xye[2])
+                    DYmax = max(DY)
+                    DZ = xye[3]*np.sqrt(xye[2])
+                    DS = xye[5]*np.sqrt(xye[2])-DYmax*G2frame.delOffset
+                    Plot.plot(X,DY,colors[N%6]+'+',picker=3.,clip_on=False)
+                    Plot.plot(X,DZ,colors[(N+1)%6],picker=False)
+                    Plot.plot(X,DS,colors[(N+3)%6],picker=False)
+                    Plot.axhline(0.,color=wx.BLACK)
                 else:
                     Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                     Plot.plot(X,Z,colors[(N+1)%6],picker=False)
@@ -748,11 +767,14 @@ def PlotPatterns(G2frame,newPlot=False):
         Page.canvas.draw()
     G2frame.Pwdr = True
     
-def PlotDeltSig(G2frame,XDS):
+################################################################################
+##### PlotDeltSig
+################################################################################
+            
+def PlotDeltSig(G2frame):
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
         newPlot = True
@@ -760,16 +782,42 @@ def PlotDeltSig(G2frame,XDS):
         Plot = G2frame.G2plotNB.addMpl('Error analysis').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+    PatternId = G2frame.PatternId
+    Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
+    Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
+    limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
+    xye = np.array(Pattern[1])
+    xmin = np.searchsorted(xye[0],limits[0])
+    xmax = np.searchsorted(xye[0],limits[1])
+    X = xye[0][xmin:xmax]
+    DS = xye[5][xmin:xmax]*np.sqrt(xye[2][xmin:xmax])
     Page.SetFocus()
+    Page.figure.clf()
+    Plot1 = Page.figure.add_subplot(211)
+    Page.figure.subplots_adjust(hspace=0.25)
     G2frame.G2plotNB.status.DestroyChildren()
-    Plot.set_title('Delta/sigma')
-    X,DS = XDS
-    Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
-    Plot.set_ylabel(r'$\mathsf{\Delta/\sigma}$',fontsize=14)
-    Plot.plot(X,DS,'k',picker=False)
+    Plot1.set_title(r'$\mathsf{\Delta/\sigma}$ analysis')
+    Plot1.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    Plot1.set_ylabel(r'$\mathsf{\Delta/\sigma}$',fontsize=14)
+    Plot1.plot(X,DS,'k',picker=False)
+    DS.sort()
+    EDS = np.zeros_like(DS)
+    DX = np.linspace(0.,1.,num=len(DS),endpoint=True)
+    T = np.where(DX != 0.0,np.sqrt(np.log(1.0/DX**2)),0.0)
+    top = 2.515517+0.802853*T+0.010328*T**2
+    bot = 1.0+1.432788*T+0.189269*T**2+0.001308*T**3
+    EDS = np.where(DX>0,-(T-top/bot),(T-top/bot))
+    EDS = np.where(DX==0.,0.,EDS)
+    Plot2 = Page.figure.add_subplot(212)
+    Plot2.set_xlabel(r'expected $\mathsf{\Delta/\sigma}$',fontsize=14)
+    Plot2.set_ylabel(r'observed $\mathsf{\Delta/\sigma}$',fontsize=14)
+    Plot2.plot(EDS,DS,'r+')
     Page.canvas.draw()
-    
-    
+       
+################################################################################
+##### PlotISFG
+################################################################################
+            
 def PlotISFG(G2frame,newPlot=False,type=''):
     ''' PLotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
@@ -984,6 +1032,10 @@ def PlotISFG(G2frame,newPlot=False,type=''):
     else:
         Page.canvas.draw()
         
+################################################################################
+##### PlotXY
+################################################################################
+            
 def PlotXY(G2frame,XY,newPlot=False,type=''):
     '''simple plot of xy data, used for diagnostic purposes
     '''
@@ -1033,6 +1085,10 @@ def PlotXY(G2frame,XY,newPlot=False,type=''):
     else:
         Page.canvas.draw()
 
+################################################################################
+##### PlotPowderLines
+################################################################################
+            
 def PlotPowderLines(G2frame):
     ''' plotting of powder lines (i.e. no powder pattern) as sticks
     '''
@@ -1085,6 +1141,10 @@ def PlotPowderLines(G2frame):
     Page.canvas.draw()
     Page.toolbar.push_current()
 
+################################################################################
+##### PlotPeakWidths
+################################################################################
+            
 def PlotPeakWidths(G2frame):
     ''' Plotting of instrument broadening terms as function of 2-theta (future TOF)
     Seen when "Instrument Parameters" chosen from powder pattern data tree
@@ -1175,6 +1235,10 @@ def PlotPeakWidths(G2frame):
     Plot.legend(loc='best')
     Page.canvas.draw()
     
+################################################################################
+##### PlotSizeStrainPO
+################################################################################
+            
 def PlotSizeStrainPO(G2frame,data,Start=False):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
@@ -1329,6 +1393,10 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
                     Plot.set_ylabel('MRD',fontsize=14)
     Page.canvas.draw()
     
+################################################################################
+##### PlotTexture
+################################################################################
+            
 def PlotTexture(G2frame,data,newPlot=False,Start=False):
     '''Pole figure, inverse pole figure, 3D pole distribution and 3D inverse pole distribution
     plotting.
@@ -1466,6 +1534,10 @@ def PlotTexture(G2frame,data,newPlot=False,Start=False):
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
     Page.canvas.draw()
 
+################################################################################
+##### PlotCovariance
+################################################################################
+            
 def PlotCovariance(G2frame,Data={}):
     if not Data:
         Data = G2frame.PatternTree.GetItemPyData(
@@ -1546,6 +1618,10 @@ def PlotCovariance(G2frame,Data={}):
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()
     
+################################################################################
+##### PlotSeq
+################################################################################
+            
 def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
     
     def OnKeyPress(event):
@@ -1587,6 +1663,10 @@ def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
             Plot.set_xlabel(xName)
             Page.canvas.draw()            
     Draw(True)
+            
+################################################################################
+##### PlotExposedImage & PlotImage
+################################################################################
             
 def PlotExposedImage(G2frame,newPlot=False,event=None):
     '''General access module for 2D image plotting
@@ -2026,6 +2106,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     finally:
         wx.EndBusyCursor()
         
+################################################################################
+##### PlotIntegration
+################################################################################
+            
 def PlotIntegration(G2frame,newPlot=False,event=None):
     '''Plot of 2D image after image integration with 2-theta and azimuth as coordinates
     '''
@@ -2088,6 +2172,10 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     else:
         Page.canvas.draw()
                 
+################################################################################
+##### PlotTRImage
+################################################################################
+            
 def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     '''a test plot routine - not normally used
     ''' 
@@ -2161,6 +2249,10 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     else:
         Page.canvas.draw()
         
+################################################################################
+##### PlotStructure
+################################################################################
+            
 def PlotStructure(G2frame,data):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra

@@ -340,6 +340,7 @@ def PlotPatterns(G2frame,newPlot=False):
                 else:
                     G2frame.Offset[0] = 0
                     G2frame.logPlot = True
+                newPlot = True
         elif event.key == 'u':
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
@@ -775,6 +776,7 @@ def PlotDeltSig(G2frame):
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
         newPlot = True
@@ -792,26 +794,28 @@ def PlotDeltSig(G2frame):
     X = xye[0][xmin:xmax]
     DS = xye[5][xmin:xmax]*np.sqrt(xye[2][xmin:xmax])
     Page.SetFocus()
-    Page.figure.clf()
-    Plot1 = Page.figure.add_subplot(211)
-    Page.figure.subplots_adjust(hspace=0.25)
     G2frame.G2plotNB.status.DestroyChildren()
-    Plot1.set_title(r'$\mathsf{\Delta/\sigma}$ analysis')
-    Plot1.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
-    Plot1.set_ylabel(r'$\mathsf{\Delta/\sigma}$',fontsize=14)
-    Plot1.plot(X,DS,'k',picker=False)
     DS.sort()
     EDS = np.zeros_like(DS)
     DX = np.linspace(0.,1.,num=len(DS),endpoint=True)
-    T = np.where(DX != 0.0,np.sqrt(np.log(1.0/DX**2)),0.0)
+    oldErr = np.seterr(invalid='ignore')    #avoid problem at DX==0
+    T = np.sqrt(np.log(1.0/DX**2))
     top = 2.515517+0.802853*T+0.010328*T**2
     bot = 1.0+1.432788*T+0.189269*T**2+0.001308*T**3
     EDS = np.where(DX>0,-(T-top/bot),(T-top/bot))
-    EDS = np.where(DX==0.,0.,EDS)
-    Plot2 = Page.figure.add_subplot(212)
-    Plot2.set_xlabel(r'expected $\mathsf{\Delta/\sigma}$',fontsize=14)
-    Plot2.set_ylabel(r'observed $\mathsf{\Delta/\sigma}$',fontsize=14)
-    Plot2.plot(EDS,DS,'r+')
+    low1 = np.searchsorted(EDS,-1.)
+    hi1 = np.searchsorted(EDS,1.)
+    slp,intcp = np.polyfit(EDS[low1:hi1],DS[low1:hi1],deg=1)
+    frac = 100.*(hi1-low1)/len(DS)
+    G2frame.G2plotNB.status.SetStatusText(  \
+        'Over range -1. to 1. :'+' slope = %.3f, intercept = %.3f for %.2f%% of the fitted data'%(slp,intcp,frac),1)
+    Plot.set_title('Normal probability for '+Pattern[-1])
+    Plot.set_xlabel(r'expected $\mathsf{\Delta/\sigma}$',fontsize=14)
+    Plot.set_ylabel(r'observed $\mathsf{\Delta/\sigma}$',fontsize=14)
+    Plot.plot(EDS,DS,'r+',label='result')
+    Plot.plot([-2,2],[-2,2],'k',dashes=(5,5),label='ideal')
+    Plot.legend(loc='upper left')
+    np.seterr(invalid='warn')
     Page.canvas.draw()
        
 ################################################################################
@@ -1276,7 +1280,7 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
     plotNum = G2frame.G2plotNB.plotList.index(plotType)
     Page = G2frame.G2plotNB.nb.GetPage(plotNum)
     Page.SetFocus()
-    G2frame.G2plotNB.status.SetStatusText('Adjust frame size to get desired aspect ratio',1)
+    G2frame.G2plotNB.status.SetStatusText('',1)
     if not Page.IsShown():
         Page.Show()
     

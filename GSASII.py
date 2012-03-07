@@ -1572,6 +1572,7 @@ class GSASII(wx.Frame):
                 parmDict[parm] = [parmDict[parm],'True']
             else:
                 parmDict[parm] = [parmDict[parm],'False']
+        parmDict[' Num refined'] = [len(varyList),'']
         dlg = self.ViewParmDialog(self,'Parameters for least squares',parmDict)
         try:
             if dlg.ShowModal() == wx.ID_OK:

@@ -24,17 +24,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>66</o:Revision>
-  <o:TotalTime>2503</o:TotalTime>
+  <o:Revision>70</o:Revision>
+  <o:TotalTime>2555</o:TotalTime>
   <o:Created>2011-11-28T16:49:00Z</o:Created>
-  <o:LastSaved>2012-03-07T17:46:00Z</o:LastSaved>
+  <o:LastSaved>2012-03-08T21:43:00Z</o:LastSaved>
   <o:Pages>7</o:Pages>
-  <o:Words>5534</o:Words>
-  <o:Characters>31548</o:Characters>
+  <o:Words>6123</o:Words>
+  <o:Characters>34907</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>262</o:Lines>
-  <o:Paragraphs>74</o:Paragraphs>
-  <o:CharactersWithSpaces>37008</o:CharactersWithSpaces>
+  <o:Lines>290</o:Lines>
+  <o:Paragraphs>81</o:Paragraphs>
+  <o:CharactersWithSpaces>40949</o:CharactersWithSpaces>
   <o:Version>12.00</o:Version>
  </o:DocumentProperties>
 </xml><![endif]-->
@@ -428,7 +428,8 @@ h3
 	mso-fareast-theme-font:minor-fareast;
 	font-weight:bold;}
 h4
-	{mso-style-priority:9;
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
 	mso-style-qformat:yes;
 	mso-style-link:"Heading 4 Char";
 	mso-style-next:Normal;
@@ -677,6 +678,7 @@ span.Heading3Char
 	font-weight:bold;}
 span.Heading4Char
 	{mso-style-name:"Heading 4 Char";
+	mso-style-noshow:yes;
 	mso-style-priority:9;
 	mso-style-unhide:no;
 	mso-style-locked:yes;
@@ -1632,7 +1634,7 @@ ul
 <![endif]-->
 <link href=gsasIIfav.png rel="SHORTCUT ICON">
 <!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="14338"/>
+ <o:shapedefaults v:ext="edit" spidmax="15362"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -1663,7 +1665,7 @@ ul
  </v:formulas>
  <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
  <o:lock v:ext="edit" aspectratio="t"/>
-</v:shapetype><v:shape id="Picture_x0020_2" o:spid="_x0000_s1043" type="#_x0000_t75"
+</v:shapetype><v:shape id="Picture_x0020_2" o:spid="_x0000_s1044" type="#_x0000_t75"
  alt="GSAS-II logo" style='position:absolute;margin-left:56pt;margin-top:0;
  width:96pt;height:96pt;z-index:1;visibility:visible;mso-wrap-style:square;
  mso-wrap-distance-left:0;mso-wrap-distance-top:0;mso-wrap-distance-right:0;
@@ -1678,12 +1680,13 @@ style='mso-fareast-font-family:"Times New Roman"'>Help for GSAS-II<o:p></o:p></s
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 is where to find help on various GSAS-II windows and plots. Note that GSAS-II
-operates with three windows: the main <a href="#Data_tree">GSAS-II data tree</a>
+operates with four windows: the main <a href="#Data_tree">GSAS-II data tree</a>
 window, which provides a hierarchical view of the current project; the <a
 href="#Data_Frame">GSAS-II data editing</a> window, which shows the contents of
-a particular section of the project, where values can be examined and changed;
-and the <a href="#Plots">GSAS-II Plots</a> window, which shows graphical
-representations of the results. <o:p></o:p></span></p>
+a particular section of the project, where values can be examined and changed; the
+<a href="#Plots">GSAS-II Plots</a> window, which shows graphical
+representations of the results; and the console which has printout information
+that can be selected, cut &amp; pasted into a document. <o:p></o:p></span></p>
 
 <div class=MsoNormal align=center style='text-align:center'><span
 style='mso-fareast-font-family:"Times New Roman"'>
@@ -1839,27 +1842,37 @@ style='mso-bidi-font-weight:normal'>Sum image data</b> - </p>
 auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>g.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Add phase</b> - </p>
+style='mso-bidi-font-weight:normal'>Add phase</b> &#8211; This begins the
+creation of a new phase in the data tree (under Phases). You are first prompted
+in a dialog box for a name to be assigned to the new phase. Then the <b
+style='mso-bidi-font-weight:normal'><a href="#General">General</a></b> tab is
+opened for this phase; you should first select the phase type, enter the space
+group symbol and then lattice parameters. Note that nonstandard space group
+symbols are permitted; there must be spaces between the axial fields (e.g. use &#8216;P
+n a 21&#8217; not &#8216;Pna21&#8217;).</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>h.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Delete phase</b> - </p>
+style='mso-bidi-font-weight:normal'>Delete phase</b> &#8211; This will remove a
+phase from the data tree. A dialog box will present the list of phases; pick one
+(or more) to delete.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>i.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Rename data</b>
-- </p>
+&#8211; This might be a bad idea!!</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>j.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Delete
-data</b> - </p>
+data</b> &#8211; This will remove an item from the data tree. A dialog box with
+a list of choices is presented.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l9 level1 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
@@ -1885,36 +1898,32 @@ style='mso-bidi-font-weight:normal'>View LS <span class=SpellE>parms</span></b>
 to be refined are flagged &#8216;True&#8217;, otherwise &#8216;False&#8217;.
 Blanks indicate parameters that are not <span class=SpellE>refinable</span>.
 The total number of refined parameters is also shown at the top of the list.
-The value of each parameter is also given. The parameter names are of the form &#8216;p<span
-class=GramE>:h:name:id&#8217;</span> where &#8216;p&#8217; is the phase index, &#8216;h&#8217;
-is the histogram index and &#8216;id&#8217; is the item index (if needed).
-Indexes all begin with &#8216;0&#8217; (zero). Note that for atom positions the
-value is not a <span class=SpellE>refinable</span> parameter, but the shift in
-the value is. Position names are, e.g. &#8216;0:<span class=GramE>:Ax:0&#8217;</span>
-for the x-position of the <span class=SpellE>zeroth</span> atom in the <span
-class=SpellE>zeroth</span> phase while shift names have a &#8216;d&#8217; in
-then, e.g. &#8216;0::dAx:0&#8217;. </p>
+The value of each parameter is also given. The parameter names are of the form
+&#8216;p<span class=GramE>:h:name:id&#8217;</span> where &#8216;p&#8217; is the
+phase index, &#8216;h&#8217; is the histogram index and &#8216;id&#8217; is the
+item index (if needed). Indexes all begin with &#8216;0&#8217; (zero). Note
+that for atom positions the value is not a <span class=SpellE>refinable</span>
+parameter, but the shift in the value is. Position names are, e.g. &#8216;0:<span
+class=GramE>:Ax:0&#8217;</span> for the x-position of the <span class=SpellE>zeroth</span>
+atom in the <span class=SpellE>zeroth</span> phase while shift names have a
+&#8216;d&#8217; in then, e.g. &#8216;0::dAx:0&#8217;. </p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>c.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Refine</b> &#8211; This performs the refinement
-(Pawley/Rietveld or single crystal) according to the controls set in the <b
-style='mso-bidi-font-weight:normal'><a href="#Controls">Controls</a></b> data
-tree item.</p>
+style='mso-bidi-font-weight:normal'>Refine</b> &#8211; This performs the
+refinement (Pawley/Rietveld or single crystal) according to the controls set in
+the <b style='mso-bidi-font-weight:normal'><a href="#Controls">Controls</a></b>
+data tree item.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>d.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Sequential refine</b> - </p>
-
-<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
-auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
-style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>e.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Solve</b> - </p>
+style='mso-bidi-font-weight:normal'>Sequential refine</b> &#8211; This starts a
+sequential refinement with the data sets selected in the <b style='mso-bidi-font-weight:
+normal'><a href="#Controls">Controls</a></b> data tree item.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l9 level1 lfo1'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
@@ -1931,25 +1940,51 @@ style='mso-bidi-font-weight:normal'>Import Phase (specific) - </b></p>
 auto;text-indent:-.25in;mso-list:l9 level3 lfo1;tab-stops:list 1.5in'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Import Phase GSAS.EXP&#8230;</b></p>
+style='mso-bidi-font-weight:normal'>Import Phase GSAS.EXP&#8230; - </b>This
+reads one phase from a GSAS experiment file (name.EXP). The file name is found
+in a directory dialog; you can change directories as needed. Only .EXP (or
+.exp) file names are shown. If the selected file has more than one phase, a
+dialog is shown with the choices; only one can be chosen. If you want more than
+one, redo the <b style='mso-bidi-font-weight:normal'>Import Phase GSAS.EXP</b>
+command. After selecting a phase, a dialog box is shown with the proposed phase
+name. You can change it if desired.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.5in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level3 lfo1;tab-stops:list 1.5in'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Import Phase PDB&#8230;</b></p>
+style='mso-bidi-font-weight:normal'>Import Phase PDB&#8230;</b> - This reads the
+macromolecular phase information from a Protein Data Base file (name.PDB or
+name.ENT). The file name is found in a directory dialog; you can change
+directories as needed. Only .PDB or .ENT file names are shown. A dialog box is
+shown with the proposed phase name. You can change it if desired.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.5in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level3 lfo1;tab-stops:list 1.5in'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Import Phase CIF&#8230;</b></p>
+style='mso-bidi-font-weight:normal'>Import Phase CIF&#8230;</b> This reads one
+phase from a Crystallographic Information File (name.CIF). The file name is
+found in a directory dialog; you can change directories as needed. Only .CIF
+(or .<span class=SpellE>cif</span>) file names are shown. If the selected file
+has more than one phase, a dialog is shown with the choices; only one can be
+chosen. If you want more than one, redo the <b style='mso-bidi-font-weight:
+normal'>Import Phase CIF</b> command. After selecting a phase, a dialog box is
+shown with the proposed phase name. You can change it if desired.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.5in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level3 lfo1;tab-stops:list 1.5in'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Import Phase GSAS-II <span class=SpellE>gpx</span>&#8230;</b></p>
+style='mso-bidi-font-weight:normal'>Import Phase GSAS-II <span class=SpellE>gpx</span>&#8230;</b>
+This reads one phase from a GSAS-II project file (name.GPX). The file name is
+found in a directory dialog; you can change directories as needed. Only .GPX
+(or .<span class=SpellE>gpx</span>) file names are shown. If the selected file
+has more than one phase, a dialog is shown with the choices; only one can be
+chosen. If you want more than one, redo the <b style='mso-bidi-font-weight:
+normal'>Import Phase GSAS-II <span class=SpellE>gpx</span></b> command. After
+selecting a phase, a dialog box is shown with the proposed phase name. You can
+change it if desired.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l9 level2 lfo1'><![if !supportLists]><span
@@ -2219,8 +2254,8 @@ function</span></b><span style='mso-fareast-font-family:"Times New Roman"'>
 &#8211; this is very similar the &#8220;Add constraint&#8221; type except that
 the result of the sum can be varied in the refinement. The keyword
 &#8216;FUNCT&#8217; marks it as a function; the &#8216;Refine?&#8217; box
-indicates your choice to refine the result of the sum. A Delete button can be used
-to remove it.<o:p></o:p></span></p>
+indicates your choice to refine the result of the sum. A Delete button can be
+used to remove it.<o:p></o:p></span></p>
 
 <h4><a name=Restraints><span style='mso-fareast-font-family:"Times New Roman"'>Restraints</span></a><span
 style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
@@ -2439,12 +2474,24 @@ auto;text-indent:-.25in;mso-list:l2 level1 lfo8'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>a.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Copy</span></b><span
-style='mso-fareast-font-family:"Times New Roman"'> &#8211; this copies the background
-parameters shown to other selected powder patterns. If used, a dialog box (Copy
-Parameters) will appear showing the list of available powder patterns, you can
-copy the background parameters to any or all of them; select &#8216;All&#8217;
-to copy them to all patterns. Then select &#8216;OK&#8217; to do the copy;
-&#8216;Cancel&#8217; to cancel the operation.<o:p></o:p></span></p>
+style='mso-fareast-font-family:"Times New Roman"'> &#8211; this copies the
+background parameters shown to other selected powder patterns. If used, a
+dialog box (Copy Parameters) will appear showing the list of available powder
+patterns, you can copy the background parameters to any or all of them; select
+&#8216;All&#8217; to copy them to all patterns. Then select &#8216;OK&#8217; to
+do the copy; &#8216;Cancel&#8217; to cancel the operation.<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
+auto;text-indent:-.25in;mso-list:l2 level1 lfo8'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>b.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
+style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Copy
+flags </span></b><span style='mso-fareast-font-family:"Times New Roman"'>&#8211;
+this copies only the refinement flags shown to other selected powder patterns. If
+used, a dialog box (Copy Refinement Flags) will appear showing the list of
+available powder patterns, you can copy the refinement flags to any or all of
+them; select &#8216;All&#8217; to copy them to all patterns. Then select
+&#8216;OK&#8217; to do the copy; &#8216;Cancel&#8217; to cancel the operation.<o:p></o:p></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l17 level1 lfo7'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
@@ -2461,8 +2508,8 @@ refine the background coefficients.<o:p></o:p></span></p>
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l17 level1 lfo7'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>You can select the number of background
-coefficients to be used (1-36).<o:p></o:p></span></p>
+style='mso-fareast-font-family:"Times New Roman"'>You can select the number of
+background coefficients to be used (1-36).<o:p></o:p></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l17 level1 lfo7'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>5.<span
@@ -2518,16 +2565,45 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Copy</span></b><span
 style='mso-fareast-font-family:"Times New Roman"'> &#8211; this copies the
-instrument parameters shown to other selected powder patterns. If used, a
-dialog box (Copy Parameters) will appear showing the list of available powder
+instrument parameters shown to other selected powder patterns. If used, a dialog
+box (Copy Parameters) will appear showing the list of available powder
 patterns, you can copy the instrument parameters to any or all of them; select
 &#8216;All&#8217; to copy them to all patterns. Then select &#8216;OK&#8217; to
-do the copy; &#8216;Cancel&#8217; to cancel the operation.<o:p></o:p></span></p>
+do the copy; &#8216;Cancel&#8217; to cancel the operation. The copy will only
+work for instrument parameters that are commensurate with the one that is
+shown, e.g. single radiation patterns will not be updated from K</span><sub><span
+style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>a</span></sub><sub><span
+style='mso-fareast-font-family:"Times New Roman"'>1</span></sub><span
+style='mso-fareast-font-family:"Times New Roman"'>/K</span><sub><span
+style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>a</span></sub><sub><span
+style='mso-fareast-font-family:"Times New Roman"'>2</span></sub><span
+style='mso-fareast-font-family:"Times New Roman"'> ones.<o:p></o:p></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l14 level1 lfo10'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>c.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
+style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Copy
+flags </span></b><span style='mso-fareast-font-family:"Times New Roman"'>- &#8211;
+this copies the instrument parameter refinement flags shown to other selected
+powder patterns. If used, a dialog box (Copy Refinement Flags) will appear
+showing the list of available powder patterns, you can copy the instrument
+parameter refinement flags to any or all of them; select &#8216;All&#8217; to
+copy them to all patterns. Then select &#8216;OK&#8217; to do the copy;
+&#8216;Cancel&#8217; to cancel the operation. The copy will only work for
+instrument parameters that are commensurate with the one that is shown, e.g.
+single radiation patterns will not be updated from K</span><sub><span
+style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>a</span></sub><sub><span
+style='mso-fareast-font-family:"Times New Roman"'>1</span></sub><span
+style='mso-fareast-font-family:"Times New Roman"'>/K</span><sub><span
+style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>a</span></sub><sub><span
+style='mso-fareast-font-family:"Times New Roman"'>2</span></sub><span
+style='mso-fareast-font-family:"Times New Roman"'> ones.<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
+auto;text-indent:-.25in;mso-list:l14 level1 lfo10'><![if !supportLists]><span
+style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>d.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Change
 radiation</span></b><span style='mso-fareast-font-family:"Times New Roman"'>
 &#8211; this changes the radiation between single wavelength (e.g. for
@@ -2562,13 +2638,15 @@ correlated parameters.<o:p></o:p></span></p>
 "Times New Roman"'>Sample Parameters<o:p></o:p></span></u></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
-window... <o:p></o:p></span></p>
+window show the various sample dependent parameters for this powder pattern. The
+presence of a refine button indicates which can be refined while others are
+fixed. All values can be changed in this window.<o:p></o:p></span></p>
 
-<h5><a name="Powder_Peaks"></a><a name="Peak_List"><span style='mso-bookmark:
-Powder_Peaks'><span style='mso-fareast-font-family:"Times New Roman"'>What can
-I do here?<o:p></o:p></span></span></a></h5>
+<h5><a name="Peak_List"></a><a name="Powder_Peaks"><span style='mso-bookmark:
+Peak_List'><span style='mso-fareast-font-family:"Times New Roman"'>What can I
+do here?<o:p></o:p></span></span></a></h5>
 
-<h4><span style='mso-bookmark:Peak_List'><span style='mso-bookmark:Powder_Peaks'><span
+<h4><span style='mso-bookmark:Powder_Peaks'><span style='mso-bookmark:Peak_List'><span
 style='mso-fareast-font-family:"Times New Roman"'>Peak List</span></span></span><span
 style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 
@@ -2740,14 +2818,14 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Space
 group</span></b><span style='mso-fareast-font-family:"Times New Roman"'>
-&#8211; this should be set when the phase is initialized; it can be changed later.
-Be careful about the impact on Atom site symmetry and multiplicity if you do.
-GSAS-II will recognize any legal space group symbol using the short Hermann-<span
-class=SpellE>Mauguin</span> forms; put a space between the axial fields (e.g.
-&#8216;F d 3 m&#8217; not &#8216;Fd3m&#8217;). For space groups with a choice
-of origin (e.g. F d 3 m), GSAS-II always uses the 2<sup>nd</sup> setting where
-the center of inversion is located at the origin. The choice of space group
-will set the available unit cell parameters.<u><o:p></o:p></u></span></p>
+&#8211; this should be set when the phase is initialized; it can be changed
+later. Be careful about the impact on Atom site symmetry and multiplicity if
+you do. GSAS-II will recognize any legal space group symbol using the short
+Hermann-<span class=SpellE>Mauguin</span> forms; put a space between the axial
+fields (e.g. &#8216;F d 3 m&#8217; not &#8216;Fd3m&#8217;). For space groups
+with a choice of origin (e.g. F d 3 m), GSAS-II always uses the 2<sup>nd</sup>
+setting where the center of inversion is located at the origin. The choice of
+space group will set the available unit cell parameters.<u><o:p></o:p></u></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l0 level2 lfo12'><![if !supportLists]><span
@@ -2861,17 +2939,17 @@ style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span
 class=GramE><b style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:
 "Times New Roman"'>a</span></b></span><b style='mso-bidi-font-weight:normal'><span
 style='mso-fareast-font-family:"Times New Roman"'>, b, c, alpha, beta, gamma</span></b><span
-style='mso-fareast-font-family:"Times New Roman"'> &#8211; lattice parameters; only
-those permitted by the space group are shown. The volume is computed from the
-values entered.<u><o:p></o:p></u></span></p>
+style='mso-fareast-font-family:"Times New Roman"'> &#8211; lattice parameters;
+only those permitted by the space group are shown. The volume is computed from
+the values entered.<u><o:p></o:p></u></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo12'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
 style='mso-fareast-font-family:"Times New Roman"'>If there are entries in the
-Atoms page then the Elements table is shown next on the General page; you may
-select the isotope (only relevant for neutron diffraction experiments). The
-density is computed depending on this choice, the unit cell volume and the atom
+Atoms page then the Elements table is shown next on the General page; you may select
+the isotope (only relevant for neutron diffraction experiments). The density is
+computed depending on this choice, the unit cell volume and the atom
 fractions/site multiplicities in the entries on the Atoms page.<u><o:p></o:p></u></span></p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l0 level1 lfo12'><![if !supportLists]><span
@@ -2999,15 +3077,15 @@ press OK.</p>
 auto;text-indent:-.25in;mso-list:l12 level1 lfo14'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>d.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>Reset atom colors</b> &#8211; return the
-atom color back to their defaults for the selected atoms.</p>
+style='mso-bidi-font-weight:normal'>Reset atom colors</b> &#8211; return the atom
+color back to their defaults for the selected atoms.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l12 level1 lfo14'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>e.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
-style='mso-bidi-font-weight:normal'>View point</b> &#8211; position the plot view
-point to the first atom in the selection.</p>
+style='mso-bidi-font-weight:normal'>View point</b> &#8211; position the plot
+view point to the first atom in the selection.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l12 level1 lfo14'><![if !supportLists]><span
@@ -3015,8 +3093,8 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'>Add atoms</b> &#8211; using the selected
 atoms, new ones are added to the bottom of the list after applying your choice
-of symmetry operator and unit cell translation selected via a dialog display. Duplicate
-atom positions are not retained. Any anisotropic thermal displacement
+of symmetry operator and unit cell translation selected via a dialog display.
+Duplicate atom positions are not retained. Any anisotropic thermal displacement
 parameters (<span class=SpellE>Uij</span>) will be transformed as appropriate.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
@@ -3052,8 +3130,8 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Delete
 atoms</b> &#8211; clear the entire draw atom table; it is then refilled from
-the Atoms table. You should do this operation after any changes in the Atoms
-table, e.g. by a structure refinement.</p>
+the Atoms table. You should do this operation after any changes in the Atoms table,
+e.g. by a structure refinement.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l8 level1 lfo13'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>6.<span
@@ -3093,8 +3171,9 @@ best plane are also listed. The Z-axis RMS value indicates the flatness of the
 proposed plane. <b style='mso-bidi-font-weight:normal'>NB</b>: if you select
 (e.g. all) atoms then Best plane will give Cartesian coordinates for these
 atoms with respect to a coordinate system where the X-axis is along the longest
-axis of the atom grouping and the Z-axis is along the shortest distance. The origin
-is at the <span class=SpellE>unweighted</span> center of the selected atoms.</p>
+axis of the atom grouping and the Z-axis is along the shortest distance. The
+origin is at the <span class=SpellE>unweighted</span> center of the selected
+atoms.</p>
 
 <h4><a name=Pawley><u>Pawley </u></a><u>reflections<o:p></o:p></u></h4>
 
@@ -3153,9 +3232,9 @@ error in your Pawley refinement.</p>
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>You
 can change the individual <span class=SpellE><span class=GramE>Fsq</span></span><span
-class=GramE>(</span><span class=SpellE>hkl</span>) values by selecting it, typing
-in the new value and then pressing enter or selecting somewhere else in the
-table.</p>
+class=GramE>(</span><span class=SpellE>hkl</span>) values by selecting it,
+typing in the new value and then pressing enter or selecting somewhere else in
+the table.</p>
 
 <div class=MsoNormal align=center style='text-align:center'><span
 style='mso-fareast-font-family:"Times New Roman"'>
@@ -3244,8 +3323,8 @@ selected.<o:p></o:p></span></p>
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l4 level1 lfo19'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>Move the mouse cursor across the
-plot, the plot status line will show the cursor position in 2</span><span
+style='mso-fareast-font-family:"Times New Roman"'>Move the mouse cursor across
+the plot, the plot status line will show the cursor position in 2</span><span
 style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>Q</span><span
 style='mso-fareast-font-family:"Times New Roman"'>, d-spacing and the
 intensity. For a q-plot, q is shown instead of 2</span><span style='font-family:
@@ -3318,10 +3397,10 @@ auto;text-indent:-.25in;mso-list:l4 level2 lfo19;tab-stops:list 1.0in'><![if !su
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>g.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
 class=GramE><b style='mso-bidi-font-weight:normal'>c</b></span><b
-style='mso-bidi-font-weight:normal'>: contour on/off</b> &#8211; if multiple
-powder profiles, then a contour plot is shown of the observed intensities. All
-data sets must be the same length as the first one to be included in the
-contour plot.</p>
+style='mso-bidi-font-weight:normal'>: contour on/off</b> &#8211; if multiple powder
+profiles, then a contour plot is shown of the observed intensities. All data
+sets must be the same length as the first one to be included in the contour
+plot.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l4 level2 lfo19;tab-stops:list 1.0in'><![if !supportLists]><span
@@ -3452,8 +3531,8 @@ style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h4>
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>The
 variance-covariance matrix as a color coded array is shown on this page. The
 color bar to the right shows the range of <span class=SpellE>covariances</span>
-(-1 to 1) and corresponding colors. The parameter names are to the right and
-the parameter numbers are below the plot.<o:p></o:p></span></p>
+(-1 to 1) and corresponding colors. The parameter names are to the right and the
+parameter numbers are below the plot.<o:p></o:p></span></p>
 
 <h5><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h5>
 
@@ -3507,12 +3586,10 @@ Widths </span></a></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 plot shows the contributions to the powder pattern peak widths as </span><span
-class=SpellE><span style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>D</span><span
-style='mso-fareast-font-family:"Times New Roman"'>d</span></span><span
-style='mso-fareast-font-family:"Times New Roman"'>/d (= </span><span
-class=SpellE><span style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>D</span><span
-style='mso-fareast-font-family:"Times New Roman"'>q</span></span><span
-style='mso-fareast-font-family:"Times New Roman"'>/q) <span class=SpellE>vs</span>
+style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>D</span><span
+style='mso-fareast-font-family:"Times New Roman"'>d/d (= </span><span
+style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>D</span><span
+style='mso-fareast-font-family:"Times New Roman"'>q/q) <span class=SpellE>vs</span>
 <span class=GramE>q(</span>=2</span><span style='font-family:Symbol;mso-fareast-font-family:
 "Times New Roman"'>p</span><span style='mso-fareast-font-family:"Times New Roman"'>/d)
 from the Gaussian and <span class=SpellE>Lorentzian</span> parts of the profile

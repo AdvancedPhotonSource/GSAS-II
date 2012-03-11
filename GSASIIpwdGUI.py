@@ -50,6 +50,10 @@ def SetDefaultSample():
         'Temperature':300.,'Pressure':1.0,'Humidity':0.0,
         'Voltage':0.0,'Force':0.0,'Gonio. radius':200.0,
         'Omega':0.0,'Chi':0.0,'Phi':0.0}    
+            
+################################################################################
+#####  Powder Peaks
+################################################################################           
        
 def UpdatePeakGrid(G2frame, data):
     if G2frame.dataDisplay:
@@ -262,12 +266,54 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([535,350])
         
+################################################################################
+#####  Background
+################################################################################           
+       
 def UpdateBackground(G2frame,data):
     if len(data) < 2:       #add Debye diffuse & peaks scattering here
         data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
     if 'nPeaks' not in data[1]:
         data[1].update({'nPeaks':0,'peaksList':[]})
     ValObj = {}
+    
+    def OnBackFlagCopy(event):
+        print data
+        flag = data[1]
+        backDict = data[-1]
+        if backDict['nDebye']:
+            DBflags = []
+            for term in backDict['debyeTerms']:
+                DBflags.append(term[1::2])
+        if backDict['nPeaks']:
+            PKflags = []
+            for term in backDict['peaksList']:
+                PKflags.append(term[1::2])            
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
+        copyList = []
+        dlg = wx.MultiChoiceDialog(G2frame, 
+            'Copy refinement flags to which histograms?', 'Copy flags', 
+            histList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All' in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                backData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'))
+                backData[1] = copy.copy(flag)
+                bkDict = backData[-1]
+                if bkDict['nDebye'] == backDict['nDebye']:
+                    for i,term in enumerate(bkDict['debyeTerms']):
+                        term[1::2] = copy.copy(DBflags[i])
+                if bkDict['nPeaks'] == backDict['nPeaks']:
+                    for i,term in enumerate(bkDict['peaksList']):
+                        term[1::2] = copy.copy(PKflags[i])                    
+        finally:
+            dlg.Destroy()
             
     def OnBackCopy(event):
         histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
@@ -477,6 +523,7 @@ def UpdateBackground(G2frame,data):
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
+    G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
     BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
     Choices = ['chebyschev','cosine','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -489,6 +536,10 @@ def UpdateBackground(G2frame,data):
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
         
+################################################################################
+#####  Limits
+################################################################################           
+       
 def UpdateLimitsGrid(G2frame, data):
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -540,6 +591,10 @@ def UpdateLimitsGrid(G2frame, data):
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([230,160])
     
+################################################################################
+#####  Instrument parameters
+################################################################################           
+       
 def UpdateInstrumentGrid(G2frame,data):
     if len(data) > 3:                   #powder data
         insVal = dict(zip(data[3],data[1]))
@@ -591,7 +646,9 @@ def UpdateInstrumentGrid(G2frame,data):
         RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
         UpdateInstrumentGrid(G2frame,data)
         
-    def OnInstCopy(event):
+    def OnInstFlagCopy(event):
+        flags = data[2]
+        instType = data[0][0]
         histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         copyList = []
         dlg = wx.MultiChoiceDialog(G2frame, 
@@ -607,7 +664,31 @@ def UpdateInstrumentGrid(G2frame,data):
             for item in copyList:
                 Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
                 instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))
-                if len(data) == len(instData):                          #don't mix lam & lam1/lam2 parms!
+                if len(data) == len(instData) and instType == instData[0][0]:   #don't mix data types or lam & lam1/lam2 parms!
+                    instData[2] = copy.copy(flags)
+                else:
+                    print item+' not copied - instrument parameters not commensurate'
+        finally:
+            dlg.Destroy()
+        
+    def OnInstCopy(event):
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
+        copyList = []
+        instType = data[0][0]
+        dlg = wx.MultiChoiceDialog(G2frame, 
+            'Copy parameters to which histograms?', 'Copy parameters', 
+            histList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All' in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))
+                if len(data) == len(instData) and instType == instData[0][0]:  #don't mix data types or lam & lam1/lam2 parms!
                     for i,item in enumerate(data[1:]):                  #skip default values in tuple
                         instData[i+1][:-1] = copy.copy(item[:-1])       #skip azimuth at end
                 else:
@@ -702,6 +783,7 @@ def UpdateInstrumentGrid(G2frame,data):
             Status = G2frame.dataFrame.CreateStatusBar()
         G2frame.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
+        G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2gd.wxID_INSTFLAGCOPY)
         G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
         typePick = wx.ComboBox(G2frame.dataDisplay,value=insVal['Type'],
             choices=['PXC','PNC','PNT'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -817,10 +899,13 @@ def UpdateInstrumentGrid(G2frame,data):
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
     
+################################################################################
+#####  Sample parameters
+################################################################################           
+       
 def UpdateSampleGrid(G2frame,data):
     
-    def OnSampleCopy(event):
-        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    def SetCopyNames(histName,addNames=[]):
         copyNames = ['Scale',]
         dataType = data['Type']
         histType = 'HKLF'
@@ -830,7 +915,13 @@ def UpdateSampleGrid(G2frame,data):
                 copyNames += ['DisplaceX','DisplaceY','Absorption']
             else:       #Bragg-Brentano
                 copyNames += ['Shift','Transparency']
-        copyNames += ['Omega','Chi','Phi']
+        if len(addNames):
+         copyNames += addNames
+        return histType,copyNames
+    
+    def OnSampleCopy(event):
+        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histType,copyNames = SetCopyNames(histName,addNames=['Omega','Chi','Phi'])
         copyDict = {}
         for parm in copyNames:
             copyDict[parm] = data[parm]
@@ -860,11 +951,45 @@ def UpdateSampleGrid(G2frame,data):
         finally:
             dlg.Destroy()
 
+    def OnSampleFlagCopy(event):
+        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histType,copyNames = SetCopyNames(histName)
+        flagDict = {}
+        for parm in copyNames:
+            flagDict[parm] = data[parm][1]
+        histList = ['All '+histType,]
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            if histType in name and name != histName:
+                histList.append(name)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        if len(histList) == 1:      #nothing to copy to!
+            return
+        copyList = []
+        dlg = wx.MultiChoiceDialog(G2frame,'Copy parameters from\n'+histName,
+            'Copy parameters to which histograms?',histList,wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All '+histType in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                for name in copyNames:
+                    sampleData[name][1] = copy.copy(flagDict[name])
+        finally:
+            dlg.Destroy()
+
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.SampleMenu)
     G2frame.dataFrame.SetLabel('Sample Parameters')
     G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
+    G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2gd.wxID_SAMPLEFLAGCOPY)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()    
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
@@ -985,6 +1110,10 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)
                 
+################################################################################
+#####  Indexing Peaks
+################################################################################           
+       
 def UpdateIndexPeaksGrid(G2frame, data):
     IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -1082,6 +1211,10 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([490,300])
   
+################################################################################
+#####  Unit cells
+################################################################################           
+       
 def UpdateUnitCellsGrid(G2frame, data):
     UnitCellsId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
@@ -1539,6 +1672,10 @@ def UpdateUnitCellsGrid(G2frame, data):
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         gridDisplay.SetSize(bottomSize)
 
+################################################################################
+#####  Reflection list
+################################################################################           
+       
 def UpdateReflectionGrid(G2frame,data):
     if not data:
         print 'No phases, no reflections'
@@ -1580,6 +1717,10 @@ def UpdateReflectionGrid(G2frame,data):
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([555,350])
 
+################################################################################
+#####  PDF controls
+################################################################################           
+       
 def UpdatePDFGrid(G2frame,data):
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w

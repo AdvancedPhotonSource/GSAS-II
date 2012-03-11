@@ -2511,6 +2511,60 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         wx.CallAfter(UpdateDData)
                 finally:
                     dlg.Destroy()
+                    
+        def OnCopyFlags(event):
+            Obj = event.GetEventObject()
+            hist = Indx[Obj.GetId()]
+            sourceDict = UseList[hist]
+            copyDict = {}
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction']
+            for name in copyNames:
+                if name in ['Scale','Extinction','HStrain']:
+                    copyDict[name] = sourceDict[name][1]
+                elif name in ['Size','Mustrain']:
+                    copyDict[name] = [sourceDict[name][0],sourceDict[name][2],sourceDict[name][4]]
+                elif name == 'Pref.Ori.':
+                    copyDict[name] = [sourceDict[name][0],sourceDict[name][2]]
+                    if sourceDict[name][0] == 'SH':
+                        SHterms = sourceDict[name][5]
+                        SHflags = {}
+                        for item in SHterms:
+                            SHflags[item] = SHterms[item][1]
+                        copyDict[name].append(SHflags)                        
+            keyList = ['All',]+UseList.keys()
+            if UseList:
+                copyList = []
+                dlg = wx.MultiChoiceDialog(G2frame, 
+                    'Copy parameters to which histograms?', 'Copy parameters', 
+                    keyList, wx.CHOICEDLG_STYLE)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        result = dlg.GetSelections()
+                        for i in result: 
+                            copyList.append(keyList[i])
+                        if 'All' in copyList: 
+                            copyList = keyList[1:]
+                        for item in copyList:
+                            UseList[item]                            
+                            for name in copyNames:
+                                if name in ['Scale','Extinction','HStrain']:
+                                    UseList[item][name][1] = copy.copy(copyDict[name])
+                                elif name in ['Size','Mustrain']:
+                                    UseList[item][name][0] = copy.copy(copyDict[name][0])
+                                    UseList[item][name][2] = copy.copy(copyDict[name][1])
+                                    UseList[item][name][4] = copy.copy(copyDict[name][2])
+                                elif name == 'Pref.Ori.':
+                                    UseList[item][name][0] = copy.copy(copyDict[name][0])
+                                    UseList[item][name][2] = copy.copy(copyDict[name][1])
+                                    if sourceDict[name][0] == 'SH':
+                                        SHflags = copy.copy(copyDict[name][2])
+                                        SHterms = copy.copy(sourceDict[name][5])
+                                        for item in SHflags:
+                                            SHterms[item][1] = copy.copy(SHflags[item])                                              
+                        wx.CallAfter(UpdateDData)
+                finally:
+                    dlg.Destroy()
+            
             
         def OnLGmixRef(event):
             Obj = event.GetEventObject()
@@ -2960,6 +3014,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx[copyData.GetId()] = item
             copyData.Bind(wx.EVT_BUTTON,OnCopyData)
             showSizer.Add(copyData,wx.ALIGN_CENTER_VERTICAL)
+            copyFlags = wx.Button(DData,-1,label=' Copy flags?')
+            Indx[copyFlags.GetId()] = item
+            copyFlags.Bind(wx.EVT_BUTTON,OnCopyFlags)
+            showSizer.Add(copyFlags,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((5,5),0)
             mainSizer.Add(showSizer,0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((0,5),0)
@@ -3106,7 +3164,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             'Size':['isotropic',[4.,4.,0.66667],[False,False,False],[0,0,1],
                                 [4.,4.,4.,0.,0.,0.],6*[False,]],
                             'Mustrain':['isotropic',[1000.0,1000.0,0.666667],[False,False,False],[0,0,1],
-                                (NShkl)*[0.01,],NShkl*[False,]],
+                                NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False]}
                         refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'Reflection Lists'))

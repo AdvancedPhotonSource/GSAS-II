@@ -491,6 +491,10 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',pfx+'A3']                       
     elif SGData['SGLaue'] in ['m3m','m3']:
         return [pfx+'A0',]
+        
+################################################################################
+##### Phase data
+################################################################################        
                     
 def GetPhaseData(PhaseData,Print=True):
             
@@ -954,6 +958,10 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                     SHtextureSig[name] = sigDict[aname]
             PrintSHtextureAndSig(textureData,SHtextureSig)
 
+################################################################################
+##### Histogram & Phase data
+################################################################################        
+                    
 def GetHistogramPhaseData(Phases,Histograms,Print=True):
     
     def PrintSize(hapData):
@@ -1345,6 +1353,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
                 PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig['HStrain'],SGData)
     
+################################################################################
+##### Histogram data
+################################################################################        
+                    
 def GetHistogramData(Histograms,Print=True):
     
     def GetBackgroundParms(hId,Background):
@@ -1674,6 +1686,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)
 
+################################################################################
+##### Function & derivative calculations
+################################################################################        
+                    
 def GetAtomFXU(pfx,calcControls,parmDict):
     Natoms = calcControls['Natoms'][pfx]
     Tdata = Natoms*[' ',]
@@ -2229,7 +2245,7 @@ def GetHStrainShiftDerv(refl,SGData,phfx):
     h,k,l = refl[:3]
     if laue in ['m3','m3m']:
         dDijDict = {phfx+'D11':h**2+k**2+l**2,
-            phfx+'eA':((h*k)**2+(h*l)**2+(k*l)**2)/(h**2+k**2+l**2)**2}
+            phfx+'eA':refl[4]**2*((h*k)**2+(h*l)**2+(k*l)**2)/(h**2+k**2+l**2)**2}
     elif laue in ['6/m','6/mmm','3m1','31m','3']:
         dDijDict = {phfx+'D11':h**2+k**2+h*k,phfx+'D33':l**2}
     elif laue in ['3R','3mR']:
@@ -3042,7 +3058,7 @@ def SeqRefine(GPXfile,dlg):
             print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
             print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
             try:
-                covMatrix = result[1]*GOF
+                covMatrix = result[1]*Rvals['GOF']
                 sig = np.sqrt(np.diag(covMatrix))
                 if np.any(np.isnan(sig)):
                     print '*** Least squares aborted - some invalid esds possible ***'

@@ -66,11 +66,11 @@ htmlFirstUse = True
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
 ] = [wx.NewId() for item in range(3)]
 
-[ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY,
-] = [wx.NewId() for item in range(3)]
+[ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
+] = [wx.NewId() for item in range(5)]
 
-[ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY,
-] = [wx.NewId() for item in range(3)]
+[ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY,
+] = [wx.NewId() for item in range(4)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,
 ] = [wx.NewId() for item in range(5)]
@@ -297,6 +297,8 @@ class DataFrame(wx.Frame):
         self.BackMenu.Append(menu=MyHelp(self,helpType='Background'),title='&Help')
         self.BackEdit.Append(id=wxID_BACKCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy background parameters to other histograms')
+        self.BackEdit.Append(id=wxID_BACKFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
+            help='Copy background refinement flags to other histograms')
             
 # PDR / Instrument Parameters
         self.InstMenu = wx.MenuBar()
@@ -307,6 +309,8 @@ class DataFrame(wx.Frame):
             id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')
         self.InstEdit.Append(help='Copy instrument profile parameters to other histograms', 
             id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')
+        self.InstEdit.Append(id=wxID_INSTFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
+            help='Copy instrument parameter refinement flags to other histograms')
         self.InstEdit.Append(help='Change radiation type (Ka12 - synch)', 
             id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
         
@@ -317,6 +321,8 @@ class DataFrame(wx.Frame):
         self.SampleMenu.Append(menu=MyHelp(self,helpType='Sample Parameters'),title='&Help')
         self.SampleEdit.Append(id=wxID_SAMPLECOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy refinable sample parameters to other histograms')
+        self.SampleEdit.Append(id=wxID_SAMPLEFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
+            help='Copy sample parameter refinement flags to other histograms')
 
 # PDR / Peak List
         self.PeakMenu = wx.MenuBar()

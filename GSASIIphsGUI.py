@@ -251,7 +251,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'POhkl' not in generalData:
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
-            generalData['Map'] = {'MapType':'','RefList':'','Resolution':4.0}
+            generalData['Map'] = {'MapType':'','RefList':'','Resolution':1.0,'rhoMax':100.,'rho':[],'rhoMax':0.}
 #        if 'SH Texture' not in generalData:
 #            generalData['SH Texture'] = data['SH Texture']
         generalData['NoAtoms'] = {}
@@ -273,6 +273,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif atom[ct] != 'UNK':
                 Info = G2elem.GetAtomInfo(atom[ct])
                 generalData['AtomTypes'].append(atom[ct])
+                generalData['Z'] = Info['Z']
                 generalData['Isotopes'][atom[ct]] = Info['Isotopes']
                 generalData['BondRadii'].append(Info['Drad'])
                 generalData['AngleRadii'].append(Info['Arad'])
@@ -284,6 +285,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     generalData['AtomMass'].append(Info['Mass'])
                 generalData['NoAtoms'][atom[ct]] = atom[cs-1]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
+        F000X = 0.
+        F000N = 0.
+        for i,elem in enumerate(generalData['AtomTypes']):
+            F000X += generalData['NoAtoms'][elem]*generalData['Z']
+            isotope = generalData['Isotope'][elem]
+            F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope][1]
+        generalData['F000X'] = F000X
+        generalData['F000N'] = F000N
+       
 
 ################################################################################
 ##### General phase routines
@@ -307,7 +317,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
         SetupGeneral()
         generalData = data['General']
-        Map = generalData['Map']  # {'MapType':'','RefList':'','Resolution':4.0}
+        Map = generalData['Map']  # {'MapType':'','RefList':'','Resolution':1.0,'rho':[],'rhoMax':0.}
         
         def NameSizer():
                    
@@ -613,7 +623,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Map['Resolution'] = res
                 except ValueError:
                     pass
-                mapRes.SetValue("%.1f"%(Map['Resolution']))          #reset in case of error
+                mapRes.SetValue("%.2f"%(Map['Resolution']))          #reset in case of error
             
             mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Patterson']
             refList = data['Histograms'].keys()
@@ -632,7 +642,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
             mapSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
             mapSizer.Add(wx.StaticText(dataDisplay,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
-            mapRes =  wx.TextCtrl(dataDisplay,value='%.1f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
+            mapRes =  wx.TextCtrl(dataDisplay,value='%.2f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
             mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
             mapSizer.Add(mapRes,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1189,7 +1199,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,'backColor':[0,0,0],'depthFog':False,
-            'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,
+            'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,'contourLevel':1.,
             'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,
             'unitCellBox':False,'showABC':True,'selectedAtoms':[],
             'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]}
@@ -1201,6 +1211,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if not drawingData:                 #fill with defaults if empty
             drawingData = copy.copy(defaultDrawing)
             drawingData['Atoms'] = []
+        if 'contourLevel' not in drawingData:
+            drawingData['contourLevel'] = 1.
         cx,ct,cs = [0,0,0]
         if generalData['Type'] == 'nuclear':
             cx,ct,cs = [2,1,6]         #x, type & style
@@ -2006,9 +2018,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 drawingData['bondRadius'] = bondRadius.GetValue()/100.
                 bondRadiusTxt.SetLabel('Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
                 G2plt.PlotStructure(G2frame,data)
+                
+            def OnContourLevel(event):
+                drawingData['contourLevel'] = contourLevel.GetValue()/100.
+                contourLevelTxt.SetLabel('Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
+                G2plt.PlotStructure(G2frame,data)
             
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
-            slideSizer = wx.FlexGridSizer(6,2)
+            slideSizer = wx.FlexGridSizer(7,2)
             slideSizer.AddGrowableCol(1,1)
     
             cameraPosTxt = wx.StaticText(dataDisplay,-1,
@@ -2051,6 +2068,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             bondRadius.SetRange(1,25)
             bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
             slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
+            
+            if generalData['Map']['rhoMax']:
+                contourLevelTxt = wx.StaticText(dataDisplay,-1,' Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
+                slideSizer.Add(contourLevelTxt,0,wx.ALIGN_CENTER_VERTICAL)
+                contourLevel = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(100*drawingData['contourLevel']))
+                contourLevel.SetRange(1,100)
+                contourLevel.Bind(wx.EVT_SLIDER, OnContourLevel)
+                slideSizer.Add(contourLevel,1,wx.EXPAND|wx.RIGHT)
             
             slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
             slopSizer.Add((10,5),0)
@@ -3313,12 +3338,91 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
     
     def OnFourierMaps(event):
+        import scipy.fftpack as fft
         generalData = data['General']
+#        for item in generalData:
+#            print item,generalData[item]
         if not generalData['Map']['MapType']:
             print '**** ERROR - Fourier map not defined'
             return
-        print 'Calculate Fourier maps'
-        print generalData['Map']
+        mapData = generalData['Map']
+        dmin = mapData['Resolution']
+        phaseName = generalData['Name']
+        SGData = generalData['SGData']
+        cell = generalData['Cell'][1:8]        
+        A = G2lat.cell2A(cell[:6])
+        Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
+        Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
+        reflName = mapData['RefList']
+        if 'PWDR' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            reflData = reflSets[phaseName]
+        elif 'HKLF' in reflName:
+            print 'single crystal reflections'
+            return
+#        Fhkl[0,0,0] = generalData['F000X']
+        time0 = time.time()
+        for ref in reflData:
+            if ref[4] >= dmin:
+                for i,hkl in enumerate(ref[11]):
+                    hkl = np.asarray(hkl,dtype='i')
+                    Fosq,Fcsq,ph = ref[8:11]
+                    dp = 360.*ref[12][i]
+                    a = cosd(ph+dp)
+                    b = sind(ph+dp)
+                    phasep = complex(a,b)
+                    phasem = complex(a,-b)
+                    if 'Fobs' in mapData['MapType']:
+                        F = np.sqrt(Fosq)
+                        h,k,l = hkl+Hmax
+                        Fhkl[h,k,l] = F*phasep
+                        h,k,l = -hkl+Hmax
+                        Fhkl[h,k,l] = F*phasem
+                    elif 'Fcalc' in mapData['MapType']:
+                        F = np.sqrt(Fcsq)
+                        h,k,l = hkl+Hmax
+                        Fhkl[h,k,l] = F*phasep
+                        h,k,l = -hkl+Hmax
+                        Fhkl[h,k,l] = F*phasem
+                    elif 'delt-F' in mapData['MapType']:
+                        dF = np.sqrt(Fosq)-np.sqrt(Fcsq)
+                        h,k,l = hkl+Hmax
+                        Fhkl[h,k,l] = dF*phasep
+                        h,k,l = -hkl+Hmax
+                        Fhkl[h,k,l] = dF*phasem
+                    elif '2*Fo-Fc' in mapData['MapType']:
+                        F = 2.*np.sqrt(Fosq)-np.sqrt(Fcsq)
+                        h,k,l = hkl+Hmax
+                        Fhkl[h,k,l] = F*phasep
+                        h,k,l = -hkl+Hmax
+                        Fhkl[h,k,l] = F*phasem
+                    elif 'Patterson' in mapData['MapType']:
+                        h,k,l = hkl+Hmax
+                        Fhkl[h,k,l] = complex(Fosq,0.)
+                        h,k,l = -hkl+Hmax
+                        Fhkl[h,k,l] = complex(Fosq,0.)
+        Fhkl = fft.fftshift(Fhkl)
+        rho = fft.fftn(Fhkl)/cell[6]
+        print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+        mapData['rho'] = np.real(rho)
+        mapData['rhoMax'] = np.max(np.real(rho))
+        data['Drawing']['contourLevel'] = 1.
+        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f'%(mapData['rhoMax'],np.min(np.real(rho)))
+## map printing for testing purposes
+#        ix,jy,kz = mapData['rho'].shape
+#        for k in range(kz):
+#            print 'k = ',k
+#            for j in range(jy):
+#                line = ''
+#                if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
+#                    line += (jy-j)*'  '
+#                for i in range(ix):
+#                    r = int(100*mapData['rho'][i,j,k]/mapData['rhoMax'])
+#                    line += '%4d'%(r)
+#                print line+'\n'
+### keep this                
+                
         
     def OnTextureRefine(event):
         print 'refine texture?'

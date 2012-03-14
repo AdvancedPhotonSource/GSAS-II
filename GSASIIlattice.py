@@ -589,6 +589,21 @@ def GenHBravais(dmin,Bravais,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
     return sortHKLd(HKL,True,False)
+
+def getHKLmax(dmin,SGData,A):
+    #finds maximum allowed hkl for given A within dmin
+    SGLaue = SGData['SGLaue']
+    if SGLaue in ['3R','3mR']:        #Rhombohedral axes
+        Hmax = [0,0,0]
+        cell = A2cell(A)
+        aHx = cell[0]*math.sqrt(2.0*(1.0-cosd(cell[3])))
+        cHx = cell[0]*math.sqrt(3.0*(1.0+2.0*cosd(cell[3])))
+        Hmax[0] = Hmax[1] = int(round(aHx/dmin))
+        Hmax[2] = int(round(cHx/dmin))
+        #print Hmax,aHx,cHx
+    else:                           # all others
+        Hmax = MaxIndex(dmin,A)
+    return Hmax
     
 def GenHLaue(dmin,SGData,A):
     """Generate the crystallographically unique powder diffraction reflections
@@ -613,16 +628,7 @@ def GenHLaue(dmin,SGData,A):
     SGLatt = SGData['SGLatt']
     SGUniq = SGData['SGUniq']
     #finds maximum allowed hkl for given A within dmin
-    if SGLaue in ['3R','3mR']:        #Rhombohedral axes
-        Hmax = [0,0,0]
-        cell = A2cell(A)
-        aHx = cell[0]*math.sqrt(2.0*(1.0-cosd(cell[3])))
-        cHx = cell[0]*math.sqrt(3.0*(1.0+2.0*cosd(cell[3])))
-        Hmax[0] = Hmax[1] = int(round(aHx/dmin))
-        Hmax[2] = int(round(cHx/dmin))
-        #print Hmax,aHx,cHx
-    else:                           # all others
-        Hmax = MaxIndex(dmin,A)
+    Hmax = getHKLmax(dmin,SGData,A)
         
     dminsq = 1./(dmin**2)
     HKL = []

@@ -11,6 +11,7 @@ import time
 import copy
 import os.path
 import numpy as np
+import numpy.ma as ma
 import numpy.linalg as nl
 import wx
 import wx.aui
@@ -434,7 +435,8 @@ def PlotPatterns(G2frame,newPlot=False):
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
                 if G2frame.PickId:
                     found = []
-                    if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List','Reflection Lists']:
+                    if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List','Reflection Lists'] or \
+                        'PWDR' in G2frame.PatternTree.GetItemText(PickId):
                         if len(HKL):
                             view = Page.toolbar._views.forward()[0][:2]
                             wid = view[1]-view[0]
@@ -498,7 +500,8 @@ def PlotPatterns(G2frame,newPlot=False):
                 PlotPatterns(G2frame)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
-        elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists':
+        elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
+            'PWDR' in G2frame.PatternTree.GetItemText(PickId):
             G2frame.itemPicked = pick
             pick = str(pick)
         
@@ -539,7 +542,8 @@ def PlotPatterns(G2frame,newPlot=False):
                         data[lineNo-2][0] = xpos
                 G2frame.PatternTree.SetItemPyData(PeakId,data)
                 G2pdG.UpdatePeakGrid(G2frame,data)
-        elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' and xpos:
+        elif (G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
+            'PWDR' in G2frame.PatternTree.GetItemText(PickId)) and xpos:
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             pick = str(G2frame.itemPicked).split('(')[1].strip(')')
             if 'Line' not in pick:       #avoid data points, etc.
@@ -737,7 +741,8 @@ def PlotPatterns(G2frame,newPlot=False):
                     Plot.axvline(4*np.pi*sind(hkl[5]/2.0)/wave,color='r',dashes=(5,5))
                 else:
                     Plot.axvline(hkl[5],color='r',dashes=(5,5))
-        elif G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
+        elif G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists'] or \
+            'PWDR' in G2frame.PatternTree.GetItemText(PickId):
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
                 peaks = Phases[phase]
@@ -2270,11 +2275,23 @@ def PlotStructure(G2frame,data):
     atomData = data['Atoms']
     drawingData = data['Drawing']
     drawAtoms = drawingData['Atoms']
+    mapData = {}
+    rhoXYZ = []
+    if 'Map' in generalData:
+        mapData = generalData['Map']
+        contLevel = drawingData['contourLevel']*mapData['rhoMax']
+        if 'delt-F' in mapData['MapType']:
+            rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
+        else:
+            rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
+        indx = np.array(ma.nonzero(rho)).T
+        steps = 1./np.array(rho.shape)
+        rhoXYZ = indx*steps
     cx,ct,cs = drawingData['atomPtrs']
-    Wt = [255,255,255]
-    Rd = [255,0,0]
-    Gr = [0,255,0]
-    Bl = [0,0,255]
+    Wt = np.array([255,255,255])
+    Rd = np.array([255,0,0])
+    Gr = np.array([0,255,0])
+    Bl = np.array([0,0,255])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -2606,6 +2623,15 @@ def PlotStructure(G2frame,data):
         gluSphere(q,radius,20,10)
         glPopMatrix()
         
+    def RenderSmallSphere(x,y,z,radius,color):
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glMultMatrixf(B4mat.T)
+        q = gluNewQuadric()
+        gluSphere(q,radius,4,2)
+        glPopMatrix()
+        
     def RenderEllipsoid(x,y,z,ellipseProb,E,R4,color):
         s1,s2,s3 = E
         glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
@@ -2690,6 +2716,18 @@ def PlotStructure(G2frame,data):
             glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
         glEnable(GL_LIGHTING)
         glPopMatrix()
+        
+    def RenderMap(rhoXYZ,indx,rho,cLevel):
+        for i,xyz in enumerate(rhoXYZ):
+            x,y,z = xyz
+            I,J,K = indx[i]
+            alpha = 1.0
+            if cLevel < 1.:
+                alpha = (abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel)
+            if rho[I,J,K] < 0.:
+                RenderSmallSphere(x,y,z,0.1*alpha,Rd)
+            else:
+                RenderSmallSphere(x,y,z,0.1*alpha,Bl)
                             
     def Draw():
         Ind = GetSelectedAtoms()
@@ -2738,6 +2776,8 @@ def PlotStructure(G2frame,data):
         Backbone = []
         BackboneColor = []
         time0 = time.time()
+#        glEnable(GL_BLEND)
+#        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
         for iat,atom in enumerate(drawingData['Atoms']):
             x,y,z = atom[cx:cx+3]
             Bonds = atom[-2]
@@ -2750,9 +2790,13 @@ def PlotStructure(G2frame,data):
             color = np.array(CL)/255.
             if iat in Ind:
                 color = np.array(Gr)/255.
+#            color += [.25,]
             radius = 0.5
             if atom[cs] != '':
-                glLoadName(atom[-3])                    
+                try:
+                    glLoadName(atom[-3])
+                except: #problem with old files - missing code
+                    pass                    
             if 'balls' in atom[cs]:
                 vdwScale = drawingData['vdwScale']
                 ballScale = drawingData['ballScale']
@@ -2819,6 +2863,9 @@ def PlotStructure(G2frame,data):
                 RenderLabel(x,y,z,atom[ct-3],radius)
             elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
                 RenderLabel(x,y,z,atom[ct-2],radius)
+#        glDisable(GL_BLEND)
+        if len(rhoXYZ):
+            RenderMap(rhoXYZ,indx,rho,drawingData['contourLevel'])
         if Backbone:
             RenderBackbone(Backbone,BackboneColor,bondR)
 #        print time.time()-time0

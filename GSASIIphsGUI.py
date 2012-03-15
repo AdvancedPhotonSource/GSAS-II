@@ -251,7 +251,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'POhkl' not in generalData:
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
-            generalData['Map'] = {'MapType':'','RefList':'','Resolution':1.0,'rhoMax':100.,'rho':[],'rhoMax':0.}
+            generalData['Map'] = {'MapType':'','RefList':'','Resolution':1.0,
+                'rhoMax':100.,'rho':[],'rhoMax':0.,'mapSize':10.0}
 #        if 'SH Texture' not in generalData:
 #            generalData['SH Texture'] = data['SH Texture']
         generalData['NoAtoms'] = {}
@@ -317,7 +318,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
         SetupGeneral()
         generalData = data['General']
-        Map = generalData['Map']  # {'MapType':'','RefList':'','Resolution':1.0,'rho':[],'rhoMax':0.}
+        Map = generalData['Map']  
+            # {'MapType':'','RefList':'','Resolution':1.0,'rho':[],'rhoMax':0.,'mapSize':10.0}
         
         def NameSizer():
                    
@@ -1990,39 +1992,45 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             def OnCameraPos(event):
                 drawingData['cameraPos'] = cameraPos.GetValue()
-                cameraPosTxt.SetLabel('Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
-                ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                cameraPosTxt.SetLabel(' Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
+                ZclipTxt.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
                 G2plt.PlotStructure(G2frame,data)
 
             def OnZclip(event):
                 drawingData['Zclip'] = Zclip.GetValue()
-                ZclipTxt.SetLabel('Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                ZclipTxt.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnVdWScale(event):
                 drawingData['vdwScale'] = vdwScale.GetValue()/100.
-                vdwScaleTxt.SetLabel('van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
+                vdwScaleTxt.SetLabel(' van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
                 G2plt.PlotStructure(G2frame,data)
     
             def OnEllipseProb(event):
                 drawingData['ellipseProb'] = ellipseProb.GetValue()
-                ellipseProbTxt.SetLabel('Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
+                ellipseProbTxt.SetLabel(' Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
                 G2plt.PlotStructure(G2frame,data)
     
             def OnBallScale(event):
                 drawingData['ballScale'] = ballScale.GetValue()/100.
-                ballScaleTxt.SetLabel('Ball scale: '+'%.2f'%(drawingData['ballScale']))
+                ballScaleTxt.SetLabel(' Ball scale: '+'%.2f'%(drawingData['ballScale']))
                 G2plt.PlotStructure(G2frame,data)
 
             def OnBondRadius(event):
                 drawingData['bondRadius'] = bondRadius.GetValue()/100.
-                bondRadiusTxt.SetLabel('Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
+                bondRadiusTxt.SetLabel(' Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnContourLevel(event):
                 drawingData['contourLevel'] = contourLevel.GetValue()/100.
-                contourLevelTxt.SetLabel('Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
+                contourLevelTxt.SetLabel(' Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
                 G2plt.PlotStructure(G2frame,data)
+
+            def OnMapSize(event):
+                drawingData['mapSize'] = mapSize.GetValue()/10.
+                mapSizeTxt.SetLabel(' Map radius, A: '+'%.1f'%(drawingData['mapSize']))
+                G2plt.PlotStructure(G2frame,data)
+
             
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
             slideSizer = wx.FlexGridSizer(7,2)
@@ -2076,6 +2084,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 contourLevel.SetRange(1,100)
                 contourLevel.Bind(wx.EVT_SLIDER, OnContourLevel)
                 slideSizer.Add(contourLevel,1,wx.EXPAND|wx.RIGHT)
+                mapSizeTxt = wx.StaticText(dataDisplay,-1,' Map radius, A: '+'%.1f'%(drawingData['mapSize']))
+                slideSizer.Add(mapSizeTxt,0,wx.ALIGN_CENTER_VERTICAL)
+                mapSize = wx.Slider(dataDisplay,style=wx.SL_HORIZONTAL,value=int(10*drawingData['mapSize']))
+                mapSize.SetRange(1,100)
+                mapSize.Bind(wx.EVT_SLIDER, OnMapSize)
+                slideSizer.Add(mapSize,1,wx.EXPAND|wx.RIGHT)
             
             slopSizer.Add(slideSizer,1,wx.EXPAND|wx.RIGHT)
             slopSizer.Add((10,5),0)
@@ -3408,7 +3422,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mapData['rho'] = np.real(rho)
         mapData['rhoMax'] = np.max(np.real(rho))
         data['Drawing']['contourLevel'] = 1.
+        data['Drawing']['mapSize'] = 10.
         print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f'%(mapData['rhoMax'],np.min(np.real(rho)))
+        G2plt.PlotStructure(G2frame,data)                    
 ## map printing for testing purposes
 #        ix,jy,kz = mapData['rho'].shape
 #        for k in range(kz):

@@ -2279,14 +2279,6 @@ def PlotStructure(G2frame,data):
     rhoXYZ = []
     if 'Map' in generalData:
         mapData = generalData['Map']
-        contLevel = drawingData['contourLevel']*mapData['rhoMax']
-        if 'delt-F' in mapData['MapType']:
-            rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
-        else:
-            rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
-        indx = np.array(ma.nonzero(rho)).T
-        steps = 1./np.array(rho.shape)
-        rhoXYZ = indx*steps
     cx,ct,cs = drawingData['atomPtrs']
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
@@ -2717,19 +2709,34 @@ def PlotStructure(G2frame,data):
         glEnable(GL_LIGHTING)
         glPopMatrix()
         
-    def RenderMap(rhoXYZ,indx,rho,cLevel):
+    def RenderMap(rho,rhoXYZ,indx,Rok):
+        cLevel = drawingData['contourLevel']
         for i,xyz in enumerate(rhoXYZ):
-            x,y,z = xyz
-            I,J,K = indx[i]
-            alpha = 1.0
-            if cLevel < 1.:
-                alpha = (abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel)
-            if rho[I,J,K] < 0.:
-                RenderSmallSphere(x,y,z,0.1*alpha,Rd)
-            else:
-                RenderSmallSphere(x,y,z,0.1*alpha,Bl)
+            if not Rok[i]:
+                x,y,z = xyz
+                I,J,K = indx[i]
+                alpha = 1.0
+                if cLevel < 1.:
+                    alpha = (abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel)
+                if rho[I,J,K] < 0.:
+                    RenderSmallSphere(x,y,z,0.1*alpha,Rd)
+                else:
+                    RenderSmallSphere(x,y,z,0.1*alpha,Bl)
                             
     def Draw():
+        if 'Map' in generalData:
+            mapData = generalData['Map']
+            contLevel = drawingData['contourLevel']*mapData['rhoMax']
+            if 'delt-F' in mapData['MapType']:
+                rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
+            else:
+                rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
+            indx = np.array(ma.nonzero(rho)).T
+            steps = 1./np.array(rho.shape)
+            rhoXYZ = indx*steps
+            radius = drawingData['mapSize']**2
+            view = np.array(drawingData['viewPoint'][0])
+            Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
         Ind = GetSelectedAtoms()
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
@@ -2865,7 +2872,7 @@ def PlotStructure(G2frame,data):
                 RenderLabel(x,y,z,atom[ct-2],radius)
 #        glDisable(GL_BLEND)
         if len(rhoXYZ):
-            RenderMap(rhoXYZ,indx,rho,drawingData['contourLevel'])
+            RenderMap(rho,rhoXYZ,indx,Rok)
         if Backbone:
             RenderBackbone(Backbone,BackboneColor,bondR)
 #        print time.time()-time0

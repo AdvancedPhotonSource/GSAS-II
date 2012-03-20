@@ -2266,8 +2266,10 @@ def PlotStructure(G2frame,data):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra
     '''
+    ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
     cell = generalData['Cell'][1:7]
+    Vol = generalData['Cell'][7:8][0]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
@@ -2725,16 +2727,23 @@ def PlotStructure(G2frame,data):
                             
     def Draw():
         if 'Map' in generalData:
+            VP = np.array(drawingData['viewPoint'][0])-np.array([.5,.5,.5])
             mapData = generalData['Map']
             contLevel = drawingData['contourLevel']*mapData['rhoMax']
             if 'delt-F' in mapData['MapType']:
                 rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
             else:
                 rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
-            indx = np.array(ma.nonzero(rho)).T
             steps = 1./np.array(rho.shape)
-            rhoXYZ = indx*steps
-            radius = drawingData['mapSize']**2
+            incre = np.where(VP>0,VP%steps,VP%steps-steps)
+            Vsteps = -np.array(VP/steps,dtype='i')
+            rho = np.roll(np.roll(np.roll(rho,Vsteps[0],axis=0),Vsteps[1],axis=1),Vsteps[2],axis=2)
+            indx = np.array(ma.nonzero(rho)).T
+            rhoXYZ = indx*steps+VP-incre
+            Nc = len(rhoXYZ)
+            rcube = 2000.*Vol/(ForthirdPI*Nc)
+            rmax = math.exp(math.log(rcube)/3.)**2
+            radius = min(drawingData['mapSize']**2,rmax)
             view = np.array(drawingData['viewPoint'][0])
             Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
         Ind = GetSelectedAtoms()

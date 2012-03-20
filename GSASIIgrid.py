@@ -37,8 +37,8 @@ else:
     helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True
 
-[ wxID_FOURCALC,
-] = [wx.NewId() for item in range(1)]
+[ wxID_FOURCALC,wxID_FOURSEARCH,
+] = [wx.NewId() for item in range(2)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(3)]
@@ -436,8 +436,10 @@ class DataFrame(wx.Frame):
         self.GeneralCalc = wx.Menu(title='')
         self.DataGeneral.Append(menu=self.GeneralCalc,title='Compute')
         self.DataGeneral.Append(menu=MyHelp(self,helpType='General'),title='&Help')
-        self.GeneralCalc.Append(help='Compute Fourier maps',id=wxID_FOURCALC, kind=wx.ITEM_NORMAL,
-            text='Fourier maps')
+        self.GeneralCalc.Append(help='Compute Fourier map',id=wxID_FOURCALC, kind=wx.ITEM_NORMAL,
+            text='Fourier map')
+        self.GeneralCalc.Append(help='Search Fourier map',id=wxID_FOURSEARCH, kind=wx.ITEM_NORMAL,
+            text='Search map')
         
 # Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()

@@ -26,6 +26,7 @@ import GSASIIIO as G2IO
 import GSASIIstruct as G2str
 import numpy as np
 import numpy.linalg as nl
+import numpy.ma as ma
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
@@ -252,7 +253,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
             generalData['Map'] = {'MapType':'','RefList':'','Resolution':1.0,
-                'rhoMax':100.,'rho':[],'rhoMax':0.,'mapSize':10.0}
+                'rhoMax':100.,'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
 #        if 'SH Texture' not in generalData:
 #            generalData['SH Texture'] = data['SH Texture']
         generalData['NoAtoms'] = {}
@@ -319,7 +320,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SetupGeneral()
         generalData = data['General']
         Map = generalData['Map']  
-            # {'MapType':'','RefList':'','Resolution':1.0,'rho':[],'rhoMax':0.,'mapSize':10.0}
+            # {'MapType':'','RefList':'','Resolution':1.0,'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
         
         def NameSizer():
                    
@@ -627,27 +628,48 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pass
                 mapRes.SetValue("%.2f"%(Map['Resolution']))          #reset in case of error
             
+            def OnCutOff(event):
+                try:
+                    res = float(cutOff.GetValue())
+                    if 1.0 <= res <= 100.:
+                        Map['cutOff'] = res
+                except ValueError:
+                    pass
+                cutOff.SetValue("%.1f"%(Map['cutOff']))          #reset in case of error
+            
+            #patch
+            if 'cutOff' not in Map:
+                Map['cutOff'] = 100.0
             mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Patterson']
             refList = data['Histograms'].keys()
             if generalData['Type'] == 'Pawley':
                  mapTypes = ['Patterson',]
                  Map['MapType'] = 'Patterson'
-            mapSizer = wx.BoxSizer(wx.HORIZONTAL)
-            mapSizer.Add(wx.StaticText(dataDisplay,label=' Fourier map controls: Map type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mapSizer = wx.BoxSizer(wx.VERTICAL)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,label=' Fourier map controls: Map type: '),0,wx.ALIGN_CENTER_VERTICAL)
             mapType = wx.ComboBox(dataDisplay,-1,value=Map['MapType'],choices=mapTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             mapType.Bind(wx.EVT_COMBOBOX,OnMapType)
-            mapSizer.Add(mapType,0,wx.ALIGN_CENTER_VERTICAL)
-            mapSizer.Add(wx.StaticText(dataDisplay,label=' Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(mapType,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,label=' Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
             refList = wx.ComboBox(dataDisplay,-1,value=Map['RefList'],choices=refList,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
-            mapSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
-            mapSizer.Add(wx.StaticText(dataDisplay,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
+            mapSizer.Add(lineSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
             mapRes =  wx.TextCtrl(dataDisplay,value='%.2f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
             mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
-            mapSizer.Add(mapRes,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(mapRes,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' Peak cutoff %: '),0,wx.ALIGN_CENTER_VERTICAL)
+            cutOff =  wx.TextCtrl(dataDisplay,value='%.1f'%(Map['cutOff']),style=wx.TE_PROCESS_ENTER)
+            cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)        
+            cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
+            line2Sizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+            mapSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
             return mapSizer
                 
         General.DestroyChildren()
@@ -3354,8 +3376,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnFourierMaps(event):
         import scipy.fftpack as fft
         generalData = data['General']
-#        for item in generalData:
-#            print item,generalData[item]
         if not generalData['Map']['MapType']:
             print '**** ERROR - Fourier map not defined'
             return
@@ -3438,7 +3458,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #                    line += '%4d'%(r)
 #                print line+'\n'
 ### keep this                
-                
+    
+    def OnSearchMaps(event):
+        generalData = data['General']
+        phaseName = generalData['Name']
+        SGData = generalData['SGData']
+        cell = generalData['Cell'][1:8]        
+        A = G2lat.cell2A(cell[:6])
+        drawingData = data['Drawing']
+        try:
+            mapData = generalData['Map']
+            contLevel = drawingData['contourLevel']*mapData['rhoMax']
+            rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
+        except KeyError:
+            print '**** ERROR - Fourier map not defined'
+            return
+        indx = np.array(ma.nonzero(rho)).T
+        steps = 1./np.array(rho.shape)
+        rhoXYZ = indx*steps
+        print rhoXYZ
+        print 'search Fourier map'
         
     def OnTextureRefine(event):
         print 'refine texture?'
@@ -3467,6 +3506,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'General':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
             UpdateGeneral()
         elif text == 'Data':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataMenu)
@@ -3515,6 +3555,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.AddPage(General,'General')
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
     SetupGeneral()
     GeneralData = data['General']
     UpdateGeneral()

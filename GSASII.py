@@ -451,12 +451,12 @@ class GSASII(wx.Frame):
         if len(arg) > 1:
             self.GSASprojectfile = arg[1]
             self.dirname = ospath.dirname(arg[1])
-            os.chdir(self.dirname)
+            if self.dirname: os.chdir(self.dirname)
             G2IO.ProjFileOpen(self)
             self.PatternTree.Expand(self.root)
             self.Refine.Enable(True)
             self.SeqRefine.Enable(True)
-            self.Solve.Enable(True)
+            #self.Solve.Enable(True) # what is this? (BHT)
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -838,7 +838,7 @@ class GSASII(wx.Frame):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_OK)              
-            self.Destroy()
+            #self.Destroy() -- do this later, after using GetData
             
         def OnCancel(self,event):
             parent = self.GetParent()

@@ -121,7 +121,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                     size=(600,100)
                     )
                 if selblk is None: return False # User pressed cancel
-            blkmm = str_blklist[selblk]
+            blknm = str_blklist[selblk]
             blk = cf[str_blklist[selblk]]
             SpGrp = blk.get("_symmetry_space_group_name_H-M")
             if SpGrp:
@@ -188,8 +188,11 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)
                 self.Phase['Atoms'].append(atomlist)
             for lbl in phasenamefields: # get a name for the phase
-                name = blk.get(lbl).strip()
-                if name is None or name == '?' or name == '.':
+                name = blk.get(lbl)
+                if name is None:
+                    continue
+                name = name.strip()
+                if name == '?' or name == '.':
                     continue
                 else:
                     break
@@ -200,6 +203,8 @@ class CIFPhaseReader(G2IO.ImportPhase):
         except Exception as detail:
             print 'CIF error:',detail # for testing
             print sys.exc_info()[0] # for testing
+            import traceback
+            print traceback.format_exc()
             return False
         finally:
             self.DoneBusy()

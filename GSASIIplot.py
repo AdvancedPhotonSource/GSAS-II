@@ -2501,6 +2501,7 @@ def PlotStructure(G2frame,data):
     def SetTranslation(newxy):
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         anglex,angley,anglez,oldxy = drawingData['Rotation']
+        if not len(oldxy): oldxy = list(newxy)
         Rx = G2lat.rotdMat(anglex,0)
         Ry = G2lat.rotdMat(angley,1)
         Rz = G2lat.rotdMat(anglez,2)
@@ -2516,6 +2517,7 @@ def PlotStructure(G2frame,data):
     def SetTestPos(newxy):
         Tx,Ty,Tz = drawingData['testPos'][0]
         anglex,angley,anglez,oldxy = drawingData['Rotation']
+        if not len(oldxy): oldxy = list(newxy)
         Rx = G2lat.rotdMat(anglex,0)
         Ry = G2lat.rotdMat(angley,1)
         Rz = G2lat.rotdMat(anglez,2)
@@ -2561,6 +2563,7 @@ def PlotStructure(G2frame,data):
                               
     def SetRotation(newxy):        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
+        if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         anglex += dxy[1]*.25
         angley += dxy[0]*.25
@@ -2569,6 +2572,7 @@ def PlotStructure(G2frame,data):
         
     def SetRotationZ(newxy):                        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
+        if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         anglez += (dxy[0]+dxy[1])*.25
         oldxy = newxy
@@ -2734,18 +2738,21 @@ def PlotStructure(G2frame,data):
                 rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
             else:
                 rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
-            steps = 1./np.array(rho.shape)
-            incre = np.where(VP>0,VP%steps,VP%steps-steps)
-            Vsteps = -np.array(VP/steps,dtype='i')
-            rho = np.roll(np.roll(np.roll(rho,Vsteps[0],axis=0),Vsteps[1],axis=1),Vsteps[2],axis=2)
-            indx = np.array(ma.nonzero(rho)).T
-            rhoXYZ = indx*steps+VP-incre
-            Nc = len(rhoXYZ)
-            rcube = 2000.*Vol/(ForthirdPI*Nc)
-            rmax = math.exp(math.log(rcube)/3.)**2
-            radius = min(drawingData['mapSize']**2,rmax)
-            view = np.array(drawingData['viewPoint'][0])
-            Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
+            if rho.size > 0: 
+                steps = 1./np.array(rho.shape)
+                incre = np.where(VP>0,VP%steps,VP%steps-steps)
+                Vsteps = -np.array(VP/steps,dtype='i')
+                rho = np.roll(np.roll(np.roll(rho,Vsteps[0],axis=0),Vsteps[1],axis=1),Vsteps[2],axis=2)
+                indx = np.array(ma.nonzero(rho)).T
+                rhoXYZ = indx*steps+VP-incre
+                Nc = len(rhoXYZ)
+                rcube = 2000.*Vol/(ForthirdPI*Nc)
+                rmax = math.exp(math.log(rcube)/3.)**2
+                radius = min(drawingData['mapSize']**2,rmax)
+                view = np.array(drawingData['viewPoint'][0])
+                Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
+            else:
+                rhoXYZ = []
         Ind = GetSelectedAtoms()
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])

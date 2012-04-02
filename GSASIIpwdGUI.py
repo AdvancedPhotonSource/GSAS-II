@@ -15,6 +15,7 @@ import copy
 import cPickle
 import GSASIIpath
 import GSASIIpwd as G2pwd
+import GSASIIIO as G2IO
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIindex as G2indx
@@ -1494,9 +1495,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 sub = G2frame.PatternTree.AppendItem(parent=sub,text=PhaseName)
                 E,SGData = G2spc.SpcGroup(spaceGroups[cell[0]])
                 G2frame.PatternTree.SetItemPyData(sub, \
-                    {'General':{'Name':PhaseName,'Type':'nuclear','SGData':SGData,
-                    'Cell':[False,]+cell[1:],
-                    'Pawley dmin':1.00},'Atoms':[],'Drawing':{},'Histograms':{}})
+                    G2IO.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell[1:]))
                 Status.SetStatusText('Change space group if needed')
         finally:
             dlg.Destroy()

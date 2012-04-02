@@ -3468,15 +3468,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         drawingData = data['Drawing']
         try:
             mapData = generalData['Map']
-            contLevel = drawingData['contourLevel']*mapData['rhoMax']
-            rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
+            contLevel = mapData['cutOff']*mapData['rhoMax']/100.
+            rho = copy.copy(mapData['rho'])     #don't mess up original
         except KeyError:
             print '**** ERROR - Fourier map not defined'
             return
-        indx = np.array(ma.nonzero(rho)).T
-        steps = 1./np.array(rho.shape)
-        rhoXYZ = indx*steps
-        print rhoXYZ
+        peaks = []
+        while True:
+            rhoMask = ma.array(rho,mask=(mapData['rho']<contLevel))
+            indx = np.array(ma.nonzero(rhoMask)).T
+            rhoList = np.array([rho[i,j,k] for i,j,k in indx])
+            rhoMax = np.max(rhoList)
+            rMI = indx[np.argmax(rhoList)]
+            print rMI,rhoMax
+            break
+#            steps = 1./np.array(rho.shape)
+#            rhoXYZ = indx*steps
         print 'search Fourier map'
         
     def OnTextureRefine(event):

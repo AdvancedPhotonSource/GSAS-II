@@ -1034,6 +1034,34 @@ def IndexPeakListSave(G2frame,peaks):
         wx.EndBusyCursor()
     print 'index peak list saved'
     
+def SetNewPhase(Name='New Phase',SGData=G2spc.SpcGroup('P 1')[1],cell=[1.0,1.0,1.0,90.,90,90.,1.]):
+    phaseData = {
+        'General':{
+            'Name':Name,
+            'Type':'nuclear',
+            'SGData':SGData,
+            'Cell':[False,]+cell,
+            'Pawley dmin':1.0,
+            'Data plot type':'Mustrain',
+            'SH Texture':{
+                'Order':0,
+                'Model':'cylindrical',
+                'Sample omega':[False,0.0],
+                'Sample chi':[False,0.0],
+                'Sample phi':[False,0.0],
+                'SH Coeff':[False,{}],
+                'SHShow':False,
+                'PFhkl':[0,0,1],
+                'PFxyz':[0,0,1],
+                'PlotType':'Pole figure'}},
+        'Atoms':[],
+        'Drawing':{},
+        'Histograms':{},
+        'Pawley ref':[],
+        'Models':{},
+        }
+    return phaseData
+    
 def ReadEXPPhase(G2frame,filename):
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     textureData = {'Order':0,'Model':'cylindrical','Sample omega':[False,0.0],
@@ -1149,20 +1177,11 @@ def ReadEXPPhase(G2frame,filename):
                 shCoef[key] = float(val)
         textureData['SH Coeff'] = [False,shCoef]
         
-    Phase = {
-            'General':{
-                'Name':PhaseName,
-                'Type':Ptype,
-                'SGData':SGData,
-                'Cell':[False,]+abc+angles+[Volume,],
-                'Pawley dmin':1.0,
-                'SH Texture':textureData},
-            'Atoms':Atoms,
-            'Drawing':{},
-            'Histograms':{},
-            'Pawley ref':[],
-            'Models':{},
-            }
+    Phase = SetNewPhase(Name=PhaseName,SGData=SGData,cell=abc+angles+[Volume,])
+    general = Phase['General']
+    general['Type'] = Ptype
+    general['SH Texture'] = textureData
+    Phase['Atoms'] = Atoms
     return Phase
        
 def ReadPDBPhase(filename):
@@ -1240,11 +1259,9 @@ def ReadPDBPhase(filename):
         PhaseName = Compnd
     else:
         PhaseName = 'None'
-    Phase['General'] = {'Name':PhaseName,'Type':'macromolecular','SGData':SGData,
-        'Cell':[False,]+cell+[Volume,]}
+    Phase = SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell+[Volume,])
+    Phase['General']['Type'] = 'macromolecular'
     Phase['Atoms'] = Atoms
-    Phase['Drawing'] = {}
-    Phase['Histograms'] = {}
     
     return Phase
 
@@ -1276,18 +1293,7 @@ class ImportPhase(object):
         # the extension matches one in the extensionlist
         self.strictExtension = strictExtension
         # define a default Phase structure
-        self.Phase = {}
-        for i in 'General', 'Atoms', 'Drawing', 'Histograms':
-            self.Phase[i] = {}
-        self.Phase['General']['Name'] = 'default'
-        self.Phase['General']['Type'] = 'nuclear'
-        self.Phase['General']['SGData'] = SGData
-        self.Phase['General']['Cell'] = [
-            False, # refinement flag
-            1.,1.,1.,    # a,b,c
-            90.,90.,90., # alpha, beta, gamma
-            1.           # volume
-            ]
+        self.Phase = SetNewPhase(Name='new phase',SGData=SGData)
         self.warnings = ''
         self.errors = ''
         #print 'created',self.__class__

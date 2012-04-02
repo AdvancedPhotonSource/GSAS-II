@@ -752,8 +752,9 @@ def PlotPatterns(G2frame,newPlot=False):
                     Plot.plot(2*np.pi/peak.T[0],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
                 else:
                     Plot.plot(peak.T[1],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
-            handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
-            Plot.legend(handles[::2],legends[::2],title='Phases',loc='best')    #skip every other one
+            if len(Phases):
+                handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
+                Plot.legend(handles[::2],legends[::2],title='Phases',loc='best')    #skip every other one
             
     if G2frame.Contour:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
@@ -2730,29 +2731,27 @@ def PlotStructure(G2frame,data):
                     RenderSmallSphere(x,y,z,0.1*alpha,Bl)
                             
     def Draw():
-        if 'Map' in generalData:
+        mapData = generalData['Map']
+        rhoXYZ = []
+        if len(mapData['rho']):
             VP = np.array(drawingData['viewPoint'][0])-np.array([.5,.5,.5])
-            mapData = generalData['Map']
             contLevel = drawingData['contourLevel']*mapData['rhoMax']
             if 'delt-F' in mapData['MapType']:
                 rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
             else:
                 rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
-            if rho.size > 0: 
-                steps = 1./np.array(rho.shape)
-                incre = np.where(VP>0,VP%steps,VP%steps-steps)
-                Vsteps = -np.array(VP/steps,dtype='i')
-                rho = np.roll(np.roll(np.roll(rho,Vsteps[0],axis=0),Vsteps[1],axis=1),Vsteps[2],axis=2)
-                indx = np.array(ma.nonzero(rho)).T
-                rhoXYZ = indx*steps+VP-incre
-                Nc = len(rhoXYZ)
-                rcube = 2000.*Vol/(ForthirdPI*Nc)
-                rmax = math.exp(math.log(rcube)/3.)**2
-                radius = min(drawingData['mapSize']**2,rmax)
-                view = np.array(drawingData['viewPoint'][0])
-                Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
-            else:
-                rhoXYZ = []
+            steps = 1./np.array(rho.shape)
+            incre = np.where(VP>0,VP%steps,VP%steps-steps)
+            Vsteps = -np.array(VP/steps,dtype='i')
+            rho = np.roll(np.roll(np.roll(rho,Vsteps[0],axis=0),Vsteps[1],axis=1),Vsteps[2],axis=2)
+            indx = np.array(ma.nonzero(rho)).T
+            rhoXYZ = indx*steps+VP-incre
+            Nc = len(rhoXYZ)
+            rcube = 2000.*Vol/(ForthirdPI*Nc)
+            rmax = math.exp(math.log(rcube)/3.)**2
+            radius = min(drawingData['mapSize']**2,rmax)
+            view = np.array(drawingData['viewPoint'][0])
+            Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
         Ind = GetSelectedAtoms()
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])

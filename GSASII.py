@@ -1063,31 +1063,7 @@ class GSASII(wx.Frame):
         dlg.Destroy()
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
         E,SGData = G2spc.SpcGroup('P 1')
-        self.PatternTree.SetItemPyData(sub, {
-            'General':{
-                'Name':PhaseName,
-                'Type':'nuclear',
-                'SGData':SGData,
-                'Cell':[False,10.,10.,10.,90.,90.,90,1000.],
-                'Pawley dmin':1.0,
-                'Data plot type':'Mustrain',
-                'SH Texture':{
-                    'Order':0,
-                    'Model':'cylindrical',
-                    'Sample omega':[False,0.0],
-                    'Sample chi':[False,0.0],
-                    'Sample phi':[False,0.0],
-                    'SH Coeff':[False,{}],
-                    'SHShow':False,
-                    'PFhkl':[0,0,1],
-                    'PFxyz':[0,0,1],
-                    'PlotType':'Pole figure'}},
-            'Atoms':[],
-            'Drawing':{},
-            'Histograms':{},
-            'Pawley ref':[],
-            'Models':{},
-            })
+        self.PatternTree.SetItemPyData(sub,G2IO.SetNewPhase(Name=PhaseName,SGData=SGData))
         
     def OnDeletePhase(self,event):
         #Hmm, also need to delete this phase from Reflection Lists for each PWDR histogram

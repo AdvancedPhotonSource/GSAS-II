@@ -42,6 +42,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 return False # found something else
         return True
     def Reader(self,filename,filepointer, ParentFrame=None):
+        returnstat = False
         cellitems = (
             '_cell_length_a','_cell_length_b','_cell_length_c',
             '_cell_angle_alpha','_cell_angle_beta','_cell_angle_gamma',)
@@ -83,8 +84,8 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 else:
                     str_blklist.append(blk)
             if not str_blklist:
-                return False            # no blocks with coordinates
-            elif len(str_blklist) == 1: # no choices
+                selblk = None # no block to choose
+            elif len(str_blklist) == 1: # only one choice
                 selblk = 0
             else:                       # choose from options
                 choice = []
@@ -119,92 +120,94 @@ class CIFPhaseReader(G2IO.ImportPhase):
                     title= 'Select a phase from one the CIF data_ blocks below',
                     size=(600,100)
                     )
-                if selblk is None: return False # User pressed cancel
-            blknm = str_blklist[selblk]
-            blk = cf[str_blklist[selblk]]
-            SpGrp = blk.get("_symmetry_space_group_name_H-M")
-            if SpGrp:
-                 E,SGData = G2spc.SpcGroup(SpGrp)
-            if E:
-                self.warnings += ' ERROR in space group symbol '+SpGrp
-                self.warnings += ' N.B.: make sure spaces separate axial fields in symbol' 
-                self.warnings += G2spc.SGErrors(E)
+            if selblk is None:
+                returnstat = False # no block selected or available
             else:
-                self.Phase['General']['SGData'] = SGData
-            # cell parameters
-            cell = []
-            for lbl in (
-                '_cell_length_a','_cell_length_b','_cell_length_c',
-                '_cell_angle_alpha','_cell_angle_beta','_cell_angle_gamma',
-                ):
-                cell.append(cif.get_number_with_esd(blk[lbl])[0])
-            Volume = G2lat.calc_V(G2lat.cell2A(cell))
-            self.Phase['General']['Cell'] = [False,]+cell+[Volume,]
-            # read in atoms
-            atomloop = blk.GetLoop('_atom_site_label')
-            atomkeys = [i.lower() for i in atomloop.keys()]
-            if blk.get('_atom_site_aniso_label'):
-                anisoloop = blk.GetLoop('_atom_site_aniso_label')
-                anisokeys = [i.lower() for i in anisoloop.keys()]
-            else:
-                anisoloop = None
-                anisokeys = []
-            self.Phase['Atoms'] = []
-            G2AtomDict = {  '_atom_site_type_symbol' : 1,
-                            '_atom_site_label' : 0,
-                            '_atom_site_fract_x' : 3,
-                            '_atom_site_fract_y' : 4,
-                            '_atom_site_fract_z' : 5,
-                            '_atom_site_occupancy' : 6,
-                            '_atom_site_aniso_u_11' : 11,
-                            '_atom_site_aniso_u_22' : 12,
-                            '_atom_site_aniso_u_33' : 13,
-                            '_atom_site_aniso_u_12' : 14,
-                            '_atom_site_aniso_u_13' : 15,
-                            '_atom_site_aniso_u_23' : 16, }
-            for aitem in atomloop:
-                atomlist = ['','','',0,0,0,1.0,'',0,'I',0.01,0,0,0,0,0,0]
-                atomlist.append(ran.randint(0,sys.maxint)) # add a unique label
-                for val,key in zip(aitem,atomkeys):
-                    col = G2AtomDict.get(key)
-                    if col >= 3:
-                        atomlist[col] = cif.get_number_with_esd(val)[0]
-                    elif col is not None:
-                        atomlist[col] = val
-                    elif key in ('_atom_site_thermal_displace_type',
-                               '_atom_site_adp_type'):   #Iso or Aniso?
-                        if val.lower() == 'uani':
-                            atomlist[9] = 'A'
-                    elif key == '_atom_site_u_iso_or_equiv':
-                        atomlist[10] =cif.get_number_with_esd(val)[0]
-                ulbl = '_atom_site_aniso_label'
-                if  atomlist[9] == 'A' and atomlist[0] in blk.get(ulbl):
-                    for val,key in zip(anisoloop.GetKeyedPacket(ulbl,atomlist[0]),
-                                       anisokeys):
-                        col = G2AtomDict.get(key)
-                        if col:
-                            atomlist[col] = cif.get_number_with_esd(val)[0]
-                atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)
-                self.Phase['Atoms'].append(atomlist)
-            for lbl in phasenamefields: # get a name for the phase
-                name = blk.get(lbl)
-                if name is None:
-                    continue
-                name = name.strip()
-                if name == '?' or name == '.':
-                    continue
+                blknm = str_blklist[selblk]
+                blk = cf[str_blklist[selblk]]
+                SpGrp = blk.get("_symmetry_space_group_name_H-M")
+                if SpGrp:
+                     E,SGData = G2spc.SpcGroup(SpGrp)
+                if E:
+                    self.warnings += ' ERROR in space group symbol '+SpGrp
+                    self.warnings += ' N.B.: make sure spaces separate axial fields in symbol' 
+                    self.warnings += G2spc.SGErrors(E)
                 else:
-                    break
-            else: # no name found, use block name for lack of a better choice
-                name = blknm
-            self.Phase['General']['Name'] = name.strip()[:20]
-            return True
+                    self.Phase['General']['SGData'] = SGData
+                # cell parameters
+                cell = []
+                for lbl in (
+                    '_cell_length_a','_cell_length_b','_cell_length_c',
+                    '_cell_angle_alpha','_cell_angle_beta','_cell_angle_gamma',
+                    ):
+                    cell.append(cif.get_number_with_esd(blk[lbl])[0])
+                Volume = G2lat.calc_V(G2lat.cell2A(cell))
+                self.Phase['General']['Cell'] = [False,]+cell+[Volume,]
+                # read in atoms
+                atomloop = blk.GetLoop('_atom_site_label')
+                atomkeys = [i.lower() for i in atomloop.keys()]
+                if blk.get('_atom_site_aniso_label'):
+                    anisoloop = blk.GetLoop('_atom_site_aniso_label')
+                    anisokeys = [i.lower() for i in anisoloop.keys()]
+                else:
+                    anisoloop = None
+                    anisokeys = []
+                self.Phase['Atoms'] = []
+                G2AtomDict = {  '_atom_site_type_symbol' : 1,
+                                '_atom_site_label' : 0,
+                                '_atom_site_fract_x' : 3,
+                                '_atom_site_fract_y' : 4,
+                                '_atom_site_fract_z' : 5,
+                                '_atom_site_occupancy' : 6,
+                                '_atom_site_aniso_u_11' : 11,
+                                '_atom_site_aniso_u_22' : 12,
+                                '_atom_site_aniso_u_33' : 13,
+                                '_atom_site_aniso_u_12' : 14,
+                                '_atom_site_aniso_u_13' : 15,
+                                '_atom_site_aniso_u_23' : 16, }
+                for aitem in atomloop:
+                    atomlist = ['','','',0,0,0,1.0,'',0,'I',0.01,0,0,0,0,0,0]
+                    atomlist.append(ran.randint(0,sys.maxint)) # add a unique label
+                    for val,key in zip(aitem,atomkeys):
+                        col = G2AtomDict.get(key)
+                        if col >= 3:
+                            atomlist[col] = cif.get_number_with_esd(val)[0]
+                        elif col is not None:
+                            atomlist[col] = val
+                        elif key in ('_atom_site_thermal_displace_type',
+                                   '_atom_site_adp_type'):   #Iso or Aniso?
+                            if val.lower() == 'uani':
+                                atomlist[9] = 'A'
+                        elif key == '_atom_site_u_iso_or_equiv':
+                            atomlist[10] =cif.get_number_with_esd(val)[0]
+                    ulbl = '_atom_site_aniso_label'
+                    if  atomlist[9] == 'A' and atomlist[0] in blk.get(ulbl):
+                        for val,key in zip(anisoloop.GetKeyedPacket(ulbl,atomlist[0]),
+                                           anisokeys):
+                            col = G2AtomDict.get(key)
+                            if col:
+                                atomlist[col] = cif.get_number_with_esd(val)[0]
+                    atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)
+                    self.Phase['Atoms'].append(atomlist)
+                for lbl in phasenamefields: # get a name for the phase
+                    name = blk.get(lbl)
+                    if name is None:
+                        continue
+                    name = name.strip()
+                    if name == '?' or name == '.':
+                        continue
+                    else:
+                        break
+                else: # no name found, use block name for lack of a better choice
+                    name = blknm
+                self.Phase['General']['Name'] = name.strip()[:20]
+                returnstat = True
         except Exception as detail:
             print 'CIF error:',detail # for testing
             print sys.exc_info()[0] # for testing
             import traceback
             print traceback.format_exc()
-            return False
+            returnstat = False
         finally:
             self.DoneBusy()
-
+        return returnstat

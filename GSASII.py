@@ -289,6 +289,8 @@ class GSASII(wx.Frame):
                 try:
                     flag = rd.Reader(file,fp,self)
                 except:
+                    import traceback
+                    print traceback.format_exc()
                     self.ErrorDialog('Error reading file '+file
                         +' with format '+ rd.formatName,'Read Error')
                     continue
@@ -314,6 +316,8 @@ class GSASII(wx.Frame):
                 self.PatternTree.Expand(psub) 
                 return # success
         except:
+            import traceback
+            print traceback.format_exc()
             self.ErrorDialog('Error on open of file '+file,'Open Error')
         finally:
             if fp: fp.close()

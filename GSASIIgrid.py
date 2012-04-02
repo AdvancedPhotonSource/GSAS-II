@@ -1262,6 +1262,9 @@ def UpdateConstraints(G2frame,data):
                     data[name][Id][-2] = result[-2][0]
                 else:
                     data[name][Id][:-2] = result[:-1]
+        except:
+            import traceback
+            print traceback.format_exc()
         finally:
             dlg.Destroy()            
         OnPageChanged(None)                     

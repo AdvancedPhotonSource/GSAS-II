@@ -73,7 +73,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
             self.ShowBusy() # this can take a while
             ciffile = 'file:'+urllib.pathname2url(filename)
             cf = cif.ReadCif(ciffile)
-            print cf
+            #print cf
             # scan blocks for structural info
             str_blklist = []
             for blk in cf.keys():
@@ -82,7 +82,6 @@ class CIFPhaseReader(G2IO.ImportPhase):
                         break
                 else:
                     str_blklist.append(blk)
-            self.DoneBusy()
             if not str_blklist:
                 return False            # no blocks with coordinates
             elif len(str_blklist) == 1: # no choices

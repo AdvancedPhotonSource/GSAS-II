@@ -22,7 +22,7 @@ class PickElement(wx.Dialog):
         self.butWid = 55
         if 'nt' in os.name:
             self.butWid = 40
-        self.SetClientSize(wx.Size(130+16*self.butWid, 250))
+        self.SetClientSize(wx.Size(50+18*self.butWid, 250))
         
         i=0
         for E in ET.ElTable:

@@ -771,8 +771,11 @@ def UpdateInstrumentGrid(G2frame,data):
                 
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
-    histoName = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[-1]
-    ifHisto = IsHistogramInAnyPhase(G2frame,histoName)
+    try:
+        histoName = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[-1]
+        ifHisto = IsHistogramInAnyPhase(G2frame,histoName)
+    except TypeError:       #PKS data never used in a phase as data
+        ifhisto = False
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
     G2frame.dataFrame.SetLabel('Instrument Parameters')
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)

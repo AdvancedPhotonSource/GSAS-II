@@ -98,6 +98,7 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 def ShowHelp(helpType,frame):
     '''Called to bring up a web page for documentation.'''
+    global htmlFirstUse
     # look up a definition for help info from dict
     helplink = helpLocDict.get(helpType)
     if helplink is None:

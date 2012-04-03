@@ -3460,6 +3460,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ### keep this                
     
     def OnSearchMaps(event):
+        
+        def findRoll(rhoMask,mapHalf):
+            indx = np.array(ma.nonzero(rhoMask)).T
+            rhoList = np.array([rho[i,j,k] for i,j,k in indx])
+            rhoMax = np.max(rhoList)
+            return mapHalf-indx[np.argmax(rhoList)]
+            
         generalData = data['General']
         phaseName = generalData['Name']
         SGData = generalData['SGData']
@@ -3470,20 +3477,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapData = generalData['Map']
             contLevel = mapData['cutOff']*mapData['rhoMax']/100.
             rho = copy.copy(mapData['rho'])     #don't mess up original
+            mapHalf = np.array(rho.shape)/2
+            step = max(1.0,1./mapData['Resolution'])
+            steps = 3*np.array(3*[step,])
         except KeyError:
             print '**** ERROR - Fourier map not defined'
             return
         peaks = []
         while True:
-            rhoMask = ma.array(rho,mask=(mapData['rho']<contLevel))
-            indx = np.array(ma.nonzero(rhoMask)).T
-            rhoList = np.array([rho[i,j,k] for i,j,k in indx])
-            rhoMax = np.max(rhoList)
-            rMI = indx[np.argmax(rhoList)]
-            print rMI,rhoMax
+            rhoMask = ma.array(rho,mask=(rho<contLevel))
+            rMI = findRoll(rhoMask,mapHalf)
+            rho = np.roll(np.roll(np.roll(rho,rMI[0],axis=0),rMI[1],axis=1),rMI[2],axis=2)
+            rMM = mapHalf-steps
+            rMP = mapHalf+steps
+            
+
+            rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
             break
-#            steps = 1./np.array(rho.shape)
-#            rhoXYZ = indx*steps
         print 'search Fourier map'
         
     def OnTextureRefine(event):

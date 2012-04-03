@@ -9,6 +9,7 @@
 # $Id: GSASIIElemGUI.py 456 2012-01-24 20:31:27Z toby $
 ########### SVN repository information ###################
 import wx
+import os
 import wx.lib.colourselect as wscs
 class PickElement(wx.Dialog):
     "Makes periodic table widget for picking element - caller maintains element list"
@@ -18,7 +19,10 @@ class PickElement(wx.Dialog):
               parent=prnt, pos=wx.DefaultPosition, 
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
         import ElementTable as ET
-        self.SetClientSize(wx.Size(770, 250))
+        self.butWid = 55
+        if 'nt' in os.name:
+            self.butWid = 40
+        self.SetClientSize(wx.Size(130+16*self.butWid, 250))
         
         i=0
         for E in ET.ElTable:
@@ -27,7 +31,7 @@ class PickElement(wx.Dialog):
             else:
                 color=E[6]
             PickElement.ElButton(self,name=E[0],
-               pos=wx.Point(E[1]*40+25,E[2]*24+24),tip=E[3],color=color,oneOnly=oneOnly)
+               pos=wx.Point(E[1]*self.butWid+25,E[2]*24+24),tip=E[3],color=color,oneOnly=oneOnly)
             i+=1
 
     def __init__(self, parent,oneOnly=False):
@@ -37,11 +41,11 @@ class PickElement(wx.Dialog):
         Black = wx.Colour(0,0,0)
         if oneOnly:
             El = wscs.ColourSelect(label=name[0], parent=self,colour=color,
-                pos=pos, size=wx.Size(40,23), style=wx.RAISED_BORDER)
+                pos=pos, size=wx.Size(self.butWid,23), style=wx.RAISED_BORDER)
 #            El.SetLabel(name)
             El.Bind(wx.EVT_BUTTON, self.OnElButton)
         else:
-            El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(40,23),
+            El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(self.butWid,23),
                 style=wx.CB_READONLY, value=name[0])
             El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
         
@@ -49,7 +53,7 @@ class PickElement(wx.Dialog):
         El.SetToolTipString(tip)
 
     def OnElButton(self, event):
-        El = event.GetEventObject().GetLabel()
+        El = event.GetEventObject().GetValue()
         self.Elem = El
         self.EndModal(wx.ID_OK)        
         

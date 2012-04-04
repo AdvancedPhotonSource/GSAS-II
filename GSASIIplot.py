@@ -517,7 +517,9 @@ def PlotPatterns(G2frame,newPlot=False):
         PickId = G2frame.PickId
         if G2frame.PatternTree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
             lines = []
-            for line in G2frame.Lines: lines.append(line.get_xdata()[0])
+            for line in G2frame.Lines: 
+                lines.append(line.get_xdata()[0])
+#            print G2frame.itemPicked.get_xdata()
             lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
             if  lineNo in [0,1]:
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')

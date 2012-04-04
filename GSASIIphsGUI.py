@@ -3440,10 +3440,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         rho = fft.fftn(Fhkl)/cell[6]
         print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
         mapData['rho'] = np.real(rho)
-        mapData['rhoMax'] = np.max(np.real(rho))
+        mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
-        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f'%(mapData['rhoMax'],np.min(np.real(rho)))
+        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']))
         G2plt.PlotStructure(G2frame,data)                    
 ## map printing for testing purposes
 #        ix,jy,kz = mapData['rho'].shape

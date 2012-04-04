@@ -2305,11 +2305,11 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
                 kRatio = parmDict[hfx+'I(L2)/I(L1)']
             x,y,w,yc,yb,yd = Histogram['Data']
+            xB = np.searchsorted(x,Limits[0])
+            xF = np.searchsorted(x,Limits[1])
             ymb = np.array(y-yb)
             ycmb = np.array(yc-yb)
             ratio = np.where(ycmb!=0.,ymb/ycmb,0.0)            
-            xB = np.searchsorted(x,Limits[0])
-            xF = np.searchsorted(x,Limits[1])
             refLists = Histogram['Reflection Lists']
             for phase in refLists:
                 Phase = Phases[phase]
@@ -2324,15 +2324,15 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                     if 'C' in calcControls[hfx+'histType']:
                         yp = np.zeros_like(yb)
                         Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
-                        iBeg = np.searchsorted(x[xB:xF],refl[5]-fmin)
-                        iFin = np.searchsorted(x[xB:xF],refl[5]+fmax)
+                        iBeg = max(xB,np.searchsorted(x,refl[5]-fmin))
+                        iFin = min(np.searchsorted(x,refl[5]+fmax),xF)
                         iFin2 = iFin
-                        yp[iBeg:iFin] = refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here                            
+                        yp[iBeg:iFin] = refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                         if Ka2:
                             pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                             Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
-                            iBeg2 = np.searchsorted(x,pos2-fmin)
-                            iFin2 = np.searchsorted(x,pos2+fmax)
+                            iBeg2 = max(xB,np.searchsorted(x[xB:xF],pos2-fmin))
+                            iFin2 = min(np.searchsorted(x[xB:xF],pos2+fmax),xF)
                             yp[iBeg2:iFin2] += refl[13]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])        #and here
                         refl[8] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[13]*(1.+kRatio)),0.0))
                     elif 'T' in calcControls[hfx+'histType']:

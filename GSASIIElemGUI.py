@@ -42,7 +42,6 @@ class PickElement(wx.Dialog):
         if oneOnly:
             El = wscs.ColourSelect(label=name[0], parent=self,colour=color,
                 pos=pos, size=wx.Size(self.butWid,23), style=wx.RAISED_BORDER)
-#            El.SetLabel(name)
             El.Bind(wx.EVT_BUTTON, self.OnElButton)
         else:
             El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(self.butWid,23),

@@ -90,7 +90,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
     lam = 0.001
     lamMax = lam
     nfev = 0
-    while icycle <= maxcyc:
+    while icycle < maxcyc:
         lamMax = max(lamMax,lam)
         M = func(x0,*args)
         nfev += 1
@@ -130,14 +130,12 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
     try:
         Bmat = nl.inv(Amat)
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[]}]
-    except LinAlgError:
-        psing = list(np.where(np.diag(nl.gr(Amat)[1]) < 1.e-14)[0])
+    except nl.LinAlgError:
+        psing = []
+        if maxcyc:
+            psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
         return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
-
-def calcFouriermap():
-    print 'Calculate Fourier map'
-
-    
+   
 def getVCov(varyNames,varyList,covMatrix):
     vcov = np.zeros((len(varyNames),len(varyNames)))
     for i1,name1 in enumerate(varyNames):

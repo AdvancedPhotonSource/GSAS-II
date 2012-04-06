@@ -262,7 +262,9 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
         SGData, from SpcGroup
         All  = True return all equivalent positions including duplicates
              = False return only unique positions
-        Uij  = [U11,U22,U33,U12,U13,U23] or [] if no Uij       
+        Uij  = [U11,U22,U33,U12,U13,U23] or [] if no Uij
+        Move = True move generated atom positions to be inside cell
+             = False do not move atoms       
     return: [[XYZEquiv],Idup,[UijEquiv]]
         [XYZEquiv] is list of equivalent positions (XYZ is first entry)
         Idup = [-][C]SS where SS is the symmetry operator number (1-24), C (if not 0,0,0)

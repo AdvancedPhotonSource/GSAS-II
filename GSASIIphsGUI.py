@@ -24,6 +24,7 @@ import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIIstruct as G2str
+import GSASIImath as G2mth
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -3444,28 +3445,70 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']))
-        G2plt.PlotStructure(G2frame,data)                    
-## map printing for testing purposes
-#        ix,jy,kz = mapData['rho'].shape
-#        for k in range(kz):
-#            print 'k = ',k
-#            for j in range(jy):
-#                line = ''
-#                if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
-#                    line += (jy-j)*'  '
-#                for i in range(ix):
-#                    r = int(100*mapData['rho'][i,j,k]/mapData['rhoMax'])
-#                    line += '%4d'%(r)
-#                print line+'\n'
-### keep this                
+        G2plt.PlotStructure(G2frame,data)
+        
+    def printRho(SGData,rho,rhoMax):                          
+# map printing for testing purposes
+        ix,jy,kz = rho.shape
+        for k in range(kz):
+            print 'k = ',k
+            for j in range(jy):
+                line = ''
+                if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
+                    line += (jy-j)*'  '
+                for i in range(ix):
+                    r = int(100*rho[i,j,k]/rhoMax)
+                    line += '%4d'%(r)
+                print line+'\n'
+## keep this                
     
     def OnSearchMaps(event):
         
+        norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
+        
+        def noDuplicate(xyz,peaks,SGData):                  #be careful where this is used - it's slow
+            equivs = G2spc.GenAtom(xyz,SGData)
+            xyzs = [equiv[0] for equiv in equivs]
+            for x in xyzs:
+                if True in [np.allclose(x,peak,atol=0.002) for peak in peaks]:
+                    return False
+            return True
+                
         def findRoll(rhoMask,mapHalf):
             indx = np.array(ma.nonzero(rhoMask)).T
             rhoList = np.array([rho[i,j,k] for i,j,k in indx])
             rhoMax = np.max(rhoList)
             return mapHalf-indx[np.argmax(rhoList)]
+            
+        def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
+            Mag,x0,y0,z0,sig = parms
+            if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
+                return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(x0-rX)*(y0-rY)+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+            else:
+                return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+            
+        def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
+            Mag,x0,y0,z0,sig = parms
+            M = rho-rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+            return M
+            
+        def peakHess(parms,rX,rY,rZ,rho,res,SGLaue):
+            Mag,x0,y0,z0,sig = parms
+            dMdv = np.zeros(([5,]+list(rX.shape)))
+            delt = .01
+            for i in range(5):
+                parms[i] -= delt
+                rhoCm = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+                parms[i] += 2.*delt
+                rhoCp = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+                parms[i] -= delt
+                dMdv[i] = (rhoCp-rhoCm)/(2.*delt)
+            rhoC = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+            Vec = np.sum(np.sum(np.sum(dMdv*(rho-rhoC),axis=3),axis=2),axis=1)
+            dMdv = np.reshape(dMdv,(5,rX.size))
+            Hess = np.inner(dMdv,dMdv)
+            
+            return Vec,Hess
             
         generalData = data['General']
         phaseName = generalData['Name']
@@ -3478,23 +3521,54 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             contLevel = mapData['cutOff']*mapData['rhoMax']/100.
             rho = copy.copy(mapData['rho'])     #don't mess up original
             mapHalf = np.array(rho.shape)/2
-            step = max(1.0,1./mapData['Resolution'])
-            steps = 3*np.array(3*[step,])
+            res = mapData['Resolution']
+            incre = 1./np.array(rho.shape)
+            step = max(1.0,1./res)+1
+            steps = np.array(3*[step,])
         except KeyError:
             print '**** ERROR - Fourier map not defined'
             return
         peaks = []
-        while True:
-            rhoMask = ma.array(rho,mask=(rho<contLevel))
-            rMI = findRoll(rhoMask,mapHalf)
-            rho = np.roll(np.roll(np.roll(rho,rMI[0],axis=0),rMI[1],axis=1),rMI[2],axis=2)
-            rMM = mapHalf-steps
-            rMP = mapHalf+steps
-            
-
-            rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
-            break
-        print 'search Fourier map'
+        mags = []
+        print ' Begin fourier map search - can take some time'
+        time0 = time.time()
+        wx.BeginBusyCursor()
+        try:
+            while True:
+                rhoMask = ma.array(rho,mask=(rho<contLevel))
+                if not ma.count(rhoMask):
+                    break
+                rMI = findRoll(rhoMask,mapHalf)
+                rho = np.roll(np.roll(np.roll(rho,rMI[0],axis=0),rMI[1],axis=1),rMI[2],axis=2)
+                rMM = mapHalf-steps
+                rMP = mapHalf+steps+1
+                rhoPeak = rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
+                peakInt = np.sum(rhoPeak)*res**3
+                rX,rY,rZ = np.mgrid[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
+                x0 = [peakInt,mapHalf[0],mapHalf[1],mapHalf[2],2.0]          #magnitude, position & width(sig)
+                result = G2mth.HessianLSQ(peakFunc,x0,Hess=peakHess,
+                    args=(rX,rY,rZ,rhoPeak,res,SGData['SGLaue']),ftol=.0001,maxcyc=100)
+                x1 = result[0]
+                if np.any(x1 < 0):
+                    break
+                peak = (np.array(x1[1:4])-rMI)*incre
+                if not len(peaks):
+                    peaks.append(peak)
+                    mags.append(x1[0])
+                else:
+                    if noDuplicate(peak,peaks,SGData) and x1[0] > 0.:
+                        peaks.append(peak)
+                        mags.append(x1[0])
+                rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(result[0],rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
+                rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
+        finally:
+            wx.EndBusyCursor()
+        sortIdx = np.argsort(mags)        
+        print ' Map search peaks found:'
+        print '  No.    Mag.      x        y        z'
+        for j,i in enumerate(sortIdx[::-1]):
+            print ' %3d %8.3f %8.5f %8.5f %8.5f'%(j,mags[i],peaks[i][0],peaks[i][1],peaks[i][2])
+        print ' Map search finished, time = %.2fs'%(time.time()-time0)
         
     def OnTextureRefine(event):
         print 'refine texture?'

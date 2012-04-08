@@ -640,6 +640,49 @@ def UpdateInstrumentGrid(G2frame,data):
                 for peak in peaks:
                     peak[4] = insVal['U']*tand(peak[0]/2.0)**2+insVal['V']*tand(peak[0]/2.0)+insVal['W']
                     peak[6] = insVal['X']/cosd(peak[0]/2.0)+insVal['Y']*tand(peak[0]/2.0)
+                    
+    def OnLoad(event):
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', '.', '', 
+            'instrument parameter files (*.instprm)|*.instprm',wx.OPEN|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                S = File.readline()
+                newItems = []
+                newVals = []
+                while S:
+                    if S[0] == '#':
+                        S = File.readline()
+                        continue
+                    [item,val] = S[:-1].split(':')
+                    newItems.append(item)
+                    try:
+                        newVals.append(float(val))
+                    except ValueError:
+                        newVals.append(val)                        
+                    S = File.readline()                
+                File.close()
+                data = [tuple(newVals),newVals,len(newVals)*[False,],newItems]
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),data)
+                RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
+                UpdateInstrumentGrid(G2frame,data)
+        finally:
+            dlg.Destroy()
+        
+    def OnSave(event):
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', '.', '', 
+            'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'w')
+                File.write("#GSAS-II instrument parameter file; do not add/delete or change order of items!") 
+                for i,item in enumerate(data[3]):
+                    File.write(item+':'+str(data[1][i])+'\n')
+                File.close()
+        finally:
+            dlg.Destroy()
                                                 
     def OnReset(event):
         insVal.update(insDef)
@@ -785,6 +828,8 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.InstMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.Bind(wx.EVT_MENU,OnLoad,id=G2gd.wxID_INSTLOAD)
+        G2frame.Bind(wx.EVT_MENU,OnSave,id=G2gd.wxID_INSTSAVE)
         G2frame.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2gd.wxID_INSTFLAGCOPY)

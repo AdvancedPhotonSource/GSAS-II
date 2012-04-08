@@ -69,8 +69,9 @@ htmlFirstUse = True
 [ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
 ] = [wx.NewId() for item in range(5)]
 
-[ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY,
-] = [wx.NewId() for item in range(4)]
+[ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
+    wxID_INSTSAVE,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,
 ] = [wx.NewId() for item in range(5)]
@@ -307,6 +308,10 @@ class DataFrame(wx.Frame):
         self.InstMenu.Append(menu=self.InstEdit, title='Operations')
         self.InstMenu.Append(menu=MyHelp(self,helpType='Instrument Parameters'),title='&Help')
         self.InstEdit.Append(help='Reset instrument profile parameters to default', 
+            id=wxID_INSTLOAD, kind=wx.ITEM_NORMAL,text='Load profile...')
+        self.InstEdit.Append(help='Load instrument profile parameters from file', 
+            id=wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')
+        self.InstEdit.Append(help='Save instrument profile parameters to file', 
             id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')
         self.InstEdit.Append(help='Copy instrument profile parameters to other histograms', 
             id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')

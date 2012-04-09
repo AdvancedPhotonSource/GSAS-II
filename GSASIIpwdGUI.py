@@ -691,12 +691,13 @@ def UpdateInstrumentGrid(G2frame,data):
         UpdateInstrumentGrid(G2frame,data)
         
     def OnInstFlagCopy(event):
+        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         flags = data[2]
         instType = data[0][0]
         histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         copyList = []
         dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy parameters to which histograms?', 'Copy parameters', 
+            'Copy refinement flags from\n'+histName, 'Copy refinement flags', 
             histList, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -716,11 +717,12 @@ def UpdateInstrumentGrid(G2frame,data):
             dlg.Destroy()
         
     def OnInstCopy(event):
+        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         copyList = []
         instType = data[0][0]
         dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy parameters to which histograms?', 'Copy parameters', 
+            'Copy parameters from\n'+histName, 'Copy parameters', 
             histList, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -985,7 +987,7 @@ def UpdateSampleGrid(G2frame,data):
             return
         copyList = []
         dlg = wx.MultiChoiceDialog(G2frame,'Copy parameters from\n'+histName,
-            'Copy parameters to which histograms?',histList,wx.CHOICEDLG_STYLE)
+            'Copy parameters',histList,wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
@@ -1017,7 +1019,7 @@ def UpdateSampleGrid(G2frame,data):
             return
         copyList = []
         dlg = wx.MultiChoiceDialog(G2frame,'Copy parameters from\n'+histName,
-            'Copy parameters to which histograms?',histList,wx.CHOICEDLG_STYLE)
+            'Copy refinement flags',histList,wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()

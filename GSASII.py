@@ -654,10 +654,11 @@ class GSASII(wx.Frame):
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
                             Data['IOtth'] = [2.0,5.0]
-                            Data['LRazimuth'] = [-135,-45]
+                            Data['LRazimuth'] = [135,225]
                             Data['azmthOff'] = 0.0
                             Data['outChannels'] = 2500
                             Data['outAzimuths'] = 1
+                            Data['centerAzm'] = False
                             Data['fullIntegrate'] = False
                             Data['setRings'] = False
                             Data['background image'] = ['',1.0]                            

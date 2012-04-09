@@ -672,11 +672,13 @@ def ImageIntegrate(image,data,masks):
     import histogram2d as h2d
     print 'Begin image integration'
     LUtth = data['IOtth']
-    LRazm = data['LRazimuth']
+    LRazm = np.array(data['LRazimuth'])
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
     Dtth = (LUtth[1]-LUtth[0])/numChans
     Dazm = (LRazm[1]-LRazm[0])/numAzms
+    if data['centerAzm']:
+        LRazm += Dazm/2.
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     imageN = len(image)

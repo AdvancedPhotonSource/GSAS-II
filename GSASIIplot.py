@@ -2057,6 +2057,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
             for i in range(Nazm):
                 cake = LRAzim[0]+i*delAzm-AzmthOff
+                if Data['centerAzm']:
+                    cake += delAzm/2.
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
                     

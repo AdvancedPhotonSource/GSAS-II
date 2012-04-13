@@ -445,6 +445,7 @@ class GSASII(wx.Frame):
         self.plotView = 0
         self.Image = 0
         self.oldImagefile = ''
+        self.ImageZ = []
         self.Integrate = 0
         self.Pwdr = False
         self.imageDefault = {}

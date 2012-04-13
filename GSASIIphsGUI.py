@@ -254,7 +254,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
             generalData['Map'] = {'MapType':'','RefList':'','Resolution':1.0,
-                'rhoMax':100.,'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
+                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
+        if 'Flip' not in generalData:
+            generalData['Flip'] = {'RefList':'','Resolution':1.0,'Norm element':'C',
+                'k-factor':1.1,'rhoSig':0.0,'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.} #???
+            
 #        if 'SH Texture' not in generalData:
 #            generalData['SH Texture'] = data['SH Texture']
         generalData['NoAtoms'] = {}
@@ -673,6 +677,55 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
             return mapSizer
                 
+        def FlipSizer():
+            
+            def OnMapType(event):
+                Map['MapType'] = mapType.GetValue()
+                
+            def OnRefList(event):
+                Flip['RefList'] = refList.GetValue()
+                
+            def OnResVal(event):
+                try:
+                    res = float(mapRes.GetValue())
+                    if 0.25 <= res <= 20.:
+                        Flip['Resolution'] = res
+                except ValueError:
+                    pass
+                flipRes.SetValue("%.2f"%(Flip['Resolution']))          #reset in case of error
+            
+            def OnCutOff(event):
+                try:
+                    res = float(cutOff.GetValue())
+                    if 1.0 <= res <= 100.:
+                        Map['cutOff'] = res
+                except ValueError:
+                    pass
+                cutOff.SetValue("%.1f"%(Map['cutOff']))          #reset in case of error
+            
+            refList = data['Histograms'].keys()
+            flipSizer = wx.BoxSizer(wx.VERTICAL)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,label=' Charge flip controls: Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
+            refList = wx.ComboBox(dataDisplay,-1,value=Map['RefList'],choices=refList,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            refList.Bind(wx.EVT_COMBOBOX,OnRefList)
+            lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
+            flipSizer.Add(lineSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mapRes =  wx.TextCtrl(dataDisplay,value='%.2f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
+            mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
+            mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
+            line2Sizer.Add(mapRes,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' Peak cutoff %: '),0,wx.ALIGN_CENTER_VERTICAL)
+            cutOff =  wx.TextCtrl(dataDisplay,value='%.1f'%(Map['cutOff']),style=wx.TE_PROCESS_ENTER)
+            cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)        
+            cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
+            line2Sizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+            flipSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
+            return flipSizer
+                
         General.DestroyChildren()
         dataDisplay = wx.Panel(General)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -693,6 +746,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         mainSizer.Add((5,5),0)
         mainSizer.Add(MapSizer())
+
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(FlipSizer())
 
         dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
@@ -3371,24 +3427,69 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             FillPawleyReflectionsGrid()
 
 ################################################################################
-##### End of main routines
+##### Fourier routines
 ################################################################################
+
+    def FillMapPeaksGrid():
+                        
+        def RowSelect(event):
+            r,c =  event.GetRow(),event.GetCol()
+            if r < 0 and c < 0:
+                if MapPeaks.IsSelection():
+                    MapPeaks.ClearSelection()
+                else:
+                    for row in range(MapPeaks.GetNumberRows()):
+                        MapPeaks.SelectRow(row,True)
+                    
+            elif c < 0:                   #only row clicks
+                if event.ControlDown():                    
+                    if r in MapPeaks.GetSelectedRows():
+                        MapPeaks.DeselectRow(r)
+                    else:
+                        MapPeaks.SelectRow(r,True)
+                elif event.ShiftDown():
+                    for row in range(r+1):
+                        MapPeaks.SelectRow(row,True)
+                else:
+                    MapPeaks.ClearSelection()
+                    MapPeaks.SelectRow(r,True)                
+            G2plt.PlotStructure(G2frame,data)                    
+            
+        G2frame.dataFrame.setSizePosLeft([450,300])
+        if 'Map Peaks' in data:
+            mapPeaks = data['Map Peaks']                        
+            rowLabels = []
+            for i in range(len(mapPeaks)): rowLabels.append(str(i))
+            colLabels = ['mag','x','y','z']
+            Types = 4*[wg.GRID_VALUE_FLOAT+':10,4',]
+            MapPeaksTable = G2gd.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            MapPeaks.SetTable(MapPeaksTable, True)
+            MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
+            for r in range(MapPeaks.GetNumberRows()):
+                for c in range(MapPeaks.GetNumberCols()):
+                    MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            MapPeaks.SetMargins(0,0)
+            MapPeaks.AutoSizeColumns(False)
+                    
+    def OnPeaksMove(event):
+        if 'Map Peaks' in data:
+            mapPeaks = data['Map Peaks']                        
+            Ind = MapPeaks.GetSelectedRows()
+            for ind in Ind:
+                print mapPeaks[ind]
+                x,y,z = mapPeaks[ind][1:]
+                AtomAdd(x,y,z)
+    
+    def OnPeaksClear(event):
+        data['Map Peaks'] = []
+        FillMapPeaksGrid()
+        G2plt.PlotStructure(G2frame,data)
     
     def OnFourierMaps(event):
-        import scipy.fftpack as fft
         generalData = data['General']
-        if not generalData['Map']['MapType']:
-            print '**** ERROR - Fourier map not defined'
-            return
         mapData = generalData['Map']
-        dmin = mapData['Resolution']
-        phaseName = generalData['Name']
-        SGData = generalData['SGData']
-        cell = generalData['Cell'][1:8]        
-        A = G2lat.cell2A(cell[:6])
-        Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
-        Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
         reflName = mapData['RefList']
+        phaseName = generalData['Name']
         if 'PWDR' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
@@ -3396,55 +3497,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif 'HKLF' in reflName:
             print 'single crystal reflections'
             return
-#        Fhkl[0,0,0] = generalData['F000X']
-        time0 = time.time()
-        for ref in reflData:
-            if ref[4] >= dmin:
-                for i,hkl in enumerate(ref[11]):
-                    hkl = np.asarray(hkl,dtype='i')
-                    Fosq,Fcsq,ph = ref[8:11]
-                    dp = 360.*ref[12][i]
-                    a = cosd(ph+dp)
-                    b = sind(ph+dp)
-                    phasep = complex(a,b)
-                    phasem = complex(a,-b)
-                    if 'Fobs' in mapData['MapType']:
-                        F = np.sqrt(Fosq)
-                        h,k,l = hkl+Hmax
-                        Fhkl[h,k,l] = F*phasep
-                        h,k,l = -hkl+Hmax
-                        Fhkl[h,k,l] = F*phasem
-                    elif 'Fcalc' in mapData['MapType']:
-                        F = np.sqrt(Fcsq)
-                        h,k,l = hkl+Hmax
-                        Fhkl[h,k,l] = F*phasep
-                        h,k,l = -hkl+Hmax
-                        Fhkl[h,k,l] = F*phasem
-                    elif 'delt-F' in mapData['MapType']:
-                        dF = np.sqrt(Fosq)-np.sqrt(Fcsq)
-                        h,k,l = hkl+Hmax
-                        Fhkl[h,k,l] = dF*phasep
-                        h,k,l = -hkl+Hmax
-                        Fhkl[h,k,l] = dF*phasem
-                    elif '2*Fo-Fc' in mapData['MapType']:
-                        F = 2.*np.sqrt(Fosq)-np.sqrt(Fcsq)
-                        h,k,l = hkl+Hmax
-                        Fhkl[h,k,l] = F*phasep
-                        h,k,l = -hkl+Hmax
-                        Fhkl[h,k,l] = F*phasem
-                    elif 'Patterson' in mapData['MapType']:
-                        h,k,l = hkl+Hmax
-                        Fhkl[h,k,l] = complex(Fosq,0.)
-                        h,k,l = -hkl+Hmax
-                        Fhkl[h,k,l] = complex(Fosq,0.)
-        Fhkl = fft.fftshift(Fhkl)
-        rho = fft.fftn(Fhkl)/cell[6]
-        print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
-        mapData['rho'] = np.real(rho)
-        mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+        mapData.update(G2mth.FourierMap(data,reflData))
+        mapSig = np.std(mapData['rho'])
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
-        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']))
+        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         G2plt.PlotStructure(G2frame,data)
         
     def printRho(SGData,rho,rhoMax):                          
@@ -3464,112 +3521,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
     def OnSearchMaps(event):
         
-        norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
-        
-        def noDuplicate(xyz,peaks,SGData):                  #be careful where this is used - it's slow
-            equivs = G2spc.GenAtom(xyz,SGData)
-            xyzs = [equiv[0] for equiv in equivs]
-            for x in xyzs:
-                if True in [np.allclose(x,peak,atol=0.002) for peak in peaks]:
-                    return False
-            return True
-                
-        def findRoll(rhoMask,mapHalf):
-            indx = np.array(ma.nonzero(rhoMask)).T
-            rhoList = np.array([rho[i,j,k] for i,j,k in indx])
-            rhoMax = np.max(rhoList)
-            return mapHalf-indx[np.argmax(rhoList)]
-            
-        def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
-            Mag,x0,y0,z0,sig = parms
-            if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
-                return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(x0-rX)*(y0-rY)+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
-            else:
-                return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
-            
-        def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
-            Mag,x0,y0,z0,sig = parms
-            M = rho-rhoCalc(parms,rX,rY,rZ,res,SGLaue)
-            return M
-            
-        def peakHess(parms,rX,rY,rZ,rho,res,SGLaue):
-            Mag,x0,y0,z0,sig = parms
-            dMdv = np.zeros(([5,]+list(rX.shape)))
-            delt = .01
-            for i in range(5):
-                parms[i] -= delt
-                rhoCm = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
-                parms[i] += 2.*delt
-                rhoCp = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
-                parms[i] -= delt
-                dMdv[i] = (rhoCp-rhoCm)/(2.*delt)
-            rhoC = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
-            Vec = np.sum(np.sum(np.sum(dMdv*(rho-rhoC),axis=3),axis=2),axis=1)
-            dMdv = np.reshape(dMdv,(5,rX.size))
-            Hess = np.inner(dMdv,dMdv)
-            
-            return Vec,Hess
-            
-        generalData = data['General']
-        phaseName = generalData['Name']
-        SGData = generalData['SGData']
-        cell = generalData['Cell'][1:8]        
-        A = G2lat.cell2A(cell[:6])
-        drawingData = data['Drawing']
-        try:
-            mapData = generalData['Map']
-            contLevel = mapData['cutOff']*mapData['rhoMax']/100.
-            rho = copy.copy(mapData['rho'])     #don't mess up original
-            mapHalf = np.array(rho.shape)/2
-            res = mapData['Resolution']
-            incre = 1./np.array(rho.shape)
-            step = max(1.0,1./res)+1
-            steps = np.array(3*[step,])
-        except KeyError:
-            print '**** ERROR - Fourier map not defined'
-            return
         peaks = []
         mags = []
         print ' Begin fourier map search - can take some time'
         time0 = time.time()
         wx.BeginBusyCursor()
         try:
-            while True:
-                rhoMask = ma.array(rho,mask=(rho<contLevel))
-                if not ma.count(rhoMask):
-                    break
-                rMI = findRoll(rhoMask,mapHalf)
-                rho = np.roll(np.roll(np.roll(rho,rMI[0],axis=0),rMI[1],axis=1),rMI[2],axis=2)
-                rMM = mapHalf-steps
-                rMP = mapHalf+steps+1
-                rhoPeak = rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
-                peakInt = np.sum(rhoPeak)*res**3
-                rX,rY,rZ = np.mgrid[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
-                x0 = [peakInt,mapHalf[0],mapHalf[1],mapHalf[2],2.0]          #magnitude, position & width(sig)
-                result = G2mth.HessianLSQ(peakFunc,x0,Hess=peakHess,
-                    args=(rX,rY,rZ,rhoPeak,res,SGData['SGLaue']),ftol=.0001,maxcyc=100)
-                x1 = result[0]
-                if np.any(x1 < 0):
-                    break
-                peak = (np.array(x1[1:4])-rMI)*incre
-                if not len(peaks):
-                    peaks.append(peak)
-                    mags.append(x1[0])
-                else:
-                    if noDuplicate(peak,peaks,SGData) and x1[0] > 0.:
-                        peaks.append(peak)
-                        mags.append(x1[0])
-                rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(result[0],rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
-                rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
+            peaks,mags = G2mth.SearchMap(data,keepDup=True)
         finally:
             wx.EndBusyCursor()
-        sortIdx = np.argsort(mags)        
-        print ' Map search peaks found:'
-        print '  No.    Mag.      x        y        z'
-        for j,i in enumerate(sortIdx[::-1]):
-            print ' %3d %8.3f %8.5f %8.5f %8.5f'%(j,mags[i],peaks[i][0],peaks[i][1],peaks[i][2])
-        print ' Map search finished, time = %.2fs'%(time.time()-time0)
-        
+        sortIdx = np.argsort(mags.flatten())
+        if len(peaks):
+            data['Map Peaks'] = np.concatenate((mags,peaks),axis=1)
+            
+            print ' Map search peaks found:'
+            print '  No.    Mag.      x        y        z'
+            for j,i in enumerate(sortIdx[::-1]):
+                print ' %3d %8.3f %8.5f %8.5f %8.5f'%(j,mags[i],peaks[i][0],peaks[i][1],peaks[i][2])
+            print ' Map search finished, time = %.2fs'%(time.time()-time0)
+        Page = G2frame.dataDisplay.FindPage('Map peaks')
+        G2frame.dataDisplay.ChangeSelection(Page)
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
+        FillMapPeaksGrid()
+        G2plt.PlotStructure(G2frame,data)
+                
     def OnTextureRefine(event):
         print 'refine texture?'
         event.Skip()        
@@ -3638,6 +3615,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
             UpdateTexture()                        
             G2plt.PlotTexture(G2frame,data,Start=True)
+        elif text == 'Map peaks':
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
+            FillMapPeaksGrid()
+            G2plt.PlotStructure(G2frame,data)
+            
         else:
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
         event.Skip()
@@ -3669,7 +3653,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
         Texture = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(Texture,'Texture')
-
+        MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
+            
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     G2frame.dataDisplay.SetSelection(oldPage)
     

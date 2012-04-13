@@ -1706,7 +1706,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
-        if event.xdata and event.ydata:                 #avoid out of frame errors
+        if event.xdata and event.ydata and len(G2frame.ImageZ):                 #avoid out of frame errors
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             item = G2frame.itemPicked
             pixelSize = Data['pixelSize']
@@ -1825,7 +1825,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
         pixLimit = Data['pixLimit']
-        if G2frame.itemPicked is None and PickName == 'Image Controls':
+        if G2frame.itemPicked is None and PickName == 'Image Controls' and len(G2frame.ImageZ):
 #            sizexy = Data['size']
             Xpos = event.xdata
             if not (Xpos and G2frame.ifGetRing):                   #got point out of frame
@@ -1985,7 +1985,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             return
         G2frame.PatternTree.SetItemPyData(G2frame.Image,[size,imagefile])
         G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,imageOnly=True)
-#        print G2frame.ImageZ.shape,G2frame.ImageZ.size,Data['size'] #might be useful debugging line
         G2frame.oldImagefile = imagefile
 
     imScale = 1
@@ -2280,6 +2279,8 @@ def PlotStructure(G2frame,data):
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     Mydir = generalData['Mydir']
     atomData = data['Atoms']
+    if 'Map Peaks' in data:
+        mapPeaks = data['Map Peaks']                        
     drawingData = data['Drawing']
     drawAtoms = drawingData['Atoms']
     mapData = {}
@@ -2326,20 +2327,35 @@ def PlotStructure(G2frame,data):
         Zmax = 1.
         if Add:
             Indx = GetSelectedAtoms()
-        for i,atom in enumerate(drawAtoms):
-            x,y,z = atom[cx:cx+3]
-            X,Y,Z = gluProject(x,y,z,Model,Proj,View)
-            XY = [int(X),int(View[3]-Y)]
-            if np.allclose(xy,XY,atol=10) and Z < Zmax:
-                Zmax = Z
-                try:
-                    Indx.remove(i)
-                    ClearSelectedAtoms()
-                    for id in Indx:
-                        SetSelectedAtoms(id,Add)
-                except:
-                    SetSelectedAtoms(i,Add)
-                    
+        if G2frame.dataDisplay.GetPageText(getSelection()) == 'Map peaks':
+            for i,peak in enumerate(mapPeaks):
+                x,y,z = peak[1:]
+                X,Y,Z = gluProject(x,y,z,Model,Proj,View)
+                XY = [int(X),int(View[3]-Y)]
+                if np.allclose(xy,XY,atol=10) and Z < Zmax:
+                    Zmax = Z
+                    try:
+                        Indx.remove(i)
+                        ClearSelectedAtoms()
+                        for id in Indx:
+                            SetSelectedAtoms(id,Add)
+                    except:
+                        SetSelectedAtoms(i,Add)
+        else:
+            for i,atom in enumerate(drawAtoms):
+                x,y,z = atom[cx:cx+3]
+                X,Y,Z = gluProject(x,y,z,Model,Proj,View)
+                XY = [int(X),int(View[3]-Y)]
+                if np.allclose(xy,XY,atol=10) and Z < Zmax:
+                    Zmax = Z
+                    try:
+                        Indx.remove(i)
+                        ClearSelectedAtoms()
+                        for id in Indx:
+                            SetSelectedAtoms(id,Add)
+                    except:
+                        SetSelectedAtoms(i,Add)
+                                       
     def OnMouseDown(event):
         xy = event.GetPosition()
         if event.ShiftDown():
@@ -2417,14 +2433,19 @@ def PlotStructure(G2frame,data):
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Draw Atoms':
                 G2frame.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Draw Atoms
+            elif G2frame.dataDisplay.GetPageText(page) == 'Map peaks':
+                G2frame.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
             elif G2frame.dataDisplay.GetPageText(page) == 'Atoms':
                 G2frame.dataDisplay.GetPage(page).ClearSelection()      #this is the Atoms grid in Atoms
+                
                     
     def SetSelectedAtoms(ind,Add=False):
         page = getSelection()
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Draw Atoms':
                 G2frame.dataDisplay.GetPage(page).SelectRow(ind,Add)      #this is the Atoms grid in Draw Atoms
+            elif G2frame.dataDisplay.GetPageText(page) == 'Map peaks':
+                G2frame.dataDisplay.GetPage(page).SelectRow(ind,Add)                  
             elif G2frame.dataDisplay.GetPageText(page) == 'Atoms':
                 Id = drawAtoms[ind][-2]
                 for i,atom in enumerate(atomData):
@@ -2437,6 +2458,8 @@ def PlotStructure(G2frame,data):
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Draw Atoms':
                 Ind = G2frame.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Draw Atoms
+            elif G2frame.dataDisplay.GetPageText(page) == 'Map peaks':
+                Ind = G2frame.dataDisplay.GetPage(page).GetSelectedRows()
             elif G2frame.dataDisplay.GetPageText(page) == 'Atoms':
                 Ind = G2frame.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
         return Ind
@@ -2658,12 +2681,13 @@ def PlotStructure(G2frame,data):
             glPushMatrix()
             Dx = np.inner(Amat,bond)
             Z = np.sqrt(np.sum(Dx**2))
-            azm = atan2d(-Dx[1],-Dx[0])
-            phi = acosd(Dx[2]/Z)
-            glRotate(-azm,0,0,1)
-            glRotate(phi,1,0,0)
-            q = gluNewQuadric()
-            gluCylinder(q,radius,radius,Z,slice,2)
+            if Z:
+                azm = atan2d(-Dx[1],-Dx[0])
+                phi = acosd(Dx[2]/Z)
+                glRotate(-azm,0,0,1)
+                glRotate(phi,1,0,0)
+                q = gluNewQuadric()
+                gluCylinder(q,radius,radius,Z,slice,2)
             glPopMatrix()            
         glPopMatrix()
                 
@@ -2697,6 +2721,22 @@ def PlotStructure(G2frame,data):
                 glVertex3fv(vert)
             glEnd()
         glPopMatrix()
+
+    def RenderMapPeak(x,y,z,color):
+        vecs = np.array([[[-.01,0,0],[.01,0,0]],[[0,-.01,0],[0,.01,0]],[[0,0,-.01],[0,0,.01]]])
+        xyz = np.array([x,y,z])
+        glEnable(GL_COLOR_MATERIAL)
+        glLineWidth(3)
+        glColor3fv(color)
+        glPushMatrix()
+        glBegin(GL_LINES)
+        for vec in vecs:
+            glVertex3fv(vec[0]+xyz)
+            glVertex3fv(vec[1]+xyz)
+        glEnd()
+        glColor4ubv([0,0,0,0])
+        glPopMatrix()
+        glDisable(GL_COLOR_MATERIAL)
         
     def RenderBackbone(Backbone,BackboneColor,radius):
         glPushMatrix()
@@ -2736,6 +2776,10 @@ def PlotStructure(G2frame,data):
                             
     def Draw():
         mapData = generalData['Map']
+        pageName = ''
+        page = getSelection()
+        if page:
+            pageName = G2frame.dataDisplay.GetPageText(page)
         rhoXYZ = []
         if len(mapData['rho']):
             VP = np.array(drawingData['viewPoint'][0])-np.array([.5,.5,.5])
@@ -2814,7 +2858,7 @@ def PlotStructure(G2frame,data):
                 atNum = -1
             CL = atom[cs+2]
             color = np.array(CL)/255.
-            if iat in Ind:
+            if iat in Ind and G2frame.dataDisplay.GetPageText(getSelection()) != 'Map peaks':
                 color = np.array(Gr)/255.
 #            color += [.25,]
             radius = 0.5
@@ -2892,6 +2936,12 @@ def PlotStructure(G2frame,data):
 #        glDisable(GL_BLEND)
         if len(rhoXYZ):
             RenderMap(rho,rhoXYZ,indx,Rok)
+        if len(mapPeaks):
+            for ind,[mag,x,y,z] in enumerate(mapPeaks):
+                if ind in Ind and pageName == 'Map peaks':
+                    RenderMapPeak(x,y,z,Gr)
+                else:
+                    RenderMapPeak(x,y,z,Wt)
         if Backbone:
             RenderBackbone(Backbone,BackboneColor,bondR)
 #        print time.time()-time0

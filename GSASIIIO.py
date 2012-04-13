@@ -489,7 +489,7 @@ def CheckImageFile(G2frame,imagefile):
         ADSC Image (*.img)|*.img|\
         All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
         try:
-            dlg.SetFilename(ospath.split(imagefile)[1])
+            dlg.SetFilename(''+ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
                 imagefile = dlg.GetPath()
             else:
@@ -915,7 +915,6 @@ def SaveIntegration(G2frame,PickId,data):
 def powderFxyeSave(G2frame,exports,powderfile):
     head,tail = ospath.split(powderfile)
     name,ext = tail.split('.')
-    wx.BeginBusyCursor()
     for i,export in enumerate(exports):
         filename = ospath.join(head,name+'-%03d.'%(i)+ext)
         prmname = filename.strip(ext)+'prm'
@@ -942,19 +941,17 @@ def powderFxyeSave(G2frame,exports,powderfile):
         prm.close()
         file = open(filename,'w')
         print 'save powder pattern to file: ',filename
-        try:
-            x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
-            file.write(powderfile+'\n')
-            file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
-                100.*x[0],100.*(x[1]-x[0])))
-            s = list(np.sqrt(1./np.array(w)))        
-            XYW = zip(x,y,s)
-            for X,Y,S in XYW:
-                file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,max(S,1.0)))
-            file.close()
-        finally:
-            wx.EndBusyCursor()
-        print 'powder pattern file written'
+        x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
+        file.write(powderfile+'\n')
+        file.write('Instrument parameter file:'+ospath.split(prmname)[1]+'\n')
+        file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
+            100.*x[0],100.*(x[1]-x[0])))
+        s = list(np.sqrt(1./np.array(w)))        
+        XYW = zip(x,y,s)
+        for X,Y,S in XYW:
+            file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,max(S,1.0)))
+        file.close()
+        print 'powder pattern file '+filename+' written'
         
 def powderXyeSave(G2frame,exports,powderfile):
     head,tail = ospath.split(powderfile)
@@ -965,17 +962,13 @@ def powderXyeSave(G2frame,exports,powderfile):
         file = open(filename,'w')
         file.write('#%s\n'%(export))
         print 'save powder pattern to file: ',filename
-        wx.BeginBusyCursor()
-        try:
-            x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
-            s = list(np.sqrt(1./np.array(w)))        
-            XYW = zip(x,y,s)
-            for X,Y,W in XYW:
-                file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
-            file.close()
-        finally:
-            wx.EndBusyCursor()
-        print 'powder pattern file written'
+        x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
+        s = list(np.sqrt(1./np.array(w)))        
+        XYW = zip(x,y,s)
+        for X,Y,W in XYW:
+            file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
+        file.close()
+        print 'powder pattern file '+filename+' written'
         
 def PDFSave(G2frame,exports):    
     for export in exports:

@@ -11,10 +11,13 @@ import os
 import os.path as ospath
 import numpy as np
 import numpy.linalg as nl
+import numpy.ma as ma
 import cPickle
 import time
 import math
+import copy
 import GSASIIpath
+import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import scipy.optimize as so
 import scipy.linalg as sl
@@ -513,4 +516,164 @@ def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
         else:
             return text
 
+def FourierMap(data,reflData):
     
+    import scipy.fftpack as fft
+    generalData = data['General']
+    if not generalData['Map']['MapType']:
+        print '**** ERROR - Fourier map not defined'
+        return
+    mapData = generalData['Map']
+    dmin = mapData['Resolution']
+    SGData = generalData['SGData']
+    cell = generalData['Cell'][1:8]        
+    A = G2lat.cell2A(cell[:6])
+    Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
+    Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
+#    Fhkl[0,0,0] = generalData['F000X']
+    time0 = time.time()
+    for ref in reflData:
+        if ref[4] >= dmin:
+            for i,hkl in enumerate(ref[11]):
+                hkl = np.asarray(hkl,dtype='i')
+                Fosq,Fcsq,ph = ref[8:11]
+                dp = 360.*ref[12][i]
+                a = cosd(ph+dp)
+                b = sind(ph+dp)
+                phasep = complex(a,b)
+                phasem = complex(a,-b)
+                if 'Fobs' in mapData['MapType']:
+                    F = np.sqrt(Fosq)
+                    h,k,l = hkl+Hmax
+                    Fhkl[h,k,l] = F*phasep
+                    h,k,l = -hkl+Hmax
+                    Fhkl[h,k,l] = F*phasem
+                elif 'Fcalc' in mapData['MapType']:
+                    F = np.sqrt(Fcsq)
+                    h,k,l = hkl+Hmax
+                    Fhkl[h,k,l] = F*phasep
+                    h,k,l = -hkl+Hmax
+                    Fhkl[h,k,l] = F*phasem
+                elif 'delt-F' in mapData['MapType']:
+                    dF = np.sqrt(Fosq)-np.sqrt(Fcsq)
+                    h,k,l = hkl+Hmax
+                    Fhkl[h,k,l] = dF*phasep
+                    h,k,l = -hkl+Hmax
+                    Fhkl[h,k,l] = dF*phasem
+                elif '2*Fo-Fc' in mapData['MapType']:
+                    F = 2.*np.sqrt(Fosq)-np.sqrt(Fcsq)
+                    h,k,l = hkl+Hmax
+                    Fhkl[h,k,l] = F*phasep
+                    h,k,l = -hkl+Hmax
+                    Fhkl[h,k,l] = F*phasem
+                elif 'Patterson' in mapData['MapType']:
+                    h,k,l = hkl+Hmax
+                    Fhkl[h,k,l] = complex(Fosq,0.)
+                    h,k,l = -hkl+Hmax
+                    Fhkl[h,k,l] = complex(Fosq,0.)
+    Fhkl = fft.fftshift(Fhkl)
+    rho = fft.fftn(Fhkl)/cell[6]
+    print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    mapData['rho'] = np.real(rho)
+    mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    return mapData
+    
+def SearchMap(data,keepDup=False):
+    
+    norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
+    
+    def noDuplicate(xyz,peaks,SGData):                  #be careful where this is used - it's slow
+        equivs = G2spc.GenAtom(xyz,SGData)
+        xyzs = [equiv[0] for equiv in equivs]
+        for x in xyzs:
+            if True in [np.allclose(x,peak,atol=0.002) for peak in peaks]:
+                return False
+        return True
+            
+    def findRoll(rhoMask,mapHalf):
+        indx = np.array(ma.nonzero(rhoMask)).T
+        rhoList = np.array([rho[i,j,k] for i,j,k in indx])
+        rhoMax = np.max(rhoList)
+        return mapHalf-indx[np.argmax(rhoList)]
+        
+    def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
+        Mag,x0,y0,z0,sig = parms
+        if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
+            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(x0-rX)*(y0-rY)+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+        else:
+            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+        
+    def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
+        Mag,x0,y0,z0,sig = parms
+        M = rho-rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+        return M
+        
+    def peakHess(parms,rX,rY,rZ,rho,res,SGLaue):
+        Mag,x0,y0,z0,sig = parms
+        dMdv = np.zeros(([5,]+list(rX.shape)))
+        delt = .01
+        for i in range(5):
+            parms[i] -= delt
+            rhoCm = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+            parms[i] += 2.*delt
+            rhoCp = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+            parms[i] -= delt
+            dMdv[i] = (rhoCp-rhoCm)/(2.*delt)
+        rhoC = rhoCalc(parms,rX,rY,rZ,res,SGLaue)
+        Vec = np.sum(np.sum(np.sum(dMdv*(rho-rhoC),axis=3),axis=2),axis=1)
+        dMdv = np.reshape(dMdv,(5,rX.size))
+        Hess = np.inner(dMdv,dMdv)
+        
+        return Vec,Hess
+        
+    generalData = data['General']
+    phaseName = generalData['Name']
+    SGData = generalData['SGData']
+    cell = generalData['Cell'][1:8]        
+    A = G2lat.cell2A(cell[:6])
+    drawingData = data['Drawing']
+    peaks = []
+    mags = []
+    try:
+        mapData = generalData['Map']
+        contLevel = mapData['cutOff']*mapData['rhoMax']/100.
+        rho = copy.copy(mapData['rho'])     #don't mess up original
+        mapHalf = np.array(rho.shape)/2
+        res = mapData['Resolution']
+        incre = 1./np.array(rho.shape)
+        step = max(1.0,1./res)+1
+        steps = np.array(3*[step,])
+    except KeyError:
+        print '**** ERROR - Fourier map not defined'
+        return peaks,mags
+    while True:
+        rhoMask = ma.array(rho,mask=(rho<contLevel))
+        if not ma.count(rhoMask):
+            break
+        rMI = findRoll(rhoMask,mapHalf)
+        rho = np.roll(np.roll(np.roll(rho,rMI[0],axis=0),rMI[1],axis=1),rMI[2],axis=2)
+        rMM = mapHalf-steps
+        rMP = mapHalf+steps+1
+        rhoPeak = rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
+        peakInt = np.sum(rhoPeak)*res**3
+        rX,rY,rZ = np.mgrid[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
+        x0 = [peakInt,mapHalf[0],mapHalf[1],mapHalf[2],2.0]          #magnitude, position & width(sig)
+        result = HessianLSQ(peakFunc,x0,Hess=peakHess,
+            args=(rX,rY,rZ,rhoPeak,res,SGData['SGLaue']),ftol=.0001,maxcyc=100)
+        x1 = result[0]
+        if np.any(x1 < 0):
+            break
+        peak = (np.array(x1[1:4])-rMI)*incre
+        if not len(peaks):
+            peaks.append(peak)
+            mags.append(x1[0])
+        else:
+            if keepDup:
+                peaks.append(peak)
+                mags.append(x1[0])
+            elif noDuplicate(peak,peaks,SGData) and x1[0] > 0.:
+                peaks.append(peak)
+                mags.append(x1[0])
+        rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(result[0],rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
+        rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
+    return np.array(peaks),np.array([mags,]).T

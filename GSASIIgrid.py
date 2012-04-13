@@ -37,8 +37,8 @@ else:
     helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True
 
-[ wxID_FOURCALC,wxID_FOURSEARCH,
-] = [wx.NewId() for item in range(2)]
+[ wxID_FOURCALC,wxID_FOURSEARCH, wxID_PEAKSMOVE, wxID_PEAKSCLEAR,
+] = [wx.NewId() for item in range(4)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(3)]
@@ -447,6 +447,18 @@ class DataFrame(wx.Frame):
         self.GeneralCalc.Append(help='Search Fourier map',id=wxID_FOURSEARCH, kind=wx.ITEM_NORMAL,
             text='Search map')
         
+# Phase / Data tab
+        self.DataMenu = wx.MenuBar()
+        self.DataEdit = wx.Menu(title='')
+        self.DataMenu.Append(menu=self.DataEdit, title='Edit')
+        self.DataMenu.Append(menu=MyHelp(self,helpType='Data'),title='&Help')
+        self.DataEdit.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
+            help='Select new powder histograms to be used for this phase')
+        self.DataEdit.Append(id=wxID_HKLFADD, kind=wx.ITEM_NORMAL,text='Add single crystal histograms',
+            help='Select new single crystal histograms to be used for this phase')
+        self.DataEdit.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Delete histograms',
+            help='Delete histograms from use for this phase')
+            
 # Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()
         self.AtomEdit = wx.Menu(title='')
@@ -475,40 +487,6 @@ class DataFrame(wx.Frame):
         self.AtomCompute.Append(id=wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Distances & Angles',
             help='Compute distances & angles for selected atoms')   
                  
-# Phase / Data tab
-        self.DataMenu = wx.MenuBar()
-        self.DataEdit = wx.Menu(title='')
-        self.DataMenu.Append(menu=self.DataEdit, title='Edit')
-        self.DataMenu.Append(menu=MyHelp(self,helpType='Data'),title='&Help')
-        self.DataEdit.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
-            help='Select new powder histograms to be used for this phase')
-        self.DataEdit.Append(id=wxID_HKLFADD, kind=wx.ITEM_NORMAL,text='Add single crystal histograms',
-            help='Select new single crystal histograms to be used for this phase')
-        self.DataEdit.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Delete histograms',
-            help='Delete histograms from use for this phase')
-            
-# Phase / Texture tab
-        self.TextureMenu = wx.MenuBar()
-        self.TextureEdit = wx.Menu(title='')
-        self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
-        self.TextureMenu.Append(menu=MyHelp(self,helpType='Texture'),title='&Help')
-        self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
-            help='Refine the texture coefficients from sequential Pawley results')
-        self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
-            help='Clear the texture coefficients' )
-            
-# Phase / Pawley tab
-        self.PawleyMenu = wx.MenuBar()
-        self.PawleyEdit = wx.Menu(title='')
-        self.PawleyMenu.Append(menu=self.PawleyEdit,title='Operations')
-        self.PawleyMenu.Append(menu=MyHelp(self,helpType='Pawley'),title='&Help')
-        self.PawleyEdit.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
-            help='Initialize Pawley reflection list')
-        self.PawleyEdit.Append(id=wxID_PAWLEYESTIMATE, kind=wx.ITEM_NORMAL,text='Pawley estimate',
-            help='Estimate initial Pawley intensities')
-        self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
-            help='Delete Pawley reflection list')
-
 # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
         self.DataDrawOptions.Append(menu=MyHelp(self,helpType='Draw Options'),title='&Help')
@@ -544,6 +522,38 @@ class DataFrame(wx.Frame):
             help='Compute distance, angle or torsion for 2-4 selected atoms')   
         self.DrawAtomCompute.Append(id=wxID_DRAWPLANE, kind=wx.ITEM_NORMAL,text='Best plane',
             help='Compute best plane for 4+ selected atoms')   
+            
+# Phase / Texture tab
+        self.TextureMenu = wx.MenuBar()
+        self.TextureEdit = wx.Menu(title='')
+        self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
+        self.TextureMenu.Append(menu=MyHelp(self,helpType='Texture'),title='&Help')
+        self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
+            help='Refine the texture coefficients from sequential Pawley results')
+        self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
+            help='Clear the texture coefficients' )
+            
+# Phase / Pawley tab
+        self.PawleyMenu = wx.MenuBar()
+        self.PawleyEdit = wx.Menu(title='')
+        self.PawleyMenu.Append(menu=self.PawleyEdit,title='Operations')
+        self.PawleyMenu.Append(menu=MyHelp(self,helpType='Pawley'),title='&Help')
+        self.PawleyEdit.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
+            help='Initialize Pawley reflection list')
+        self.PawleyEdit.Append(id=wxID_PAWLEYESTIMATE, kind=wx.ITEM_NORMAL,text='Pawley estimate',
+            help='Estimate initial Pawley intensities')
+        self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
+            help='Delete Pawley reflection list')
+            
+# Phase / Map peaks tab
+        self.MapPeaksMenu = wx.MenuBar()
+        self.MapPeaksEdit = wx.Menu(title='')
+        self.MapPeaksMenu.Append(menu=self.MapPeaksEdit, title='Map peaks')
+        self.MapPeaksMenu.Append(menu=MyHelp(self,helpType='Map peaks'),title='&Help')
+        self.MapPeaksEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks', 
+            help='Move selected peaks to atom list')
+        self.MapPeaksEdit.Append(id=wxID_PEAKSCLEAR, kind=wx.ITEM_NORMAL,text='Clear peaks', 
+            help='Clear the map peak list')
             
 # end of GSAS-II menu definitions
         

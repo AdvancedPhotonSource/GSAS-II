@@ -1,0 +1,801 @@
+##############################################################################
+#                                                                            #
+# This CIF contains the data in a paper accepted for publication in Acta     #
+# Crystallographica Section B. It has been peer reviewed under the auspices  #
+# of the IUCr Commission on Journals.                                        #
+#                                                                            #
+# Full details of the Crystallographic Information File format               #
+# are given in the paper "The Crystallographic Information File (CIF):       #
+# a New Standard Archive File for Crystallography" by S. R. Hall, F. H.      #
+# Allen and I. D. Brown [Acta Cryst. (1991), A47, 655-685].                  #
+#                                                                            #
+# The current version of the core CIF dictionary may be obtained from        #
+# ftp://ftp.iucr.org/pub/cif_core.dic. The current version number is 2.1.    #
+#                                                                            #
+# Software is freely available for graphical display of the structure(s) in  #
+# this CIF.  For information consult the CIF home page http://www.iucr.org/  #
+# cif/home.html                                                              #
+#                                                                            #
+#           Copyright International Union of Crystallography                 #
+#                                                                            #
+##############################################################################
+
+data_phase
+_audit_creation_method     'Created with Diamond'
+_journal_year     2007
+_chemical_formula_moiety     'B3 H O8 Si, Na, Li'
+_chemical_formula_sum     'B3 H Li Na O8 Si'
+_chemical_formula_structural     LiNaSiB3O8H
+_chemical_formula_analytical     LiNaSiB3O8H
+_chemical_formula_weight     219.455
+_symmetry_cell_setting     monoclinic
+_symmetry_space_group_name_H-M     'P 21/c'
+_symmetry_space_group_name_Hall     -P_2ybc
+loop_
+    _symmetry_equiv_pos_site_id
+    _symmetry_equiv_pos_as_xyz
+    1 'x, y, z'
+    2 '-x, 1/2+y, 1/2-z'
+    3 '-x, -y, -z'
+    4 'x, 1/2-y, 1/2+z'
+_cell_length_a     6.76200(10)
+_cell_length_b     13.8016(3)
+_cell_length_c     7.6878(2)
+_cell_angle_alpha     90.000
+_cell_angle_beta     124.0890(10)
+_cell_angle_gamma     90.000
+_cell_volume     594.18(2)
+_cell_formula_units_Z     4
+_cell_measurement_temperature     298
+_exptl_crystal_colour     white
+_exptl_crystal_density_diffrn     2.45321
+_exptl_crystal_density_meas     2.453
+_exptl_crystal_density_method     'Bermann balance'
+_exptl_absorpt_coefficient_mu     4.507
+_exptl_absorpt_correction_type     'cylinder'
+_exptl_absorpt_process_details     'Debye-Scherrer correction'
+_diffrn_radiation_type     'Cu K\a'
+_diffrn_radiation_wavelength     1.5418
+_diffrn_measurement_device_type     'Bruker D8 Advance'
+_refine_ls_structure_factor_coef     Fsqd
+_refine_ls_matrix_type     full
+_refine_ls_goodness_of_fit_all     1.27
+_refine_ls_number_parameters     87
+_refine_ls_number_constraints     1
+_refine_ls_hydrogen_treatment     'mixed'
+_refine_ls_weighting_scheme     'unit'
+_refine_ls_weighting_details     .
+_refine_ls_shift/su_max     0.001
+_refine_ls_extinction_method     'none'
+_refine_ls_extinction_coef     .
+loop_
+    _atom_type_symbol
+    _atom_type_scat_source
+    Li 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
+    Na 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
+    B 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
+    Si 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
+    O 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
+    H 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
+_computing_data_reduction     'Topas 4 beta (14/7/2006)'
+_computing_structure_solution     'Topas 4 beta (14/7/2006)'
+_computing_structure_refinement     'Topas 4 beta (14/7/2006)'
+_computing_molecular_graphics     'Diamond 3.1d'
+_computing_publication_material     'Topas 4 beta (14/7/2006)'
+loop_
+    _atom_site_type_symbol
+    _atom_site_label
+    _atom_site_fract_x
+    _atom_site_fract_y
+    _atom_site_fract_z
+    _atom_site_U_iso_or_equiv
+    _atom_site_thermal_displace_type
+    _atom_site_calc_flag
+    _atom_site_occupancy
+    Li Li1 0.462(2) 0.1995(6) 0.1383(15) 0.046(3) Uiso d 1.000
+    Na Na1 0.9733(3) 0.99060(10) 0.7544(3) 0.0764 Uani d 1.000
+    B B1 0.2096(17) 0.1602(8) 0.6623(18) 0.091(3) Uiso d 1.000
+    B B2 0.6920(14) 0.3493(6) 0.4160(15) 0.054(2) Uiso d 1.000
+    B B3 0.5290(10) 0.5022(4) 0.7860(9) 0.0947 Uani d 1.000
+    Si Si1 0.0378(4) 0.7539(2) 0.2048(3) 0.0584(5) Uiso d 1.000
+    O O1 0.8157(7) 0.7241(3) 0.9895(6) 0.0651(14) Uiso d 1.000
+    O O2 0.2673(7) 0.7818(3) 0.2102(6) 0.0663(13) Uiso d 1.000
+    O O3 0.9733(6) 0.8483(3) 0.2873(7) 0.0581(14) Uiso d 1.000
+    O O4 0.1150(5) 0.6584(3) 0.3491(6) 0.0542(13) Uiso d 1.000
+    O O5 0.7457(8) 0.5506(3) 0.8761(9) 0.0708(15) Uiso d 1.000
+    O O6 0.6846(9) 0.4560(3) 0.3520(8) 0.0570(13) Uiso d 1.000
+    O O7 0.5489(7) 0.6725(3) 0.6198(6) 0.0634(12) Uiso d 1.000
+    O O8 0.5299(3) 0.4051(3) 0.8362(6) 0.0733(14) Uiso d 1.000
+    H H1 0.699(3) 0.3993(14) 0.936(3) 0.0953(19) Uiso d 1.000
+loop_
+    _atom_site_aniso_label
+    _atom_site_aniso_U_11
+    _atom_site_aniso_U_22
+    _atom_site_aniso_U_33
+    _atom_site_aniso_U_12
+    _atom_site_aniso_U_13
+    _atom_site_aniso_U_23
+    Na1 0.091(6) 0.0657(18) 0.081(2) 0.01(7) 0.038(2) -0.0046(19)
+    B3 0.046(7) 0.158(10) 0.098(11) 0.016(7) 0.043(8) 0.078(8)
+loop_
+    _geom_bond_atom_site_label_1
+    _geom_bond_atom_site_label_2
+    _geom_bond_site_symmetry_2
+    _geom_bond_distance
+    Li1 O1 7_666 1.882(11)
+    Li1 O2 8_645 1.898(10)
+    Li1 O8 14_445 1.957(11)
+    Li1 O7 13_645 1.978(14)
+    Li1 O7 13_666 2.598(13)
+    Li1 H1 15_544 2.36(2)
+    Na1 O4 10_665 2.212(4)
+    Na1 O3 9_776 2.303(5)
+    Na1 O5 11_564 2.477(6)
+    Na1 O6 12_565 2.561(7)
+    Na1 H1 15_564 2.579(17)
+    Na1 O6 12_756 2.624(5)
+    Na1 O5 11_756 2.728(8)
+    B1 O1 7_646 1.395(14)
+    B1 O3 9_666 1.493(16)
+    B1 O7 13_646 1.561(9)
+    B1 O5 11_646 1.602(12)
+    B2 O2 8_645 1.479(12)
+    B2 O7 13_666 1.522(11)
+    B2 O4 10_666 1.528(9)
+    B2 O6 12_555 1.544(10)
+    B3 O6 12_666 1.352(7)
+    B3 O5 11_555 1.391(7)
+    B3 O8 14_555 1.394(7)
+    Si1 O1 7_454 1.542(4)
+    Si1 O2 8_555 1.577(6)
+    Si1 O4 10_555 1.611(5)
+    Si1 O3 9_455 1.613(5)
+    H1 O8 14_555 0.960(15)
+    H1 O3 9_746 2.155(14)
+    H1 O5 11_555 2.20(2)
+loop_
+    _geom_angle_atom_site_label_1
+    _geom_angle_atom_site_label_2
+    _geom_angle_atom_site_label_3
+    _geom_angle_site_symmetry_1
+    _geom_angle_site_symmetry_2
+    _geom_angle_site_symmetry_3
+    _geom_angle
+    O1 Li1 O2 7_666 . 8_645 108.8(6)
+    O2 Li1 O7 8_645 . 8_645 103.9(5)
+    O2 Li1 O8 8_645 . 8_645 102.1(5)
+    O8 Li1 O7 8_645 . 13_645 120.1(5)
+    O4 Na1 O3 10_665 . 9_776 150.49(17)
+    O4 Na1 O5 10_665 . 11_564 92.43(15)
+    O4 Na1 O6 10_665 . 12_565 115.57(17)
+    O3 Na1 O5 9_776 . 11_564 94.79(16)
+    O3 Na1 O6 9_776 . 12_565 88.16(17)
+    O1 B1 O3 7_646 . 9_666 122.4(9)
+    O1 B1 O7 7_646 . 13_646 113.2(8)
+    O1 B1 O5 7_646 . 11_646 113.0(7)
+    O3 B1 O7 9_666 . 13_646 104.5(8)
+    O2 B2 O7 8_645 . 13_666 109.3(7)
+    O2 B2 O4 8_645 . 10_666 112.4(6)
+    O2 B2 O6 8_645 . 12_555 112.2(6)
+    O7 B2 O4 13_666 . 10_666 108.6(7)
+    O6 B3 O5 12_666 . 11_555 123.3(6)
+    O6 B3 O8 12_666 . 14_555 117.6(5)
+    O5 B3 O8 11_555 . 14_555 119.0(5)
+    O1 Si1 O2 7_454 . 8_555 116.4(3)
+    O1 Si1 O4 7_454 . 10_555 105.4(2)
+    O1 Si1 O3 7_454 . 9_455 108.8(3)
+    O2 Si1 O4 8_555 . 10_555 104.3(3)
+    O4 Si1 O3 10_555 . 9_455 116.5(3)
+    O8 H1 O3 14_555 . 9_746 157.2(17)
+data_global
+_publ_contact_author_name     'Pamela Whitfield'
+_publ_contact_author_address
+;
+ICPET, Building M12, National Research Council, 1200 Montreal Road, Ottawa ON
+K1A 0R6 Canada
+;
+_publ_contact_author_email     pamela.whitfield@nrc.gc.ca
+_publ_contact_author_fax     '+1 613 991 2384'
+_publ_contact_author_phone     '+1 613 998 8462'
+_publ_section_title
+;
+LiNaSiB3O7(OH) - Novel Structure of a New Borosilicate Mineral Determined From
+ Laboratory Powder Diffraction Data
+;
+loop_
+    _publ_author_name
+    _publ_author_address
+    'Whitfield, P. S.'
+;ICPET
+National Research Council
+1200 Montreal Road
+Ottawa ON
+K1A 0R6
+Canada
+;
+    'Le Page, Y.'
+;ICPET
+National Research Council
+1200 Montreal Road
+Ottawa ON
+K1A 0R6
+Canada
+;
+    'Grice, J. D.'
+;Canadian Museum of Nature
+PO Box 3443
+Stn D
+Ottawa ON
+K1P 6P4
+Canada
+;
+    'Stanley, C.J.'
+;Department of Mineralogy,
+Natural History Museum,
+London SW7 5BD,
+UK
+;
+    'Jones, C.G.'
+;Department of Mineralogy,
+Natural History Museum,
+London SW7 5BD,
+UK
+;
+    'Rumsey, M.S.'
+;Department of Mineralogy,
+Natural History Museum,
+London SW7 5BD,
+UK
+;
+    'Blake, C.'
+;Rio Tinto,
+Unit 34,
+Hither Green Industrial Estate,
+Clevendon,
+Somerset BS21 6XU,
+UK
+;
+    'Roberts, A.C.'
+;Geological Survey of Canada,
+601 Booth Street,
+Ottawa ON K1A 0E8,
+Canada
+;
+    'Stirling, J.A.R.'
+;Geological Survey of Canada,
+601 Booth Street,
+Ottawa ON K1A 0E8,
+Canada
+;
+    'Carpenter, G.J.C.'
+;Materials Technologies Laboratories,
+Natural Resources Canada,
+568 Booth Street,
+Ottawa ON K1A 0G1,
+Canada
+;
+_publ_section_synopsis
+;
+Due to the absence of crystals suitable for single crystal X-ray
+diffraction, the structure of a new mineral, LiNaSiB3O7(OH),
+has been determined using laboratory powder diffraction data.
+Its novel architecture is made of lithium, silicon, and two of
+the boron atoms forming unbranched vierer single layers of
+corner-sharing tetrahedra, themselves decorated by triangular
+borate groups and connected by distorted sodium octahedra.
+The structure was validated using ab-initio modelling due to
+the extreme difficulty in obtaining neutron diffraction data
+from such a boron-rich sample.
+;
+data_section_1
+loop_
+    _refln_index_h
+    _refln_index_k
+    _refln_index_l
+    0 2 0
+    0 1 1
+    1 -1 -1
+    1 0 0
+    1 1 0
+    0 2 1
+    1 -2 -1
+    1 2 0
+    1 0 -2
+    0 3 1
+    1 -3 -1
+    1 -1 -2
+    1 3 0
+    0 4 0
+    1 -2 -2
+    1 1 1
+    2 -1 -1
+    0 0 2
+    2 0 -2
+    0 1 2
+    2 -1 -2
+    0 4 1
+    1 2 1
+    1 -4 -1
+    2 -2 -1
+    1 -3 -2
+    1 4 0
+    0 2 2
+    2 -2 -2
+    2 0 0
+    2 1 0
+    1 3 1
+    2 -3 -1
+    0 3 2
+    2 -3 -2
+    2 2 0
+    1 -4 -2
+    0 5 1
+    1 -5 -1
+    1 5 0
+    1 -1 -3
+    2 -1 -3
+    1 4 1
+    2 -4 -1
+    2 3 0
+    1 -2 -3
+    2 -2 -3
+    0 4 2
+    2 -4 -2
+    0 6 0
+    1 0 2
+    3 0 -2
+    1 1 2
+    1 -5 -2
+    3 -1 -2
+    1 -3 -3
+    2 -3 -3
+_reflns_number_observed     57
+data_section_2
+loop_
+    _refln_index_h
+    _refln_index_k
+    _refln_index_l
+    2 3 0
+    1 -2 -3
+    2 -2 -3
+    0 4 2
+    2 -4 -2
+    0 6 0
+    1 0 2
+    3 0 -2
+    1 1 2
+    1 -5 -2
+    3 -1 -2
+    1 -3 -3
+    2 -3 -3
+    2 4 0
+    0 6 1
+    1 -6 -1
+    1 2 2
+    3 -2 -2
+    1 5 1
+    2 1 1
+    2 -5 -1
+    1 6 0
+    3 -1 -1
+    0 1 3
+    0 5 2
+    3 -1 -3
+    2 -5 -2
+    2 2 1
+    3 -2 -1
+    1 3 2
+    0 2 3
+    1 -4 -3
+    3 -3 -2
+    2 -4 -3
+    3 -2 -3
+    1 -6 -2
+    2 5 0
+    2 3 1
+    3 -3 -1
+    0 3 3
+    2 0 -4
+    3 -3 -3
+    2 -1 -4
+    1 6 1
+    1 4 2
+    2 -6 -1
+    3 -4 -2
+    0 7 1
+    1 -7 -1
+    3 0 0
+    0 6 2
+    1 7 0
+    2 -6 -2
+    1 -5 -3
+    2 -2 -4
+    2 -5 -3
+    3 1 0
+    2 4 1
+    1 0 -4
+    3 -4 -1
+    3 0 -4
+    0 4 3
+    1 -1 -4
+    3 2 0
+    3 -1 -4
+    3 -4 -3
+    2 6 0
+    2 -3 -4
+    1 -2 -4
+    1 5 2
+    1 -7 -2
+    3 -2 -4
+    3 -5 -2
+    3 3 0
+    0 8 0
+    1 7 1
+    2 5 1
+    2 -7 -1
+    1 -3 -4
+    3 -5 -1
+    1 -6 -3
+    2 -6 -3
+    3 -3 -4
+    2 0 2
+    0 5 3
+    1 1 3
+    2 -4 -4
+    0 7 2
+    2 1 2
+    3 -5 -3
+    4 0 -2
+    2 -7 -2
+    4 -1 -3
+    0 8 1
+    1 -8 -1
+    4 -1 -2
+    1 8 0
+    1 2 3
+    3 4 0
+    2 2 2
+    4 -2 -3
+    4 -2 -2
+    1 6 2
+    2 7 0
+    1 -4 -4
+    3 -6 -2
+    3 -4 -4
+    0 0 4
+    1 3 3
+    2 3 2
+    0 1 4
+    4 0 -4
+    2 -5 -4
+    4 -3 -3
+    1 -8 -2
+    2 6 1
+    4 -3 -2
+    3 -6 -1
+    4 -1 -4
+    0 6 3
+    3 1 1
+    4 -1 -1
+    3 -6 -3
+    0 2 4
+    1 -7 -3
+    2 -7 -3
+    3 5 0
+    4 -2 -4
+    1 8 1
+    2 -8 -1
+    3 2 1
+    4 -2 -1
+    1 -5 -4
+    1 4 3
+    0 8 2
+    2 -1 -5
+    3 -5 -4
+    2 4 2
+    2 -8 -2
+    3 -1 -5
+    4 -4 -3
+    4 -4 -2
+    0 3 4
+    4 -3 -4
+    0 9 1
+    1 -9 -1
+    1 7 2
+    2 -2 -5
+    3 -2 -5
+    3 3 1
+    3 -7 -2
+    4 -3 -1
+    1 9 0
+    2 -6 -4
+    2 8 0
+    2 7 1
+    3 -7 -1
+    3 6 0
+    2 -3 -5
+    0 4 4
+    0 7 3
+    3 -3 -5
+    1 5 3
+    2 5 2
+    3 -7 -3
+    4 -4 -4
+    4 -5 -3
+    4 -5 -2
+    1 -6 -4
+    3 4 1
+    1 -9 -2
+    4 -4 -1
+    3 -6 -4
+    1 -8 -3
+    1 -1 -5
+    2 -8 -3
+    4 -1 -5
+    4 0 0
+    1 -2 -5
+    1 9 1
+    2 -4 -5
+    2 -9 -1
+    4 1 0
+    3 -4 -5
+    4 -2 -5
+    0 9 2
+    0 10 0
+    2 -9 -2
+    0 5 4
+    2 -7 -4
+    1 8 2
+    4 2 0
+    3 -8 -2
+    4 -5 -4
+    3 5 1
+    1 6 3
+    1 -3 -5
+    4 -5 -1
+    2 6 2
+    2 1 3
+    4 -6 -3
+    3 7 0
+    4 -3 -5
+    4 -6 -2
+    0 10 1
+    1 -10 -1
+    2 8 1
+    1 0 4
+    2 9 0
+    5 -1 -3
+    3 -8 -1
+    1 10 0
+    4 3 0
+    1 1 4
+    0 8 3
+    1 -7 -4
+    2 2 3
+    2 -5 -5
+    3 -7 -4
+    3 -8 -3
+    5 0 -4
+    3 -5 -5
+    5 -1 -4
+    5 -2 -3
+    1 2 4
+    3 0 2
+    1 -4 -5
+    3 1 2
+    5 0 -2
+    4 -4 -5
+    0 6 4
+    5 -2 -4
+    1 -9 -3
+    2 3 3
+    2 -9 -3
+    5 -1 -2
+    4 -6 -4
+    1 -10 -2
+    4 4 0
+    5 -3 -3
+    3 6 1
+    3 2 2
+    4 -6 -1
+    1 3 4
+    5 -2 -2
+    1 7 3
+    2 -8 -4
+    3 0 -6
+    2 7 2
+    5 -3 -4
+    4 -7 -3
+    1 10 1
+    2 -10 -1
+    3 -1 -6
+    4 -7 -2
+    1 9 2
+    2 -6 -5
+    3 -6 -5
+    3 3 2
+    0 1 5
+    2 4 3
+    3 -9 -2
+    1 -5 -5
+    3 8 0
+    0 10 2
+    2 -10 -2
+    5 -3 -2
+    4 -5 -5
+    3 -2 -6
+    5 -4 -3
+    5 -1 -5
+    1 4 4
+    1 -8 -4
+    0 2 5
+    2 0 -6
+    2 9 1
+    3 -8 -4
+    4 5 0
+    3 -9 -1
+    2 -1 -6
+    4 0 -6
+    5 -4 -4
+    0 9 3
+    5 -2 -5
+    4 -1 -6
+    3 -9 -3
+    0 7 4
+    2 10 0
+    3 -3 -6
+    3 4 2
+    4 -7 -4
+    2 -2 -6
+    0 11 1
+    1 -11 -1
+    3 7 1
+    0 3 5
+    4 -2 -6
+    5 -4 -2
+    4 1 1
+    4 -7 -1
+    1 11 0
+    2 5 3
+    5 -1 -1
+    5 -3 -5
+    5 -5 -3
+    1 -6 -5
+    4 2 1
+    1 5 4
+    1 8 3
+    1 -10 -3
+    2 -3 -6
+    5 -2 -1
+    2 -10 -3
+    4 -6 -5
+    2 -7 -5
+    2 8 2
+    3 -7 -5
+    4 -8 -3
+    4 -3 -6
+    3 -4 -6
+    4 -8 -2
+    5 -5 -4
+    2 -9 -4
+    4 6 0
+    0 4 5
+    1 -11 -2
+    3 5 2
+    4 3 1
+    5 -3 -1
+    5 -4 -5
+    3 9 0
+    5 -5 -2
+    1 10 2
+    3 -10 -2
+    2 -4 -6
+    1 11 1
+    2 -11 -1
+    1 -9 -4
+    2 6 3
+    4 -4 -6
+    3 -9 -4
+    0 8 4
+    1 0 -6
+    0 11 2
+    2 -11 -2
+    5 -6 -3
+    1 -1 -6
+    4 -8 -4
+    2 10 1
+    3 -5 -6
+    1 6 4
+    3 8 1
+    5 0 -6
+    3 -10 -1
+    4 4 1
+    4 -8 -1
+    0 10 3
+    5 -1 -6
+    0 5 5
+    5 -4 -1
+    1 -7 -5
+    3 -10 -3
+    5 -6 -4
+    1 -2 -6
+    4 -7 -5
+    0 12 0
+    5 -5 -5
+    2 11 0
+    5 -2 -6
+    3 6 2
+    2 -8 -5
+    4 7 0
+    3 -8 -5
+    2 -5 -6
+    5 -6 -2
+    1 9 3
+    2 0 4
+    4 -5 -6
+    2 9 2
+    1 -3 -6
+    2 1 4
+    4 -9 -3
+    0 12 1
+    1 -12 -1
+    4 -9 -2
+    1 12 0
+    6 0 -4
+    5 -3 -6
+    4 5 1
+    6 -1 -4
+    2 2 4
+    1 -11 -3
+    2 7 3
+    2 -10 -4
+    5 -5 -1
+    2 -11 -3
+    5 0 0
+    3 1 3
+    3 -6 -6
+    5 1 0
+    5 -7 -3
+    0 6 5
+    6 -2 -4
+    6 -1 -3
+    1 7 4
+    1 1 5
+    3 10 0
+    3 2 3
+    1 -4 -6
+    5 -6 -5
+    5 2 0
+    0 9 4
+    5 -7 -4
+    2 3 4
+    1 -12 -2
+    6 -2 -3
+    1 -10 -4
+    5 -4 -6
+    6 -1 -5
+    1 2 5
+    4 -9 -4
+    2 -6 -6
+    1 -8 -5
+    1 11 2
+    3 -10 -4
+    3 9 1
+    3 7 2
+    3 -11 -2
+    4 -6 -6
+    4 -8 -5
+    4 -9 -1
+    6 -3 -4
+    5 -7 -2
+    3 3 3
+    3 -1 -7
+    6 -2 -5
+    4 -1 -7
+    1 12 1
+    5 3 0
+    2 -12 -1
+    4 8 0
+    4 6 1
+_reflns_number_observed     442
+

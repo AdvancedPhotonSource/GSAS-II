@@ -24,7 +24,6 @@ import scipy as sp
 import wx
 import matplotlib as mpl
 import wx.lib.inspection as wxeye
-
 try:
     import OpenGL as ogl
 except ImportError:
@@ -33,11 +32,11 @@ except ImportError:
     print('     - we will try to install it')
     print('*******************************************************')
     def install_with_easyinstall(package):
-        easy_install.main(["-U", package])
+        easy_install.main(['-f',ospath.split(__file__)[0],package])
     from setuptools.command import easy_install
     install_with_easyinstall('PyOpenGl')
     print('*******************************************************')         
-    print('OpenGL has been installed. Please restart GSAS-II again')
+    print('OpenGL has been installed. Please restart GSAS-II')
     print('*******************************************************')         
     sys.exit()
 

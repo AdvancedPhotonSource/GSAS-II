@@ -28,12 +28,17 @@ import wx.lib.inspection as wxeye
 try:
     import OpenGL as ogl
 except ImportError:
-    from setuptools.command import easy_install
-    print("OpenGL wwas not found. Will attempt to load the package.")
+    print('*******************************************************')
+    print('PyOpenGL is missing from your python installation')
+    print('     - we will try to install it')
+    print('*******************************************************')
     def install_with_easyinstall(package):
         easy_install.main(["-U", package])
+    from setuptools.command import easy_install
     install_with_easyinstall('PyOpenGl')
-    print("OpenGL has been installed. Please restart GSAS-II again")
+    print('*******************************************************')         
+    print('OpenGL has been installed. Please restart GSAS-II again')
+    print('*******************************************************')         
     sys.exit()
 
 # load the GSAS routines

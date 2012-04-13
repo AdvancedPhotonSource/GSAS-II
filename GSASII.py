@@ -25,6 +25,17 @@ import wx
 import matplotlib as mpl
 import wx.lib.inspection as wxeye
 
+try:
+    import OpenGL as ogl
+except ImportError:
+    from setuptools.command import easy_install
+    print("OpenGL wwas not found. Will attempt to load the package.")
+    def install_with_easyinstall(package):
+        easy_install.main(["-U", package])
+    install_with_easyinstall('PyOpenGl')
+    print("OpenGL has been installed. Please restart GSAS-II again")
+    sys.exit()
+
 # load the GSAS routines
 import GSASIIpath
 import GSASIIIO as G2IO
@@ -35,7 +46,6 @@ import GSASIIspc as G2spc
 import GSASIIstruct as G2str
 import GSASIImapvars as G2mv
 import GSASIIsolve as G2sol
-import OpenGL as ogl
 
 #wx inspector - use as needed
 wxInspector = False
@@ -204,13 +214,14 @@ class GSASII(wx.Frame):
                 pass
             finally:
                 if fp: fp.close()
-#        item = parent.Append(wx.ID_ANY, help='Import phase data',
-#                      kind=wx.ITEM_NORMAL,text='Import Phase (generic)...')
-#        self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Import Phase menu',
             submenu, help='Import phase data')
         self.PhaseImportMenuId = {}
+        item = submenu.Append(wx.ID_ANY,
+                              help='Import phase data based selected by extension',
+                              kind=wx.ITEM_NORMAL,text='Import Phase by extension')
+        self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
         for reader in self.ImportPhaseReaderlist:
             item = submenu.Append(wx.ID_ANY,
                 help='Import specific format phase data',

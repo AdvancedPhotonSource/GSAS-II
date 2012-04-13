@@ -1,0 +1,153 @@
+     VERSION    6                                                               
+      DESCR   alpha Si3N4 x-ray                                                 
+    HSTRY  1 EXPEDT  V-MS-DOS 10-FEB-95 20: 7:22 P PH                           
+    HSTRY  2 EXPEDT  V-MS-DOS 10-FEB-95 21: 9:55 P  H        LA  OS             
+    HSTRY  3 POWPREF V-MS-DOS 10-FEB-95 21:10: 2                                
+    HSTRY  4 GENLES  V-MS-DOS 10-FEB-95 21:11:44 Sdsq=  .322E+06 S/E=  .445E-10 
+    HSTRY  5 EXPEDT  V-MS-DOS 10-FEB-95 21:13:46             L   O              
+    HSTRY  6 GENLES  V-MS-DOS 10-FEB-95 21:15: 6 Sdsq=  .981E+05 S/E=  .191E+04 
+    HSTRY  7 EXPEDT  V-MS-DOS 10-FEB-95 21:15:48             L  L               
+    HSTRY  8 POWPREF V-MS-DOS 10-FEB-95 21:15:55                                
+    HSTRY  9 GENLES  V-MS-DOS 10-FEB-95 21:23: 0 Sdsq=  .571E+05 S/E=  1.20     
+    HSTRY 10 EXPEDT  V-MS-DOS 10-FEB-95 21:29:44             LA  O              
+    HSTRY 11 POWPREF V-MS-DOS 10-FEB-95 21:29:51                                
+    HSTRY 12 GENLES  V-MS-DOS 10-FEB-95 21:36:31 Sdsq=  .397E+05 S/E=  1.56     
+    HSTRY 13 EXPEDT  V-MS-DOS 10-FEB-95 21:41:29             LA  O              
+    HSTRY 14 EXPEDT  Win32  Jan 13 13:47:18 2011             LA                 
+    HSTRY 15 POWPREF Win32  Jul 19 15:47:27 2011                                
+    HSTRY 16 GENLES  Win32  Jul 19 15:47:33 2011 Sdsq= 0.389E+05 S/E= 0.185E-01 
+    HSTRY 17 POWPREF Win64  Sep 29 13:07:25 2011                                
+    HSTRY 18 POWPREF Win32  Oct 07 17:55:20 2011                                
+    HSTRY 19 GENLES  Win32  Oct 07 17:55:33 2011 Sdsq= 0.391E+05 S/E= 0.788E-02 
+    HSTRY 20 EXPEDT  Win32  Oct 08 10:18:05 2011             LA                 
+    HSTRY 21 POWPREF Win32  Oct 08 10:18:08 2011                                
+  DSGL CDAT1  DRAD ARAD NOFO                                                    
+  DSGL CDAT2  DRAD ARAD NOFO                                                    
+  GNLS  RUN on Oct 08 10:18:14 2011    Total cycles run  29       18321.        
+  GNLS CDAT1  MXCY  5                                                           
+  GNLS SHFTS      0.31      0.07                                                
+ AFAC  N    12.2126  .0057 3.1322 9.8933 2.012528.9975 1.1663  .5826-11.529 RHF 
+ AFAC  N_    14.007  .930        1.90                                           
+ AFAC  N_SIZ      1.08      0.88 1.50  208                                      
+ AFAC  N_XAB  568.1 337.1 166.1 18.37 11.06                                     
+ AFAC  N_XAN   .059  .042  .044  .029  .029  .018  .004  .003  .001  .002       
+ AFAC SI     6.2915 2.4386 3.035332.3337 1.9891  .6785 1.541081.6937 1.1407 RHF 
+ AFAC SI_    28.086 .4149        .171                                           
+ AFAC SI_SIZ      1.52     1.32  2.00  007                                      
+ AFAC SI_XAB   9456  5878  3047 304.7 151.8                                     
+ AFAC SI_XAN   .355  .693  .311  .509  .244  .330  .072  .071  .042  .043       
+ EXPR  HTYP1  PXC                                                               
+ EXPR  NATYP    2                                                               
+ EXPR  NHST     1                                                               
+ EXPR ATYP 1  SI          3      1.52     1.32  2.00  007                       
+ EXPR ATYP 2  N           6      1.08      0.88 1.50  208                       
+ EXPR NPHAS     1    1    0    0    0    0    0    0    0                       
+ REFN GDNFT  Reduced CHI**2 =  3.382     for   34 variables                     
+ REFN RPOWD     0.1420    0.0940   5451  18472.        0.1521    0.1069    48   
+ REFN STATS  Cycle  29 There were  5451 observations. Total CHI**2 = 1.8321E+04 
+CRS1    PNAM  a-Si3N4                                                           
+CRS1   NATOM    6                                                               
+CRS1  ABC     7.753888  7.753888  5.620424    Y    0                            
+CRS1  ABCSIG  0.000154  0.000154  0.000129                                      
+CRS1  ANGLES   90.0000   90.0000  120.0000                                      
+CRS1  ANGSIG    0.0000    0.0000    0.0000                                      
+CRS1  AT  1A  SI        0.081689  0.511482  0.205036  1.000000SI1        6 000  
+CRS1  AT  1B  0.003810                                                    I XU  
+CRS1  AT  2A  SI        0.253013  0.167424 -0.001523  1.000000SI2        6 000  
+CRS1  AT  2B  0.002847                                                    I XU  
+CRS1  AT  3A  N         0.653870  0.611162 -0.016692  1.000000N3         6 000  
+CRS1  AT  3B -0.000961                                                    I XU  
+CRS1  AT  4A  N         0.313768  0.319219  0.253658  1.000000N4         6 000  
+CRS1  AT  4B -0.001186                                                    I XU  
+CRS1  AT  5A  N         0.333333  0.666667  0.145365  1.000000N5         2 000  
+CRS1  AT  5B -0.005424                                                    I XU  
+CRS1  AT  6A  N         0.000000  0.000000  0.500000  1.000000N6         2 000  
+CRS1  AT  6B -0.004266                                                    I  U  
+CRS1  CELVOL        292.643          0.014                                      
+CRS1  CHMF 1  SI            6.00                                                
+CRS1  CHMF 2  N             8.00                                                
+CRS1  SG SYM  P 3 1 c                                                           
+CRS1  SPAXIS    0    0    1                                                     
+CRS2    PNAM  b-Si3N4 contaminant                                               
+CRS2   NATOM    3                                                               
+CRS2  ABC     7.601730  7.601730  2.906304    Y    0                            
+CRS2  ABCSIG  0.000245  0.000245  0.000149                                      
+CRS2  ANGLES   90.0000   90.0000  120.0000                                      
+CRS2  ANGSIG    0.0000    0.0000    0.0000                                      
+CRS2  AT  1A  SI         .770000   .175000   .250000  1.000000SI1        6 000  
+CRS2  AT  1B   .005000                                                    I     
+CRS2  AT  2A  N          .030000   .330000   .250000  1.000000N2         6 000  
+CRS2  AT  2B   .005000                                                    I     
+CRS2  AT  3A  N          .666667   .333333   .250000  1.000000N3         2 000  
+CRS2  AT  3B   .005000                                                    I     
+CRS2  CELVOL        145.444          0.008                                      
+CRS2  CHMF 1  SI            3.00                                                
+CRS2  CHMF 2  N             4.00                                                
+CRS2  SG SYM  P 63/m                                                            
+CRS2  SPAXIS    0    0    1                                                     
+HAP1 1 ZONE     0    0    0    0                                                
+HAP1 1EXTPOW    0.00000E+00    N    0                                           
+HAP1 1MASSFR    0.9902    0.0177                                                
+HAP1 1NAXIS     1                                                               
+HAP1 1PHSFR     0.89411        Y    0                                           
+HAP1 1PRCF      2   18    .00500    0NNNYYNYYNNNNNNNNNNNN                       
+HAP1 1PRCF 1   0.200000E+01  -0.200000E+01   0.500000E+01   0.699474E+01        
+HAP1 1PRCF 2   0.145676E+02   0.000000E+00  -0.130255E+01   0.151000E+01        
+HAP1 1PRCF 3   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF 4   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF 5   0.000000E+00   0.000000E+00                                      
+HAP1 1PREFO1  1.003031  1.000000  0.000000  0.000000  1.000000   YN    0    0   
+HAP2 1 ZONE     0    0    0    0                                                
+HAP2 1EXTPOW    0.00000E+00    N    0                                           
+HAP2 1MASSFR    0.0098    0.0177                                                
+HAP2 1NAXIS     1                                                               
+HAP2 1PHSFR     0.17632E-01    Y    0                                           
+HAP2 1PRCF      2    6      0.01                                                
+HAP2 1PRCF 1   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        
+HAP2 1PRCF 2   0.000000E+00   0.000000E+00                                      
+HAP2 1PREFO1  1.000000  1.000000  0.000000  0.000000  1.000000   NN    0    0   
+HST  1  HFIL  ..\data\a_si3n4.xra                                               
+HST  1  HNAM  ALPHA SI3N4 40MA 4SEC STEP               7/19/1990   8: 6: 0      
+HST  1  IFIL  ..\parm\inst_xry.prm                                              
+HST  1 BANK     1                                                               
+HST  1 BIGFO   0.000000E+00                                                     
+HST  1 CHANS         0         1      5499  86984704      5500    1    0        
+HST  1 EPHAS    0    0    0    0    0    0    0    0    0    F                  
+HST  1 ICONR  1.540500  1.544300       0.0         0       0.5    0             
+HST  1 ICONS  1.540500  1.544300       0.0         0       0.5    0             
+HST  1 IRAD     3                                                               
+HST  1 MAXRF   56                                                               
+HST  1 NEXC     2                                                               
+HST  1 NPHAS    1    1    0    0    0    0    0    0    0                       
+HST  1 NREF   500    0.8894    N    Y                                           
+HST  1 RPOWD    0.1420    0.0940   5451  18472.        0.1521    0.1069   48    
+HST  1 TRNGE  10.00000 119.96000                                                
+HST  1 WREXP    0.0775                                                          
+HST  1ABSCOR   0.000000E+00   0.000000E+00    N    0                            
+HST  1BAKGD     2    3    Y    0    Y                                           
+HST  1BAKGD1   0.421708E+02  -0.335452E+01   0.147403E+02                       
+HST  1CHI       0.0000                                                          
+HST  1EXC  1      .000      .000                                                
+HST  1EXC  2   120.000  1000.000                                                
+HST  1EXMNMX   1.00000   1.00000                                                
+HST  1HSCALE     148.41        Y    0                                           
+HST  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER                  
+HST  1I ITYP    0    0.0000  180.0000         1                                 
+HST  1MNREF     0    1.0000                                                     
+HST  1ODMNMX   0.99154   1.00426                                                
+HST  1OMEGA     0.0000                                                          
+HST  1PHI       0.0000                                                          
+HST  1PRCF1     2    6      0.01                                                
+HST  1PRCF11   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        
+HST  1PRCF12   0.000000E+00   0.000000E+00                                      
+HST  1RSP    0.0993 0.0939 0.0762 0.0981 0.0873 0.0967 0.1245 0.1272 0.1058     
+HST  1RSPA   0.0755 0.0761 0.0641 0.0816 0.0790 0.0877 0.1074 0.1172 0.1018     
+HST  1RSPTT  10.00 22.20 34.42 46.64 58.86 71.08 83.30 95.52107.74119.96        
+HST  1RSPW   0.1499 0.1614 0.1242 0.1450 0.1230 0.1318 0.1691 0.1729 0.1366     
+HST  1RSPWA  0.1126 0.1224 0.0929 0.1107 0.1033 0.1108 0.1312 0.1541 0.1255     
+HST  1TRMNMX   1.00000   1.00000                                                
+HST  2 FACTR    1.00000                                                         
+LEQV PHSFR      1    1                                                          
+LEQV PHSFR11  1,1           1.000 2,1          -1.000                           
+ZZZZZZZZZZZZ  Last EXP file record                                              
+    HSTRY 22 GENLES  Win32  Oct 08 10:18:14 2011 Sdsq= 0.183E+05 S/E= 0.353     

@@ -42,24 +42,27 @@ def GetControls(GPXfile):
     '''
     Controls = {'deriv type':'analytic Hessian','max cyc':3,'max Hprocess':1,
         'max Rprocess':1,'min dM/M':0.0001,'shift factor':1.}
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
         if datum[0] == 'Controls':
             Controls.update(datum[1])
-    file.close()
+    fl.close()
     return Controls
     
-def GetConstraints(GPXfile):
+def GetConstraints(GPXfile,varyList,parmDict):
+    '''Read the constraints from the GPX file and interpret them
+    Note that this needs an update to match the new-style constraints
+    '''
     constList = []
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
@@ -67,23 +70,57 @@ def GetConstraints(GPXfile):
             constDict = datum[1]
             for item in constDict:
                 constList += constDict[item]
-    file.close()
+    fl.close()
     constDict = []
     constFlag = []
     fixedList = []
     for item in constList:
-        if item[-2]:
-            fixedList.append(str(item[-2]))
-        else:
+        if item[-1] == 'h':
+            # process a hold
             fixedList.append('0')
-        if item[-1]:
-            constFlag.append(['VARY'])
-        else:
             constFlag.append([])
-        itemDict = {}
-        for term in item[:-2]:
-            itemDict[term[1]] = term[0]
-        constDict.append(itemDict)
+            constDict.append({item[0][1]:0.0})
+        elif item[-1] == 'f':
+            # process a new variable
+            fixedList.append(None)
+            constFlag.append([])
+            constDict.append({})
+            for term in item[:-3]:
+                constDict[-1][term[1]] = term[0]
+            if item[-2]:
+                constFlag[-1] = ['Vary']
+        elif item[-1] == 'c': 
+            # process a contraint relationship
+            const = item[-3]
+            vars = 0
+            used = {}
+            for term in item[:-3]:
+                if term[1] in varyList:
+                    used[term[1]] = term[0]
+                    vars += 1
+                else:
+                    const -= parmDict[term[1]]*term[0]
+            if vars == 0:
+                print 'Contraint is not used',item[:-3],'=',item[-3]
+                print 'no refined variables'
+                continue
+            fixedList.append(str(const))
+            constFlag.append(['VaryFree'])
+            constDict.append(used)
+        elif item[-1] == 'e':
+            # process an equivalence
+            first = None
+            eqlist = []
+            for term in item[:-3]:
+                if first is None:
+                    first = term[0]
+                    if first == 0: first = 1.0
+                    firstvar = term[1]
+                else:
+                    eqlist.append([term[1],term[0]/first])
+            G2mv.StoreEquivalence(firstvar,eqlist)                
+        else:
+            pass
     return constDict,constFlag,fixedList
     
 def GetPhaseNames(GPXfile):
@@ -93,18 +130,18 @@ def GetPhaseNames(GPXfile):
     return: 
         PhaseNames = list of phase names
     '''
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     PhaseNames = []
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
         if 'Phases' == datum[0]:
             for datus in data[1:]:
                 PhaseNames.append(datus[0])
-    file.close()
+    fl.close()
     return PhaseNames
 
 def GetAllPhaseData(GPXfile,PhaseName):
@@ -115,12 +152,12 @@ def GetAllPhaseData(GPXfile,PhaseName):
     return:
         phase dictionary
     '''        
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     General = {}
     Atoms = []
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
@@ -128,7 +165,7 @@ def GetAllPhaseData(GPXfile,PhaseName):
             for datus in data[1:]:
                 if datus[0] == PhaseName:
                     break
-    file.close()
+    fl.close()
     return datus[1]
     
 def GetHistograms(GPXfile,hNames):
@@ -139,11 +176,11 @@ def GetHistograms(GPXfile,hNames):
     return: 
         Histograms = dictionary of histograms (types = PWDR & HKLF)
     """
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     Histograms = {}
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
@@ -167,7 +204,7 @@ def GetHistograms(GPXfile,hNames):
                 datum = data[0]
                 HKLFdata = datum[1:][0]
                 Histograms[hist] = HKLFdata           
-    file.close()
+    fl.close()
     return Histograms
     
 def GetHistogramNames(GPXfile,hType):
@@ -178,17 +215,17 @@ def GetHistogramNames(GPXfile,hType):
     return: 
         HistogramNames = list of histogram names (types = PWDR & HKLF)
     """
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     HistogramNames = []
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
         if datum[0][:4] in hType:
             HistogramNames.append(datum[0])
-    file.close()
+    fl.close()
     return HistogramNames
     
 def GetUsedHistogramsAndPhases(GPXfile):
@@ -347,11 +384,11 @@ def GetPWDRdata(GPXfile,PWDRname):
             Data - powder data arrays, Limits, Instrument Parameters, Sample Parameters
         
     '''
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     PWDRdata = {}
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
@@ -365,7 +402,7 @@ def GetPWDRdata(GPXfile,PWDRname):
                 PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
             except IndexError:
                 PWDRdata['Reflection lists'] = {}
-    file.close()
+    fl.close()
     return PWDRdata
     
 def GetHKLFdata(GPXfile,HKLFname):
@@ -377,17 +414,17 @@ def GetHKLFdata(GPXfile,HKLFname):
         HKLFdata = single crystal data list of reflections: for each reflection:
             HKLF = [np.array([h,k,l]),FoSq,sigFoSq,FcSq,Fcp,Fcpp,phase]
     '''
-    file = open(GPXfile,'rb')
+    fl = open(GPXfile,'rb')
     HKLFdata = []
     while True:
         try:
-            data = cPickle.load(file)
+            data = cPickle.load(fl)
         except EOFError:
             break
         datum = data[0]
         if datum[0] == HKLFname:
             HKLFdata = datum[1:][0]
-    file.close()
+    fl.close()
     return HKLFdata
     
 def ShowBanner():
@@ -2811,7 +2848,6 @@ def Refine(GPXfile,dlg):
     ShowControls(Controls)
     calcControls = {}
     calcControls.update(Controls)            
-    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -2835,6 +2871,7 @@ def Refine(GPXfile,dlg):
     parmDict.update(histDict)
     GetFprime(calcControls,Histograms)
     # do constraint processing
+    constrDict,constrFlag,fixedList = GetConstraints(GPXfile,varyList,parmDict)
     try:
         groups,parmlist = G2mv.GroupConstraints(constrDict)
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
@@ -2847,8 +2884,8 @@ def Refine(GPXfile,dlg):
         print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
         print msg
         raise Exception(' *** Refine aborted ***')
+    print G2mv.VarRemapShow(varyList)
     G2mv.Map2Dict(parmDict,varyList)
-#    print G2mv.VarRemapShow(varyList)
     Rvals = {}
     while True:
         begin = time.time()
@@ -2930,17 +2967,17 @@ def Refine(GPXfile,dlg):
     
 #for testing purposes!!!
 #    import cPickle
-#    file = open('structTestdata.dat','wb')
-#    cPickle.dump(parmDict,file,1)
-#    cPickle.dump(varyList,file,1)
+#    fl = open('structTestdata.dat','wb')
+#    cPickle.dump(parmDict,fl,1)
+#    cPickle.dump(varyList,fl,1)
 #    for histogram in Histograms:
 #        if 'PWDR' in histogram[:4]:
 #            Histogram = Histograms[histogram]
-#    cPickle.dump(Histogram,file,1)
-#    cPickle.dump(Phases,file,1)
-#    cPickle.dump(calcControls,file,1)
-#    cPickle.dump(pawleyLookup,file,1)
-#    file.close()
+#    cPickle.dump(Histogram,fl,1)
+#    cPickle.dump(Phases,fl,1)
+#    cPickle.dump(calcControls,fl,1)
+#    cPickle.dump(pawleyLookup,fl,1)
+#    fl.close()
 
     if dlg:
         return Rvals['Rwp']
@@ -2954,7 +2991,6 @@ def SeqRefine(GPXfile,dlg):
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
-    constrDict,constrFlag,fixedList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -3016,7 +3052,8 @@ def SeqRefine(GPXfile,dlg):
         parmDict.update(hapDict)
         parmDict.update(histDict)
         GetFprime(calcControls,Histo)
-        constrDict,constrFlag,fixedList = G2mv.InputParse([])        #constraints go here?
+        # do constraint processing
+        constrDict,constrFlag,fixedList = GetConstraints(GPXfile,varyList,parmDict)
         groups,parmlist = G2mv.GroupConstraints(constrDict)
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
         G2mv.Map2Dict(parmDict,varyList)

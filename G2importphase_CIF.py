@@ -17,8 +17,7 @@ import urllib
 class CIFPhaseReader(G2IO.ImportPhase):
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
-            #extensionlist=('.CIF','.cif'),
-            extensionlist=('.CIF','.cif','.pdb'), # just for test!
+            extensionlist=('.CIF','.cif'),
             strictExtension=False,
             formatName = 'CIF',
             longFormatName = 'Crystallographic Information File import'

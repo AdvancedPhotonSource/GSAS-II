@@ -13,7 +13,7 @@ import os
 import os.path as ospath
 import sys
 import math
-import cPickle
+#import cPickle
 import time
 import copy
 import glob
@@ -840,6 +840,46 @@ class GSASII(wx.Frame):
             panel.SetSizer(mainSizer)
             panel.Fit()
             self.Fit()
+
+    class ConstraintDialog(wx.Dialog):
+        '''Window to edit Constraint values
+        '''
+        def __init__(self,parent,title,text,data):
+            wx.Dialog.__init__(self,parent,-1,title, 
+                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            self.data = data
+            panel = wx.Panel(self)
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            topLabl = wx.StaticText(panel,-1,text)
+            mainSizer.Add((10,10),1)
+            mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
+            mainSizer.Add((10,10),1)
+            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=2,hgap=2,vgap=2)
+            for id,item in enumerate(self.data[:-1]):
+                #name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(200,20))
+                name = wx.StaticText(panel,-1,item[1],size=wx.Size(200,20))
+                #name.SetEditable(False)
+                scale = wx.TextCtrl(panel,id,'%.3f'%(item[0]),style=wx.TE_PROCESS_ENTER)
+                scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
+                scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
+                dataGridSizer.Add(scale,0,wx.LEFT,10)
+                dataGridSizer.Add(name,0,wx.RIGHT,10)
+            mainSizer.Add(dataGridSizer,0,wx.EXPAND)
+            OkBtn = wx.Button(panel,-1,"Ok")
+            OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+            cancelBtn = wx.Button(panel,-1,"Cancel")
+            cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(OkBtn)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(cancelBtn)
+            btnSizer.Add((20,20),1)
+            
+            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+            panel.SetSizer(mainSizer)
+            panel.Fit()
+            self.Fit()
             
         def OnNameChange(self,event):
             self.data[-1] = self.name.GetValue() 
@@ -865,7 +905,7 @@ class GSASII(wx.Frame):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_CANCEL)              
-            self.Destroy()
+            #self.Destroy()
             
         def GetData(self):
             return self.data

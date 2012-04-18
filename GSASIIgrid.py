@@ -37,8 +37,8 @@ else:
     helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True
 
-[ wxID_FOURCALC,wxID_FOURSEARCH, wxID_PEAKSMOVE, wxID_PEAKSCLEAR,
-] = [wx.NewId() for item in range(4)]
+[ wxID_FOURCALC,wxID_FOURSEARCH, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, wxID_CHARGEFLIP,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(3)]
@@ -446,6 +446,8 @@ class DataFrame(wx.Frame):
             text='Fourier map')
         self.GeneralCalc.Append(help='Search Fourier map',id=wxID_FOURSEARCH, kind=wx.ITEM_NORMAL,
             text='Search map')
+        self.GeneralCalc.Append(help='Run charge flipping',id=wxID_CHARGEFLIP, kind=wx.ITEM_NORMAL,
+            text='Charge flipping')
         
 # Phase / Data tab
         self.DataMenu = wx.MenuBar()

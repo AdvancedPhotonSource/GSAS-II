@@ -246,6 +246,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atomData = data['Atoms']
         generalData['AtomTypes'] = []
         generalData['Isotopes'] = {}
+# various patches
         if 'Isotope' not in generalData:
             generalData['Isotope'] = {}
         if 'Data plot type' not in generalData:
@@ -257,7 +258,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
         if 'Flip' not in generalData:
             generalData['Flip'] = {'RefList':'','Resolution':1.0,'Norm element':'C',
-                'k-factor':1.1,'rhoSig':0.0,'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.} #???
+                'k-factor':1.1}
+        if 'doPawley' not in generalData:
+            generalData['doPawley'] = False
+        if 'Pawley dmin' not in generalData:
+            generalData['Pawley dmin'] = 1.0
             
 #        if 'SH Texture' not in generalData:
 #            generalData['SH Texture'] = data['SH Texture']
@@ -321,11 +326,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         'Drawing':{}
         '''
         
-        phaseTypes = ['nuclear','modulated','magnetic','macromolecular','Pawley']
+        phaseTypes = ['nuclear','modulated','magnetic','macromolecular']
         SetupGeneral()
         generalData = data['General']
-        Map = generalData['Map']  
-            # {'MapType':'','RefList':'','Resolution':1.0,'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
+        Map = generalData['Map']
+        Flip = generalData['Flip']  
         
         def NameSizer():
                    
@@ -342,14 +347,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     generalData['Type'] = TypeTxt.GetValue()
                     dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
                     UpdateGeneral()         #must use this way!
-                    if generalData['Type'] == 'Pawley':
-                        if G2frame.dataDisplay.FindPage('Atoms'):
-                            G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Atoms'))
-                            G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Options'))
-                            G2frame.dataDisplay.DeletePage(G2frame.dataDisplay.FindPage('Draw Atoms'))
-                        if not G2frame.dataDisplay.FindPage('Pawley reflections'):
-                            G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)      
-                            G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
                 else:
                     TypeTxt.SetValue(generalData['Type'])                
                 
@@ -579,6 +576,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return elemSizer
             
         def DenSizer():
+            
             mass = 0.
             for i,elem in enumerate(generalData['AtomTypes']):
                 mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
@@ -597,8 +595,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 denSizer.Add(mattTxt,0,wx.ALIGN_CENTER_VERTICAL)
             return denSizer
             
-        def PawlSizer():
-                        
+        def PawleySizer():
+            
+            def OnPawleyRef(event):
+                generalData['doPawley'] = pawlRef.GetValue()
+            
             def OnPawleyVal(event):
                 try:
                     dmin = float(pawlVal.GetValue())
@@ -606,15 +607,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         generalData['Pawley dmin'] = dmin
                 except ValueError:
                     pass
-                pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error
+                pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error                
             
-            pawlSizer = wx.BoxSizer(wx.HORIZONTAL)
-            pawlSizer.Add(wx.StaticText(dataDisplay,label=' Pawley dmin: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
+            pawleySizer.Add(wx.StaticText(dataDisplay,label=' Pawley controls: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pawlRef = wx.CheckBox(dataDisplay,-1,label=' Do Pawley refinement?')
+            pawlRef.SetValue(generalData['doPawley'])
+            pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
+            pawleySizer.Add(pawlRef,0,wx.ALIGN_CENTER_VERTICAL)
+            pawleySizer.Add(wx.StaticText(dataDisplay,label=' Pawley dmin: '),0,wx.ALIGN_CENTER_VERTICAL)
             pawlVal = wx.TextCtrl(dataDisplay,value='%.3f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
             pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
-            pawlSizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
-            return pawlSizer
+            pawleySizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
+            return pawleySizer
             
         def MapSizer():
             
@@ -647,7 +653,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Map['cutOff'] = 100.0
             mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Patterson']
             refList = data['Histograms'].keys()
-            if generalData['Type'] == 'Pawley':
+            if not generalData['AtomTypes']:
                  mapTypes = ['Patterson',]
                  Map['MapType'] = 'Patterson'
             mapSizer = wx.BoxSizer(wx.VERTICAL)
@@ -679,50 +685,58 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
         def FlipSizer():
             
-            def OnMapType(event):
-                Map['MapType'] = mapType.GetValue()
-                
             def OnRefList(event):
                 Flip['RefList'] = refList.GetValue()
                 
+            def OnNormElem(event):
+                PE = G2elemGUI.PickElement(G2frame)
+                if PE.ShowModal() == wx.ID_OK:
+                    Flip['Norm element'] = PE.Elem.strip()
+                    normElem.SetLabel(Flip['Norm element'])
+                PE.Destroy()                
+                
             def OnResVal(event):
                 try:
-                    res = float(mapRes.GetValue())
+                    res = float(flipRes.GetValue())
                     if 0.25 <= res <= 20.:
                         Flip['Resolution'] = res
                 except ValueError:
                     pass
                 flipRes.SetValue("%.2f"%(Flip['Resolution']))          #reset in case of error
             
-            def OnCutOff(event):
+            def OnkFactor(event):
                 try:
-                    res = float(cutOff.GetValue())
-                    if 1.0 <= res <= 100.:
-                        Map['cutOff'] = res
+                    res = float(kFactor.GetValue())
+                    if 0.2 <= res <= 1.2:
+                        Flip['k-factor'] = res
                 except ValueError:
                     pass
-                cutOff.SetValue("%.1f"%(Map['cutOff']))          #reset in case of error
+                kFactor.SetValue("%.3f"%(Flip['k-factor']))          #reset in case of error
             
             refList = data['Histograms'].keys()
             flipSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(dataDisplay,label=' Charge flip controls: Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
-            refList = wx.ComboBox(dataDisplay,-1,value=Map['RefList'],choices=refList,
+            refList = wx.ComboBox(dataDisplay,-1,value=Flip['RefList'],choices=refList,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
             lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
             flipSizer.Add(lineSizer,0,wx.ALIGN_CENTER_VERTICAL)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' Normalizing element: '),0,wx.ALIGN_CENTER_VERTICAL)
+            normElem = wx.Button(dataDisplay,label=Flip['Norm element'],style=wx.TE_READONLY)
+            normElem.Bind(wx.EVT_BUTTON,OnNormElem)
+            line2Sizer.Add(normElem,0,wx.ALIGN_CENTER_VERTICAL)
             line2Sizer.Add(wx.StaticText(dataDisplay,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
-            mapRes =  wx.TextCtrl(dataDisplay,value='%.2f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
-            mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
-            mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
-            line2Sizer.Add(mapRes,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(dataDisplay,label=' Peak cutoff %: '),0,wx.ALIGN_CENTER_VERTICAL)
-            cutOff =  wx.TextCtrl(dataDisplay,value='%.1f'%(Map['cutOff']),style=wx.TE_PROCESS_ENTER)
-            cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)        
-            cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
-            line2Sizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+            flipRes =  wx.TextCtrl(dataDisplay,value='%.2f'%(Flip['Resolution']),style=wx.TE_PROCESS_ENTER)
+            flipRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
+            flipRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
+            line2Sizer.Add(flipRes,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Factor (0.2-1.2) %: '),0,wx.ALIGN_CENTER_VERTICAL)
+            kFactor =  wx.TextCtrl(dataDisplay,value='%.3f'%(Flip['k-factor']),style=wx.TE_PROCESS_ENTER)
+            kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
+            kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
+            line2Sizer.Add(kFactor,0,wx.ALIGN_CENTER_VERTICAL)
             flipSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
             return flipSizer
                 
@@ -741,9 +755,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
             
-        elif generalData['Type'] == 'Pawley':
-            mainSizer.Add(PawlSizer())
-            
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(PawleySizer())
+
         mainSizer.Add((5,5),0)
         mainSizer.Add(MapSizer())
 
@@ -2299,7 +2313,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-        if generalData['Type'] == 'Pawley' and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequental results'):
+        if generalData['doPawley'] and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequental results'):
             G2frame.dataFrame.RefineTexture.Enable(True)
         shAngles = ['omega','chi','phi']
         
@@ -3546,6 +3560,39 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
+        
+    def OnChargeFlip(event):
+        generalData = data['General']
+        mapData = generalData['Map']
+        flipData = generalData['Flip']
+        reflName = flipData['RefList']
+        phaseName = generalData['Name']
+        if 'PWDR' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            reflData = reflSets[phaseName]
+        elif 'HKLF' in reflName:
+            print 'single crystal reflections'
+            return
+        else:
+            print '**** ERROR - No data defined for charge flipping'
+            return
+        pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
+        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        pgbar.SetSize(Size)
+        try:
+            mapData.update(G2mth.ChargeFlip(data,reflData,pgbar))
+        finally:
+            pgbar.Destroy()        
+        mapSig = np.std(mapData['rho'])
+        data['Drawing']['contourLevel'] = 1.
+        data['Drawing']['mapSize'] = 10.
+        print ' Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        OnSearchMaps(event)             #does a plot structure at end
                 
     def OnTextureRefine(event):
         print 'refine texture?'
@@ -3575,6 +3622,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
             UpdateGeneral()
         elif text == 'Data':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataMenu)
@@ -3631,30 +3679,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
     SetupGeneral()
     GeneralData = data['General']
     UpdateGeneral()
 
-    if GeneralData['Type'] == 'Pawley':
-        DData = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(DData,'Data')
-        G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
-#        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
-#        G2frame.dataDisplay.AddPage(Texture,'Texture')
-    else:
-        DData = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(DData,'Data')
-        Atoms = G2gd.GSGrid(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(Atoms,'Atoms')
-        drawOptions = wx.Window(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
-        drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
-        Texture = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(Texture,'Texture')
-        MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
+    DData = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(DData,'Data')
+    Atoms = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(Atoms,'Atoms')
+    drawOptions = wx.Window(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
+    drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
+    Texture = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(Texture,'Texture')
+    MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
+    G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
             
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     G2frame.dataDisplay.SetSelection(oldPage)

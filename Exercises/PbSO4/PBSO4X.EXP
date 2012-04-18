@@ -1,0 +1,132 @@
+     VERSION    6                                                               
+      DESCR   Lead Sulfate RRRR                                                 
+    HSTRY  1 EXPEDT  V-MS-DOS  8-FEB-95 21: 9:44 P PH                           
+    HSTRY  2 EXPEDT  V-MS-DOS  8-FEB-95 21:12:16             LA                 
+    HSTRY  3 POWPREF V-MS-DOS  8-FEB-95 21:12:25                                
+    HSTRY  4 GENLES  V-MS-DOS  8-FEB-95 21:14:22 Sdsq=  .540E+06 S/E=  .287E-06 
+    HSTRY  5 EXPEDT  V-MS-DOS  8-FEB-95 21:15:43             L   O              
+    HSTRY  6 GENLES  V-MS-DOS  8-FEB-95 21:17:23 Sdsq=  .734E+05 S/E=  .156E+04 
+    HSTRY  7 POWPREF Win32  Sep 25 19:26:04 2011                                
+    HSTRY  8 GENLES  Win32  Sep 25 19:27:05 2011 Sdsq= 0.369E+05 S/E= 0.958     
+    HSTRY  9 EXPEDT  Win32  Sep 26 19:30:01 2011             LA  O              
+    HSTRY 10 GENLES  Win32  Sep 26 19:30:10 2011 Sdsq= 0.368E+05 S/E= 0.155E-02 
+    HSTRY 11 EXPEDT  Win32  Sep 29 12:40:43 2011             L  L               
+    HSTRY 12 GENLES  Win32  Sep 29 12:40:47 2011                                
+    HSTRY 13 GENLES  Win32  Sep 29 12:42:41 2011                                
+    HSTRY 14 POWPREF Win32  Sep 29 12:43:01 2011                                
+    HSTRY 15 EXPEDT  Win32  Sep 29 12:43:20 2011 File cleanup only              
+    HSTRY 16 EXPEDT  Win32  Sep 29 12:45:43 2011 P  H                           
+    HSTRY 17 POWPREF Win32  Sep 29 12:45:51 2011                                
+    HSTRY 18 GENLES  Win32  Sep 29 12:45:56 2011                                
+    HSTRY 19 GENLES  Win32  Sep 29 12:46:45 2011                                
+    HSTRY 20 POWPREF Win64  Sep 29 12:50:56 2011                                
+    HSTRY 21 POWPREF Win64  Sep 29 13:00:41 2011                                
+    HSTRY 22 POWPREF Win32  Sep 29 13:09:21 2011                                
+    HSTRY 23 GENLES  Win32  Sep 29 13:09:26 2011 Sdsq= 0.379E+05 S/E=  1.19     
+    HSTRY 24 GENLES  Win64  Sep 29 13:11:11 2011                                
+    HSTRY 25 EXPEDT  Win32  Oct 12 09:06:23 2011             L  LO              
+    HSTRY 26 POWPREF Win32  Oct 12 09:06:27 2011                                
+  DSGL CDAT1  DRAD ARAD NOFO                                                    
+  GNLS  RUN on Oct 12 09:06:31 2011    Total cycles run  13       37930.        
+  GNLS CDAT1  MXCY  1 PRNT  65                                                  
+  GNLS SHFTS      0.06      0.03                                                
+ AFAC  O     3.048513.2771 2.2868 5.7011 1.5463  .3239  .867032.9089  .2508 RHF 
+ AFAC  O_    15.999 .5805      .00019                                           
+ AFAC  O_SIZ      1.09      0.89 1.40  108                                      
+ AFAC  O_XAB  988.0 590.6 293.1 30.48 17.21                                     
+ AFAC  O_XAN   .090  .073  .069  .052  .047  .032  .008  .006  .003  .004       
+ AFAC  S     6.9053 1.4679 5.203422.2151 1.4379  .2536 1.586356.1720  .8669 RHF 
+ AFAC  S_    32.064 .2847         .53                                           
+ AFAC  S_SIZ      1.47      1.27 1.85 1306                                      
+ AFAC  S_XAB  15010  9402  4927 512.5 256.4                                     
+ AFAC  S_XAN   .374 1.142  .370  .847  .319  .557  .110  .124  .068  .076       
+ AFAC PB    31.0617  .690213.0637 2.357618.4420 8.6180 5.969647.257913.4118 RHF 
+ AFAC PB_   203.973 .9401         .17                                           
+ AFAC PB_SIZ      1.95     1.75  2.35  007                                      
+ AFAC PB_XAB 221700143700 79840 42230 22760                                     
+ AFAC PB_XAN -5.16115.595-4.59612.108-4.818 8.505-4.13310.102-1.910 6.930       
+ EXPR  HTYP1  PXC                                                               
+ EXPR  NATYP    3                                                               
+ EXPR  NHST     1                                                               
+ EXPR ATYP 1  PB          1      1.95     1.75  2.35  007                       
+ EXPR ATYP 2  S           1      1.47      1.27 1.85 1306                       
+ EXPR ATYP 3  O           3      1.09      0.89 1.40  108                       
+ EXPR NPHAS     1    0    0    0    0    0    0    0    0                       
+ REFN GDNFT  Reduced CHI**2 =  6.333     for   11 variables                     
+ REFN RPOWD     0.1243    0.0960   6000  37930.        0.0000    0.0000     0   
+ REFN STATS  Cycle  13 There were  6000 observations. Total CHI**2 = 3.7930E+04 
+CRS1    PNAM  pbso4                                                             
+CRS1   NATOM    5                                                               
+CRS1  ABC     8.482371  5.400051  6.961979    Y    0                            
+CRS1  ABCSIG  0.000117  0.000077  0.000100                                      
+CRS1  ANGLES   90.0000   90.0000   90.0000                                      
+CRS1  ANGSIG    0.0000    0.0000    0.0000                                      
+CRS1  AT  1A  PB         .188200   .250000   .167000  1.000000PB1        4 000  
+CRS1  AT  1B   .005000                                                    I     
+CRS1  AT  2A  S          .063000   .250000   .686000  1.000000S2         4 000  
+CRS1  AT  2B   .005000                                                    I     
+CRS1  AT  3A  O         -.095000   .250000   .600000  1.000000O3         4 000  
+CRS1  AT  3B   .005000                                                    I     
+CRS1  AT  4A  O          .181000   .250000   .543000  1.000000O4         4 000  
+CRS1  AT  4B   .005000                                                    I     
+CRS1  AT  5A  O          .085000   .026000   .806000  1.000000O5         8 000  
+CRS1  AT  5B   .005000                                                    I     
+CRS1  CELVOL        318.895          0.009                                      
+CRS1  CHMF 1  PB            1.00                                                
+CRS1  CHMF 2  S             1.00                                                
+CRS1  CHMF 3  O             4.00                                                
+CRS1  SG SYM  P n m a                                                           
+CRS1  SPAXIS    0    0    1                                                     
+HAP1 1 ZONE     0    0    0    0                                                
+HAP1 1EXTPOW    0.00000E+00    N    0                                           
+HAP1 1NAXIS     1                                                               
+HAP1 1PHSFR      1.0000        N    0                                           
+HAP1 1PRCF      2   18    .00500    0NNNYYNYYNNNNNNNNNNNN                       
+HAP1 1PRCF 1   0.200000E+01  -0.200000E+01   0.500000E+01   0.122031E+01        
+HAP1 1PRCF 2   0.153751E+02   0.000000E+00   0.495499E+01   0.666618E+00        
+HAP1 1PRCF 3   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF 4   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF 5   0.000000E+00   0.000000E+00                                      
+HAP1 1PREFO1  1.000000  1.000000  0.000000  0.000000  1.000000   NN    0    0   
+HST  1  HFIL  D:\pygsasii\testing\class\DATA\PBSO4.XRA                          
+HST  1  HNAM    10.000   0.025 159.00  CPD RRRR   PbSO4  Cu Ka X-ray data  22.9.
+HST  1  IFIL  D:\pygsasii\testing\class\DATA\INST_XRY.PRM                       
+HST  1 BANK     1                                                               
+HST  1 BIGFO   0.000000E+00                                                     
+HST  1 CHANS         0         1      6000 106937344      6001    0    0        
+HST  1 EPHAS    0    0    0    0    0    0    0    0    0    F                  
+HST  1 ICONR  1.540500  1.544300       0.0         0       0.5    0             
+HST  1 ICONS  1.540500  1.544300       0.0         0       0.5    0             
+HST  1 IRAD     3                                                               
+HST  1 MAXRF   54                                                               
+HST  1 NEXC     2                                                               
+HST  1 NPHAS    1    0    0    0    0    0    0    0    0                       
+HST  1 NREF   780    0.7821    N    Y                                           
+HST  1 RPOWD    0.1243    0.0960   6000  37930.        0.0000    0.0000    0    
+HST  1 TRNGE  10.00000 159.97501                                                
+HST  1 WREXP    0.0494                                                          
+HST  1ABSCOR   0.000000E+00   0.000000E+00    N    0                            
+HST  1BAKGD     2    3    Y    0    Y                                           
+HST  1BAKGD1   0.119924E+03  -0.143238E+02   0.173883E+02                       
+HST  1CHI       0.0000                                                          
+HST  1EXC  1      .000      .000                                                
+HST  1EXC  2   160.027  1000.000                                                
+HST  1EXMNMX   1.00000   1.00000                                                
+HST  1HSCALE     25.067        Y    0                                           
+HST  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER                  
+HST  1I ITYP    0    0.0000  180.0000         1                                 
+HST  1MNREF     0    1.0000                                                     
+HST  1ODMNMX   1.00000   1.00000                                                
+HST  1OMEGA     0.0000                                                          
+HST  1PHI       0.0000                                                          
+HST  1PRCF1     2    6      0.01                                                
+HST  1PRCF11   2.000000E+00  -2.000000E+00   5.000000E+00   1.000000E+00        
+HST  1PRCF12   1.000000E+00   0.000000E+00                                      
+HST  1RSP    0.1076 0.0905 0.0737 0.0783 0.0974 0.1145 0.1173 0.1125 0.1111     
+HST  1RSPA   0.0960 0.0860 0.0656 0.0744 0.0988 0.1172 0.1223 0.1117 0.1126     
+HST  1RSPTT  10.00 26.65 43.30 59.97 76.65 93.30109.97126.65143.30159.98        
+HST  1RSPW   0.1482 0.1112 0.0997 0.1013 0.1260 0.1423 0.1460 0.1368 0.1384     
+HST  1RSPWA  0.1231 0.1001 0.0821 0.0940 0.1286 0.1455 0.1550 0.1359 0.1414     
+HST  1TRMNMX   1.00000   1.00000                                                
+ZZZZZZZZZZZZ  Last EXP file record                                              
+    HSTRY 27 GENLES  Win32  Oct 12 09:06:30 2011 Sdsq= 0.379E+05 S/E= 0.126E-01 

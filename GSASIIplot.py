@@ -2279,6 +2279,7 @@ def PlotStructure(G2frame,data):
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     Mydir = generalData['Mydir']
     atomData = data['Atoms']
+    mapPeaks = []
     if 'Map Peaks' in data:
         mapPeaks = data['Map Peaks']                        
     drawingData = data['Drawing']

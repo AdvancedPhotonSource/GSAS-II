@@ -858,7 +858,7 @@ class GSASII(wx.Frame):
     class ConstraintDialog(wx.Dialog):
         '''Window to edit Constraint values
         '''
-        def __init__(self,parent,title,text,data):
+        def __init__(self,parent,title,text,data,separator='*'):
             wx.Dialog.__init__(self,parent,-1,title, 
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
             self.data = data
@@ -870,14 +870,15 @@ class GSASII(wx.Frame):
             mainSizer.Add((10,10),1)
             dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=2,hgap=2,vgap=2)
             for id,item in enumerate(self.data[:-1]):
-                #name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(200,20))
-                name = wx.StaticText(panel,-1,item[1],size=wx.Size(200,20))
-                #name.SetEditable(False)
+                lbl = item[1]
+                if lbl[-1] != '=': lbl += ' ' + separator + ' '
+                name = wx.StaticText(panel,-1,lbl,size=wx.Size(200,20),
+                                     style=wx.ALIGN_RIGHT)
                 scale = wx.TextCtrl(panel,id,'%.3f'%(item[0]),style=wx.TE_PROCESS_ENTER)
                 scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
                 scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
-                dataGridSizer.Add(scale,0,wx.LEFT,10)
-                dataGridSizer.Add(name,0,wx.RIGHT,10)
+                dataGridSizer.Add(name,0,wx.LEFT,10)
+                dataGridSizer.Add(scale,0,wx.RIGHT,10)
             mainSizer.Add(dataGridSizer,0,wx.EXPAND)
             OkBtn = wx.Button(panel,-1,"Ok")
             OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -894,6 +895,7 @@ class GSASII(wx.Frame):
             panel.SetSizer(mainSizer)
             panel.Fit()
             self.Fit()
+            self.CenterOnParent()
             
         def OnNameChange(self,event):
             self.data[-1] = self.name.GetValue() 

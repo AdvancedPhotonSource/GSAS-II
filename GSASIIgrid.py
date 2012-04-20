@@ -1227,7 +1227,8 @@ def UpdateConstraints(G2frame,data):
     def ConstSizer(name,pageDisplay):
         '''This creates a sizer displaying all of the constraints entered
         '''
-        constSizer = wx.FlexGridSizer(1,5,0,0)
+        constSizer = wx.FlexGridSizer(1,4,0,0)
+        maxlen = 70 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):
             eqString = ['',]
             if item[-1] == 'h':
@@ -1241,19 +1242,21 @@ def UpdateConstraints(G2frame,data):
                 Indx[constEdit.GetId()] = [Id,name]
                 if item[-1] == 'f':
                     for term in item[:-3]:
-                        if len(eqString[-1]) > 60:
+                        if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
+                        m = term[0]
                         if eqString[-1] != '':
-                            if term[0] > 0:
+                            if m >= 0:
                                 eqString[-1] += ' + '
                             else:
                                 eqString[-1] += ' - '
-                        eqString[-1] += '%.3f*%s '%(abs(term[0]),term[1])
+                                m = abs(m)
+                        eqString[-1] += '%.3f*%s '%(m,term[1])
                     typeString = ' NEWVAR  '
                     eqString[-1] += ' = New Variable   '
                 elif item[-1] == 'c':
                     for term in item[:-3]:
-                        if len(eqString[-1]) > 60:
+                        if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
                         if eqString[-1] != '':
                             if term[0] > 0:
@@ -1264,15 +1267,15 @@ def UpdateConstraints(G2frame,data):
                     typeString = ' CONSTR  '
                     eqString[-1] += ' = %.3f'%(item[-3])+'  '
                 elif item[-1] == 'e':
-                    first = 1.0
                     for term in item[:-3]:
-                        if len(eqString[-1]) > 60:
+                        if term[0] == 0: term[0] = 1.0
+                        if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
                         if eqString[-1] == '':
                             eqString[-1] += '%s '%(term[1])
-                            if term[0] != 0: first = term[0]
+                            first = term[0]
                         else:
-                            eqString[-1] += ' = %.3f*%s '%(term[0]/first,term[1])
+                            eqString[-1] += ' = %.3f*%s '%(first/term[0],term[1])
                     typeString = ' EQUIV   '
                 else:
                     print 'Unexpected constraint',item
@@ -1289,19 +1292,19 @@ def UpdateConstraints(G2frame,data):
             for s in eqString:
                 EqSizer.Add(wx.StaticText(pageDisplay,-1,s),0,wx.ALIGN_CENTER_VERTICAL)
             constSizer.Add(EqSizer,0,wx.ALIGN_CENTER_VERTICAL)
-            if item[-1] == 'f':
-                constRef = wx.CheckBox(pageDisplay,-1,label=' Refine?') 
-                constRef.SetValue(item[-2])
-                constRef.Bind(wx.EVT_CHECKBOX,OnConstRef)
-                Indx[constRef.GetId()] = item
-                constSizer.Add(constRef)
-            else:
-                constSizer.Add((5,5),0)
+            # if item[-1] == 'f':
+            #     constRef = wx.CheckBox(pageDisplay,-1,label=' Refine?') 
+            #     constRef.SetValue(item[-2])
+            #     constRef.Bind(wx.EVT_CHECKBOX,OnConstRef)
+            #     Indx[constRef.GetId()] = item
+            #     constSizer.Add(constRef)
+            # else:
+            #     constSizer.Add((5,5),0)
         return constSizer
                 
-    def OnConstRef(event):
-        Obj = event.GetEventObject()
-        Indx[Obj.GetId()][-2] = Obj.GetValue()
+    # def OnConstRef(event):
+    #     Obj = event.GetEventObject()
+    #     Indx[Obj.GetId()][-2] = Obj.GetValue()
         
     def OnConstDel(event):
         Obj = event.GetEventObject()
@@ -1313,22 +1316,24 @@ def UpdateConstraints(G2frame,data):
         '''Called to edit an individual contraint by the Edit button'''
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
+        sep = '*'
         if data[name][Id][-1] == 'f':
             items = data[name][Id][:-3]+[[],]
             constType = 'New Variable'
             lbl = 'Enter value for each term in constraint; sum = new variable'
         elif data[name][Id][-1] == 'c':
             items = data[name][Id][:-3]+[
-                [data[name][Id][-3],'= fixed value'],[]]
+                [data[name][Id][-3],'fixed value ='],[]]
             constType = 'Constraint'
             lbl = 'Edit value for each term in constant constraint sum'
         elif data[name][Id][-1] == 'e':
             items = data[name][Id][:-3]+[[],]
             constType = 'Equivalence'
-            lbl = 'Variable ' + items[0][1] + ' is equal to: '
+            lbl = 'The following terms are set to be equal:'
+            sep = '/'
         else:
             return
-        dlg = G2frame.ConstraintDialog(G2frame,constType,lbl,items)
+        dlg = G2frame.ConstraintDialog(G2frame.dataFrame,constType,lbl,items,sep)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetData()

@@ -54,9 +54,8 @@ def GetControls(GPXfile):
     fl.close()
     return Controls
     
-def GetConstraints(GPXfile,varyList,parmDict):
+def GetConstraints(GPXfile):
     '''Read the constraints from the GPX file and interpret them
-    Note that this needs an update to match the new-style constraints
     '''
     constList = []
     fl = open(GPXfile,'rb')
@@ -72,56 +71,43 @@ def GetConstraints(GPXfile,varyList,parmDict):
                 constList += constDict[item]
     fl.close()
     constDict = []
-    constFlag = []
     fixedList = []
+    ignored = 0
     for item in constList:
         if item[-1] == 'h':
             # process a hold
             fixedList.append('0')
-            constFlag.append([])
             constDict.append({item[0][1]:0.0})
         elif item[-1] == 'f':
             # process a new variable
             fixedList.append(None)
-            constFlag.append([])
             constDict.append({})
             for term in item[:-3]:
                 constDict[-1][term[1]] = term[0]
-            if item[-2]:
-                constFlag[-1] = ['Vary']
+            #constFlag[-1] = ['Vary']
         elif item[-1] == 'c': 
             # process a contraint relationship
-            const = item[-3]
-            vars = 0
-            used = {}
+            fixedList.append(str(item[-3]))
+            constDict.append({})
             for term in item[:-3]:
-                if term[1] in varyList:
-                    used[term[1]] = term[0]
-                    vars += 1
-                else:
-                    const -= parmDict[term[1]]*term[0]
-            if vars == 0:
-                print 'Contraint is not used',item[:-3],'=',item[-3]
-                print 'no refined variables'
-                continue
-            fixedList.append(str(const))
-            constFlag.append(['VaryFree'])
-            constDict.append(used)
+                constDict[-1][term[1]] = term[0]
+            #constFlag[-1] = ['VaryFree']
         elif item[-1] == 'e':
             # process an equivalence
-            first = None
+            firstmult = None
             eqlist = []
             for term in item[:-3]:
-                if first is None:
-                    first = term[0]
-                    if first == 0: first = 1.0
-                    firstvar = term[1]
+                if term[0] == 0: term[0] = 1.0
+                if firstmult is None:
+                    firstmult,firstvar = term
                 else:
-                    eqlist.append([term[1],term[0]/first])
-            G2mv.StoreEquivalence(firstvar,eqlist)                
+                    eqlist.append([term[1],firstmult/term[0]])
+            G2mv.StoreEquivalence(firstvar,eqlist)
         else:
-            pass
-    return constDict,constFlag,fixedList
+            ignored += 1
+    if ignored:
+        print ignored,'old-style Constraints were rejected'
+    return constDict,fixedList
     
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -2847,6 +2833,7 @@ def Refine(GPXfile,dlg):
     ShowControls(Controls)
     calcControls = {}
     calcControls.update(Controls)            
+    constrDict,fixedList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -2870,19 +2857,21 @@ def Refine(GPXfile,dlg):
     parmDict.update(histDict)
     GetFprime(calcControls,Histograms)
     # do constraint processing
-    constrDict,constrFlag,fixedList = GetConstraints(GPXfile,varyList,parmDict)
     try:
         groups,parmlist = G2mv.GroupConstraints(constrDict)
-        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
+        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
     except:
         print ' *** ERROR - your constraints are internally inconsistent ***'
+        # traceback for debug
+        #import traceback
+        #print traceback.format_exc()
         raise Exception(' *** Refine aborted ***')
-    # check to see which generated parameters are fully varied
-    msg = G2mv.SetVaryFlags(varyList)
-    if msg:
-        print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
-        print msg
-        raise Exception(' *** Refine aborted ***')
+    # # check to see which generated parameters are fully varied
+    # msg = G2mv.SetVaryFlags(varyList)
+    # if msg:
+    #     print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
+    #     print msg
+    #     raise Exception(' *** Refine aborted ***')
     print G2mv.VarRemapShow(varyList)
     G2mv.Map2Dict(parmDict,varyList)
     Rvals = {}
@@ -2990,6 +2979,7 @@ def SeqRefine(GPXfile,dlg):
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
+    constrDict,fixedList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -3052,9 +3042,19 @@ def SeqRefine(GPXfile,dlg):
         parmDict.update(histDict)
         GetFprime(calcControls,Histo)
         # do constraint processing
-        constrDict,constrFlag,fixedList = GetConstraints(GPXfile,varyList,parmDict)
-        groups,parmlist = G2mv.GroupConstraints(constrDict)
-        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList)
+        try:
+            groups,parmlist = G2mv.GroupConstraints(constrDict)
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
+        except:
+            print ' *** ERROR - your constraints are internally inconsistent ***'
+            raise Exception(' *** Refine aborted ***')
+        # check to see which generated parameters are fully varied
+        # msg = G2mv.SetVaryFlags(varyList)
+        # if msg:
+        #     print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
+        #     print msg
+        #     raise Exception(' *** Refine aborted ***')
+        #print G2mv.VarRemapShow(varyList)
         G2mv.Map2Dict(parmDict,varyList)
         Rvals = {}
         while True:

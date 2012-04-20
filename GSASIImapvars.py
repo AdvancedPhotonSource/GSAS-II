@@ -8,31 +8,49 @@
 """Module that implements algebraic contraints, parameter redefinition
 and parameter simplification contraints.
 
-Parameter redefinition is done by creating one or more relationships
+Parameter redefinition (new vars) is done by creating one or more relationships
 between a set of parameters
    Mx1 * Px + My1 * Py +...
    Mx2 * Px + Mz2 * Pz + ...
 where Pj is a parameter name and Mjk is a constant.
 
-Relations are typically supplied as input to InputParse, where either
-of two keywords can be attached to a relationship:
- * VARY which means the generated parameter name will be included in
-  the list of variables to be refined (varyList)
- * VARYFREE which means that all generated parameter names for a
-  group, including the ones for generated relationships (see below)
-  will be included in the list of variables to be refined (varyList)
-  The case of VARY and VARYFREE is immaterial.
-
-Relations can also be supplied in the form of an equation:
+Constant constraint Relations can also be supplied in the form of an equation:
   nx1 * Px + ny1 * Py +... = C1
 where Cn is a constant. These equations define an algebraic
-constrant. The keyword VARY makes no sense when used with a constraint
-equation, but VARYFREE can be used.  #RVD??? is VARYFREE required or default??
+constrant.
 
-Unconstrained relations describe a new, independent, parameter, which
+Parameters can also be "fixed" (held), which prevents them from being refined.
+
+All of the above three cases is supplied as input using routines
+GroupConstraints and GenerateConstraints. The input consists of a list of
+relationship dictionaries:
+    constrDict = [
+         {'0:12:Scale': 2.0, '0:14:Scale': 4.0, '0:13:Scale': 3.0, '0:0:Scale': 0.5},
+         {'2::C(10,6,1)': 1.0, '1::C(10,6,1)': 1.0},
+         {'0::A0': 0.0}]
+
+    fixedList = ['5.0', None, '0']
+
+Where the dictionary defines the first part of an expression and the corresponding fixedList
+item is either None (for parameter redefinition) or the constant value, for a constant
+constraint equation. A dictionary that contains a single term defines a variable that
+will be fixed (held). The multiplier and the fixedList value in this case are ignored.
+
+Parameters can also be equivalenced or "slaved" to another parameter, such that one
+(independent) parameter is equated to several (now dependent) parameters. In
+algebraic form this is:
+   P0 = M1 * P1 = M2 * P2 = ...
+Thus parameters P0, P1 and P2,... are linearly equivalent. Routine StoreEquivalence is
+used to specify these equivalences.
+
+Parameter redefinition (new vars) describes a new, independent, parameter, which
 is defined in terms of dependent parameters that are defined in the
-Model, while constrained relations effectively reduce the complexity
-of the Model by removing a degree of freedom.
+Model, while fixed constrained relations effectively reduce the complexity
+of the Model by removing a degree of freedom. It is possible for a parameter to appear
+in both a parameter redefinition expression and a fixed constraint equation, but a
+parameter cannot be used a parameter equivalance cannot be used elsewhere (not fixed,
+constrained or redefined). Likewise a fixed parameter cannot be used elsewhere (not
+equivalanced, constrained or redefined).
 
 Relationships are grouped so that a set of dependent parameters appear
 in only one group (done in routine GroupConstraints.) Note that if a
@@ -41,19 +59,19 @@ parameters, there must exist N-C new parameters, where C is the number
 of contraint equations in the group. Routine GenerateConstraints takes
 the output from InputParse and GroupConstraints generates the
 "missing" relationships and saves that information in the module's
-global variables. Each generated parameter is named
-sequentially using paramPrefix.
+global variables. Each generated parameter is named sequentially using paramPrefix.
 
-Parameter redefinition is done by equating one (independent) parameter to several
-(now dependent) parameters, in algebraic form:
-  P1 = n2 * P2 = n3 * P3 ...
-Each equality in the relationship reduces the complexity of the model
-by one potentially variable parameter. Input is provided to routine
-StoreEquivalence in the form of an independent parameter and a list of
-dependent parameters, optionally with a multiplier.
-
-Note that none of the dependent parameters in any constraint or
-reformulation can be refined (see dependentParmList, below).
+A list of parameters that will be varied is specified as input to GenerateConstraints
+(varyList). A fixed parameter will simply be removed from this list preventing that
+parameter from being varied. Note that all parameters in a relationship must specified as
+varied (appear in varyList) or none can be varied. This is checked in GenerateConstraints
+(as well as for generated relationships in SetVaryFlags).
+* If all parameters in a parameter redefinition (new var) relationship are varied, the
+  parameter assigned to this expression (::constr:n, see paramPrefix) newly generated
+  parameter is varied. Note that any generated "missing" relations are not varied. Only
+  the input relations are varied.
+* If all parameters in a fixed constraint equation are varied, the generated "missing"
+  relations in the group are all varied. This provides the N-C degrees of freedom. 
 
 External Routines:
    To define a set of constrained and unconstrained relations, one
@@ -108,7 +126,6 @@ Global Variables:
 """
 
 import numpy as np
-import re
 # data used for constraints; 
 debug = False # turns on printing as constraint input is processed
 # note that constraints are stored listed by contraint groups, where each constraint
@@ -121,14 +138,6 @@ indParmList = [] # a list of names for the new parameters
 fixedDict = {} # a dictionary containing the fixed values corresponding to defined parameter equations
                # key is original ascii string, value is float
 fixedVarList = [] # List of variables that should not be refined
-
-# compile regular expressions used for parsing input
-rex_mult = re.compile('[+-]?[0-9.]+[eE]?[+-]?[0-9]*')
-rex_star = re.compile('\s*\*\s*')
-rex_var = re.compile('[a-zA-Z0-9_:]+')
-rex_plusminus = re.compile('\s*[+-=]\s*')
-rex_vary = re.compile('\s*Vary\s*', re.IGNORECASE)
-rex_varyfree = re.compile('(.*)\s*VaryFree\s*', re.IGNORECASE)
 
 # prefix for parameter names
 paramPrefix = "::constr:"
@@ -144,133 +153,6 @@ def InitVars():
     fixedDict = {} # a dictionary containing the fixed values corresponding to defined parameter equations
     consNum = 0 # number of the next constraint to be created
     fixedVarList = []
-
-def InputParse(mapList):
-    '''Converts a set relationships used to remap parameters into composite
-    parameters or to one or more constants.
-        
-    Input:
-      mapList: a list of character strings where each string defines
-    a relationship in form:
-    ('<const11>*<prm1> [+-] <const12>*<prm2> [+-] ... = <value> [VaryFree]',
-    '<const21>*<prm1> [+-] <const22>*<prm2> [+-] ... [Vary/VaryFree]',
-    ...)
-    these define either a constraint or a new independent parameter,
-    where <constXX> is a constant containing an optional sign, digits,
-    optionally a decimal point and/or an exponent, prefixed by e or E,
-    and <prmN> is the name of a parameter defined in the Model.
-    Parameters can be included in any order. Multiplying a parameter
-    by 0 causes that parameter to be included in a group of
-    relationships.  Note that if the same parameter is included twice
-    in a relationship/equation, the coefficients are added.
-    
-    When an equality is defined, a constant, <value>, is
-    included. This then describes a constraint equation.
-    
-    Vary is an optional keyword that indicates the indicated remapped
-    parameter should be varied (note, case insensitive). Should be the
-    last item on the line. Makes no sense with an equation.
-
-    VaryFree is an optional keyword that indicates all possible
-    remapped parameters should be varied (note, case
-    insensitive). Makes most sense with a constraint equation.  Should
-    be the last item on the line.
-
-    returns
-      constrDict: a list with a dict for each item in mapList that
-        defines the relationship. The keys are parameter names and the
-        values are the multiplier for the parameter name
-      constrFlag: a list for each item in mapList with a list contains
-        'Vary' and/or 'VaryFree'
-      fixedList: a list for each item in mapList. Contains the value
-        (as a string) for each contraint equation or None for a
-        constraint relationship.
-    '''
-    i = 0
-    constrDict = []
-    fixedList = []
-    constrFlag = []
-    if debug: print 50*'-','\n(Input)'
-    for line in mapList:
-        inputline = line[:]
-        line = line.strip()
-        if len(line) == 0: continue # empty lines are ignored
-        constrDict.append({})
-        constrFlag.append([])
-        fixedList.append(None)
-        i += 1
-        fixedval = None
-        if debug: print '\t',line
-        try: 
-            j = 0
-            sign = 1.0
-            while len(line):
-                j += 1
-                m = sign * float(rex_mult.match(line).group())
-                line = line[rex_mult.match(line).end():]
-                j += 1
-                line = line[rex_star.match(line).end():]
-                j += 1
-                v = rex_var.match(line).group()
-                line = line[rex_var.match(line).end():]
-                #print m,'times',v
-                #if v not in varlist: varlist.append(v)
-                if constrDict[i-1].get(v) == None:
-                    constrDict[i-1][v] = m
-                else:
-                    constrDict[i-1][v] += m
-                if len(line.strip()) == 0: break
-                j += 1
-                # advance to next separator (+-=)
-                pm = rex_plusminus.match(line)
-                if pm != None:
-                    line = line[pm.end():]
-                    pm = pm.group()
-                else:
-                    pm = ''
-                if pm.strip() == '+':
-                    sign = 1.0
-                elif pm.strip() == '-':
-                    sign = -1.0
-                elif pm.strip() == '=':
-                    # found a fixed value, also check for a VaryFree flag
-                    if rex_varyfree.match(line):
-                        constrFlag[-1].append('VaryFree')
-                        #fixedval = float(rex_varyfree.split(line)[1])
-                        fixedval = rex_varyfree.split(line)[1].strip()
-                    else:
-                        #fixedval = float(line.strip())
-                        fixedval = line.strip()
-                    fixedList[-1] = fixedval
-                    line = ""
-                elif rex_varyfree.match(line):
-                    constrFlag[-1].append('VaryFree')
-                    line = line[rex_varyfree.match(line).end():]
-                elif rex_vary.match(line):
-                    constrFlag[-1].append('Vary')
-                    line = line[rex_vary.match(line).end():]
-                else:
-                    # something else is on the line, but not a keyword
-                    raise Exception,'Error in line '+str(inputline)+'\nat '+str(line)
-        except SyntaxError:
-            if debug: print 'Error in line',i,'token',j,'@','"'+line+'"'
-            raise Exception,'Error in line %d token %d, beginning with %s'% (i,j, line)
-
-    if debug: # on debug, show what is parsed in a semi-readable
-        print 50*'-','\n(parsed relationship/equation & flag)'
-        for i in range(len(constrDict)):
-            flags = ''
-            for f in constrFlag[i]:
-                if flags != '':
-                    flags = flags + ' + ' + f
-                else:
-                    flags = f
-            if fixedList[i] is None:
-                print '#',i+1,constrDict[i],'\t',constrFlag[i]
-            else:
-                print '#',i+1,constrDict[i],'=',fixedList[i],'\t',constrFlag[i]
-
-    return constrDict,constrFlag,fixedList
 
 def GroupConstraints(constrDict):
     """divide the constraints into groups that share no parameters.
@@ -306,42 +188,178 @@ def GroupConstraints(constrDict):
         ParmList.append(varlist)
     return groups,ParmList
 
-def GenerateConstraints(groups,parmlist,varyList,constrDict,constrFlag,fixedList):
-    '''Takes a list of relationship entries comprising a group of constraints and
-    builds the relationship lists and their inverse and stores them in global variables
+def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
+    '''Takes a list of relationship entries comprising a group of
+    constraints and builds the relationship lists and their inverse
+    and stores them in global variables Also checks for internal
+    conflicts or inconsistencies in parameter/variable definitions.
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
+    msg = ''
+
+    # process fixed (held) variables
+    for cdict in constrDict:
+        if len(cdict) == 1:
+            fixedVarList.append(cdict.keys()[0])
+    #print 'fixedVarList',fixedVarList
+    
+    # process equivalences: make a list of dependent and independent vars
+    #    and check for repeated uses (repetition of a parameter as an
+    #    independent var is OK)
+    indepVarList = []
+    depVarList = []
+    multdepVarList = []
+    for varlist,mapvars,multarr,invmultarr in zip(
+        dependentParmList,indParmList,arrayList,invarrayList):
+        if multarr is None:
+            zeromult = False
+            for mv in mapvars:
+                varied = 0
+                notvaried = ''
+                if mv in varyList:
+                    varied += 1
+                else:
+                    if notvaried: notvaried += ', '
+                    notvaried += mv
+                if mv not in indepVarList: indepVarList.append(mv)
+                for v,m in zip(varlist,invmultarr):
+                    if m == 0: zeromult = True
+                    if v in varyList:
+                        varied += 1
+                    else:
+                        if notvaried: notvaried += ', '
+                        notvaried += v
+                    if v in depVarList:
+                        multdepVarList.append(v)
+                    else:
+                        depVarList.append(v)
+            if varied > 0 and varied != len(varlist)+1:
+                msg += "\nNot all variables refined in equivalence:\n\t"
+                s = ""
+                for v in varlist:
+                    if s != "": s+= " & "
+                    s += str(v)            
+                msg += str(mv) + " => " + s
+                msg += '\nNot refined: ' + notvaried + '\n'
+            if zeromult:
+                msg += "\nZero multiplier is invalid in equivalence:\n\t"
+                s = ""
+                for v in varlist:
+                    if s != "": s+= " & "
+                    s += str(v)            
+                msg += str(mv) + " => " + s + '\n'
+
+    #print 'indepVarList',indepVarList
+    #print 'depVarList',depVarList
+    # check for errors:
+    inboth = set(indepVarList).intersection(set(depVarList))
+    if len(inboth) > 0:
+        msg += "\nThe following parameters(s) are used as both dependent and independent variables in Equivalence relations:\n"
+        s = ''
+        for var in inboth:
+            if s != "": s+= ", "
+            s += str(v)
+        msg += '\t'+ s + '\n'
+    if len(multdepVarList) > 0:
+        msg += "\nThe following parameters(s) are used in multiple Equivalence relations as dependent variables:\n"
+        s = ''
+        for var in multdepVarList:
+            if s != "": s+= ", "
+            s += str(v)            
+        msg += '\t'+ s + '\n'
+    equivVarList = list(set(indepVarList).union(set(depVarList)))
+    #print 'equivVarList',equivVarList
+    inboth = set(fixedVarList).intersection(set(equivVarList))
+    if len(inboth) > 0:
+        msg += "\nError! The following variables are used in both Equivalence and Fixed constraints:\n"
+        s = ''
+        for var in inboth:
+            if s != "": s+= ", "
+            s += str(v)
+        msg += '\t'+ s + '\n'
+
+    # scan through parameters in each relationship. Are all varied? If only some are
+    # varied, create an error message. 
+    # If all are varied and this is a constraint equation, then set VaryFree flag
+    # so that newly created relationships will be varied
     for group,varlist in zip(groups,parmlist):
+        if len(varlist) == 1: continue
         VaryFree = False
-        for row in group:
-            if 'VaryFree' in constrFlag[row]: VaryFree = True
-        if len(varlist) == 1:
-            #print "Debug: Fixing parameter (%s)" % (varlist[0])
-            fixedVarList.append(varlist[0])
-            continue
+        for rel in group:
+            varied = 0
+            notvaried = ''
+            for var in constrDict[rel]:
+                if var in varyList:
+                    varied += 1
+                else:
+                    if notvaried: notvaried += ', '
+                    notvaried += var
+                if var in fixedVarList:
+                    msg += '\nError: parameter '+var+" is Fixed and used in a constraint:\n\t"
+                    msg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
+                if var in equivVarList:
+                    msg += '\nError: parameter '+var+" is Equivalenced and used in a constraint:\n\t"
+                    msg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
+            if varied > 0 and varied != len(constrDict[rel]):
+                msg += "\nNot all variables refined in constraint:\n\t"
+                msg += FormatConstraint(constrDict[rel],fixedList[rel])
+                msg += '\nNot refined: ' + notvaried + '\n'
+            if fixedList[rel] is not None and varied > 0:
+                VaryFree = True
+    # if there were errors found, go no farther
+    if msg:
+        print ' *** ERROR in constraint definitions! ***'
+        print msg
+        raise Exception
+                
+    # now process each group and create the relations that are needed to form
+    # non-singular square matrix
+    for group,varlist in zip(groups,parmlist):
+        if len(varlist) == 1: continue
         arr = MakeArray(constrDict, group, varlist)
         constrArr = FillInMissingRelations(arr,len(group))
         mapvar = []
         group = group[:]
+        # scan through all generated and input variables, add to the varied list
+        # all the new parameters where VaryFree has been set or where all the
+        # dependent parameters are varied. Check again for inconsistent variable use
+        # for new variables -- where varied and unvaried parameters get grouped
+        # together. I don't think this can happen when not flagged before, but
+        # it does not hurt to check again. 
         for i in range(len(varlist)):
-            vary = VaryFree
+            varied = 0
+            notvaried = ''
             if len(group) > 0:
                 rel = group.pop(0)
                 fixedval = fixedList[rel]
-                if 'Vary' in constrFlag[rel]: vary = True
+                for var in constrDict[rel]:
+                    if var in varyList:
+                        varied += 1
+                    else:
+                        if notvaried: notvaried += ', '
+                        notvaried += var
             else:
                 fixedval = None
             if fixedval is None:
                 varname = paramPrefix + str(consNum)
                 mapvar.append(varname)
                 consNum += 1
-                if vary: varyList.append(varname)
+                if VaryFree or varied > 0:
+                    varyList.append(varname)
             else:
                 mapvar.append(fixedval)
+            if varied > 0 and notvaried != '':
+                msg += "\nNot all variables refined in generated constraint\n\t"
+                msg += '\nNot refined: ' + notvaried + '\n'
         dependentParmList.append(varlist)
         arrayList.append(constrArr)
         invarrayList.append(np.linalg.inv(constrArr))
         indParmList.append(mapvar)
+    if msg:
+        print ' *** ERROR in constraint definitions! ***'
+        print msg
+        print VarRemapShow(varyList)
+        raise Exception
     # setup dictionary containing the fixed values
     global fixedDict 
     # key is original ascii string, value is float
@@ -394,41 +412,41 @@ def StoreEquivalence(independentVar,dependentList):
     dependentParmList.append(mapList)
     return
 
-def SetVaryFlags(varyList):
-    '''Adds independent variables to the varyList provided that all
-    dependent variables are being varied.
-    Ignores independent variables where no dependent variables are
-    being varied.
-    Returns a non-empty text message where some but not all dependent
-    variables are being varied.
-    '''
-    global dependentParmList,arrayList,invarrayList,indParmList,fixedDict
-    msg = ""
-    for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):
-        for mv in mapvars:
-            varied = []
-            notvaried = []
-            if mv in fixedDict: continue
-            if multarr is None:
-                if mv in varyList:
-                    varied.append(mv)
-                else:
-                    notvaried.append(mv)
-            for v in varlist:
-                if v in varyList:
-                    varied.append(v)
-                else:
-                    notvaried.append(v)
-            if len(varied) > 0 and len(notvaried) > 0:
-                if msg != "": msg += "\n"
-                msg += "Error: inconsistent use of parameter " + mv
-                msg += "\n  varied: "
-                for v in varied: msg += v
-                msg += "\n  not varied: "
-                for v in notvaried: msg += v    
-            elif len(varied) > 0 and multarr is not None:
-                varyList.append(mv)
-    return msg
+# def SetVaryFlags(varyList,fixedList):
+#     '''Adds independent variables to the varyList provided that all
+#     dependent variables are being varied.
+#     Ignores independent variables where no dependent variables are
+#     being varied.
+#     Returns a non-empty text message where some but not all dependent
+#     variables are being varied.
+#     '''
+#     global dependentParmList,arrayList,invarrayList,indParmList,fixedDict
+#     msg = ""
+#     for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):
+#         for mv in mapvars:
+#             varied = []
+#             notvaried = []
+#             if mv in fixedDict: continue
+#             if multarr is None:
+#                 if mv in varyList:
+#                     varied.append(mv)
+#                 else:
+#                     notvaried.append(mv)
+#             for v in varlist:
+#                 if v in varyList:
+#                     varied.append(v)
+#                 else:
+#                     notvaried.append(v)
+#             if len(varied) > 0 and len(notvaried) > 0:
+#                 if msg != "": msg += "\n"
+#                 msg += "Error: inconsistent use of parameter " + mv
+#                 msg += "\n  varied: "
+#                 for v in varied: msg += v
+#                 msg += "\n  not varied: "
+#                 for v in notvaried: msg += v    
+#             #elif len(varied) > 0 and multarr is not None:
+#             #    varyList.append(mv)
+#     return msg
 
 def GetDependentVars():
     '''Return a list of dependent variables: e.g. variables that are
@@ -488,9 +506,11 @@ def ComputeDepESD(covMatrix,varyList,parmDict):
     '''Compute uncertainties for dependent parameters from independent ones
     returns a dictionary containing the esd values for dependent parameters
     '''
+    # I think this fails for equivalencies: the ESD for the master (independent variable)
+    # needs to be adjusted.
     sigmaDict = {}
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
-        if invmultarr is None: continue # probably not needed
+        #if invmultarr is None: continue # probably not needed
         valuelist = [parmDict[var] for var in mapvars]
         # get the v-covar matrix for independent parameters 
         vcov = np.zeros((len(mapvars),len(mapvars)))
@@ -505,7 +525,30 @@ def ComputeDepESD(covMatrix,varyList,parmDict):
         for v,vec in zip(varlist,invmultarr):
             sigmaDict[v] = np.sqrt(np.inner(vec.T,np.inner(vcov,vec)))
     return sigmaDict
-        
+
+def FormatConstraint(RelDict,RelVal):
+    '''Formats a Constraint or Function for use in a convenient way'''
+    s = [""]
+    for var,val in RelDict.items():
+        if len(s[-1]) > 60: s.append(' ')
+        m = val
+        if s[-1] != "" and m >= 0:
+            s[-1] += ' + '
+        elif s[-1] != "":
+            s[-1] += ' - '
+            m = abs(m)
+        s[-1] += '%.3f*%s '%(m,var)
+    if len(s[-1]) > 60: s.append(' ')
+    if RelVal is None:
+        s[-1] += ' = New variable'
+    else:
+        s[-1] += ' = ' + RelVal
+    s1 = ''
+    for s2 in s:
+        if s1 != '': s1 += '\n\t'
+        s1 += s2
+    return s1
+
 def VarRemapShow(varyList):
     '''List out the saved relationships.
     Returns a string containing the details.
@@ -521,10 +564,10 @@ def VarRemapShow(varyList):
         dependentParmList,indParmList,arrayList,invarrayList):
         for i,mv in enumerate(mapvars):
             if multarr is None:
-                s += '  ' + str(mv) + ' defines parameter(s): '
+                s += '  ' + str(mv) + ' is equivalent to parameter(s): '
                 j = 0
                 for v,m in zip(varlist,invmultarr):
-                    print v,m[0]
+                    #print v,m[0]
                     if j > 0: s += '  & '
                     j += 1
                     s += str(v)
@@ -559,15 +602,21 @@ def Dict2Deriv(varyList,derivDict,dMdv):
     derivatives for the original parameters
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,invarrayList
-    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
+    for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
         for i,name in enumerate(mapvars):
             # grouped variables: need to add in the derv. w/r
             # dependent variables to the independent ones
-            if name not in varyList: continue # if independent var not varied
-            for m,v in zip(invmultarr[:,i],varlist):
-#                print 'add derv',v,'*',m,'to derv',name
-                if m == 0: continue
-                dMdv[varyList.index(name)] += m * derivDict[v]
+            if name not in varyList: continue # skip if independent var not varied
+            if multarr is None:
+                for v,m in zip(varlist,invmultarr):
+                    #print 'add derv',v,'/',m[0],'to derv',name
+                    if m == 0: continue
+                    dMdv[varyList.index(name)] += derivDict[v] / m[0]
+            else:
+                for v,m in zip(varlist,multarr[i,:]):
+                    #print 'add derv',v,'*',m,'to derv',name
+                    if m == 0: continue
+                    dMdv[varyList.index(name)] += m * derivDict[v]
 
 def Map2Dict(parmDict,varyList):
     '''Create (or update) the Independent Parameters from the original
@@ -603,20 +652,21 @@ def Map2Dict(parmDict,varyList):
     parmDict.update(fixedDict)
 
 def Dict2Map(parmDict,varyList):
-    #I think this needs fixing to update parmDict with new values 
-    #   from the constraints based on what is in varyList - RVD 
     '''Convert the remapped values back to the original parameters
     
     This should be done to apply constraints to parameter values (use
-    Map2Dict first). It should be done as part of the Model function
+    Map2Dict once first). It should be done as part of the Model function
     evaluation, before any computation is done
     '''
+    #I think this needs fixing to update parmDict with new values 
+    #   from the constraints based on what is in varyList - RVD. Don't think so -- BHT
     global dependentParmList,arrayList,invarrayList,indParmList,fixedDict
     # reset fixed values (should not be needed, but very quick) 
     # - this seems to update parmDict with {'0':0.0} & {'1.0':1.0} - probably not what was intended
+    # not needed, but also not a problem - BHT
     parmDict.update(fixedDict)
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
-        if invmultarr is None: continue
+        #if invmultarr is None: continue
         valuelist = [parmDict[var] for var in mapvars]
         parmDict.update(zip(varlist,
                             np.dot(invmultarr,np.array(valuelist)))
@@ -785,66 +835,54 @@ def EvalLCterm(term):
 
 if __name__ == "__main__":
     import sys
-    #remap = MapParameters() # create an object (perhaps better as a module)
-    #remap.debug = 1
-    #debug = 1
     parmdict = {}
+    constrDict = [
+        {'0:12:Scale': 2.0, '0:11:Scale': 1.0, '0:14:Scale': 4.0, '0:13:Scale': 3.0, '0:0:Scale': 0.5},
+        {'0:0:eA': 0.0},
+        {'2::C(10,6,1)': 1.0, '1::C(10,6,1)': 1.0},
+        {'1::C(10,0,1)': 1.0, '2::C(10,0,1)': 1.0},
+        {'1::AUiso:0': 1.0, '0::AUiso:0': 1.0},
+        {'0::A0': 0.0}
+        ]
+    fixedList = ['5.0', '0', None, None, '1.0', '0']
     StoreEquivalence('2::atomx:3',('2::atomy:3', ('2::atomz:3',2,), ))
-    varylist = ['2::atomx:3',]
-    #print VarRemapShow(varylist)
-    #msg = SetVaryFlags(varylist)
-    #if msg != "": print msg
-    varylist = ['2::atomx:3', '2::atomy:3', '2::atomz:3',]
-    print VarRemapShow(varylist)
-    msg = SetVaryFlags(varylist)
-    if msg != "": print msg
-    #parmdict = {
-    #    '2::atomx:3':.1 ,
-    #    '2::atomy:3':.2 , # conflicts with constraint
-    #    '2::atomz:3':.3 ,
-    #}
-
-    varylist = []
-    mapList1 = [
-        "1 * 2::atomz:3 = 0",
-        "1*p1 + 2e0*p2 - 1.0*p3",
-        "1*p4 + 1*p7",
-        "1*p1+2*p2-3.0*p2 VARY",
-        ]
-    mapList = [
-        "1 * 2::atomz:3 = 0",
-        "1*p1 + 2e0*p2 - 1.0*p3",
-        "1*p4 + 1*p7",
-        "1*p1+2*p2-3.0*p2 VARY",
-        "1*p21 + 0*p22 - 0*p23 + 0*p24 varyfree",
-        "1*p5 + 2*p6 = 1 varyfree",
-        "-1 * p6 + 1*p5",
-        "-10e-1 * p1 - -2*p2 + 3.0*p4",
-        ]
-    constrDict,constrFlag,fixedList = InputParse(mapList1)
-    #print constrDict
-    #print constrFlag
-    #print fixedList
+    #StoreEquivalence('1::atomx:3',('2::atomx:3', ('2::atomz:3',2,), )) # error: dependent & independent vars mixed
+    #StoreEquivalence('1::atomx:3',('2::atomy:3', ('2::atomz:3',2,), )) # error: dependent vars repeated
+    #StoreEquivalence('0:1:eA',('0:0:eA',)) # error: equiv & fixed
+    #StoreEquivalence('0:99:Scale',('0:12:Scale',)) # error: equiv & constrained
+    #StoreEquivalence('0:12:Scale',('0:99:Scale',)) # error: equiv & constrained
+    varylist = ['2::atomx:3',
+                '2::C(10,6,1)', '1::C(10,6,1)',
+                '2::atomy:3', '2::atomz:3',
+                '0:12:Scale', '0:11:Scale', '0:14:Scale', '0:13:Scale', '0:0:Scale']
     groups,parmlist = GroupConstraints(constrDict)
-    GenerateConstraints(groups,parmlist,varylist,constrDict,constrFlag,fixedList)
+    GenerateConstraints(groups,parmlist,varylist,constrDict,fixedList)
     print VarRemapShow(varylist)
-    sys.exit()
-    parmdict.update( {'p1':1,'p2':2,'p3':3,'p4':4,
-                      'p6':6,'p5':5,  # conflicts with constraint
-                      'p7':7,
-                      "p21":.1,"p22":.2,"p23":.3,"p24":.4,
-                      })
-    #print 'parmdict start',parmdict
+    parmdict.update( {
+        '0:12:Scale': 1.0, '0:11:Scale': 1.0, '0:14:Scale': 1.0, '0:13:Scale': 1.0, '0:0:Scale': 2.0,
+        '0:0:eA': 0.0,
+        '2::C(10,6,1)': 0.2, '1::C(10,6,1)': 0.3,
+        '1::C(10,0,1)': 0.2, '2::C(10,0,1)': 0.3,
+        '1::AUiso:0': 0.02, '0::AUiso:0': 0.03,
+        '0::A0': 0.0,
+        '2::atomx:3':0.23,'2::atomy:3':-.23, '2::atomz:3':-0.11,
+        })
+    print 'parmdict start',parmdict
+    print 'varylist start',varylist
     before = parmdict.copy()
-    Map2Dict(parmdict,[])
+    Map2Dict(parmdict,varylist)
     print 'parmdict before and after Map2Dict'
     print '  key / before / after'
     for key in sorted(parmdict.keys()):
         print '  '+key,'\t',before.get(key),'\t',parmdict[key]
-
+    print 'varylist after',varylist
     before = parmdict.copy()
-    Dict2Map(parmdict,[])
+    Dict2Map(parmdict,varylist)
     print 'after Dict2Map'
     print '  key / before / after'
     for key in sorted(parmdict.keys()):
         print '  '+key,'\t',before.get(key),'\t',parmdict[key]
+    dMdv = len(varylist)*[0]
+    deriv = {}
+    for i,v in enumerate(parmdict.keys()): deriv[v]=i
+    Dict2Deriv(varylist,deriv,dMdv)

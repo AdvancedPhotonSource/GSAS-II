@@ -32,7 +32,21 @@ except ImportError:
     print('     - we will try to install it')
     print('*******************************************************')
     def install_with_easyinstall(package):
-        easy_install.main(['-f',ospath.split(__file__)[0],package])
+        try: 
+            print "trying a system-wide PyOpenGl install"
+            easy_install.main(['-f',ospath.split(__file__)[0],package])
+            return
+        except:
+            pass
+        try: 
+            print "trying a user level PyOpenGl install"
+            easy_install.main(['-f',ospath.split(__file__)[0],'--user',package])
+            return
+        except:
+            print "Install of '+package+' failed. Please report this information:"
+            import traceback
+            print traceback.format_exc()
+            sys.exit()
     from setuptools.command import easy_install
     install_with_easyinstall('PyOpenGl')
     print('*******************************************************')         

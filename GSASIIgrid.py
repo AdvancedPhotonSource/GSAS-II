@@ -582,7 +582,7 @@ class DataFrame(wx.Frame):
         Width[1] = min(Width[1],clientSize[2]-300)
         Width[0] = max(Width[0],300)
         self.SetSize(Width)
-        self.SetPosition(wx.Point(clientSize[2]-Width[0],clientSize[1]+250))
+#        self.SetPosition(wx.Point(clientSize[2]-Width[0],clientSize[1]+250))
         
     def Clear(self):
         self.ClearBackground()

@@ -1109,7 +1109,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillAtomsGrid()
         event.StopPropagation()
                 
-    def AtomAdd(x,y,z):
+    def AtomAdd(x,y,z,El='H'):
         atomData = data['Atoms']
         generalData = data['General']
         Ncol = Atoms.GetNumberCols()
@@ -1117,11 +1117,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
         if generalData['Type'] == 'macromolecular':
-            atomData.append([0,'UNK','','UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
+            atomData.append([0,'UNK','','UNK',El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'nuclear':
-            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+            atomData.append(['UNK',El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'magnetic':
-            atomData.append(['UNK','H','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
+            atomData.append(['UNK',El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
@@ -1297,7 +1297,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,'backColor':[0,0,0],'depthFog':False,
             'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,'contourLevel':1.,
             'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,
-            'unitCellBox':False,'showABC':True,'selectedAtoms':[],
+            'unitCellBox':False,'showABC':True,'selectedAtoms':[],'Atoms':[],
             'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]}
         try:
             drawingData = data['Drawing']
@@ -3493,7 +3493,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for ind in Ind:
                 print mapPeaks[ind]
                 x,y,z = mapPeaks[ind][1:]
-                AtomAdd(x,y,z)
+                AtomAdd(x,y,z,'C')
     
     def OnPeaksClear(event):
         data['Map Peaks'] = []
@@ -3519,19 +3519,31 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         G2plt.PlotStructure(G2frame,data)
         
-    def printRho(SGData,rho,rhoMax):                          
+    def printRho(SGLaue,rho,rhoMax):                          
 # map printing for testing purposes
-        ix,jy,kz = rho.shape
-        for k in range(kz):
-            print 'k = ',k
+        dim = len(rho.shape)
+        if dim == 2:
+            ix,jy = rho.shape
             for j in range(jy):
                 line = ''
-                if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
+                if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
                     line += (jy-j)*'  '
                 for i in range(ix):
-                    r = int(100*rho[i,j,k]/rhoMax)
+                    r = int(100*rho[i,j]/rhoMax)
                     line += '%4d'%(r)
                 print line+'\n'
+        else:
+            ix,jy,kz = rho.shape
+            for k in range(kz):
+                print 'k = ',k
+                for j in range(jy):
+                    line = ''
+                    if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
+                        line += (jy-j)*'  '
+                    for i in range(ix):
+                        r = int(100*rho[i,j,k]/rhoMax)
+                        line += '%4d'%(r)
+                    print line+'\n'
 ## keep this                
     
     def OnSearchMaps(event):

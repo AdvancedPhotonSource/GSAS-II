@@ -579,6 +579,18 @@ def FourierMap(data,reflData):
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData
+    
+def findRoll(SGData,rho,Fhkl):
+    mapShape = rho.shape
+    hklShape = Fhkl.shape
+    mapHalf = np.array(mapShape)/2
+    hklHalf = np.array(hklShape)/2
+    mapMax = np.unravel_index(np.argmax(rho),mapShape)
+    print mapMax,rho[mapMax],mapHalf
+    hklMax = np.unravel_index(np.argmax(Fhkl),hklShape)
+    print hklMax,Fhkl[hklMax],hklMax-hklHalf,hklHalf
+    
+    return [0,0,0]
 
 def ChargeFlip(data,reflData,pgbar):
 #    import scipy.fftpack as fft
@@ -636,7 +648,8 @@ def ChargeFlip(data,reflData,pgbar):
         CEsig = np.std(CErho)
         CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
         CFhkl = fft.ifftshift(fft.ifftn(CFrho))
-        CEhkl = np.absolute(Ehkl)*CFhkl/np.absolute(CFhkl)
+        phase = CFhkl/np.absolute(CFhkl)
+        CEhkl = np.absolute(Ehkl)*phase
         Ncyc += 1
         sumCF = np.sum(ma.array(np.absolute(CFhkl),mask=Emask))
         DEhkl = np.absolute(np.absolute(Ehkl)/sumE-np.absolute(CFhkl)/sumCF)
@@ -648,7 +661,9 @@ def ChargeFlip(data,reflData,pgbar):
             break
     print 'Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     print 'No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')
-    mapData['rho'] = np.real(fft.fftn(fft.fftshift(CEhkl)))
+    CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
+    roll = findRoll(SGData,CErho,CEhkl)
+    mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData
     

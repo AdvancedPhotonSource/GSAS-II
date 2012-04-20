@@ -12,6 +12,9 @@ if sys.platform == "win32":
         bindir = 'binwin%d.%d' % sys.version_info[0:2]
 elif sys.platform == "darwin":
     bindir = 'binmac%d.%d' % sys.version_info[0:2]
+    import platform
+    if platform.mac_ver()[0].startswith('10.5.'):
+        bindir += '_10.5'
 elif sys.platform == "linux2":
     if platform.architecture()[0] == '64bit':
         bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]

@@ -257,7 +257,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Map'] = {'MapType':'','RefList':'','Resolution':1.0,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
         if 'Flip' not in generalData:
-            generalData['Flip'] = {'RefList':'','Resolution':1.0,'Norm element':'C',
+            generalData['Flip'] = {'RefList':'','Resolution':1.0,'Norm element':'None',
                 'k-factor':1.1}
         if 'doPawley' not in generalData:
             generalData['doPawley'] = False
@@ -689,7 +689,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Flip['RefList'] = refList.GetValue()
                 
             def OnNormElem(event):
-                PE = G2elemGUI.PickElement(G2frame)
+                PE = G2elemGUI.PickElement(G2frame,ifNone=True)
                 if PE.ShowModal() == wx.ID_OK:
                     Flip['Norm element'] = PE.Elem.strip()
                     normElem.SetLabel(Flip['Norm element'])
@@ -996,12 +996,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if Atoms.GetColLabelValue(c) == 'Type':
                 PE = G2elemGUI.PickElement(G2frame)
                 if PE.ShowModal() == wx.ID_OK:
-                    atomData[r][c] = PE.Elem.strip()
-                    name = atomData[r][c]
-                    if len(name) in [2,4]:
-                        atomData[r][c-1] = name[:2]+'(%d)'%(r+1)
-                    else:
-                        atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
+                    if PE.Elem not in 'None':                        
+                        atomData[r][c] = PE.Elem.strip()
+                        name = atomData[r][c]
+                        if len(name) in [2,4]:
+                            atomData[r][c-1] = name[:2]+'(%d)'%(r+1)
+                        else:
+                            atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
                 PE.Destroy()
                 SetupGeneral()
                 FillAtomsGrid()

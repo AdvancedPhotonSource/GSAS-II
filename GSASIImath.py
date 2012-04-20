@@ -581,31 +581,33 @@ def FourierMap(data,reflData):
     return mapData
 
 def ChargeFlip(data,reflData,pgbar):
-    print 'charge flip'
-    import scipy.fftpack as fft
-#    import numpy.fft as fft
+#    import scipy.fftpack as fft
+    import numpy.fft as fft
     generalData = data['General']
     mapData = generalData['Map']
     flipData = generalData['Flip']
-    normElem = flipData['Norm element'].upper()
     FFtable = {}
-    FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
-    for ff in FFs:
-        if ff['Symbol'] == normElem:
-            FFtable.update(ff)
+    if 'None' not in flipData['Norm element']:
+        normElem = flipData['Norm element'].upper()
+        FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        for ff in FFs:
+            if ff['Symbol'] == normElem:
+                FFtable.update(ff)
     dmin = flipData['Resolution']
     SGData = generalData['SGData']
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
-    Ehkl = np.zeros(shape=2*Hmax,dtype='c16')
+    Ehkl = np.zeros(shape=2*Hmax,dtype='c16')       #2X64bits per complex no.
     time0 = time.time()
     for ref in reflData:
         dsp = ref[4]
         if dsp >= dmin:
-            SQ = 0.25/dsp**2
-            ff = 0.1*Vol*G2el.ScatFac(FFtable,SQ)[0]
+            ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
+            if FFtable:
+                SQ = 0.25/dsp**2
+                ff *= G2el.ScatFac(FFtable,SQ)[0]
             E = np.sqrt(ref[8])/ff
             ph = ref[10]
             if SGData['SGInv']:
@@ -621,30 +623,31 @@ def ChargeFlip(data,reflData,pgbar):
                 phasem = complex(a,-b)
                 h,k,l = hkl+Hmax
                 Ehkl[h,k,l] = E*phasep
-                h,k,l = -hkl+Hmax       #Friedel pair
+                h,k,l = -hkl+Hmax       #Friedel pair refl.
                 Ehkl[h,k,l] = E*phasem
+#    Ehkl[Hmax] = 0.00001           #this to preserve F[0,0,0]
     CEhkl = copy.copy(Ehkl)
     MEhkl = ma.array(Ehkl,mask=(Ehkl==0.0))
-    dmask = ma.getmask(MEhkl)
-    sumE2 = np.sum(ma.array(np.absolute(CEhkl),mask=dmask)**2)
+    Emask = ma.getmask(MEhkl)
+    sumE = np.sum(ma.array(np.absolute(CEhkl),mask=Emask))
     Ncyc = 0
     while True:        
-        CFrho = np.real(fft.fftn(fft.fftshift(CEhkl)))
-        CFsig = np.std(CFrho)
-        CErho = np.where(CFrho >= flipData['k-factor']*CFsig,CFrho,-CFrho)
-        CFhkl = fft.ifftshift(fft.ifftn(CErho))
+        CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
+        CEsig = np.std(CErho)
+        CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
+        CFhkl = fft.ifftshift(fft.ifftn(CFrho))
         CEhkl = np.absolute(Ehkl)*CFhkl/np.absolute(CFhkl)
         Ncyc += 1
-        DEhkl = np.absolute(Ehkl)-np.absolute(CFhkl)
-        sumDE2 = np.sum(ma.array(DEhkl,mask=dmask)**2)
-        Rcf = min(100.,np.sqrt(sumDE2/sumE2)*100.)
-        print '%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc)
+        sumCF = np.sum(ma.array(np.absolute(CFhkl),mask=Emask))
+        DEhkl = np.absolute(np.absolute(Ehkl)/sumE-np.absolute(CFhkl)/sumCF)
+        Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
         if Rcf < 5.:
             break
         GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
         if not GoOn:
             break
     print 'Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
+    print 'No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')
     mapData['rho'] = np.real(fft.fftn(fft.fftshift(CEhkl)))
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData

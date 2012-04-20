@@ -21,6 +21,7 @@ import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
+import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -2075,10 +2076,10 @@ def UpdatePDFGrid(G2frame,data):
         
     def OnAddElement(event):
         ElList = data['ElList']
-        PE = G2elem.PickElement(G2frame,oneOnly=True)
+        PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
         if PE.ShowModal() == wx.ID_OK:
             El = PE.Elem
-            if El not in ElList:
+            if El not in ElList and El != 'None':
                 ElemSym = El.strip().upper()                
                 FpMu = G2elem.FPcalc(G2elem.GetXsectionCoeff(ElemSym), keV)
                 ElData = G2elem.GetFormFactorCoeff(ElemSym)[0]
@@ -2094,7 +2095,7 @@ def UpdatePDFGrid(G2frame,data):
     def OnDeleteElement(event):
         ElList = data['ElList']
         choice = ElList.keys()
-        dlg = G2elem.DeleteElement(G2frame,choice=choice)
+        dlg = G2elemGUI.DeleteElement(G2frame,choice=choice)
         if dlg.ShowModal() == wx.ID_OK:
             del ElList[dlg.GetDeleteElement()]
         dlg.Destroy()

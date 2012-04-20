@@ -14,7 +14,7 @@ import wx.lib.colourselect as wscs
 class PickElement(wx.Dialog):
     "Makes periodic table widget for picking element - caller maintains element list"
     Elem=None
-    def _init_ctrls(self, prnt,oneOnly):
+    def _init_ctrls(self, prnt):
         wx.Dialog.__init__(self, id=-1, name='PickElement',
               parent=prnt, pos=wx.DefaultPosition, 
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
@@ -26,25 +26,32 @@ class PickElement(wx.Dialog):
         
         i=0
         for E in ET.ElTable:
-            if oneOnly:
+            if self.oneOnly:
                 color=E[4]
             else:
                 color=E[6]
             PickElement.ElButton(self,name=E[0],
-               pos=wx.Point(E[1]*self.butWid+25,E[2]*24+24),tip=E[3],color=color,oneOnly=oneOnly)
+               pos=wx.Point(E[1]*self.butWid+25,E[2]*24+24),tip=E[3],color=color)
             i+=1
 
-    def __init__(self, parent,oneOnly=False):
-        self._init_ctrls(parent,oneOnly)
+    def __init__(self, parent,oneOnly=False,ifNone=False):
+        self.oneOnly = oneOnly
+        self.ifNone = ifNone
+        self._init_ctrls(parent)
         
-    def ElButton(self, name, pos, tip, color, oneOnly):
+    def ElButton(self, name, pos, tip, color):
         Black = wx.Colour(0,0,0)
-        if oneOnly:
+        if not self.ifNone and name[0] == 'None':
+            return
+        if self.oneOnly:
             El = wscs.ColourSelect(label=name[0], parent=self,colour=color,
                 pos=pos, size=wx.Size(self.butWid,23), style=wx.RAISED_BORDER)
             El.Bind(wx.EVT_BUTTON, self.OnElButton)
         else:
-            El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(self.butWid,23),
+            butWid = self.butWid
+            if name[0] == 'None':
+                butWid *= 2
+            El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
                 style=wx.CB_READONLY, value=name[0])
             El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
         
@@ -52,7 +59,10 @@ class PickElement(wx.Dialog):
         El.SetToolTipString(tip)
 
     def OnElButton(self, event):
-        El = event.GetEventObject().GetValue()
+        if self.oneOnly:
+            El = event.GetEventObject().GetLabel()
+        else:
+            El = event.GetEventObject().GetValue()
         self.Elem = El
         self.EndModal(wx.ID_OK)        
         

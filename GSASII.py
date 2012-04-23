@@ -670,7 +670,7 @@ class GSASII(wx.Frame):
                             Data['calibrant'] = ''
                         else:
                             Data['type'] = 'PWDR'
-                            Data['color'] = 'binary'
+                            Data['color'] = 'Paired'
                             Data['tilt'] = 0.0
                             Data['rotation'] = 0.0
                             Data['showLines'] = False

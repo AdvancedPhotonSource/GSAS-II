@@ -580,15 +580,38 @@ def FourierMap(data,reflData):
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData
     
-def findRoll(SGData,rho,Fhkl):
+def findOffset(SGData,rho,Fhkl):
     mapShape = rho.shape
     hklShape = Fhkl.shape
     mapHalf = np.array(mapShape)/2
+    Fmax = np.max(np.absolute(Fhkl))
     hklHalf = np.array(hklShape)/2
-    mapMax = np.unravel_index(np.argmax(rho),mapShape)
-    print mapMax,rho[mapMax],mapHalf
-    hklMax = np.unravel_index(np.argmax(Fhkl),hklShape)
-    print hklMax,Fhkl[hklMax],hklMax-hklHalf,hklHalf
+    sortHKL = np.argsort(Fhkl.flatten())
+    Fdict = {}
+    for hkl in sortHKL:
+        HKL = np.unravel_index(hkl,hklShape)
+        F = Fhkl[HKL[0]][HKL[1]][HKL[2]]
+        if F == 0.:
+            break
+        Fdict['%.6f'%(np.absolute(F))] = hkl
+    Flist = np.flipud(np.sort(Fdict.keys()))
+    F = str(1.e6)
+    i = 0
+    while float(F) > 0.5*Fmax:
+        F = Flist[i]
+        hkl = np.unravel_index(Fdict[F],hklShape)
+        iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
+        Uniq = np.array(Uniq,dtype='i')
+        Uniq = np.concatenate((Uniq,-Uniq))+hklHalf
+        phi = np.concatenate((phi,-phi))
+        print hkl-hklHalf
+        for j,H in enumerate(Uniq):
+            Fh = Fhkl[H[0],H[1],H[2]]
+            h,k,l = H-hklHalf
+            print '(%3d,%3d,%3d) %5.2f %9.5f'%(h,k,l,phi[j],np.angle(Fh,deg=True))        
+        i += 1
+        
+        
     
     return [0,0,0]
 
@@ -662,7 +685,7 @@ def ChargeFlip(data,reflData,pgbar):
     print 'Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     print 'No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
-    roll = findRoll(SGData,CErho,CEhkl)
+    roll = findOffset(SGData,CErho,CEhkl)
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData

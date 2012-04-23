@@ -181,7 +181,10 @@ def UpdateImageControls(G2frame,data,masks):
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
                     'IOtth','outAzimuths']
                 for key in keys:
-                    File.write(key+':'+str(data[key])+'\n')
+                    if key in ['rotation']:
+                        File.write(key+':'+str(data[key]-90.)+'\n')                        
+                    else:
+                        File.write(key+':'+str(data[key])+'\n')
                 File.close()
         finally:
             dlg.Destroy()
@@ -204,6 +207,8 @@ def UpdateImageControls(G2frame,data,masks):
                     [key,val] = S[:-1].split(':')
                     if key in ['type','calibrant',]:
                         save[key] = val
+                    elif key in ['rotation']:
+                        save[key] = val+90.
                     elif key in ['center',]:
                         if ',' in val:
                             save[key] = eval(val)

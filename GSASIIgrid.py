@@ -22,7 +22,7 @@ import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 import GSASIIstruct as G2str
-#import GSASIImapvars as G2mv
+import GSASIImapvars as G2mv
 
 # globals we will use later
 __version__ = None # gets overridden in GSASII.py
@@ -1143,6 +1143,60 @@ def UpdateConstraints(G2frame,data):
                 constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
                 return [constr+[1.0,None,'c']]          #just one constraint - default sum to one
         return []
+
+    def CheckAddedConstraint(newcons):
+        '''Check a new constraint that has just been input.
+        If there is an error display a message and give the user a
+        choice to keep or discard the last entry (why keep? -- they
+        may want to delete something else or edit multipliers).
+        Since the varylist is not available, no warning messages
+        should be generated.
+        Returns True if constraint should be added
+        '''
+        allcons = []
+        for key in 'Hist','HAP','Phase':
+            allcons += data[key]
+        allcons += newcons
+        if not len(allcons): return True
+        G2mv.InitVars()    
+        constDictList,fixedList,ignored = G2str.ProcessConstraints(allcons)
+        errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
+        if errmsg:
+            res = G2frame.ErrorDialog('Constraint Error',
+                                'Error with newly added constraint:\n'+errmsg+
+                                '\n\nDiscard newly added constraint?',
+                                parent=G2frame.dataFrame,
+                                wtype=wx.YES_NO)
+            return res != wx.ID_YES
+        elif warnmsg:
+            print 'Unexpected contraint warning:\n',warnmsg
+        return True
+
+    def CheckChangedConstraint():
+        '''Check all constraints after an edit has been made.
+        If there is an error display a message and give the user a
+        choice to keep or discard the last edit.
+        Since the varylist is not available, no warning messages
+        should be generated.
+        Returns True if the edit should be retained
+        '''
+        allcons = []
+        for key in 'Hist','HAP','Phase':
+            allcons += data[key]
+        if not len(allcons): return True
+        G2mv.InitVars()    
+        constDictList,fixedList,ignored = G2str.ProcessConstraints(allcons)
+        errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
+        if errmsg:
+            res = G2frame.ErrorDialog('Constraint Error',
+                                'Error after editing constraint:\n'+errmsg+
+                                '\n\nDiscard last constraint edit?',
+                                parent=G2frame.dataFrame,
+                                wtype=wx.YES_NO)
+            return res != wx.ID_YES
+        elif warnmsg:
+            print 'Unexpected contraint warning:\n',warnmsg
+        return True
              
     def OnAddHold(event):
         '''add a Hold constraint'''
@@ -1160,7 +1214,9 @@ def UpdateConstraints(G2frame,data):
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
-            data[choice[3]] += [[[0.0,FrstVarb],None,None,'h'],]
+            newcons = [[[0.0,FrstVarb],None,None,'h']]
+            if CheckAddedConstraint(newcons):
+                data[choice[3]] += newcons
         dlg.Destroy()
         choice[4]()
         
@@ -1178,9 +1234,10 @@ def UpdateConstraints(G2frame,data):
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
             moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            constr = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'equivalence')
-            if len(constr) > 0:
-                data[choice[3]] += constr
+            newcons = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'equivalence')
+            if len(newcons) > 0:
+                if CheckAddedConstraint(newcons):
+                    data[choice[3]] += newcons
         dlg.Destroy()
         choice[4]()
    
@@ -1198,9 +1255,10 @@ def UpdateConstraints(G2frame,data):
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
             moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            constr = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'function')
-            if len(constr) > 0:
-                data[choice[3]] += constr
+            newcons = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'function')
+            if len(newcons) > 0:
+                if CheckAddedConstraint(newcons):
+                    data[choice[3]] += newcons
         dlg.Destroy()
         choice[4]()
                         
@@ -1218,9 +1276,10 @@ def UpdateConstraints(G2frame,data):
             sel = dlg.GetSelection()
             FrstVarb = choice[2][sel]
             moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            constr = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'constraint')
-            if len(constr) > 0:
-                data[choice[3]] += constr
+            newcons = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'constraint')
+            if len(newcons) > 0:
+                if CheckAddedConstraint(newcons):
+                    data[choice[3]] += newcons
         dlg.Destroy()
         choice[4]()
                         
@@ -1336,12 +1395,15 @@ def UpdateConstraints(G2frame,data):
         dlg = G2frame.ConstraintDialog(G2frame.dataFrame,constType,lbl,items,sep)
         try:
             if dlg.ShowModal() == wx.ID_OK:
+                prev = data[name][Id]
                 result = dlg.GetData()
                 if data[name][Id][-1] == 'c':
                     data[name][Id][:-3] = result[:-2]
                     data[name][Id][-3] = result[-2][0]
                 else:
                     data[name][Id][:-3] = result[:-1]
+                if not CheckChangedConstraint():
+                    data[name][Id] = prev
         except:
             import traceback
             print traceback.format_exc()
@@ -1449,8 +1511,22 @@ def UpdateConstraints(G2frame,data):
     UpdatePhaseConstr()
 
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
-    
-    
+    # validate all the constrants -- should not see any errors here normally
+    allcons = []
+    for key in 'Hist','HAP','Phase':
+        allcons += data[key]
+    if not len(allcons): return
+    G2mv.InitVars()    
+    constDictList,fixedList,ignored = G2str.ProcessConstraints(allcons)
+    errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
+    if errmsg:
+        G2frame.ErrorDialog('Constraint Error',
+                            'Error in constraints:\n'+errmsg,
+                            parent=G2frame.dataFrame)
+                            
+    elif warnmsg:
+        print 'Unexpected contraint warning:\n',warnmsg
+
 def UpdateRestraints(G2frame,data):
 
     def OnAddRestraint(event):

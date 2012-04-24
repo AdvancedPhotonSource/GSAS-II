@@ -303,7 +303,7 @@ class GSASII(wx.Frame):
             elif flag:
                 primaryReaders.append(reader)
         if len(secondaryReaders) + len(primaryReaders) == 0:
-            self.ErrorDialog('No matching format for file '+file,'No Format')
+            self.ErrorDialog('No Format','No matching format for file '+file)
             return
         
         fp = None
@@ -320,8 +320,9 @@ class GSASII(wx.Frame):
                 except:
                     import traceback
                     print traceback.format_exc()
-                    self.ErrorDialog('Error reading file '+file
-                        +' with format '+ rd.formatName,'Read Error')
+                    self.ErrorDialog('Read Error',
+                                     'Error reading file '+file
+                                     +' with format '+ rd.formatName)
                     continue
                 if not flag: continue
                 dlg = wx.TextEntryDialog( # allow editing of phase name
@@ -347,7 +348,8 @@ class GSASII(wx.Frame):
         except:
             import traceback
             print traceback.format_exc()
-            self.ErrorDialog('Error on open of file '+file,'Open Error')
+            self.ErrorDialog('Open Error',
+                             'Error on open of file '+file)
         finally:
             if fp: fp.close()
 
@@ -1635,6 +1637,23 @@ class GSASII(wx.Frame):
        
     def OnRefine(self,event):
         self.OnFileSave(event)
+        # check that constraints are OK here
+        errmsg, warnmsg = G2str.CheckConstraints(self.GSASprojectfile)
+        if errmsg:
+            print('Error in constraints:\n'+errmsg+
+                  '\nRefinement not possible')
+            self.ErrorDialog('Constraint Error',
+                             'Error in constraints:\n'+errmsg+
+                             '\nRefinement not possible')
+            return
+        if warnmsg:
+            print('Conflict between refinment flag settings and constraints:\n'+
+                  warnmsg+'\nRefinement not possible')
+            self.ErrorDialog('Refinement Flag Error',
+                             'Conflict between refinment flag settings and constraints:\n'+
+                             warnmsg+
+                             '\nRefinement not possible')
+            return
         #works - but it'd be better if it could restore plots
         dlg = wx.ProgressDialog('Residual','Powder profile Rwp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
@@ -1674,6 +1693,22 @@ class GSASII(wx.Frame):
             Id = self.PatternTree.AppendItem(self.root,text='Sequental results')
             self.PatternTree.SetItemPyData(Id,{})            
         self.OnFileSave(event)
+        # check that constraints are OK here
+        errmsg, warnmsg = G2str.CheckConstraints(self.GSASprojectfile)
+        if errmsg:
+            print('Error in constraints:\n'+errmsg+
+                  '\nRefinement not possible')
+            self.ErrorDialog('Constraint Error',
+                             'Error in constraints:\n'+errmsg+
+                             '\nRefinement not possible')
+            return
+        if warnmsg:
+            print('Conflict between refinment flag settings and constraints:\n'+
+                  warnmsg+'\nRefinement not possible')
+            self.ErrorDialog('Refinement Flag Error',
+                             'Conflict between refinment flag settings and constraints:\n'+
+                             warnmsg+'\nRefinement not possible')
+            return
         dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -1705,12 +1740,18 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         
-    def ErrorDialog(self,title,message):
-        dlg = wx.MessageDialog(self, message, title,  wx.OK)
+    def ErrorDialog(self,title,message,parent=None, wtype=wx.OK):
+        result = None
+        if parent is None:
+            dlg = wx.MessageDialog(self, message, title,  wtype)
+        else:
+            dlg = wx.MessageDialog(parent, message, title,  wtype)
+            dlg.CenterOnParent() # not working on Mac
         try:
             result = dlg.ShowModal()
         finally:
             dlg.Destroy()
+        return result
 
 class GSASIImain(wx.App):
     def OnInit(self):

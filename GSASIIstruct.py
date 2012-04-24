@@ -70,6 +70,13 @@ def GetConstraints(GPXfile):
             for item in constDict:
                 constList += constDict[item]
     fl.close()
+    constDict,fixedList,ignored = ProcessConstraints(constList)
+    if ignored:
+        print ignored,'old-style Constraints were rejected'
+    return constDict,fixedList
+    
+def ProcessConstraints(constList):
+    "interpret constraints"
     constDict = []
     fixedList = []
     ignored = 0
@@ -105,9 +112,24 @@ def GetConstraints(GPXfile):
             G2mv.StoreEquivalence(firstvar,eqlist)
         else:
             ignored += 1
-    if ignored:
-        print ignored,'old-style Constraints were rejected'
-    return constDict,fixedList
+    return constDict,fixedList,ignored
+
+def CheckConstraints(GPXfile):
+    '''Load constraints and related info and return any error or warning messages'''
+    # get variables
+    Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
+    if not Phases:
+        return 'Error: No Phases!',''
+    if not Histograms:
+        return 'Error: no diffraction data',''
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases)
+    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms)
+    histVary,histDict,controlDict = GetHistogramData(Histograms)
+    varyList = phaseVary+hapVary+histVary
+    # setup constraints
+    G2mv.InitVars()    
+    constrDict,fixedList = GetConstraints(GPXfile)
+    return G2mv.CheckConstraints(varyList,constrDict,fixedList)
     
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -627,7 +649,7 @@ def GetPhaseData(PhaseData,Print=True):
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
         Natoms[pfx] = 0
-        if Atoms and not General['doPawley']:
+        if Atoms and not General.get('doPawley'):
             if General['Type'] == 'nuclear':
                 Natoms[pfx] = len(Atoms)
                 for i,at in enumerate(Atoms):
@@ -931,7 +953,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
             print ptstr
             print sigstr
             
-        if Phase['General']['doPawley']:
+        if Phase['General'].get('doPawley'):
             pawleyRef = Phase['Pawley ref']
             for i,refl in enumerate(pawleyRef):
                 key = pfx+'PWLref:'+str(i)
@@ -2418,7 +2440,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
-        if not Phase['General']['doPawley']:
+        if not Phase['General'].get('doPawley'):
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
         for refl in refList:
             if 'C' in calcControls[hfx+'histType']:
@@ -2429,7 +2451,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[6:8] = GetReflSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict)    #peak sig & gam
                 GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)    #puts corrections in refl[13]
                 refl[13] *= Vst*Lorenz
-                if Phase['General']['doPawley']:
+                if Phase['General'].get('doPawley'):
                     try:
                         refl[9] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
                     except KeyError:
@@ -2530,13 +2552,13 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
-        if not Phase['General']['doPawley']:
+        if not Phase['General'].get('doPawley'):
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
         for iref,refl in enumerate(refList):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
                 dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA = GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
-                if Phase['General']['doPawley']:
+                if Phase['General'].get('doPawley'):
                     try:
                         refl[9] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
                     except KeyError:
@@ -2573,7 +2595,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         dMdpk2[0] = 100.*dx*refl[13]*refl[9]*kRatio*dMdipk2[0]
                         dMdpk2[5] = 100.*dx*refl[13]*dMdipk2[0]
                         dervDict2 = {'int':dMdpk2[0],'pos':dMdpk2[1],'sig':dMdpk2[2],'gam':dMdpk2[3],'shl':dMdpk2[4],'L1/L2':dMdpk2[5]*refl[9]}
-                if Phase['General']['doPawley']:
+                if Phase['General'].get('doPawley'):
                     try:
                         idx = varylist.index(pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]))
                         dMdv[idx][iBeg:iFin] = dervDict['int']/refl[9]
@@ -2836,7 +2858,7 @@ def Refine(GPXfile,dlg):
     constrDict,fixedList = GetConstraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
-        print ' *** ERROR - you have no histograms to refine! ***'
+        print ' *** ERROR - you have no phases! ***'
         print ' *** Refine aborted ***'
         raise Exception
     if not Histograms:
@@ -2863,6 +2885,9 @@ def Refine(GPXfile,dlg):
     except:
         print ' *** ERROR - your constraints are internally inconsistent ***'
         # traceback for debug
+        #print 'varyList',varyList
+        #print 'constrDict',constrDict
+        #print 'fixedList',fixedList
         #import traceback
         #print traceback.format_exc()
         raise Exception(' *** Refine aborted ***')

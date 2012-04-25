@@ -1271,7 +1271,9 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
     plotType = generalData['Data plot type']
     plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.'}
     for ptype in plotDict:
-        G2frame.G2plotNB.Delete(ptype)        
+        G2frame.G2plotNB.Delete(ptype)
+    if plotType in ['None']:
+        return        
 
     for item in useList:
         if useList[item]['Show']:
@@ -2281,13 +2283,17 @@ def PlotStructure(G2frame,data):
     atomData = data['Atoms']
     mapPeaks = []
     if 'Map Peaks' in data:
-        mapPeaks = data['Map Peaks']                        
+        mapPeaks = data['Map Peaks']
     drawingData = data['Drawing']
     drawAtoms = drawingData['Atoms']
     mapData = {}
+    flipData = {}
     rhoXYZ = []
     if 'Map' in generalData:
         mapData = generalData['Map']
+    if 'Flip' in generalData:
+        flipData = generalData['Flip']                        
+        flipData['mapRoll'] = [0,0,0]
     cx,ct,cs = drawingData['atomPtrs']
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
@@ -2369,8 +2375,6 @@ def PlotStructure(G2frame,data):
         Draw()
         
     def OnMouseMove(event):
-        if event.ShiftDown():
-            return        
         newxy = event.GetPosition()
         page = getSelection()
         if event.ControlDown() and drawingData['showABC']:
@@ -2471,12 +2475,12 @@ def PlotStructure(G2frame,data):
             keyCode = 0
         key,xyz = chr(keyCode),event.GetPosition()
         indx = drawingData['selectedAtoms']
-        if key in ['c','C']:
+        if key in ['C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
             drawingData['testPos'] = [[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]
             drawingData['Rotation'] = [0.0,0.0,0.0,[]]
             SetViewPointText(drawingData['viewPoint'][0])
-        elif key in ['n','N']:
+        elif key in ['N']:
             drawAtoms = drawingData['Atoms']
             pI = drawingData['viewPoint'][1]
             if indx:
@@ -2494,7 +2498,7 @@ def PlotStructure(G2frame,data):
             SetViewPointText(drawingData['viewPoint'][0])
             G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
                 
-        elif key in ['p','P']:
+        elif key in ['P']:
             drawAtoms = drawingData['Atoms']
             pI = drawingData['viewPoint'][1]
             if indx:
@@ -2511,6 +2515,9 @@ def PlotStructure(G2frame,data):
             drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
             SetViewPointText(drawingData['viewPoint'][0])            
             G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
+        elif key in ['U','D','L','R'] and mapData['Flip'] == True:
+            dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
+            SetMapRoll(dirDict[key])
         Draw()
             
     def SetBackground():
@@ -2526,6 +2533,19 @@ def PlotStructure(G2frame,data):
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        
+    def SetMapRoll(newxy):
+        anglex,angley,anglez,oldxy = drawingData['Rotation']
+        Rx = G2lat.rotdMat(anglex,0)
+        Ry = G2lat.rotdMat(angley,1)
+        Rz = G2lat.rotdMat(anglez,2)
+        dxy = np.inner(Bmat,np.inner(Rz,np.inner(Ry,np.inner(Rx,newxy+[0,]))))
+        dxy *= np.array([-1,-1,1])
+        rho = mapData['rho']
+        dxy = np.array(dxy*rho.shape)
+        roll = np.where(dxy>0.5,1,np.where(dxy<-.5,-1,0))
+        mapData['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+        drawingData['Rotation'][3] = list(newxy)
         
     def SetTranslation(newxy):
         Tx,Ty,Tz = drawingData['viewPoint'][0]

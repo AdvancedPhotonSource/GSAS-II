@@ -230,6 +230,66 @@ class DisAglDialog(wx.Dialog):
         self.__default__(data,self.default)
         self.Draw(self.data)
         
+class SingleFloatDialog(wx.Dialog):
+    
+    def __init__(self,parent,title,prompt,value,limits=[0.,1.]):
+        wx.Dialog.__init__(self,parent,-1,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.limits = limits
+        self.value = value
+        self.prompt = prompt
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnValItem(event):
+            try:
+                val = float(valItem.GetValue())
+                if val < self.limits[0] or val > self.limits[1]:
+                    raise ValueError
+            except ValueError:
+                val = self.value
+            self.value = val
+            valItem.SetValue('%.5g'%(self.value))
+            
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        valItem = wx.TextCtrl(self.panel,-1,value='%.5g'%(self.value),style=wx.TE_PROCESS_ENTER)
+        mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
+        valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+        valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetValue(self):
+        return self.value
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        self.Destroy()
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)              
+        self.Destroy()
+        
 def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     Atoms = []
@@ -255,7 +315,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
             generalData['Map'] = {'MapType':'','RefList':'','Resolution':1.0,
-                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.}
+                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
         if 'Flip' not in generalData:
             generalData['Flip'] = {'RefList':'','Resolution':1.0,'Norm element':'None',
                 'k-factor':1.1}
@@ -1203,6 +1263,66 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if indx:
             atomData = data['Atoms']
             generalData = data['General']
+            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            choices = ['Type','x','y','z','frac','I/A','Uiso']
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                parm = choices[sel]
+                cid = colLabels.index(parm)
+            dlg.Destroy()
+            print parm,cid,indx
+            if parm in ['Type']:
+                dlg = G2elemGUI.PickElement(G2frame)
+                if dlg.ShowModal() == wx.ID_OK:
+                    if dlg.Elem not in ['None']:
+                        El = dlg.Elem.strip()
+                        print El,indx,cid
+                        for r in indx:                        
+                            atomData[r][cid] = El
+                            if len(El) in [2,4]:
+                                atomData[r][cid-1] = El[:2]+'(%d)'%(r+1)
+                            else:
+                                atomData[r][cid-1] = El[:1]+'(%d)'%(r+1)
+                        SetupGeneral()
+                        if 'Atoms' in data['Drawing']:
+                            for r in indx:
+                                ID = atomData[r][-1]
+                                DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                    FillAtomsGrid()
+                dlg.Destroy()
+            elif parm in ['I/A']:
+                choices = ['Isotropic','Anisotropic']
+                dlg = wx.SingleChoiceDialog(G2frame,'Select','Thermal parameter model',choices)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    parm = choices[sel][0]
+                    for r in indx:                        
+                        atomData[r][cid] = parm
+                    FillAtomsGrid()
+            elif parm in ['frac','Uiso']:
+                limits = [0.,1.]
+                val = 1.0
+                if  parm in ['Uiso']:
+                    limits = [0.,0.25]
+                    val = 0.01
+                dlg = SingleFloatDialog(G2frame,'New value','Enter new value for '+parm,val,limits)
+                if dlg.ShowModal() == wx.ID_OK:
+                    parm = dlg.GetValue()
+                    for r in indx:                        
+                        atomData[r][cid] = parm
+                    SetupGeneral()
+                    FillAtomsGrid()
+            elif parm in ['x','y','z']:
+                limits = [-1.,1.]
+                val = 0.
+                dlg = SingleFloatDialog(G2frame,'Atom shift','Enter shift for '+parm,val,limits)
+                if dlg.ShowModal() == wx.ID_OK:
+                    parm = dlg.GetValue()
+                    for r in indx:                        
+                        atomData[r][cid] += parm
+                    SetupGeneral()
+                    FillAtomsGrid()
 
     def AtomTransform(event):
         indx = Atoms.GetSelectedRows()
@@ -1294,19 +1414,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
-        defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,'backColor':[0,0,0],'depthFog':False,
-            'Zclip':50.0,'cameraPos':50.,'radiusFactor':0.85,'contourLevel':1.,
-            'bondRadius':0.1,'ballScale':0.33,'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,
-            'unitCellBox':False,'showABC':True,'selectedAtoms':[],'Atoms':[],
-            'Rotation':[0.0,0.0,0.0,[]],'bondList':{},'testPos':[[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]}
+        defaultDrawing = {'Atoms':[],'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
+            'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,
+            'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
+            'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
+            'showABC':True,'selectedAtoms':[],'Atoms':[],'Rotation':[0.0,0.0,0.0,[]],
+            'bondList':{},'testPos':[[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]}
         try:
             drawingData = data['Drawing']
         except KeyError:
             data['Drawing'] = {}
             drawingData = data['Drawing']
         if not drawingData:                 #fill with defaults if empty
-            drawingData = copy.copy(defaultDrawing)
-            drawingData['Atoms'] = []
+            drawingData.update(defaultDrawing)
         if 'contourLevel' not in drawingData:
             drawingData['contourLevel'] = 1.
         cx,ct,cs = [0,0,0]
@@ -2563,9 +2683,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotSizeStrainPO(G2frame,data)
             
             plotSizer = wx.BoxSizer(wx.VERTICAL)
-            choice = ['Mustrain','Size','Preferred orientation']
+            choice = ['None','Mustrain','Size','Preferred orientation']
             plotSel = wx.RadioBox(DData,-1,'Select plot type:',choices=choice,
-                majorDimension=3,style=wx.RA_SPECIFY_COLS)
+                majorDimension=2,style=wx.RA_SPECIFY_COLS)
             plotSel.SetStringSelection(generalData['Data plot type'])
             plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
             plotSizer.Add(plotSel)
@@ -3513,6 +3633,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print 'single crystal reflections'
             return
         mapData.update(G2mth.FourierMap(data,reflData))
+        mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
@@ -3600,12 +3721,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         try:
             mapData.update(G2mth.ChargeFlip(data,reflData,pgbar))
         finally:
-            pgbar.Destroy()        
+            pgbar.Destroy()
+        mapData['Flip'] = True        
         mapSig = np.std(mapData['rho'])
+        if not data['Drawing']:                 #if new drawing - no drawing data!
+            SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         print ' Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
-        OnSearchMaps(event)             #does a plot structure at end
+        if mapData['Rcf'] < 99.:
+            OnSearchMaps(event)             #does a plot structure at end
+        else:
+            print 'Bad charge flip map - no peak search done'
                 
     def OnTextureRefine(event):
         print 'refine texture?'

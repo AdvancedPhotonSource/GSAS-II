@@ -1035,7 +1035,7 @@ def SetNewPhase(Name='New Phase',SGData=G2spc.SpcGroup('P 1')[1],cell=[1.0,1.0,1
             'SGData':SGData,
             'Cell':[False,]+cell,
             'Pawley dmin':1.0,
-            'Data plot type':'Mustrain',
+            'Data plot type':'None',
             'SH Texture':{
                 'Order':0,
                 'Model':'cylindrical',

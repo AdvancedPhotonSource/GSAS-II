@@ -518,7 +518,8 @@ def UpdateBackground(G2frame,data):
         return peaksSizer
                 
     if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
+#        G2frame.dataFrame.Clear()
+        G2frame.dataFrame.DestroyChildren()
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BackMenu)
     G2frame.dataFrame.SetLabel('Background')

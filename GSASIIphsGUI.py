@@ -1405,7 +1405,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 DisAglData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
             G2str.DistAngle(DisAglCtls,DisAglData)
             
+################################################################################
 #Structure drawing GUI stuff                
+################################################################################
 
     def SetupDrawingData():
         generalData = data['General']
@@ -2191,6 +2193,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             DATData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
         G2str.DisAglTor(DATData)
                 
+################################################################################
+#### Draw Options page
+################################################################################
+
     def UpdateDrawOptions():
         import copy
         import wx.lib.colourselect as wcs
@@ -2395,6 +2401,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             radSizer.Add(radFactor,0,wx.ALIGN_CENTER_VERTICAL)
             return radSizer
 
+        drawOptions.DestroyChildren()
         dataDisplay = wx.Panel(drawOptions)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)

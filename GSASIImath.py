@@ -102,8 +102,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
         chisq0 = np.sum(M**2)
         Yvec,Amat = Hess(x0,*args)
         Adiag = np.sqrt(np.diag(Amat))
-        if 0.0 in Adiag:                #hard singularity in matrix
-            psing = list(np.where(Adiag == 0.)[0])
+        psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
+        if np.any(psing):                #hard singularity in matrix
             return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
         Anorm = np.outer(Adiag,Adiag)
         Yvec /= Adiag
@@ -114,6 +114,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
             try:
                 Xvec = nl.solve(Amatlam,Yvec)
             except LinAlgError:
+                print 'ouch #1'
                 psing = list(np.where(np.diag(nl.gr(Amatlam)[1]) < 1.e-14)[0])
                 return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
             Xvec /= Adiag
@@ -136,6 +137,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
         Bmat = nl.inv(Amat)
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[]}]
     except nl.LinAlgError:
+        print 'ouch #2'
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
@@ -520,7 +522,8 @@ def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
 
 def FourierMap(data,reflData):
     
-    import scipy.fftpack as fft
+#    import scipy.fftpack as fft
+    import numpy.fft as fft
     generalData = data['General']
     if not generalData['Map']['MapType']:
         print '**** ERROR - Fourier map not defined'
@@ -601,14 +604,12 @@ def findOffset(SGData,rho,Fhkl):
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
-        Uniq = np.array(Uniq,dtype='i')
-        Uniq = np.concatenate((Uniq,-Uniq))+hklHalf
-        phi = np.concatenate((phi,-phi))
-#        print hkl-hklHalf
-#        for j,H in enumerate(Uniq):
-#            Fh = Fhkl[H[0],H[1],H[2]]
-#            h,k,l = H-hklHalf
-#            print '(%3d,%3d,%3d) %5.2f %9.5f'%(h,k,l,phi[j],np.angle(Fh,deg=True))        
+        Uniq = np.array(Uniq,dtype='i')+hklHalf
+        print hkl-hklHalf
+        for j,H in enumerate(Uniq):
+            Fh = Fhkl[H[0],H[1],H[2]]
+            h,k,l = H-hklHalf
+            print '(%3d,%3d,%3d) %5.2f %9.5f'%(h,k,l,phi[j],np.angle(Fh,deg=True))        
         i += 1
         
         
@@ -645,10 +646,7 @@ def ChargeFlip(data,reflData,pgbar):
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
             E = np.sqrt(ref[8])/ff
             ph = ref[10]
-            if SGData['SGInv']:
-                ph = rn.randint(0,1)*180.
-            else:
-                ph = rn.uniform(0.,360.)
+#            ph = rn.uniform(0.,360.)
             for i,hkl in enumerate(ref[11]):
                 hkl = np.asarray(hkl,dtype='i')
                 dp = 360.*ref[12][i]
@@ -718,10 +716,7 @@ def SearchMap(data,keepDup=False):
         
     def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
-        if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
-            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(x0-rX)*(y0-rY)+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
-        else:
-            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+        return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
         
     def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
         Mag,x0,y0,z0,sig = parms

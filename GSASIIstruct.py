@@ -487,34 +487,42 @@ def GetBLtable(General):
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
     if SGLaue in ['-1','2/m','mmm']:
         return                      #no Pawley symmetry required constraints
+    eqvDict = {}
     for i,varyI in enumerate(pawleyVary):
+        eqvDict[varyI] = []
         refI = int(varyI.split(':')[-1])
         ih,ik,il = PawleyRef[refI][:3]
-        for varyJ in pawleyVary[0:i]:
+        for varyJ in pawleyVary[i+1:]:
             refJ = int(varyJ.split(':')[-1])
             jh,jk,jl = PawleyRef[refJ][:3]
             if SGLaue in ['4/m','4/mmm']:
                 isum = ih**2+ik**2
                 jsum = jh**2+jk**2
                 if abs(il) == abs(jl) and isum == jsum:
-                    G2mv.StoreEquivalence(varyJ,(varyI,))
+                    eqvDict[varyI].append(varyJ) 
             elif SGLaue in ['3R','3mR']:
                 isum = ih**2+ik**2+il**2
                 jsum = jh**2+jk**2*jl**2
                 isum2 = ih*ik+ih*il+ik*il
                 jsum2 = jh*jk+jh*jl+jk*jl
                 if isum == jsum and isum2 == jsum2:
-                    G2mv.StoreEquivalence(varyJ,(varyI,))
+                    eqvDict[varyI].append(varyJ) 
             elif SGLaue in ['3','3m1','31m','6/m','6/mmm']:
                 isum = ih**2+ik**2+ih*ik
                 jsum = jh**2+jk**2+jh*jk
                 if abs(il) == abs(jl) and isum == jsum:
-                    G2mv.StoreEquivalence(varyJ,(varyI,))
+                    eqvDict[varyI].append(varyJ) 
             elif SGLaue in ['m3','m3m']:
                 isum = ih**2+ik**2+il**2
                 jsum = jh**2+jk**2+jl**2
                 if isum == jsum:
-                    G2mv.StoreEquivalence(varyJ,(varyI,))
+                    eqvDict[varyI].append(varyJ) 
+    for item in pawleyVary:
+        if eqvDict[item]:
+            for item2 in pawleyVary:
+                if item2 in eqvDict[item]:
+                    eqvDict[item2] = []
+            G2mv.StoreEquivalence(item,eqvDict[item])
                     
 def cellVary(pfx,SGData): 
     if SGData['SGLaue'] in ['-1',]:
@@ -2897,7 +2905,7 @@ def Refine(GPXfile,dlg):
     #     print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
     #     print msg
     #     raise Exception(' *** Refine aborted ***')
-    print G2mv.VarRemapShow(varyList)
+    #print G2mv.VarRemapShow(varyList)
     G2mv.Map2Dict(parmDict,varyList)
     Rvals = {}
     while True:
@@ -2946,9 +2954,11 @@ def Refine(GPXfile,dlg):
         except TypeError:          #result[1] is None on singular matrix
             print '**** Refinement failed - singular matrix ****'
             if 'Hessian' in Controls['deriv type']:
-                for i in result[2]['psing'].reverse():
-                        print 'Removing parameter: ',varyList[i]
-                        del(varyList[i])                    
+                num = len(varyList)-1
+                for i,val in enumerate(np.flipud(result[2]['psing'])):
+                    if val:
+                        print 'Removing parameter: ',varyList[num-i]
+                        del(varyList[num-i])                    
             else:
                 Ipvt = result[2]['ipvt']
                 for i,ipvt in enumerate(Ipvt):
@@ -3128,9 +3138,11 @@ def SeqRefine(GPXfile,dlg):
             except TypeError:          #result[1] is None on singular matrix
                 print '**** Refinement failed - singular matrix ****'
                 if 'Hessian' in Controls['deriv type']:
-                    for i in result[2]['psing'].reverse():
-                            print 'Removing parameter: ',varyList[i]
-                            del(varyList[i])                    
+                    num = len(varyList)-1
+                    for i,val in enumerate(np.flipud(result[2]['psing'])):
+                        if val:
+                            print 'Removing parameter: ',varyList[num-i]
+                            del(varyList[num-i])                    
                 else:
                     Ipvt = result[2]['ipvt']
                     for i,ipvt in enumerate(Ipvt):

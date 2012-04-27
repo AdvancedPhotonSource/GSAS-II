@@ -116,6 +116,8 @@ def ProcessConstraints(constList):
 
 def CheckConstraints(GPXfile):
     '''Load constraints and related info and return any error or warning messages'''
+    # init constraints
+    G2mv.InitVars()    
     # get variables
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
@@ -126,8 +128,6 @@ def CheckConstraints(GPXfile):
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms)
     histVary,histDict,controlDict = GetHistogramData(Histograms)
     varyList = phaseVary+hapVary+histVary
-    # setup constraints
-    G2mv.InitVars()    
     constrDict,fixedList = GetConstraints(GPXfile)
     return G2mv.CheckConstraints(varyList,constrDict,fixedList)
     

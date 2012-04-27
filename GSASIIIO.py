@@ -233,6 +233,7 @@ def GetPawleyPeaks(filename):
     File.close()
     return PawleyPeaks
     
+# this will be removed eventually
 def GetHKLData(filename):
     print 'Reading: '+filename
     File = open(filename,'Ur')
@@ -1349,3 +1350,105 @@ class ImportPhase(object):
         #filepointer.seek(0) # rewind the file pointer
         return True
 
+######################################################################
+class ImportStructFactor(object):
+    '''Defines a base class for the reading of files with tables
+    of structure factors
+    '''
+    def __init__(self,
+                 formatName,
+                 longFormatName=None,
+                 extensionlist=[],
+                 strictExtension=False,
+                 ):
+        self.formatName = formatName # short string naming file type
+        if longFormatName: # longer string naming file type
+            self.longFormatName = longFormatName
+        else:
+            self.longFormatName = formatName
+        # define extensions that are allowed for the file type
+        # for windows, remove any extensions that are duplicate, as case is ignored
+        if sys.platform == 'windows' and extensionlist:
+            extensionlist = list(set([s.lower() for s in extensionlist]))
+        self.extensionlist = extensionlist
+        # If strictExtension is True, the file will not be read, unless
+        # the extension matches one in the extensionlist
+        self.strictExtension = strictExtension
+        # define contents of Structure Factor entry
+        self.Controls = { # dictionary with plotting controls
+            'Type' : 'Fosq',
+            'ifFc' : None,
+            'HKLmax' : [None,None,None],
+            'HKLmin' : [None,None,None],
+            'FoMax' : None,   # maximum observed structure factor
+            'Zone' : '001',
+            'Layer' : 0,
+            'Scale' : 1.0,
+            'log-lin' : 'lin',
+            }            
+        self.Parameters = [ # list with data collection parameters
+            ('SXC',1.5428),
+            ['SXC',1.5428],
+            ['Type','Lam']
+            ]
+        self.RefList = []
+        self.warnings = ''
+        self.errors = ''
+
+    def PhaseSelector(self, ChoiceList, ParentFrame=None,
+                      title='Select a structure factor', size=None):
+        ''' Provide a wx dialog to select a dataset if the file contains more
+        than one
+        '''
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,
+            title,
+            'Structure Factor Selection',
+            ChoiceList,
+            )
+        if size: dlg.SetSize(size)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            dlg.Destroy()
+            return sel
+        else:
+            dlg.Destroy()
+            return None
+
+    def ShowBusy(self):
+        wx.BeginBusyCursor()
+
+    def DoneBusy(self):
+        wx.EndBusyCursor()
+        
+#    def Reader(self, filename, filepointer, ParentFrame=None):
+#        '''This method must be supplied in the child class
+#        it will read the file
+#        '''
+#        return True # if read OK
+#        return False # if an error occurs
+
+    def ExtensionValidator(self, filename):
+        '''This methods checks if the file has the correct extension
+        Return False if this filename will not be supported by this reader
+        Return True if the extension matches the list supplied by the reader
+        Return None if the reader allows un-registered extensions
+        '''
+        if filename:
+            ext = os.path.splitext(filename)[1]
+            if sys.platform == 'windows': ext = ext.lower()
+            if ext in self.extensionlist: return True
+            if self.strictExtension: return False
+        return None
+
+    def ContentsValidator(self, filepointer):
+        '''This routine will attempt to determine if the file can be read
+        with the current format.
+        This will typically be overridden with a method that 
+        takes a quick scan of [some of]
+        the file contents to do a "sanity" check if the file
+        appears to match the selected format. 
+        Expected to be called via self.Validator()
+        '''
+        #filepointer.seek(0) # rewind the file pointer
+        return True

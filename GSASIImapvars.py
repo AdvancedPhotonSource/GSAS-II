@@ -272,16 +272,16 @@ def CheckConstraints(varyList,constrDict,fixedList):
     if len(inboth) > 0:
         errmsg += "\nThe following parameters(s) are used as both dependent and independent variables in Equivalence relations:\n"
         s = ''
-        for var in inboth:
+        for var in sorted(inboth):
             if s != "": s+= ", "
-            s += str(v)
+            s += str(var)
         errmsg += '\t'+ s + '\n'
     if len(multdepVarList) > 0:
         errmsg += "\nThe following parameters(s) are used in multiple Equivalence relations as dependent variables:\n"
         s = ''
-        for var in multdepVarList:
+        for var in sorted(set(multdepVarList)):
             if s != "": s+= ", "
-            s += str(v)            
+            s += str(var)            
         errmsg += '\t'+ s + '\n'
     equivVarList = list(set(indepVarList).union(set(depVarList)))
     #print 'equivVarList',equivVarList
@@ -289,9 +289,9 @@ def CheckConstraints(varyList,constrDict,fixedList):
     if len(inboth) > 0:
         errmsg += "\nThe following parameter(s) are used in both Equivalence and Fixed constraints:\n"
         s = ''
-        for var in inboth:
+        for var in sorted(inboth):
             if s != "": s+= ", "
-            s += str(v)
+            s += str(var)
         errmsg += '\t'+ s + '\n'
 
     groups,parmlist = GroupConstraints(constrDict)
@@ -435,6 +435,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         if multarr is None:
             zeromult = False
             for mv in mapvars:
+                #s = ''
                 varied = 0
                 notvaried = ''
                 if mv in varyList:
@@ -444,6 +445,10 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                     notvaried += mv
                 if mv not in indepVarList: indepVarList.append(mv)
                 for v,m in zip(varlist,invmultarr):
+                    #if len(s): s += '  & '
+                    #s += str(v)
+                    #if m != 1:
+                    #    s += " / " + str(m[0])                        
                     if m == 0: zeromult = True
                     if v in varyList:
                         varied += 1
@@ -454,6 +459,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                         multdepVarList.append(v)
                     else:
                         depVarList.append(v)
+                #print str(mv) + ' is equivalent to parameter(s): '+s
             if varied > 0 and varied != len(varlist)+1:
                 msg += "\nNot all variables refined in equivalence:\n\t"
                 s = ""
@@ -477,16 +483,16 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
     if len(inboth) > 0:
         msg += "\nThe following parameters(s) are used as both dependent and independent variables in Equivalence relations:\n"
         s = ''
-        for var in inboth:
+        for var in sorted(inboth):
             if s != "": s+= ", "
-            s += str(v)
+            s += str(var)
         msg += '\t'+ s + '\n'
     if len(multdepVarList) > 0:
         msg += "\nThe following parameters(s) are used in multiple Equivalence relations as dependent variables:\n"
         s = ''
-        for var in multdepVarList:
+        for var in sorted(set(multdepVarList)):
             if s != "": s+= ", "
-            s += str(v)            
+            s += str(var)            
         msg += '\t'+ s + '\n'
     equivVarList = list(set(indepVarList).union(set(depVarList)))
     #print 'equivVarList',equivVarList
@@ -494,9 +500,9 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
     if len(inboth) > 0:
         msg += "\nError! The following variables are used in both Equivalence and Fixed constraints:\n"
         s = ''
-        for var in inboth:
+        for var in sorted(inboth):
             if s != "": s+= ", "
-            s += str(v)
+            s += str(var)
         msg += '\t'+ s + '\n'
 
     # scan through parameters in each relationship. Are all varied? If only some are

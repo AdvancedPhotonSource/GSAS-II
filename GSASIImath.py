@@ -646,7 +646,7 @@ def ChargeFlip(data,reflData,pgbar):
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
             E = np.sqrt(ref[8])/ff
             ph = ref[10]
-#            ph = rn.uniform(0.,360.)
+            ph = rn.uniform(0.,360.)
             for i,hkl in enumerate(ref[11]):
                 hkl = np.asarray(hkl,dtype='i')
                 dp = 360.*ref[12][i]
@@ -716,7 +716,10 @@ def SearchMap(data,keepDup=False):
         
     def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
-        return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+        if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
+            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(x0-rX)*(y0-rY)+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+        else:
+            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
         
     def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
         Mag,x0,y0,z0,sig = parms

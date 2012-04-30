@@ -192,21 +192,20 @@ class GSASII(wx.Frame):
         self.SeqRefine.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=wxID_SEQREFINE)
         
-    def _init_Import_Phase(self,parent):
-        '''import all the G2importphase*.py files that are found in the
-        path and configure the Import Phase menus accordingly
+    def _init_Import_routines(self,parent,prefix,readerlist,errprefix):
+        '''import all the import readers matching the prefix
         '''
-
         path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file
         pathlist = sys.path[:]
         if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
         filelist = []
         for path in pathlist:
-            for filename in glob.iglob(os.path.join(path, "G2importphase*.py")):
+            for filename in glob.iglob(os.path.join(
+                path,
+                "G2import"+prefix+"*.py")):
                 filelist.append(filename)    
                 #print 'found',filename
         filelist = sorted(list(set(filelist))) # remove duplicates
-        self.ImportPhaseReaderlist = []
         for filename in filelist:
             path,rootname = os.path.split(filename)
             pkg = os.path.splitext(rootname)[0]
@@ -222,37 +221,24 @@ class GSASII(wx.Frame):
                             if not hasattr(clss[1],m): break
                             if not callable(getattr(clss[1],m)): break
                         else:
-                            reader = clss[1]() # create a phase import instance
-                            self.ImportPhaseReaderlist.append(reader)
+                            reader = clss[1]() # create an import instance
+                            readerlist.append(reader)
             except AttributeError:
-                print 'Import_Phase: Attribute Error',filename
+                print 'Import_'+errprefix+': Attribute Error'+str(filename)
                 pass
             except ImportError:
-                print 'Import_Phase: Error importing file',filename
+                print 'Import_'+errprefix+': Error importing file'+str(filename)
                 pass
             finally:
                 if fp: fp.close()
-        submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase menu',
-            submenu, help='Import phase data')
-        self.PhaseImportMenuId = {}
-        item = submenu.Append(wx.ID_ANY,
-                              help='Import phase data based selected by extension',
-                              kind=wx.ITEM_NORMAL,text='Import Phase by extension')
-        self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
-        for reader in self.ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,
-                help='Import specific format phase data',
-                kind=wx.ITEM_NORMAL,text='Import Phase '+reader.formatName+'...')
-            self.PhaseImportMenuId[item.GetId()] = reader
-            self.Bind(wx.EVT_MENU, self.OnImportPhaseGeneric, id=item.GetId())
 
-    def OnImportPhaseGeneric(self,event):
-        # find out which format was requested
-        reader = self.PhaseImportMenuId.get(event.GetId())
+    def OnImportGeneric(self,reader,readerlist,label):
+        '''Call the requested import reader or all of the appropriate
+        import readers in response to a menu item
+        '''
+        self.lastimport = ''
         if reader is None:
             #print "use all formats"
-            readerlist = self.ImportPhaseReaderlist
             choices = "any file (*.*)|*.*"
             extdict = {}
             # compile a list of allowed extensions
@@ -280,7 +266,7 @@ class GSASII(wx.Frame):
                 choices += "|any file (*.*)|*.*"
         # get the file
         dlg = wx.FileDialog(
-            self, message="Choose phase input file",
+            self, message="Choose "+label+" input file",
             #defaultDir=os.getcwd(), 
             defaultFile="",
             wildcard=choices,
@@ -290,7 +276,7 @@ class GSASII(wx.Frame):
             if dlg.ShowModal() == wx.ID_OK:
                 file = dlg.GetPath()
             else: # cancel was pressed
-                return
+                return None
         finally:
             dlg.Destroy()
         # set what formats are compatible with this file
@@ -304,11 +290,12 @@ class GSASII(wx.Frame):
                 primaryReaders.append(reader)
         if len(secondaryReaders) + len(primaryReaders) == 0:
             self.ErrorDialog('No Format','No matching format for file '+file)
-            return
+            return None
         
         fp = None
         try:
             fp = open(file,'r')
+            self.lastimport = file
             # try the file first with Readers that specify the
             # files extension and later with ones that allow it
             for rd in primaryReaders+secondaryReaders:
@@ -326,204 +313,118 @@ class GSASII(wx.Frame):
                                      +' with format '+ rd.formatName)
                     continue
                 if not flag: continue
-                dlg = wx.TextEntryDialog( # allow editing of phase name
-                    self, 'Enter the name for the new phase',
-                    'Edit phase name', rd.Phase['General']['Name'],
-                    style=wx.OK)
-                dlg.CenterOnParent()
-                if dlg.ShowModal() == wx.ID_OK:
-                    rd.Phase['General']['Name'] = dlg.GetValue()
-                dlg.Destroy()
-                PhaseName = rd.Phase['General']['Name']
-                print 'Read phase '+str(PhaseName)+' from file '+str(file)
-                self.CheckNotebook()
-                if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
-                    sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
-                else:
-                    sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
-                psub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-                self.PatternTree.SetItemPyData(psub,rd.Phase)
-                self.PatternTree.Expand(self.root) # make sure phases are seen
-                self.PatternTree.Expand(sub) 
-                self.PatternTree.Expand(psub) 
-                return # success
+                return rd
         except:
             import traceback
             print traceback.format_exc()
-            self.ErrorDialog('Open Error',
-                             'Error on open of file '+file)
+            self.ErrorDialog('Open Error','Error on open of file '+file)
         finally:
             if fp: fp.close()
+        return None
 
-        return
+    def _init_Import_Phase(self,parent):
+        '''import all the G2importphase*.py files that are found in the
+        path and configure the Import Phase menus accordingly
+        '''
+        self.ImportPhaseReaderlist = []
+        self._init_Import_routines(parent,'phase',
+                                   self.ImportPhaseReaderlist,
+                                   'Phase')
+        submenu = wx.Menu()
+        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase menu',
+            submenu, help='Import phase data')
+        item = submenu.Append(wx.ID_ANY,
+                              help='Import phase data based selected by extension',
+                              kind=wx.ITEM_NORMAL,text='Import Phase by extension')
+        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
+        for reader in self.ImportPhaseReaderlist:
+            item = submenu.Append(wx.ID_ANY,
+                help='Import specific format phase data',
+                kind=wx.ITEM_NORMAL,text='Import Phase '+reader.formatName+'...')
+            self.ImportMenuId[item.GetId()] = reader
+            self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
+
+    def OnImportPhase(self,event):
+        # look up which format was requested
+        reader = self.ImportMenuId.get(event.GetId())
+        rd = self.OnImportGeneric(reader,
+                                  self.ImportPhaseReaderlist,
+                                  'phase')
+        if rd is None: return
+        dlg = wx.TextEntryDialog( # allow editing of phase name
+            self, 'Enter the name for the new phase',
+            'Edit phase name', rd.Phase['General']['Name'],
+            style=wx.OK)
+        dlg.CenterOnParent()
+        if dlg.ShowModal() == wx.ID_OK:
+            rd.Phase['General']['Name'] = dlg.GetValue()
+        dlg.Destroy()
+        PhaseName = rd.Phase['General']['Name']
+        print 'Read phase '+str(PhaseName)+' from file '+str(self.lastimport)
+        self.CheckNotebook()
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
+        else:
+            sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        psub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
+        self.PatternTree.SetItemPyData(psub,rd.Phase)
+        self.PatternTree.Expand(self.root) # make sure phases are seen
+        self.PatternTree.Expand(sub) 
+        self.PatternTree.Expand(psub) 
+        return # success
         
     def _init_Import_Sfact(self,parent):
         '''import all the G2importsfact*.py files that are found in the
         path and configure the Import Structure Factor menus accordingly
         '''
-
-        path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file
-        pathlist = sys.path[:]
-        if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
-        filelist = []
-        for path in pathlist:
-            #print path
-            for filename in glob.iglob(os.path.join(path, "G2importsfact*.py")):
-                filelist.append(filename)    
-                #print 'found',filename
-        filelist = sorted(list(set(filelist))) # remove duplicates
         self.ImportSfactReaderlist = []
-        for filename in filelist:
-            path,rootname = os.path.split(filename)
-            pkg = os.path.splitext(rootname)[0]
-            try:
-                fp = None
-                fp, fppath,desc = imp.find_module(pkg,[path,])
-                pkg = imp.load_module(pkg,fp,fppath,desc)
-                for clss in inspect.getmembers(pkg): # find classes defined in package
-                    if clss[0].startswith('_'): continue
-                    if inspect.isclass(clss[1]):
-                        # check if we have the required methods
-                        for m in 'Reader','ExtensionValidator','ContentsValidator':
-                            if not hasattr(clss[1],m): break
-                            if not callable(getattr(clss[1],m)): break
-                        else:
-                            reader = clss[1]() # create a Structure Factor import instance
-                            self.ImportSfactReaderlist.append(reader)
-            except AttributeError:
-                print 'Import_Sfact: Attribute Error',filename
-                pass
-            except ImportError:
-                print 'Import_Sfact: Error importing file',filename
-                pass
-            finally:
-                if fp: fp.close()
+        self._init_Import_routines(parent,'sfact',
+                                   self.ImportSfactReaderlist,
+                                   'Struct_Factor')
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Import Structure Factor menu',
             submenu, help='Import Structure Factor data')
-        self.SfactImportMenuId = {}
         item = submenu.Append(wx.ID_ANY,
                               help='Import Structure Factor data based selected by extension',
                               kind=wx.ITEM_NORMAL,text='Import Structure Factor by extension')
-        self.Bind(wx.EVT_MENU, self.OnImportSfactGeneric, id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
         for reader in self.ImportSfactReaderlist:
             item = submenu.Append(wx.ID_ANY,
                 help='Import specific format Structure Factor data',
                 kind=wx.ITEM_NORMAL,text='Import Structure Factor '+reader.formatName+'...')
-            self.SfactImportMenuId[item.GetId()] = reader
-            self.Bind(wx.EVT_MENU, self.OnImportSfactGeneric, id=item.GetId())
+            self.ImportMenuId[item.GetId()] = reader
+            self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
 
-    def OnImportSfactGeneric(self,event):
-        # find out which format was requested
-        reader = self.SfactImportMenuId.get(event.GetId())
-        if reader is None:
-            #print "use all formats"
-            readerlist = self.ImportSfactReaderlist
-            choices = "any file (*.*)|*.*"
-            extdict = {}
-            # compile a list of allowed extensions
-            for rd in readerlist:
-                fmt = rd.formatName
-                for extn in rd.extensionlist:
-                    if not extdict.get(extn): extdict[extn] = []
-                    extdict[extn] += [fmt,]
-            for extn in sorted(extdict.keys(),cmp=lambda x,y: cmp(x.lower(), y.lower())):
-                fmt = ''
-                for f in extdict[extn]:
-                    if fmt != "": fmt += ', '
-                    fmt += f
-                choices += "|" + fmt + " file (*" + extn + ")|*" + extn
-        else:
-            readerlist = [reader,]
-            # compile a list of allowed extensions
-            choices = reader.formatName + " file ("
-            w = ""
-            for extn in reader.extensionlist:
-                if w != "": w += ";"
-                w += "*" + extn
-            choices += w + ")|" + w
-            if not reader.strictExtension:
-                choices += "|any file (*.*)|*.*"
-        # get the file
-        dlg = wx.FileDialog(
-            self, message="Choose Structure Factor input file",
-            #defaultDir=os.getcwd(), 
-            defaultFile="",
-            wildcard=choices,
-            style=wx.OPEN | wx.CHANGE_DIR
-            )
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                file = dlg.GetPath()
-            else: # cancel was pressed
-                return
-        finally:
-            dlg.Destroy()
-        # set what formats are compatible with this file
-        primaryReaders = []
-        secondaryReaders = []
-        for reader in readerlist:
-            flag = reader.ExtensionValidator(file)
-            if flag is None: 
-                secondaryReaders.append(reader)
-            elif flag:
-                primaryReaders.append(reader)
-        if len(secondaryReaders) + len(primaryReaders) == 0:
-            self.ErrorDialog('No Format','No matching format for file '+file)
-            return
-        
-        fp = None
-        try:
-            fp = open(file,'r')
-            # try the file first with Readers that specify the
-            # files extension and later with ones that allow it
-            for rd in primaryReaders+secondaryReaders:
-                fp.seek(0)  # rewind
-                if not rd.ContentsValidator(fp):
-                    continue # rejected on cursory check
-                try:
-                    fp.seek(0)  # rewind
-                    flag = rd.Reader(file,fp,self)
-                except:
-                    import traceback
-                    print traceback.format_exc()
-                    self.ErrorDialog('Read Error',
-                                     'Error reading file '+file
-                                     +' with format '+ rd.formatName)
-                    continue
-                if not flag: continue
-                HistName = ospath.basename(file)
-                dlg = wx.TextEntryDialog( # allow editing of Structure Factor name
-                    self, 'Enter the name for the new Structure Factor',
-                    'Edit Structure Factor name', HistName,
-                    style=wx.OK)
-                dlg.CenterOnParent()
-                if dlg.ShowModal() == wx.ID_OK:
-                    HistName = dlg.GetValue()
-                dlg.Destroy()
-                print 'Read structure factor table '+str(HistName)+' from file '+str(file)
-                self.CheckNotebook()
-                Id = self.PatternTree.AppendItem(parent=self.root,
-                                                 text='HKLF '+HistName)
-                self.PatternTree.SetItemPyData(Id,rd.RefList)
-                Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
-                self.PatternTree.SetItemPyData(Sub,rd.Parameters)
-                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(
-                    Id,text='HKL Plot Controls'),
-                                               rd.Controls)
-                self.PatternTree.SelectItem(Id)
-                self.PatternTree.Expand(Id)
-                self.Sngl = Id
-                return # success
-        except:
-            import traceback
-            print traceback.format_exc()
-            self.ErrorDialog('Open Error',
-                             'Error on open of file '+file)
-        finally:
-            if fp: fp.close()
-
-        return
+    def OnImportSfact(self,event):
+        # look up which format was requested
+        reader = self.ImportMenuId.get(event.GetId())
+        rd = self.OnImportGeneric(reader,
+                                  self.ImportSfactReaderlist,
+                                  'Structure Factor')
+        if rd is None: return
+        HistName = ospath.basename(self.lastimport)
+        dlg = wx.TextEntryDialog( # allow editing of Structure Factor name
+            self, 'Enter the name for the new Structure Factor',
+            'Edit Structure Factor name', HistName,
+            style=wx.OK)
+        dlg.CenterOnParent()
+        if dlg.ShowModal() == wx.ID_OK:
+            HistName = dlg.GetValue()
+        dlg.Destroy()
+        print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
+        self.CheckNotebook()
+        Id = self.PatternTree.AppendItem(parent=self.root,
+                                         text='HKLF '+HistName)
+        self.PatternTree.SetItemPyData(Id,rd.RefList)
+        Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
+        self.PatternTree.SetItemPyData(Sub,rd.Parameters)
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='HKL Plot Controls'),
+            rd.Controls)
+        self.PatternTree.SelectItem(Id)
+        self.PatternTree.Expand(Id)
+        self.Sngl = Id
+        return # success
 
     def _init_coll_Import_Items(self,parent):
         self.ImportPattern = parent.Append(help='',id=wxID_IMPORTPATTERN, kind=wx.ITEM_NORMAL,
@@ -571,6 +472,7 @@ class GSASII(wx.Frame):
         self._init_coll_File_Items(self.File)
         self._init_coll_Data_Items(self.Data)
         self._init_coll_Calculate_Items(self.Calculate)
+        self.ImportMenuId = {}
         self._init_Import_Phase(self.Import)
         self._init_Import_Sfact(self.Import)
         self._init_coll_Import_Items(self.Import)

@@ -1372,7 +1372,11 @@ class ImportPhase(ImportBaseclass):
         ''' Provide a wx dialog to select a phase if the file contains more
         than one phase
         '''
-        self.BlockSelector(ChoiceList, ParentFrame, title, size, header)
+        return self.BlockSelector(ChoiceList,
+                                  ParentFrame,
+                                  title,
+                                  size,
+                                  header)
 
 ######################################################################
 class ImportStructFactor(ImportBaseclass):

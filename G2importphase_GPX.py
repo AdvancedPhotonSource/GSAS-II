@@ -19,7 +19,6 @@ class PhaseReaderClass(G2IO.ImportPhase):
             longFormatName = 'GSAS-II project (.gpx file) import'
             )
     def ContentsValidator(self, filepointer):
-        filepointer.seek(0) # rewind the file pointer
         # if the 1st section can't be read as a cPickle file, it can't be!
         try: 
             cPickle.load(filepointer)
@@ -46,6 +45,8 @@ class PhaseReaderClass(G2IO.ImportPhase):
         try:
             self.Phase = G2str.GetAllPhaseData(filename,phasenames[selblk])
             return True
-        except:
-            return False
-
+        except Exception as detail:
+            print self.formatName+' error:',detail # for testing
+            print sys.exc_info()[0] # for testing
+            import traceback
+            print traceback.format_exc()

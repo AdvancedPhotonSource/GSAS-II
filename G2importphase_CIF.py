@@ -23,7 +23,6 @@ class CIFPhaseReader(G2IO.ImportPhase):
             longFormatName = 'Crystallographic Information File import'
             )
     def ContentsValidator(self, filepointer):
-        filepointer.seek(0) # rewind the file pointer
         for i,line in enumerate(filepointer):
             if i >= 1000: break
             ''' Encountered only blank lines or comments in first 1000
@@ -73,6 +72,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
             self.ShowBusy() # this can take a while
             ciffile = 'file:'+urllib.pathname2url(filename)
             cf = cif.ReadCif(ciffile)
+            self.DoneBusy()
             #print cf
             # scan blocks for structural info
             str_blklist = []
@@ -93,7 +93,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                     # accumumlate some info about this phase
                     choice[-1] += blknm + ': '
                     for i in phasenamefields: # get a name for the phase
-                        name = cf[blknm].get(i).strip()
+                        name = cf[blknm].get(i)
                         if name is None or name == '?' or name == '.':
                             continue
                         else:
@@ -207,6 +207,4 @@ class CIFPhaseReader(G2IO.ImportPhase):
             import traceback
             print traceback.format_exc()
             returnstat = False
-        finally:
-            self.DoneBusy()
         return returnstat

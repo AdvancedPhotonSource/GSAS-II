@@ -312,10 +312,11 @@ class GSASII(wx.Frame):
             # try the file first with Readers that specify the
             # files extension and later with ones that allow it
             for rd in primaryReaders+secondaryReaders:
+                fp.seek(0)  # rewind
                 if not rd.ContentsValidator(fp):
                     continue # rejected on cursory check
-                #flag = rd.Reader(file,fp,self)
                 try:
+                    fp.seek(0)  # rewind
                     flag = rd.Reader(file,fp,self)
                 except:
                     import traceback
@@ -329,12 +330,13 @@ class GSASII(wx.Frame):
                     self, 'Enter the name for the new phase',
                     'Edit phase name', rd.Phase['General']['Name'],
                     style=wx.OK)
-                #dlg.SetValue("Python is the best!")
                 dlg.CenterOnParent()
                 if dlg.ShowModal() == wx.ID_OK:
                     rd.Phase['General']['Name'] = dlg.GetValue()
                 dlg.Destroy()
                 PhaseName = rd.Phase['General']['Name']
+                print 'Read phase '+str(PhaseName)+' from file '+str(file)
+                self.CheckNotebook()
                 if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
                     sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
                 else:
@@ -365,6 +367,7 @@ class GSASII(wx.Frame):
         if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
         filelist = []
         for path in pathlist:
+            #print path
             for filename in glob.iglob(os.path.join(path, "G2importsfact*.py")):
                 filelist.append(filename)    
                 #print 'found',filename
@@ -475,10 +478,11 @@ class GSASII(wx.Frame):
             # try the file first with Readers that specify the
             # files extension and later with ones that allow it
             for rd in primaryReaders+secondaryReaders:
+                fp.seek(0)  # rewind
                 if not rd.ContentsValidator(fp):
                     continue # rejected on cursory check
-                #flag = rd.Reader(file,fp,self)
                 try:
+                    fp.seek(0)  # rewind
                     flag = rd.Reader(file,fp,self)
                 except:
                     import traceback
@@ -488,24 +492,28 @@ class GSASII(wx.Frame):
                                      +' with format '+ rd.formatName)
                     continue
                 if not flag: continue
-#                dlg = wx.TextEntryDialog( # allow editing of Structure Factor name
-#                    self, 'Enter the name for the new Structure Factor',
-#                    'Edit Structure Factor name', rd.Phase['General']['Name'],
- #                   style=wx.OK)
+                HistName = ospath.basename(file)
+                dlg = wx.TextEntryDialog( # allow editing of Structure Factor name
+                    self, 'Enter the name for the new Structure Factor',
+                    'Edit Structure Factor name', HistName,
+                    style=wx.OK)
                 dlg.CenterOnParent()
-#                if dlg.ShowModal() == wx.ID_OK:
-#                    rd.Phase['General']['Name'] = dlg.GetValue()
-#                dlg.Destroy()
-#                PhaseName = rd.Phase['General']['Name']
-#                if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
-#                    sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
-#                else:
-#                    sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
-#                psub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
-#                self.PatternTree.SetItemPyData(psub,rd.Phase)
-#                self.PatternTree.Expand(self.root) # make sure phases are seen
-#                self.PatternTree.Expand(sub) 
-#                self.PatternTree.Expand(psub) 
+                if dlg.ShowModal() == wx.ID_OK:
+                    HistName = dlg.GetValue()
+                dlg.Destroy()
+                print 'Read structure factor table '+str(HistName)+' from file '+str(file)
+                self.CheckNotebook()
+                Id = self.PatternTree.AppendItem(parent=self.root,
+                                                 text='HKLF '+HistName)
+                self.PatternTree.SetItemPyData(Id,rd.RefList)
+                Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
+                self.PatternTree.SetItemPyData(Sub,rd.Parameters)
+                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(
+                    Id,text='HKL Plot Controls'),
+                                               rd.Controls)
+                self.PatternTree.SelectItem(Id)
+                self.PatternTree.Expand(Id)
+                self.Sngl = Id
                 return # success
         except:
             import traceback

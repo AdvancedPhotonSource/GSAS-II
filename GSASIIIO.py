@@ -1264,8 +1264,9 @@ def ReadPDBPhase(filename):
 #   not used directly, only by subclassing
 ######################################################################
 E,SGData = G2spc.SpcGroup('P 1') # data structure for default space group
-class ImportPhase(object):
-    '''Defines a base class for the reading of files with coordinates
+class ImportBaseclass(object):
+    '''Defines a base class for the importing of data files (diffraction
+    data, coordinates,...
     '''
     def __init__(self,
                  formatName,
@@ -1286,21 +1287,19 @@ class ImportPhase(object):
         # If strictExtension is True, the file will not be read, unless
         # the extension matches one in the extensionlist
         self.strictExtension = strictExtension
-        # define a default Phase structure
-        self.Phase = SetNewPhase(Name='new phase',SGData=SGData)
         self.warnings = ''
         self.errors = ''
         #print 'created',self.__class__
 
-    def PhaseSelector(self, ChoiceList, ParentFrame=None,
-                      title='Select a phase', size=None):
-        ''' Provide a wx dialog to select a phase if the file contains more
-        than one
+    def BlockSelector(self, ChoiceList, ParentFrame=None,
+                      title='Select a block',
+                      size=None, header='Block Selector'):
+        ''' Provide a wx dialog to select a block if the file contains more
+        than one set of data and one must be selected
         '''
         dlg = wx.SingleChoiceDialog(
             ParentFrame,
-            title,
-            'Phase Selection',
+            title, header,
             ChoiceList,
             )
         if size: dlg.SetSize(size)
@@ -1350,8 +1349,33 @@ class ImportPhase(object):
         #filepointer.seek(0) # rewind the file pointer
         return True
 
+class ImportPhase(ImportBaseclass):
+    '''Defines a base class for the reading of files with coordinates
+    '''
+    def __init__(self,
+                 formatName,
+                 longFormatName=None,
+                 extensionlist=[],
+                 strictExtension=False,
+                 ):
+        # call parent __init__
+        ImportBaseclass.__init__(self,formatName,
+                                            longFormatName,
+                                            extensionlist,
+                                            strictExtension)
+        # define a default Phase structure
+        self.Phase = SetNewPhase(Name='new phase',SGData=SGData)
+
+    def PhaseSelector(self, ChoiceList, ParentFrame=None,
+                      title='Select a phase', size=None,
+                      header='Phase Selector'):
+        ''' Provide a wx dialog to select a phase if the file contains more
+        than one phase
+        '''
+        self.BlockSelector(ChoiceList, ParentFrame, title, size, header)
+
 ######################################################################
-class ImportStructFactor(object):
+class ImportStructFactor(ImportBaseclass):
     '''Defines a base class for the reading of files with tables
     of structure factors
     '''
@@ -1361,94 +1385,69 @@ class ImportStructFactor(object):
                  extensionlist=[],
                  strictExtension=False,
                  ):
-        self.formatName = formatName # short string naming file type
-        if longFormatName: # longer string naming file type
-            self.longFormatName = longFormatName
-        else:
-            self.longFormatName = formatName
-        # define extensions that are allowed for the file type
-        # for windows, remove any extensions that are duplicate, as case is ignored
-        if sys.platform == 'windows' and extensionlist:
-            extensionlist = list(set([s.lower() for s in extensionlist]))
-        self.extensionlist = extensionlist
-        # If strictExtension is True, the file will not be read, unless
-        # the extension matches one in the extensionlist
-        self.strictExtension = strictExtension
+        ImportBaseclass.__init__(self,formatName,
+                                            longFormatName,
+                                            extensionlist,
+                                            strictExtension)
+
         # define contents of Structure Factor entry
         self.Controls = { # dictionary with plotting controls
             'Type' : 'Fosq',
-            'ifFc' : None,
+            'ifFc' : False,    # 
             'HKLmax' : [None,None,None],
             'HKLmin' : [None,None,None],
-            'FoMax' : None,   # maximum observed structure factor
+            'FoMax' : None,   # maximum observed structure factor as Fo
             'Zone' : '001',
             'Layer' : 0,
             'Scale' : 1.0,
             'log-lin' : 'lin',
-            }            
+            }
         self.Parameters = [ # list with data collection parameters
             ('SXC',1.5428),
             ['SXC',1.5428],
             ['Type','Lam']
             ]
         self.RefList = []
-        self.warnings = ''
-        self.errors = ''
 
-    def PhaseSelector(self, ChoiceList, ParentFrame=None,
-                      title='Select a structure factor', size=None):
-        ''' Provide a wx dialog to select a dataset if the file contains more
-        than one
+    def UpdateParameters(self,Type=None,Wave=None):
+        HistType = self.Parameters[0][0]
+        HistWave = self.Parameters[0][1]
+        if Type is not None:
+            HistType = Type
+        if Wave is not None:
+            HistWave = Wave
+        self.Parameters = [ # overwrite entire list 
+            (HistType,HistWave),
+            [HistType,HistWave],
+            ['Type','Lam']
+            ]
+            
+    def UpdateControls(self,Type='Fosq',FcalcPresent=False):
+        '''Scan through the reflections to update the Controls dictionary
         '''
-        dlg = wx.SingleChoiceDialog(
-            ParentFrame,
-            title,
-            'Structure Factor Selection',
-            ChoiceList,
-            )
-        if size: dlg.SetSize(size)
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            dlg.Destroy()
-            return sel
+        self.Controls['Type'] = Type
+        self.Controls['iffc'] = FcalcPresent
+        HKLmax = [None,None,None]
+        HKLmin = [None,None,None]
+        Fo2max = None
+        for HKL,Fo2,SFo2,Fc,Fcp,Fcpp,phase in self.RefList:
+            if Fo2max is None:
+                Fo2max = Fo2
+            else:
+                Fo2max = max(Fo2max,Fo2)
+            for i,hkl in enumerate(HKL):
+                if HKLmax[i] is None:
+                    HKLmax[i] = hkl
+                    HKLmin[i] = hkl
+                else:
+                    HKLmax[i] = max(HKLmax[i],hkl)
+                    HKLmin[i] = min(HKLmin[i],hkl)
+        self.Controls['HKLmax'] = HKLmax
+        self.Controls['HKLmin'] = HKLmin
+        if Type ==  'Fosq':
+            self.Controls['FoMax'] = np.sqrt(Fo2max)
+        elif Type ==  'Fo':
+            self.Controls['FoMax'] = Fo2max
         else:
-            dlg.Destroy()
-            return None
-
-    def ShowBusy(self):
-        wx.BeginBusyCursor()
-
-    def DoneBusy(self):
-        wx.EndBusyCursor()
-        
-#    def Reader(self, filename, filepointer, ParentFrame=None):
-#        '''This method must be supplied in the child class
-#        it will read the file
-#        '''
-#        return True # if read OK
-#        return False # if an error occurs
-
-    def ExtensionValidator(self, filename):
-        '''This methods checks if the file has the correct extension
-        Return False if this filename will not be supported by this reader
-        Return True if the extension matches the list supplied by the reader
-        Return None if the reader allows un-registered extensions
-        '''
-        if filename:
-            ext = os.path.splitext(filename)[1]
-            if sys.platform == 'windows': ext = ext.lower()
-            if ext in self.extensionlist: return True
-            if self.strictExtension: return False
-        return None
-
-    def ContentsValidator(self, filepointer):
-        '''This routine will attempt to determine if the file can be read
-        with the current format.
-        This will typically be overridden with a method that 
-        takes a quick scan of [some of]
-        the file contents to do a "sanity" check if the file
-        appears to match the selected format. 
-        Expected to be called via self.Validator()
-        '''
-        #filepointer.seek(0) # rewind the file pointer
-        return True
+            print "Unsupported Stract Fact type in ImportStructFactor.UpdateControls"
+            raise Exception,"Unsupported Stract Fact type in ImportStructFactor.UpdateControls"

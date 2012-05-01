@@ -958,7 +958,7 @@ def GetKcl(L,N,SGLaue,phi,beta):
             pcrs *= SQ2
         if SGLaue in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
             if SGLaue in ['3mR','3m1','31m']: 
-                if n%6 == 3:
+                if N%6 == 3:
                     Kcl = pcrs*sind(N*beta)
                 else:
                     Kcl = pcrs*cosd(N*beta)

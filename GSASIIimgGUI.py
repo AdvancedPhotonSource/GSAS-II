@@ -208,7 +208,7 @@ def UpdateImageControls(G2frame,data,masks):
                     if key in ['type','calibrant',]:
                         save[key] = val
                     elif key in ['rotation']:
-                        save[key] = val+90.
+                        save[key] = float(val)+90.
                     elif key in ['center',]:
                         if ',' in val:
                             save[key] = eval(val)

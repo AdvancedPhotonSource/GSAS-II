@@ -280,8 +280,7 @@ def UpdateBackground(G2frame,data):
     ValObj = {}
     
     def OnBackFlagCopy(event):
-        print data
-        flag = data[1]
+        flag = data[0][1]
         backDict = data[-1]
         if backDict['nDebye']:
             DBflags = []
@@ -306,7 +305,7 @@ def UpdateBackground(G2frame,data):
             for item in copyList:
                 Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
                 backData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'))
-                backData[1] = copy.copy(flag)
+                backData[0][1] = copy.copy(flag)
                 bkDict = backData[-1]
                 if bkDict['nDebye'] == backDict['nDebye']:
                     for i,term in enumerate(bkDict['debyeTerms']):

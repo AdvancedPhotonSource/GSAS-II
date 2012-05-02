@@ -933,6 +933,12 @@ def UpdateSeqResults(G2frame,data):
                 sampleParm[item] = sampleParmDict[item]            
         return sampleParm
             
+    def GetRwps():
+        Rwps = []
+        for name in histNames:
+            Rwps.append(data[name]['Rvals']['Rwp'])
+        return Rwps
+            
     def GetSigData(parm):
         sigData = []
         for name in histNames:
@@ -1010,14 +1016,14 @@ def UpdateSeqResults(G2frame,data):
         if item in data['varyList']:
             atomList[newAtomDict[item][0]] = item
     sampleParms = GetSampleParms()
+    Rwps = GetRwps()
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.SequentialMenu)
     G2frame.dataFrame.SetLabel('Sequental refinement results')
     G2frame.dataFrame.CreateStatusBar()
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
-    colLabels = data['varyList']+atomList.keys()+cellList.keys()
-    Types = len(data['varyList']+atomList.keys()+cellList.keys())*[wg.GRID_VALUE_FLOAT,]
-    seqList = [list(data[name]['variables']) for name in histNames]
-    
+    colLabels = ['Rwp',]+data['varyList']+atomList.keys()+cellList.keys()
+    Types = (len(data['varyList']+atomList.keys()+cellList.keys())+1)*[wg.GRID_VALUE_FLOAT,]
+    seqList = [[Rwps[i],]+list(data[name]['variables']) for i,name in enumerate(histNames)]    
     for i,item in enumerate(seqList):
         newAtomDict = data[histNames[i]]['newAtomDict']
         newCellDict = data[histNames[i]]['newCellDict']

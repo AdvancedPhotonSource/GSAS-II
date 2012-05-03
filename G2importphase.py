@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ########### SVN repository information ###################
 # $Date: 2012-02-13 11:33:35 -0600 (Mon, 13 Feb 2012) $
 # $Author: vondreele & toby $

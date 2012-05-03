@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASII - data display routines
 ########### SVN repository information ###################
 # $Date$
@@ -978,14 +979,27 @@ def UpdateSampleGrid(G2frame,data):
         for parm in copyNames:
             copyDict[parm] = data[parm]
         histList = ['All '+histType,]
+        AllList = {}
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
             name = G2frame.PatternTree.GetItemText(item)
             if histType in name and name != histName:
+                allname = name.split(' Azm=')[0]
+                if allname in AllList:
+                    AllList[allname] += 1
+                else:
+                    AllList[allname] = 1
                 histList.append(name)
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         if len(histList) == 1:      #nothing to copy to!
             return
+        nAll = 0
+        AllNames = AllList.keys()
+        AllNames.sort()
+        for allname in AllNames:
+            if AllList[allname] > 1:
+                histList.insert(1+nAll,'All '+allname)
+                nAll += 1
         copyList = []
         dlg = wx.MultiChoiceDialog(G2frame,'Copy parameters from\n'+histName,
             'Copy parameters',histList,wx.CHOICEDLG_STYLE)
@@ -994,8 +1008,15 @@ def UpdateSampleGrid(G2frame,data):
                 result = dlg.GetSelections()
                 for i in result: 
                     copyList.append(histList[i])
+                for allname in AllList:
+                    if 'All '+allname in copyList:
+                        copyList = []
+                        for name in histList:
+                            if name.split(' Azm=')[0] == allname:
+                                copyList.append(name)
+                        break       #only one All allowed
                 if 'All '+histType in copyList: 
-                    copyList = histList[1:]
+                    copyList = histList[1+nAll:]
             for item in copyList:
                 Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
                 sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))

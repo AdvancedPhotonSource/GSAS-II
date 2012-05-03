@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ElementGUI: class defn. for element GUIs
    Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 """

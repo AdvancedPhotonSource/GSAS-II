@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #Element table for building periodic table with valences & JMOL colors
 #Need these in case go back to this periodic table coloring scheme
 REcolor = (128, 128, 255)

@@ -1,5 +1,5 @@
+# -*- coding: utf-8 -*-
 "GSASII - Space group interpretion routines"
-
 ########### SVN repository information ###################
 # $Date$
 # $Author$

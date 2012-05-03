@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # determine a binary path for the pyd files based on the host OS and the python version,  
 # path is relative to location of the script that is called as well as this file
 # this must be imported before anything that imports any .pyd/.so file for GSASII

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASII - data display routines
 ########### SVN repository information ###################
 # $Date$

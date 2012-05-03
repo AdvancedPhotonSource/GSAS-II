@@ -1,5 +1,5 @@
+# -*- coding: utf-8 -*-
 '''Perform lattice-related computations'''
-
 ########### SVN repository information ###################
 # $Date$
 # $Author$

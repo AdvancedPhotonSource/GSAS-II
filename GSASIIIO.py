@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """GSASIIIO: functions for IO of data
    Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
 """

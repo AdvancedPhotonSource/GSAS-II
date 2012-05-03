@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #FormFactors.py
 #  
 #  The atomic scattering factor is calculated using the method developed by  D. Waasmaier & A. Kirfel

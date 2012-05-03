@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
 # $Date: 2012-01-13 11:48:53 -0600 (Fri, 13 Jan 2012) $

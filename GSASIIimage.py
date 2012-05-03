@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASII image calculations: ellipse fitting & image integration        
 ########### SVN repository information ###################
 # $Date$

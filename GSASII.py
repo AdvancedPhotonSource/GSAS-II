@@ -564,7 +564,6 @@ class GSASII(wx.Frame):
             self.PatternTree.Expand(self.root)
             self.Refine.Enable(True)
             self.SeqRefine.Enable(True)
-            #self.Solve.Enable(True) # what is this? (BHT)
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()

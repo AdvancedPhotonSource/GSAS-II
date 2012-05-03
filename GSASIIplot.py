@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASII plotting routines
 ########### SVN repository information ###################
 # $Date$
@@ -1411,7 +1412,7 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
 ##### PlotTexture
 ################################################################################
             
-def PlotTexture(G2frame,data,newPlot=False,Start=False):
+def PlotTexture(G2frame,data,Start=False):
     '''Pole figure, inverse pole figure, 3D pole distribution and 3D inverse pole distribution
     plotting.
     dict generalData contains all phase info needed which is in data
@@ -1470,15 +1471,17 @@ def PlotTexture(G2frame,data,newPlot=False,Start=False):
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     G2frame.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
     
-    if G2frame.Projection == '3D display' and 'Axial'  not in SHData['PlotType']:               
-        Plot = mp3d.Axes3D(G2frame.G2plotNB.add3D('Texture'))
-    else:
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index('Texture')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Texture').gca()
-    plotNum = G2frame.G2plotNB.plotList.index('Texture')
-    Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-    if G2frame.Projection == '3D display':
-        pass
-    else:
+        plotNum = G2frame.G2plotNB.plotList.index('Texture')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
 
     Page.SetFocus()
@@ -1519,9 +1522,7 @@ def PlotTexture(G2frame,data,newPlot=False,Start=False):
                 Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             except ValueError:
                 pass
-            if newPlot:
-#                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
-                newPlot = False
+            Page.figure.colorbar(Img)
             Plot.set_title('Inverse pole figure for XYZ='+str(SHData['PFxyz']))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
                         
@@ -1541,9 +1542,7 @@ def PlotTexture(G2frame,data,newPlot=False,Start=False):
             except ValueError:
                 pass
             Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
-            if newPlot:
-#                Page.figure.colorbar(Img)    #colorbar fails - crashes gsasii
-                newPlot = False
+            Page.figure.colorbar(Img)
             Plot.set_title('Pole figure for HKL='+str(SHData['PFhkl']))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
     Page.canvas.draw()

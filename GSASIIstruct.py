@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASIIstructure - structure computation routines
 ########### SVN repository information ###################
 # $Date$

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASII cell indexing program: variation on that of A. Coehlo
 #   includes cell refinement from peak positions (not zero as yet)
 ########### SVN repository information ###################

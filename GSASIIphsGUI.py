@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 ########### SVN repository information ###################
 # $Date$
@@ -2459,14 +2460,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             textureData['Order'] = int(Obj.GetValue())
             textureData['SH Coeff'][1] = SetSHCoef()
             wx.CallAfter(UpdateTexture)
-            G2plt.PlotTexture(G2frame,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data)
                         
         def OnShModel(event):
             Obj = event.GetEventObject()
             textureData['Model'] = Obj.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
             wx.CallAfter(UpdateTexture)
-            G2plt.PlotTexture(G2frame,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data)
             
         def OnSHRefine(event):
             Obj = event.GetEventObject()
@@ -2480,12 +2481,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnProjSel(event):
             Obj = event.GetEventObject()
             G2frame.Projection = Obj.GetValue()
-            G2plt.PlotTexture(G2frame,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data)
             
         def OnColorSel(event):
             Obj = event.GetEventObject()
             G2frame.ContourColor = Obj.GetValue()
-            G2plt.PlotTexture(G2frame,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data)
             
         def OnAngRef(event):
             Obj = event.GetEventObject()
@@ -2508,7 +2509,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 value = textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]]
             Obj.SetValue('%8.3f'%(value))
             textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]] = value
-            G2plt.PlotTexture(G2frame,data,newPlot=False)
+            G2plt.PlotTexture(G2frame,data)
             
         def OnPfType(event):
             Obj = event.GetEventObject()

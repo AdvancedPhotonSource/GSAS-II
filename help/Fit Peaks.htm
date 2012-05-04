@@ -1,0 +1,919 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 14">
+<meta name=Originator content="Microsoft Word 14">
+<link rel=File-List href="Fit%20Peaks_files/filelist.xml">
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Von Dreele</o:Author>
+  <o:LastAuthor>Von Dreele</o:LastAuthor>
+  <o:Revision>2</o:Revision>
+  <o:TotalTime>3</o:TotalTime>
+  <o:Created>2012-05-04T21:03:00Z</o:Created>
+  <o:LastSaved>2012-05-04T21:12:00Z</o:LastSaved>
+  <o:Pages>3</o:Pages>
+  <o:Words>1329</o:Words>
+  <o:Characters>7576</o:Characters>
+  <o:Company>Argonne National Laboratory</o:Company>
+  <o:Lines>63</o:Lines>
+  <o:Paragraphs>17</o:Paragraphs>
+  <o:CharactersWithSpaces>8888</o:CharactersWithSpaces>
+  <o:Version>14.00</o:Version>
+ </o:DocumentProperties>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+ </o:OfficeDocumentSettings>
+</xml><![endif]-->
+<link rel=themeData href="Fit%20Peaks_files/themedata.thmx">
+<link rel=colorSchemeMapping href="Fit%20Peaks_files/colorschememapping.xml">
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:TrackMoves>false</w:TrackMoves>
+  <w:TrackFormatting/>
+  <w:PunctuationKerning/>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:DoNotPromoteQF/>
+  <w:LidThemeOther>EN-US</w:LidThemeOther>
+  <w:LidThemeAsian>X-NONE</w:LidThemeAsian>
+  <w:LidThemeComplexScript>X-NONE</w:LidThemeComplexScript>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+   <w:DontGrowAutofit/>
+   <w:SplitPgBreakAndParaMark/>
+   <w:EnableOpenTypeKerning/>
+   <w:DontFlipMirrorIndents/>
+   <w:OverrideTableStyleHps/>
+  </w:Compatibility>
+  <m:mathPr>
+   <m:mathFont m:val="Cambria Math"/>
+   <m:brkBin m:val="before"/>
+   <m:brkBinSub m:val="&#45;-"/>
+   <m:smallFrac m:val="off"/>
+   <m:dispDef/>
+   <m:lMargin m:val="0"/>
+   <m:rMargin m:val="0"/>
+   <m:defJc m:val="centerGroup"/>
+   <m:wrapIndent m:val="1440"/>
+   <m:intLim m:val="subSup"/>
+   <m:naryLim m:val="undOvr"/>
+  </m:mathPr></w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" DefUnhideWhenUsed="true"
+  DefSemiHidden="true" DefQFormat="false" DefPriority="99"
+  LatentStyleCount="267">
+  <w:LsdException Locked="false" Priority="0" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Normal"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="heading 1"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 2"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 3"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 4"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 5"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 6"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 7"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 8"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 9"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 1"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 2"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 3"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 4"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 5"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 6"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 7"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 8"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 9"/>
+  <w:LsdException Locked="false" Priority="35" QFormat="true" Name="caption"/>
+  <w:LsdException Locked="false" Priority="10" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Title"/>
+  <w:LsdException Locked="false" Priority="1" Name="Default Paragraph Font"/>
+  <w:LsdException Locked="false" Priority="11" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtitle"/>
+  <w:LsdException Locked="false" Priority="22" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Strong"/>
+  <w:LsdException Locked="false" Priority="20" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Emphasis"/>
+  <w:LsdException Locked="false" Priority="59" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Table Grid"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Placeholder Text"/>
+  <w:LsdException Locked="false" Priority="1" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="No Spacing"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 1"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 1"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Revision"/>
+  <w:LsdException Locked="false" Priority="34" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="List Paragraph"/>
+  <w:LsdException Locked="false" Priority="29" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Quote"/>
+  <w:LsdException Locked="false" Priority="30" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Quote"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 1"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 1"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 1"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 2"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 2"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 2"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 2"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 3"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 3"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 3"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 4"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 4"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 4"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 4"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 5"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 5"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 5"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 5"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 6"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 6"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 6"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 6"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="19" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Emphasis"/>
+  <w:LsdException Locked="false" Priority="21" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Emphasis"/>
+  <w:LsdException Locked="false" Priority="31" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Reference"/>
+  <w:LsdException Locked="false" Priority="32" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Reference"/>
+  <w:LsdException Locked="false" Priority="33" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Book Title"/>
+  <w:LsdException Locked="false" Priority="37" Name="Bibliography"/>
+  <w:LsdException Locked="false" Priority="39" QFormat="true" Name="TOC Heading"/>
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Cambria;
+	panose-1:2 4 5 3 5 4 6 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:roman;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1073743103 0 0 415 0;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:-520092929 1073786111 9 0 415 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-parent:"";
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:10.0pt;
+	margin-left:0in;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:11.0pt;
+	font-family:"Calibri","sans-serif";
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Calibri;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+p.MsoTitle, li.MsoTitle, div.MsoTitle
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:15.0pt;
+	margin-left:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	border:none;
+	mso-border-bottom-alt:solid #4F81BD 1.0pt;
+	mso-border-bottom-themecolor:accent1;
+	padding:0in;
+	mso-padding-alt:0in 0in 4.0pt 0in;
+	font-size:26.0pt;
+	font-family:"Cambria","serif";
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#17365D;
+	mso-themecolor:text2;
+	mso-themeshade:191;
+	letter-spacing:.25pt;
+	mso-font-kerning:14.0pt;}
+p.MsoTitleCxSpFirst, li.MsoTitleCxSpFirst, div.MsoTitleCxSpFirst
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	border:none;
+	mso-border-bottom-alt:solid #4F81BD 1.0pt;
+	mso-border-bottom-themecolor:accent1;
+	padding:0in;
+	mso-padding-alt:0in 0in 4.0pt 0in;
+	font-size:26.0pt;
+	font-family:"Cambria","serif";
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#17365D;
+	mso-themecolor:text2;
+	mso-themeshade:191;
+	letter-spacing:.25pt;
+	mso-font-kerning:14.0pt;}
+p.MsoTitleCxSpMiddle, li.MsoTitleCxSpMiddle, div.MsoTitleCxSpMiddle
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	border:none;
+	mso-border-bottom-alt:solid #4F81BD 1.0pt;
+	mso-border-bottom-themecolor:accent1;
+	padding:0in;
+	mso-padding-alt:0in 0in 4.0pt 0in;
+	font-size:26.0pt;
+	font-family:"Cambria","serif";
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#17365D;
+	mso-themecolor:text2;
+	mso-themeshade:191;
+	letter-spacing:.25pt;
+	mso-font-kerning:14.0pt;}
+p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:15.0pt;
+	margin-left:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	border:none;
+	mso-border-bottom-alt:solid #4F81BD 1.0pt;
+	mso-border-bottom-themecolor:accent1;
+	padding:0in;
+	mso-padding-alt:0in 0in 4.0pt 0in;
+	font-size:26.0pt;
+	font-family:"Cambria","serif";
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#17365D;
+	mso-themecolor:text2;
+	mso-themeshade:191;
+	letter-spacing:.25pt;
+	mso-font-kerning:14.0pt;}
+span.TitleChar
+	{mso-style-name:"Title Char";
+	mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:Title;
+	mso-ansi-font-size:26.0pt;
+	mso-bidi-font-size:26.0pt;
+	font-family:"Cambria","serif";
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#17365D;
+	mso-themecolor:text2;
+	mso-themeshade:191;
+	letter-spacing:.25pt;
+	mso-font-kerning:14.0pt;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	mso-default-props:yes;
+	font-family:"Calibri","sans-serif";
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Calibri;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+.MsoPapDefault
+	{mso-style-type:export-only;
+	margin-bottom:10.0pt;
+	line-height:115%;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.WordSection1
+	{page:WordSection1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin-top:0in;
+	mso-para-margin-right:0in;
+	mso-para-margin-bottom:10.0pt;
+	mso-para-margin-left:0in;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:11.0pt;
+	font-family:"Calibri","sans-serif";
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="1026"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US style='tab-interval:.5in'>
+
+<div class=WordSection1>
+
+<div style='mso-element:para-border-div;border:none;border-bottom:solid #4F81BD 1.0pt;
+mso-border-bottom-themecolor:accent1;padding:0in 0in 4.0pt 0in'>
+
+<p class=MsoTitle><span style='mso-spacerun:yes'> </span>Fit Peaks/<span
+class=SpellE>Autoindexing</span> in GSAS-II <o:p></o:p></p>
+
+</div>
+
+<p class=MsoNormal>In this exercise you will use the GSAS-II program to search
+for a unit cell that matches a set of diffraction peaks -- a process known as
+auto-indexing. First peaks must be located and optimized and then indexing can
+be done.<o:p></o:p></p>
+
+<p class=MsoNormal>Step 1: read in data<o:p></o:p></p>
+
+<p class=MsoNormal>Download the sample data file and matching instrument
+parameter file from these links:<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>   
+</span>https://subversion.xor.aps.anl.gov/trac/pyGSAS/browser/Examples/powder%20data/11bmb_3844.fxye?format=raw<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>   
+</span>https://subversion.xor.aps.anl.gov/trac/pyGSAS/browser/Examples/powder%20data/11bmb_3844.prm?format=raw<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>    </span>(One can also use
+this links<span style='mso-spacerun:yes'>    </span><o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>   
+</span>https://subversion.xor.aps.anl.gov/pyGSAS/Examples/powder%20data/11bmb_3844.fxye
+and <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>   
+</span>https://subversion.xor.aps.anl.gov/pyGSAS/Examples/powder%20data/11bmb_3844.prm<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>    </span><span class=GramE>to</span>
+obtain the file, but this is more complex).<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Step 2: Start GSAS-II ===<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>This is done in
+different ways, depending on your OS and how GSAS-II is installed.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Step 3: read in the data file ===<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Use the '''Data/Read
+powder data''' menu item to read the data file into the current GSAS-II
+project. <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span><o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Select the
+{{{11bmb_3844.fxye}}} data file in the first dialog and press Open.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Select the
+{{{11bmb_3844.prm}}} instrument parameter file in the second dialog and press
+Open.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>    </span>At this point the
+data tree window will have several entries <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>   
+</span>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d3w2.png
+view]);<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>    </span><span class=GramE>and</span>
+the plot window will show the powder pattern<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>    </span><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d3w1.png
+view]).</span><o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Step 4: Select Data Range ===<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>This pattern has much
+more data than we need, so it is helpful to cut down the range. Click on the
+Limits item in the data tree. A new window is created. Use the
+&quot;changed&quot; row of entry boxes to set <span class=SpellE>Tmin</span>
+and <span class=SpellE>Tmax</span> to 4 and 30. You may also drag the limits lines
+to the desired location or place them by a left mouse click on a data point for
+the lower limit or a right click on a data point for the upper limit.<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d3w3.png
+view]).</span> <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Note the green and
+red vertical lines in the plot window move. <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Step 5: Determine Peak Positions ===<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Click on the Peak
+List item in the data tree. This creates an empty window of peak positions. At
+this point it is wise to <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span><span class=GramE>zoom</span>
+in on the data that will be used for indexing. This can be done by clicking on
+this button:<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Click on the
+magnification button: [[Image(d3z1.png)]], then press the left mouse in one
+corner of the region to be used; holding the mouse button down, drag over the
+region to the opposite corner. <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>'''Important:'''
+Click on the magnification [[<span class=GramE>Image(</span>d3z1.png)]] button
+again to turn off the zoom mode. <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span><span class=GramE>Using
+the left mouse button click on a data point near the top of each peak to be
+added to the peak list.</span> As this is done, a line is <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span><span class=GramE>drawn</span>
+in the plot window<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> 
+</span>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d3w4.png
+view]) and<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span><span class=GramE>peaks</span>
+are added to the Peak List window<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d3w5.png
+view]).</span> Note that if peaks are <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span><span class=GramE>not</span>
+being added, you probably have not exited zoom mode.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span>Once peaks in that
+region have been added, move to a new region of the pattern. This can be done
+by clicking on the shift button: [[<span class=GramE>Image(</span>d3z2.png)]].
+Dragging with the left mouse will shift the data to follow the mouse. <span
+class=GramE>Clicking with the right button (on the Mac, control + mouse) and
+moving up increases the vertical scale and to the right increases the
+horizontal scale.</span><span style='mso-spacerun:yes'> 
+</span>'''Important:''' Click on the shift [[<span class=GramE>Image(</span>d3z2.png)]]
+button again to turn off this mode. <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span>Again, using the
+left mouse button, click on the tops of more peaks to be added to the peak
+list. Note that if peaks are <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span><span class=GramE>not</span>
+being added, you probably have not exited shift mode.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>  </span>Add approximately 24
+peaks total to the peak list. Be sure to add the lowest angle peaks that are
+visible in the plot. You may drag a peak position as needed; be sure the
+zoom/shift buttons are off. A position may be deleted with a right click with
+the mouse on the blue line.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Step 6: Refine Peak Positions ===<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>First, refine the peak intensities and the background. These
+parameters have their refinement flag turned on by default. Use the menu item
+'''Peak Fitting/<span class=GramE>LSQ !<span class=SpellE>PeakFit</span>'''</span>.
+A window will show the progress of the refinement and will close when the least
+<span class=GramE>squares is</span> complete. A summary of the refinement is
+shown on the console window as well.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Second, add refinement of the peak positions. This can be
+done by clicking on all the refinement flags for the individual peaks or it is
+possible to set them all at the same time using this recipe: <o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>* <span class=GramE>single-click</span>
+on any value in the table to select it, for example the first peak position. A
+black box appears around the value. If the field if opened for editing (the box
+turns to blue), select a different item in the table.<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span>* double-click on the
+refine label above the peak position check-boxes. The entire column of
+checkboxes is highlighted in blue. Press the y key to turn on all refinement
+flags (n would turn them off).<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span><o:p></o:p></p>
+
+<p class=MsoNormal>Third, repeat the refinement using the '''Peak Fitting/<span
+class=GramE>LSQ !<span class=SpellE>PeakFit</span>'''</span> menu item.<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'> </span><o:p></o:p></p>
+
+<p class=MsoNormal>Fourth, select peak widths for refinement. This can be done
+by refining sigma (Gaussian width) and/or gamma (Lorentzian width) for
+individual peaks, but here we constrain the peaks to follow an instrumental
+broadening equation. Select the Instrumental Parameters item in the data tree. <o:p></o:p></p>
+
+<p class=MsoNormal>This opens a window for peak profile terms<o:p></o:p></p>
+
+<p class=MsoNormal><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d3w6.png
+view]).</span> <o:p></o:p></p>
+
+<p class=MsoNormal>Select the refine flag checkbox for Gaussian U, V, W,
+Lorentzian X, Y and the asymmetry parameter SH/L. <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Fifth, repeat the refinement. First click on the Peak List
+item in the data tree and then refine using the '''Peak Fitting/<span
+class=GramE>LSQ !<span class=SpellE>PeakFit</span>'''</span> menu item. At this
+point a good fit should be seen by zooming in on individual peaks. (For example
+see <o:p></o:p></p>
+
+<p class=MsoNormal><span class=GramE>[https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d3w7.png
+this]).</span> The <span class=SpellE>Rwp</span> is ~6% as shown on the console
+window.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Prepare Indexing Peak List ===<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>A separate list of peaks is kept for use in <span
+class=SpellE>autoindexing</span>. This list is manipulated by clicking on the
+Index Peak List item in the data tree. In the initially empty window created by
+this action, use menu item '''Index Peaks Operations/Load''' to copy over the
+fitted peaks from the Peak List tree entry<o:p></o:p></p>
+
+<p class=MsoNormal><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d4w1.png
+view]).</span> <o:p></o:p></p>
+
+<p class=MsoNormal>Note that by default all peaks are selected to be used. <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Run <span class=SpellE>Autoindexing</span> ===<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Select the Unit Cells List data item. This brings up a
+window for indexing and cell refinement options<o:p></o:p></p>
+
+<p class=MsoNormal><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d4w2.png
+view]).</span> For the most rapid search (since we know the right answer),
+select Cubic-P and launch the search using menu item '''Cell Index/Index
+Cell'''. The search then runs and he console shows a running list of possible
+cells as they are found; the sorted by M20 list of possible matching cells is
+shown in the window<o:p></o:p></p>
+
+<p class=MsoNormal><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d4w3.png
+view]).</span> <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Review Cell Choices === <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Review the list of cells associated with the Unit Cells List
+data item. Note that as one selects a unit cell, the generated reflections for
+that cell are shown in the plot with dashed red lines. Sliding the cursor over
+these lines shows a small popup window with the indexed <span class=SpellE>hkl</span>
+for them. Note how the 8.312 <span class=GramE>A</span> cell generates very
+many lines with no corresponding peaks <o:p></o:p></p>
+
+<p class=MsoNormal>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d4w4.png
+view])<o:p></o:p></p>
+
+<p class=MsoNormal><span class=GramE>while</span> the 2.939 A cell generates
+not enough lines to match all the peaks<o:p></o:p></p>
+
+<p class=MsoNormal><span class=GramE>([https://subversion.xor.aps.anl.gov/trac/pyGSAS/attachment/wiki/DemoAutoIndex/d4w5.png
+view]).</span> <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>=== Select/Refine Cell === <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Select the top option, a 4.1568 <span class=GramE>A</span>
+cell with M20 figure of merit of 2700. This indexes all peaks, though peak
+positions are not exactly perfect if one zooms in enough. Import the cell
+information using the '''Cell Index/Copy Cell''' menu option. Then optimize the
+cell by refining the lattice parameters and the two-theta zero: click on the
+refine checkbox next to the Zero offset value and then the '''Cell Index/Refine
+Cell''' menu option. <span class=GramE>The a</span> cell parameter value shifts
+from 4.15679 to 4.15684 when zero is refined. <o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>(Optional) Finally, use of the '''Cell Index/New phase'''
+menu option allows one to assign a phase with these lattice parameters to the
+data set (histogram). A name for the new phase is then requested. This adds a
+Phases entry to the data tree, as well as an entry for the new phase. This new
+phase can be used in future code.</p>
+
+</div>
+
+</body>
+
+</html>

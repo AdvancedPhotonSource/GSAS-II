@@ -1,0 +1,103 @@
+     VERSION    6     Sat Jan 01 16:30:48 2011                                  
+      DESCR   fluoroapatite                                                     
+    HSTRY  1 EXPEDT  Win32  Jun 23 14:59:14 2011 P PH        LA  O              
+  DSGL CDAT1  DRAD ARAD NOFO                                                    
+  GNLS CDAT1  MXCY  3                                                           
+ AFAC  F     3.539210.2825 2.6412 4.2944 1.5170  .2615 1.024326.1476  .2776 RHF 
+ AFAC  F_    18.998 .5654       .0096                                           
+ AFAC  F_SIZ      1.30      1.10 1.35   67                                      
+ AFAC  F_XAB   1676  1008 503.2 49.99 26.84 2790. 779.0                         
+ AFAC  F_XF1  0.132 0.104 0.073 0.017 0.010 0.170 0.092-0.003-0.003-0.003       
+ AFAC  F_XF2  0.119 0.085 0.053 0.010 0.006 0.171 0.072 0.001 0.001 0.000       
+ AFAC  O     3.048513.2771 2.2868 5.7011 1.5463  .3239  .867032.9089  .2508 RHF 
+ AFAC  O_    15.999 .5805      .00019                                           
+ AFAC  O_SIZ      1.09      0.89 1.45   96 1.40                                 
+ AFAC  O_XAB  988.0 590.6 293.1 30.48 17.21 1730. 478.0                         
+ AFAC  O_XF1  0.093 0.072 0.049 0.011 0.006 0.121 0.063-0.002-0.003-0.003       
+ AFAC  O_XF2  0.073 0.052 0.032 0.006 0.004 0.106 0.044 0.000 0.000 0.000       
+ AFAC  P     6.4345 1.9067 4.179127.1570 1.7800  .5260 1.490868.1645 1.1149 RHF 
+ AFAC  P_    30.974  .513        .172                                           
+ AFAC  P_SIZ      1.48      1.28 1.90    1                                      
+ AFAC  P_XAB  12110  7590  3975 404.8 201.2 19500 5930.                         
+ AFAC  P_XF1  0.390 0.359 0.296 0.102 0.067 0.382 0.339-0.000-0.001-0.005       
+ AFAC  P_XF2  0.898 0.663 0.434 0.094 0.058 1.242 0.573 0.008 0.007 0.005       
+ AFAC CA     8.626610.4421 7.3873  .6599 1.589985.7484 1.0211178.437 1.3751 RHF 
+ AFAC CA_     40.08   .47         .43                                           
+ AFAC CA_SIZ      2.17      1.97 2.00  007                                      
+ AFAC CA_XAB  33250 21230 11410  1264 637.1 52000 16900                         
+ AFAC CA_XF1 -0.199 0.187 0.364 0.226 0.161-1.367 0.278 0.012 0.010 0.000       
+ AFAC CA_XF2  2.514 1.903 1.286 0.306 0.193 3.369 0.665 0.027 0.026 0.019       
+ EXPR  HTYP1  PXC                                                               
+ EXPR  NATYP    4                                                               
+ EXPR  NHST     1                                                               
+ EXPR ATYP 1  CA          2      2.17      1.97 2.00  007                       
+ EXPR ATYP 2  P           1      1.48      1.28 1.90    1                       
+ EXPR ATYP 3  F           1      1.30      1.10 1.35   67                       
+ EXPR ATYP 4  O           3      1.09      0.89 1.45   96 1.40                  
+ EXPR NPHAS     1    0    0    0    0    0    0    0    0                       
+CRS1    PNAM  fap                                                               
+CRS1   NATOM    7                                                               
+CRS1  ABC     9.372000  9.372000  6.886000    N    0                            
+CRS1  ANGLES   90.0000   90.0000  120.0000                                      
+CRS1  AT  1A  CA        0.333333  0.666667  0.001000  1.000000CA1        4 000  
+CRS1  AT  1B  0.005000                                                    I     
+CRS1  AT  2A  CA        0.242000  0.992000  0.250000  1.000000CA2        6 000  
+CRS1  AT  2B  0.005000                                                    I     
+CRS1  AT  3A  P         0.397000  0.367000  0.250000  1.000000P3         6 000  
+CRS1  AT  3B  0.005000                                                    I     
+CRS1  AT  4A  F         0.000000  0.000000  0.250000  1.000000F4         2 000  
+CRS1  AT  4B  0.010000                                                    I     
+CRS1  AT  5A  O         0.325000  0.485000  0.250000  1.000000O5         6 000  
+CRS1  AT  5B  0.005000                                                    I     
+CRS1  AT  6A  O         0.591000  0.469000  0.250000  1.000000O6         6 000  
+CRS1  AT  6B  0.005000                                                    I     
+CRS1  AT  7A  O         0.340000  0.258000  0.070000  1.000000O7        12 000  
+CRS1  AT  7B  0.005000                                                    I     
+CRS1  CELVOL        523.796                                                     
+CRS1  SG SYM  P 63/m                                                            
+CRS1  SPAXIS    0    0    1                                                     
+HAP1 1 ZONE     0    0    0    0                                                
+HAP1 1EXTPOW    0.00000E+00    N    0                                           
+HAP1 1NAXIS     1                                                               
+HAP1 1PHSFR      1.0000        N    0                                           
+HAP1 1PRCF      2   18   0.01000    0NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP1 1PRCF 1   0.200000E+01  -0.200000E+01   0.500000E+01   0.100000E+01        
+HAP1 1PRCF 2   0.100000E+01   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF 3   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF 4   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF 5   0.000000E+00   0.000000E+00                                      
+HAP1 1PREFO1   1.00000   1.00000   0.00000   0.00000   1.00000   NN    0        
+HAP1 1RADDAM    0.00000E+00    N    0      0.00                                 
+HST  1  HFIL  c:\gsas\class\data\fap.xra                                        
+HST  1  HNAM   15.000    .020  90.000 PS1286 90MR21 Y286 DOUBLE  T=19X2        1
+HST  1  IFIL  c:\gsas\class\parm\inst_xry.prm                                   
+HST  1 BANK     1                                                               
+HST  1 CHANS         0         1      5750  73092096      5753    0    0        
+HST  1 EPHAS    0    0    0    0    0    0    0    0    0    Y                  
+HST  1 ICONR  1.540500  1.544300       0.0         0       0.5    0             
+HST  1 ICONS  1.540500  1.544300       0.0         0       0.5    0             
+HST  1 IRAD     3                                                               
+HST  1 NEXC     2                                                               
+HST  1 NPHAS    1    0    0    0    0    0    0    0    0                       
+HST  1 NREF   652    0.8499                                                     
+HST  1ABSCOR   0.000000E+00   0.000000E+00    N    0                            
+HST  1BAKGD     5    3    Y    0    Y                                           
+HST  1BAKGD1   0.100000E+01   0.000000E+00   0.000000E+00                       
+HST  1CHI       0.0000                                                          
+HST  1DETAZM    0.0000                                                          
+HST  1EXC  1     0.000     0.000                                                
+HST  1EXC  2   130.000  1000.000                                                
+HST  1HSCALE   1.000000E+00    Y    0                                           
+HST  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER                  
+HST  1I ITYP    0    0.0000  180.0000         1                                 
+HST  1OMEGA     0.0000    Y                                                     
+HST  1PHI       0.0000                                                          
+HST  1PRCF1     2    6      0.01                                                
+HST  1PRCF11   2.000000E+00  -2.000000E+00   5.000000E+00   1.000000E+00        
+HST  1PRCF12   1.000000E+00   0.000000E+00                                      
+ZZZZZZZZZZZZ  Last EXP file record                                              
+    HSTRY  2 POWPREF Win32  Jun 23 14:59:14 2011                                
+HST  1 TRNGE  15.00000 129.98000                                                
+HST  1 WREXP    0.0561                                                          
+HST  1MNREF     0    1.0000                                                     
+HST  1 MAXRF   14                                                               

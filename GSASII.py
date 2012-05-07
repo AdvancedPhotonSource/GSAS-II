@@ -125,6 +125,7 @@ class GSASII(wx.Frame):
         parent.Append(menu=self.Calculate, title='Calculate')
         parent.Append(menu=self.Import, title='Import')
         parent.Append(menu=self.Export, title='Export')
+        parent.Append(menu=G2gd.MyHelp(self,helpType='Tutorials'),title='&Tutorials' )
         parent.Append(menu=G2gd.MyHelp(self,helpType='Data tree'),title='&Help' )
 
     def _init_coll_File_Items(self, parent):

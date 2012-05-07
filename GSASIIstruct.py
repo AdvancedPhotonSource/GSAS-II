@@ -32,6 +32,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
+DEBUG = False
 
 
 def GetControls(GPXfile):
@@ -966,7 +967,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
             pawleyRef = Phase['Pawley ref']
             for i,refl in enumerate(pawleyRef):
                 key = pfx+'PWLref:'+str(i)
-                refl[6] = abs(parmDict[key])        #suppress negative Fsq
+                refl[6] = parmDict[key]
                 if key in sigDict:
                     refl[7] = sigDict[key]
                 else:
@@ -1739,6 +1740,19 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                 PrintSampleParmsSig(Sample,sampSig)
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)
+                
+################################################################################
+##### Penalty & restraint functions 
+################################################################################
+
+def getPenalties():
+    return []
+    
+def penaltyFxn(penalties):
+    return []
+    
+def penaltyDeriv(penalties):
+    return []
 
 ################################################################################
 ##### Function & derivative calculations
@@ -2462,7 +2476,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[13] *= Vst*Lorenz
                 if Phase['General'].get('doPawley'):
                     try:
-                        refl[9] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
+                        refl[9] = parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
@@ -2569,7 +2583,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA = GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 if Phase['General'].get('doPawley'):
                     try:
-                        refl[9] = abs(parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
+                        refl[9] = parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
@@ -2723,7 +2737,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
     return dMdv
 
-def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
+def dervRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
@@ -2746,25 +2760,27 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
             else:
                 dMdv = dMdvh
+    if penalties:
+        dmdv = np.concatenate((dmdv.T,penaltyDeriv(penalties).T)).T
     return dMdv
 
-def ComputePowderHessian(args):
-    Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup = args
-    hId = Histogram['hId']
-    hfx = ':%d:'%(hId)
-    Limits = calcControls[hfx+'Limits']
-    x,y,w,yc,yb,yd = Histogram['Data']
-    dy = y-yc
-    xB = np.searchsorted(x,Limits[0])
-    xF = np.searchsorted(x,Limits[1])
-    dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(
-        parmdict,x[xB:xF],
-        varylist,Histogram,Phases,calcControls,pawleyLookup)
-    Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
-    Hess = np.inner(dMdvh,dMdvh)
-    return Vec,Hess
-
-def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
+#def ComputePowderHessian(args):
+#    Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup = args
+#    hId = Histogram['hId']
+#    hfx = ':%d:'%(hId)
+#    Limits = calcControls[hfx+'Limits']
+#    x,y,w,yc,yb,yd = Histogram['Data']
+#    dy = y-yc
+#    xB = np.searchsorted(x,Limits[0])
+#    xF = np.searchsorted(x,Limits[1])
+#    dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(
+#        parmdict,x[xB:xF],
+#        varylist,Histogram,Phases,calcControls,pawleyLookup)
+#    Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
+#    Hess = np.inner(dMdvh,dMdvh)
+#    return Vec,Hess
+#
+def HessRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
@@ -2794,19 +2810,19 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 Hess = np.inner(dMdvh,dMdvh)
     return Vec,Hess
 
-def ComputePowderProfile(args):
-    Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup = args
-    hId = Histogram['hId']
-    hfx = ':%d:'%(hId)
-    x,y,w,yc,yb,yd = Histogram['Data']
-    Limits = calcControls[hfx+'Limits']
-    xB = np.searchsorted(x,Limits[0])
-    xF = np.searchsorted(x,Limits[1])
-    yc,yb = getPowderProfile(parmdict,x[xB:xF],varylist,Histogram,Phases,
-        calcControls,pawleyLookup)
-    return xB,xF,yc,yb,Histogram['Reflection Lists']
-
-def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
+#def ComputePowderProfile(args):
+#    Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup = args
+#    hId = Histogram['hId']
+#    hfx = ':%d:'%(hId)
+#    x,y,w,yc,yb,yd = Histogram['Data']
+#    Limits = calcControls[hfx+'Limits']
+#    xB = np.searchsorted(x,Limits[0])
+#    xF = np.searchsorted(x,Limits[1])
+#    yc,yb = getPowderProfile(parmdict,x[xB:xF],varylist,Histogram,Phases,
+#        calcControls,pawleyLookup)
+#    return xB,xF,yc,yb,Histogram['Reflection Lists']
+#
+def errRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawleyLookup,dlg):        
     parmdict.update(zip(varylist,values))
     Values2Dict(parmdict, varylist, values)
     G2mv.Dict2Map(parmdict,varylist)
@@ -2850,6 +2866,8 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
         if not GoOn:
             parmDict['saved values'] = values
             raise Exception         #Abort!!
+    if penalties:
+        M = np.concatenate((M,penaltyFxn(penalties)))
     return M
                         
 def Refine(GPXfile,dlg):
@@ -2912,22 +2930,23 @@ def Refine(GPXfile,dlg):
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
+        penalties = getPenalties()
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
         maxCyc = Controls['max cyc']
         if 'Jacobian' in Controls['deriv type']:            
             result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
         elif 'Hessian' in Controls['deriv type']:
             result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']                           
         else:           #'numeric'
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/len(varyList))
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
@@ -2990,18 +3009,19 @@ def Refine(GPXfile,dlg):
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
     
 #for testing purposes!!!
-#    import cPickle
-#    fl = open('structTestdata.dat','wb')
-#    cPickle.dump(parmDict,fl,1)
-#    cPickle.dump(varyList,fl,1)
-#    for histogram in Histograms:
-#        if 'PWDR' in histogram[:4]:
-#            Histogram = Histograms[histogram]
-#    cPickle.dump(Histogram,fl,1)
-#    cPickle.dump(Phases,fl,1)
-#    cPickle.dump(calcControls,fl,1)
-#    cPickle.dump(pawleyLookup,fl,1)
-#    fl.close()
+    if DEBUG:
+        import cPickle
+        fl = open('structTestdata.dat','wb')
+        cPickle.dump(parmDict,fl,1)
+        cPickle.dump(varyList,fl,1)
+        for histogram in Histograms:
+            if 'PWDR' in histogram[:4]:
+                Histogram = Histograms[histogram]
+        cPickle.dump(Histogram,fl,1)
+        cPickle.dump(Phases,fl,1)
+        cPickle.dump(calcControls,fl,1)
+        cPickle.dump(pawleyLookup,fl,1)
+        fl.close()
 
     if dlg:
         return Rvals['Rwp']
@@ -3095,7 +3115,8 @@ def SeqRefine(GPXfile,dlg):
         Rvals = {}
         while True:
             begin = time.time()
-            values =  np.array(Dict2Values(parmDict, varyList))
+            values =  np.array(Dict2Values(parmDict,varyList))
+            penalties = getPenalties()
             Ftol = Controls['min dM/M']
             Factor = Controls['shift factor']
             maxCyc = Controls['max cyc']
@@ -3103,15 +3124,15 @@ def SeqRefine(GPXfile,dlg):
             if 'Jacobian' in Controls['deriv type']:            
                 result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                     ftol=Ftol,col_deriv=True,factor=Factor,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/2)
             elif 'Hessian' in Controls['deriv type']:
                 result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = result[2]['num cyc']+1                           
             else:           #'numeric'
                 result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/len(varyList))
 
 

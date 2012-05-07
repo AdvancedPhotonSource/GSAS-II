@@ -32,8 +32,8 @@ helpLocDict = {}
 htmlPanel = None
 htmlFrame = None
 if sys.platform.lower().startswith('win'): 
-#    helpMode = 'browser'    # need a global control to set this
-    helpMode = 'internal'    # need a global control to set this
+    helpMode = 'browser'    # need a global control to set this
+#    helpMode = 'internal'    # need a global control to set this
 else:
     helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True

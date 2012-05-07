@@ -32,8 +32,8 @@ helpLocDict = {}
 htmlPanel = None
 htmlFrame = None
 if sys.platform.lower().startswith('win'): 
-    helpMode = 'browser'    # need a global control to set this
-#    helpMode = 'internal'    # need a global control to set this
+#    helpMode = 'browser'    # need a global control to set this
+    helpMode = 'internal'    # need a global control to set this
 else:
     helpMode = 'browser'    # need a global control to set this
 htmlFirstUse = True
@@ -178,7 +178,7 @@ class MyHtmlPanel(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         back = wx.Button(self, -1, "Back")
         back.Bind(wx.EVT_BUTTON, self.OnBack)
-        self.htmlwin = G2HtmlWindow(self, id, size=(602,450))
+        self.htmlwin = G2HtmlWindow(self, id, size=(750,450))
         sizer.Add(self.htmlwin, 1,wx.EXPAND)
         sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
         self.SetSizer(sizer)

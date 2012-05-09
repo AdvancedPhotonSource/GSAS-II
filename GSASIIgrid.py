@@ -31,11 +31,9 @@ path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this
 helpLocDict = {}
 htmlPanel = None
 htmlFrame = None
-if sys.platform.lower().startswith('win'): 
-    helpMode = 'browser'    # need a global control to set this
-#    helpMode = 'internal'    # need a global control to set this
-else:
-    helpMode = 'browser'    # need a global control to set this
+helpMode = 'browser'
+if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global control to set this
+    
 htmlFirstUse = True
 
 [ wxID_FOURCALC,wxID_FOURSEARCH, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, wxID_CHARGEFLIP,
@@ -236,7 +234,7 @@ class G2HtmlWindow(wx.html.HtmlWindow):
         self.TitlePage()
     def TitlePage(self):
         self.parent.frame.SetTitle(self.GetOpenedPage() + ' -- ' + 
-                                   self.GetOpenedPageTitle())
+            self.GetOpenedPageTitle())
 
 class DataFrame(wx.Frame):
 

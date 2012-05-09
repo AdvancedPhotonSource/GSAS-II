@@ -80,14 +80,14 @@ Change wavelength in Instrument Parameters if needed''','Data type?',
             Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
             Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
             Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
-            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        '
+            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
         else:
             Iparm = {}                                               #Assume 0.6A synchrotron data
             Iparm['INS   HTYPE '] = 'PXC '
             Iparm['INS  1 ICONS'] = '  0.600000  0.000000       0.0         0      0.99    0       0.5   '
             Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
             Iparm['INS  1PRCF11'] = '   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        '
-            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
+            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-02   0.100000E-02        '
                         
         
     else:                       #GSAS style fxye or fxy file (e.g. 100*2-th, I, sig)
@@ -100,7 +100,7 @@ Change wavelength in Instrument Parameters if needed''','Data type?',
             Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
             Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
             Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
-            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        '
+            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
     S = 1
     Banks = []
     Pos = []

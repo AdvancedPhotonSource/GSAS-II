@@ -3221,10 +3221,12 @@ def DistAngle(DisAglCtls,DisAglData):
             '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
     Factor = DisAglCtls['Factors']
     Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
-    Units = np.array([                   #is there a nicer way to make this?
-        [-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
-        [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,0],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
-        [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]])
+#    Units = np.array([                   #is there a nicer way to make this?
+#        [-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
+#        [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,0],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
+#        [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]])
+    indices = (-1,0,1)
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     origAtoms = DisAglData['OrigAtoms']
     targAtoms = DisAglData['TargAtoms']
     for Oatom in origAtoms:

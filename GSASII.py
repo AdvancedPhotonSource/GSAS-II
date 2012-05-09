@@ -81,7 +81,8 @@ try:
     import mkl
     print "Max threads ",mkl.get_max_threads()
 except:
-    print "MKL module not present"
+    pass
+#    print "MKL module not present"
 __version__ = '0.1.5'
 G2gd.__version__ = __version__
 print "This is GSAS-II version:     ",__version__
@@ -814,9 +815,13 @@ Change wavelength in Instrument Parameters if needed''',
                                     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
                                     v = (v[0],v[2],v[4])
                                     codes = [0,0,0,0]
+                                    Sample['Type'] = 'Debye-Scherrer'               #default instrument type
                                 else:
                                     names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
                                     codes = [0,0,0,0,0,0]
+                                    Sample['Type'] = 'Bragg-Brentano'               #default instrument type
+                                    Sample['Shift'] = [0.0,False]
+                                    Sample['Transparency'] = [0.0,False]
                                 data.extend(v)
                                 v1 = Iparm['INS  1PRCF1 '].split()                                                  
                                 v = Iparm['INS  1PRCF11'].split()
@@ -826,8 +831,8 @@ Change wavelength in Instrument Parameters if needed''',
                                 except KeyError:                                                #not in this Iparm file
                                     azm = 0.0
                                 v = Iparm['INS  1PRCF12'].split()
-                                if v1[0] == 3:
-                                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
+                                if v1[0] == '3':
+                                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3]),azm])  #get LX, LY, S+H/L & azimuth
                                 else:
                                     data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                                 codes.extend([0,0,0,0,0,0,0])

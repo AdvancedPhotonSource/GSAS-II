@@ -7,4 +7,4 @@ INS  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER
 INS  1I ITYP    0    0.0000  180.0000         1                                 
 INS  1PRCF1     3    8      0.01                                                
 INS  1PRCF11   2.000000E+00  -2.000000E+00   5.000000E+00   0.100000E+00        
-INS  1PRCF12   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        
+INS  1PRCF12   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        

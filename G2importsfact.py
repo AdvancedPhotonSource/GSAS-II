@@ -37,7 +37,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
             S = filepointer.readline()
         return True
 
-    def Reader(self,filename,filepointer, ParentFrame=None):
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         try:
             for S in filepointer:
                 if S[0] == '#': continue       #ignore comments, if any

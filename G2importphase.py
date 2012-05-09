@@ -26,7 +26,7 @@ class PDB_ReaderClass(G2IO.ImportPhase):
     #    filepointer.seek(0) # rewind the file pointer
     #    return True
 
-    def Reader(self,filename,filepointer, ParentFrame=None):
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         try:
             self.Phase = G2IO.ReadPDBPhase(filename)
             return True
@@ -53,7 +53,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
         except: pass
         return False
 
-    def Reader(self,filename,filepointer, ParentFrame=None):
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         try:
             self.Phase = G2IO.ReadEXPPhase(ParentFrame, filename)
             return True

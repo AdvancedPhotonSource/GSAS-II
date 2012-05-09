@@ -134,24 +134,35 @@ class MyHelp(wx.Menu):
     NOTE: the title for this menu should be '&Help' so the wx handles
     it correctly. BHT
     '''
-    def __init__(self,frame,title='',helpType=None):
+    def __init__(self,frame,title='',helpType=None,morehelpitems=[]):
         wx.Menu.__init__(self,title)
-        self.helpType = helpType
+        self.HelpById = {}
         self.frame = frame
         # add a help item only when helpType is specified
         if helpType is not None:
             helpobj = self.Append(text='Help on '+helpType,
                 id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-            frame.Bind(wx.EVT_MENU, self.OnHelp, helpobj)
+            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
+            self.HelpById[helpobj.GetId()] = helpType
         self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
             text='&About GSAS-II')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
+        for lbl,indx in morehelpitems:
+            helpobj = self.Append(text=lbl,
+                id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
+            self.HelpById[helpobj.GetId()] = indx
 
-    def OnHelp(self,event):
+    def OnHelpById(self,event):
         '''Called when Help on... is pressed in a menu. Brings up
         a web page for documentation.
         '''
-        ShowHelp(self.helpType,self.frame)
+        helpType = self.HelpById.get(event.GetId())
+        if helpType is None:
+            print 'Error: help lookup failed!',event.GetEventObject()
+            print 'id=',event.GetId()
+        else:
+            ShowHelp(helpType,self.frame)
 
     def OnHelpAbout(self, event):
         "Display an 'About GSAS-II' box"

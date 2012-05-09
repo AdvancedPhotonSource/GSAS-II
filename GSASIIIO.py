@@ -1290,6 +1290,10 @@ class ImportBaseclass(object):
         self.strictExtension = strictExtension
         self.warnings = ''
         self.errors = ''
+        # used for readers that will use multiple passes to read
+        # more than one data block
+        self.repeat = False
+        self.repeatcount = 0
         #print 'created',self.__class__
 
     def BlockSelector(self, ChoiceList, ParentFrame=None,
@@ -1318,7 +1322,7 @@ class ImportBaseclass(object):
     def DoneBusy(self):
         wx.EndBusyCursor()
         
-#    def Reader(self, filename, filepointer, ParentFrame=None):
+#    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
 #        '''This method must be supplied in the child class
 #        it will read the file
 #        '''
@@ -1456,3 +1460,47 @@ class ImportStructFactor(ImportBaseclass):
         else:
             print "Unsupported Stract Fact type in ImportStructFactor.UpdateControls"
             raise Exception,"Unsupported Stract Fact type in ImportStructFactor.UpdateControls"
+
+######################################################################
+class ImportPowderData(ImportBaseclass):
+    '''Defines a base class for the reading of files with powder data
+    '''
+    # define some default instrument parameter files
+    # just like GSAS, sigh
+    Iparm_CuKa12 = { # Default Inst. parms for CuKa lab data
+        'INS   HTYPE ':'PXC ',
+        'INS  1 ICONS':'  1.540500  1.544300       0.0         0       0.7    0       0.5   ',
+        'INS  1PRCF1 ':'    3    8      0.01                                                ',
+        'INS  1PRCF11':'   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        ',
+        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        ',
+        }
+    Iparm_Sync06 = { # Default Inst. parms for 0.6A synchrotron data
+        'INS   HTYPE ':'PXC ',
+        'INS  1 ICONS':'  0.600000  0.000000       0.0         0      0.99    0       0.5   ',
+        'INS  1PRCF1 ':'    3    8      0.01                                                ',
+        'INS  1PRCF11':'   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        ',
+        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        ',
+        }
+    def __init__(self,
+                 formatName,
+                 longFormatName=None,
+                 extensionlist=[],
+                 strictExtension=False,
+                 ):
+        ImportBaseclass.__init__(self,formatName,
+                                            longFormatName,
+                                            extensionlist,
+                                            strictExtension)
+        self.powderentry = ['',None,None] #  (filename,Pos,Bank)
+        self.powderdata = [] # Powder dataset
+        '''A powder data set is a list with items [x,y,w,yc,yb,yd]:
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.array(yc), # calc. intensities (zero)
+                np.array(yb), # calc. background (zero)
+                np.array(yd), # obs-calc profiles
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.Sample = G2pdG.SetDefaultSample()

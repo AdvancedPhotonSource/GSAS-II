@@ -40,7 +40,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
             else:
                 return False # found something else
         return True
-    def Reader(self,filename,filepointer, ParentFrame=None):
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         returnstat = False
         cellitems = (
             '_cell_length_a','_cell_length_b','_cell_length_c',

@@ -10,6 +10,7 @@
 # 
 import sys
 import numpy as np
+import os.path
 import GSASIIIO as G2IO
 import CifFile as cif # PyCifRW from James Hester
 import urllib
@@ -41,7 +42,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
             else:
                 return False # found something else
         return True
-    def Reader(self,filename,filepointer, ParentFrame=None):
+    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
         hklitems = ('_refln_index_h','_refln_index_k','_refln_index_l')
         cellitems = (
             '_cell_length_a','_cell_length_b','_cell_length_c',
@@ -51,11 +52,18 @@ class CIFhklReader(G2IO.ImportStructFactor):
             '_pd_phase_name',
             '_chemical_formula_sum'
             )
+        rdbuffer = kwarg.get('buffer')
+        cf = None
         try:
-            self.ShowBusy() # this can take a while
-            ciffile = 'file:'+urllib.pathname2url(filename)
-            cf = cif.ReadCif(ciffile)
-            self.DoneBusy()
+            if self.repeat and rdbuffer is not None:
+                cf = rdbuffer.get('lastcif')
+                print 'no-parse'
+            if cf is None:
+                print 'parse'
+                self.ShowBusy() # this can take a while
+                ciffile = 'file:'+urllib.pathname2url(filename)
+                cf = cif.ReadCif(ciffile)
+                self.DoneBusy()
             # scan blocks for reflections
             blklist = []
             blktype = []
@@ -103,88 +111,100 @@ class CIFhklReader(G2IO.ImportStructFactor):
                     if s: choice[-1] += ', cell: ' + s
                     sg = cf[blknm].get("_symmetry_space_group_name_H-M")
                     if sg: choice[-1] += ', (' + sg.strip() + ')'
-                selblk = self.BlockSelector(
-                    choice,
-                    ParentFrame=ParentFrame,
-                    title='Select a dataset from one the CIF data_ blocks below',
-                    size=(600,100),
-                    header='Dataset Selector')
+                choice.append('Import all of the above')
+                if self.repeat: # we were called to repeat the read
+                    selblk = self.repeatcount
+                    self.repeatcount += 1
+                    if self.repeatcount >= len(blklist): self.repeat = False
+                else:
+                    selblk = self.BlockSelector(
+                        choice,
+                        ParentFrame=ParentFrame,
+                        title='Select a dataset from one the CIF data_ blocks below',
+                        size=(600,100),
+                        header='Dataset Selector')
             if selblk is None:
                 return False # no block selected or available
+            if selblk >= len(blklist): # all blocks selected
+                selblk = 0
+                self.repeat = True
+                if rdbuffer is not None:
+                    rdbuffer['lastcif'] = cf # save the parsed cif for the next loop
+                self.repeatcount = 1
+            blknm = blklist[selblk]
+            blk = cf[blklist[selblk]]
+            self.objname = os.path.basename(filename)+':'+str(blknm)
+            # read in reflections
+            refloop = blk.GetLoop('_refln_index_h')
+            itemkeys = {}
+            # prepare an index to the CIF reflection loop
+            for i,key in enumerate(refloop.keys()):
+                itemkeys[key.lower()] = i
+            if '_refln_f_squared_calc' in itemkeys:
+                FcalcPresent = True
+            elif '_refln_f_calc' in itemkeys:
+                FcalcPresent = True
             else:
-                blknm = blklist[selblk]
-                blk = cf[blklist[selblk]]
-                # read in reflections
-                refloop = blk.GetLoop('_refln_index_h')
-                itemkeys = {}
-                # prepare an index to the CIF reflection loop
-                for i,key in enumerate(refloop.keys()):
-                    itemkeys[key.lower()] = i
+                FcalcPresent = False
+            for item in refloop:
+                HKL = []
+                for i in hklitems: # ('_refln_index_h','_refln_index_k','_refln_index_l')
+                    num = itemkeys.get(i)
+                    try:
+                        HKL.append(int(item[num]))
+                    except:
+                        HKL.append('.')
+                ref = [HKL,0.,0.,0,0,0,0]  # HKL. Fo**2, sig(Fo**2), Fc, Fcp, Fcpp & phase
+                # get F or F**2 and sigma
+                if '_refln_f_squared_meas' in itemkeys:
+                    try:
+                        ref[1] = float(item[itemkeys['_refln_f_squared_meas']])
+                    except:
+                        pass
+                    if  '_refln_f_squared_sigma' in itemkeys:
+                        try:
+                            ref[2] = float(item[itemkeys['_refln_f_squared_sigma']])
+                        except:
+                            pass                            
+                elif '_refln_f_meas' in itemkeys:
+                    try:
+                        ref[1] = float(item[itemkeys['_refln_f_meas']])**2
+                    except:
+                        pass                                
+                    if  '_refln_f_sigma' in itemkeys:
+                        try:
+                            ref[2] = 2.*sqrt(ref[1])*float(item[itemkeys['_refln_f_sigma']])
+                        except:
+                            pass                                
                 if '_refln_f_squared_calc' in itemkeys:
-                    FcalcPresent = True
+                    try:
+                        ref[3] = float(item[itemkeys['_refln_f_squared_calc']])
+                    except:
+                        pass                                
                 elif '_refln_f_calc' in itemkeys:
-                    FcalcPresent = True
-                else:
-                    FcalcPresent = False
-                for item in refloop:
-                    HKL = []
-                    for i in hklitems: # ('_refln_index_h','_refln_index_k','_refln_index_l')
-                        num = itemkeys.get(i)
-                        try:
-                            HKL.append(int(item[num]))
-                        except:
-                            HKL.append('.')
-                    ref = [HKL,0.,0.,0,0,0,0]  # HKL. Fo**2, sig(Fo**2), Fc, Fcp, Fcpp & phase
-                    # get F or F**2 and sigma
-                    if '_refln_f_squared_meas' in itemkeys:
-                        try:
-                            ref[1] = float(item[itemkeys['_refln_f_squared_meas']])
-                        except:
-                            pass
-                        if  '_refln_f_squared_sigma' in itemkeys:
-                            try:
-                                ref[2] = float(item[itemkeys['_refln_f_squared_sigma']])
-                            except:
-                                pass                            
-                    elif '_refln_f_meas' in itemkeys:
-                        try:
-                            ref[1] = float(item[itemkeys['_refln_f_meas']])**2
-                        except:
-                            pass                                
-                        if  '_refln_f_sigma' in itemkeys:
-                            try:
-                                ref[2] = 2.*sqrt(ref[1])*float(item[itemkeys['_refln_f_sigma']])
-                            except:
-                                pass                                
-                    if '_refln_f_squared_calc' in itemkeys:
-                        try:
-                            ref[3] = float(item[itemkeys['_refln_f_squared_calc']])
-                        except:
-                            pass                                
-                    elif '_refln_f_calc' in itemkeys:
-                        try:
-                            ref[3] = float(item[itemkeys['_refln_f_calc']])**2
-                        except:
-                            pass                                
-                    if '_refln_phase_calc' in itemkeys:
-                        try:
-                            ref[6] = float(item[itemkeys['_refln_phase_calc']])
-                        except:
-                            pass                                
- 
-                    self.RefList.append(ref)
-                self.UpdateControls(Type='Fosq',FcalcPresent=FcalcPresent) # set Fobs type & if Fcalc values are loaded
-                if blk.get('_diffrn_radiation_probe'):
-                    if blk['_diffrn_radiation_probe'] == 'neutron':
-                        type = 'SNC'
-                else:
-                    type = 'SXC'
-                if blk.get('_diffrn_radiation_wavelength'):
-                    wave = blk['_diffrn_radiation_wavelength']
-                else:
-                    wave = None
-                self.UpdateParameters(Type=type,Wave=wave) # histogram type
-                return True
+                    try:
+                        ref[3] = float(item[itemkeys['_refln_f_calc']])**2
+                    except:
+                        pass                                
+                if '_refln_phase_calc' in itemkeys:
+                    try:
+                        ref[6] = float(item[itemkeys['_refln_phase_calc']])
+                    except:
+                        pass                                
+
+                self.RefList.append(ref)
+            self.UpdateControls(Type='Fosq',FcalcPresent=FcalcPresent) # set Fobs type & if Fcalc values are loaded
+            if blk.get('_diffrn_radiation_probe'):
+                if blk['_diffrn_radiation_probe'] == 'neutron':
+                    type = 'SNC'
+            else:
+                type = 'SXC'
+            if blk.get('_diffrn_radiation_wavelength'):
+                wave = blk['_diffrn_radiation_wavelength']
+            else:
+                wave = None
+            self.UpdateParameters(Type=type,Wave=wave) # histogram type
+            return True
         except Exception as detail:
             print self.formatName+' read error:'+str(detail) # for testing
             import traceback

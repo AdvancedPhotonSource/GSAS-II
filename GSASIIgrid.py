@@ -142,14 +142,14 @@ class MyHelp(wx.Menu):
                 id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = helpType
-        self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
-            text='&About GSAS-II')
-        frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
         for lbl,indx in morehelpitems:
             helpobj = self.Append(text=lbl,
                 id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = indx
+        self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
+            text='&About GSAS-II')
+        frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
 
     def OnHelpById(self,event):
         '''Called when Help on... is pressed in a menu. Brings up

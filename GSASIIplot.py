@@ -424,7 +424,10 @@ def PlotPatterns(G2frame,newPlot=False):
                 except KeyError:
                     wave = Parms['Lam1']
                 if G2frame.qPlot:
-                    xpos = 2.0*asind(xpos*wave/(4*math.pi))
+                    try:
+                        xpos = 2.0*asind(xpos*wave/(4*math.pi))
+                    except ValueError:      #avoid bad value in asin beyond upper limit
+                        pass
                 dsp = 0.0
                 if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                     dsp = wave/(2.*sind(abs(xpos)/2.0))
@@ -549,7 +552,7 @@ def PlotPatterns(G2frame,newPlot=False):
             'PWDR' in G2frame.PatternTree.GetItemText(PickId)) and xpos:
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             pick = str(G2frame.itemPicked).split('(')[1].strip(')')
-            if 'Line' not in pick:       #avoid data points, etc.
+            if 'line' not in pick:       #avoid data points, etc.
                 num = Phases.keys().index(pick)
                 if num:
                     G2frame.refDelt = -(event.ydata-G2frame.refOffset)/(num*Ymax)
@@ -749,6 +752,8 @@ def PlotPatterns(G2frame,newPlot=False):
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
                 peaks = Phases[phase]
+                if not peaks:
+                    continue
                 peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = G2frame.refOffset-pId*Ymax*G2frame.refDelt*np.ones_like(peak)
                 if G2frame.qPlot:
@@ -757,7 +762,8 @@ def PlotPatterns(G2frame,newPlot=False):
                     Plot.plot(peak.T[1],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
             if len(Phases):
                 handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
-                Plot.legend(handles[::2],legends[::2],title='Phases',loc='best')    #skip every other one
+                if handles:
+                    Plot.legend(handles[::2],legends[::2],title='Phases',loc='best')    #skip every other one
             
     if G2frame.Contour:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)

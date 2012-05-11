@@ -83,7 +83,7 @@ try:
 except:
     pass
 #    print "MKL module not present"
-__version__ = '0.1.5'
+__version__ = '0.2.0'
 G2gd.__version__ = __version__
 print "This is GSAS-II version:     ",__version__
 

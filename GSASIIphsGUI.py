@@ -1441,7 +1441,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cx,ct,cs = [2,1,6]         #x, type & style
 #        elif generalData['Type'] == 'modulated':
 #           ?????   for future
-        if not drawingData['Atoms']:
+        if not drawingData.get('Atoms'):
             for atom in atomData:
                 DrawAtomAdd(drawingData,atom)
             drawingData['atomPtrs'] = [cx,ct,cs]
@@ -1781,6 +1781,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawAtoms.ClearSelection()
             dlg.Destroy()
             G2frame.dataFrame.SetStatusText('')
+            G2plt.PlotStructure(G2frame,data)
             
     def ResetAtomColors(event):
         generalData = data['General']
@@ -3643,9 +3644,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mapData.update(G2mth.FourierMap(data,reflData))
         mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
+        if not data['Drawing']:                 #if new drawing - no drawing data!
+            SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
         
     def printRho(SGLaue,rho,rhoMax):                          
@@ -3700,6 +3704,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
+        UpdateDrawAtoms()
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
         

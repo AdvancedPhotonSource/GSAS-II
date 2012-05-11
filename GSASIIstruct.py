@@ -2305,7 +2305,7 @@ def GetHStrainShift(refl,SGData,phfx,parmDict):
     else:
         Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2+ \
             parmDict[phfx+'D12']*h*k+parmDict[phfx+'D13']*h*l+parmDict[phfx+'D23']*k*l
-    return Dij*refl[4]**2*tand(refl[5]/2.0)
+    return -Dij*refl[4]**2*tand(refl[5]/2.0)
             
 def GetHStrainShiftDerv(refl,SGData,phfx):
     laue = SGData['SGLaue']
@@ -2335,7 +2335,7 @@ def GetHStrainShiftDerv(refl,SGData,phfx):
         dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2,
             phfx+'D12':h*k,phfx+'D13':h*l,phfx+'D23':k*l}
     for item in dDijDict:
-        dDijDict[item] *= refl[4]**2*tand(refl[5]/2.0)
+        dDijDict[item] *= -refl[4]**2*tand(refl[5]/2.0)
     return dDijDict
     
 def GetFprime(controlDict,Histograms):
@@ -2393,14 +2393,18 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         yp = np.zeros_like(yb)
                         Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
                         iBeg = max(xB,np.searchsorted(x,refl[5]-fmin))
-                        iFin = min(np.searchsorted(x,refl[5]+fmax),xF)
+                        iFin = max(xB,min(np.searchsorted(x,refl[5]+fmax),xF))
                         iFin2 = iFin
                         yp[iBeg:iFin] = refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                         if Ka2:
                             pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                             Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
-                            iBeg2 = max(xB,np.searchsorted(x[xB:xF],pos2-fmin))
-                            iFin2 = min(np.searchsorted(x[xB:xF],pos2+fmax),xF)
+                            iBeg2 = max(xB,np.searchsorted(x,pos2-fmin))
+                            iFin2 = min(np.searchsorted(x,pos2+fmax),xF)
+                            if not iBeg2+iFin2:       #peak below low limit - skip peak
+                                continue
+                            elif not iBeg2-iFin2:     #peak above high limit - done
+                                break
                             yp[iBeg2:iFin2] += refl[13]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])        #and here
                         refl[8] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[13]*(1.+kRatio)),0.0))
                     elif 'T' in calcControls[hfx+'histType']:

@@ -57,9 +57,8 @@ class CIFhklReader(G2IO.ImportStructFactor):
         try:
             if self.repeat and rdbuffer is not None:
                 cf = rdbuffer.get('lastcif')
-                print 'no-parse'
+                print 'Reuse previously parsed CIF'
             if cf is None:
-                print 'parse'
                 self.ShowBusy() # this can take a while
                 ciffile = 'file:'+urllib.pathname2url(filename)
                 cf = cif.ReadCif(ciffile)

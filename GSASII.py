@@ -10,7 +10,7 @@
 ########### SVN repository information ###################
 
 import os
-import os.path as ospath
+#import os.path as ospath
 import sys
 import math
 import copy
@@ -35,13 +35,13 @@ except ImportError:
     def install_with_easyinstall(package):
         try: 
             print "trying a system-wide PyOpenGl install"
-            easy_install.main(['-f',ospath.split(__file__)[0],package])
+            easy_install.main(['-f',os.path.split(__file__)[0],package])
             return
         except:
             pass
         try: 
             print "trying a user level PyOpenGl install"
-            easy_install.main(['-f',ospath.split(__file__)[0],'--user',package])
+            easy_install.main(['-f',os.path.split(__file__)[0],'--user',package])
             return
         except:
             print "Install of '+package+' failed. Please report this information:"
@@ -201,16 +201,22 @@ class GSASII(wx.Frame):
     def _init_Import_routines(self,parent,prefix,readerlist,errprefix):
         '''import all the import readers matching the prefix
         '''
-        path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file
+        #path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file
+        #pathlist = sys.path[:]
+        #if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
+        path2GSAS2 = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), # location of this file
+            'imports')
         pathlist = sys.path[:]
         if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
+
         filelist = []
         for path in pathlist:
             for filename in glob.iglob(os.path.join(
                 path,
-                "G2import"+prefix+"*.py")):
+                "G2"+prefix+"*.py")):
                 filelist.append(filename)    
-                #print 'found',filename
+                print 'debug: found',filename
         filelist = sorted(list(set(filelist))) # remove duplicates
         for filename in filelist:
             path,rootname = os.path.split(filename)
@@ -312,7 +318,7 @@ class GSASII(wx.Frame):
             fp = None
             msg = ''
             try:
-                fp = open(filename,'r')
+                fp = open(filename,'Ur')
                 self.lastimport = filename
                 # try the file first with Readers that specify the
                 # files extension and later with ones that allow it
@@ -328,7 +334,7 @@ class GSASII(wx.Frame):
                             block += 1
                             repeat = False
                             fp.seek(0)  # rewind
-                            rd.objname = ospath.basename(filename)
+                            rd.objname = os.path.basename(filename)
                             flag = rd.Reader(filename,fp,self,
                                              buffer=rdbuffer,
                                              blocknum=block)
@@ -485,10 +491,118 @@ class GSASII(wx.Frame):
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
             
-    def GetPowderIparm(self,rd, prevIparm):
+    def ReadPowderIparm(self,instfile,bank,databanks,rd):
+        '''Read a GSAS (old) instrument parameter file'''
+        if not os.path.exists(instfile): # no such file
+            return {}
+        try:
+            fp = open(instfile,'Ur')
+            Iparm = {}
+            for S in fp:
+                Iparm[S[:12]] = S[12:-1]
+        except IOError:
+            print('Error reading file:'+str(instfile))
+        finally:        
+            fp.close()
+
+        try:
+            ibanks = int(Iparm.get('INS   BANK  ').strip())
+        except:
+            ibanks = 1
+        if ibanks == 1: # there is only one bank here, return it
+            rd.instbank = 1
+            return Iparm
+        if ibanks != databanks:
+            # number of banks in data and prm file not not agree, need a
+            # choice from a human here
+            choices = []
+            for i in range(1,1+len(ibanks)):
+                choices.append('Bank '+str(i))
+            bank = rd.BlockSelector(
+                choices, self,
+                title='Select an instrument parameter block for '+
+                rd.powderentry[0]+' block '+str(bank)+
+                '\nCancel: Use default settings',
+                header='Block Selector')
+        if bank is None: return {}
+        # pull out requested bank # bank from the data, and change the bank to 1
+        IparmS = {}
+        for key in Iparm:
+            if key[4:6] == "  ":
+                IparmS[key] = Iparm[key]
+            elif int(key[4:6].strip()) == bank:
+                IparmS[key[:4]+' 1'+key[6:]] = Iparm[key]
+        rd.instbank = bank
+        return IparmS
+                        
+    def GetPowderIparm(self,rd, prevIparm, lastIparmfile, lastdatafile):
         '''Open and read an instrument parameter file for a data file
-        for now, just set defaults
+        for now, just use old GSAS type files, but someday allow other options.
+        Then update SetPowderInstParms to work with that input
         '''
+        # stuff we might need from the reader
+        filename = rd.powderentry[0]
+        bank = rd.powderentry[2]
+        numbanks = rd.numbanks
+        # is there an instrument parameter file defined for the current data set?
+        if rd.instparm or lastdatafile == filename:
+            if rd.instparm:
+                instfile = os.path.join(os.path.split(filename)[0],
+                                    rd.instparm)
+            else:
+                # for multiple reads of one data file, reuse the inst parm file
+                instfile = lastIparmfile
+            if os.path.exists(instfile):
+                print 'debug: try read',instfile
+                Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+                if Iparm:
+                    print 'debug: success'
+                    rd.instfile = instfile
+                    rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                    return Iparm
+            else:
+                self.ErrorDialog('Open Error',
+                                 'Error opening file '+str(instfile)
+                                 +' requested by file '+ filename)
+        # is there an instrument parameter file matching the current file
+        # with extension .inst or .prm? If so read it
+        basename = os.path.splitext(filename)[0]
+        for ext in '.inst','.prm':
+            instfile = basename + ext
+            Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+            if Iparm:
+                print 'debug: success'
+                rd.instfile = instfile
+                rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                return Iparm
+            else:
+                print 'debug open/read failed',instfile
+                pass # fail silently
+        
+        while True: # loop until we get a file that works or we get a cancel
+            instfile = ''
+            dlg = wx.FileDialog(self,
+                                'Choose an instrument file or press Cancel to select a default setting',
+                                '.', '',
+                                'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
+                                wx.OPEN|wx.CHANGE_DIR)
+            if os.path.exists(lastIparmfile):
+                dlg.SetFilename(lastIparmfile)
+            if dlg.ShowModal() == wx.ID_OK:
+                instfile = dlg.GetPath()
+            dlg.Destroy()
+            if not instfile: break
+            Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+            if Iparm:
+                print 'debug: success with',instfile
+                rd.instfile = instfile
+                rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                return Iparm
+            else:
+                self.ErrorDialog('Read Error',
+                                 'Error opening/reading file '+str(instfile))
+        
+        # still no success: offer the user a last choice
         dlg = wx.MessageDialog(self,
 '''Is this laboratory Cu Ka1/Ka2 data? 
 (No = 0.6A wavelength synchrotron data)
@@ -500,8 +614,12 @@ Change wavelength in Instrument Parameters if needed''',
         finally:
             dlg.Destroy()
         if result == wx.ID_YES:
+            rd.instfile = ''
+            rd.instmsg = 'default: CuKa12'
             return rd.Iparm_CuKa12
         else:
+            rd.instfile = ''
+            rd.instmsg =  'default: 0.6A synchrotron'
             return rd.Iparm_Sync06
 
     def SetPowderInstParms(self, Iparm):
@@ -538,6 +656,9 @@ Change wavelength in Instrument Parameters if needed''',
             return [tuple(data),data,codes,names]
 
     def OnImportPowder(self,event):
+        '''reads powder data using a variety of formats
+        reads an instrument parameter file for each dataset
+        '''
         reqrdr = self.ImportMenuId.get(event.GetId())  # look up which format was requested
         rdlist = self.OnImportGeneric(reqrdr,
                                       self.ImportPowderReaderlist,
@@ -545,11 +666,18 @@ Change wavelength in Instrument Parameters if needed''',
         if len(rdlist) == 0: return
         self.CheckNotebook()
         Iparm = None
+        lastIparmfile = ''
+        lastdatafile = ''
         for rd in rdlist:
-            Iparm = self.GetPowderIparm(rd, Iparm)
+            # get instrument parameters for each dataset
+            Iparm = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+            lastIparmfile = rd.instfile
+            lastdatafile = rd.powderentry[0]
             print 'Read powder data '+str(
                 rd.idstring)+' from file '+str(
-                self.lastimport)
+                self.lastimport) + ' with parameters from '+str(
+                rd.instmsg)
+            # data are read, now store them in the tree
             Id = self.PatternTree.AppendItem(
                 parent=self.root,
                 text='PWDR '+rd.idstring)
@@ -682,7 +810,7 @@ Change wavelength in Instrument Parameters if needed''',
         # various defaults
         self.oldFocus = None
         self.GSASprojectfile = ''
-        self.dirname = ospath.expanduser('~')       #start in the users home directory by default; may be meaningless
+        self.dirname = os.path.expanduser('~')       #start in the users home directory by default; may be meaningless
         self.undofile = ''
         self.TreeItemDelete = False
         self.Offset = [0.0,0.0]
@@ -690,7 +818,7 @@ Change wavelength in Instrument Parameters if needed''',
         self.refOffset = -100.0
         self.refDelt = .01
         self.Weight = False
-        self.IparmName = ''
+        self.IparmName = ''  # to be removed when SelectPowderData & GetInstrumentFile is
         self.IfPlot = False
         self.PatternId = 0
         self.PickId = 0
@@ -722,7 +850,7 @@ Change wavelength in Instrument Parameters if needed''',
         arg = sys.argv
         if len(arg) > 1:
             self.GSASprojectfile = arg[1]
-            self.dirname = ospath.dirname(arg[1])
+            self.dirname = os.path.dirname(arg[1])
             if self.dirname: os.chdir(self.dirname)
             G2IO.ProjFileOpen(self)
             self.PatternTree.Expand(self.root)
@@ -791,7 +919,7 @@ Change wavelength in Instrument Parameters if needed''',
                     try:
                         for Item in Data:
                             vals = Item[2].split()          #split up the BANK record
-                            Id = self.PatternTree.AppendItem(parent=self.root,text='PWDR '+ospath.basename(Item[0])+': '+vals[0]+vals[1])
+                            Id = self.PatternTree.AppendItem(parent=self.root,text='PWDR '+os.path.basename(Item[0])+': '+vals[0]+vals[1])
                             data = G2IO.GetPowderData(filename,Item[1],Item[2],DataType)
                             self.PatternTree.SetItemPyData(Id,[Item,data])
                             '''
@@ -861,7 +989,7 @@ Change wavelength in Instrument Parameters if needed''',
                 self.HKL = []
                 self.powderfile = dlg.GetPath()
                 comments,peaks = G2IO.GetPowderPeaks(self.powderfile)
-                Id = self.PatternTree.AppendItem(parent=self.root,text='PKS '+ospath.basename(self.powderfile))
+                Id = self.PatternTree.AppendItem(parent=self.root,text='PKS '+os.path.basename(self.powderfile))
                 data = ['PKS',Cuka,0.0]
                 names = ['Type','Lam','Zero'] 
                 codes = [0,0]
@@ -893,7 +1021,7 @@ Change wavelength in Instrument Parameters if needed''',
                 for imagefile in imagefiles:
                     Comments,Data,Npix,Image = G2IO.GetImageData(self,imagefile)
                     if Comments:
-                        Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+ospath.basename(imagefile))
+                        Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+os.path.basename(imagefile))
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
                         Imax = np.amax(Image)
                         Imin = max(0.0,np.amin(Image))          #force positive
@@ -959,7 +1087,7 @@ Change wavelength in Instrument Parameters if needed''',
                     Data = {}
                     names = ['Type','Lam']
                     HKLref,HKLmin,HKLmax,FoMax,ifFc = G2IO.GetHKLData(filename)
-                    Id = self.PatternTree.AppendItem(parent=self.root,text='HKLF '+ospath.basename(filename))
+                    Id = self.PatternTree.AppendItem(parent=self.root,text='HKLF '+os.path.basename(filename))
                     self.PatternTree.SetItemPyData(Id,HKLref)
                     Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
                     data = ['SXC',1.5428,]

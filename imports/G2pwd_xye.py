@@ -23,6 +23,35 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             longFormatName = 'Topas .xye powder data file'
             )
 
+    # Validate the contents -- make sure we only have valid lines
+    def ContentsValidator(self, filepointer):
+        #print 'ContentsValidator: '+self.formatName
+        gotCcomment = False
+        begin = True
+        for i,S in enumerate(filepointer):
+            if i > 1000: break
+            if begin:
+                if gotCcomment and S.find('*/') > -1:
+                    begin = False
+                    continue
+                if S.strip().startswith('/*'):
+                    gotCcomment = True
+                    continue   
+                if S[0] == '#':
+                    continue       #ignore comments, if any
+                else:
+                    begin = False
+                # valid line to read? 
+            vals = S.split()
+            if len(vals) == 2 or len(vals) == 3:
+                continue
+            else:
+                print 'ContentsValidator: '+self.formatName
+                print 'Unexpected information in line:',i+1 # debug info
+                print line
+                return False
+        return True # no errors encountered
+
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         x = []
         y = []
@@ -75,7 +104,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                 np.zeros(N), # obs-calc profiles
                 ]
             self.powderentry[0] = filename
-            #self.powderentry[1] = pos # position
+            #self.powderentry[1] = pos # bank offset (N/A here)
             self.powderentry[2] = 1 # xye file only has one bank
             self.idstring = ospath.basename(filename)
             # scan comments for temperature

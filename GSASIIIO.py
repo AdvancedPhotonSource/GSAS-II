@@ -43,6 +43,7 @@ def FileDlgFixExt(dlg,file):
         file += ext
     return file
     
+# to be removed
 def SelectPowderData(G2frame, filename):
     """Selects banks of data from a filename of any GSAS powder data format
     Input - filename: any GSAS powder data formatted file (currently STD, FXYE, FXY & ESD)
@@ -149,6 +150,7 @@ Change wavelength in Instrument Parameters if needed''','Data type?',
             dlg.Destroy()
     return FoundData,Iparm,Comments,Temperature
 
+# to be removed
 def GetInstrumentFile(G2frame,filename):
     import os.path as op
     dlg = wx.FileDialog(G2frame,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
@@ -165,6 +167,7 @@ def GetInstrumentFile(G2frame,filename):
         dlg.Destroy()
     return filename
 
+# to be removed
 def GetInstrumentData(IparmName):
     file = open(IparmName, 'Ur')
     S = 1
@@ -304,6 +307,7 @@ def GetHKLData(filename):
     File.close()
     return HKLref,HKLmin,HKLmax,FoMax,ifFc
 
+# to be removed
 def GetPowderData(filename,Pos,Bank,DataType):
     '''Reads one BANK of data from GSAS raw powder data file
     input:
@@ -335,6 +339,7 @@ def GetPowderData(filename,Pos,Bank,DataType):
         return GetSTDdata(filename,Pos,Bank,DataType)
     return []
 
+# to be removed
 def GetFXYEdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
     File.seek(Pos)
@@ -360,6 +365,7 @@ def GetFXYEdata(filename,Pos,Bank,DataType):
     N = len(x)
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
+# to be removed
 def GetXYEdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
     File.seek(Pos)
@@ -386,6 +392,7 @@ def GetXYEdata(filename,Pos,Bank,DataType):
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
     
+# to be removed
 def GetFXYdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
     File.seek(Pos)
@@ -411,6 +418,7 @@ def GetFXYdata(filename,Pos,Bank,DataType):
     N = len(x)
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
+# to be removed
 def GetESDdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
     cons = Bank.split()
@@ -444,6 +452,7 @@ def GetESDdata(filename,Pos,Bank,DataType):
     N = len(x)
     return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
 
+# to be removed
 def GetSTDdata(filename,Pos,Bank,DataType):
     File = open(filename,'Ur')
     cons = Bank.split()
@@ -1316,6 +1325,33 @@ class ImportBaseclass(object):
             dlg.Destroy()
             return None
 
+    def MultipleBlockSelector(self, ChoiceList, ParentFrame=None,
+                      title='Select a block',
+                      size=None, header='Block Selector'):
+        ''' Provide a wx dialog to select a block of data if the file contains more
+        than one set of data and one must be selected.
+        Returns a list of the selected blocks
+        '''
+        dlg = wx.MultiChoiceDialog(
+            ParentFrame,
+            title, header,
+            ChoiceList+['Select all'],
+            wx.CHOICEDLG_STYLE
+            )
+        if size: dlg.SetSize(size)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return []
+        selected = []
+        if len(ChoiceList) in sel:
+            return range(len(ChoiceList))
+        else:
+            return sel
+        return selected
+
     def ShowBusy(self):
         wx.BeginBusyCursor()
 
@@ -1504,3 +1540,9 @@ class ImportPowderData(ImportBaseclass):
         self.comments = []
         self.idstring = ''
         self.Sample = G2pdG.SetDefaultSample()
+        self.instparm = None # name hint 
+        self.instfile = '' # full path name to instrument parameter file
+        self.instbank = '' # inst parm bank number
+        self.instmsg = ''  # a label that gets printed to show
+                           # where instrument parameters are from
+        self.numbanks = 1

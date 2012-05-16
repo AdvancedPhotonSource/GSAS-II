@@ -51,6 +51,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         rdbuffer = kwarg.get('buffer')
         title = ''
         comments = None
+        selections = None
 
         # reload previously saved values
         if self.repeat and rdbuffer is not None:

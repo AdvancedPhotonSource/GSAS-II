@@ -216,7 +216,7 @@ class GSASII(wx.Frame):
                 path,
                 "G2"+prefix+"*.py")):
                 filelist.append(filename)    
-                print 'debug: found',filename
+                #print 'debug: found',filename
         filelist = sorted(list(set(filelist))) # remove duplicates
         for filename in filelist:
             path,rootname = os.path.split(filename)
@@ -277,7 +277,7 @@ class GSASII(wx.Frame):
             choices += w + ")|" + w
             if not reader.strictExtension:
                 choices += "|any file (*.*)|*.*"
-        # get the file
+        # get the file(s)
         if multiple:
             mode = style=wx.OPEN | wx.CHANGE_DIR | wx.MULTIPLE
         else:
@@ -319,6 +319,27 @@ class GSASII(wx.Frame):
             msg = ''
             try:
                 fp = open(filename,'Ur')
+                if len(filelist) == 1:
+                    # confirm we have the right file
+                    rdmsg = 'File '+str(filename)+' begins:\n\n'
+                    for i in range(3):
+                        rdmsg += fp.readline()
+                    rdmsg += '...'
+                    result = wx.ID_NO
+                    # it would be better to use something that
+                    # would resize better, but this will do for now
+                    dlg = wx.MessageDialog(
+                        self, rdmsg,
+                        'Is this the file you want?', 
+                        wx.YES_NO | wx.ICON_QUESTION,
+                        )
+                    dlg.SetSize((700,300)) # does not resize on Mac
+                    try:
+                        result = dlg.ShowModal()
+                    finally:
+                        dlg.Destroy()
+                    if result == wx.ID_NO: return []
+
                 self.lastimport = filename
                 # try the file first with Readers that specify the
                 # files extension and later with ones that allow it
@@ -545,7 +566,7 @@ class GSASII(wx.Frame):
         bank = rd.powderentry[2]
         numbanks = rd.numbanks
         # is there an instrument parameter file defined for the current data set?
-        if rd.instparm or lastdatafile == filename:
+        if rd.instparm or (lastdatafile == filename and lastIparmfile):
             if rd.instparm:
                 instfile = os.path.join(os.path.split(filename)[0],
                                     rd.instparm)
@@ -553,16 +574,17 @@ class GSASII(wx.Frame):
                 # for multiple reads of one data file, reuse the inst parm file
                 instfile = lastIparmfile
             if os.path.exists(instfile):
-                print 'debug: try read',instfile
+                #print 'debug: try read',instfile
                 Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                 if Iparm:
-                    print 'debug: success'
+                    #print 'debug: success'
                     rd.instfile = instfile
                     rd.instmsg = instfile + ' bank ' + str(rd.instbank)
                     return Iparm
             else:
                 self.ErrorDialog('Open Error',
-                                 'Error opening file '+str(instfile)
+                                 'Error opening instrument parameter file '
+                                 +str(instfile)
                                  +' requested by file '+ filename)
         # is there an instrument parameter file matching the current file
         # with extension .inst or .prm? If so read it
@@ -571,18 +593,20 @@ class GSASII(wx.Frame):
             instfile = basename + ext
             Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
             if Iparm:
-                print 'debug: success'
+                #print 'debug: success'
                 rd.instfile = instfile
                 rd.instmsg = instfile + ' bank ' + str(rd.instbank)
                 return Iparm
             else:
-                print 'debug open/read failed',instfile
+                print 'debug: open/read failed',instfile
                 pass # fail silently
         
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
             dlg = wx.FileDialog(self,
-                                'Choose an instrument file or press Cancel to select a default setting',
+                                'Choose an instrument file for '
+                                +rd.idstring
+                                +' or press Cancel to select a default setting',
                                 '.', '',
                                 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
                                 wx.OPEN|wx.CHANGE_DIR)
@@ -594,7 +618,7 @@ class GSASII(wx.Frame):
             if not instfile: break
             Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
             if Iparm:
-                print 'debug: success with',instfile
+                #print 'debug: success with',instfile
                 rd.instfile = instfile
                 rd.instmsg = instfile + ' bank ' + str(rd.instbank)
                 return Iparm
@@ -603,11 +627,11 @@ class GSASII(wx.Frame):
                                  'Error opening/reading file '+str(instfile))
         
         # still no success: offer the user a last choice
-        dlg = wx.MessageDialog(self,
-'''Is this laboratory Cu Ka1/Ka2 data? 
+        msg = 'Are the data from '  + rd.idstring
+        msg += ''' laboratory Cu Ka1/Ka2 data? 
 (No = 0.6A wavelength synchrotron data)
-Change wavelength in Instrument Parameters if needed''',
-                               'Data type?',
+Change wavelength in Instrument Parameters if needed'''
+        dlg = wx.MessageDialog(self, msg, 'Data type?',
                                wx.YES_NO | wx.ICON_QUESTION)
         try:
             result = dlg.ShowModal()
@@ -622,15 +646,28 @@ Change wavelength in Instrument Parameters if needed''',
             rd.instmsg =  'default: 0.6A synchrotron'
             return rd.Iparm_Sync06
 
-    def SetPowderInstParms(self, Iparm):
+    def SetPowderInstParms(self, Iparm, rd):
         '''extracts values from instrument parameter file and creates
         the contents of the instrument parameter tree entry
         '''
         DataType = Iparm['INS   HTYPE '].strip()[0:3]  # take 1st 3 chars
+        # override inst values with values read from data file
+        if rd.instdict.get('type'):
+            DataType = rd.instdict.get('type')
+        wave1 = None
+        wave2 = 0.0
+        if rd.instdict.get('wave'):
+            wl = rd.instdict.get('wave')
+            wave1 = wl[0]
+            if len(wl) > 1: wave2 = wl[1]
         data = [DataType,]
         if 'C' in DataType:
             s = Iparm['INS  1 ICONS']
-            v = (G2IO.sfloat(s[:10]),G2IO.sfloat(s[10:20]),G2IO.sfloat(s[20:30]),G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
+            if not wave1:
+                wave1 = G2IO.sfloat(s[:10])
+                wave2 = G2IO.sfloat(s[10:20])
+            v = (wave1,wave2,
+                 G2IO.sfloat(s[20:30]),G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
             if not v[1]:
                 names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
                 v = (v[0],v[2],v[4])
@@ -697,7 +734,7 @@ Change wavelength in Instrument Parameters if needed''',
                  {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
-                self.SetPowderInstParms(Iparm))
+                self.SetPowderInstParms(Iparm,rd))
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)

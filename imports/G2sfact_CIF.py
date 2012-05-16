@@ -105,8 +105,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         if i == 5: fmt = "%.f"
                         val = cf[blknm].get(key)
                         if val is None: break
-                        s += fmt % cif.get_number_with_esd(
-                            )[0]
+                        s += fmt % cif.get_number_with_esd(val)[0]
                     if s: choice[-1] += ', cell: ' + s
                     sg = cf[blknm].get("_symmetry_space_group_name_H-M")
                     if sg: choice[-1] += ', (' + sg.strip() + ')'

@@ -1269,6 +1269,66 @@ def ReadPDBPhase(filename):
     
     return Phase
 
+class MultipleChoicesDialog(wx.Dialog):
+    '''A dialog that offers a series of choices, each with a title and a wx.Choice
+    widget. Intended to be used Modally. 
+    typical input:
+          choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+          headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+    selections are placed in self.chosen when OK is pressed
+    '''
+    def __init__(self,choicelist,headinglist,
+                 head='Select options',
+                 title='Please select from options below',
+                 parent=None):
+        self.chosen = []
+        wx.Dialog.__init__(
+            self,parent,wx.ID_ANY,head, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((10,10),1)
+        topLabl = wx.StaticText(panel,wx.ID_ANY,title)
+        mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.CENTER,10)
+        self.ChItems = []
+        for choice,lbl in zip(choicelist,headinglist):
+            mainSizer.Add((10,10),1)
+            self.chosen.append(0)
+            topLabl = wx.StaticText(panel,wx.ID_ANY,' '+lbl)
+            mainSizer.Add(topLabl,0,wx.ALIGN_LEFT,10)
+            self.ChItems.append(wx.Choice(self, wx.ID_ANY, (100, 50), choices = choice))
+            mainSizer.Add(self.ChItems[-1],0,wx.ALIGN_CENTER,10)
+
+        OkBtn = wx.Button(panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        panel.SetSizer(mainSizer)
+        panel.Fit()
+        self.Fit()
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        if parent is not None: parent.Raise()
+        # save the results from the choice widgets
+        self.chosen = []
+        for w in self.ChItems:
+            self.chosen.append(w.GetSelection())
+        self.EndModal(wx.ID_OK)              
+            
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        if parent is not None: parent.Raise()
+        self.chosen = []
+        self.EndModal(wx.ID_CANCEL)              
+            
 ######################################################################
 # base classes for reading various types of data files
 #   not used directly, only by subclassing
@@ -1351,6 +1411,23 @@ class ImportBaseclass(object):
         else:
             return sel
         return selected
+
+    def MultipleChoicesDialog(self, choicelist, headinglist, ParentFrame=None, **kwargs):
+        '''A modal dialog that offers a series of choices, each with a title and a wx.Choice
+        widget. 
+        typical input:
+           choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+           headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+        optional keyword parameters are: head (window title) and title
+        returns a list of selected indicies for each choice (or None)
+        '''
+        result = None
+        dlg = MultipleChoicesDialog(choicelist,headinglist,
+                                    parent=ParentFrame, **kwargs)          
+        if dlg.ShowModal() == wx.ID_OK:
+            result = dlg.chosen
+        dlg.Destroy()
+        return result
 
     def ShowBusy(self):
         wx.BeginBusyCursor()
@@ -1546,3 +1623,16 @@ class ImportPowderData(ImportBaseclass):
         self.instmsg = ''  # a label that gets printed to show
                            # where instrument parameters are from
         self.numbanks = 1
+        self.instdict = {} # place items here that will be transferred to the instrument parameters
+
+if __name__ == '__main__':
+    app = wx.PySimpleApp()
+    frm = wx.Frame(None) # create a frame
+    choicelist=[ ('a','b','c'),
+                 ('test1','test2'),('no choice',)]
+    titles = [ 'a, b or c', 'tests', 'No option here']
+    dlg = MultipleChoicesDialog(
+        choicelist,titles,
+        parent=frm)
+    if dlg.ShowModal() == wx.ID_OK:
+        print 'Got OK'

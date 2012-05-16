@@ -604,9 +604,9 @@ class GSASII(wx.Frame):
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
             dlg = wx.FileDialog(self,
-                                'Choose an instrument file for '
+                                'Choose inst parm file for "'
                                 +rd.idstring
-                                +' or press Cancel to select a default setting',
+                                +'" (Cancel for defaults)',
                                 '.', '',
                                 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
                                 wx.OPEN|wx.CHANGE_DIR)
@@ -626,25 +626,22 @@ class GSASII(wx.Frame):
                 self.ErrorDialog('Read Error',
                                  'Error opening/reading file '+str(instfile))
         
-        # still no success: offer the user a last choice
-        msg = 'Are the data from '  + rd.idstring
-        msg += ''' laboratory Cu Ka1/Ka2 data? 
-(No = 0.6A wavelength synchrotron data)
-Change wavelength in Instrument Parameters if needed'''
-        dlg = wx.MessageDialog(self, msg, 'Data type?',
-                               wx.YES_NO | wx.ICON_QUESTION)
-        try:
-            result = dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-        if result == wx.ID_YES:
+        # still no success: offer user choice of defaults
+        while True: # loop until we get a choice
+            choices = []
+            head = 'Select from default instrument parameters for '+rd.idstring
+
+            for l in rd.defaultIparm_lbl:
+                choices.append('Defaults for '+l)
+            res = rd.BlockSelector(
+                choices,
+                ParentFrame=self,
+                title=head,
+                header='Select default inst parms',)
+            if res is None: continue
             rd.instfile = ''
-            rd.instmsg = 'default: CuKa12'
-            return rd.Iparm_CuKa12
-        else:
-            rd.instfile = ''
-            rd.instmsg =  'default: 0.6A synchrotron'
-            return rd.Iparm_Sync06
+            rd.instmsg = 'default: '+rd.defaultIparm_lbl[res]
+            return rd.defaultIparms[res]
 
     def SetPowderInstParms(self, Iparm, rd):
         '''extracts values from instrument parameter file and creates

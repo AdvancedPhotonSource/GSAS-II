@@ -1580,20 +1580,33 @@ class ImportPowderData(ImportBaseclass):
     '''
     # define some default instrument parameter files
     # just like GSAS, sigh
-    Iparm_CuKa12 = { # Default Inst. parms for CuKa lab data
+    defaultIparm_lbl = []
+    defaultIparms = []
+    defaultIparm_lbl.append('CuKa lab data')
+    defaultIparms.append({
         'INS   HTYPE ':'PXC ',
         'INS  1 ICONS':'  1.540500  1.544300       0.0         0       0.7    0       0.5   ',
         'INS  1PRCF1 ':'    3    8      0.01                                                ',
         'INS  1PRCF11':'   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        ',
         'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        ',
-        }
-    Iparm_Sync06 = { # Default Inst. parms for 0.6A synchrotron data
+        })
+    defaultIparm_lbl.append('0.6A synch')
+    defaultIparms.append({
         'INS   HTYPE ':'PXC ',
         'INS  1 ICONS':'  0.600000  0.000000       0.0         0      0.99    0       0.5   ',
         'INS  1PRCF1 ':'    3    8      0.01                                                ',
         'INS  1PRCF11':'   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        ',
         'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        ',
-        }
+        })
+    defaultIparm_lbl.append('1.5A CW neutron data')
+    defaultIparms.append({
+        'INS   HTYPE ':'PNC',
+        'INS  1 ICONS':'   1.54020   0.00000   0.04000         0',
+        'INS  1PRCF1 ':'    3    8      0.01                                                ',
+        'INS  1PRCF1 ':'    3    8     0.005',
+        'INS  1PRCF11':'   0.239700E+03  -0.298200E+03   0.180800E+03   0.000000E+00',
+        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.400000E-01   0.300000E-01',
+        })
     def __init__(self,
                  formatName,
                  longFormatName=None,

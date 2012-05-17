@@ -325,21 +325,22 @@ class GSASII(wx.Frame):
                     for i in range(3):
                         rdmsg += fp.readline()
                     rdmsg += '...'
-                    result = wx.ID_NO
-                    # it would be better to use something that
-                    # would resize better, but this will do for now
-                    dlg = wx.MessageDialog(
-                        self, rdmsg,
-                        'Is this the file you want?', 
-                        wx.YES_NO | wx.ICON_QUESTION,
-                        )
-                    dlg.SetSize((700,300)) # does not resize on Mac
-                    try:
-                        result = dlg.ShowModal()
-                    finally:
-                        dlg.Destroy()
-                    if result == wx.ID_NO: return []
-
+                    if all(16 < ord(c) < 128 for c in rdmsg): # show only if ASCII
+                        result = wx.ID_NO
+                        # it would be better to use something that
+                        # would resize better, but this will do for now
+                        dlg = wx.MessageDialog(
+                            self, rdmsg,
+                            'Is this the file you want?', 
+                            wx.YES_NO | wx.ICON_QUESTION,
+                            )
+                        dlg.SetSize((700,300)) # does not resize on Mac
+                        try:
+                            result = dlg.ShowModal()
+                        finally:
+                            dlg.Destroy()
+                            if result == wx.ID_NO: return []
+                            
                 self.lastimport = filename
                 # try the file first with Readers that specify the
                 # files extension and later with ones that allow it
@@ -392,16 +393,17 @@ class GSASII(wx.Frame):
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Import Phase menu',
             submenu, help='Import phase data')
-        item = submenu.Append(wx.ID_ANY,
-                              help='Import phase data based selected by extension',
-                              kind=wx.ITEM_NORMAL,text='Import Phase by extension')
-        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
         for reader in self.ImportPhaseReaderlist:
             item = submenu.Append(wx.ID_ANY,
                 help='Import specific format phase data',
-                kind=wx.ITEM_NORMAL,text='Import Phase '+reader.formatName+'...')
+                kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
+        item = submenu.Append(wx.ID_ANY,
+                              help='Import phase data, use file to try to determine format',
+                              kind=wx.ITEM_NORMAL,
+                              text='guess format from file')
+        self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
 
     def OnImportPhase(self,event):
         # look up which format was requested
@@ -446,16 +448,17 @@ class GSASII(wx.Frame):
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Import Structure Factor menu',
             submenu, help='Import Structure Factor data')
-        item = submenu.Append(wx.ID_ANY,
-                              help='Import Structure Factor (determine format from file extension)',
-                              kind=wx.ITEM_NORMAL,text='Import Structure Factor (fmt from extension)')
-        self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
         for reader in self.ImportSfactReaderlist:
             item = submenu.Append(wx.ID_ANY,
                 help='Import specific format Structure Factor data',
-                kind=wx.ITEM_NORMAL,text='Import Structure Factor '+reader.formatName+'...')
+                kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
+        item = submenu.Append(wx.ID_ANY,
+                              help='Import Structure Factor, use file to try to determine format',
+                              kind=wx.ITEM_NORMAL,
+                              text='guess format from file')
+        self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
 
     def OnImportSfact(self,event):
         # look up which format was requested
@@ -501,16 +504,18 @@ class GSASII(wx.Frame):
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Import Powder Data menu',
             submenu, help='Import Powder data')
-        item = submenu.Append(wx.ID_ANY,
-                              help='Import powder data (determine format from file extension)',
-                              kind=wx.ITEM_NORMAL,text='Import powder data (fmt from extension)')
-        self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
         for reader in self.ImportPowderReaderlist:
             item = submenu.Append(wx.ID_ANY,
-                help='Import specific format powder data',
-                kind=wx.ITEM_NORMAL,text='Import powder data from '+reader.formatName+' file ...')
+                                  help='Import specific format powder data',
+                                  kind=wx.ITEM_NORMAL,
+                                  text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
+        item = submenu.Append(wx.ID_ANY,
+                              help='Import powder data, use file to try to determine format',
+                              kind=wx.ITEM_NORMAL,
+                              text='guess format from file')
+        self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
             
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file'''

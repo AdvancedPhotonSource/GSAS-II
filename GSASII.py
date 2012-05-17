@@ -324,22 +324,24 @@ class GSASII(wx.Frame):
                     rdmsg = 'File '+str(filename)+' begins:\n\n'
                     for i in range(3):
                         rdmsg += fp.readline()
-                    rdmsg += '...'
-                    if all(16 < ord(c) < 128 for c in rdmsg): # show only if ASCII
-                        result = wx.ID_NO
-                        # it would be better to use something that
-                        # would resize better, but this will do for now
-                        dlg = wx.MessageDialog(
-                            self, rdmsg,
-                            'Is this the file you want?', 
-                            wx.YES_NO | wx.ICON_QUESTION,
-                            )
-                        dlg.SetSize((700,300)) # does not resize on Mac
-                        try:
-                            result = dlg.ShowModal()
-                        finally:
-                            dlg.Destroy()
-                            if result == wx.ID_NO: return []
+                    rdmsg += '\n\nDo you want to read this file?'
+                    if not all([ord(c) < 128 for c in rdmsg]): # show only if ASCII
+                        rdmsg = 'File '+str(
+                            filename)+' is a binary file. Do you want to read this file?'
+                    result = wx.ID_NO
+                    # it would be better to use something that
+                    # would resize better, but this will do for now
+                    dlg = wx.MessageDialog(
+                        self, rdmsg,
+                        'Is this the file you want?', 
+                        wx.YES_NO | wx.ICON_QUESTION,
+                        )
+                    dlg.SetSize((700,300)) # does not resize on Mac
+                    try:
+                        result = dlg.ShowModal()
+                    finally:
+                        dlg.Destroy()
+                    if result == wx.ID_NO: return []
                             
                 self.lastimport = filename
                 # try the file first with Readers that specify the

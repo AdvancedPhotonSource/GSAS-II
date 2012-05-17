@@ -29,7 +29,6 @@ class PhaseReaderClass(G2IO.ImportPhase):
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         try:
             phasenames = G2str.GetPhaseNames(filename)
-            print phasenames
         except:
             return False
         if not phasenames:

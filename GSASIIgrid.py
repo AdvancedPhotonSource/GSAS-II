@@ -1639,6 +1639,8 @@ def UpdateHKLControls(G2frame,data):
         
     def OnSelZone(event):
         data['Zone'] = zoneSel.GetValue()
+        izone = zones.index(data['Zone'])
+        layerSel.SetRange(maxValue=HKLmax[izone],minValue=HKLmin[izone])
         G2plt.PlotSngl(G2frame,newPlot=True)
         
     def OnSelType(event):
@@ -1646,7 +1648,7 @@ def UpdateHKLControls(G2frame,data):
         G2plt.PlotSngl(G2frame)
         
     def SetStatusLine():
-        Status.SetStatusText("look at me!!!")
+        Status.SetStatusText("")
                                       
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
@@ -1662,19 +1664,21 @@ def UpdateHKLControls(G2frame,data):
         typeChoices = ['Fosq','Fo']
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+    G2frame.dataFrame.SetTitle('HKL Plot Controls')
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
     
     scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
     scaleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Scale'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-    scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=100,
+    scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=1,
         style=wx.SL_HORIZONTAL,value=int(data['Scale']*100))
     scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
-    scaleSel.SetLineSize(100)
-    scaleSel.SetPageSize(900)
+    scaleSel.SetLineSize(10)
+    scaleSel.SetPageSize(10)
     scaleSel.Bind(wx.EVT_SLIDER, OnScaleSlider)
-    mainSizer.Add(scaleSizer,1,wx.EXPAND|wx.RIGHT)
+    mainSizer.Add(scaleSizer,0,wx.EXPAND|wx.RIGHT)
+    mainSizer.Add((0,10),0)    
     
     zoneSizer = wx.BoxSizer(wx.HORIZONTAL)
     zoneSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Zone  '),0,
@@ -1690,7 +1694,8 @@ def UpdateHKLControls(G2frame,data):
     typeSel.Bind(wx.EVT_COMBOBOX, OnSelType)
     zoneSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
     zoneSizer.Add((10,0),0)    
-    mainSizer.Add(zoneSizer,1,wx.EXPAND|wx.RIGHT)
+    mainSizer.Add(zoneSizer,0,wx.EXPAND|wx.RIGHT)
+    mainSizer.Add((0,10),0)    
         
     izone = zones.index(data['Zone'])
     layerSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1699,7 +1704,7 @@ def UpdateHKLControls(G2frame,data):
     layerSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
         style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
     layerSel.SetLineSize(1)
-    layerSel.SetLineSize(5)
+    layerSel.SetPageSize(1)
     layerSel.Bind(wx.EVT_SLIDER, OnLayerSlider)    
     layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
     layerSizer.Add((10,0),0)    

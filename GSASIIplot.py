@@ -259,7 +259,9 @@ def PlotSngl(self,newPlot=False):
     Plot.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
     HKL = []
     HKLF = []
-    for H,Fosq,sig,Fcsq,x,x,x in HKLref:
+    for refl in HKLref:    
+        H = np.array(refl[:3])
+        sig,Fosq,Fcsq = refl[7:10]
         HKL.append(H)
         HKLF.append([Fosq,sig,Fcsq])
         if H[izone] == Data['Layer']:
@@ -2313,6 +2315,8 @@ def PlotStructure(G2frame,data):
     altDown = False
     shiftDown = False
     ctrlDown = False
+    global sumroll
+    sumroll = np.zeros(3)
     
     def OnKeyBox(event):
         import Image
@@ -2540,6 +2544,7 @@ def PlotStructure(G2frame,data):
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
     def SetMapRoll(newxy):
+        global sumroll
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         Rx = G2lat.rotdMat(anglex,0)
         Ry = G2lat.rotdMat(angley,1)
@@ -2549,7 +2554,9 @@ def PlotStructure(G2frame,data):
         rho = mapData['rho']
         dxy = np.array(dxy*rho.shape)
         roll = np.where(dxy>0.5,1,np.where(dxy<-.5,-1,0))
+        sumroll += roll
         mapData['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+#        print 'sumroll',sumroll,rho.shape      #useful debug?
         drawingData['Rotation'][3] = list(newxy)
         
     def SetTranslation(newxy):

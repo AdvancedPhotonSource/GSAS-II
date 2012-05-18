@@ -26,6 +26,7 @@ import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIIstruct as G2str
 import GSASIImath as G2mth
+import GSASIIpwd as G2pwd
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -793,7 +794,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             flipRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             flipRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
             line2Sizer.Add(flipRes,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Factor (0.2-1.2) %: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Factor (0.2-1.2): '),0,wx.ALIGN_CENTER_VERTICAL)
             kFactor =  wx.TextCtrl(dataDisplay,value='%.3f'%(Flip['k-factor']),style=wx.TE_PROCESS_ENTER)
             kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
             kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
@@ -3258,14 +3259,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         for item in keyList:
             histData = UseList[item]
-###### Patch to add LGmix to Size & Mustrain
-            if len(histData['Size'][1]) == 2:
-                histData['Size'][1].append(1.0)
-                histData['Size'][2].append(False)
-                histData['Mustrain'][1].append(1.0)
-                histData['Mustrain'][2].append(False)
-                UseList[item] = histData
-###### end patch
+####### Patch to add LGmix to Size & Mustrain
+#            if len(histData['Size'][1]) == 2:
+#                histData['Size'][1].append(1.0)
+#                histData['Size'][2].append(False)
+#                histData['Mustrain'][1].append(1.0)
+#                histData['Mustrain'][2].append(False)
+#                UseList[item] = histData
+####### end patch
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             showData = wx.CheckBox(DData,-1,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
@@ -3541,7 +3542,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wave = Inst['Lam']
         else:
             wave = Inst['Lam1']
-        
         posCorr = Inst['Zero']
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         
@@ -3554,7 +3554,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
             indx = np.searchsorted(xdata[0],pos)
             try:
-                ref[6] = xdata[1][indx]
+                ref[6] = xdata[1][indx]/ref[3]
+                pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'],xdata[0][indx],0.0)
+                ref[6] /= pola
             except IndexError:
                 pass
         FillPawleyReflectionsGrid()
@@ -3639,8 +3641,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             reflData = reflSets[phaseName]
         elif 'HKLF' in reflName:
-            print 'single crystal reflections'
-            return
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflData = G2frame.PatternTree.GetItemPyData(PatternId)
         mapData.update(G2mth.FourierMap(data,reflData))
         mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
@@ -3719,8 +3721,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             reflData = reflSets[phaseName]
         elif 'HKLF' in reflName:
-            print 'single crystal reflections'
-            return
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflData = G2frame.PatternTree.GetItemPyData(PatternId)
         else:
             print '**** ERROR - No data defined for charge flipping'
             return

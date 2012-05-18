@@ -45,8 +45,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
                 HKL = np.array([int(h),int(k),int(l)])
                 Fo = float(Fo)
                 sigFo = float(sigFo)
-                self.RefList.append([HKL,Fo**2,2.*Fo*sigFo,0,0,0,0])  # HKL. Fo**2, sig(Fo**2), Fc, Fcp, Fcpp & phase
-                #print HKL,Fo**2,2.*Fo*sigFo
+                self.RefList.append([h,k,l,0,0,0,0,2.*Fo*sigFo,Fo**2,0,0,[],[],0,{}])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
             return True

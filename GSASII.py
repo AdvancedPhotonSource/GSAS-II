@@ -127,10 +127,8 @@ class GSASII(wx.Frame):
         parent.Append(menu=self.Calculate, title='Calculate')
         parent.Append(menu=self.Import, title='Import')
         parent.Append(menu=self.Export, title='Export')
-        self.HelpMenu=G2gd.MyHelp(self,
-                                  helpType='Data tree',
-                                  morehelpitems=[('&Tutorials','Tutorials')]
-                                  )
+        self.HelpMenu=G2gd.MyHelp(self,helpType='Data tree',
+            morehelpitems=[('&Tutorials','Tutorials')])
         parent.Append(menu=self.HelpMenu,title='&Help')
         
     def _init_coll_File_Items(self, parent):
@@ -465,9 +463,8 @@ class GSASII(wx.Frame):
     def OnImportSfact(self,event):
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
-        rdlist = self.OnImportGeneric(reqrdr,
-                                  self.ImportSfactReaderlist,
-                                  'Structure Factor')
+        rdlist = self.OnImportGeneric(reqrdr,self.ImportSfactReaderlist,
+            'Structure Factor')
         if len(rdlist) == 0: return
         self.CheckNotebook()
         for rd in rdlist:

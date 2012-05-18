@@ -1470,47 +1470,31 @@ class ImportBaseclass(object):
 class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
     '''
-    def __init__(self,
-                 formatName,
-                 longFormatName=None,
-                 extensionlist=[],
-                 strictExtension=False,
-                 ):
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
         # call parent __init__
-        ImportBaseclass.__init__(self,formatName,
-                                            longFormatName,
-                                            extensionlist,
-                                            strictExtension)
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
         # define a default Phase structure
         self.Phase = SetNewPhase(Name='new phase',SGData=SGData)
 
     def PhaseSelector(self, ChoiceList, ParentFrame=None,
-                      title='Select a phase', size=None,
-                      header='Phase Selector'):
+        title='Select a phase', size=None,header='Phase Selector'):
         ''' Provide a wx dialog to select a phase if the file contains more
         than one phase
         '''
-        return self.BlockSelector(ChoiceList,
-                                  ParentFrame,
-                                  title,
-                                  size,
-                                  header)
+        return self.BlockSelector(ChoiceList,ParentFrame,title,
+            size,header)
 
 ######################################################################
 class ImportStructFactor(ImportBaseclass):
     '''Defines a base class for the reading of files with tables
     of structure factors
     '''
-    def __init__(self,
-                 formatName,
-                 longFormatName=None,
-                 extensionlist=[],
-                 strictExtension=False,
-                 ):
-        ImportBaseclass.__init__(self,formatName,
-                                            longFormatName,
-                                            extensionlist,
-                                            strictExtension)
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
 
         # define contents of Structure Factor entry
         self.Controls = { # dictionary with plotting controls
@@ -1538,25 +1522,23 @@ class ImportStructFactor(ImportBaseclass):
             HistType = Type
         if Wave is not None:
             HistWave = Wave
-        self.Parameters = [ # overwrite entire list 
-            (HistType,HistWave),
-            [HistType,HistWave],
-            ['Type','Lam']
-            ]
+        self.Parameters = [(HistType,HistWave),[HistType,HistWave],  # overwrite entire list 
+            ['Type','Lam']]
             
     def UpdateControls(self,Type='Fosq',FcalcPresent=False):
         '''Scan through the reflections to update the Controls dictionary
         '''
         self.Controls['Type'] = Type
-        self.Controls['iffc'] = FcalcPresent
+        self.Controls['ifFc'] = FcalcPresent
         HKLmax = [None,None,None]
         HKLmin = [None,None,None]
         Fo2max = None
-        for HKL,Fo2,SFo2,Fc,Fcp,Fcpp,phase in self.RefList:
+        for refl in self.RefList:
+            HKL = refl[:3]
             if Fo2max is None:
-                Fo2max = Fo2
+                Fo2max = refl[8]
             else:
-                Fo2max = max(Fo2max,Fo2)
+                Fo2max = max(Fo2max,refl[8])
             for i,hkl in enumerate(HKL):
                 if HKLmax[i] is None:
                     HKLmax[i] = hkl

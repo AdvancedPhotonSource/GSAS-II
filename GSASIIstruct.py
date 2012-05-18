@@ -423,6 +423,7 @@ def GetHKLFdata(GPXfile,HKLFname):
     return: 
         HKLFdata = single crystal data list of reflections: for each reflection:
             HKLF = [np.array([h,k,l]),FoSq,sigFoSq,FcSq,Fcp,Fcpp,phase]
+            need this [h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0,{}]
     '''
     fl = open(GPXfile,'rb')
     HKLFdata = []
@@ -494,9 +495,11 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
         eqvDict[varyI] = []
         refI = int(varyI.split(':')[-1])
         ih,ik,il = PawleyRef[refI][:3]
+        dspI = PawleyRef[refI][4]
         for varyJ in pawleyVary[i+1:]:
             refJ = int(varyJ.split(':')[-1])
             jh,jk,jl = PawleyRef[refJ][:3]
+            dspJ = PawleyRef[refJ][4]
             if SGLaue in ['4/m','4/mmm']:
                 isum = ih**2+ik**2
                 jsum = jh**2+jk**2
@@ -518,7 +521,9 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
                 isum = ih**2+ik**2+il**2
                 jsum = jh**2+jk**2+jl**2
                 if isum == jsum:
-                    eqvDict[varyI].append(varyJ) 
+                    eqvDict[varyI].append(varyJ)
+#            if abs(dspI-dspJ) < 3.e-4:
+#                eqvDict[varyI].append(varyJ) 
     for item in pawleyVary:
         if eqvDict[item]:
             for item2 in pawleyVary:
@@ -1745,14 +1750,19 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
 ##### Penalty & restraint functions 
 ################################################################################
 
-def getPenalties():
-    return []
+def penaltyFxn(parmDict,varyList):
+    pFxn = np.zeros(len(varyList))
+    for i,item in enumerate(varyList):
+        if 'PWLref' in item and parmDict[item] < 0.:
+            pFxn[i] = -parmDict[item]
+    return pFxn
     
-def penaltyFxn(penalties):
-    return []
-    
-def penaltyDeriv(penalties):
-    return []
+def penaltyDeriv(parmDict,varyList):
+    pDerv = np.zeros(len(varyList))
+    for i,item in enumerate(varyList):
+        if 'PWLref' in item and parmDict[item] < 0.:
+            pDerv[i] += -1./parmDict[item]
+    return pDerv
 
 ################################################################################
 ##### Function & derivative calculations
@@ -2741,7 +2751,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
     return dMdv
 
-def dervRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawleyLookup,dlg):
+def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
@@ -2764,27 +2774,11 @@ def dervRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawle
                 dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
             else:
                 dMdv = dMdvh
-    if penalties:
-        dmdv = np.concatenate((dmdv.T,penaltyDeriv(penalties).T)).T
+#    dpdv = penaltyDeriv(parmdict,varylist)
+#    dMdv = np.concatenate((dMdv.T,np.outer(dpdv,dpdv))).T
     return dMdv
 
-#def ComputePowderHessian(args):
-#    Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup = args
-#    hId = Histogram['hId']
-#    hfx = ':%d:'%(hId)
-#    Limits = calcControls[hfx+'Limits']
-#    x,y,w,yc,yb,yd = Histogram['Data']
-#    dy = y-yc
-#    xB = np.searchsorted(x,Limits[0])
-#    xF = np.searchsorted(x,Limits[1])
-#    dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(
-#        parmdict,x[xB:xF],
-#        varylist,Histogram,Phases,calcControls,pawleyLookup)
-#    Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
-#    Hess = np.inner(dMdvh,dMdvh)
-#    return Vec,Hess
-#
-def HessRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawleyLookup,dlg):
+def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
@@ -2812,21 +2806,12 @@ def HessRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawle
             else:
                 Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
                 Hess = np.inner(dMdvh,dMdvh)
+#    dpdv = penaltyDeriv(parmdict,varylist)
+#    Vec += dpdv*penaltyFxn(parmdict,varylist)
+#    Hess += np.outer(dpdv,dpdv)
     return Vec,Hess
 
-#def ComputePowderProfile(args):
-#    Histogram,parmdict,varylist,Phases,calcControls,pawleyLookup = args
-#    hId = Histogram['hId']
-#    hfx = ':%d:'%(hId)
-#    x,y,w,yc,yb,yd = Histogram['Data']
-#    Limits = calcControls[hfx+'Limits']
-#    xB = np.searchsorted(x,Limits[0])
-#    xF = np.searchsorted(x,Limits[1])
-#    yc,yb = getPowderProfile(parmdict,x[xB:xF],varylist,Histogram,Phases,
-#        calcControls,pawleyLookup)
-#    return xB,xF,yc,yb,Histogram['Reflection Lists']
-#
-def errRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawleyLookup,dlg):        
+def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
     parmdict.update(zip(varylist,values))
     Values2Dict(parmdict, varylist, values)
     G2mv.Dict2Map(parmdict,varylist)
@@ -2870,8 +2855,7 @@ def errRefine(values,HistoPhases,penalties,parmdict,varylist,calcControls,pawley
         if not GoOn:
             parmDict['saved values'] = values
             raise Exception         #Abort!!
-    if penalties:
-        M = np.concatenate((M,penaltyFxn(penalties)))
+#    M = np.concatenate((M,penaltyFxn(parmdict,varylist)))
     return M
                         
 def Refine(GPXfile,dlg):
@@ -2934,23 +2918,22 @@ def Refine(GPXfile,dlg):
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
-        penalties = getPenalties()
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
         maxCyc = Controls['max cyc']
         if 'Jacobian' in Controls['deriv type']:            
             result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
-                args=([Histograms,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
         elif 'Hessian' in Controls['deriv type']:
             result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                args=([Histograms,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']                           
         else:           #'numeric'
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                args=([Histograms,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/len(varyList))
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
@@ -3120,7 +3103,6 @@ def SeqRefine(GPXfile,dlg):
         while True:
             begin = time.time()
             values =  np.array(Dict2Values(parmDict,varyList))
-            penalties = getPenalties()
             Ftol = Controls['min dM/M']
             Factor = Controls['shift factor']
             maxCyc = Controls['max cyc']
@@ -3128,15 +3110,15 @@ def SeqRefine(GPXfile,dlg):
             if 'Jacobian' in Controls['deriv type']:            
                 result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                     ftol=Ftol,col_deriv=True,factor=Factor,
-                    args=([Histo,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/2)
             elif 'Hessian' in Controls['deriv type']:
                 result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                    args=([Histo,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = result[2]['num cyc']+1                           
             else:           #'numeric'
                 result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                    args=([Histo,Phases],penalties,parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/len(varyList))
 
 
@@ -3225,10 +3207,6 @@ def DistAngle(DisAglCtls,DisAglData):
             '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
     Factor = DisAglCtls['Factors']
     Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
-#    Units = np.array([                   #is there a nicer way to make this?
-#        [-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
-#        [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,0],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
-#        [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]])
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     origAtoms = DisAglData['OrigAtoms']

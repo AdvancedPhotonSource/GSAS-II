@@ -19,7 +19,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
     'Routines to import Phase information from a CIF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.CIF','.cif'),
+            extensionlist=('.CIF','.cif','.HKL','.hkl'),
             strictExtension=False,
             formatName = 'CIF',
             longFormatName = 'Reflections from CIF'
@@ -152,44 +152,42 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         HKL.append(int(item[num]))
                     except:
                         HKL.append('.')
-                ref = [HKL,0.,0.,0,0,0,0]  # HKL. Fo**2, sig(Fo**2), Fc, Fcp, Fcpp & phase
-                # get F or F**2 and sigma
+                ref = HKL+[0,0,0,0,0,0,0,0,[],[],0,{}]
                 if '_refln_f_squared_meas' in itemkeys:
                     try:
-                        ref[1] = float(item[itemkeys['_refln_f_squared_meas']])
+                        ref[8] = float(item[itemkeys['_refln_f_squared_meas']])
                     except:
                         pass
                     if  '_refln_f_squared_sigma' in itemkeys:
                         try:
-                            ref[2] = float(item[itemkeys['_refln_f_squared_sigma']])
+                            ref[7] = float(item[itemkeys['_refln_f_squared_sigma']])
                         except:
                             pass                            
                 elif '_refln_f_meas' in itemkeys:
                     try:
-                        ref[1] = float(item[itemkeys['_refln_f_meas']])**2
+                        ref[8] = float(item[itemkeys['_refln_f_meas']])**2
                     except:
                         pass                                
                     if  '_refln_f_sigma' in itemkeys:
                         try:
-                            ref[2] = 2.*sqrt(ref[1])*float(item[itemkeys['_refln_f_sigma']])
+                            ref[7] = 2.*sqrt(ref[8])*float(item[itemkeys['_refln_f_sigma']])
                         except:
                             pass                                
                 if '_refln_f_squared_calc' in itemkeys:
                     try:
-                        ref[3] = float(item[itemkeys['_refln_f_squared_calc']])
+                        ref[9] = float(item[itemkeys['_refln_f_squared_calc']])
                     except:
                         pass                                
                 elif '_refln_f_calc' in itemkeys:
                     try:
-                        ref[3] = float(item[itemkeys['_refln_f_calc']])**2
+                        ref[9] = float(item[itemkeys['_refln_f_calc']])**2
                     except:
                         pass                                
                 if '_refln_phase_calc' in itemkeys:
                     try:
-                        ref[6] = float(item[itemkeys['_refln_phase_calc']])
+                        ref[10] = float(item[itemkeys['_refln_phase_calc']])
                     except:
                         pass                                
-
                 self.RefList.append(ref)
             self.UpdateControls(Type='Fosq',FcalcPresent=FcalcPresent) # set Fobs type & if Fcalc values are loaded
             if blk.get('_diffrn_radiation_probe'):

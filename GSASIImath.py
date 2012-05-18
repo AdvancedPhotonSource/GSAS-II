@@ -114,9 +114,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
             Amatlam = Amat*(One+Lam)
             try:
                 Xvec = nl.solve(Amatlam,Yvec)
-            except LinAlgError:
+            except nl.LinAlgError:
                 print 'ouch #1'
-                psing = list(np.where(np.diag(nl.gr(Amatlam)[1]) < 1.e-14)[0])
+                psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
                 return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
             Xvec /= Adiag
             M2 = func(x0+Xvec,*args)
@@ -523,7 +523,6 @@ def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
 
 def FourierMap(data,reflData):
     
-#    import scipy.fftpack as fft
     import numpy.fft as fft
     generalData = data['General']
     if not generalData['Map']['MapType']:
@@ -607,10 +606,13 @@ def findOffset(SGData,rho,Fhkl):
         iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
         Uniq = np.array(Uniq,dtype='i')+hklHalf
         print hkl-hklHalf
+        Fh0 = Fhkl[hkl[0],hkl[1],hkl[2]]
+        ph0 = np.angle(Fh0,deg=True)/360.
         for j,H in enumerate(Uniq):
             Fh = Fhkl[H[0],H[1],H[2]]
             h,k,l = H-hklHalf
-            print '(%3d,%3d,%3d) %5.2f %9.5f'%(h,k,l,phi[j],np.angle(Fh,deg=True))        
+            ang = np.angle(Fh,deg=True)/360.-ph0
+            print '(%3d,%3d,%3d) %5.2f %9.5f %9.5f'%(h,k,l,phi[j],np.angle(Fh,deg=True)/360.,ang)        
         i += 1
         
         
@@ -645,7 +647,10 @@ def ChargeFlip(data,reflData,pgbar):
             if FFtable:
                 SQ = 0.25/dsp**2
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
-            E = np.sqrt(ref[8])/ff
+            if ref[8] > 0.:
+                E = np.sqrt(ref[8])/ff
+            else:
+                E = 0.
             ph = ref[10]
             ph = rn.uniform(0.,360.)
             for i,hkl in enumerate(ref[11]):

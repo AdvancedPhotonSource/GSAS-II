@@ -152,35 +152,44 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         HKL.append(int(item[num]))
                     except:
                         HKL.append('.')
-                ref = HKL+[0,0,0,0,0,0,0,0,[],[],0,{}]
+                #h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                ref = HKL+[0,0,0,0,0,0,0,0,[],[],0,{}] 
                 if '_refln_f_squared_meas' in itemkeys:
                     try:
-                        ref[8] = float(item[itemkeys['_refln_f_squared_meas']])
+                        Fsq = float(item[itemkeys['_refln_f_squared_meas']])
+                        ref[8] = Fsq
+                        ref[5] = Fsq
                     except:
                         pass
                     if  '_refln_f_squared_sigma' in itemkeys:
                         try:
-                            ref[7] = float(item[itemkeys['_refln_f_squared_sigma']])
+                            ref[6] = float(item[itemkeys['_refln_f_squared_sigma']])
                         except:
                             pass                            
                 elif '_refln_f_meas' in itemkeys:
                     try:
-                        ref[8] = float(item[itemkeys['_refln_f_meas']])**2
+                        Fsq = float(item[itemkeys['_refln_f_meas']])**2
+                        ref[8] = Fsq
+                        ref[5] = Fsq
                     except:
                         pass                                
                     if  '_refln_f_sigma' in itemkeys:
                         try:
-                            ref[7] = 2.*sqrt(ref[8])*float(item[itemkeys['_refln_f_sigma']])
+                            ref[6] = 2.*sqrt(ref[8])*float(item[itemkeys['_refln_f_sigma']])
                         except:
                             pass                                
                 if '_refln_f_squared_calc' in itemkeys:
                     try:
-                        ref[9] = float(item[itemkeys['_refln_f_squared_calc']])
+                        Fsq = float(item[itemkeys['_refln_f_squared_calc']])
+                        ref[9] = Fsq
+                        ref[7] = Fsq
                     except:
                         pass                                
                 elif '_refln_f_calc' in itemkeys:
                     try:
-                        ref[9] = float(item[itemkeys['_refln_f_calc']])**2
+                        Fsq = float(item[itemkeys['_refln_f_calc']])**2
+                        ref[9] = Fsq
+                        ref[7] = Fsq
                     except:
                         pass                                
                 if '_refln_phase_calc' in itemkeys:

@@ -22,7 +22,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
             extensionlist=('.CIF','.cif','.HKL','.hkl'),
             strictExtension=False,
             formatName = 'CIF',
-            longFormatName = 'Reflections from CIF'
+            longFormatName = 'CIF format structure factor file (.cif or .hkl)'
             )
     # Validate the contents
     def ContentsValidator(self, filepointer):

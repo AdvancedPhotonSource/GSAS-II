@@ -110,11 +110,6 @@ wxID_REFINE,  wxID_MAKEPDFS, wxID_VIEWLSPARMS, wxID_SEQREFINE,
  wxID_IMSUM, wxID_DATARENAME,
 ] = [wx.NewId() for _init_coll_Data_Items in range(10)]
 
-[wxID_IMPORT, wxID_IMPORTPATTERN, wxID_IMPORTHKL
-#, wxID_IMPORTPHASE,
-#wxID_IMPORTCIF, wxID_IMPORTPDB,  
-] = [wx.NewId() for _init_coll_Import_Items in range(3)]
-
 [wxID_EXPORT, wxID_EXPORTPATTERN, wxID_EXPORTHKL, wxID_EXPORTPHASE,
 wxID_EXPORTCIF, wxID_EXPORTPEAKLIST, wxID_EXPORTPDF,
 ] = [wx.NewId() for _init_coll_Export_Items in range(7)]
@@ -149,8 +144,8 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
         
     def _init_coll_Data_Items(self,parent):
-        parent.Append(help='', id=wxID_PWDRREAD, kind=wx.ITEM_NORMAL,
-            text='Read powder data...')
+#        parent.Append(help='', id=wxID_PWDRREAD, kind=wx.ITEM_NORMAL,
+#            text='Read powder data...')
         parent.Append(help='',id=wxID_IMGREAD, kind=wx.ITEM_NORMAL,
             text='Read image data...')
         parent.Append(help='',id=wxID_READPEAKS, kind=wx.ITEM_NORMAL,
@@ -391,11 +386,10 @@ class GSASII(wx.Frame):
                                    self.ImportPhaseReaderlist,
                                    'Phase')
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase menu',
+        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase',
             submenu, help='Import phase data')
         for reader in self.ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,
-                help='Import specific format phase data',
+            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
                 kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
@@ -446,11 +440,10 @@ class GSASII(wx.Frame):
                                    self.ImportSfactReaderlist,
                                    'Struct_Factor')
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Structure Factor menu',
+        item = parent.AppendMenu(wx.ID_ANY, 'Import Structure Factor',
             submenu, help='Import Structure Factor data')
         for reader in self.ImportSfactReaderlist:
-            item = submenu.Append(wx.ID_ANY,
-                help='Import specific format Structure Factor data',
+            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,                
                 kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
@@ -497,23 +490,19 @@ class GSASII(wx.Frame):
         path and configure the Import Powder Data menus accordingly
         '''
         self.ImportPowderReaderlist = []
-        self._init_Import_routines(parent,'pwd',
-                                   self.ImportPowderReaderlist,
-                                   'Powder_Data')
+        self._init_Import_routines(parent,'pwd',self.ImportPowderReaderlist,
+            'Powder_Data')
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Powder Data menu',
+        item = parent.AppendMenu(wx.ID_ANY, 'Import Powder Data',
             submenu, help='Import Powder data')
         for reader in self.ImportPowderReaderlist:
-            item = submenu.Append(wx.ID_ANY,
-                                  help='Import specific format powder data',
-                                  kind=wx.ITEM_NORMAL,
-                                  text='from '+reader.formatName+' file')
+            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
+                kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,
-                              help='Import powder data, use file to try to determine format',
-                              kind=wx.ITEM_NORMAL,
-                              text='guess format from file')
+            help='Import powder data, use file to try to determine format',
+            kind=wx.ITEM_NORMAL,text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
             
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
@@ -755,14 +744,6 @@ class GSASII(wx.Frame):
         self.PatternTree.SelectItem(Id)
         return # success
 
-    def _init_coll_Import_Items(self,parent):
-        self.ImportPattern = parent.Append(help='',id=wxID_IMPORTPATTERN, kind=wx.ITEM_NORMAL,
-            text='Import Powder Pattern...')
-        self.ImportHKL = parent.Append(help='',id=wxID_IMPORTHKL, kind=wx.ITEM_NORMAL,
-            text='Import HKLs...')
-        self.Bind(wx.EVT_MENU, self.OnImportPattern, id=wxID_IMPORTPATTERN)
-        self.Bind(wx.EVT_MENU, self.OnImportHKL, id=wxID_IMPORTHKL)
-
     def _init_coll_Export_Items(self,parent):
         self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_EXPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Export Powder Patterns...')
@@ -805,7 +786,6 @@ class GSASII(wx.Frame):
         self._init_Import_Phase(self.Import)
         self._init_Import_powder(self.Import)
         self._init_Import_Sfact(self.Import)
-        self._init_coll_Import_Items(self.Import)
         self._init_coll_Export_Items(self.Export)
         
     def _init_ctrls(self, parent):

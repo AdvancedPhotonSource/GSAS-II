@@ -769,7 +769,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnkFactor(event):
                 try:
                     res = float(kFactor.GetValue())
-                    if 0.2 <= res <= 1.2:
+                    if 0.1 <= res <= 1.2:
                         Flip['k-factor'] = res
                 except ValueError:
                     pass
@@ -794,7 +794,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             flipRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             flipRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
             line2Sizer.Add(flipRes,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Factor (0.2-1.2): '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Factor (0.1-1.2): '),0,wx.ALIGN_CENTER_VERTICAL)
             kFactor =  wx.TextCtrl(dataDisplay,value='%.3f'%(Flip['k-factor']),style=wx.TE_PROCESS_ENTER)
             kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
             kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
@@ -3393,9 +3393,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
                             'Extinction':['Lorentzian','Secondary Type I',{'Eg':[0.0,False]},]}                        
                     data['Histograms'] = UseList
+                    wx.BeginBusyCursor()
+                    UpdateHKLFdata(histoName)
+                    wx.EndBusyCursor()
                     wx.CallAfter(UpdateDData)
             finally:
                 dlg.Destroy()
+                
+    def UpdateHKLFdata(histoName):
+        generalData = data['General']
+        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
+        reflData = G2frame.PatternTree.GetItemPyData(Id)
+        SGData = generalData['SGData']
+        Cell = generalData['Cell'][1:7]
+        G,g = G2lat.cell2Gmat(Cell)
+        for ref in reflData:
+            H = ref[:3]
+            ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+            iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(H,SGData,Friedel=False)
+            ref[3] = mulp/2             #convert from powder mulp.
+            ref[11] = Uniq
+            ref[12] = phi
+        G2frame.PatternTree.SetItemPyData(Id,reflData)
         
     def OnPwdrAdd(event):
         generalData = data['General']

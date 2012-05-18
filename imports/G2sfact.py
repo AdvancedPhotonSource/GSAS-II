@@ -19,7 +19,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
             formatName = 'HKL',
-            longFormatName = 'Simple (hkl Fo sig(Fo)) Structure factor file'
+            longFormatName = 'Simple (hkl Fo sig(Fo)) Structure factor text file'
             )
     # Validate the contents
     def ContentsValidator(self, filepointer):
@@ -42,7 +42,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
             for S in filepointer:
                 if S[0] == '#': continue       #ignore comments, if any
                 h,k,l,Fo,sigFo = S.split()
-                HKL = np.array([int(h),int(k),int(l)])
+                h,k,l = [int(h),int(k),int(l)]
                 Fo = float(Fo)
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...

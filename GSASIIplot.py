@@ -259,7 +259,7 @@ def PlotSngl(self,newPlot=False):
     Plot.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
     HKL = []
     HKLF = []
-    for refl in HKLref:    
+    for refl in HKLref:
         H = np.array(refl[:3])
         sig,Fosq,Fcsq = refl[7:10]
         HKL.append(H)

@@ -44,6 +44,8 @@ class PhaseReaderClass(G2IO.ImportPhase):
             if selblk is None: return False # User pressed cancel
         try:
             self.Phase = G2str.GetAllPhaseData(filename,phasenames[selblk])
+            self.Phase['Histograms'] = {}       #remove any histograms
+            self.Phase['Pawley ref'] = []       # & any Pawley refl.
             return True
         except Exception as detail:
             print self.formatName+' error:',detail # for testing

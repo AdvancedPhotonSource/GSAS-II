@@ -155,8 +155,8 @@ class GSASII(wx.Frame):
             text='Read image data...')
         parent.Append(help='',id=wxID_READPEAKS, kind=wx.ITEM_NORMAL,
             text='Read Powder Pattern Peaks...')
-        parent.Append(help='', id=wxID_SNGLREAD, kind=wx.ITEM_NORMAL,
-            text='Read single crystal data...')
+#        parent.Append(help='', id=wxID_SNGLREAD, kind=wx.ITEM_NORMAL,
+#            text='Read single crystal data...')
         parent.Append(help='', id=wxID_PWDSUM, kind=wx.ITEM_NORMAL,
             text='Sum powder data')
         parent.Append(help='',id=wxID_IMSUM, kind=wx.ITEM_NORMAL,
@@ -174,7 +174,7 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=wxID_READPEAKS)
         self.Bind(wx.EVT_MENU, self.OnImageRead, id=wxID_IMGREAD)
         self.Bind(wx.EVT_MENU, self.OnImageSum, id=wxID_IMSUM)
-        self.Bind(wx.EVT_MENU, self.OnSnglRead, id=wxID_SNGLREAD)
+#        self.Bind(wx.EVT_MENU, self.OnSnglRead, id=wxID_SNGLREAD)
         self.Bind(wx.EVT_MENU, self.OnAddPhase, id=wxID_ADDPHASE)
         self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=wxID_DELETEPHASE)
         self.Bind(wx.EVT_MENU, self.OnRenameData, id=wxID_DATARENAME)
@@ -1112,41 +1112,41 @@ class GSASII(wx.Frame):
             dlg.Destroy()
 
     # this will be removed eventually
-    def OnSnglRead(self,event):
-        self.CheckNotebook()
-        dlg = wx.FileDialog(self, 'Choose file', '.', '', 
-            'hkl files (*.hkl)|*.hkl|All files (*.*)|*.*', 
-            wx.OPEN|wx.CHANGE_DIR)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                filename = dlg.GetPath()
-                wx.BeginBusyCursor()
-                try:
-                    Data = {}
-                    names = ['Type','Lam']
-                    HKLref,HKLmin,HKLmax,FoMax,ifFc = G2IO.GetHKLData(filename)
-                    Id = self.PatternTree.AppendItem(parent=self.root,text='HKLF '+os.path.basename(filename))
-                    self.PatternTree.SetItemPyData(Id,HKLref)
-                    Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
-                    data = ['SXC',1.5428,]
-                    self.PatternTree.SetItemPyData(Sub,[tuple(data),data,names])
-                    Data['Type'] = 'Fosq'
-                    Data['ifFc'] = ifFc
-                    Data['HKLmax'] = HKLmax
-                    Data['HKLmin'] = HKLmin
-                    Data['FoMax'] = FoMax
-                    Data['Zone'] = '001'
-                    Data['Layer'] = 0
-                    Data['Scale'] = 1.0
-                    Data['log-lin'] = 'lin'                    
-                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='HKL Plot Controls'),Data)
-                    self.PatternTree.SelectItem(Id)
-                    self.PatternTree.Expand(Id)
-                    self.Sngl = Id
-                finally:
-                    wx.EndBusyCursor()    
-        finally:
-            dlg.Destroy()
+#    def OnSnglRead(self,event):
+#        self.CheckNotebook()
+#        dlg = wx.FileDialog(self, 'Choose file', '.', '', 
+#            'hkl files (*.hkl)|*.hkl|All files (*.*)|*.*', 
+#            wx.OPEN|wx.CHANGE_DIR)
+#        try:
+#            if dlg.ShowModal() == wx.ID_OK:
+#                filename = dlg.GetPath()
+#                wx.BeginBusyCursor()
+#                try:
+#                    Data = {}
+#                    names = ['Type','Lam']
+#                    HKLref,HKLmin,HKLmax,FoMax,ifFc = G2IO.GetHKLData(filename)
+#                    Id = self.PatternTree.AppendItem(parent=self.root,text='HKLF '+os.path.basename(filename))
+#                    self.PatternTree.SetItemPyData(Id,HKLref)
+#                    Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
+#                    data = ['SXC',1.5428,]
+#                    self.PatternTree.SetItemPyData(Sub,[tuple(data),data,names])
+#                    Data['Type'] = 'Fosq'
+#                    Data['ifFc'] = ifFc
+#                    Data['HKLmax'] = HKLmax
+#                    Data['HKLmin'] = HKLmin
+#                    Data['FoMax'] = FoMax
+#                    Data['Zone'] = '001'
+#                    Data['Layer'] = 0
+#                    Data['Scale'] = 1.0
+#                    Data['log-lin'] = 'lin'                    
+#                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='HKL Plot Controls'),Data)
+#                    self.PatternTree.SelectItem(Id)
+#                    self.PatternTree.Expand(Id)
+#                    self.Sngl = Id
+#                finally:
+#                    wx.EndBusyCursor()    
+#        finally:
+#            dlg.Destroy()
             
     def CheckNotebook(self):
         '''Make sure the data tree has the minimally expected controls

@@ -216,96 +216,96 @@ def GetPowderPeaks(fileName):
             Peaks.append([tth,peak[1],True,False,0,0,0,dsp,0.0])
     return Comments,Peaks
 
-def GetPawleyPeaks(filename):
-    rt2ln2x2 = 2.35482
-    File = open(filename,'Ur')
-    PawleyPeaks = []
-    S = File.readline()         #skip header
-    S = File.readline()
-    item = S.split()
-    while S:
-        h,k,l = int(item[0]),int(item[1]),int(item[2])
-        mult = int(item[3])
-        tth = float(item[5])
-        sig = float(item[6])/rt2ln2x2
-        Iobs = float(item[7])*mult
-        PawleyPeaks.append([h,k,l,mult,tth,False,Iobs,0.0])
-        S = File.readline()
-        item = S.split()
-        if item[3] == '-100.0000':       #find trailer
-            break
-    File.close()
-    return PawleyPeaks
+#def GetPawleyPeaks(filename):   #dead code??
+#    rt2ln2x2 = 2.35482
+#    File = open(filename,'Ur')
+#    PawleyPeaks = []
+#    S = File.readline()         #skip header
+#    S = File.readline()
+#    item = S.split()
+#    while S:
+#        h,k,l = int(item[0]),int(item[1]),int(item[2])
+#        mult = int(item[3])
+#        tth = float(item[5])
+#        sig = float(item[6])/rt2ln2x2
+#        Iobs = float(item[7])*mult
+#        PawleyPeaks.append([h,k,l,mult,tth,False,Iobs,0.0])
+#        S = File.readline()
+#        item = S.split()
+#        if item[3] == '-100.0000':       #find trailer
+#            break
+#    File.close()
+#    return PawleyPeaks
     
 # this will be removed eventually
-def GetHKLData(filename):
-    print 'Reading: '+filename
-    File = open(filename,'Ur')
-    HKLref = []
-    HKLmin = [1000,1000,1000]
-    HKLmax = [0,0,0]
-    FoMax = 0
-    ifFc = False
-    S = File.readline()
-    while '#' in S[0]:        #get past comments if any
-        S = File.readline()        
-    if '_' in S:         #cif style .hkl file
-        while 'loop_' not in S:         #skip preliminaries if any - can't have 'loop_' in them!
-            S = File.readline()        
-        S = File.readline()             #get past 'loop_' line
-        pos = 0
-        hpos = kpos = lpos = Fosqpos = Fcsqpos = sigpos = -1
-        while S:
-            if '_' in S:
-                if 'index_h' in S:
-                    hpos = pos
-                elif 'index_k' in S:
-                    kpos = pos
-                elif 'index_l' in S:
-                    lpos = pos
-                elif 'F_squared_meas' in S:
-                    Fosqpos = pos
-                elif 'F_squared_calc' in S:
-                    Fcsqpos = pos
-                elif 'F_squared_sigma' in S:
-                    sigpos = pos
-                pos += 1
-            else:
-                data = S.split()
-                if data:                    #avoid blank lines
-                    HKL = np.array([int(data[hpos]),int(data[kpos]),int(data[lpos])])
-                    h,k,l = HKL
-                    Fosq = float(data[Fosqpos])
-                    if sigpos != -1:
-                        sigFosq = float(data[sigpos])
-                    else:
-                        sigFosq = 1.
-                    if Fcsqpos != -1:
-                        Fcsq = float(data[Fcsqpos])
-                        if Fcsq:
-                            ifFc = True
-                    else:
-                        Fcsq = 0.
-                        
-                    HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
-                    HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
-                    FoMax = max(FoMax,Fosq)
-                    HKLref.append([HKL,Fosq,sigFosq,Fcsq,0,0,0])                 #room for Fcp, Fcpp & phase
-            S = File.readline()
-    else:                   #dumb h,k,l,Fo,sigFo .hkl file
-        while S:
-            h,k,l,Fo,sigFo = S.split()
-            HKL = np.array([int(h),int(k),int(l)])
-            h,k,l = HKL
-            Fo = float(Fo)
-            sigFo = float(sigFo)
-            HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
-            HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
-            FoMax = max(FoMax,Fo)
-            HKLref.append([HKL,Fo**2,2.*Fo*sigFo,0,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
-            S = File.readline()
-    File.close()
-    return HKLref,HKLmin,HKLmax,FoMax,ifFc
+#def GetHKLData(filename):
+#    print 'Reading: '+filename
+#    File = open(filename,'Ur')
+#    HKLref = []
+#    HKLmin = [1000,1000,1000]
+#    HKLmax = [0,0,0]
+#    FoMax = 0
+#    ifFc = False
+#    S = File.readline()
+#    while '#' in S[0]:        #get past comments if any
+#        S = File.readline()        
+#    if '_' in S:         #cif style .hkl file
+#        while 'loop_' not in S:         #skip preliminaries if any - can't have 'loop_' in them!
+#            S = File.readline()        
+#        S = File.readline()             #get past 'loop_' line
+#        pos = 0
+#        hpos = kpos = lpos = Fosqpos = Fcsqpos = sigpos = -1
+#        while S:
+#            if '_' in S:
+#                if 'index_h' in S:
+#                    hpos = pos
+#                elif 'index_k' in S:
+#                    kpos = pos
+#                elif 'index_l' in S:
+#                    lpos = pos
+#                elif 'F_squared_meas' in S:
+#                    Fosqpos = pos
+#                elif 'F_squared_calc' in S:
+#                    Fcsqpos = pos
+#                elif 'F_squared_sigma' in S:
+#                    sigpos = pos
+#                pos += 1
+#            else:
+#                data = S.split()
+#                if data:                    #avoid blank lines
+#                    HKL = np.array([int(data[hpos]),int(data[kpos]),int(data[lpos])])
+#                    h,k,l = HKL
+#                    Fosq = float(data[Fosqpos])
+#                    if sigpos != -1:
+#                        sigFosq = float(data[sigpos])
+#                    else:
+#                        sigFosq = 1.
+#                    if Fcsqpos != -1:
+#                        Fcsq = float(data[Fcsqpos])
+#                        if Fcsq:
+#                            ifFc = True
+#                    else:
+#                        Fcsq = 0.
+#                        
+#                    HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
+#                    HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
+#                    FoMax = max(FoMax,Fosq)
+#                    HKLref.append([HKL,Fosq,sigFosq,Fcsq,0,0,0])                 #room for Fcp, Fcpp & phase
+#            S = File.readline()
+#    else:                   #dumb h,k,l,Fo,sigFo .hkl file
+#        while S:
+#            h,k,l,Fo,sigFo = S.split()
+#            HKL = np.array([int(h),int(k),int(l)])
+#            h,k,l = HKL
+#            Fo = float(Fo)
+#            sigFo = float(sigFo)
+#            HKLmin = [min(h,HKLmin[0]),min(k,HKLmin[1]),min(l,HKLmin[2])]
+#            HKLmax = [max(h,HKLmax[0]),max(k,HKLmax[1]),max(l,HKLmax[2])]
+#            FoMax = max(FoMax,Fo)
+#            HKLref.append([HKL,Fo**2,2.*Fo*sigFo,0,0,0,0])                 #room for Fc, Fcp, Fcpp & phase
+#            S = File.readline()
+#    File.close()
+#    return HKLref,HKLmin,HKLmax,FoMax,ifFc
 
 # to be removed
 def GetPowderData(filename,Pos,Bank,DataType):

@@ -160,7 +160,14 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         ref[8] = Fsq
                         ref[5] = Fsq
                     except:
-                        pass
+                        try:
+                            Fsq,Esd = item[itemkeys['_refln_f_squared_meas']].split('(')
+                            Fsq = float(Fsq)
+                            ref[8] = Fsq
+                            ref[5] = Fsq
+                            ref[6] = float(Esd[:-1])
+                        except:
+                            pass
                     if  '_refln_f_squared_sigma' in itemkeys:
                         try:
                             ref[6] = float(item[itemkeys['_refln_f_squared_sigma']])
@@ -172,7 +179,14 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         ref[8] = Fsq
                         ref[5] = Fsq
                     except:
-                        pass                                
+                        try:
+                            Fsq,Esd = item[itemkeys['_refln_f_squared_meas']].split('(')
+                            Fsq = float(Fsq)**2
+                            ref[8] = Fsq
+                            ref[5] = Fsq
+                            ref[6] = 2.0*sqrt(Fsq)*float(Esd[:-1])
+                        except:
+                            pass                                
                     if  '_refln_f_sigma' in itemkeys:
                         try:
                             ref[6] = 2.*sqrt(ref[8])*float(item[itemkeys['_refln_f_sigma']])

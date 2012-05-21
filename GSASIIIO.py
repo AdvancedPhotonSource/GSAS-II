@@ -43,139 +43,139 @@ def FileDlgFixExt(dlg,file):
         file += ext
     return file
     
-# to be removed
-def SelectPowderData(G2frame, filename):
-    """Selects banks of data from a filename of any GSAS powder data format
-    Input - filename: any GSAS powder data formatted file (currently STD, FXYE, FXY & ESD)
-    Returns - a list of banks to be read; each entry in list is a tuple containing:
-    filename: same as input filename
-    Pos: position for start of data; record just after BANK record
-    Bank: the BANK record
-    """
-    File = open(filename,'Ur')
-    Title = '''
-First line of this file:
-'''+File.readline()
-    dlg = wx.MessageDialog(G2frame, Title, 'Is this the file you want?', 
-        wx.YES_NO | wx.ICON_QUESTION)
-    try:
-        result = dlg.ShowModal()
-    finally:
-        dlg.Destroy()
-    if result == wx.ID_NO: return (0,0)
-    Temperature = 300
-    
-    if '.xye' in filename:      #Topas style xye file (e.g. 2-th, I, sig) - no iparm file/no BANK record
-        dlg = wx.MessageDialog(G2frame,'''Is this laboratory Cu Ka1/Ka2 data? 
-(No = 0.6A wavelength synchrotron data)
-Change wavelength in Instrument Parameters if needed''','Data type?',
-            wx.YES_NO | wx.ICON_QUESTION)
-        try:
-            result = dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-        print result
-        if result == wx.ID_YES:
-            Iparm = {}                                               #Assume CuKa lab data
-            Iparm['INS   HTYPE '] = 'PXC '
-            Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
-            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
-            Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
-            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
-        else:
-            Iparm = {}                                               #Assume 0.6A synchrotron data
-            Iparm['INS   HTYPE '] = 'PXC '
-            Iparm['INS  1 ICONS'] = '  0.600000  0.000000       0.0         0      0.99    0       0.5   '
-            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
-            Iparm['INS  1PRCF11'] = '   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        '
-            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-02   0.100000E-02        '
-                        
-        
-    else:                       #GSAS style fxye or fxy file (e.g. 100*2-th, I, sig)
-        G2frame.IparmName = GetInstrumentFile(G2frame,filename)
-        if G2frame.IparmName:
-            Iparm = GetInstrumentData(G2frame.IparmName)
-        else:
-            Iparm = {}                                               #Assume CuKa lab data if no iparm file
-            Iparm['INS   HTYPE '] = 'PXC '
-            Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
-            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
-            Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
-            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
-    S = 1
-    Banks = []
-    Pos = []
-    FoundData = []
-    Comments = []
-    wx.BeginBusyCursor()
-    try:
-        while S:
-            S = File.readline()
-            if S[:1] != '#':
-                if S[:4] == 'BANK':
-                    Banks.append(S)
-                    Pos.append(File.tell())
-                elif '.xye' in filename:    #No BANK in a xye file
-                    Banks.append('BANK 1 XYE')
-                    Pos.append(File.tell())
-                    break
-            else:
-                Comments.append(S[:-1])
-                if 'Temp' in S.split('=')[0]:
-                    Temperature = float(S.split('=')[1])
-        File.close()
-    finally:
-        wx.EndBusyCursor()
-    if Comments:
-       print 'Comments on file:'
-       for Comment in Comments: print Comment
-    if Banks:
-        result = [0]
-        if len(Banks) >= 2:
-            dlg = wx.MultiChoiceDialog(G2frame, 'Which scans do you want?', 'Select scans', Banks, wx.CHOICEDLG_STYLE)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                else:
-                    result = []
-            finally:
-                dlg.Destroy()
-        for i in result:
-            FoundData.append((filename,Pos[i],Banks[i]))
-    else:
-        dlg = wx.MessageDialog(G2frame, 'ERROR - this is not a GSAS powder data file', 'No BANK records', wx.OK | wx.ICON_ERROR)
-        try:
-            result = dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-    return FoundData,Iparm,Comments,Temperature
-
-# to be removed
-def GetInstrumentFile(G2frame,filename):
-    import os.path as op
-    dlg = wx.FileDialog(G2frame,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
-        wx.OPEN|wx.CHANGE_DIR)
-    Tname = filename[:filename.index('.')]+'.prm'
-    if op.exists(Tname):
-        G2frame.IparmName = Tname        
-    if G2frame.IparmName: dlg.SetFilename(G2frame.IparmName)
-    filename = ''
-    try:
-        if dlg.ShowModal() == wx.ID_OK:
-            filename = dlg.GetPath()
-    finally:
-        dlg.Destroy()
-    return filename
-
-# to be removed
-def GetInstrumentData(IparmName):
-    file = open(IparmName, 'Ur')
-    S = 1
-    Iparm = {}
-    while S:
-        S = file.readline()
-        Iparm[S[:12]] = S[12:-1]
-    return Iparm
+## to be removed
+#def SelectPowderData(G2frame, filename):
+#    """Selects banks of data from a filename of any GSAS powder data format
+#    Input - filename: any GSAS powder data formatted file (currently STD, FXYE, FXY & ESD)
+#    Returns - a list of banks to be read; each entry in list is a tuple containing:
+#    filename: same as input filename
+#    Pos: position for start of data; record just after BANK record
+#    Bank: the BANK record
+#    """
+#    File = open(filename,'Ur')
+#    Title = '''
+#First line of this file:
+#'''+File.readline()
+#    dlg = wx.MessageDialog(G2frame, Title, 'Is this the file you want?', 
+#        wx.YES_NO | wx.ICON_QUESTION)
+#    try:
+#        result = dlg.ShowModal()
+#    finally:
+#        dlg.Destroy()
+#    if result == wx.ID_NO: return (0,0)
+#    Temperature = 300
+#    
+#    if '.xye' in filename:      #Topas style xye file (e.g. 2-th, I, sig) - no iparm file/no BANK record
+#        dlg = wx.MessageDialog(G2frame,'''Is this laboratory Cu Ka1/Ka2 data? 
+#(No = 0.6A wavelength synchrotron data)
+#Change wavelength in Instrument Parameters if needed''','Data type?',
+#            wx.YES_NO | wx.ICON_QUESTION)
+#        try:
+#            result = dlg.ShowModal()
+#        finally:
+#            dlg.Destroy()
+#        print result
+#        if result == wx.ID_YES:
+#            Iparm = {}                                               #Assume CuKa lab data
+#            Iparm['INS   HTYPE '] = 'PXC '
+#            Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
+#            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
+#            Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
+#            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
+#        else:
+#            Iparm = {}                                               #Assume 0.6A synchrotron data
+#            Iparm['INS   HTYPE '] = 'PXC '
+#            Iparm['INS  1 ICONS'] = '  0.600000  0.000000       0.0         0      0.99    0       0.5   '
+#            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
+#            Iparm['INS  1PRCF11'] = '   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        '
+#            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-02   0.100000E-02        '
+#                        
+#        
+#    else:                       #GSAS style fxye or fxy file (e.g. 100*2-th, I, sig)
+#        G2frame.IparmName = GetInstrumentFile(G2frame,filename)
+#        if G2frame.IparmName:
+#            Iparm = GetInstrumentData(G2frame.IparmName)
+#        else:
+#            Iparm = {}                                               #Assume CuKa lab data if no iparm file
+#            Iparm['INS   HTYPE '] = 'PXC '
+#            Iparm['INS  1 ICONS'] = '  1.540500  1.544300       0.0         0       0.7    0       0.5   '
+#            Iparm['INS  1PRCF1 '] = '    3    8      0.01                                                '
+#            Iparm['INS  1PRCF11'] = '   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        '
+#            Iparm['INS  1PRCF12'] = '   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        '
+#    S = 1
+#    Banks = []
+#    Pos = []
+#    FoundData = []
+#    Comments = []
+#    wx.BeginBusyCursor()
+#    try:
+#        while S:
+#            S = File.readline()
+#            if S[:1] != '#':
+#                if S[:4] == 'BANK':
+#                    Banks.append(S)
+#                    Pos.append(File.tell())
+#                elif '.xye' in filename:    #No BANK in a xye file
+#                    Banks.append('BANK 1 XYE')
+#                    Pos.append(File.tell())
+#                    break
+#            else:
+#                Comments.append(S[:-1])
+#                if 'Temp' in S.split('=')[0]:
+#                    Temperature = float(S.split('=')[1])
+#        File.close()
+#    finally:
+#        wx.EndBusyCursor()
+#    if Comments:
+#       print 'Comments on file:'
+#       for Comment in Comments: print Comment
+#    if Banks:
+#        result = [0]
+#        if len(Banks) >= 2:
+#            dlg = wx.MultiChoiceDialog(G2frame, 'Which scans do you want?', 'Select scans', Banks, wx.CHOICEDLG_STYLE)
+#            try:
+#                if dlg.ShowModal() == wx.ID_OK:
+#                    result = dlg.GetSelections()
+#                else:
+#                    result = []
+#            finally:
+#                dlg.Destroy()
+#        for i in result:
+#            FoundData.append((filename,Pos[i],Banks[i]))
+#    else:
+#        dlg = wx.MessageDialog(G2frame, 'ERROR - this is not a GSAS powder data file', 'No BANK records', wx.OK | wx.ICON_ERROR)
+#        try:
+#            result = dlg.ShowModal()
+#        finally:
+#            dlg.Destroy()
+#    return FoundData,Iparm,Comments,Temperature
+#
+## to be removed
+#def GetInstrumentFile(G2frame,filename):
+#    import os.path as op
+#    dlg = wx.FileDialog(G2frame,'Choose an instrument file','.', '', 'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
+#        wx.OPEN|wx.CHANGE_DIR)
+#    Tname = filename[:filename.index('.')]+'.prm'
+#    if op.exists(Tname):
+#        G2frame.IparmName = Tname        
+#    if G2frame.IparmName: dlg.SetFilename(G2frame.IparmName)
+#    filename = ''
+#    try:
+#        if dlg.ShowModal() == wx.ID_OK:
+#            filename = dlg.GetPath()
+#    finally:
+#        dlg.Destroy()
+#    return filename
+#
+## to be removed
+#def GetInstrumentData(IparmName):
+#    file = open(IparmName, 'Ur')
+#    S = 1
+#    Iparm = {}
+#    while S:
+#        S = file.readline()
+#        Iparm[S[:12]] = S[12:-1]
+#    return Iparm
     
 def GetPowderPeaks(fileName):
     sind = lambda x: math.sin(x*math.pi/180.)
@@ -307,187 +307,187 @@ def GetPowderPeaks(fileName):
 #    File.close()
 #    return HKLref,HKLmin,HKLmax,FoMax,ifFc
 
-# to be removed
-def GetPowderData(filename,Pos,Bank,DataType):
-    '''Reads one BANK of data from GSAS raw powder data file
-    input:
-    filename: GSAS raw powder file dataname
-    Pos: start of data in file just after BANK record
-    Bank: the BANK record
-    DataType: powder data type, e.g. "PXC" for Powder X-ray CW data
-    returns: list [x,y,e,yc,yb]
-    x: np.array of x-axis values
-    y: np.array of powder pattern intensities
-    w: np.array of w=sig(intensity)^2 values
-    yc: np.array of calc. intensities (zero)
-    yb: np.array of calc. background (zero)
-    yd: np.array of obs-calc profiles
-    '''
-    print 'Reading: '+filename
-    print 'Bank:    '+Bank[:-1]
-    if 'FXYE' in Bank:
-        return GetFXYEdata(filename,Pos,Bank,DataType)
-    elif ' XYE' in Bank:
-        return GetXYEdata(filename,Pos,Bank,DataType)
-    elif 'FXY' in Bank:
-        return GetFXYdata(filename,Pos,Bank,DataType)
-    elif 'ESD' in Bank:
-        return GetESDdata(filename,Pos,Bank,DataType)
-    elif 'STD' in Bank:
-        return GetSTDdata(filename,Pos,Bank,DataType)
-    else:
-        return GetSTDdata(filename,Pos,Bank,DataType)
-    return []
-
-# to be removed
-def GetFXYEdata(filename,Pos,Bank,DataType):
-    File = open(filename,'Ur')
-    File.seek(Pos)
-    x = []
-    y = []
-    w = []
-    S = File.readline()
-    while S and S[:4] != 'BANK':
-        vals = S.split()
-        if DataType[2] == 'C':
-            x.append(float(vals[0])/100.)               #CW: from centidegrees to degrees
-        elif DataType[2] == 'T':
-            x.append(float(vals[0])/1000.0)             #TOF: from musec to millisec
-        f = float(vals[1])
-        if f <= 0.0:
-            y.append(0.0)
-            w.append(1.0)
-        else:
-            y.append(float(vals[1]))
-            w.append(1.0/float(vals[2])**2)
-        S = File.readline()
-    File.close()
-    N = len(x)
-    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-    
-# to be removed
-def GetXYEdata(filename,Pos,Bank,DataType):
-    File = open(filename,'Ur')
-    File.seek(Pos)
-    x = []
-    y = []
-    w = []
-    S = File.readline()
-    while S:
-        vals = S.split()
-        try:
-            x.append(float(vals[0]))
-            f = float(vals[1])
-            if f <= 0.0:
-                y.append(0.0)
-                w.append(1.0)
-            else:
-                y.append(float(vals[1]))
-                w.append(1.0/float(vals[2])**2)
-            S = File.readline()
-        except ValueError:
-            break
-    File.close()
-    N = len(x)
-    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-    
-    
-# to be removed
-def GetFXYdata(filename,Pos,Bank,DataType):
-    File = open(filename,'Ur')
-    File.seek(Pos)
-    x = []
-    y = []
-    w = []
-    S = File.readline()
-    while S and S[:4] != 'BANK':
-        vals = S.split()
-        if DataType[2] == 'C':
-            x.append(float(vals[0])/100.)               #CW: from centidegrees to degrees
-        elif DataType[2] == 'T':
-            x.append(float(vals[0])/1000.0)             #TOF: from musec to millisec
-        f = float(vals[1])
-        if f > 0.0:
-            y.append(f)
-            w.append(1.0/f)
-        else:              
-            y.append(0.0)
-            w.append(1.0)
-        S = File.readline()
-    File.close()
-    N = len(x)
-    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-    
-# to be removed
-def GetESDdata(filename,Pos,Bank,DataType):
-    File = open(filename,'Ur')
-    cons = Bank.split()
-    if DataType[2] == 'C':
-        start = float(cons[5])/100.0               #CW: from centidegrees to degrees
-        step = float(cons[6])/100.0
-    elif DataType[2] == 'T':
-        start = float(cons[5])/1000.0              #TOF: from musec to millisec
-        step = float(cons[6])/1000.0
-    File.seek(Pos)
-    x = []
-    y = []
-    w = []
-    S = File.readline()
-    j = 0
-    while S and S[:4] != 'BANK':
-        for i in range(0,80,16):
-            xi = start+step*j
-            yi = sfloat(S[i:i+8])
-            ei = sfloat(S[i+8:i+16])
-            x.append(xi)
-            if yi > 0.0:
-                y.append(yi)
-                w.append(1.0/ei**2)
-            else:              
-                y.append(0.0)
-                w.append(1.0)
-            j += 1
-        S = File.readline()
-    File.close()
-    N = len(x)
-    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-
-# to be removed
-def GetSTDdata(filename,Pos,Bank,DataType):
-    File = open(filename,'Ur')
-    cons = Bank.split()
-    Nch = int(cons[2])
-    if DataType[2] == 'C':
-        start = float(cons[5])/100.0               #CW: from centidegrees to degrees
-        step = float(cons[6])/100.0
-    elif DataType[2] == 'T':
-        start = float(cons[5])/1000.0              #TOF: from musec to millisec - not likely!
-        step = float(cons[6])/1000.0
-    File.seek(Pos)
-    x = []
-    y = []
-    w = []
-    S = File.readline()
-    j = 0
-    while S and S[:4] != 'BANK':
-        for i in range(0,80,8):
-            xi = start+step*j
-            ni = max(sint(S[i:i+2]),1)
-            yi = max(sfloat(S[i+2:i+8]),0.0)
-            if yi:
-                vi = yi/ni
-            else:
-                yi = 0.0
-                vi = 1.0
-            j += 1
-            if j < Nch:
-                x.append(xi)
-                y.append(yi)
-                w.append(1.0/vi)
-        S = File.readline()
-    File.close()
-    N = len(x)
-    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+## to be removed
+#def GetPowderData(filename,Pos,Bank,DataType):
+#    '''Reads one BANK of data from GSAS raw powder data file
+#    input:
+#    filename: GSAS raw powder file dataname
+#    Pos: start of data in file just after BANK record
+#    Bank: the BANK record
+#    DataType: powder data type, e.g. "PXC" for Powder X-ray CW data
+#    returns: list [x,y,e,yc,yb]
+#    x: np.array of x-axis values
+#    y: np.array of powder pattern intensities
+#    w: np.array of w=sig(intensity)^2 values
+#    yc: np.array of calc. intensities (zero)
+#    yb: np.array of calc. background (zero)
+#    yd: np.array of obs-calc profiles
+#    '''
+#    print 'Reading: '+filename
+#    print 'Bank:    '+Bank[:-1]
+#    if 'FXYE' in Bank:
+#        return GetFXYEdata(filename,Pos,Bank,DataType)
+#    elif ' XYE' in Bank:
+#        return GetXYEdata(filename,Pos,Bank,DataType)
+#    elif 'FXY' in Bank:
+#        return GetFXYdata(filename,Pos,Bank,DataType)
+#    elif 'ESD' in Bank:
+#        return GetESDdata(filename,Pos,Bank,DataType)
+#    elif 'STD' in Bank:
+#        return GetSTDdata(filename,Pos,Bank,DataType)
+#    else:
+#        return GetSTDdata(filename,Pos,Bank,DataType)
+#    return []
+#
+## to be removed
+#def GetFXYEdata(filename,Pos,Bank,DataType):
+#    File = open(filename,'Ur')
+#    File.seek(Pos)
+#    x = []
+#    y = []
+#    w = []
+#    S = File.readline()
+#    while S and S[:4] != 'BANK':
+#        vals = S.split()
+#        if DataType[2] == 'C':
+#            x.append(float(vals[0])/100.)               #CW: from centidegrees to degrees
+#        elif DataType[2] == 'T':
+#            x.append(float(vals[0])/1000.0)             #TOF: from musec to millisec
+#        f = float(vals[1])
+#        if f <= 0.0:
+#            y.append(0.0)
+#            w.append(1.0)
+#        else:
+#            y.append(float(vals[1]))
+#            w.append(1.0/float(vals[2])**2)
+#        S = File.readline()
+#    File.close()
+#    N = len(x)
+#    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+#    
+## to be removed
+#def GetXYEdata(filename,Pos,Bank,DataType):
+#    File = open(filename,'Ur')
+#    File.seek(Pos)
+#    x = []
+#    y = []
+#    w = []
+#    S = File.readline()
+#    while S:
+#        vals = S.split()
+#        try:
+#            x.append(float(vals[0]))
+#            f = float(vals[1])
+#            if f <= 0.0:
+#                y.append(0.0)
+#                w.append(1.0)
+#            else:
+#                y.append(float(vals[1]))
+#                w.append(1.0/float(vals[2])**2)
+#            S = File.readline()
+#        except ValueError:
+#            break
+#    File.close()
+#    N = len(x)
+#    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+#    
+#    
+## to be removed
+#def GetFXYdata(filename,Pos,Bank,DataType):
+#    File = open(filename,'Ur')
+#    File.seek(Pos)
+#    x = []
+#    y = []
+#    w = []
+#    S = File.readline()
+#    while S and S[:4] != 'BANK':
+#        vals = S.split()
+#        if DataType[2] == 'C':
+#            x.append(float(vals[0])/100.)               #CW: from centidegrees to degrees
+#        elif DataType[2] == 'T':
+#            x.append(float(vals[0])/1000.0)             #TOF: from musec to millisec
+#        f = float(vals[1])
+#        if f > 0.0:
+#            y.append(f)
+#            w.append(1.0/f)
+#        else:              
+#            y.append(0.0)
+#            w.append(1.0)
+#        S = File.readline()
+#    File.close()
+#    N = len(x)
+#    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+#    
+## to be removed
+#def GetESDdata(filename,Pos,Bank,DataType):
+#    File = open(filename,'Ur')
+#    cons = Bank.split()
+#    if DataType[2] == 'C':
+#        start = float(cons[5])/100.0               #CW: from centidegrees to degrees
+#        step = float(cons[6])/100.0
+#    elif DataType[2] == 'T':
+#        start = float(cons[5])/1000.0              #TOF: from musec to millisec
+#        step = float(cons[6])/1000.0
+#    File.seek(Pos)
+#    x = []
+#    y = []
+#    w = []
+#    S = File.readline()
+#    j = 0
+#    while S and S[:4] != 'BANK':
+#        for i in range(0,80,16):
+#            xi = start+step*j
+#            yi = sfloat(S[i:i+8])
+#            ei = sfloat(S[i+8:i+16])
+#            x.append(xi)
+#            if yi > 0.0:
+#                y.append(yi)
+#                w.append(1.0/ei**2)
+#            else:              
+#                y.append(0.0)
+#                w.append(1.0)
+#            j += 1
+#        S = File.readline()
+#    File.close()
+#    N = len(x)
+#    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+#
+## to be removed
+#def GetSTDdata(filename,Pos,Bank,DataType):
+#    File = open(filename,'Ur')
+#    cons = Bank.split()
+#    Nch = int(cons[2])
+#    if DataType[2] == 'C':
+#        start = float(cons[5])/100.0               #CW: from centidegrees to degrees
+#        step = float(cons[6])/100.0
+#    elif DataType[2] == 'T':
+#        start = float(cons[5])/1000.0              #TOF: from musec to millisec - not likely!
+#        step = float(cons[6])/1000.0
+#    File.seek(Pos)
+#    x = []
+#    y = []
+#    w = []
+#    S = File.readline()
+#    j = 0
+#    while S and S[:4] != 'BANK':
+#        for i in range(0,80,8):
+#            xi = start+step*j
+#            ni = max(sint(S[i:i+2]),1)
+#            yi = max(sfloat(S[i+2:i+8]),0.0)
+#            if yi:
+#                vi = yi/ni
+#            else:
+#                yi = 0.0
+#                vi = 1.0
+#            j += 1
+#            if j < Nch:
+#                x.append(xi)
+#                y.append(yi)
+#                w.append(1.0/vi)
+#        S = File.readline()
+#    File.close()
+#    N = len(x)
+#    return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
     
 def CheckImageFile(G2frame,imagefile):
     if not ospath.exists(imagefile):
@@ -832,7 +832,7 @@ def ProjFileOpen(G2frame):
             for datus in data[1:]:
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
                 G2frame.PatternTree.SetItemPyData(sub,datus[1])
-            if 'IMG' in datum[0]:                   #retreive image default flag & data if set
+            if 'IMG' in datum[0]:                   #retrieve image default flag & data if set
                 Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                
@@ -1509,8 +1509,8 @@ class ImportStructFactor(ImportBaseclass):
             'log-lin' : 'lin',
             }
         self.Parameters = [ # list with data collection parameters
-            ('SXC',1.5428),
-            ['SXC',1.5428],
+            ('SXC',0.70926),
+            ['SXC',0.70926],
             ['Type','Lam']
             ]
         self.RefList = []
@@ -1553,8 +1553,8 @@ class ImportStructFactor(ImportBaseclass):
         elif Type ==  'Fo':
             self.Controls['FoMax'] = Fo2max
         else:
-            print "Unsupported Stract Fact type in ImportStructFactor.UpdateControls"
-            raise Exception,"Unsupported Stract Fact type in ImportStructFactor.UpdateControls"
+            print "Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
+            raise Exception,"Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
 
 ######################################################################
 class ImportPowderData(ImportBaseclass):

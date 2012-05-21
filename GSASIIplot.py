@@ -241,8 +241,8 @@ def PlotSngl(self,newPlot=False):
     Page.SetFocus()
     
     Plot.set_aspect(aspect='equal')
-    HKLref = self.PatternTree.GetItemPyData(self.Sngl)
-    Data = self.PatternTree.GetItemPyData( \
+    HKLref = self.PatternTree.GetItemPyData(self.Sngl)[1]
+    Data = self.PatternTree.GetItemPyData( 
         G2gd.GetPatternTreeItemId(self,self.Sngl, 'HKL Plot Controls'))
     Type = Data['Type']            
     scale = Data['Scale']

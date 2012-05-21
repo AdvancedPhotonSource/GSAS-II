@@ -760,7 +760,8 @@ def UpdateInstrumentGrid(G2frame,data):
     def OnNewType(event):
         insVal['Type'] = typePick.GetValue()
         data = updateData(insVal,insRef)
-        UpdateInstrumentGrid(G2frame,data)
+        if 'P' in insVal['Type']:
+            UpdateInstrumentGrid(G2frame,data)
         
     def OnLamPick(event):
         lamType = lamPick.GetValue()
@@ -941,8 +942,12 @@ def UpdateInstrumentGrid(G2frame,data):
         typePick.Bind(wx.EVT_COMBOBOX, OnNewType)
         instSizer.Add(typePick,0,wx.ALIGN_CENTER_VERTICAL)
         if 'C' in insVal['Type']:               #constant wavelength
-            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Lam: %10.6f'%(insDef['Lam'])),
-                    0,wx.ALIGN_CENTER_VERTICAL)
+            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Lam: (%10.6f)'%(insDef['Lam'])),
+                0,wx.ALIGN_CENTER_VERTICAL)
+            waveVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
+            waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)
+            waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveValue)
+            instSizer.Add(waveVal,0,wx.ALIGN_CENTER_VERTICAL)
         else:                                   #time of flight (neutrons)
             pass                                #for now
         
@@ -1747,40 +1752,52 @@ def UpdateUnitCellsGrid(G2frame, data):
 #####  Reflection list
 ################################################################################           
        
-def UpdateReflectionGrid(G2frame,data):
+def UpdateReflectionGrid(G2frame,data,HKLF=False):
     if not data:
         print 'No phases, no reflections'
         return
-    phases = data.keys()
+    if HKLF:
+        G2frame.RefList = 1
+        phaseName = data[0]
+    else:
+        phasename = G2frame.RefList
+        phases = data.keys()
     
-    def OnSelectPhase(event):
-        dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',phases)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelection()
-                G2frame.RefList = phases[sel]
-                UpdateReflectionGrid(G2frame,data)
-        finally:
-            dlg.Destroy()
-        G2plt.PlotPatterns(G2frame)
+        def OnSelectPhase(event):
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',phases)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    G2frame.RefList = phases[sel]
+                    UpdateReflectionGrid(G2frame,data)
+            finally:
+                dlg.Destroy()
+            G2plt.PlotPatterns(G2frame)
         
         
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
-    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ReflMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()    
-    G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
-    G2frame.dataFrame.SelectPhase.Enable(False)
-    if len(data) > 1:
-        G2frame.dataFrame.SelectPhase.Enable(True)
     rowLabels = []
-    refList = [refl[:11] for refl in data[G2frame.RefList]]
+    if HKLF:
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+        refList = [refl[:11] for refl in data[1]]
+    else:        
+        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ReflMenu)
+        if not G2frame.dataFrame.GetStatusBar():
+            Status = G2frame.dataFrame.CreateStatusBar()    
+        G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
+        G2frame.dataFrame.SelectPhase.Enable(False)
+        if len(data) > 1:
+            G2frame.dataFrame.SelectPhase.Enable(True)
+        refList = [refl[:11] for refl in data[G2frame.RefList]]
     for i in range(len(refList)): rowLabels.append(str(i))
-    colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase',]
+    if HKLF:
+        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase',]
+    else:
+        colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase',]
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]
     G2frame.PeakTable = G2gd.Table(refList,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    G2frame.dataFrame.SetLabel('Reflection List for '+G2frame.RefList)
+    G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
     G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
     G2frame.dataDisplay.EnableEditing(False)

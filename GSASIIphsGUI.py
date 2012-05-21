@@ -2727,7 +2727,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Scale'][0]))          #reset in case of error
                             
             scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
-            scaleRef = wx.CheckBox(DData,-1,label=' Phase fraction: ')
+            if 'PWDR' in item:
+                scaleRef = wx.CheckBox(DData,-1,label=' Phase fraction: ')
+            elif 'HKLF' in item:
+                scaleRef = wx.CheckBox(DData,-1,label=' Scale factor: ')                
             scaleRef.SetValue(UseList[item]['Scale'][1])
             Indx[scaleRef.GetId()] = item
             scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
@@ -2967,20 +2970,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 pass
             Obj.SetValue("%.5f"%(UseList[hist]['HStrain'][0][pid]))          #reset in case of error
 
-        def OnPOType(event):
-            Obj = event.GetEventObject()
-            hist = Indx[Obj.GetId()]
-            if 'March' in Obj.GetValue():
-                UseList[hist]['Pref.Ori.'][0] = 'MD'
-            else:
-                UseList[hist]['Pref.Ori.'][0] = 'SH'
-            wx.CallAfter(UpdateDData)            
-
-        def OnPORef(event):
-            Obj = event.GetEventObject()
-            hist = Indx[Obj.GetId()]
-            UseList[hist]['Pref.Ori.'][2] = Obj.GetValue()
-            
         def OnPOVal(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -3014,6 +3003,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UseList[hist]['Pref.Ori.'][5] = SetPOCoef(Order,hist)
             wx.CallAfter(UpdateDData)
 
+        def OnPOType(event):
+            Obj = event.GetEventObject()
+            hist = Indx[Obj.GetId()]
+            if 'March' in Obj.GetValue():
+                UseList[hist]['Pref.Ori.'][0] = 'MD'
+            else:
+                UseList[hist]['Pref.Ori.'][0] = 'SH'
+            wx.CallAfter(UpdateDData)            
+    
+        def OnPORef(event):
+            Obj = event.GetEventObject()
+            hist = Indx[Obj.GetId()]
+            UseList[hist]['Pref.Ori.'][2] = Obj.GetValue()
+                
         def SetPOCoef(Order,hist):
             cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
             newPOCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
@@ -3035,8 +3038,40 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     UseList[Indx[Obj.GetId()]]['Extinction'][0] = ext
             except ValueError:
                 pass
-            Obj.SetValue("%.2f"%(UseList[Indx[Obj.GetId()]]['Extinction'][0]))          #reset in case of error
+            Obj.SetValue("%.2f"%(UseList[Indx[Obj.GetId()]]['Extinction'][0]))
             
+        def OnTbarVal(event):
+            Obj = event.GetEventObject()
+            try:
+                tbar = float(Obj.GetValue())
+                if tbar >= 0:
+                    UseList[Indx[Obj.GetId()]]['Extinction'][2]['Tbar'] = tbar
+            except ValueError:
+                pass
+            Obj.SetValue("%.2f"%(UseList[Indx[Obj.GetId()]]['Extinction'][2]['Tbar']))
+            
+        def OnEval(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            try:
+                val = float(Obj.GetValue())
+                if val >= 0:
+                    UseList[item[0]]['Extinction'][2][item[1]][0] = val
+            except ValueError:
+                pass
+            Obj.SetValue("%9.3g"%(UseList[item[0]]['Extinction'][2][item[1]][0]))
+            
+        def OnEref(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            UseList[item[0]]['Extinction'][2][item[1]][1] = Obj.GetValue()
+
+        def OnSCExtType(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            UseList[item[0]]['Extinction'][item[1]] = Obj.GetValue()
+            wx.CallAfter(UpdateDData)
+                
         def checkAxis(axis):
             if not np.any(np.array(axis)):
                 return False
@@ -3250,6 +3285,58 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
             extSizer.Add(extVal,0,wx.ALIGN_CENTER_VERTICAL)
             return extSizer
+        
+        def SCExtSizer():
+#'Extinction':['Lorentzian','Secondary Type I',{'Tbar':0.20,'Eg':[0.0,False],'Es':[0.0,False],'Ep':[0.0,False]},]}
+            extSizer = wx.BoxSizer(wx.VERTICAL)
+            typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
+            typeSizer.Add(wx.StaticText(DData,-1,' Extinction type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Choices = ['Primary','Secondary Type I','Secondary Type II','Secondary Type I & II']
+            typeTxt = wx.ComboBox(DData,-1,choices=Choices,value=UseList[item]['Extinction'][1],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[typeTxt.GetId()] = [item,1]
+            typeTxt.Bind(wx.EVT_COMBOBOX,OnSCExtType)
+            typeSizer.Add(typeTxt)
+            typeSizer.Add(wx.StaticText(DData,-1,' Approx: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Choices=['Lorentzian','Gaussian']
+            approxTxT = wx.ComboBox(DData,-1,choices=Choices,value=UseList[item]['Extinction'][0],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[approxTxT.GetId()] = [item,0]
+            approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
+            typeSizer.Add(approxTxT)
+            extSizer.Add(typeSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            extSizer.Add((0,5),)
+            valSizer =wx.BoxSizer(wx.HORIZONTAL)
+            valSizer.Add(wx.StaticText(DData,-1,' Tbar(mm):'),0,wx.ALIGN_CENTER_VERTICAL)
+            tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
+                '%.3f'%(UseList[item]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
+            Indx[tbarVal.GetId()] = item
+            tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
+            tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
+            valSizer.Add(tbarVal,0,wx.ALIGN_CENTER_VERTICAL)
+            if 'Primary' in UseList[item]['Extinction'][1]:
+                Ekey = ['Ep',]
+            elif 'Secondary Type II' == UseList[item]['Extinction'][1]:
+                Ekey = ['Es',]
+            elif 'Secondary Type I' == UseList[item]['Extinction'][1]:
+                Ekey = ['Eg',]
+            else:
+                Ekey = ['Eg','Es']
+            for ekey in Ekey:
+                Eref = wx.CheckBox(DData,-1,label=ekey+' : ')
+                Eref.SetValue(UseList[item]['Extinction'][2][ekey][1])
+                Indx[Eref.GetId()] = [item,ekey]
+                Eref.Bind(wx.EVT_CHECKBOX, OnEref)
+                valSizer.Add(Eref,0,wx.ALIGN_CENTER_VERTICAL)
+                Eval = wx.TextCtrl(DData,wx.ID_ANY,
+                    '%9.3g'%(UseList[item]['Extinction'][2][ekey][0]),style=wx.TE_PROCESS_ENTER)
+                Indx[Eval.GetId()] = [item,ekey]
+                Eval.Bind(wx.EVT_TEXT_ENTER,OnEval)
+                Eval.Bind(wx.EVT_KILL_FOCUS,OnEval)
+                valSizer.Add(Eval,0,wx.ALIGN_CENTER_VERTICAL)
+
+            extSizer.Add(valSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            return extSizer
             
         if DData.GetSizer():
             DData.GetSizer().Clear(True)
@@ -3259,14 +3346,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         for item in keyList:
             histData = UseList[item]
-####### Patch to add LGmix to Size & Mustrain
-#            if len(histData['Size'][1]) == 2:
-#                histData['Size'][1].append(1.0)
-#                histData['Size'][2].append(False)
-#                histData['Mustrain'][1].append(1.0)
-#                histData['Mustrain'][2].append(False)
-#                UseList[item] = histData
-####### end patch
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             showData = wx.CheckBox(DData,-1,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
@@ -3360,6 +3439,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mainSizer.Add(ExtSizer())
                 mainSizer.Add((0,5),0)
             elif item[:4] == 'HKLF' and UseList[item]['Show']:
+                mainSizer.Add((0,5),0)                
+                mainSizer.Add(SCExtSizer())
+                mainSizer.Add((0,5),0)
                 pass
         mainSizer.Add((5,5),0)
 
@@ -3367,7 +3449,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.FitInside(G2frame.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
+        Size[1] = max(Size[1],290) + 20
         DData.SetSize(Size)
         DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
@@ -3391,7 +3473,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for i in result:
                         histoName = TextList[i]
                         UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                            'Extinction':['Lorentzian','Secondary Type I',{'Eg':[0.0,False]},]}                        
+                            'Extinction':['Lorentzian','Secondary Type I',
+                            {'Tbar':0.0,'Eg':[0.0,False],'Es':[0.0,False],'Ep':[0.0,False]},]}                        
                     data['Histograms'] = UseList
                     wx.BeginBusyCursor()
                     UpdateHKLFdata(histoName)
@@ -3403,7 +3486,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def UpdateHKLFdata(histoName):
         generalData = data['General']
         Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-        reflData = G2frame.PatternTree.GetItemPyData(Id)
+        reflData = G2frame.PatternTree.GetItemPyData(Id)[1]
         SGData = generalData['SGData']
         Cell = generalData['Cell'][1:7]
         G,g = G2lat.cell2Gmat(Cell)
@@ -3414,7 +3497,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             ref[3] = mulp/2             #convert from powder mulp.
             ref[11] = Uniq
             ref[12] = phi
-        G2frame.PatternTree.SetItemPyData(Id,reflData)
+        G2frame.PatternTree.SetItemPyData(Id,[histoName,reflData])
         
     def OnPwdrAdd(event):
         generalData = data['General']
@@ -3661,7 +3744,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             reflData = reflSets[phaseName]
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflData = G2frame.PatternTree.GetItemPyData(PatternId)
+            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         mapData.update(G2mth.FourierMap(data,reflData))
         mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
@@ -3741,7 +3824,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             reflData = reflSets[phaseName]
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflData = G2frame.PatternTree.GetItemPyData(PatternId)
+            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         else:
             print '**** ERROR - No data defined for charge flipping'
             return

@@ -1951,7 +1951,7 @@ def MovePatternTreeToGrid(G2frame,item):
             G2plt.PlotPowderLines(G2frame)
         else:
             G2plt.PlotPatterns(G2frame)
-    elif G2frame.PatternTree.GetItemText(item) == 'Reflection Lists':
+    elif G2frame.PatternTree.GetItemText(item) == 'Reflection Lists':   #powder reflections
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
@@ -1960,3 +1960,7 @@ def MovePatternTreeToGrid(G2frame,item):
             G2frame.RefList = data.keys()[0]
         G2pdG.UpdateReflectionGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Reflection List':    #HKLF reflections
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+        G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True)

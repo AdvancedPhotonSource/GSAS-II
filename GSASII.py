@@ -386,7 +386,7 @@ class GSASII(wx.Frame):
                                    self.ImportPhaseReaderlist,
                                    'Phase')
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Phase',
+        item = parent.AppendMenu(wx.ID_ANY, 'Phase',
             submenu, help='Import phase data')
         for reader in self.ImportPhaseReaderlist:
             item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
@@ -440,7 +440,7 @@ class GSASII(wx.Frame):
                                    self.ImportSfactReaderlist,
                                    'Struct_Factor')
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Structure Factor',
+        item = parent.AppendMenu(wx.ID_ANY, 'Structure Factor',
             submenu, help='Import Structure Factor data')
         for reader in self.ImportSfactReaderlist:
             item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,                
@@ -448,9 +448,9 @@ class GSASII(wx.Frame):
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,
-                              help='Import Structure Factor, use file to try to determine format',
-                              kind=wx.ITEM_NORMAL,
-                              text='guess format from file')
+            help='Import Structure Factor, use file to try to determine format',
+            kind=wx.ITEM_NORMAL,
+            text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
 
     def OnImportSfact(self,event):
@@ -474,12 +474,14 @@ class GSASII(wx.Frame):
             print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
             Id = self.PatternTree.AppendItem(parent=self.root,
                                              text='HKLF '+HistName)
-            self.PatternTree.SetItemPyData(Id,rd.RefList)
+            self.PatternTree.SetItemPyData(Id,['HKLF '+HistName,rd.RefList])
             Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
             self.PatternTree.SetItemPyData(Sub,rd.Parameters)
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='HKL Plot Controls'),
                 rd.Controls)
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
             self.PatternTree.SelectItem(Id)
             self.PatternTree.Expand(Id)
             self.Sngl = Id
@@ -493,7 +495,7 @@ class GSASII(wx.Frame):
         self._init_Import_routines(parent,'pwd',self.ImportPowderReaderlist,
             'Powder_Data')
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Import Powder Data',
+        item = parent.AppendMenu(wx.ID_ANY, 'Powder Data',
             submenu, help='Import Powder data')
         for reader in self.ImportPowderReaderlist:
             item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
@@ -1091,43 +1093,6 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
 
-    # this will be removed eventually
-#    def OnSnglRead(self,event):
-#        self.CheckNotebook()
-#        dlg = wx.FileDialog(self, 'Choose file', '.', '', 
-#            'hkl files (*.hkl)|*.hkl|All files (*.*)|*.*', 
-#            wx.OPEN|wx.CHANGE_DIR)
-#        try:
-#            if dlg.ShowModal() == wx.ID_OK:
-#                filename = dlg.GetPath()
-#                wx.BeginBusyCursor()
-#                try:
-#                    Data = {}
-#                    names = ['Type','Lam']
-#                    HKLref,HKLmin,HKLmax,FoMax,ifFc = G2IO.GetHKLData(filename)
-#                    Id = self.PatternTree.AppendItem(parent=self.root,text='HKLF '+os.path.basename(filename))
-#                    self.PatternTree.SetItemPyData(Id,HKLref)
-#                    Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
-#                    data = ['SXC',1.5428,]
-#                    self.PatternTree.SetItemPyData(Sub,[tuple(data),data,names])
-#                    Data['Type'] = 'Fosq'
-#                    Data['ifFc'] = ifFc
-#                    Data['HKLmax'] = HKLmax
-#                    Data['HKLmin'] = HKLmin
-#                    Data['FoMax'] = FoMax
-#                    Data['Zone'] = '001'
-#                    Data['Layer'] = 0
-#                    Data['Scale'] = 1.0
-#                    Data['log-lin'] = 'lin'                    
-#                    self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='HKL Plot Controls'),Data)
-#                    self.PatternTree.SelectItem(Id)
-#                    self.PatternTree.Expand(Id)
-#                    self.Sngl = Id
-#                finally:
-#                    wx.EndBusyCursor()    
-#        finally:
-#            dlg.Destroy()
-            
     def CheckNotebook(self):
         '''Make sure the data tree has the minimally expected controls
         (BHT) correct?
@@ -1926,14 +1891,11 @@ class GSASII(wx.Frame):
             HKLFname = single crystal histogram name as obtained from GetHistogramNames
         return: 
             HKLFdata = single crystal data list of reflections: for each reflection:
-                HKLF = [np.array([h,k,l]),FoSq,sigFoSq,FcSq,Fcp,Fcpp,phase]
+                HKLF = 
         '''
-        HKLFdata = []
-        while True:
-            data = self.PatternTree.GetItemPyData(HKLFname)
-            datum = data[0]
-            if datum[0] == HKLFname:
-                HKLFdata = datum[1:][0]
+        HKLFdata = {}
+        HKLFdata['Data'] = self.PatternTree.GetItemPyData(HKLFname)[1]
+        HKLFdata['Instrument Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,HKLFname,'Instrument Parameters'))
         return HKLFdata
                     
     def GetUsedHistogramsAndPhasesfromTree(self):
@@ -2000,6 +1962,7 @@ class GSASII(wx.Frame):
     def OnViewLSParms(self,event):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        print Histograms.keys()
         Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)

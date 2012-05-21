@@ -206,13 +206,14 @@ def GetHistograms(GPXfile,hNames):
                 try:
                     PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
                 except IndexError:
-                    PWDRdata['Reflection lists'] = {}
+                    PWDRdata['Reflection Lists'] = {}
     
                 Histograms[hist] = PWDRdata
             elif 'HKLF' in hist[:4]:
-                HKLFdata = []
-                datum = data[0]
-                HKLFdata = datum[1:][0]
+                HKLFdata = {}
+                HKLFdata['Data'] = datum[1][1]
+                HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
+                HKLFdata['Reflection Lists'] = None
                 Histograms[hist] = HKLFdata           
     fl.close()
     return Histograms
@@ -411,7 +412,7 @@ def GetPWDRdata(GPXfile,PWDRname):
             try:
                 PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
             except IndexError:
-                PWDRdata['Reflection lists'] = {}
+                PWDRdata['Reflection Lists'] = {}
     fl.close()
     return PWDRdata
     
@@ -426,7 +427,7 @@ def GetHKLFdata(GPXfile,HKLFname):
             need this [h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0,{}]
     '''
     fl = open(GPXfile,'rb')
-    HKLFdata = []
+    HKLFdata = {}
     while True:
         try:
             data = cPickle.load(fl)
@@ -434,7 +435,8 @@ def GetHKLFdata(GPXfile,HKLFname):
             break
         datum = data[0]
         if datum[0] == HKLFname:
-            HKLFdata = datum[1:][0]
+            HKLFdata['Data'] = datum[1:][0]        
+            HKLFdata['Reflection Lists'] = None
     fl.close()
     return HKLFdata
     
@@ -1119,96 +1121,134 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 continue
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']
-            limits = Histogram['Limits'][1]
-            inst = Histogram['Instrument Parameters']
-            inst = dict(zip(inst[3],inst[1]))
-            Zero = inst['Zero']
-            if 'C' in inst['Type']:
-                try:
-                    wave = inst['Lam']
-                except KeyError:
-                    wave = inst['Lam1']
-                dmin = wave/(2.0*sind(limits[1]/2.0))
-            pfx = str(pId)+':'+str(hId)+':'
-            for item in ['Scale','Extinction']:
-                hapDict[pfx+item] = hapData[item][0]
-                if hapData[item][1]:
-                    hapVary.append(pfx+item)
-            names = G2spc.HStrainNames(SGData)
-            for i,name in enumerate(names):
-                hapDict[pfx+name] = hapData['HStrain'][0][i]
-                if hapData['HStrain'][1][i]:
-                    hapVary.append(pfx+name)
-            controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
-            if hapData['Pref.Ori.'][0] == 'MD':
-                hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
-                controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
-                if hapData['Pref.Ori.'][2]:
-                    hapVary.append(pfx+'MD')
-            else:                           #'SH' spherical harmonics
-                controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
-                controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
-                for item in hapData['Pref.Ori.'][5]:
-                    hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-                    if hapData['Pref.Ori.'][2]:
-                        hapVary.append(pfx+item)
-            for item in ['Mustrain','Size']:
-                controlDict[pfx+item+'Type'] = hapData[item][0]
-                hapDict[pfx+item+':mx'] = hapData[item][1][2]
-                if hapData[item][2][2]:
-                    hapVary.append(pfx+item+':mx')
-                if hapData[item][0] in ['isotropic','uniaxial']:
-                    hapDict[pfx+item+':i'] = hapData[item][1][0]
-                    if hapData[item][2][0]:
-                        hapVary.append(pfx+item+':i')
-                    if hapData[item][0] == 'uniaxial':
-                        controlDict[pfx+item+'Axis'] = hapData[item][3]
-                        hapDict[pfx+item+':a'] = hapData[item][1][1]
-                        if hapData[item][2][1]:
-                            hapVary.append(pfx+item+':a')
-                else:       #generalized for mustrain or ellipsoidal for size
-                    Nterms = len(hapData[item][4])
-                    if item == 'Mustrain':
-                        names = G2spc.MustrainNames(SGData)
-                        pwrs = []
-                        for name in names:
-                            h,k,l = name[1:]
-                            pwrs.append([int(h),int(k),int(l)])
-                        controlDict[pfx+'MuPwrs'] = pwrs
-                    for i in range(Nterms):
-                        sfx = ':'+str(i)
-                        hapDict[pfx+item+sfx] = hapData[item][4][i]
-                        if hapData[item][5][i]:
-                            hapVary.append(pfx+item+sfx)
-                            
-            if Print: 
-                print '\n Phase: ',phase,' in histogram: ',histogram
-                print 135*'-'
-                print ' Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-                print ' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
-                if hapData['Pref.Ori.'][0] == 'MD':
-                    Ax = hapData['Pref.Ori.'][3]
-                    print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
-                        ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])
-                else: #'SH' for spherical harmonics
-                    PrintSHPO(hapData['Pref.Ori.'])
-                PrintSize(hapData['Size'])
-                PrintMuStrain(hapData['Mustrain'],SGData)
-                PrintHStrain(hapData['HStrain'],SGData)
-            HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
-            refList = []
-            for h,k,l,d in HKLd:
-                ext,mul,Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
-                if ext:
-                    continue
+            if 'PWDR' in histogram:
+                limits = Histogram['Limits'][1]
+                inst = Histogram['Instrument Parameters']
+                inst = dict(zip(inst[3],inst[1]))
+                Zero = inst['Zero']
                 if 'C' in inst['Type']:
-                    pos = 2.0*asind(wave/(2.0*d))+Zero
-                    if limits[0] < pos < limits[1]:
-                        refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0,{}])
-                        #last item should contain form factor values by atom type
+                    try:
+                        wave = inst['Lam']
+                    except KeyError:
+                        wave = inst['Lam1']
+                    dmin = wave/(2.0*sind(limits[1]/2.0))
+                pfx = str(pId)+':'+str(hId)+':'
+                for item in ['Scale','Extinction']:
+                    hapDict[pfx+item] = hapData[item][0]
+                    if hapData[item][1]:
+                        hapVary.append(pfx+item)
+                names = G2spc.HStrainNames(SGData)
+                for i,name in enumerate(names):
+                    hapDict[pfx+name] = hapData['HStrain'][0][i]
+                    if hapData['HStrain'][1][i]:
+                        hapVary.append(pfx+name)
+                controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
+                if hapData['Pref.Ori.'][0] == 'MD':
+                    hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
+                    controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
+                    if hapData['Pref.Ori.'][2]:
+                        hapVary.append(pfx+'MD')
+                else:                           #'SH' spherical harmonics
+                    controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
+                    controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
+                    for item in hapData['Pref.Ori.'][5]:
+                        hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
+                        if hapData['Pref.Ori.'][2]:
+                            hapVary.append(pfx+item)
+                for item in ['Mustrain','Size']:
+                    controlDict[pfx+item+'Type'] = hapData[item][0]
+                    hapDict[pfx+item+':mx'] = hapData[item][1][2]
+                    if hapData[item][2][2]:
+                        hapVary.append(pfx+item+':mx')
+                    if hapData[item][0] in ['isotropic','uniaxial']:
+                        hapDict[pfx+item+':i'] = hapData[item][1][0]
+                        if hapData[item][2][0]:
+                            hapVary.append(pfx+item+':i')
+                        if hapData[item][0] == 'uniaxial':
+                            controlDict[pfx+item+'Axis'] = hapData[item][3]
+                            hapDict[pfx+item+':a'] = hapData[item][1][1]
+                            if hapData[item][2][1]:
+                                hapVary.append(pfx+item+':a')
+                    else:       #generalized for mustrain or ellipsoidal for size
+                        Nterms = len(hapData[item][4])
+                        if item == 'Mustrain':
+                            names = G2spc.MustrainNames(SGData)
+                            pwrs = []
+                            for name in names:
+                                h,k,l = name[1:]
+                                pwrs.append([int(h),int(k),int(l)])
+                            controlDict[pfx+'MuPwrs'] = pwrs
+                        for i in range(Nterms):
+                            sfx = ':'+str(i)
+                            hapDict[pfx+item+sfx] = hapData[item][4][i]
+                            if hapData[item][5][i]:
+                                hapVary.append(pfx+item+sfx)
+                                
+                if Print: 
+                    print '\n Phase: ',phase,' in histogram: ',histogram
+                    print 135*'-'
+                    print ' Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+                    print ' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
+                    if hapData['Pref.Ori.'][0] == 'MD':
+                        Ax = hapData['Pref.Ori.'][3]
+                        print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
+                            ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])
+                    else: #'SH' for spherical harmonics
+                        PrintSHPO(hapData['Pref.Ori.'])
+                    PrintSize(hapData['Size'])
+                    PrintMuStrain(hapData['Mustrain'],SGData)
+                    PrintHStrain(hapData['HStrain'],SGData)
+                HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
+                refList = []
+                for h,k,l,d in HKLd:
+                    ext,mul,Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
+                    if ext:
+                        continue
+                    if 'C' in inst['Type']:
+                        pos = 2.0*asind(wave/(2.0*d))+Zero
+                        if limits[0] < pos < limits[1]:
+                            refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0,{}])
+                            #last item should contain form factor values by atom type
+                    else:
+                        raise ValueError 
+                Histogram['Reflection Lists'][phase] = refList
+            elif 'HKLF' in histogram:
+                inst = Histogram['Instrument Parameters']
+                inst = dict(zip(inst[2],inst[1]))
+                hId = Histogram['hId']
+                hfx = ':%d:'%(hId)
+                for item in inst:
+                    hapDict[hfx+item] = inst[item]
+                pfx = str(pId)+':'+str(hId)+':'
+                hapDict[pfx+'Scale'] = hapData['Scale'][0]
+                if hapData['Scale'][1]:
+                    hapVary.append(pfx+'Scale')
+                extApprox,extType,extParms = hapData['Extinction']
+                controlDict[pfx+'EType'] = extType
+                controlDict[pfx+'EApprox'] = extApprox
+                if 'Primary' in extType:
+                    Ekey = ['Ep',]
+                elif 'Secondary Type II' == extType:
+                    Ekey = ['Es',]
+                elif 'Secondary Type I' == extType:
+                    Ekey = ['Eg',]
                 else:
-                    raise ValueError 
-            Histogram['Reflection Lists'][phase] = refList
+                    Ekey = ['Eg','Es']
+                for eKey in Ekey:
+                    hapDict[pfx+eKey] = extParms[eKey][0]
+                    if extParms[eKey][1]:
+                        hapVary.append(pfx+eKey)
+                if Print: 
+                    print '\n Phase: ',phase,' in histogram: ',histogram
+                    print 135*'-'
+                    print ' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+                    print ' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
+                    text = ' Parameters       :'
+                    for eKey in Ekey:
+                        text += ' %4s : %10.3g Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
+                    print text
+                Histogram['Reflection Lists'] = phase       
+                
     return hapVary,hapDict,controlDict
     
 def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
@@ -1348,70 +1388,102 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
             print 130*'-'
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']
-            pfx = str(pId)+':'+str(hId)+':'
-            print ' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
-                %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
-            
-            PhFrExtPOSig = {}
-            for item in ['Scale','Extinction']:
-                hapData[item][0] = parmDict[pfx+item]
-                if pfx+item in sigDict:
-                    PhFrExtPOSig[item] = sigDict[pfx+item]
-            if hapData['Pref.Ori.'][0] == 'MD':
-                hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
-                if pfx+'MD' in sigDict:
-                    PhFrExtPOSig['MD'] = sigDict[pfx+'MD']
-            else:                           #'SH' spherical harmonics
-                for item in hapData['Pref.Ori.'][5]:
-                    hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
+            if 'PWDR' in histogram:
+                pfx = str(pId)+':'+str(hId)+':'
+                print ' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
+                    %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
+                
+                PhFrExtPOSig = {}
+                for item in ['Scale','Extinction']:
+                    hapData[item][0] = parmDict[pfx+item]
                     if pfx+item in sigDict:
                         PhFrExtPOSig[item] = sigDict[pfx+item]
-            if Print:
-                if 'Scale' in PhFrExtPOSig:
-                    print ' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
-                if 'Extinction' in PhFrExtPOSig:
-                    print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
                 if hapData['Pref.Ori.'][0] == 'MD':
-                    if 'MD' in PhFrExtPOSig:
-                        print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
-                else:
-                    PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
-            SizeMuStrSig = {'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
-                'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
-                'HStrain':{}}                  
-            for item in ['Mustrain','Size']:
-                hapData[item][1][2] = parmDict[pfx+item+':mx']
-                hapData[item][1][2] = min(1.,max(0.1,hapData[item][1][2]))
-                if pfx+item+':mx' in sigDict:
-                    SizeMuStrSig[item][0][2] = sigDict[pfx+item+':mx']
-                if hapData[item][0] in ['isotropic','uniaxial']:                    
-                    hapData[item][1][0] = parmDict[pfx+item+':i']
-                    if item == 'Size':
-                        hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
-                    if pfx+item+':i' in sigDict: 
-                        SizeMuStrSig[item][0][0] = sigDict[pfx+item+':i']
-                    if hapData[item][0] == 'uniaxial':
-                        hapData[item][1][1] = parmDict[pfx+item+':a']
+                    hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
+                    if pfx+'MD' in sigDict:
+                        PhFrExtPOSig['MD'] = sigDict[pfx+'MD']
+                else:                           #'SH' spherical harmonics
+                    for item in hapData['Pref.Ori.'][5]:
+                        hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
+                        if pfx+item in sigDict:
+                            PhFrExtPOSig[item] = sigDict[pfx+item]
+                if Print:
+                    if 'Scale' in PhFrExtPOSig:
+                        print ' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
+                    if 'Extinction' in PhFrExtPOSig:
+                        print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
+                    if hapData['Pref.Ori.'][0] == 'MD':
+                        if 'MD' in PhFrExtPOSig:
+                            print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
+                    else:
+                        PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
+                SizeMuStrSig = {'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
+                    'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
+                    'HStrain':{}}                  
+                for item in ['Mustrain','Size']:
+                    hapData[item][1][2] = parmDict[pfx+item+':mx']
+                    hapData[item][1][2] = min(1.,max(0.1,hapData[item][1][2]))
+                    if pfx+item+':mx' in sigDict:
+                        SizeMuStrSig[item][0][2] = sigDict[pfx+item+':mx']
+                    if hapData[item][0] in ['isotropic','uniaxial']:                    
+                        hapData[item][1][0] = parmDict[pfx+item+':i']
                         if item == 'Size':
-                            hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
-                        if pfx+item+':a' in sigDict:
-                            SizeMuStrSig[item][0][1] = sigDict[pfx+item+':a']
-                else:       #generalized for mustrain or ellipsoidal for size
-                    Nterms = len(hapData[item][4])
-                    for i in range(Nterms):
-                        sfx = ':'+str(i)
-                        hapData[item][4][i] = parmDict[pfx+item+sfx]
-                        if pfx+item+sfx in sigDict:
-                            SizeMuStrSig[item][1][i] = sigDict[pfx+item+sfx]
-            names = G2spc.HStrainNames(SGData)
-            for i,name in enumerate(names):
-                hapData['HStrain'][0][i] = parmDict[pfx+name]
-                if pfx+name in sigDict:
-                    SizeMuStrSig['HStrain'][name] = sigDict[pfx+name]
-            if Print:
-                PrintSizeAndSig(hapData['Size'],SizeMuStrSig['Size'])
-                PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
-                PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig['HStrain'],SGData)
+                            hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
+                        if pfx+item+':i' in sigDict: 
+                            SizeMuStrSig[item][0][0] = sigDict[pfx+item+':i']
+                        if hapData[item][0] == 'uniaxial':
+                            hapData[item][1][1] = parmDict[pfx+item+':a']
+                            if item == 'Size':
+                                hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
+                            if pfx+item+':a' in sigDict:
+                                SizeMuStrSig[item][0][1] = sigDict[pfx+item+':a']
+                    else:       #generalized for mustrain or ellipsoidal for size
+                        Nterms = len(hapData[item][4])
+                        for i in range(Nterms):
+                            sfx = ':'+str(i)
+                            hapData[item][4][i] = parmDict[pfx+item+sfx]
+                            if pfx+item+sfx in sigDict:
+                                SizeMuStrSig[item][1][i] = sigDict[pfx+item+sfx]
+                names = G2spc.HStrainNames(SGData)
+                for i,name in enumerate(names):
+                    hapData['HStrain'][0][i] = parmDict[pfx+name]
+                    if pfx+name in sigDict:
+                        SizeMuStrSig['HStrain'][name] = sigDict[pfx+name]
+                if Print:
+                    PrintSizeAndSig(hapData['Size'],SizeMuStrSig['Size'])
+                    PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
+                    PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig['HStrain'],SGData)
+                
+            elif 'HKLF' in histogram:
+                pfx = str(pId)+':'+str(hId)+':'
+# fix after it runs!                
+#                hapDict[pfx+'Scale'] = hapData['Scale'][0]
+#                if hapData['Scale'][1]:
+#                    hapVary.append(pfx+'Scale')
+#                extApprox,extType,extParms = hapData['Extinction']
+#                controlDict[pfx+'EType'] = extType
+#                controlDict[pfx+'EApprox'] = extApprox
+#                if 'Primary' in extType:
+#                    Ekey = ['Ep',]
+#                elif 'Secondary Type II' == extType:
+#                    Ekey = ['Es',]
+#                elif 'Secondary Type I' == extType:
+#                    Ekey = ['Eg',]
+#                else:
+#                    Ekey = ['Eg','Es']
+#                for eKey in Ekey:
+#                    hapDict[pfx+eKey] = extParms[eKey][0]
+#                    if extParms[eKey][1]:
+#                        hapVary.append(pfx+eKey)
+#                if Print: 
+#                    print '\n Phase: ',phase,' in histogram: ',histogram
+#                    print 135*'-'
+#                    print ' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+#                    print ' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
+#                    text = ' Parameters       :'
+#                    for eKey in Ekey:
+#                        text += ' %4s : %10.3g Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
+#                    print text
     
 ################################################################################
 ##### Histogram data
@@ -1548,45 +1620,53 @@ def GetHistogramData(Histograms,Print=True):
     histoList = Histograms.keys()
     histoList.sort()
     for histogram in histoList:
-        Histogram = Histograms[histogram]
-        hId = Histogram['hId']
-        pfx = ':'+str(hId)+':'
-        controlDict[pfx+'Limits'] = Histogram['Limits'][1]
-        
-        Background = Histogram['Background']
-        Type,bakDict,bakVary = GetBackgroundParms(hId,Background)
-        controlDict[pfx+'bakType'] = Type
-        histDict.update(bakDict)
-        histVary += bakVary
-        
-        Inst = Histogram['Instrument Parameters']
-        Type,instDict,insVary = GetInstParms(hId,Inst)
-        controlDict[pfx+'histType'] = Type
-        if pfx+'Lam1' in instDict:
-            controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam1']
-        else:
-            controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam']            
-        histDict.update(instDict)
-        histVary += insVary
-        
-        Sample = Histogram['Sample Parameters']
-        Type,sampDict,sampVary = GetSampleParms(hId,Sample)
-        controlDict[pfx+'instType'] = Type
-        histDict.update(sampDict)
-        histVary += sampVary
-
-        if Print: 
-            print '\n Histogram: ',histogram,' histogram Id: ',hId
-            print 135*'-'
-            Units = {'C':' deg','T':' msec'}
-            units = Units[controlDict[pfx+'histType'][2]]
-            Limits = controlDict[pfx+'Limits']
-            print ' Instrument type: ',Sample['Type']
-            print ' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)     
-            PrintSampleParms(Sample)
-            PrintInstParms(Inst)
-            PrintBackground(Background)
-        
+        if 'PWDR' in histogram:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            pfx = ':'+str(hId)+':'
+            controlDict[pfx+'Limits'] = Histogram['Limits'][1]
+            
+            Background = Histogram['Background']
+            Type,bakDict,bakVary = GetBackgroundParms(hId,Background)
+            controlDict[pfx+'bakType'] = Type
+            histDict.update(bakDict)
+            histVary += bakVary
+            
+            Inst = Histogram['Instrument Parameters']
+            Type,instDict,insVary = GetInstParms(hId,Inst)
+            controlDict[pfx+'histType'] = Type
+            if pfx+'Lam1' in instDict:
+                controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam1']
+            else:
+                controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam']            
+            histDict.update(instDict)
+            histVary += insVary
+            
+            Sample = Histogram['Sample Parameters']
+            Type,sampDict,sampVary = GetSampleParms(hId,Sample)
+            controlDict[pfx+'instType'] = Type
+            histDict.update(sampDict)
+            histVary += sampVary
+    
+            if Print: 
+                print '\n Histogram: ',histogram,' histogram Id: ',hId
+                print 135*'-'
+                Units = {'C':' deg','T':' msec'}
+                units = Units[controlDict[pfx+'histType'][2]]
+                Limits = controlDict[pfx+'Limits']
+                print ' Instrument type: ',Sample['Type']
+                print ' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)     
+                PrintSampleParms(Sample)
+                PrintInstParms(Inst)
+                PrintBackground(Background)
+        elif 'HKLF' in histogram:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            pfx = ':'+str(hId)+':'
+            Inst = Histogram['Instrument Parameters']
+            controlDict[pfx+'histType'] = Inst[1][0]
+            histDict[pfx+'Lam'] = Inst[1][1]
+            controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
     return histVary,histDict,controlDict
     
 def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
@@ -2355,7 +2435,7 @@ def GetFprime(controlDict,Histograms):
     histoList = Histograms.keys()
     histoList.sort()
     for histogram in histoList:
-        if 'PWDR' in histogram[:4]:
+        if histogram[:4] in ['PWDR','HKLF']:
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             hfx = ':%d:'%(hId)
@@ -2774,6 +2854,11 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
             else:
                 dMdv = dMdvh
+        elif 'HKLF' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            
 #    dpdv = penaltyDeriv(parmdict,varylist)
 #    dMdv = np.concatenate((dMdv.T,np.outer(dpdv,dpdv))).T
     return dMdv
@@ -2806,6 +2891,11 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             else:
                 Vec = np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
                 Hess = np.inner(dMdvh,dMdvh)
+        elif 'HKLF' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+
 #    dpdv = penaltyDeriv(parmdict,varylist)
 #    Vec += dpdv*penaltyFxn(parmdict,varylist)
 #    Hess += np.outer(dpdv,dpdv)
@@ -2847,6 +2937,29 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             if dlg:
                 dlg.Update(Histogram['wRp'],newmsg='For histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
             M = np.concatenate((M,wdy))
+        elif 'HKLF' in histogram[:4]:
+            Histogram = Histograms[histogram]
+            phase = Histogram['Reflection Lists']
+            Phase = Phases[phase]
+            hId = Histogram['hId']
+            hfx = ':%d:'%(hId)
+            pfx = '%d::'%(Phase['pId'])
+            phfx = '%d:%d:'%(Phase['pId'],hId)
+            SGData = Phase['General']['SGData']
+            A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
+            G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+            refList = Histogram['Data']
+            Histogram['Nobs'] = len(refList)
+            Nobs += Histogram['Nobs']
+            StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
+            df = np.empty(len(refList))
+            for i,ref in enumerate(refList):
+                ref[7] = parmdict[phfx+'Scale']*ref[9]
+                ref[8] = ref[5]/parmdict[phfx+'Scale']
+                df[i] = ((ref[5]-ref[7])/ref[6])**2
+            M = np.concatenate((M,df))
+
+
     Histograms['sumwYo'] = sumwYo
     Histograms['Nobs'] = Nobs
     Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)

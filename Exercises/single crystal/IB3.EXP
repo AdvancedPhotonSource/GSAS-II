@@ -1,0 +1,123 @@
+     VERSION    6     Wed Nov 10 15:42:12 2010                                  
+      DESCR   Single crystal GSAS exercise                                      
+    HSTRY  1 CAD4RD  Win32  Oct 09 15:27:55 2011                                
+    HSTRY  2 EXPEDT  Win32  Oct 09 15:27:59 2011       S   A       F-EDT        
+    HSTRY  3 SCABS   Win32  Oct 09 15:27:59 2011 Finished                       
+    HSTRY  4 SCMERGE Win32  Oct 09 15:28:00 2011                                
+    HSTRY  5 EXPEDT  Win32  Oct 09 15:28:00 2011             LA LO              
+    HSTRY  6 GENLES  Win32  Oct 09 15:28:00 2011 Sdsq= 0.111E+05 S/E= 0.776E-04 
+    HSTRY  7 EXPEDT  Win32  Oct 09 15:28:00 2011             LA                 
+  DSGL CDAT1  DRAD ARAD NOFO                                                    
+  FOUR CDAT1  PTSN X    1 NOPR   0.00      999.99                               
+  GNLS  RUN on Oct 09 15:28:00 2011    Total cycles run   9       5994.5        
+  GNLS CDAT1  MXCY  5 RFN-F   WGHT  0 DSMN  0 DSMX9999NEGI Y  SGLM  15SGLU9999  
+  GNLS CDAT2  FREE 500                                                          
+  GNLS SHFTS      0.04      0.01                                                
+ AFAC  F     3.539210.2825 2.6412 4.2944 1.5170  .2615 1.024326.1476  .2776 RHF 
+ AFAC  F_    18.998 .5654       .0096                                           
+ AFAC  F_SIZ      1.30      1.10 1.35   67                                      
+ AFAC  F_XAB   1676  1008 503.2 49.99 26.84 2790. 779.0                         
+ AFAC  F_XF1  0.132 0.104 0.073 0.017 0.010 0.170 0.092-0.003-0.003-0.003       
+ AFAC  F_XF2  0.119 0.085 0.053 0.010 0.006 0.171 0.072 0.001 0.001 0.000       
+ AFAC  H    .49300210.5109.32291226.1257.1401913.14236.04081057.7997.003038 SDS 
+ AFAC  H_     1.008-.3741  20.6  19.2                                           
+ AFAC  H_SIZ      0.98      0.78 1.20  118                                      
+ AFAC  H_XAB  .6888 .6700 .6548 .6238 .6131 .7240 .6640                         
+ AFAC  H_XF1     0.    0.    0.    0.    0.    0.    0.    0.    0.    0.       
+ AFAC  H_XF2     0.    0.    0.    0.    0.    0.    0.    0.    0.    0.       
+ AFAC  O     3.048513.2771 2.2868 5.7011 1.5463  .3239  .867032.9089  .2508 RHF 
+ AFAC  O_    15.999 .5805      .00019                                           
+ AFAC  O_SIZ      1.09      0.89 1.45   96 1.40                                 
+ AFAC  O_XAB  988.0 590.6 293.1 30.48 17.21 1730. 478.0                         
+ AFAC  O_XF1  0.093 0.072 0.049 0.011 0.006 0.121 0.063-0.002-0.003-0.003       
+ AFAC  O_XF2  0.073 0.052 0.032 0.006 0.004 0.106 0.044 0.000 0.000 0.000       
+ AFAC SB    19.6418 5.303419.0455  .4607 5.037127.9074 2.682775.2825 4.5909 RHF 
+ AFAC SB_    121.75  .557        4.91                                           
+ AFAC SB_SIZ      1.79      1.59 2.20   76                                      
+ AFAC SB_XAB 148300 96950 53890  6675  3449200000 77400                         
+ AFAC SB_XF1 -3.064-0.987-0.056-0.587-1.055-9.214-0.519 0.056 0.062 0.061       
+ AFAC SB_XF2 11.103 8.562 5.895 1.546 1.01012.766 7.537 1.220 1.151 0.883       
+ EXPR  HTYP1  SXC                                                               
+ EXPR  NATYP    4                                                               
+ EXPR  NHST     1                                                               
+ EXPR ATYP 1  SB          1      1.79      1.59 2.20   76                       
+ EXPR ATYP 2  O           1      1.09      0.89 1.45   96 1.40                  
+ EXPR ATYP 3  F           1      1.30      1.10 1.35   67                       
+ EXPR ATYP 4  H           0      0.98      0.78 1.20  118                       
+ EXPR NMXTLS    1    0    0    0    0    0    0    0    0                       
+ EXPR NPHAS     1    0    0    0    0    0    0    0    0                       
+ EXPR PTSNRL      2603                                                          
+ REFN GDNFT  Reduced CHI**2 =  25.19     for   14 variables                     
+ REFN STATS  Cycle   9 There were   252 observations. Total CHI**2 = 5.9945E+03 
+CRS1    PNAM  H3OSbF6                                                           
+CRS1   ABSCO  1229.96   799.59   441.55    54.09    28.01     0.48     0.48     
+CRS1   ATYPS    4                                                               
+CRS1   F000     27.261   927.945                                                
+CRS1   FRML1SB          8.00O           8.00F          48.00H          24.00    
+CRS1   NATOM    3                                                               
+CRS1  ABC     10.13996  10.13996  10.13996                                      
+CRS1  ABCSIG  0.007000  0.007000  0.007000    N    0                            
+CRS1  ANGLES  90.00000  90.00000  90.00000                                      
+CRS1  ANGSIG    0.0000    0.0000    0.0000                                      
+CRS1  AT 10A  SB        0.000000  0.000000  0.000000  1.000000Sb         8 000  
+CRS1  AT 10B  0.015621  0.015621  0.015621  0.004400  0.004400  0.004400  A XU  
+CRS1  AT 11A  O         0.250000  0.250000  0.250000  1.000000O          8 000  
+CRS1  AT 11B  0.037608  0.037608  0.037608  0.015591  0.015591  0.015591  A XU  
+CRS1  AT 12A  F         0.058879  0.140879  0.395700  1.000000F         48 000  
+CRS1  AT 12B  0.036765  0.022977  0.027574 -0.004302  0.010372  0.004807  A XU  
+CRS1  CELVOL       1042.573                                                     
+CRS1  CHMF 1  SB            1.00                                                
+CRS1  CHMF 2  O             1.00                                                
+CRS1  CHMF 3  F             6.00                                                
+CRS1  DENSTY     3.265                                                          
+CRS1  FMHST1  1                                                                 
+CRS1  FMPCTL  100  100  100    0    0    0   25   50   50                       
+CRS1  SG SYM  I b 3                                                             
+CRS1  SPAXIS    0    0    1                                                     
+HAP1 1ELMFR1     1.0000        N    0                                           
+HAP1 1EXTMAX Max. Extinction is 1.00000                                         
+HAP1 1XTLELM   1 0 0 0 0 0 0 0 0                                                
+HST  1  HFIL  ..\example\OXONIUM.DAT                                            
+HST  1  HNAM  KENT'S H3O+SBF5- LOW TEMP -50C       173 4.0 1.3 5.9              
+HST  1  INST    1                                                               
+HST  1 CDAT1  MoKa  SPHR+PSI F 0.150 0.010 2.000 0    0.0000                    
+HST  1 IRAD     4                                                               
+HST  1 NFOBS  259    0    0    0    0    0    0    0    0                       
+HST  1 NPSI1   37   14    8    0                                                
+HST  1 NPSIS    1                                                               
+HST  1 NREF  1460   0.61940                                                     
+HST  1 NREFM  367   0.61940                                                     
+HST  1 R-FAC  259   0.06090   5.450003E+02    7   0.05421                       
+HST  1COS2TM   0.95528                                                          
+HST  1FSQMAX   3.603802E+04                                                     
+HST  1HSCALE    0.45236        Y    0                                           
+HST  1LAMBDA  0.709300  0.713590  0.000000                                      
+HST  1MRG-R  wR(Fsq)= 0.132 wR(F)= 0.046 R(Fsq)= 0.090 R(F)= 0.052 N(I)=  367   
+HST  1O-CHI     91.453                                                          
+HST  1O-OMG     64.611                                                          
+HST  1O-PHI    344.102                                                          
+HST  1PSIA11   0.00  10.00  20.00  30.00  40.00  50.00  60.00  70.00  80.00     
+HST  1PSIA12  90.00 100.00 110.00 120.00 130.00 140.00 150.00 160.00 170.00     
+HST  1PSIA13-180.00-170.00-160.00-150.00-140.00-130.00-120.00-110.00-100.00     
+HST  1PSIA14 -90.00 -80.00 -70.00 -60.00 -50.00 -40.00 -30.00 -20.00 -10.00     
+HST  1PSIA15   0.00                                                             
+HST  1PSIINT  10.00000    9                                                     
+HST  1PSIV11 0.9841 0.9372 0.7982 0.9360 0.9400 0.8914 0.9389 0.9972 0.9715     
+HST  1PSIV12 1.0401 1.0904 1.0429 1.0281 1.1630 1.1687 1.1607 1.1167 1.0664     
+HST  1PSIV13 0.8971 0.9743 0.8085 0.8720 0.8748 0.8194 0.8766 0.9314 0.9875     
+HST  1PSIV14 0.8268 0.9343 0.9921 1.1167 1.1236 1.2734 1.1293 1.1127 1.1179     
+HST  1PSIV15 1.0601                                                             
+HST  1REFLEN   36                                                               
+HST  1TRNSLM Max. Transmission  0.37425 Min. Transmission  0.25310              
+INST  NINSTS    1                                                               
+INST 1  IFIL  ..\example\CAD4.prm                                               
+INST 1 NAME  Test of a constant wavelength xray source                          
+INST 1ATTNCU 1.54       1.0     3.02    1.0     1.0     1.0     1.0             
+INST 1ATTNMO 0.71069    1.0    16.23    1.0     1.0     1.0     1.0             
+INST 1CHIR     1.                                                               
+INST 1OMGR     1.                                                               
+INST 1PHIR    -1.                                                               
+ZZZZZZZZZZZZ  Last EXP file record                                              
+    HSTRY  8 GENLES  Win32  Oct 09 15:28:00 2011 Sdsq= 0.599E+04 S/E= 0.280E-02 
+CIF AUTHOR    rvd                                                               
+HST  1 INAME  cad4                                                              

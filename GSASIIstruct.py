@@ -126,9 +126,9 @@ def CheckConstraints(GPXfile):
         return 'Error: No Phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases)
-    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms)
-    histVary,histDict,controlDict = GetHistogramData(Histograms)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,Print=False)
+    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
+    histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = phaseVary+hapVary+histVary
     constrDict,fixedList = GetConstraints(GPXfile)
     return G2mv.CheckConstraints(varyList,constrDict,fixedList)

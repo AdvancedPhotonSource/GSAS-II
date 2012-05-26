@@ -862,7 +862,7 @@ def UpdateControls(G2frame,data):
             except ValueError:
                 value = 1.0
             data['minF/sig'] = value
-            Factr.SetValue('%.2f'%(value))
+            minSig.SetValue('%.2f'%(value))
 
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)

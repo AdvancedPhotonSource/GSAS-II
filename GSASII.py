@@ -2007,19 +2007,19 @@ class GSASII(wx.Frame):
                              '\nRefinement not possible')
             return
         #works - but it'd be better if it could restore plots
-        dlg = wx.ProgressDialog('Residual','Powder profile Rwp =',101.0, 
+        dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()
         Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         dlg.SetSize(Size)
-        Rwp = 100.00
+        Rw = 100.00
         try:
-            Rwp = G2str.Refine(self.GSASprojectfile,dlg)
+            Rw = G2str.Refine(self.GSASprojectfile,dlg)
         finally:
             dlg.Destroy()        
-        dlg = wx.MessageDialog(self,'Load new result?','Refinement results, Rwp =%.3f'%(Rwp),wx.OK|wx.CANCEL)
+        dlg = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 Id = 0

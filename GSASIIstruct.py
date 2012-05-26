@@ -1464,6 +1464,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 
             elif 'HKLF' in histogram:
                 pfx = str(pId)+':'+str(hId)+':'
+                print ' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
+                    %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
                 ScalExtSig = {}
                 for item in ['Scale','Ep','Eg','Es']:
                     if parmDict.get(pfx+item):
@@ -1817,7 +1819,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
 
             print '\n Histogram: ',histogram,' histogram Id: ',hId
             print 135*'-'
-            print ' Final refinement wRp = %.2f%% on %d observations in this histogram'%(Histogram['wRp'],Histogram['Nobs'])
+            print ' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['wR'],Histogram['Nobs'])
             if Print:
                 print ' Instrument type: ',Sample['Type']
                 PrintSampleParmsSig(Sample,sampSig)
@@ -2882,7 +2884,7 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             if dlg:
-                dlg.Update(Histogram['wRp'],newmsg='Hessian for histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
+                dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             if len(Hess):
                 Vec += np.sum(dMdvh*np.sqrt(w[xB:xF])*dy[xB:xF],axis=1)
                 Hess += np.inner(dMdvh,dMdvh)
@@ -2903,14 +2905,14 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             refList = Histogram['Data']
             Histogram['Nobs'] = len(refList)
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
-            df = np.empty(len(refList))
+            df = np.zeros(len(refList))
             for i,ref in enumerate(refList):
                 if ref[6] > 0:
                     Nobs += 1
                     ref[7] = parmdict[phfx+'Scale']*ref[9]
                     ref[8] = ref[5]/parmdict[phfx+'Scale']
                     df[i] = (ref[5]-ref[7])/ref[6]
-                    sumwYo += ref[5]/ref[6]**2
+                    sumwYo += (ref[5]/ref[6])**2
             M = np.concatenate((M,df))
 
 #    dpdv = penaltyDeriv(parmdict,varylist)
@@ -2924,7 +2926,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     G2mv.Dict2Map(parmdict,varylist)
     Histograms,Phases = HistoPhases
     M = np.empty(0)
-    sumwYo = 0
+    SumwYo = 0
     Nobs = 0
     histoList = Histograms.keys()
     histoList.sort()
@@ -2943,16 +2945,16 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Nobs'] = xF-xB
             Nobs += Histogram['Nobs']
             Histogram['sumwYo'] = np.sum(w[xB:xF]*y[xB:xF]**2)
-            sumwYo += Histogram['sumwYo']
+            SumwYo += Histogram['sumwYo']
             yc[xB:xF],yb[xB:xF] = getPowderProfile(parmdict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
             Histogram['sumwYd'] = np.sum(np.sqrt(w[xB:xF])*(yd[xB:xF]))
             wdy = -np.sqrt(w[xB:xF])*(yd[xB:xF])
-            Histogram['wRp'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
+            Histogram['wR'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
             if dlg:
-                dlg.Update(Histogram['wRp'],newmsg='For histogram %d Rwp=%8.3f%s'%(hId,Histogram['wRp'],'%'))[0]
+                dlg.Update(Histogram['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             M = np.concatenate((M,wdy))
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
@@ -2968,33 +2970,53 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             refList = Histogram['Data']
             Histogram['Nobs'] = len(refList)
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
-            df = np.empty(len(refList))
+            df = np.zeros(len(refList))
+            sumwYo = 0
+            sumFo = 0
+            sumFo2 = 0
+            sumdF = 0
+            sumdF2 = 0
             for i,ref in enumerate(refList):
                 if ref[6] > 0 and ref[5] > 0:
                     ref[7] = parmdict[phfx+'Scale']*ref[9]
                     ref[8] = ref[5]/parmdict[phfx+'Scale']
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
+                            sumFo2 += ref[5]
+                            Fo = np.sqrt(ref[5])
+                            sumFo += Fo
+                            sumFo2 += ref[5]
+                            sumdF += abs(Fo-np.sqrt(ref[7]))
+                            sumdF2 += abs(ref[5]-ref[7])
                             Nobs += 1
                             df[i] = -(ref[5]-ref[7])/ref[6]
-                            sumwYo += ref[5]/ref[6]**2
+                            sumwYo += (ref[5]/ref[6])**2
                     else:
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
                         sig = ref[6]/(2.0*Fo)
                         if Fo/sig >= calcControls['minF/sig']:
+                            sumFo += Fo
+                            sumFo2 += ref[5]
+                            sumdF += abs(Fo-Fc)
+                            sumdF2 += abs(ref[5]-ref[7])
                             Nobs += 1
                             df[i] = (Fo-Fc)/sig
-                            sumwYo += Fo/sig**2
+                            sumwYo += (Fo/sig)**2
+            Histogram['sumwYo'] = sumwYo
+            SumwYo += sumwYo
+            Histogram['wR'] = min(100.,np.sqrt(np.sum(df**2)/Histogram['sumwYo'])*100.)
+            Histogram[phfx+'Rf'] = 100.*sumdF/sumFo
+            Histogram[phfx+'Rf^2'] = 100.*sumdF2/sumFo2
+            Histogram[phfx+'Nref'] = Nobs
+            if dlg:
+                dlg.Update(Histogram['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             M = np.concatenate((M,df))
-
-
-    Histograms['sumwYo'] = sumwYo
+    Histograms['sumwYo'] = SumwYo
     Histograms['Nobs'] = Nobs
-    Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
-    print 'Rwp',sumwYo,np.sum(M**2),np.sqrt(np.sum(M**2)),Rwp,Nobs
+    Rw = min(100.,np.sqrt(np.sum(M**2)/SumwYo)*100.)
     if dlg:
-        GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile Rwp =',Rwp,'%'))[0]
+        GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))[0]
         if not GoOn:
             parmDict['saved values'] = values
             raise Exception         #Abort!!
@@ -3092,7 +3114,7 @@ def Refine(GPXfile,dlg):
         print 135*'-'
         print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
         print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
-        print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+        print ' wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
         try:
             covMatrix = result[1]*Rvals['GOF']
             sig = np.sqrt(np.diag(covMatrix))

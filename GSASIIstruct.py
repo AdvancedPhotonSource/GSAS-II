@@ -683,13 +683,17 @@ def GetPhaseData(PhaseData,Print=True):
                         phaseVary.append(pfx+'Afrac:'+str(i))
                     if 'X' in at[2]:
                         xId,xCoef = G2spc.GetCSxinel(at[7])
-                        delnames = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
+                        names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
+                        equivs = [[],[],[]]
                         for j in range(3):
                             if xId[j] > 0:                               
-                                phaseVary.append(delnames[j])
-                                for k in range(j):
-                                    if xId[j] == xId[k]:
-                                        G2mv.StoreEquivalence(delnames[k],((delnames[j],xCoef[j]),)) 
+                                phaseVary.append(names[j])
+                                equivs[xId[j]-1].append([names[j],xCoef[j]])
+                        for equiv in equivs:
+                            if len(equiv) > 1:
+                                name = equiv[0][0]
+                                for eqv in equiv[1:]:
+                                    G2mv.StoreEquivalence(name,(eqv,))
                     if 'U' in at[2]:
                         if at[9] == 'I':
                             phaseVary.append(pfx+'AUiso:'+str(i))
@@ -697,12 +701,16 @@ def GetPhaseData(PhaseData,Print=True):
                             uId,uCoef = G2spc.GetCSuinel(at[7])[:2]
                             names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
                                 pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
+                            equivs = [[],[],[],[],[],[]]
                             for j in range(6):
                                 if uId[j] > 0:                               
                                     phaseVary.append(names[j])
-                                    for k in range(j):
-                                        if uId[j] == uId[k]:
-                                            G2mv.StoreEquivalence(names[k],((names[j],uCoef[j]),))
+                                    equivs[uId[j]-1].append([names[j],uCoef[j]])
+                            for equiv in equivs:
+                                if len(equiv) > 1:
+                                    name = equiv[0][0]
+                                    for eqv in equiv[1:]:
+                                        G2mv.StoreEquivalence(name,(eqv,))
 #            elif General['Type'] == 'magnetic':
 #            elif General['Type'] == 'macromolecular':
 
@@ -1456,26 +1464,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 
             elif 'HKLF' in histogram:
                 pfx = str(pId)+':'+str(hId)+':'
+                ScalExtSig = {}
+                for item in ['Scale','Ep','Eg','Es']:
+                    if parmDict.get(pfx+item):
+                        hapData[item][0] = parmDict[pfx+item]
+                        if pfx+item in sigDict:
+                            ScalExtSig[item] = sigDict[pfx+item]
+                if Print: 
+                    if 'Scale' in ScalExtSig:
+                        print ' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig['Scale'])
 # fix after it runs!                
-#                hapDict[pfx+'Scale'] = hapData['Scale'][0]
-#                if hapData['Scale'][1]:
-#                    hapVary.append(pfx+'Scale')
-#                extApprox,extType,extParms = hapData['Extinction']
-#                controlDict[pfx+'EType'] = extType
-#                controlDict[pfx+'EApprox'] = extApprox
-#                if 'Primary' in extType:
-#                    Ekey = ['Ep',]
-#                elif 'Secondary Type II' == extType:
-#                    Ekey = ['Es',]
-#                elif 'Secondary Type I' == extType:
-#                    Ekey = ['Eg',]
-#                else:
-#                    Ekey = ['Eg','Es']
-#                for eKey in Ekey:
-#                    hapDict[pfx+eKey] = extParms[eKey][0]
-#                    if extParms[eKey][1]:
-#                        hapVary.append(pfx+eKey)
-#                if Print: 
 #                    print '\n Phase: ',phase,' in histogram: ',histogram
 #                    print 135*'-'
 #                    print ' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
@@ -2893,8 +2891,27 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 Hess = np.inner(dMdvh,dMdvh)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
+            phase = Histogram['Reflection Lists']
+            Phase = Phases[phase]
             hId = Histogram['hId']
             hfx = ':%d:'%(hId)
+            pfx = '%d::'%(Phase['pId'])
+            phfx = '%d:%d:'%(Phase['pId'],hId)
+            SGData = Phase['General']['SGData']
+            A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
+            G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+            refList = Histogram['Data']
+            Histogram['Nobs'] = len(refList)
+            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
+            df = np.empty(len(refList))
+            for i,ref in enumerate(refList):
+                if ref[6] > 0:
+                    Nobs += 1
+                    ref[7] = parmdict[phfx+'Scale']*ref[9]
+                    ref[8] = ref[5]/parmdict[phfx+'Scale']
+                    df[i] = (ref[5]-ref[7])/ref[6]
+                    sumwYo += ref[5]/ref[6]**2
+            M = np.concatenate((M,df))
 
 #    dpdv = penaltyDeriv(parmdict,varylist)
 #    Vec += dpdv*penaltyFxn(parmdict,varylist)
@@ -2950,19 +2967,32 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
             Histogram['Nobs'] = len(refList)
-            Nobs += Histogram['Nobs']
-            StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
+            refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
             df = np.empty(len(refList))
             for i,ref in enumerate(refList):
-                ref[7] = parmdict[phfx+'Scale']*ref[9]
-                ref[8] = ref[5]/parmdict[phfx+'Scale']
-                df[i] = ((ref[5]-ref[7])/ref[6])**2
+                if ref[6] > 0 and ref[5] > 0:
+                    ref[7] = parmdict[phfx+'Scale']*ref[9]
+                    ref[8] = ref[5]/parmdict[phfx+'Scale']
+                    if calcControls['F**2']:
+                        if ref[5]/ref[6] >= calcControls['minF/sig']:
+                            Nobs += 1
+                            df[i] = -(ref[5]-ref[7])/ref[6]
+                            sumwYo += ref[5]/ref[6]**2
+                    else:
+                        Fo = np.sqrt(ref[5])
+                        Fc = np.sqrt(ref[7])
+                        sig = ref[6]/(2.0*Fo)
+                        if Fo/sig >= calcControls['minF/sig']:
+                            Nobs += 1
+                            df[i] = (Fo-Fc)/sig
+                            sumwYo += Fo/sig**2
             M = np.concatenate((M,df))
 
 
     Histograms['sumwYo'] = sumwYo
     Histograms['Nobs'] = Nobs
     Rwp = min(100.,np.sqrt(np.sum(M**2)/sumwYo)*100.)
+    print 'Rwp',sumwYo,np.sum(M**2),np.sqrt(np.sum(M**2)),Rwp,Nobs
     if dlg:
         GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Powder profile Rwp =',Rwp,'%'))[0]
         if not GoOn:

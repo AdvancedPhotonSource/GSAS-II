@@ -778,10 +778,15 @@ def UpdateControls(G2frame,data):
         data['min dM/M'] = 0.0001
         data['shift factor'] = 1.
         data['max cyc'] = 3        
+        data['F**2'] = True
+        data['minF/sig'] = 0
     if 'shift factor' not in data:
         data['shift factor'] = 1.
     if 'max cyc' not in data:
-        data['max cyc'] = 3        
+        data['max cyc'] = 3
+    if 'F**2' not in data:
+        data['F**2'] = True
+        data['minF/sig'] = 0
     #end patch
     def SeqSizer():
         
@@ -847,8 +852,19 @@ def UpdateControls(G2frame,data):
                 value = 1.0
             data['shift factor'] = value
             Factr.SetValue('%.5f'%(value))
+            
+        def OnFsqRef(event):
+            data['F**2'] = fsqRef.GetValue()
         
-        LSSizer = wx.FlexGridSizer(cols=6,vgap=5,hgap=5)
+        def OnMinSig(event):
+            try:
+                value = min(max(float(minSig.GetValue()),0.),5.)
+            except ValueError:
+                value = 1.0
+            data['minF/sig'] = value
+            Factr.SetValue('%.2f'%(value))
+
+        LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
         Choice=['analytic Jacobian','numeric','analytic Hessian']
         derivSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['deriv type'],choices=Choice,
@@ -876,6 +892,18 @@ def UpdateControls(G2frame,data):
             Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
             Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
             LSSizer.Add(Factr,0,wx.ALIGN_CENTER_VERTICAL)
+        if G2frame.Sngl:
+            LSSizer.Add((1,0),)
+            LSSizer.Add((1,0),)
+            fsqRef = wx.CheckBox(G2frame.dataDisplay,-1,label='Refine HKLF as F^2? ')
+            fsqRef.SetValue(data['F**2'])
+            fsqRef.Bind(wx.EVT_CHECKBOX,OnFsqRef)
+            LSSizer.Add(fsqRef,0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label='Min obs/sig (0-5): '),0,wx.ALIGN_CENTER_VERTICAL)
+            minSig = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(data['minF/sig']),style=wx.TE_PROCESS_ENTER)
+            minSig.Bind(wx.EVT_TEXT_ENTER,OnMinSig)
+            minSig.Bind(wx.EVT_KILL_FOCUS,OnMinSig)
+            LSSizer.Add(minSig,0,wx.ALIGN_CENTER_VERTICAL)
         return LSSizer
         
     if G2frame.dataDisplay:
@@ -1131,15 +1159,11 @@ def UpdateConstraints(G2frame,data):
         #future -  add 'all:all:name', '0:all:name', etc. to the varList
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in varList]
-            dlg = wx.MultiChoiceDialog(G2frame,
-                                       'Select more variables:'+legend,
-                                       'Constrain '+FrstVarb+' and...',
-                                       atchoice)
+            dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,
+                'Constrain '+FrstVarb+' and...',atchoice)
         else:
-            dlg = wx.MultiChoiceDialog(G2frame,
-                                       'Select more variables:'+legend,
-                                       'Constrain '+FrstVarb+' and...',
-                                       varList)
+            dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,
+                'Constrain '+FrstVarb+' and...',varList)
         varbs = [FrstVarb,]
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
@@ -1179,10 +1203,9 @@ def UpdateConstraints(G2frame,data):
         errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
         if errmsg:
             res = G2frame.ErrorDialog('Constraint Error',
-                                'Error with newly added constraint:\n'+errmsg+
-                                '\n\nDiscard newly added constraint?',
-                                parent=G2frame.dataFrame,
-                                wtype=wx.YES_NO)
+                'Error with newly added constraint:\n'+errmsg+
+                '\n\nDiscard newly added constraint?',parent=G2frame.dataFrame,
+                wtype=wx.YES_NO)
             return res != wx.ID_YES
         elif warnmsg:
             print 'Unexpected contraint warning:\n',warnmsg
@@ -1205,10 +1228,9 @@ def UpdateConstraints(G2frame,data):
         errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
         if errmsg:
             res = G2frame.ErrorDialog('Constraint Error',
-                                'Error after editing constraint:\n'+errmsg+
-                                '\n\nDiscard last constraint edit?',
-                                parent=G2frame.dataFrame,
-                                wtype=wx.YES_NO)
+                'Error after editing constraint:\n'+errmsg+
+                '\n\nDiscard last constraint edit?',parent=G2frame.dataFrame,
+                wtype=wx.YES_NO)
             return res != wx.ID_YES
         elif warnmsg:
             print 'Unexpected contraint warning:\n',warnmsg
@@ -1536,10 +1558,8 @@ def UpdateConstraints(G2frame,data):
     constDictList,fixedList,ignored = G2str.ProcessConstraints(allcons)
     errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
     if errmsg:
-        G2frame.ErrorDialog('Constraint Error',
-                            'Error in constraints:\n'+errmsg,
-                            parent=G2frame.dataFrame)
-                            
+        G2frame.ErrorDialog('Constraint Error','Error in constraints:\n'+errmsg,
+            parent=G2frame.dataFrame)
     elif warnmsg:
         print 'Unexpected contraint warning:\n',warnmsg
 

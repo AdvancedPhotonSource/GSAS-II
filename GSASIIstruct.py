@@ -2938,10 +2938,12 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             refList = Histogram['Data']
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
             dMdvh = np.zeros((len(varylist),len(refList)))
+            wdf = np.zeros(len(refList))
             for iref,ref in enumerate(refList):
                 if ref[6] > 0:
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
+                            wdf[iref] = (ref[5]-ref[7])/ref[6]
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
                                     dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
@@ -2951,12 +2953,21 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
                         sig = ref[6]/(2.0*Fo)
+                        wdf[iref] = (Fo-Fc)/sig
                         if Fo/sig >= calcControls['minF/sig']:
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
                                     dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
                             if phfx+'Scale' in varylist:
                                 dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]                            
+            if dlg:
+                dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
+            if len(Hess):
+                Vec += np.sum(dMdvh*wdf,axis=1)
+                Hess += np.inner(dMdvh,dMdvh)
+            else:
+                Vec = np.sum(dMdvh*wdf,axis=1)
+                Hess = np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
 

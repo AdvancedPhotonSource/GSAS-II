@@ -783,7 +783,7 @@ def PlotPatterns(G2frame,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-    G2frame.Pwdr = True
+#    G2frame.Pwdr = True
     
 ################################################################################
 ##### PlotDeltSig

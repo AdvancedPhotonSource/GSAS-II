@@ -393,6 +393,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         Map = generalData['Map']
         Flip = generalData['Flip']  
+        PWDR = any(['PWDR' in item for item in data['Histograms'].keys()])
         
         def NameSizer():
                    
@@ -558,10 +559,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if laue in cellGUI[0]:
                     useGUI = cellGUI
             cellSizer = wx.FlexGridSizer(2,useGUI[1]+1,5,5)
-            cellRef = wx.CheckBox(dataDisplay,-1,label='Refine unit cell:')
-            cellSizer.Add(cellRef,0,wx.ALIGN_CENTER_VERTICAL)
-            cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
-            cellRef.SetValue(cell[0])
+            if PWDR:
+                cellRef = wx.CheckBox(dataDisplay,-1,label='Refine unit cell:')
+                cellSizer.Add(cellRef,0,wx.ALIGN_CENTER_VERTICAL)
+                cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
+                cellRef.SetValue(cell[0])
             cellList = []
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(dataDisplay,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
@@ -2668,6 +2670,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SGData = generalData['SGData']
         keyList = UseList.keys()
         keyList.sort()
+        PWDR = any(['PWDR' in item for item in keyList])
         Indx = {}
         
         def PlotSizer():
@@ -3287,7 +3290,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return extSizer
         
         def SCExtSizer():
-#'Extinction':['Lorentzian','Secondary Type I',{'Tbar':0.20,'Eg':[0.0,False],'Es':[0.0,False],'Ep':[0.0,False]},]}
             extSizer = wx.BoxSizer(wx.VERTICAL)
             typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
             typeSizer.Add(wx.StaticText(DData,-1,' Extinction type: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -3342,7 +3344,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             DData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(DData,-1,'Histogram data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add(PlotSizer())            
+        if PWDR:
+            mainSizer.Add(PlotSizer())            
             
         for item in keyList:
             histData = UseList[item]

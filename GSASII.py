@@ -862,7 +862,6 @@ class GSASII(wx.Frame):
         self.oldImagefile = ''
         self.ImageZ = []
         self.Integrate = 0
-        self.Pwdr = False
         self.imageDefault = {}
         self.Sngl = 0
         self.ifGetRing = False

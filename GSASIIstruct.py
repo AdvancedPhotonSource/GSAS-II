@@ -2850,14 +2850,46 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             xF = np.searchsorted(x,Limits[1])
             dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
-            if len(dMdv):
-                dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
-            else:
-                dMdv = dMdvh
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
+            nobs = Histogram['Nobs']
+            phase = Histogram['Reflection Lists']
+            Phase = Phases[phase]
             hId = Histogram['hId']
             hfx = ':%d:'%(hId)
+            pfx = '%d::'%(Phase['pId'])
+            phfx = '%d:%d:'%(Phase['pId'],hId)
+            SGData = Phase['General']['SGData']
+            A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
+            G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+            refList = Histogram['Data']
+            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
+            dMdvh = np.zeros((len(varylist),len(refList)))
+            for iref,ref in enumerate(refList):
+                if ref[6] > 0:
+                    if calcControls['F**2']:
+                        if ref[5]/ref[6] >= calcControls['minF/sig']:
+                            for j,var in enumerate(varylist):
+                                if var in dFdvDict:
+                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
+                            if phfx+'Scale' in varylist:
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]
+                    else:
+                        Fo = np.sqrt(ref[5])
+                        Fc = np.sqrt(ref[7])
+                        sig = ref[6]/(2.0*Fo)
+                        if Fo/sig >= calcControls['minF/sig']:
+                            for j,var in enumerate(varylist):
+                                if var in dFdvDict:
+                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
+                            if phfx+'Scale' in varylist:
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]                            
+        else:
+            continue        #skip non-histogram entries
+        if len(dMdv):
+            dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
+        else:
+            dMdv = dMdvh
             
 #    dpdv = penaltyDeriv(parmdict,varylist)
 #    dMdv = np.concatenate((dMdv.T,np.outer(dpdv,dpdv))).T
@@ -2893,6 +2925,7 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 Hess = np.inner(dMdvh,dMdvh)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
+            nobs = Histogram['Nobs']
             phase = Histogram['Reflection Lists']
             Phase = Phases[phase]
             hId = Histogram['hId']
@@ -2903,17 +2936,29 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
-            Histogram['Nobs'] = len(refList)
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
-            df = np.zeros(len(refList))
-            for i,ref in enumerate(refList):
+            dMdvh = np.zeros((len(varylist),len(refList)))
+            for iref,ref in enumerate(refList):
                 if ref[6] > 0:
-                    Nobs += 1
-                    ref[7] = parmdict[phfx+'Scale']*ref[9]
-                    ref[8] = ref[5]/parmdict[phfx+'Scale']
-                    df[i] = (ref[5]-ref[7])/ref[6]
-                    sumwYo += (ref[5]/ref[6])**2
-            M = np.concatenate((M,df))
+                    if calcControls['F**2']:
+                        if ref[5]/ref[6] >= calcControls['minF/sig']:
+                            for j,var in enumerate(varylist):
+                                if var in dFdvDict:
+                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
+                            if phfx+'Scale' in varylist:
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]
+                    else:
+                        Fo = np.sqrt(ref[5])
+                        Fc = np.sqrt(ref[7])
+                        sig = ref[6]/(2.0*Fo)
+                        if Fo/sig >= calcControls['minF/sig']:
+                            for j,var in enumerate(varylist):
+                                if var in dFdvDict:
+                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
+                            if phfx+'Scale' in varylist:
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]                            
+        else:
+            continue        #skip non-histogram entries
 
 #    dpdv = penaltyDeriv(parmdict,varylist)
 #    Vec += dpdv*penaltyFxn(parmdict,varylist)
@@ -2968,7 +3013,6 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
-            Histogram['Nobs'] = len(refList)
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
             df = np.zeros(len(refList))
             sumwYo = 0
@@ -2976,8 +3020,9 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             sumFo2 = 0
             sumdF = 0
             sumdF2 = 0
+            nobs = 0
             for i,ref in enumerate(refList):
-                if ref[6] > 0 and ref[5] > 0:
+                if ref[6] > 0:
                     ref[7] = parmdict[phfx+'Scale']*ref[9]
                     ref[8] = ref[5]/parmdict[phfx+'Scale']
                     if calcControls['F**2']:
@@ -2988,7 +3033,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
                             sumFo2 += ref[5]
                             sumdF += abs(Fo-np.sqrt(ref[7]))
                             sumdF2 += abs(ref[5]-ref[7])
-                            Nobs += 1
+                            nobs += 1
                             df[i] = -(ref[5]-ref[7])/ref[6]
                             sumwYo += (ref[5]/ref[6])**2
                     else:
@@ -3000,15 +3045,17 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
                             sumFo2 += ref[5]
                             sumdF += abs(Fo-Fc)
                             sumdF2 += abs(ref[5]-ref[7])
-                            Nobs += 1
+                            nobs += 1
                             df[i] = (Fo-Fc)/sig
                             sumwYo += (Fo/sig)**2
+            Histogram['Nobs'] = nobs
             Histogram['sumwYo'] = sumwYo
             SumwYo += sumwYo
             Histogram['wR'] = min(100.,np.sqrt(np.sum(df**2)/Histogram['sumwYo'])*100.)
             Histogram[phfx+'Rf'] = 100.*sumdF/sumFo
             Histogram[phfx+'Rf^2'] = 100.*sumdF2/sumFo2
-            Histogram[phfx+'Nref'] = Nobs
+            Histogram[phfx+'Nref'] = nobs
+            Nobs += nobs
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             M = np.concatenate((M,df))

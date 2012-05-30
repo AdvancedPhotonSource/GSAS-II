@@ -2822,7 +2822,7 @@ def PlotStructure(G2frame,data):
             else:
                 rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
             steps = 1./np.array(rho.shape)
-            incre = np.where(VP>0,VP%steps,VP%steps-steps)
+            incre = np.where(VP>=0,VP%steps,VP%steps-steps)
             Vsteps = -np.array(VP/steps,dtype='i')
             rho = np.roll(np.roll(np.roll(rho,Vsteps[0],axis=0),Vsteps[1],axis=1),Vsteps[2],axis=2)
             indx = np.array(ma.nonzero(rho)).T
@@ -2863,8 +2863,8 @@ def PlotStructure(G2frame,data):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         glRotate(anglez,0,0,1)
-        glRotate(anglex,cosd(anglez),-sind(anglez),0)
         glRotate(angley,sind(anglez),cosd(anglez),0)
+        glRotate(anglex,cosd(anglez),-sind(anglez),0)
         glMultMatrixf(A4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
         if drawingData['unitCellBox']:

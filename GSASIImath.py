@@ -603,7 +603,7 @@ def findOffset(SGData,rho,Fhkl):
     while float(F) > 0.5*Fmax:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
-        iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
+        iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData,Friedel=True)
         Uniq = np.array(Uniq,dtype='i')+hklHalf
         print hkl-hklHalf
         Fh0 = Fhkl[hkl[0],hkl[1],hkl[2]]
@@ -611,8 +611,8 @@ def findOffset(SGData,rho,Fhkl):
         for j,H in enumerate(Uniq):
             Fh = Fhkl[H[0],H[1],H[2]]
             h,k,l = H-hklHalf
-            ang = np.angle(Fh,deg=True)/360.-ph0
-            print '(%3d,%3d,%3d) %5.2f %9.5f %9.5f'%(h,k,l,phi[j],np.angle(Fh,deg=True)/360.,ang)        
+            ang = np.angle(Fh,deg=True)/360.-phi[j]
+            print '(%3d,%3d,%3d) %9.5f'%(h,k,l,ang)        
         i += 1
         
         

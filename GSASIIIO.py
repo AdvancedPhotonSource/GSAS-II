@@ -1329,6 +1329,107 @@ class MultipleChoicesDialog(wx.Dialog):
         self.chosen = []
         self.EndModal(wx.ID_CANCEL)              
             
+def ExtractFileFromZip(filename, selection=None, confirmread=True,
+                       confirmoverwrite=True, parent=None):
+    '''If the filename is a zip file, extract a file from that archive.
+      selection is used to predefine the name of the file to be extracted
+         filename case and zip directory name are ignored in selection;
+         the first matching file is used
+      confirmread if True asks the user to confirm before expanding
+         the only file in a zip
+      confirmoverwrite if True asks the user to confirm before
+        overwriting if the extracted file already exists
+    If only one file is present, do not ask which one, otherwise offer a
+       list of choices (unless selection is used)
+    Return the name of the file that has been created
+      If the file is not a zipfile, return the name of the input file.
+      If the zipfile is empty or no file has been selected, return None
+    '''
+    import zipfile # do this now, since we can save startup time by doing this only on need
+    import shutil
+    zloc = os.path.split(filename)[0]
+    if not zipfile.is_zipfile(filename):
+        #print("not zip")
+        return filename
+
+    z = zipfile.ZipFile(filename,'r')
+    zinfo = z.infolist()
+
+    if len(zinfo) == 0:
+        #print('Zip has no files!')
+        zindex = -1
+    if selection:
+        choices = [os.path.split(i.filename)[1].lower() for i in zinfo]
+        if selection.lower() in choices:
+            zindex = choices.index(selection.lower())
+        else:
+            print('debug: file '+str(selection)+' was not found in '+str(filename))
+            zindex = -1
+    elif len(zinfo) == 1 and confirmread:
+        result = wx.ID_NO
+        dlg = wx.MessageDialog(
+            parent,
+            'Is file '+str(zinfo[0].filename)+
+            ' what you want to extract from '+
+            str(os.path.split(filename)[1])+'?',
+            'Confirm file', 
+            wx.YES_NO | wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result == wx.ID_NO:
+            zindex = -1
+        else:
+            zindex = 0
+    elif len(zinfo) == 1:
+        zindex = 0
+    else:
+        # select from list
+        choices = [i.filename for i in zinfo]
+        dlg = wx.SingleChoiceDialog(
+            parent,
+            'Select file to extract from zip file'+str(filename),
+            'Choose file',
+            choices,
+            )
+        if dlg.ShowModal() == wx.ID_OK:
+            zindex = dlg.GetSelection()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            zindex = -1
+        
+    if zindex >= 0:
+        efil = os.path.join(zloc, os.path.split(zinfo[zindex].filename)[1])
+        if os.path.exists(efil) and confirmoverwrite:
+            result = wx.ID_NO
+            dlg = wx.MessageDialog(
+                parent,
+                'File '+str(efil)+' already exists. OK to overwrite it?',
+                'Confirm overwrite', 
+                wx.YES_NO | wx.ICON_QUESTION)
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result == wx.ID_NO:
+                zindex = -1
+    if zindex >= 0:
+        # extract the file to the current directory, regardless of it's original path
+        eloc,efil = os.path.split(zinfo[zindex].filename)
+        outfile = os.path.join(zloc, efil)
+        fpin = z.open(zinfo[zindex])
+        fpout = file(outfile, "wb")
+        shutil.copyfileobj(fpin, fpout)
+        fpin.close()
+        fpout.close()
+        #z.extract(zinfo[zindex],zloc)
+        z.close()
+        return outfile
+    z.close()
+    return None
+
 ######################################################################
 # base classes for reading various types of data files
 #   not used directly, only by subclassing
@@ -1623,11 +1724,21 @@ class ImportPowderData(ImportBaseclass):
 if __name__ == '__main__':
     app = wx.PySimpleApp()
     frm = wx.Frame(None) # create a frame
-    choicelist=[ ('a','b','c'),
-                 ('test1','test2'),('no choice',)]
-    titles = [ 'a, b or c', 'tests', 'No option here']
-    dlg = MultipleChoicesDialog(
-        choicelist,titles,
-        parent=frm)
-    if dlg.ShowModal() == wx.ID_OK:
-        print 'Got OK'
+    frm.Show(True)
+    filename = '/tmp/notzip.zip'
+    filename = '/tmp/all.zip'
+    #filename = '/tmp/11bmb_7652.zip'
+    
+    #selection=None, confirmoverwrite=True, parent=None
+    #print ExtractFileFromZip(filename, selection='11bmb_7652.fxye',parent=frm)
+    print ExtractFileFromZip(filename)
+                             #confirmread=False, confirmoverwrite=False)
+
+    # choicelist=[ ('a','b','c'),
+    #              ('test1','test2'),('no choice',)]
+    # titles = [ 'a, b or c', 'tests', 'No option here']
+    # dlg = MultipleChoicesDialog(
+    #     choicelist,titles,
+    #     parent=frm)
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     print 'Got OK'

@@ -242,10 +242,12 @@ class GSASII(wx.Frame):
         import readers in response to a menu item
         '''
         self.lastimport = ''
+        self.zipfile = None
         if reader is None:
             multiple = False
             #print "use all formats"
             choices = "any file (*.*)|*.*"
+            choices += "|zip archive (.zip)|*.zip"
             extdict = {}
             # compile a list of allowed extensions
             for rd in readerlist:
@@ -268,6 +270,7 @@ class GSASII(wx.Frame):
                 if w != "": w += ";"
                 w += "*" + extn
             choices += w + ")|" + w
+            choices += "|zip archive (.zip)|*.zip"
             if not reader.strictExtension:
                 choices += "|any file (*.*)|*.*"
         # get the file(s)
@@ -295,7 +298,13 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         rd_list = []
         for filename in filelist:
-        # set what formats are compatible with this file
+            # is this a zip file?
+            if os.path.splitext(filename)[1].lower() == '.zip':
+                extractedfile = G2IO.ExtractFileFromZip(filename,parent=self)
+                if extractedfile is None: continue # error or Cancel 
+                if extractedfile != filename:
+                    filename,self.zipfile = extractedfile,filename # now use the file that was created
+            # set what formats are compatible with this file
             primaryReaders = []
             secondaryReaders = []
             for reader in readerlist:
@@ -595,7 +604,26 @@ class GSASII(wx.Frame):
             else:
                 print 'debug: open/read failed',instfile
                 pass # fail silently
-        
+
+        # did we read the data file from a zip? If so, look there for a
+        # instrument parameter file
+        if self.zipfile:
+            for ext in '.inst','.prm':
+                instfile = G2IO.ExtractFileFromZip(
+                    self.zipfile,
+                    selection=os.path.split(basename + ext)[1],
+                    parent=self)
+                if instfile is not None and instfile != self.zipfile:
+                    print 'debug:',instfile,'created from ',self.zipfile
+                    Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+                    if Iparm:
+                        rd.instfile = instfile
+                        rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                        return Iparm
+                    else:
+                        print 'debug: open/read for',instfile,'from',self.zipfile,'failed'
+                        pass # fail silently
+
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
             dlg = wx.FileDialog(self,
@@ -1023,21 +1051,28 @@ class GSASII(wx.Frame):
             
     def OnImageRead(self,event):
         self.CheckNotebook()
-        dlg = wx.FileDialog(self, 'Choose image files', '.', '',\
-        'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img)\
-        |*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img|\
-        Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
-        MAR file (*.mar*)|*.mar*|\
-        GE Image (*.avg;*.sum)|*.avg;*.sum|\
-        ADSC Image (*.img)|*.img|\
-        GSAS-II Image (*.G2img)|*.G2img|\
-        All files (*.*)|*.*',
-        wx.OPEN | wx.MULTIPLE|wx.CHANGE_DIR)
+        dlg = wx.FileDialog(
+            self, 'Choose image files', '.', '',
+            'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img)|'
+            '*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img;*.zip|'
+            'Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|'
+            'MAR file (*.mar*)|*.mar*|'
+            'GE Image (*.avg;*.sum)|*.avg;*.sum|'
+            'ADSC Image (*.img)|*.img|'
+            'GSAS-II Image (*.G2img)|*.G2img|'
+            'Zip archive (*.zip)|*.zip|'
+            'All files (*.*)|*.*',
+            wx.OPEN | wx.MULTIPLE|wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 imagefiles = dlg.GetPaths()
                 imagefiles.sort()
                 for imagefile in imagefiles:
+                    # if a zip file, open and extract
+                    if os.path.splitext(imagefile)[1].lower() == '.zip':
+                        extractedfile = G2IO.ExtractFileFromZip(imagefile,parent=self)
+                        if extractedfile is not None and extractedfile != imagefile:
+                            imagefile = extractedfile
                     Comments,Data,Npix,Image = G2IO.GetImageData(self,imagefile)
                     if Comments:
                         Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+os.path.basename(imagefile))

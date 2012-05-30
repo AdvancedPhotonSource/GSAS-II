@@ -48,7 +48,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             else:
                 print 'ContentsValidator: '+self.formatName
                 print 'Unexpected information in line:',i+1 # debug info
-                print line
+                print S
                 return False
         return True # no errors encountered
 

@@ -11,6 +11,7 @@ import sys
 import random as ran
 import GSASIIIO as G2IO
 import GSASIIspc as G2spc
+import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
 import CifFile as cif # PyCifRW from James Hester
 import urllib
@@ -46,7 +47,6 @@ class CIFPhaseReader(G2IO.ImportPhase):
             '_cell_length_a','_cell_length_b','_cell_length_c',
             '_cell_angle_alpha','_cell_angle_beta','_cell_angle_gamma',)
         reqitems = (
-             '_atom_site_type_symbol',
              '_atom_site_fract_x',
              '_atom_site_fract_y',
              '_atom_site_fract_z',
@@ -180,6 +180,12 @@ class CIFPhaseReader(G2IO.ImportPhase):
                                 atomlist[9] = 'A'
                         elif key == '_atom_site_u_iso_or_equiv':
                             atomlist[10] =cif.get_number_with_esd(val)[0]
+                    if not atomlist[1] and atomlist[0]:
+                        for i in range(2,0,-1):
+                            typ = atomlist[0].strip()[:i]
+                            if G2elem.CheckElement(typ):
+                                atomlist[1] = typ
+                            if not atomlist[1]: atomlist[1] = 'Xe'
                     ulbl = '_atom_site_aniso_label'
                     if  atomlist[9] == 'A' and atomlist[0] in blk.get(ulbl):
                         for val,key in zip(anisoloop.GetKeyedPacket(ulbl,atomlist[0]),

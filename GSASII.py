@@ -297,6 +297,20 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         rd_list = []
+        filelist1 = []
+        for filename in filelist:
+            # is this a zip file?
+            if os.path.splitext(filename)[1].lower() == '.zip':
+                extractedfiles = G2IO.ExtractFileFromZip(
+                    filename,parent=self,
+                    multipleselect=True)
+                if extractedfiles is None: continue # error or Cancel 
+                if extractedfiles != filename:
+                    self.zipfile = filename # save zip name
+                    filelist1 += extractedfiles
+                    continue
+            filelist1.append(filename)
+        filelist = filelist1
         for filename in filelist:
             # is this a zip file?
             if os.path.splitext(filename)[1].lower() == '.zip':

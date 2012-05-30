@@ -1330,7 +1330,8 @@ class MultipleChoicesDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)              
             
 def ExtractFileFromZip(filename, selection=None, confirmread=True,
-                       confirmoverwrite=True, parent=None):
+                       confirmoverwrite=True, parent=None,
+                       multipleselect=False):
     '''If the filename is a zip file, extract a file from that archive.
       selection is used to predefine the name of the file to be extracted
          filename case and zip directory name are ignored in selection;
@@ -1339,9 +1340,11 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
          the only file in a zip
       confirmoverwrite if True asks the user to confirm before
         overwriting if the extracted file already exists
+      multipleselect if True allows more than one zip file to be extracted,
+        a list of file(s) is returned
     If only one file is present, do not ask which one, otherwise offer a
        list of choices (unless selection is used)
-    Return the name of the file that has been created
+    Return the name of the file that has been created or a list of files (see multipleselect)
       If the file is not a zipfile, return the name of the input file.
       If the zipfile is empty or no file has been selected, return None
     '''
@@ -1357,14 +1360,14 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
 
     if len(zinfo) == 0:
         #print('Zip has no files!')
-        zindex = -1
+        zlist = [-1]
     if selection:
         choices = [os.path.split(i.filename)[1].lower() for i in zinfo]
         if selection.lower() in choices:
-            zindex = choices.index(selection.lower())
+            zlist = [choices.index(selection.lower())]
         else:
             print('debug: file '+str(selection)+' was not found in '+str(filename))
-            zindex = -1
+            zlist = [-1]
     elif len(zinfo) == 1 and confirmread:
         result = wx.ID_NO
         dlg = wx.MessageDialog(
@@ -1379,13 +1382,29 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
         finally:
             dlg.Destroy()
         if result == wx.ID_NO:
-            zindex = -1
+            zlist = [-1]
         else:
-            zindex = 0
+            zlist = [0]
     elif len(zinfo) == 1:
-        zindex = 0
+        zlist = [0]
+    elif multipleselect:
+        # select one or more from a from list
+        choices = [i.filename for i in zinfo]
+        dlg = wx.MultiChoiceDialog(
+            parent,
+            'Select file(s) to extract from zip file'+str(filename),
+            'Choose file(s)',
+            choices,
+            wx.CHOICEDLG_STYLE,
+            )
+        if dlg.ShowModal() == wx.ID_OK:
+            zlist = dlg.GetSelections()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            zlist = []
     else:
-        # select from list
+        # select one from a from list
         choices = [i.filename for i in zinfo]
         dlg = wx.SingleChoiceDialog(
             parent,
@@ -1394,41 +1413,47 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
             choices,
             )
         if dlg.ShowModal() == wx.ID_OK:
-            zindex = dlg.GetSelection()
+            zlist = [dlg.GetSelection()]
             dlg.Destroy()
         else:
             dlg.Destroy()
-            zindex = -1
+            zlist = [-1]
         
-    if zindex >= 0:
-        efil = os.path.join(zloc, os.path.split(zinfo[zindex].filename)[1])
-        if os.path.exists(efil) and confirmoverwrite:
-            result = wx.ID_NO
-            dlg = wx.MessageDialog(
-                parent,
-                'File '+str(efil)+' already exists. OK to overwrite it?',
-                'Confirm overwrite', 
-                wx.YES_NO | wx.ICON_QUESTION)
-            try:
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            if result == wx.ID_NO:
-                zindex = -1
-    if zindex >= 0:
-        # extract the file to the current directory, regardless of it's original path
-        eloc,efil = os.path.split(zinfo[zindex].filename)
-        outfile = os.path.join(zloc, efil)
-        fpin = z.open(zinfo[zindex])
-        fpout = file(outfile, "wb")
-        shutil.copyfileobj(fpin, fpout)
-        fpin.close()
-        fpout.close()
-        #z.extract(zinfo[zindex],zloc)
-        z.close()
-        return outfile
+    outlist = []
+    for zindex in zlist:
+        if zindex >= 0:
+            efil = os.path.join(zloc, os.path.split(zinfo[zindex].filename)[1])
+            if os.path.exists(efil) and confirmoverwrite:
+                result = wx.ID_NO
+                dlg = wx.MessageDialog(
+                    parent,
+                    'File '+str(efil)+' already exists. OK to overwrite it?',
+                    'Confirm overwrite', 
+                    wx.YES_NO | wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                finally:
+                    dlg.Destroy()
+                if result == wx.ID_NO:
+                    zindex = -1
+        if zindex >= 0:
+            # extract the file to the current directory, regardless of it's original path
+            #z.extract(zinfo[zindex],zloc)
+            eloc,efil = os.path.split(zinfo[zindex].filename)
+            outfile = os.path.join(zloc, efil)
+            fpin = z.open(zinfo[zindex])
+            fpout = file(outfile, "wb")
+            shutil.copyfileobj(fpin, fpout)
+            fpin.close()
+            fpout.close()
+            outlist.append(outfile)
     z.close()
-    return None
+    if multipleselect and len(outlist) >= 1:
+        return outlist
+    elif len(outlist) == 1:
+        return outlist[0]
+    else:
+        return None
 
 ######################################################################
 # base classes for reading various types of data files
@@ -1731,7 +1756,7 @@ if __name__ == '__main__':
     
     #selection=None, confirmoverwrite=True, parent=None
     #print ExtractFileFromZip(filename, selection='11bmb_7652.fxye',parent=frm)
-    print ExtractFileFromZip(filename)
+    print ExtractFileFromZip(filename,multipleselect=True)
                              #confirmread=False, confirmoverwrite=False)
 
     # choicelist=[ ('a','b','c'),

@@ -71,6 +71,16 @@ def GetFFC5(ElSym):
     El['cmpb'] = Cmp5[6:]
     return El
     
+def CheckElement(El):
+    import ElementTable as ET
+    Elements = []
+    for elem in ET.ElTable:
+        Elements.append(elem[0][0])
+    if El.capitalize() in Elements:
+        return True
+    else:
+        return False  
+        
 def GetAtomInfo(El):
     
     import ElementTable as ET

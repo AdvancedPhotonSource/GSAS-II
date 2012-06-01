@@ -576,8 +576,7 @@ def FourierMap(data,reflData):
                     Fhkl[h,k,l] = complex(Fosq,0.)
                     h,k,l = -hkl+Hmax
                     Fhkl[h,k,l] = complex(Fosq,0.)
-    Fhkl = fft.fftshift(Fhkl)
-    rho = fft.fftn(Fhkl)/cell[6]
+    rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
     print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
@@ -611,7 +610,7 @@ def findOffset(SGData,rho,Fhkl):
         for j,H in enumerate(Uniq):
             Fh = Fhkl[H[0],H[1],H[2]]
             h,k,l = H-hklHalf
-            ang = np.angle(Fh,deg=True)/360.-phi[j]
+            ang = (np.angle(Fh,deg=True)/360.-phi[j]) % 1.
             print '(%3d,%3d,%3d) %9.5f'%(h,k,l,ang)        
         i += 1
         
@@ -696,6 +695,14 @@ def ChargeFlip(data,reflData,pgbar):
     print 'No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
     roll = findOffset(SGData,CErho,CEhkl)
+    
+#    for i,j,k in [[1,0,0],[0,1,0],[0,0,1]]:
+#        print i,j,k,CErho.shape,CEhkl.shape
+#    
+#        Rmap = np.roll(np.roll(np.roll(CErho,i,axis=0),j,axis=1),k,axis=2)
+#        Rhkl = fft.ifftshift(fft.ifftn(Rmap))
+#        R = findOffset(SGData,Rmap,Rhkl)
+    
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))

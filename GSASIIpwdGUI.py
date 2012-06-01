@@ -1760,7 +1760,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False):
         G2frame.RefList = 1
         phaseName = data[0]
     else:
-        phasename = G2frame.RefList
+        phaseName = G2frame.RefList
         phases = data.keys()
     
         def OnSelectPhase(event):

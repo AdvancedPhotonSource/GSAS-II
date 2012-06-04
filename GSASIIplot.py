@@ -2862,9 +2862,12 @@ def PlotStructure(G2frame,data):
             
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        glRotate(anglez,0,0,1)
-        glRotate(angley,sind(anglez),cosd(anglez),0)
-        glRotate(anglex,cosd(anglez),-sind(anglez),0)
+        matX = G2lat.rotdMat(anglex,axis=0)
+        matY = G2lat.rotdMat(angley,axis=1)
+        matZ = G2lat.rotdMat(anglez,axis=2)
+        matRot = np.inner(matX,np.inner(matY,matZ))
+        matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+        glMultMatrixf(matRot.T)
         glMultMatrixf(A4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
         if drawingData['unitCellBox']:

@@ -1210,6 +1210,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 refList = []
                 for h,k,l,d in HKLd:
                     ext,mul,Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
+                    mul *= 2      # for powder overlap of Friedel pairs
                     if ext:
                         continue
                     if 'C' in inst['Type']:
@@ -1982,7 +1983,6 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         occ = Mdata*Fdata/len(Uniq)
         biso = -SQfactor*Uisodata
         Tiso = np.where(biso<1.,np.exp(biso),1.0)
-#        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
         HbH = -np.inner(H,np.inner(bij,H))
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in Uniq])
         Hij = np.array([G2lat.UijtoU6(Uij) for Uij in Hij])

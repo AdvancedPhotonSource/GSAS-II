@@ -34,6 +34,7 @@ def SpcGroup(SGSymbol):
              'SGCen': cell centering vectors [0,0,0] at least
              'SGOps': symmetry operations as [M,T] so that M*x+T = x'
              'SGSys': one of 'triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic'
+             'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111' for arbitrary axes
        '''
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
     LattSym = ('P','A','B','C','I','F','R')
@@ -311,16 +312,15 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     else:
         return zip(XYZEquiv,Idup,Cell)
 
-def GenHKLf(HKL,SGData,Friedel=False):
+def GenHKLf(HKL,SGData):
     '''
     Uses old GSAS Fortran routine genhkl.for
     input:
         HKL - [h,k,l]
         SGData - space group data obtained from SpcGroup
-        Friedel = True to retain Friedel pairs for centrosymmetric case
     returns:
         iabsnt = True is reflection is forbidden by symmetry
-        mulp = reflection multiplicity including Fridel pairs
+        mulp = reflection multiplicity including Friedel pairs
         Uniq = numpy array of equivalent hkl in descending order of h,k,l
     '''
     hklf = HKL+[0,]
@@ -334,9 +334,8 @@ def GenHKLf(HKL,SGData,Friedel=False):
     h,k,l,f = Uniq
     Uniq=np.array(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq]))
     phi = f[:Nuniq]
-    Uniq = np.array(Uniq)
     
-    return iabsnt,2*mulp,Uniq,phi       #include Friedel pairs in powder mulp
+    return iabsnt,mulp,Uniq,phi
                                   
 def GetOprPtrName(key):            
     OprPtrName = {

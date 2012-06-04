@@ -583,7 +583,17 @@ def FourierMap(data,reflData):
     return mapData
     
 def findOffset(SGData,rho,Fhkl):
+    
+    def calcPhase(DX,DH,Dphi):
+        H,K,L = DH.T
+        Phi = (H*DX[0]+K*DX[1]+L*DX[2]+0.5) % 1.
+        return Dphi-Phi
+    
+    if SGData['SpGrp'] == 'P 1':
+        return [0,0,0]    
+# will need to consider 'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111'
     mapShape = rho.shape
+    steps = np.array(mapShape)
     hklShape = Fhkl.shape
     mapHalf = np.array(mapShape)/2
     Fmax = np.max(np.absolute(Fhkl))
@@ -599,24 +609,47 @@ def findOffset(SGData,rho,Fhkl):
     Flist = np.flipud(np.sort(Fdict.keys()))
     F = str(1.e6)
     i = 0
+    DH = []
+    Dphi = []
     while float(F) > 0.5*Fmax:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
-        iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData,Friedel=True)
-        Uniq = np.array(Uniq,dtype='i')+hklHalf
-        print hkl-hklHalf
+        iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
+        Uniq = np.array(Uniq,dtype='i')
+        Phi = np.array(Phi)
+        Uniq = np.concatenate((Uniq,-Uniq))+hklHalf         # put in Friedel pairs & make as index to Farray
+        Phi = np.concatenate((Phi,-Phi))                      # and their phase shifts
         Fh0 = Fhkl[hkl[0],hkl[1],hkl[2]]
-        ph0 = np.angle(Fh0,deg=True)/360.
-        for j,H in enumerate(Uniq):
-            Fh = Fhkl[H[0],H[1],H[2]]
-            h,k,l = H-hklHalf
-            ang = (np.angle(Fh,deg=True)/360.-phi[j]) % 1.
-            print '(%3d,%3d,%3d) %9.5f'%(h,k,l,ang)        
+        ang0 = np.angle(Fh0,deg=True)/360.
+        for j,H in enumerate(Uniq[1:]):
+            ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-Phi[j+1])
+            dH = H-hkl
+            dang = ang-ang0
+            DH.append(dH)
+            Dphi.append((dang+0.5) % 1.0)
         i += 1
-        
-        
+#    for item in zip(DH,Dphi):
+#        print item
+    DH = np.array(DH)
+    Dphi = np.array(Dphi)
+    DX = np.zeros(3)
+    X,Y,Z = np.mgrid[0:1:steps[0]*(0+1j),0:1:steps[1]*(0+1j),0:1:steps[2]*(0+1j)]
+    XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
+    Mmin = 1.e10
     
-    return [0,0,0]
+    for xyz in XYZ:
+        M = np.sum(calcPhase(xyz,DH,Dphi)**2)
+        if M < Mmin:
+            DX = xyz
+            Mmin = M
+    
+    print DX,Mmin
+    result = so.leastsq(calcPhase,DX,full_output=True,args=(DH,Dphi))
+    chisq = np.sum(result[2]['fvec']**2)
+    DX = np.array(np.rint(-result[0]*steps),dtype='i')
+    print chisq,DX
+    print result[0],result[0]*steps
+    return DX
 
 def ChargeFlip(data,reflData,pgbar):
 #    import scipy.fftpack as fft

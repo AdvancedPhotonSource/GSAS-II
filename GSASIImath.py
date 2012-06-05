@@ -611,7 +611,7 @@ def findOffset(SGData,rho,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while float(F) > 0.5*Fmax:
+    while i < 20:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
@@ -625,30 +625,32 @@ def findOffset(SGData,rho,Fhkl):
             ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-Phi[j+1])
             dH = H-hkl
             dang = ang-ang0
+            if np.any(np.abs(dH)-8 > 0):    #keep low order DHs
+                continue
             DH.append(dH)
             Dphi.append((dang+0.5) % 1.0)
         i += 1
-#    for item in zip(DH,Dphi):
-#        print item
     DH = np.array(DH)
     Dphi = np.array(Dphi)
+#    for item in zip(DH,Dphi):
+#        print item[0],'%.4f'%(item[1])
     DX = np.zeros(3)
-    X,Y,Z = np.mgrid[0:1:steps[0]*(0+1j),0:1:steps[1]*(0+1j),0:1:steps[2]*(0+1j)]
+    X,Y,Z = np.mgrid[0:1:10j,0:1:10j,0:1:10j]
     XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
     Mmin = 1.e10
     
-    for xyz in XYZ:
+    for xyz in XYZ:             #do a global search for best roll
         M = np.sum(calcPhase(xyz,DH,Dphi)**2)
         if M < Mmin:
             DX = xyz
             Mmin = M
     
-    print DX,Mmin
     result = so.leastsq(calcPhase,DX,full_output=True,args=(DH,Dphi))
+#    for item in zip(DH,Dphi,result[2]['fvec']):
+#        print item[0],'%.4f %.4f'%(item[1],item[2])
     chisq = np.sum(result[2]['fvec']**2)
     DX = np.array(np.rint(-result[0]*steps),dtype='i')
-    print chisq,DX
-    print result[0],result[0]*steps
+    print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
     return DX
 
 def ChargeFlip(data,reflData,pgbar):
@@ -724,8 +726,8 @@ def ChargeFlip(data,reflData,pgbar):
             Rcf = 100.
             break
     np.seterr(**old)
-    print 'Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
-    print 'No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')
+    print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
+    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
     roll = findOffset(SGData,CErho,CEhkl)
     
@@ -823,7 +825,7 @@ def SearchMap(data,keepDup=False):
         rX,rY,rZ = np.mgrid[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
         x0 = [peakInt,mapHalf[0],mapHalf[1],mapHalf[2],2.0]          #magnitude, position & width(sig)
         result = HessianLSQ(peakFunc,x0,Hess=peakHess,
-            args=(rX,rY,rZ,rhoPeak,res,SGData['SGLaue']),ftol=.0001,maxcyc=100)
+            args=(rX,rY,rZ,rhoPeak,res,SGData['SGLaue']),ftol=.01,maxcyc=10)
         x1 = result[0]
         if np.any(x1 < 0):
             break
@@ -838,8 +840,8 @@ def SearchMap(data,keepDup=False):
             elif noDuplicate(peak,peaks,SGData) and x1[0] > 0.:
                 peaks.append(peak)
                 mags.append(x1[0])
-            if len(peaks) > 100:
+            if len(peaks) > 300:
                 break
-        rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(result[0],rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
+        rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(x1,rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
         rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
     return np.array(peaks),np.array([mags,]).T

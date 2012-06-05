@@ -3496,10 +3496,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for ref in reflData:
             H = ref[:3]
             ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-            iabsnt,mulp,Uniq,phi = G2spc.GenHKLf(H,SGData)
-            ref[3] = mulp/2             #convert from powder mulp.
-            ref[11] = Uniq
-            ref[12] = phi
+            iabsnt,ref[3],ref[11],ref[12] = G2spc.GenHKLf(H,SGData)
         G2frame.PatternTree.SetItemPyData(Id,[histoName,reflData])
         
     def OnPwdrAdd(event):

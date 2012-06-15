@@ -679,7 +679,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 File = open(filename,'w')
-                File.write("#GSAS-II instrument parameter file; do not add/delete or change order of items!") 
+                File.write("#GSAS-II instrument parameter file; do not add/delete or change order of items!\n") 
                 for i,item in enumerate(data[3]):
                     File.write(item+':'+str(data[1][i])+'\n')
                 File.close()

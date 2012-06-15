@@ -132,8 +132,8 @@ def Polarization(Pola,Tth,Azm=0.0):
         Tth: 2-theta scattering angle - can be numpy array
             which (if either) of these is "right"?
     return:
-        pola = (Pola*npcosd(Azm)**2+(1.-Pola)*npsind(Azm)**2)*npcosd(Tth)**2+ \
-            Pola*npsind(Azm)**2+(1.-Pola)*npcosd(Azm)**2
+        pola = ((1-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+ \
+            (1-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
         dpdPola: derivative needed for least squares
     """
     pola = ((1.0-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
@@ -584,6 +584,16 @@ def getWidths(pos,sig,gam,shl):
     if pos > 90:
         fmin,fmax = [fmax,fmin]          
     return widths,fmin,fmax
+    
+def getFWHM(TTh,Inst):
+    sig = lambda Th,U,V,W: 1.17741*math.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*math.pi/180.
+    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
+    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
+    s = sig(TTh/2.,Inst['U'],Inst['V'],Inst['W'])*100.
+    g = gam(TTh/2.,Inst['X'],Inst['Y'])*100.
+    print TTh,s,g
+    return gamFW(g,s)
+    
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
     DX = xdata[1]-xdata[0]

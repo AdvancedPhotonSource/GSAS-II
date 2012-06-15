@@ -649,7 +649,7 @@ def findOffset(SGData,rho,Fhkl):
 #    for item in zip(DH,Dphi,result[2]['fvec']):
 #        print item[0],'%.4f %.4f'%(item[1],item[2])
     chisq = np.sum(result[2]['fvec']**2)
-    DX = np.array(np.rint(-result[0]*steps),dtype='i')
+    DX = np.array(np.fix(-result[0]*steps),dtype='i')
     print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
     return DX
 
@@ -748,11 +748,11 @@ def SearchMap(data,keepDup=False):
     
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
     
-    def noDuplicate(xyz,peaks,SGData):                  #be careful where this is used - it's slow
+    def noDuplicate(xyz,peaks,SGData,incre):                  #be careful where this is used - it's slow
         equivs = G2spc.GenAtom(xyz,SGData)
         xyzs = [equiv[0] for equiv in equivs]
         for x in xyzs:
-            if True in [np.allclose(x,peak,atol=0.002) for peak in peaks]:
+            if True in [np.allclose(x,peak,atol=0.02) for peak in peaks]:
                 return False
         return True
             
@@ -837,7 +837,7 @@ def SearchMap(data,keepDup=False):
             if keepDup:
                 peaks.append(peak)
                 mags.append(x1[0])
-            elif noDuplicate(peak,peaks,SGData) and x1[0] > 0.:
+            elif noDuplicate(peak,peaks,SGData,incre) and x1[0] > 0.:
                 peaks.append(peak)
                 mags.append(x1[0])
             if len(peaks) > 300:

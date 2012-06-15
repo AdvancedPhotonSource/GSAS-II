@@ -3621,6 +3621,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for h,k,l,d in HKLd:
                 ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
                 if not ext:
+                    mul *= 2        #for powder multiplicity
                     PawleyPeaks.append([h,k,l,mul,d,False,100.0,1.0])
         finally:
             wx.EndBusyCursor()
@@ -3656,9 +3657,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
             indx = np.searchsorted(xdata[0],pos)
             try:
-                ref[6] = xdata[1][indx]/ref[3]
-                pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'],xdata[0][indx],0.0)
-                ref[6] /= pola
+                FWHM = max(0.001,G2pwd.getFWHM(pos,Inst))/2.
+                dx = xdata[0][indx+1]-xdata[0][indx]
+                ref[6] = FWHM*xdata[1][indx]/dx
+                Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
+                pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'],xdata[0][indx],Inst['Azimuth'])
+                ref[6] /= (Lorenz*pola*ref[3])
             except IndexError:
                 pass
         FillPawleyReflectionsGrid()
@@ -3732,6 +3736,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         data['Map Peaks'] = []
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
+        
+    def OnPeaksUnique(event):
+        generalData = data['General']
+        SGData = generalData['SGData']
+        if 'Map Peaks' in data:
+            mapPeaks = data['Map Peaks']
+            for ipk,peak in enumerate(mapPeaks):
+                XYZ = peak[1:]                        
+                Equiv = G2spc.GenAtom(XYZ,SGData,Move=True)[1:]     #remove self
     
     def OnFourierMaps(event):
         generalData = data['General']
@@ -3807,6 +3820,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataDisplay.ChangeSelection(Page)
         G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
         UpdateDrawAtoms()
         FillMapPeaksGrid()

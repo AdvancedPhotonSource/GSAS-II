@@ -490,8 +490,8 @@ def GetBLtable(General):
     return BLtable
         
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
-    if SGLaue in ['-1','2/m','mmm']:
-        return                      #no Pawley symmetry required constraints
+#    if SGLaue in ['-1','2/m','mmm']:
+#        return                      #no Pawley symmetry required constraints
     eqvDict = {}
     for i,varyI in enumerate(pawleyVary):
         eqvDict[varyI] = []
@@ -524,8 +524,8 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
                 jsum = jh**2+jk**2+jl**2
                 if isum == jsum:
                     eqvDict[varyI].append(varyJ)
-#            if abs(dspI-dspJ) < 3.e-4:
-#                eqvDict[varyI].append(varyJ) 
+            elif abs(dspI-dspJ) < 1.e-4:
+                eqvDict[varyI].append(varyJ) 
     for item in pawleyVary:
         if eqvDict[item]:
             for item2 in pawleyVary:
@@ -1835,14 +1835,14 @@ def penaltyFxn(parmDict,varyList):
     pFxn = np.zeros(len(varyList))
     for i,item in enumerate(varyList):
         if 'PWLref' in item and parmDict[item] < 0.:
-            pFxn[i] = -parmDict[item]
+            pFxn[i] = -parmDict[item]**2        #checked OK
     return pFxn
     
 def penaltyDeriv(parmDict,varyList):
     pDerv = np.zeros(len(varyList))
     for i,item in enumerate(varyList):
         if 'PWLref' in item and parmDict[item] < 0.:
-            pDerv[i] += -1./parmDict[item]
+            pDerv[i] += 2.*parmDict[item]
     return pDerv
 
 ################################################################################
@@ -2466,8 +2466,9 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
             ymb = np.array(y-yb)
+            ymb = np.where(ymb==0.,1.0,ymb)
             ycmb = np.array(yc-yb)
-            ratio = np.where(ycmb!=0.,ymb/ycmb,0.0)            
+            ratio = ymb/ycmb            
             refLists = Histogram['Reflection Lists']
             for phase in refLists:
                 Phase = Phases[phase]
@@ -2570,7 +2571,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[13] *= Vst*Lorenz
                 if Phase['General'].get('doPawley'):
                     try:
-                        refl[9] = parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])]
+                       refl[9] = parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
@@ -2718,7 +2719,6 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         dMdv[idx][iBeg:iFin] = dervDict['int']/refl[9]
                         if Ka2:
                             dMdv[idx][iBeg2:iFin2] = dervDict2['int']/refl[9]
-                        # Assuming Pawley variables not in constraints
                     except ValueError:
                         pass
                 dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict)
@@ -2891,8 +2891,9 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
         else:
             dMdv = dMdvh
             
-#    dpdv = penaltyDeriv(parmdict,varylist)
-#    dMdv = np.concatenate((dMdv.T,np.outer(dpdv,dpdv))).T
+    dpdv = penaltyDeriv(parmdict,varylist)
+    if np.any(dpdv):
+        dMdv = np.concatenate((dMdv.T,np.outer(dpdv,dpdv))).T
     return dMdv
 
 def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
@@ -2970,10 +2971,13 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 Hess = np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
-
-#    dpdv = penaltyDeriv(parmdict,varylist)
-#    Vec += dpdv*penaltyFxn(parmdict,varylist)
-#    Hess += np.outer(dpdv,dpdv)
+    dpdv = penaltyDeriv(parmdict,varylist)
+    if np.any(dpdv):
+        Vec += dpdv*penaltyFxn(parmdict,varylist)
+        pHess = np.zeros((len(varylist),len(varylist)))
+        for i,val in enumerate(dpdv):
+            pHess[i][i] = dpdv[i]**2
+        Hess += pHess
     return Vec,Hess
 
 def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
@@ -3078,7 +3082,9 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
         if not GoOn:
             parmDict['saved values'] = values
             raise Exception         #Abort!!
-#    M = np.concatenate((M,penaltyFxn(parmdict,varylist)))
+    pFunc = penaltyFxn(parmdict,varylist)
+    if np.any(pFunc):
+        M = np.concatenate((M,pFunc))
     return M
                         
 def Refine(GPXfile,dlg):
@@ -3153,7 +3159,7 @@ def Refine(GPXfile,dlg):
             result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = result[2]['num cyc']+1
-            Rvals['lamMax'] = result[2]['lamMax']                           
+            Rvals['lamMax'] = result[2]['lamMax']
         else:           #'numeric'
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))

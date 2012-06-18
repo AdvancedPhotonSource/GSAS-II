@@ -385,11 +385,11 @@ def GetTifData(filename,imageOnly=False):
                     print 'Read APS scanCCD tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 4096:
-            tifType = 'Canadian'
-            pixy = (347,347)
+            tifType = 'Rayonix'
+            pixy = (73.242,73.242)
             File.seek(4096)
             if not imageOnly:
-                print 'Read Canadian tiff file: ',filename
+                print 'Read Rayonix MX300HE tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'

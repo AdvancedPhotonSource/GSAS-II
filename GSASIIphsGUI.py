@@ -3728,7 +3728,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapPeaks = data['Map Peaks']                        
             Ind = MapPeaks.GetSelectedRows()
             for ind in Ind:
-                print mapPeaks[ind]
                 x,y,z = mapPeaks[ind][1:]
                 AtomAdd(x,y,z,'C')
     
@@ -3739,12 +3738,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def OnPeaksUnique(event):
         generalData = data['General']
+        cell = generalData['Cell'][1:7]
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+        A = G2lat.cell2A(cell)
         SGData = generalData['SGData']
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
-            for ipk,peak in enumerate(mapPeaks):
-                XYZ = peak[1:]                        
+            Ind = MapPeaks.GetSelectedRows()
+            for ind in Ind:
+                XYZ = np.array(mapPeaks[ind][1:])                        
                 Equiv = G2spc.GenAtom(XYZ,SGData,Move=True)[1:]     #remove self
+                for equiv in Equiv:                                 #special position fixer
+                        Dx = XYZ-np.array(equiv[0])
+                        dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
+                        if dist < 0.5:
+                            print equiv[0],Dx,dist
+                            mapPeaks[ind][1:] -= Dx/2.
+        FillMapPeaksGrid()
     
     def OnFourierMaps(event):
         generalData = data['General']
@@ -3937,6 +3947,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Map peaks':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
             FillMapPeaksGrid()
             G2plt.PlotStructure(G2frame,data)

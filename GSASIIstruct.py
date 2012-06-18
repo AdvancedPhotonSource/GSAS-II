@@ -2571,7 +2571,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[13] *= Vst*Lorenz
                 if Phase['General'].get('doPawley'):
                     try:
-                       refl[9] = max(1.0,parmDict[pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])])
+                        pInd =pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
+                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
+                        refl[9] = parmDict[pInd]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
@@ -2710,14 +2712,15 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 if Phase['General'].get('doPawley'):
                     dMdpw = np.zeros(len(x))
                     try:
-                        idx = varylist.index(pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)]))
+                        pIdx = pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
+                        idx = varylist.index(pIdx)
                         dMdpw[iBeg:iFin] = dervDict['int']/refl[9]
-                        if refl[9] < 0.:
-                            dMdpw[iBeg:iFin] += 2.*dervDict['int']
+                        if parmDict[pIdx] < 0.:
+                            dMdpw[iBeg:iFin] = 2.*dervDict['int']/refl[9]
                         if Ka2:
                             dMdpw[iBeg2:iFin2] += dervDict2['int']/refl[9]
-                            if refl[9] < 0.:
-                                dMdpw[iBeg2:iFin2] += 2.*dervDict['int']
+                            if parmDict[pIdx] < 0.:
+                                dMdpw[iBeg2:iFin2] += 2.*dervDict['int']/refl[9]
                         dMdv[idx] = dMdpw
                     except ValueError:
                         pass

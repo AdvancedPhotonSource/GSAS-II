@@ -24,6 +24,7 @@ import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import scipy.optimize as so
 import scipy.linalg as sl
+import numpy.fft as fft
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -523,7 +524,6 @@ def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
 
 def FourierMap(data,reflData):
     
-    import numpy.fft as fft
     generalData = data['General']
     if not generalData['Map']['MapType']:
         print '**** ERROR - Fourier map not defined'
@@ -582,6 +582,33 @@ def FourierMap(data,reflData):
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData
     
+# map printing for testing purposes
+def printRho(SGLaue,rho,rhoMax):                          
+    dim = len(rho.shape)
+    if dim == 2:
+        ix,jy = rho.shape
+        for j in range(jy):
+            line = ''
+            if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
+                line += (jy-j)*'  '
+            for i in range(ix):
+                r = int(100*rho[i,j]/rhoMax)
+                line += '%4d'%(r)
+            print line+'\n'
+    else:
+        ix,jy,kz = rho.shape
+        for k in range(kz):
+            print 'k = ',k
+            for j in range(jy):
+                line = ''
+                if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
+                    line += (jy-j)*'  '
+                for i in range(ix):
+                    r = int(100*rho[i,j,k]/rhoMax)
+                    line += '%4d'%(r)
+                print line+'\n'
+## keep this
+                
 def findOffset(SGData,rho,Fhkl):
     
     def calcPhase(DX,DH,Dphi):
@@ -591,7 +618,7 @@ def findOffset(SGData,rho,Fhkl):
     
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
-# will need to consider 'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111'
+# will need to consider 'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111'?
     mapShape = rho.shape
     steps = np.array(mapShape)
     hklShape = Fhkl.shape
@@ -611,7 +638,7 @@ def findOffset(SGData,rho,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while i < 20:
+    while i < 20:       #use 20 strongest F's
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
@@ -628,23 +655,28 @@ def findOffset(SGData,rho,Fhkl):
             if np.any(np.abs(dH)-8 > 0):    #keep low order DHs
                 continue
             DH.append(dH)
-            Dphi.append((dang+0.5) % 1.0)
+            Dphi.append((dang+.5) % 1.0)
         i += 1
     DH = np.array(DH)
     Dphi = np.array(Dphi)
 #    for item in zip(DH,Dphi):
 #        print item[0],'%.4f'%(item[1])
     DX = np.zeros(3)
-    X,Y,Z = np.mgrid[0:1:10j,0:1:10j,0:1:10j]
+    X,Y,Z = np.mgrid[0:12,0:12,0:12]
     XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
     Mmin = 1.e10
+    Ms = []
     
     for xyz in XYZ:             #do a global search for best roll
-        M = np.sum(calcPhase(xyz,DH,Dphi)**2)
+        M = np.sum(calcPhase(xyz/12.,DH,Dphi)**2)
+        Ms.append(M)
         if M < Mmin:
             DX = xyz
             Mmin = M
-    
+#    Ms = np.array(Ms)
+#    Ms = np.reshape(Ms,newshape=(12,12,12))
+#    printRho(SGData['SGLaue'],Ms,np.max(Ms))    
+    print ' Search result:',Mmin,DX
     result = so.leastsq(calcPhase,DX,full_output=True,args=(DH,Dphi))
 #    for item in zip(DH,Dphi,result[2]['fvec']):
 #        print item[0],'%.4f %.4f'%(item[1],item[2])
@@ -652,10 +684,35 @@ def findOffset(SGData,rho,Fhkl):
     DX = np.array(np.fix(-result[0]*steps),dtype='i')
     print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
     return DX
+    
+def findOffset2(SGData,rho,Fhkl):
+    if SGData['SpGrp'] == 'P 1':
+        return [0,0,0]
+    mapShape = rho.shape
+    mapHalf = np.array(mapShape)/2
+    steps = np.array(mapShape)
+    hklShape = Fhkl.shape
+    hklHalf = np.array(hklShape)/2
+    for M,T in SGData['SGOps'][1:]:
+        FThkl = np.zeros(shape=hklShape,dtype='c16')
+        for ind,F in enumerate(Fhkl.flatten()):
+            if F:
+                HKL = np.unravel_index(ind,hklShape)-hklHalf
+                HKLT = np.inner(HKL,M.T)
+                phi = (np.angle(F,deg=True)/360.+np.vdot(T,HKL) % 1.)*360.
+                phasep = complex(cosd(phi),-sind(phi))      #want F*
+                h,k,l = HKLT+hklHalf
+                FThkl[h,k,l] = np.absolute(F)*phasep
+        Cd = np.real(fft.fftn(fft.fftshift(Fhkl*FThkl)))
+        CdMax = np.array(np.unravel_index(np.argmax(Cd),mapShape))
+        print CdMax,CdMax/2
+    DX = CdMax/2            
+    
+    print ' Test map offset : %d %d %d'%(DX[0],DX[1],DX[2])
+    return DX
+
 
 def ChargeFlip(data,reflData,pgbar):
-#    import scipy.fftpack as fft
-    import numpy.fft as fft
     generalData = data['General']
     mapData = generalData['Map']
     flipData = generalData['Flip']
@@ -727,17 +784,11 @@ def ChargeFlip(data,reflData,pgbar):
             break
     np.seterr(**old)
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
-    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')
+    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
+#    roll = findOffset2(SGData,CErho,CEhkl) #doesn't work
     roll = findOffset(SGData,CErho,CEhkl)
-    
-#    for i,j,k in [[1,0,0],[0,1,0],[0,0,1]]:
-#        print i,j,k,CErho.shape,CEhkl.shape
-#    
-#        Rmap = np.roll(np.roll(np.roll(CErho,i,axis=0),j,axis=1),k,axis=2)
-#        Rhkl = fft.ifftshift(fft.ifftn(Rmap))
-#        R = findOffset(SGData,Rmap,Rhkl)
-    
+        
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))

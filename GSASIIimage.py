@@ -721,13 +721,14 @@ def ImageIntegrate(image,data,masks):
         H0 = np.nan_to_num(H0)
         del NST
         if Dtth:
-            H2 = [tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)]
+            H2 = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
         else:
-            H2 = LUtth
+            H2 = np.array(LUtth)
         if Dazm:        
             H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
         else:
             H1 = LRazm
+        H0[0] /= npcosd(H2[:-1])
         Nup += 1
         dlg.Update(Nup)
         t1 = time.time()

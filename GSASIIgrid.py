@@ -37,8 +37,8 @@ if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global
 htmlFirstUse = True
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, wxID_CHARGEFLIP,
-    wxID_PEAKSUNIQUE,
-] = [wx.NewId() for item in range(6)]
+    wxID_PEAKSUNIQUE, wxID_PEAKSDELETE,
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(3)]
@@ -567,6 +567,8 @@ class DataFrame(wx.Frame):
             help='Move selected peaks to atom list')
         self.MapPeaksEdit.Append(id=wxID_PEAKSUNIQUE, kind=wx.ITEM_NORMAL,text='Unique peaks', 
             help='Reduce map peak list to unique set')
+        self.MapPeaksEdit.Append(id=wxID_PEAKSDELETE, kind=wx.ITEM_NORMAL,text='Delete peaks', 
+            help='Delete selected peaks')
         self.MapPeaksEdit.Append(id=wxID_PEAKSCLEAR, kind=wx.ITEM_NORMAL,text='Clear peaks', 
             help='Clear the map peak list')
             

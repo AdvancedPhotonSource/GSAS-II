@@ -618,7 +618,7 @@ def findOffset(SGData,rho,Fhkl):
     
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
-# will need to consider 'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111'?
+# will need to consider 'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111'
     mapShape = rho.shape
     steps = np.array(mapShape)
     hklShape = Fhkl.shape
@@ -638,7 +638,7 @@ def findOffset(SGData,rho,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while i < 20:       #use 20 strongest F's
+    while i < 20:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
@@ -655,28 +655,23 @@ def findOffset(SGData,rho,Fhkl):
             if np.any(np.abs(dH)-8 > 0):    #keep low order DHs
                 continue
             DH.append(dH)
-            Dphi.append((dang+.5) % 1.0)
+            Dphi.append((dang+0.5) % 1.0)
         i += 1
     DH = np.array(DH)
     Dphi = np.array(Dphi)
 #    for item in zip(DH,Dphi):
 #        print item[0],'%.4f'%(item[1])
     DX = np.zeros(3)
-    X,Y,Z = np.mgrid[0:12,0:12,0:12]
+    X,Y,Z = np.mgrid[0:1:10j,0:1:10j,0:1:10j]
     XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
     Mmin = 1.e10
-    Ms = []
     
     for xyz in XYZ:             #do a global search for best roll
-        M = np.sum(calcPhase(xyz/12.,DH,Dphi)**2)
-        Ms.append(M)
+        M = np.sum(calcPhase(xyz,DH,Dphi)**2)
         if M < Mmin:
             DX = xyz
             Mmin = M
-#    Ms = np.array(Ms)
-#    Ms = np.reshape(Ms,newshape=(12,12,12))
-#    printRho(SGData['SGLaue'],Ms,np.max(Ms))    
-    print ' Search result:',Mmin,DX
+    
     result = so.leastsq(calcPhase,DX,full_output=True,args=(DH,Dphi))
 #    for item in zip(DH,Dphi,result[2]['fvec']):
 #        print item[0],'%.4f %.4f'%(item[1],item[2])

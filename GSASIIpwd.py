@@ -670,7 +670,22 @@ def getBackground(pfx,parmDict,bakType,xdata):
             yb += ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
             iD += 1       
         except KeyError:
-            break    
+            break
+    iD = 0
+    while True:
+        try:
+            pkP = parmDict[pfx+'BkPkpos:'+str(iD)]
+            pkI = parmDict[pfx+'BkPkint:'+str(iD)]
+            pkS = parmDict[pfx+'BkPksig:'+str(iD)]
+            pkG = parmDict[pfx+'BkPkgam:'+str(iD)]
+            shl = 0.002
+            Wd,fmin,fmax = getWidths(pkP,pkS,pkG,shl)
+            iBeg = np.searchsorted(xdata,pkP-fmin)
+            iFin = np.searchsorted(xdata,pkP+fmax)
+            yb[iBeg:iFin] += pkI*getFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
+            iD += 1       
+        except KeyError:
+            break        
     return yb
     
 def getBackgroundDerv(pfx,parmDict,bakType,xdata):
@@ -683,6 +698,8 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             break
     dydb = np.zeros(shape=(nBak,len(xdata)))
     dyddb = np.zeros(shape=(3*parmDict[pfx+'nDebye'],len(xdata)))
+    dydpk = np.zeros(shape=(4*parmDict[pfx+'nPeaks'],len(xdata)))
+    dx = xdata[1]-xdata[0]
 
     if bakType in ['chebyschev','cosine']:
         for iBak in range(nBak):    
@@ -734,13 +751,32 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             sqr = np.sin(q*dbR)/(q*dbR)
             cqr = np.cos(q*dbR)
             temp = np.exp(-dbU*q**2)
-            dyddb[3*iD] = ff*sqr*temp
-            dyddb[3*iD+1] = ff*dbA*temp*(cqr-sqr)/dbR 
-            dyddb[3*iD+2] = -ff*dbA*sqr*temp*q**2
+            dyddb[3*iD] = 100.*dx*ff*sqr*temp
+            dyddb[3*iD+1] = 100.*dx*ff*dbA*temp*(cqr-sqr)/dbR 
+            dyddb[3*iD+2] = -100.*dx*ff*dbA*sqr*temp*q**2
             iD += 1       
         except KeyError:
             break
-    return dydb,dyddb
+    iD = 0
+    while True:
+        try:
+            pkP = parmDict[pfx+'BkPkpos:'+str(iD)]
+            pkI = parmDict[pfx+'BkPkint:'+str(iD)]
+            pkS = parmDict[pfx+'BkPksig:'+str(iD)]
+            pkG = parmDict[pfx+'BkPkgam:'+str(iD)]
+            shl = 0.002
+            Wd,fmin,fmax = getWidths(pkP,pkS,pkG,shl)
+            iBeg = np.searchsorted(xdata,pkP-fmin)
+            iFin = np.searchsorted(xdata,pkP+fmax)
+            Df,dFdp,dFds,dFdg,dFdsh = getdFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
+            dydpk[4*iD][iBeg:iFin] += 100.*dx*pkI*dFdp
+            dydpk[4*iD+1][iBeg:iFin] += 100.*dx*Df
+            dydpk[4*iD+2][iBeg:iFin] += 100.*dx*pkI*dFds
+            dydpk[4*iD+3][iBeg:iFin] += 100.*dx*pkI*dFdg
+            iD += 1       
+        except KeyError:
+            break
+    return dydb,dyddb,dydpk
 
 #use old fortran routine
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
@@ -838,7 +874,7 @@ def getPeakProfile(parmDict,xdata,varyList,bakType):
 def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
 # needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
-    dMdb,dMddb = getBackgroundDerv('',parmDict,bakType,xdata)
+    dMdb,dMddb,dMdpk = getBackgroundDerv('',parmDict,bakType,xdata)
     if 'Back:0' in varyList:            #background derivs are in front if present
         dMdv[0:len(dMdb)] = dMdb
     names = ['DebyeA','DebyeR','DebyeU']
@@ -847,6 +883,12 @@ def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
             parm,id = name.split(':')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMddb[3*int(id)+ip]
+    names = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
+    for name in varyList:
+        if 'BkPk' in name:
+            parm,id = name.split(':')
+            ip = names.index(parm)
+            dMdv[varyList.index(name)] = dMdpk[4*int(id)+ip]
     dx = xdata[1]-xdata[0]
     U = parmDict['U']
     V = parmDict['V']
@@ -979,6 +1021,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         backDict.update(debyeDict)
         backVary += debyeVary 
    
+        backDict['nPeaks'] = Debye['nPeaks']
         peaksDict = {}
         peaksList = []
         for i in range(Debye['nPeaks']):

@@ -673,8 +673,8 @@ def findOffset(SGData,rho,Fhkl):
             Mmin = M
     
     result = so.leastsq(calcPhase,DX,full_output=True,args=(DH,Dphi))
-#    for item in zip(DH,Dphi,result[2]['fvec']):
-#        print item[0],'%.4f %.4f'%(item[1],item[2])
+    for item in zip(DH,Dphi,result[2]['fvec']):
+        print item[0],'%.4f %.4f'%(item[1],item[2])
     chisq = np.sum(result[2]['fvec']**2)
     DX = np.array(np.fix(-result[0]*steps),dtype='i')
     print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])

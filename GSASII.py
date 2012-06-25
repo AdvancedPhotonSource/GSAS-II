@@ -2019,7 +2019,8 @@ class GSASII(wx.Frame):
         parmDict.update(hapDict)
         parmDict.update(histDict)
         for parm in parmDict:
-            if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2','Omega','Chi','Phi']:
+            if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2',
+                'Omega','Chi','Phi','nDebye','nPeaks']:
                 parmDict[parm] = [parmDict[parm],' ']
             elif parm.split(':')[-2] in ['Ax','Ay','Az','SHmodel','SHord']:
                 parmDict[parm] = [parmDict[parm],' ']

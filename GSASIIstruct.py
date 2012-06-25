@@ -1494,7 +1494,7 @@ def GetHistogramData(Histograms,Print=True):
     
     def GetBackgroundParms(hId,Background):
         Back = Background[0]
-        Debye = Background[1]
+        DebyePeaks = Background[1]
         bakType,bakFlag = Back[:2]
         backVals = Back[3:]
         backNames = [':'+str(hId)+':Back:'+str(i) for i in range(len(backVals))]
@@ -1502,19 +1502,33 @@ def GetHistogramData(Histograms,Print=True):
         backVary = []
         if bakFlag:
             backVary = backNames
-        backDict[':'+str(hId)+':nDebye'] = Debye['nDebye']
+        backDict[':'+str(hId)+':nDebye'] = DebyePeaks['nDebye']
+        backDict[':'+str(hId)+':nPeaks'] = DebyePeaks['nPeaks']
         debyeDict = {}
         debyeList = []
-        for i in range(Debye['nDebye']):
+        for i in range(DebyePeaks['nDebye']):
             debyeNames = [':'+str(hId)+':DebyeA:'+str(i),':'+str(hId)+':DebyeR:'+str(i),':'+str(hId)+':DebyeU:'+str(i)]
-            debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2])))
-            debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2])
+            debyeDict.update(dict(zip(debyeNames,DebyePeaks['debyeTerms'][i][::2])))
+            debyeList += zip(debyeNames,DebyePeaks['debyeTerms'][i][1::2])
         debyeVary = []
         for item in debyeList:
             if item[1]:
                 debyeVary.append(item[0])
         backDict.update(debyeDict)
-        backVary += debyeVary    
+        backVary += debyeVary
+        peakDict = {}
+        peakList = []
+        for i in range(DebyePeaks['nPeaks']):
+            peakNames = [':'+str(hId)+':BkPkpos:'+str(i),':'+str(hId)+ \
+                ':BkPkint:'+str(i),':'+str(hId)+':BkPksig:'+str(i),':'+str(hId)+':BkPkgam:'+str(i)]
+            peakDict.update(dict(zip(peakNames,DebyePeaks['peaksList'][i][::2])))
+            peakList += zip(peakNames,DebyePeaks['peaksList'][i][1::2])
+        peakVary = []
+        for item in peakList:
+            if item[1]:
+                peakVary.append(item[0])
+        backDict.update(peakDict)
+        backVary += peakVary
         return bakType,backDict,backVary            
         
     def GetInstParms(hId,Inst):
@@ -1553,7 +1567,7 @@ def GetHistogramData(Histograms,Print=True):
         
     def PrintBackground(Background):
         Back = Background[0]
-        Debye = Background[1]
+        DebyePeaks = Background[1]
         print '\n Background function: ',Back[0],' Refine?',bool(Back[1])
         line = ' Coefficients: '
         for i,back in enumerate(Back[3:]):
@@ -1561,17 +1575,29 @@ def GetHistogramData(Histograms,Print=True):
             if i and not i%10:
                 line += '\n'+15*' '
         print line
-        if Debye['nDebye']:
+        if DebyePeaks['nDebye']:
             print '\n Debye diffuse scattering coefficients'
             parms = ['DebyeA','DebyeR','DebyeU']
-            line = ' names :'
+            line = ' names :  '
             for parm in parms:
-                line += '%16s'%(parm)
+                line += '%8s refine?'%(parm)
             print line
             for j,term in enumerate(Debye['debyeTerms']):
                 line = ' term'+'%2d'%(j)+':'
                 for i in range(3):
                     line += '%10.4g %5s'%(term[2*i],bool(term[2*i+1]))                    
+                print line
+        if DebyePeaks['nPeaks']:
+            print '\n Single peak coefficients'
+            parms =    ['BkPkpos','BkPkint','BkPksig','BkPkgam']
+            line = ' names :  '
+            for parm in parms:
+                line += '%8s refine?'%(parm)
+            print line
+            for j,term in enumerate(DebyePeaks['peaksList']):
+                line = ' peak'+'%2d'%(j)+':'
+                for i in range(4):
+                    line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
                 print line
         
     def PrintInstParms(Inst):
@@ -1674,20 +1700,28 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
         Back = Background[0]
-        Debye = Background[1]
+        DebyePeaks = Background[1]
         lenBack = len(Back[3:])
-        backSig = [0 for i in range(lenBack+3*Debye['nDebye'])]
+        backSig = [0 for i in range(lenBack+3*DebyePeaks['nDebye']+4*DebyePeaks['nPeaks'])]
         for i in range(lenBack):
             Back[3+i] = parmDict[pfx+'Back:'+str(i)]
             if pfx+'Back:'+str(i) in sigDict:
                 backSig[i] = sigDict[pfx+'Back:'+str(i)]
-        if Debye['nDebye']:
-            for i in range(Debye['nDebye']):
+        if DebyePeaks['nDebye']:
+            for i in range(DebyePeaks['nDebye']):
                 names = [pfx+'DebyeA:'+str(i),pfx+'DebyeR:'+str(i),pfx+'DebyeU:'+str(i)]
                 for j,name in enumerate(names):
-                    Debye['debyeTerms'][i][2*j] = parmDict[name]
+                    DebyePeaks['debyeTerms'][i][2*j] = parmDict[name]
                     if name in sigDict:
                         backSig[lenBack+3*i+j] = sigDict[name]            
+        if DebyePeaks['nPeaks']:
+            for i in range(DebyePeaks['nPeaks']):
+                names = [pfx+'BkPkpos:'+str(i),pfx+'BkPkint:'+str(i),
+                    pfx+'BkPksig:'+str(i),pfx+'BkPkgam:'+str(i)]
+                for j,name in enumerate(names):
+                    DebyePeaks['peaksList'][i][2*j] = parmDict[name]
+                    if name in sigDict:
+                        backSig[lenBack+3*DebyePeaks['nDebye']+4*i+j] = sigDict[name]
         return backSig
         
     def SetInstParms(pfx,Inst,parmDict,sigDict):
@@ -1717,7 +1751,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
         
     def PrintBackgroundSig(Background,backSig):
         Back = Background[0]
-        Debye = Background[1]
+        DebyePeaks = Background[1]
         lenBack = len(Back[3:])
         valstr = ' value : '
         sigstr = ' sig   : '
@@ -1733,7 +1767,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
             print '\n Background function: ',Back[0]
             print valstr
             print sigstr 
-        if Debye['nDebye']:
+        if DebyePeaks['nDebye']:
             ifAny = False
             ptfmt = "%12.5f"
             names =  ' names :'
@@ -1747,6 +1781,23 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                     sigstr += ptfmt%(sigDict[item])
             if ifAny:
                 print '\n Debye diffuse scattering coefficients'
+                print names
+                print ptstr
+                print sigstr
+        if DebyePeaks['nPeaks']:
+            ifAny = False
+            ptfmt = "%14.3f"
+            names =  ' names :'
+            ptstr =  ' values:'
+            sigstr = ' esds  :'
+            for item in sigDict:
+                if 'BkPk' in item:
+                    ifAny = True
+                    names += '%14s'%(item)
+                    ptstr += ptfmt%(parmDict[item])
+                    sigstr += ptfmt%(sigDict[item])
+            if ifAny:
+                print '\n Single peak coefficients'
                 print names
                 print ptstr
                 print sigstr
@@ -2637,7 +2688,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
-    dMdb,dMddb = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,x)
+    dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,x)
     if hfx+'Back:0' in varylist: # for now assume that Back:x vars to not appear in constraints
         bBpos =varylist.index(hfx+'Back:0')
         dMdv[bBpos:bBpos+len(dMdb)] = dMdb
@@ -2648,6 +2699,13 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             parm = name[:int(name.rindex(':'))]
             ip = names.index(parm)
             dMdv[varylist.index(name)] = dMddb[3*id+ip]
+    names = [hfx+'BkPkpos',hfx+'BkPkint',hfx+'BkPksig',hfx+'BkPkgam']
+    for name in varylist:
+        if 'BkPk' in name:
+            id = int(name.split(':')[-1])
+            parm = name[:int(name.rindex(':'))]
+            ip = names.index(parm)
+            dMdv[varylist.index(name)] = dMdpk[4*id+ip]
     if 'C' in calcControls[hfx+'histType']:    
         dx = x[1]-x[0]
         shl = max(parmDict[hfx+'SH/L'],0.002)

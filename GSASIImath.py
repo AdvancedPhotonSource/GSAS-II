@@ -609,16 +609,9 @@ def printRho(SGLaue,rho,rhoMax):
                 print line+'\n'
 ## keep this
                 
-def findOffset(SGData,rho,Fhkl):
-    
-    def calcPhase(DX,DH,Dphi):
-        H,K,L = DH.T
-        Phi = (H*DX[0]+K*DX[1]+L*DX[2]+0.5) % 1.
-        return Dphi-Phi
-    
+def findOffset(SGData,rho,Fhkl):    
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
-# will need to consider 'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111'
     mapShape = rho.shape
     steps = np.array(mapShape)
     hklShape = Fhkl.shape
@@ -659,54 +652,14 @@ def findOffset(SGData,rho,Fhkl):
         i += 1
     DH = np.array(DH)
     Dphi = np.array(Dphi)
-#    for item in zip(DH,Dphi):
-#        print item[0],'%.4f'%(item[1])
-    DX = np.zeros(3)
-    X,Y,Z = np.mgrid[0:1:10j,0:1:10j,0:1:10j]
+    X,Y,Z = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2]]
     XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
-    Mmin = 1.e10
-    
-    for xyz in XYZ:             #do a global search for best roll
-        M = np.sum(calcPhase(xyz,DH,Dphi)**2)
-        if M < Mmin:
-            DX = xyz
-            Mmin = M
-    
-    result = so.leastsq(calcPhase,DX,full_output=True,args=(DH,Dphi))
-    for item in zip(DH,Dphi,result[2]['fvec']):
-        print item[0],'%.4f %.4f'%(item[1],item[2])
-    chisq = np.sum(result[2]['fvec']**2)
-    DX = np.array(np.fix(-result[0]*steps),dtype='i')
+    Mmap = np.reshape(np.sum(((np.dot(XYZ,DH.T)+.5)%1.-Dphi)**2,axis=1),newshape=steps)
+    chisq = np.min(Mmap)
+    DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
     print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
     return DX
     
-def findOffset2(SGData,rho,Fhkl):
-    if SGData['SpGrp'] == 'P 1':
-        return [0,0,0]
-    mapShape = rho.shape
-    mapHalf = np.array(mapShape)/2
-    steps = np.array(mapShape)
-    hklShape = Fhkl.shape
-    hklHalf = np.array(hklShape)/2
-    for M,T in SGData['SGOps'][1:]:
-        FThkl = np.zeros(shape=hklShape,dtype='c16')
-        for ind,F in enumerate(Fhkl.flatten()):
-            if F:
-                HKL = np.unravel_index(ind,hklShape)-hklHalf
-                HKLT = np.inner(HKL,M.T)
-                phi = (np.angle(F,deg=True)/360.+np.vdot(T,HKL) % 1.)*360.
-                phasep = complex(cosd(phi),-sind(phi))      #want F*
-                h,k,l = HKLT+hklHalf
-                FThkl[h,k,l] = np.absolute(F)*phasep
-        Cd = np.real(fft.fftn(fft.fftshift(Fhkl*FThkl)))
-        CdMax = np.array(np.unravel_index(np.argmax(Cd),mapShape))
-        print CdMax,CdMax/2
-    DX = CdMax/2            
-    
-    print ' Test map offset : %d %d %d'%(DX[0],DX[1],DX[2])
-    return DX
-
-
 def ChargeFlip(data,reflData,pgbar):
     generalData = data['General']
     mapData = generalData['Map']
@@ -772,7 +725,7 @@ def ChargeFlip(data,reflData,pgbar):
             if Rcf < 5.:
                 break
             GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
-            if not GoOn:
+            if not GoOn or Ncyc > 10000:
                 break
         except FloatingPointError:
             Rcf = 100.
@@ -781,7 +734,6 @@ def ChargeFlip(data,reflData,pgbar):
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
-#    roll = findOffset2(SGData,CErho,CEhkl) #doesn't work
     roll = findOffset(SGData,CErho,CEhkl)
         
     mapData['Rcf'] = Rcf
@@ -790,7 +742,7 @@ def ChargeFlip(data,reflData,pgbar):
     mapData['rollMap'] = [0,0,0]
     return mapData
     
-def SearchMap(data,keepDup=False):
+def SearchMap(data,keepDup=False,Pgbar=None):
     
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
     
@@ -810,10 +762,11 @@ def SearchMap(data,keepDup=False):
         
     def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
-        if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
-            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(x0-rX)*(y0-rY)+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
-        else:
-            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+#        if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
+#            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(x0-rX)*(y0-rY)+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+#        else:
+#            return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+        return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
         
     def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
@@ -886,7 +839,8 @@ def SearchMap(data,keepDup=False):
             elif noDuplicate(peak,peaks,SGData,incre) and x1[0] > 0.:
                 peaks.append(peak)
                 mags.append(x1[0])
-            if len(peaks) > 300:
+            GoOn = Pgbar.Update(len(peaks),newmsg='%s%d'%('No. Peaks found =',len(peaks)))[0]
+            if not GoOn or len(peaks) > 300:
                 break
         rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(x1,rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
         rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)

@@ -3824,11 +3824,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mags = []
         print ' Begin fourier map search - can take some time'
         time0 = time.time()
-        wx.BeginBusyCursor()
+
+        pgbar = wx.ProgressDialog('Map search','No. Peaks found =',301.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
+        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        pgbar.SetSize(Size)
         try:
-            peaks,mags = G2mth.SearchMap(data,keepDup=True)
+            peaks,mags = G2mth.SearchMap(data,keepDup=True,Pgbar=pgbar)
         finally:
-            wx.EndBusyCursor()
+            pgbar.Destroy()
+
+
+#        wx.BeginBusyCursor()
+#        try:
+#            peaks,mags = G2mth.SearchMap(data,keepDup=True)
+#        finally:
+#            wx.EndBusyCursor()
         sortIdx = np.argsort(mags.flatten())
         if len(peaks):
             data['Map Peaks'] = np.concatenate((mags,peaks),axis=1)

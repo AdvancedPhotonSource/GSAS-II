@@ -524,7 +524,7 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
                 jsum = jh**2+jk**2+jl**2
                 if isum == jsum:
                     eqvDict[varyI].append(varyJ)
-            elif abs(dspI-dspJ) < 1.e-4:
+            elif abs(dspI-dspJ)/dspI < 1.e-4:
                 eqvDict[varyI].append(varyJ) 
     for item in pawleyVary:
         if eqvDict[item]:

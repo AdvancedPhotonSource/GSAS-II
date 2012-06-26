@@ -751,10 +751,10 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             sqr = np.sin(q*dbR)/(q*dbR)
             cqr = np.cos(q*dbR)
             temp = np.exp(-dbU*q**2)
-            dyddb[3*iD] = 100.*dx*ff*sqr*temp
-            dyddb[3*iD+1] = 100.*dx*ff*dbA*temp*(cqr-sqr)/dbR 
-            dyddb[3*iD+2] = -100.*dx*ff*dbA*sqr*temp*q**2
-            iD += 1       
+            dyddb[3*iD] = ff*sqr*temp/(np.pi*dx)
+            dyddb[3*iD+1] = ff*dbA*temp*(cqr-sqr)/(np.pi*dbR*dx)
+            dyddb[3*iD+2] = -ff*dbA*sqr*temp*q**2/(np.pi*dx)
+            iD += 1       #ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
         except KeyError:
             break
     iD = 0

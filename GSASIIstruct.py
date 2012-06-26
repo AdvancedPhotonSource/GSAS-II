@@ -1582,10 +1582,10 @@ def GetHistogramData(Histograms,Print=True):
             for parm in parms:
                 line += '%8s refine?'%(parm)
             print line
-            for j,term in enumerate(Debye['debyeTerms']):
+            for j,term in enumerate(DebyePeaks['debyeTerms']):
                 line = ' term'+'%2d'%(j)+':'
                 for i in range(3):
-                    line += '%10.4g %5s'%(term[2*i],bool(term[2*i+1]))                    
+                    line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
                 print line
         if DebyePeaks['nPeaks']:
             print '\n Single peak coefficients'
@@ -1769,7 +1769,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
             print sigstr 
         if DebyePeaks['nDebye']:
             ifAny = False
-            ptfmt = "%12.5f"
+            ptfmt = "%12.3f"
             names =  ' names :'
             ptstr =  ' values:'
             sigstr = ' esds  :'

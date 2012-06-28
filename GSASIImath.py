@@ -521,6 +521,16 @@ def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
             return text.rstrip('0')
         else:
             return text
+            
+def adjHKLmax(SGData,Hmax):
+    if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
+        Hmax[0] = ((Hmax[0]+3)/6)*6
+        Hmax[1] = ((Hmax[1]+3)/6)*6
+        Hmax[2] = ((Hmax[2]+1)/4)*4
+    else:
+        Hmax[0] = ((Hmax[0]+2)/4)*4
+        Hmax[1] = ((Hmax[1]+2)/4)*4
+        Hmax[2] = ((Hmax[2]+1)/4)*4
 
 def FourierMap(data,reflData):
     
@@ -534,6 +544,7 @@ def FourierMap(data,reflData):
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
+    adjHKLmax(SGData,Hmax)
     Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
 #    Fhkl[0,0,0] = generalData['F000X']
     time0 = time.time()
@@ -609,13 +620,11 @@ def printRho(SGLaue,rho,rhoMax):
                 print line+'\n'
 ## keep this
                 
-def findOffset(SGData,rho,Fhkl):    
+def findOffset(SGData,Fhkl):    
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
-    mapShape = rho.shape
-    steps = np.array(mapShape)
     hklShape = Fhkl.shape
-    mapHalf = np.array(mapShape)/2
+    steps = np.array(hklShape)
     Fmax = np.max(np.absolute(Fhkl))
     hklHalf = np.array(hklShape)/2
     sortHKL = np.argsort(Fhkl.flatten())
@@ -645,7 +654,7 @@ def findOffset(SGData,rho,Fhkl):
             ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-Phi[j+1])
             dH = H-hkl
             dang = ang-ang0
-            if np.any(np.abs(dH)-8 > 0):    #keep low order DHs
+            if np.any(np.abs(dH)-6 > 0):    #keep low order DHs
                 continue
             DH.append(dH)
             Dphi.append((dang+0.5) % 1.0)
@@ -657,7 +666,7 @@ def findOffset(SGData,rho,Fhkl):
     Mmap = np.reshape(np.sum(((np.dot(XYZ,DH.T)+.5)%1.-Dphi)**2,axis=1),newshape=steps)
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
+    print ' map offset chi**2: %.3f, map offset: %d %d %d, no. terms: %d'%(chisq,DX[0],DX[1],DX[2],len(DH))
     return DX
     
 def ChargeFlip(data,reflData,pgbar):
@@ -677,6 +686,7 @@ def ChargeFlip(data,reflData,pgbar):
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
+    adjHKLmax(SGData,Hmax)
     Ehkl = np.zeros(shape=2*Hmax,dtype='c16')       #2X64bits per complex no.
     time0 = time.time()
     for ref in reflData:
@@ -734,7 +744,7 @@ def ChargeFlip(data,reflData,pgbar):
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
-    roll = findOffset(SGData,CErho,CEhkl)
+    roll = findOffset(SGData,CEhkl)
         
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
@@ -746,14 +756,19 @@ def SearchMap(data,keepDup=False,Pgbar=None):
     
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
     
-    def noDuplicate(xyz,peaks,SGData,incre):                  #be careful where this is used - it's slow
+    def noEquivalent(xyz,peaks,SGData):                  #be careful where this is used - it's slow
         equivs = G2spc.GenAtom(xyz,SGData)
         xyzs = [equiv[0] for equiv in equivs]
         for x in xyzs:
             if True in [np.allclose(x,peak,atol=0.02) for peak in peaks]:
                 return False
         return True
-            
+        
+    def noDuplicate(xyz,peaks,incre):
+        if True in [np.allclose(xyz*incre,peak*incre,atol=2.0) for peak in peaks]:
+            return False
+        return True
+                        
     def findRoll(rhoMask,mapHalf):
         indx = np.array(ma.nonzero(rhoMask)).T
         rhoList = np.array([rho[i,j,k] for i,j,k in indx])
@@ -805,7 +820,7 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         rho = copy.copy(mapData['rho'])     #don't mess up original
         mapHalf = np.array(rho.shape)/2
         res = mapData['Resolution']
-        incre = 1./np.array(rho.shape)
+        incre = np.array(rho.shape)
         step = max(1.0,1./res)+1
         steps = np.array(3*[step,])
     except KeyError:
@@ -828,15 +843,16 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         x1 = result[0]
         if np.any(x1 < 0):
             break
-        peak = (np.array(x1[1:4])-rMI)*incre
+        peak = (np.array(x1[1:4])-rMI)/incre
         if not len(peaks):
             peaks.append(peak)
             mags.append(x1[0])
         else:
             if keepDup:
-                peaks.append(peak)
-                mags.append(x1[0])
-            elif noDuplicate(peak,peaks,SGData,incre) and x1[0] > 0.:
+                if noDuplicate(peak,peaks,incre):
+                    peaks.append(peak)
+                    mags.append(x1[0])
+            elif noEquivalent(peak,peaks,SGData) and x1[0] > 0.:
                 peaks.append(peak)
                 mags.append(x1[0])
             GoOn = Pgbar.Update(len(peaks),newmsg='%s%d'%('No. Peaks found =',len(peaks)))[0]

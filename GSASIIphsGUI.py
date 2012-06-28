@@ -3740,7 +3740,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Ind = MapPeaks.GetSelectedRows()
             Ind.sort()
             Ind.reverse()
-            print Ind
             for ind in Ind:
                 mapPeaks = np.delete(mapPeaks,ind,0)
             data['Map Peaks'] = mapPeaks

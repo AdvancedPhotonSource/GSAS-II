@@ -1708,7 +1708,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataFrame.setSizePosLeft(topSize)    
     
     if cells:
-        bottomSize = G2frame.bottom.GetSize()
+        bottomSize = topSize        #screwy but bottom doesn't have a size in linux!
+        bottomSize[0] -= 20         #to reveal slider
         if ibrav == 13:
             bottomSize[1] -= 240
         else:

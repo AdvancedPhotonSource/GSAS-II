@@ -20,6 +20,7 @@ import wx.glcanvas
 import matplotlib as mpl
 import mpl_toolkits.mplot3d.axes3d as mp3d
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIgrid as G2gd
 import GSASIIimage as G2img
 import GSASIIpwd as G2pwd

@@ -21,6 +21,7 @@ import scipy.stats as st
 import scipy.optimize as so
 
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 1 $")
 import GSASIIlattice as G2lat
 import GSASIIElem as G2elem
 import GSASIIgrid as G2gd

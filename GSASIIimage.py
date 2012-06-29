@@ -13,6 +13,7 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import fellipse as fel

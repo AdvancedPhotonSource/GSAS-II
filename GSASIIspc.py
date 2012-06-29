@@ -15,6 +15,7 @@ import sys
 import os.path as ospath
 
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import pyspg
 
 def SpcGroup(SGSymbol):

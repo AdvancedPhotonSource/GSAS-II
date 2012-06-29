@@ -13,6 +13,7 @@
 import math
 import os.path
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import numpy as np
 
 def GetFormFactorCoeff(El):

@@ -15,6 +15,7 @@ import time
 import copy
 import cPickle
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIpwd as G2pwd
 import GSASIIIO as G2IO
 import GSASIIlattice as G2lat

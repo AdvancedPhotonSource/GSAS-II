@@ -17,6 +17,7 @@ import sys
 import random as ran
 import cPickle
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

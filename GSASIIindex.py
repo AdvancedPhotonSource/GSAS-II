@@ -14,6 +14,7 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import scipy.optimize as so
 

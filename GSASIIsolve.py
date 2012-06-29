@@ -14,6 +14,7 @@ import cPickle
 import time
 import math
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

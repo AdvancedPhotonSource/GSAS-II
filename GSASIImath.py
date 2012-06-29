@@ -19,6 +19,7 @@ import time
 import math
 import copy
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 1 $")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

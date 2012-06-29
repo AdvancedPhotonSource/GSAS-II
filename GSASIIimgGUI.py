@@ -14,6 +14,7 @@ import time
 import copy
 import cPickle
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIimage as G2img
 import GSASIIplot as G2plt
 import GSASIIIO as G2IO

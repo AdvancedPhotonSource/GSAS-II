@@ -17,6 +17,7 @@ import os.path
 import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
@@ -168,7 +169,7 @@ class MyHelp(wx.Menu):
         global __version__
         info = wx.AboutDialogInfo()
         info.Name = 'GSAS-II'
-        info.Version = __version__
+        info.Version = __version__ + ' Revision '+str(GSASIIpath.GetVersionNumber())
         info.Copyright = '''
 Robert B. Von Dreele & Brian H. Toby
 Argonne National Laboratory(C)

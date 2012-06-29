@@ -17,6 +17,7 @@ import numpy as np
 import numpy.linalg as nl
 import scipy.optimize as so
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

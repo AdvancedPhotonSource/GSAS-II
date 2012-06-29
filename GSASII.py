@@ -57,6 +57,7 @@ except ImportError:
 
 # load the GSAS routines
 import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
@@ -85,7 +86,7 @@ except:
 #    print "MKL module not present"
 __version__ = '0.2.0'
 G2gd.__version__ = __version__
-print "This is GSAS-II version:     ",__version__
+print "This is GSAS-II version:     ",__version__,' revision '+str(GSASIIpath.GetVersionNumber())
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -401,7 +402,7 @@ class GSASII(wx.Frame):
         return rd_list
 
     def _init_Import_Phase(self,parent):
-        '''import all the G2importphase*.py files that are found in the
+        '''import all the G2phase*.py files that are found in the
         path and configure the Import Phase menus accordingly
         '''
         self.ImportPhaseReaderlist = []
@@ -455,7 +456,7 @@ class GSASII(wx.Frame):
         return # success
         
     def _init_Import_Sfact(self,parent):
-        '''import all the G2importsfact*.py files that are found in the
+        '''import all the G2sfact*.py files that are found in the
         path and configure the Import Structure Factor menus accordingly
         '''
         self.ImportSfactReaderlist = []
@@ -511,7 +512,7 @@ class GSASII(wx.Frame):
         return # success
 
     def _init_Import_powder(self,parent):
-        '''import all the G2importpwd*.py files that are found in the
+        '''import all the G2pwd*.py files that are found in the
         path and configure the Import Powder Data menus accordingly
         '''
         self.ImportPowderReaderlist = []
@@ -788,6 +789,44 @@ class GSASII(wx.Frame):
         self.PatternTree.SelectItem(Id)
         return # success
 
+    def _init_Exports(self,parent):
+        '''
+        '''
+        #self.Exportlist = []
+        #self._init_Import_routines(parent,'phase',
+        #                           self.ImportPhaseReaderlist,
+        #                           'Phase')
+        submenu = wx.Menu()
+        item = parent.AppendMenu(
+            wx.ID_ANY, 'entire project',
+            submenu, help='Export entire project')
+        item = submenu.Append(
+            wx.ID_ANY,
+            help='this is a module for testing',
+            kind=wx.ITEM_NORMAL,
+            text='to test file')
+        #self.ImportMenuId[item.GetId()] = reader
+        self.Bind(wx.EVT_MENU, self.OnExportTest, id=item.GetId())
+        # for reader in self.ImportPhaseReaderlist:
+        #     item = submenu.Append(wx.ID_ANY,
+        #         help='to Import specific format phase data',
+        #         kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
+        #     self.ImportMenuId[item.GetId()] = reader
+        #     self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
+        # item = submenu.Append(wx.ID_ANY,
+        #                       help='Import phase data, use file to try to determine format',
+        #                       kind=wx.ITEM_NORMAL,
+        #                       text='guess format from file')
+        # self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
+        import G2export
+        
+    def OnExportTest(self,event):
+        import G2export
+        reload(G2export)
+        G2export.ProjExport(self)
+        
+
+
     def _init_coll_Export_Items(self,parent):
         self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_EXPORTPATTERN, kind=wx.ITEM_NORMAL,
             text='Export Powder Patterns...')
@@ -831,6 +870,7 @@ class GSASII(wx.Frame):
         self._init_Import_powder(self.Import)
         self._init_Import_Sfact(self.Import)
         self._init_coll_Export_Items(self.Export)
+        self._init_Exports(self.Export)
         
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,
@@ -1669,7 +1709,11 @@ class GSASII(wx.Frame):
         if self.PatternTree.GetChildrenCount(self.root,False):
             if self.dataFrame:
                 self.dataFrame.Clear() 
-            dlg = wx.MessageDialog(self, 'Overwrite?','Project exists!',  wx.OK | wx.CANCEL)
+            dlg = wx.MessageDialog(
+                self,
+                'Do you want to overwrite the current project? '
+                'Any unsaved changes will be lost. Press OK to continue.',
+                'Overwrite?',  wx.OK | wx.CANCEL)
             try:
                 result = dlg.ShowModal()
                 if result == wx.ID_OK:
@@ -1745,7 +1789,7 @@ class GSASII(wx.Frame):
             if dlg.ShowModal() == wx.ID_OK:
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
-                self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
+                self.PatternTree.SetItemText(self.root,'Saving project as'+self.GSASprojectfile)
                 G2IO.ProjFileSave(self)
                 self.dirname = dlg.GetDirectory()
         finally:

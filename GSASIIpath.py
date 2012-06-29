@@ -33,3 +33,19 @@ for loc in sys.path[0],ospath.split(__file__)[0]:
             sys.path.insert(0,ospath.join(loc,bindir))
 if bindir == None:
     print "Warning GSAS-II binary libraries not found, some sections of code will not function"
+
+# track the latest version number here
+version = -1
+def SetVersionNumber(RevString):
+    '''RevString is something like "$Revision$" that is set by subversion when
+    the file is retrieved from subversion.
+    '''
+    try:
+        RevVersion = int(RevString.split(':')[1].split()[0])
+        global version
+        version = max(version,RevVersion)
+    except:
+        pass
+        
+def GetVersionNumber():
+    return version

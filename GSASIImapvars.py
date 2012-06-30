@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2011-01-07 13:27:24 -0600 (Fri, 07 Jan 2011) $
-# $Author: vondreele & toby $
-# $Revision: 230 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImapvars.py $
-# $Id: GSASIImapvars.py 230 2011-01-07 19:27:24Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 """Module that implements algebraic contraints, parameter redefinition
 and parameter simplification contraints.

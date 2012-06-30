@@ -3,11 +3,11 @@
    Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 """
 ########### SVN repository information ###################
-# $Date: 2012-01-24 14:31:27 -0600 (Tue, 24 Jan 2012) $
-# $Author: vondreele & toby $
-# $Revision: 456 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIElemGUI.py $
-# $Id: GSASIIElemGUI.py 456 2012-01-24 20:31:27Z toby $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 import wx
 import os

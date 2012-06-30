@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #GSASII powder calculation module
 ########### SVN repository information ###################
-# $Date: 2011-04-20 13:09:53 -0500 (Wed, 20 Apr 2011) $
-# $Author: vondreele $
-# $Revision: 267 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIpwd.py $
-# $Id: GSASIIpwd.py 267 2011-04-20 18:09:53Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 import sys
 import math
@@ -21,7 +21,7 @@ import scipy.stats as st
 import scipy.optimize as so
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIElem as G2elem
 import GSASIIgrid as G2gd

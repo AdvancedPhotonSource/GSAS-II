@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
-# $Date: 2012-06-30 12:01:02 -0500 (Sat, 30 Jun 2012) $
-# $Author: vondreele $
-# $Revision: 663 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 663 2012-06-30 17:01:02Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 import sys
 import os
@@ -19,7 +19,7 @@ import time
 import math
 import copy
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

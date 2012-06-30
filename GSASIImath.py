@@ -2,7 +2,7 @@
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
 # $Date: 2012-01-13 11:48:53 -0600 (Fri, 13 Jan 2012) $
-# $Author: vondreele & toby $
+# $Author: vondreele $
 # $Revision: 451 $
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
 # $Id: GSASIImath.py 451 2012-01-13 17:48:53Z vondreele $

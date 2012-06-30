@@ -806,7 +806,7 @@ class GSASII(wx.Frame):
             kind=wx.ITEM_NORMAL,
             text='to test file')
         #self.ImportMenuId[item.GetId()] = reader
-        self.Bind(wx.EVT_MENU, self.OnExportTest, id=item.GetId())
+#        self.Bind(wx.EVT_MENU, self.OnExportTest, id=item.GetId())
         # for reader in self.ImportPhaseReaderlist:
         #     item = submenu.Append(wx.ID_ANY,
         #         help='to Import specific format phase data',
@@ -818,12 +818,12 @@ class GSASII(wx.Frame):
         #                       kind=wx.ITEM_NORMAL,
         #                       text='guess format from file')
         # self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
-        import G2export
+#        import G2export
         
-    def OnExportTest(self,event):
-        import G2export
-        reload(G2export)
-        G2export.ProjExport(self)
+#    def OnExportTest(self,event):
+#        import G2export
+#        reload(G2export)
+#        G2export.ProjExport(self)
         
 
 

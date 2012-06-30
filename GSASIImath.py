@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 ########### SVN repository information ###################
-# $Date: 2012-01-13 11:48:53 -0600 (Fri, 13 Jan 2012) $
+# $Date: 2012-06-30 12:01:02 -0500 (Sat, 30 Jun 2012) $
 # $Author: vondreele $
-# $Revision: 451 $
+# $Revision: 663 $
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $
-# $Id: GSASIImath.py 451 2012-01-13 17:48:53Z vondreele $
+# $Id: GSASIImath.py 663 2012-06-30 17:01:02Z vondreele $
 ########### SVN repository information ###################
 import sys
 import os

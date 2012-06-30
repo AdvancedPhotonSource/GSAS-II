@@ -765,8 +765,9 @@ def SearchMap(data,keepDup=False,Pgbar=None):
                 return False
         return True
         
-    def noDuplicate(xyz,peaks,incre):
-        if True in [np.allclose(xyz*incre,peak*incre,atol=2.0) for peak in peaks]:
+    def noDuplicate(xyz,peaks,Amat):
+        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=1.0) for peak in peaks]:
+            print ' Peak',xyz,' <1A from another peak'
             return False
         return True
                         
@@ -810,8 +811,9 @@ def SearchMap(data,keepDup=False,Pgbar=None):
     generalData = data['General']
     phaseName = generalData['Name']
     SGData = generalData['SGData']
-    cell = generalData['Cell'][1:8]        
-    A = G2lat.cell2A(cell[:6])
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+#    cell = generalData['Cell'][1:8]        
+#    A = G2lat.cell2A(cell[:6])
     drawingData = data['Drawing']
     peaks = []
     mags = []
@@ -850,7 +852,7 @@ def SearchMap(data,keepDup=False,Pgbar=None):
             mags.append(x1[0])
         else:
             if keepDup:
-                if noDuplicate(peak,peaks,incre):
+                if noDuplicate(peak,peaks,Amat):
                     peaks.append(peak)
                     mags.append(x1[0])
             elif noEquivalent(peak,peaks,SGData) and x1[0] > 0.:

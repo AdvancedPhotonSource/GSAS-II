@@ -3836,21 +3836,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             peaks,mags = G2mth.SearchMap(data,keepDup=True,Pgbar=pgbar)
         finally:
             pgbar.Destroy()
-
-
-#        wx.BeginBusyCursor()
-#        try:
-#            peaks,mags = G2mth.SearchMap(data,keepDup=True)
-#        finally:
-#            wx.EndBusyCursor()
         sortIdx = np.argsort(mags.flatten())
         if len(peaks):
-            data['Map Peaks'] = np.concatenate((mags,peaks),axis=1)
-            
-#            print ' Map search peaks found:'
-#            print '  No.    Mag.      x        y        z'
-#            for j,i in enumerate(sortIdx[::-1]):
-#                print ' %3d %8.3f %8.5f %8.5f %8.5f'%(j,mags[i],peaks[i][0],peaks[i][1],peaks[i][2])
+            data['Map Peaks'] = np.concatenate((mags,peaks),axis=1)            
             print ' Map search finished, time = %.2fs'%(time.time()-time0)
         Page = G2frame.dataDisplay.FindPage('Map peaks')
         G2frame.dataDisplay.ChangeSelection(Page)

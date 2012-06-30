@@ -812,8 +812,6 @@ def SearchMap(data,keepDup=False,Pgbar=None):
     phaseName = generalData['Name']
     SGData = generalData['SGData']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-#    cell = generalData['Cell'][1:8]        
-#    A = G2lat.cell2A(cell[:6])
     drawingData = data['Drawing']
     peaks = []
     mags = []

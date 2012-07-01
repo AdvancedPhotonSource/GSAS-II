@@ -71,7 +71,7 @@ import GSASIIsolve as G2sol
 wxInspector = False
 
 # print versions
-print "Available python module versions for GSASII:"
+print "Python module versions loaded:"
 print "python:     ",sys.version[:5]
 print "wxpython:   ",wx.__version__
 print "matplotlib: ",mpl.__version__
@@ -792,40 +792,21 @@ class GSASII(wx.Frame):
     def _init_Exports(self,parent):
         '''
         '''
-        #self.Exportlist = []
-        #self._init_Import_routines(parent,'phase',
-        #                           self.ImportPhaseReaderlist,
-        #                           'Phase')
-        submenu = wx.Menu()
-        item = parent.AppendMenu(
-            wx.ID_ANY, 'entire project',
-            submenu, help='Export entire project')
-        item = submenu.Append(
-            wx.ID_ANY,
-            help='this is a module for testing',
-            kind=wx.ITEM_NORMAL,
-            text='to test file')
-        #self.ImportMenuId[item.GetId()] = reader
+#        submenu = wx.Menu()
+#        item = parent.AppendMenu(
+#            wx.ID_ANY, 'entire project',
+#            submenu, help='Export entire project')
+#        item = submenu.Append(
+#            wx.ID_ANY,
+#            help='this is a module for testing',
+#            kind=wx.ITEM_NORMAL,
+#            text='to test file')
 #        self.Bind(wx.EVT_MENU, self.OnExportTest, id=item.GetId())
-        # for reader in self.ImportPhaseReaderlist:
-        #     item = submenu.Append(wx.ID_ANY,
-        #         help='to Import specific format phase data',
-        #         kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
-        #     self.ImportMenuId[item.GetId()] = reader
-        #     self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
-        # item = submenu.Append(wx.ID_ANY,
-        #                       help='Import phase data, use file to try to determine format',
-        #                       kind=wx.ITEM_NORMAL,
-        #                       text='guess format from file')
-        # self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
 #        import G2export
-        
 #    def OnExportTest(self,event):
 #        import G2export
 #        reload(G2export)
 #        G2export.ProjExport(self)
-        
-
 
     def _init_coll_Export_Items(self,parent):
         self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_EXPORTPATTERN, kind=wx.ITEM_NORMAL,
@@ -1790,6 +1771,8 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.PatternTree.SetItemText(self.root,'Saving project as'+self.GSASprojectfile)
+                self.SetTitle("GSAS-II data tree: "+
+                              os.path.split(self.GSASprojectfile)[1])
                 G2IO.ProjFileSave(self)
                 self.dirname = dlg.GetDirectory()
         finally:

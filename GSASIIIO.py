@@ -416,6 +416,8 @@ def GetTifData(filename,imageOnly=False):
 def ProjFileOpen(G2frame):
     file = open(G2frame.GSASprojectfile,'rb')
     print 'load from file: ',G2frame.GSASprojectfile
+    G2frame.SetTitle("GSAS-II data tree: "+
+                     os.path.split(G2frame.GSASprojectfile)[1])
     wx.BeginBusyCursor()
     try:
         while True:

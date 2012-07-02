@@ -140,7 +140,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
         Bmat = nl.inv(Amat)
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[]}]
     except nl.LinAlgError:
-        print 'ouch #2'
+        print 'ouch #2 linear algebra error in LS'
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
@@ -766,8 +766,8 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         return True
         
     def noDuplicate(xyz,peaks,Amat):
-        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=1.0) for peak in peaks]:
-            print ' Peak',xyz,' <1A from another peak'
+        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
+            print ' Peak',xyz,' <0.5A from another peak'
             return False
         return True
                         

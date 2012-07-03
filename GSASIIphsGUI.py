@@ -3748,25 +3748,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2plt.PlotStructure(G2frame,data)
                 
     def OnPeaksUnique(event):
-        generalData = data['General']
-        cell = generalData['Cell'][1:7]
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        A = G2lat.cell2A(cell)
-        SGData = generalData['SGData']
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
             Ind = MapPeaks.GetSelectedRows()
-            for ind in Ind:
-                XYZ = np.array(mapPeaks[ind][1:])                        
-                Equiv = G2spc.GenAtom(XYZ,SGData,Move=True)[1:]     #remove self
-                for equiv in Equiv:                                 #special position fixer
-                        Dx = XYZ-np.array(equiv[0])
-                        dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
-                        if dist < 0.5:
-                            print equiv[0],Dx,dist
-                            mapPeaks[ind][1:] -= Dx/2.
-        FillMapPeaksGrid()
-        G2plt.PlotStructure(G2frame,data)
+            if Ind:
+                G2mth.PeaksUnique(data,Ind)
+                FillMapPeaksGrid()
+                G2plt.PlotStructure(G2frame,data)
     
     def OnFourierMaps(event):
         generalData = data['General']

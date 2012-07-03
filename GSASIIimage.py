@@ -729,7 +729,7 @@ def ImageIntegrate(image,data,masks):
             H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
         else:
             H1 = LRazm
-        H0[0] /= npcosd(H2[:-1])
+        H0[0] /= npcosd(H2[:-1])**2
         Nup += 1
         dlg.Update(Nup)
         t1 = time.time()

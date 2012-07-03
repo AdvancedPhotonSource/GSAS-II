@@ -862,3 +862,20 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(x1,rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
         rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
     return np.array(peaks),np.array([mags,]).T
+
+def PeaksUnique(data,Ind):
+    generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    A = G2lat.cell2A(cell)
+    SGData = generalData['SGData']
+    mapPeaks = data['Map Peaks']
+    for ind in Ind:
+        XYZ = np.array(mapPeaks[ind][1:])                        
+        Equiv = G2spc.GenAtom(XYZ,SGData,Move=True)[1:]     #remove self
+        for equiv in Equiv:                                 #special position fixer
+                Dx = XYZ-np.array(equiv[0])
+                dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
+                if dist < 0.5:
+                    print equiv[0],Dx,dist
+                    mapPeaks[ind][1:] -= Dx/2.

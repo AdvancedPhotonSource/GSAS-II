@@ -16,6 +16,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
+import GSASIIpwd as G2pwd
 import fellipse as fel
 
 # trig functions in degrees
@@ -730,6 +731,8 @@ def ImageIntegrate(image,data,masks):
         else:
             H1 = LRazm
         H0[0] /= npcosd(H2[:-1])**2
+        if data['Oblique'][1]:
+            H0[0] /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
         Nup += 1
         dlg.Update(Nup)
         t1 = time.time()

@@ -440,11 +440,19 @@ def ProjFileOpen(G2frame):
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                
         file.close()
-        
+        print 'project load successful'
+        G2frame.NewPlot = True
+    except:
+        msg = wx.MessageDialog(
+            G2frame,
+            message="Error reading GSAS project file "+
+            str(G2frame.GSASprojectfile)+
+            ". Is this a .gpx file created by GSAS-II?",
+            caption="Load Error",
+            style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
+        msg.ShowModal()
     finally:
         wx.EndBusyCursor()
-    print 'project load successful'
-    G2frame.NewPlot = True
     
 def ProjFileSave(G2frame):
     if not G2frame.PatternTree.IsEmpty():

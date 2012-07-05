@@ -443,13 +443,9 @@ def ProjFileOpen(G2frame):
         print 'project load successful'
         G2frame.NewPlot = True
     except:
-        msg = wx.MessageDialog(
-            G2frame,
-            message="Error reading GSAS project file "+
-            str(G2frame.GSASprojectfile)+
-            ". Is this a .gpx file created by GSAS-II?",
-            caption="Load Error",
-            style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
+        msg = wx.MessageDialog(G2frame,message="Error reading file "+
+            str(G2frame.GSASprojectfile)+". This is not a GSAS-II .gpx file",
+            caption="Load Error",style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
         msg.ShowModal()
     finally:
         wx.EndBusyCursor()

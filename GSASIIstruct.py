@@ -2122,6 +2122,7 @@ def ApplyXYZshifts(parmDict,varyList):
     return newAtomDict
     
 def SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict):
+    #Spherical harmonics texture
     IFCoup = 'Bragg' in calcControls[hfx+'instType']
     odfCor = 1.0
     H = refl[:3]
@@ -2140,6 +2141,7 @@ def SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict):
     return odfCor
     
 def SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict):
+    #Spherical harmonics texture derivatives
     FORPI = 12.5663706143592
     IFCoup = 'Bragg' in calcControls[hfx+'instType']
     odfCor = 1.0
@@ -2164,6 +2166,7 @@ def SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict):
     return odfCor,dFdODF,dFdSA
     
 def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
+    #sphericaql harmonics preferred orientation (cylindrical symmetry only)
     odfCor = 1.0
     H = refl[:3]
     cell = G2lat.Gmat2cell(g)
@@ -2184,6 +2187,7 @@ def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     return odfCor
     
 def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
+    #sphericaql harmonics preferred orientation derivatives (cylindrical symmetry only)
     FORPI = 12.5663706143592
     odfCor = 1.0
     dFdODF = {}
@@ -2243,6 +2247,18 @@ def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
             POcorr,POderv = SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr,POderv
     
+def GetAbsorb(refl,hfx,calcControls,parmDict):
+    if 'Debye' in calcControls[hfx+'instType']:
+        return G2pwd.Absorb('Cylinder',parmDict[hfx+'Absorption'],refl[5],0,0)
+    else:
+        return 1.0
+    
+def GetAbsorbDerv(refl,hfx,calcControls,parmDict):
+    if 'Debye' in calcControls[hfx+'instType']:
+        return G2pwd.AbsorbDerv('Cylinder',parmDict[hfx+'Absorption'],refl[5],0,0)
+    else:
+        return 0.0
+    
 def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
     if 'X' in parmDict[hfx+'Type']:
@@ -2250,6 +2266,7 @@ def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     Icorr *= GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict)
     if pfx+'SHorder' in parmDict:
         Icorr *= SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict)
+    Icorr *= GetAbsorb(refl,hfx,calcControls,parmDict)
     refl[13] = Icorr        
     
 def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
@@ -2271,7 +2288,8 @@ def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
             dFdODF[iSH] /= odfCor
         for i in range(3):
             dFdSA[i] /= odfCor
-    return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA
+    dFdAb = GetAbsorbDerv(refl,hfx,calcControls,parmDict)
+    return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA,dFdAb
         
 def GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict):
     costh = cosd(refl[5]/2.)
@@ -2736,7 +2754,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         for iref,refl in enumerate(refList):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
-                dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA = GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
+                dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb = GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
                 iBeg = np.searchsorted(x,refl[5]-fmin)
                 iFin = np.searchsorted(x,refl[5]+fmax)
@@ -2789,7 +2807,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'SH/L':[1.0,'shl'],
                     hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
-                    hfx+'DisplaceY':[dpdY,'pos'],}
+                    hfx+'DisplaceY':[dpdY,'pos'],hfx+'Absorption':[dFdAb,'int'],}
                 for name in names:
                     item = names[name]
                     if name in varylist:

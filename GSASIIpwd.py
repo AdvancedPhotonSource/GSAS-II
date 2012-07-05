@@ -80,18 +80,16 @@ def Transmission(Geometry,Abs,Diam):
     elif 'Bragg' in Geometry:
         return 0.0
 
-def Absorb(Geometry,Abs,Diam,Tth,Phi=0,Psi=0):
+def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
 #Calculate sample absorption
 #   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting Flat Plate in transmission','Fixed flat plate'
-#   Abs: absorption coeff in cm-1
-#   Diam: sample thickness/diameter in mm
+#   MuR: absorption coeff * sample thickness/2 or radius
 #   Tth: 2-theta scattering angle - can be numpy array
 #   Phi: flat plate tilt angle - future
 #   Psi: flat plate tilt axis - future
     Sth2 = npsind(Tth/2.0)**2
     Cth2 = 1.-Sth2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
-        MuR = Abs*Diam/20.0
         if MuR < 3.0:
             T0 = 16.0/(3*np.pi)
             T1 = (25.99978-0.01911*Sth2**0.25)*np.exp(-0.024551*Sth2)+ \
@@ -115,15 +113,24 @@ def Absorb(Geometry,Abs,Diam,Tth,Phi=0,Psi=0):
         return 1.0
     elif 'Fixed' in Geometry: #assumes sample plane is perpendicular to incident beam
         # and only defined for 2theta < 90
-        MuR = Abs*Diam/10.0
-        T1 = np.exp(-MuR)
-        T2 = np.exp(-MuR/npcosd(Tth))
-        Tb = MuR-MuR/npcosd(Tth)
+        MuT = 2.*MuR
+        T1 = np.exp(-MuT)
+        T2 = np.exp(-MuT/npcosd(Tth))
+        Tb = MuT-MuT/npcosd(Tth)
         return (T2-T1)/Tb
     elif 'Tilting' in Geometry: #assumes symmetric tilt so sample plane is parallel to diffraction vector
-        MuR = Abs*Diam/10.0
+        MuT = 2.*MuR
         cth = npcosd(Tth/2.0)
-        return np.exp(-MuR/cth)/cth
+        return np.exp(-MuT/cth)/cth
+        
+def AbsorbDerv(Geometry,MuR,Tth,Phi=0,Psi=0):
+    dA = 0.001
+    AbsP = Absorb(Geometry,MuR+dA,Tth,Phi,Psi)
+    if MuR:
+        AbsM = Absorb(Geometry,MuR-dA,Tth,Phi,Psi)
+        return (AbsP-AbsM)/(2.0*dA)
+    else:
+        return (AbsP-1.)/dA
         
 def Polarization(Pola,Tth,Azm=0.0):
     """   Calculate angle dependent x-ray polarization correction (not scaled correctly!)
@@ -391,7 +398,8 @@ def CalcPDF(data,inst,xydata):
     #Apply angle dependent corrections
     Tth = xydata['Sample'][1][0]
     dt = (Tth[1]-Tth[0])
-    xydata['IofQ'][1][1] /= Absorb(data['Geometry'],Abs,data['Diam'],Tth)
+    MuR = Abs*data['Diam']/20.0
+    xydata['IofQ'][1][1] /= Absorb(data['Geometry'],MuR,Tth)
     xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'],Tth,Azm=inst['Azimuth'])[0]
     if data['DetType'] == 'Image plate':
         xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)

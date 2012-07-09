@@ -130,13 +130,13 @@ class SymOpDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
-        self.Destroy()
+        #self.Destroy()
 
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
-        self.Destroy()
+        #self.Destroy()
 
 class DisAglDialog(wx.Dialog):
     
@@ -226,7 +226,7 @@ class DisAglDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)              
-        self.Destroy()
+        #self.Destroy()
         
     def OnReset(self,event):
         data = {}
@@ -285,13 +285,13 @@ class SingleFloatDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)              
-        self.Destroy()
+        #self.Destroy()
         
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)              
-        self.Destroy()
+        #self.Destroy()
         
 def UpdatePhaseData(G2frame,Item,data,oldPage):
 

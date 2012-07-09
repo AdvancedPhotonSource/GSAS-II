@@ -1225,13 +1225,13 @@ class GSASII(wx.Frame):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_OK)              
-            self.Destroy()
+            #self.Destroy()
             
         def OnCancel(self,event):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_CANCEL)              
-            self.Destroy()
+            #self.Destroy()
             
         def GetData(self):
             return self.data

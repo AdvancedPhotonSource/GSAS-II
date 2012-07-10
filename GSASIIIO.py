@@ -997,34 +997,24 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     elif multipleselect:
         # select one or more from a from list
         choices = [i.filename for i in zinfo]
-        dlg = wx.MultiChoiceDialog(
-            parent,
-            'Select file(s) to extract from zip file'+str(filename),
-            'Choose file(s)',
-            choices,
-            wx.CHOICEDLG_STYLE,
-            )
+        dlg = wx.MultiChoiceDialog(parent,'Select file(s) to extract from zip file'+str(filename),
+            'Choose file(s)',choices,wx.CHOICEDLG_STYLE,)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = dlg.GetSelections()
-            dlg.Destroy()
         else:
-            dlg.Destroy()
             zlist = []
+        dlg.Destroy()
     else:
         # select one from a from list
         choices = [i.filename for i in zinfo]
-        dlg = wx.SingleChoiceDialog(
-            parent,
-            'Select file to extract from zip file'+str(filename),
-            'Choose file',
-            choices,
-            )
+        dlg = wx.SingleChoiceDialog(parent,
+            'Select file to extract from zip file'+str(filename),'Choose file',
+            choices,)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = [dlg.GetSelection()]
-            dlg.Destroy()
         else:
-            dlg.Destroy()
             zlist = [-1]
+        dlg.Destroy()
         
     outlist = []
     for zindex in zlist:
@@ -1032,11 +1022,9 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
             efil = os.path.join(zloc, os.path.split(zinfo[zindex].filename)[1])
             if os.path.exists(efil) and confirmoverwrite:
                 result = wx.ID_NO
-                dlg = wx.MessageDialog(
-                    parent,
+                dlg = wx.MessageDialog(parent,
                     'File '+str(efil)+' already exists. OK to overwrite it?',
-                    'Confirm overwrite', 
-                    wx.YES_NO | wx.ICON_QUESTION)
+                    'Confirm overwrite',wx.YES_NO | wx.ICON_QUESTION)
                 try:
                     result = dlg.ShowModal()
                 finally:
@@ -1098,46 +1086,34 @@ class ImportBaseclass(object):
         self.repeatcount = 0
         #print 'created',self.__class__
 
-    def BlockSelector(self, ChoiceList, ParentFrame=None,
-                      title='Select a block',
-                      size=None, header='Block Selector'):
+    def BlockSelector(self, ChoiceList, ParentFrame=None,itle='Select a block',
+        size=None, header='Block Selector'):
         ''' Provide a wx dialog to select a block if the file contains more
         than one set of data and one must be selected
         '''
-        dlg = wx.SingleChoiceDialog(
-            ParentFrame,
-            title, header,
-            ChoiceList,
-            )
+        dlg = wx.SingleChoiceDialog(ParentFrame,title, header,ChoiceList,)
         if size: dlg.SetSize(size)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
-            dlg.Destroy()
             return sel
         else:
-            dlg.Destroy()
             return None
+        dlg.Destroy()
 
     def MultipleBlockSelector(self, ChoiceList, ParentFrame=None,
-                      title='Select a block',
-                      size=None, header='Block Selector'):
+        title='Select a block',size=None, header='Block Selector'):
         ''' Provide a wx dialog to select a block of data if the file contains more
         than one set of data and one must be selected.
         Returns a list of the selected blocks
         '''
-        dlg = wx.MultiChoiceDialog(
-            ParentFrame,
-            title, header,
-            ChoiceList+['Select all'],
-            wx.CHOICEDLG_STYLE
-            )
+        dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
+            wx.CHOICEDLG_STYLE)
         if size: dlg.SetSize(size)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
-            dlg.Destroy()
         else:
-            dlg.Destroy()
             return []
+        dlg.Destroy()
         selected = []
         if len(ChoiceList) in sel:
             return range(len(ChoiceList))
@@ -1156,7 +1132,7 @@ class ImportBaseclass(object):
         '''
         result = None
         dlg = MultipleChoicesDialog(choicelist,headinglist,
-                                    parent=ParentFrame, **kwargs)          
+            parent=ParentFrame, **kwargs)          
         if dlg.ShowModal() == wx.ID_OK:
             result = dlg.chosen
         dlg.Destroy()

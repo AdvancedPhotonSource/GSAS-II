@@ -536,11 +536,11 @@ def UpdateImageControls(G2frame,data,masks):
         littleSizer.Add(outAzim,0,wx.ALIGN_CENTER_VERTICAL)
         dataSizer.Add(littleSizer,0,)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        oblique = wx.CheckBox(parent=G2frame.dataDisplay,label='Appl. det. absorption?')
+        oblique = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply detector absorption?')
         dataSizer.Add(oblique,0,wx.ALIGN_CENTER_VERTICAL)
         oblique.Bind(wx.EVT_CHECKBOX, OnOblique)
         oblique.SetValue(data['Oblique'][1])
-        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' value (0.01-0.99)  '),0,
+        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.01-0.99)  '),0,
             wx.ALIGN_CENTER_VERTICAL)
         obliqVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['Oblique'][0]),style=wx.TE_PROCESS_ENTER)
         obliqVal.Bind(wx.EVT_TEXT_ENTER,OnObliqVal)

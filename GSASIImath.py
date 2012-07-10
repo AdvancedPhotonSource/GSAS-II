@@ -155,7 +155,48 @@ def getVCov(varyNames,varyList,covMatrix):
             except ValueError:
                 vcov[i1][i2] = 0.0
     return vcov
+
+def getRestDist(XYZ,Amat):
+    return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
+
+def getRestAngle(XYZ,Amat):
     
+    def calcVec(Ox,Tx,Amat):
+        return np.inner(Amat,(Tx-Ox))
+
+    VecA = calcVec(XYZ[1],XYZ[0],Amat)
+    VecA /= np.sqrt(np.sum(VecA**2))
+    VecB = calcVec(XYZ[1],XYZ[2],Amat)
+    VecB /= np.sqrt(np.sum(VecB**2))
+    edge = VecB-VecA
+    edge = np.sum(edge**2)
+    angle = (2.-edge)/2.
+    angle = max(angle,-1.)
+    return acosd(angle)
+    
+def getRestPlane(XYZ,Amat):
+    sumXYZ = np.zeros(3)
+    for xyz in XYZ:
+        sumXYZ += xyz
+    sumXYZ /= len(XYZ)
+    XYZ = np.array(XYZ)-sumXYZ
+    XYZ = np.inner(Amat,XYZ).T
+    Zmat = np.zeros((3,3))
+    for i,xyz in enumerate(XYZ):
+        Zmat += np.outer(xyz.T,xyz)
+    Evec,Emat = nl.eig(Zmat)
+    Evec = np.sqrt(Evec)/(len(XYZ)-3)
+    Order = np.argsort(Evec)
+    return Evec[Order[0]]
+    
+def getRestChiral(XYZ,Amat):
+    
+    VecA = np.empty((3,3))    
+    VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
+    VecA[1] = np.inner(XYZ[2]-XYZ[0],Amat)
+    VecA[2] = np.inner(XYZ[3]-XYZ[0],Amat)
+    return nl.det(VecA)
+        
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):

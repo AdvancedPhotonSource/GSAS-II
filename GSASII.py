@@ -1225,13 +1225,11 @@ class GSASII(wx.Frame):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_OK)              
-            #self.Destroy()
             
         def OnCancel(self,event):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_CANCEL)              
-            #self.Destroy()
             
         def GetData(self):
             return self.data
@@ -1340,13 +1338,11 @@ class GSASII(wx.Frame):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_OK)              
-            #self.Destroy() -- do this later, after using GetData
             
         def OnCancel(self,event):
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_CANCEL)              
-            #self.Destroy()
             
         def GetData(self):
             return self.data
@@ -1972,14 +1968,8 @@ class GSASII(wx.Frame):
         HKLFdata['Data'] = self.PatternTree.GetItemPyData(HKLFname)[1]
         HKLFdata['Instrument Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,HKLFname,'Instrument Parameters'))
         return HKLFdata
-                    
-    def GetUsedHistogramsAndPhasesfromTree(self):
-        ''' Returns all histograms that are found in any phase
-        and any phase that uses a histogram
-        return:
-            Histograms = dictionary of histograms as {name:data,...}
-            Phases = dictionary of phases that use histograms
-        '''
+        
+    def GetPhaseData(self):
         phaseData = {}
         if G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
             sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
@@ -1990,7 +1980,17 @@ class GSASII(wx.Frame):
             item, cookie = self.PatternTree.GetFirstChild(sub)
             while item:
                 phaseData[self.PatternTree.GetItemText(item)] =  self.PatternTree.GetItemPyData(item)                
-                item, cookie = self.PatternTree.GetNextChild(sub, cookie)                
+                item, cookie = self.PatternTree.GetNextChild(sub, cookie)
+        return phaseData                
+                    
+    def GetUsedHistogramsAndPhasesfromTree(self):
+        ''' Returns all histograms that are found in any phase
+        and any phase that uses a histogram
+        return:
+            Histograms = dictionary of histograms as {name:data,...}
+            Phases = dictionary of phases that use histograms
+        '''
+        phaseData = self.GetPhaseData()
         Histograms = {}
         Phases = {}
         pId = 0

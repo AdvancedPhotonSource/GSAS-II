@@ -130,13 +130,11 @@ class SymOpDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
-        #self.Destroy()
 
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
-        #self.Destroy()
 
 class DisAglDialog(wx.Dialog):
     
@@ -226,7 +224,6 @@ class DisAglDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)              
-        #self.Destroy()
         
     def OnReset(self,event):
         data = {}
@@ -285,13 +282,20 @@ class SingleFloatDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)              
-        #self.Destroy()
         
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)              
-        #self.Destroy()
+        
+def FindAtomIndexByIDs(atomData,IDs,Draw=True):
+    indx = []
+    for i,atom in enumerate(atomData):
+        if Draw and atom[-3] in IDs:
+            indx.append(i)
+        elif atom[-1] in IDs:
+            indx.append(i)
+    return indx
         
 def UpdatePhaseData(G2frame,Item,data,oldPage):
 
@@ -912,6 +916,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for row in range(Atoms.GetNumberRows()):
                             if parms == atomData[row][c]:
                                 Atoms.SelectRow(row,True)
+                    dlg.Destroy()
                     SetupGeneral()
                 elif Atoms.GetColLabelValue(c) == 'residue':
                     choice = []
@@ -928,6 +933,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for row in range(Atoms.GetNumberRows()):
                             if parms == atomData[row][c]:
                                 Atoms.SelectRow(row,True)
+                    dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'res no':
                     choice = []
                     for r in range(Atoms.GetNumberRows()):
@@ -942,6 +948,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for row in range(Atoms.GetNumberRows()):
                             if int(parms) == atomData[row][c]:
                                 Atoms.SelectRow(row,True)
+                    dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'chain':
                     choice = []
                     for r in range(Atoms.GetNumberRows()):
@@ -1303,6 +1310,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for r in indx:                        
                         atomData[r][cid] = parm
                     FillAtomsGrid()
+                dlg.Destroy()
             elif parm in ['frac','Uiso']:
                 limits = [0.,1.]
                 val = 1.0
@@ -1316,6 +1324,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         atomData[r][cid] = parm
                     SetupGeneral()
                     FillAtomsGrid()
+                dlg.Destroy()
             elif parm in ['x','y','z']:
                 limits = [-1.,1.]
                 val = 0.
@@ -1326,6 +1335,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         atomData[r][cid] += parm
                     SetupGeneral()
                     FillAtomsGrid()
+                dlg.Destroy()
 
     def AtomTransform(event):
         indx = Atoms.GetSelectedRows()
@@ -1407,7 +1417,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 DisAglData['pId'] = data['pId']
                 DisAglData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
             G2str.DistAngle(DisAglCtls,DisAglData)
-            
+                        
 ################################################################################
 #Structure drawing GUI stuff                
 ################################################################################
@@ -1434,19 +1444,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawingData.update(defaultDrawing)
         if 'contourLevel' not in drawingData:
             drawingData['contourLevel'] = 1.
-        cx,ct,cs = [0,0,0]
+        cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] == 'nuclear':
-            cx,ct,cs = [2,1,6]         #x, type & style
+            cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
         elif generalData['Type'] == 'macromolecular':
-            cx,ct,cs = [5,4,9]         #x, type & style
+            cx,ct,cs,ci = [5,4,9,20]         #x, type, style & index
         elif generalData['Type'] == 'magnetic':
-            cx,ct,cs = [2,1,6]         #x, type & style
+            cx,ct,cs,ci = [2,1,6,20]         #x, type, style & index
 #        elif generalData['Type'] == 'modulated':
 #           ?????   for future
+        drawingData['atomPtrs'] = [cx,ct,cs,ci]
         if not drawingData.get('Atoms'):
             for atom in atomData:
                 DrawAtomAdd(drawingData,atom)
-            drawingData['atomPtrs'] = [cx,ct,cs]
             data['Drawing'] = drawingData
             
     def MakeDrawAtom(atom,oldatom=None):
@@ -1499,6 +1509,66 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         indx = FindAtomIndexByIDs(atomData,IDs)
         for ind in indx:
             atomData[ind] = MakeDrawAtom(atom,atomData[ind])
+            
+    def OnRestraint(event):        
+        indx = drawAtoms.GetSelectedRows()
+        restData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Restraints'))
+        drawingData = data['Drawing']
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
+        cx,ct,cs,ci = drawingData['atomPtrs']
+        atomData = drawingData['Atoms']
+        atNames = []
+        atXYZ = []
+        atSymOp = []
+        atIndx = []
+        for item in indx:
+            atNames.append(atomData[item][ct-1])
+            atXYZ.append(np.array(atomData[item][cx:cx+3]))
+            atSymOp.append(atomData[item][cs-1])
+            atIndx.append(atomData[item][ci])
+        if event.GetId() == G2gd.wxID_DRAWRESTRBOND and len(indx) == 2:
+            try:
+                bondData = restData[PhaseName]['Bond']
+            except KeyError:
+                bondData = {'wtFactor':1.0,'Bonds':[]}
+                restData[PhaseName] = {}
+                restData[PhaseName]['Bond'] = bondData
+            dist = G2mth.getRestDist(atXYZ,Amat)
+            bondData['Bonds'].append([atNames,atSymOp,atIndx,dist,1.54,0.01])
+        elif event.GetId() == G2gd.wxID_DRAWRESTRANGLE and len(indx) == 3:
+            try:
+                angleData = restData[PhaseName]['Angle']
+            except KeyError:
+                angleData = {'wtFactor':1.0,'Angles':[]}
+                restData[PhaseName] = {}
+                restData[PhaseName]['Angle'] = angleData
+            angle = G2mth.getRestAngle(atXYZ,Amat)
+            angleData['Angles'].append([atNames,atSymOp,atIndx,angle,109.5,1.0])            
+        elif event.GetId() == G2gd.wxID_DRAWRESTRPLANE and len(indx) > 3:
+            try:
+                planeData = restData[PhaseName]['Plane']
+            except KeyError:
+                planeData = {'wtFactor':1.0,'Planes':[]}
+                restData[PhaseName] = {}
+                restData[PhaseName]['Plane'] = planeData
+            plane = G2mth.getRestPlane(atXYZ,Amat)
+            planeData['Planes'].append([atNames,atSymOp,atIndx,plane,0.0,0.01])            
+        elif event.GetId() == G2gd.wxID_DRAWRESTRCHIRAL and len(indx) == 4:
+            try:
+                chiralData = restData[PhaseName]['Chiral']
+            except KeyError:
+                chiralData = {'wtFactor':1.0,'Volumes':[]}
+                restData[PhaseName] = {}
+                restData[PhaseName]['Chiral'] = chiralData
+            volume = G2mth.getRestChiral(atXYZ,Amat)
+            chiralData['Volumes'].append([atNames,atSymOp,atIndx,volume,2.5,0.1])            
+        else:
+            print '**** ERROR wrong number of atoms selected for this restraint'
+            return
+        G2frame.PatternTree.SetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Restraints'),restData)
 
 ################################################################################
 ##### Atom draw routines
@@ -1508,7 +1578,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
-        cx,ct,cs = drawingData['atomPtrs']
+        cx,ct,cs,ci = drawingData['atomPtrs']
         atomData = drawingData['Atoms']
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
             [wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,polyhedra",
@@ -1708,7 +1778,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if indx:
             generalData = data['General']
             atomData = data['Drawing']['Atoms']
-            cx,ct,cs = data['Drawing']['atomPtrs']
+            cx,ct,cs,ci = data['Drawing']['atomPtrs']
             styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
             if generalData['Type'] == 'macromolecular':
                 styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids',
@@ -1730,7 +1800,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if indx:
             generalData = data['General']
             atomData = data['Drawing']['Atoms']
-            cx,ct,cs = data['Drawing']['atomPtrs']
+            cx,ct,cs,ci = data['Drawing']['atomPtrs']
             styleChoice = [' ','type','name','number']
             if generalData['Type'] == 'macromolecular':
                 styleChoice = [' ','type','name','number','residue','1-letter','chain']
@@ -1755,7 +1825,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2frame.dataFrame.SetStatusText('Change color, Add to Custom Colors, then OK')
             generalData = data['General']
             atomData = data['Drawing']['Atoms']
-            cx,ct,cs = data['Drawing']['atomPtrs']
+            cx,ct,cs,ci = data['Drawing']['atomPtrs']
             atmColors = []
             atmTypes = []
             for r in indx:
@@ -1788,7 +1858,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def ResetAtomColors(event):
         generalData = data['General']
         atomData = data['Drawing']['Atoms']
-        cx,ct,cs = data['Drawing']['atomPtrs']
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         for atom in atomData:            
             atNum = generalData['AtomTypes'].index(atom[ct])
             atom[cs+2] = list(generalData['Color'][atNum])
@@ -1915,7 +1985,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             indx.sort()
             atomData = data['Drawing']['Atoms']
             numAtoms = len(atomData)
-            cx,ct,cs = data['Drawing']['atomPtrs']
+            cx,ct,cs,ci = data['Drawing']['atomPtrs']
             generalData = data['General']
             SGData = generalData['SGData']
             cellArray = G2lat.CellBlock(1)
@@ -1997,7 +2067,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotStructure(G2frame,data)
             
     def FindBondsToo():                         #works but slow for large structures - keep as reference
-        cx,ct,cs = data['Drawing']['atomPtrs']
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         atomData = data['Drawing']['Atoms']
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -2031,7 +2101,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     
     def FindBondsDraw():                    #uses numpy & masks - very fast even for proteins!
         import numpy.ma as ma
-        cx,ct,cs = data['Drawing']['atomPtrs']
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         hydro = data['Drawing']['showHydrogen']
         atomData = data['Drawing']['Atoms']
         generalData = data['General']
@@ -2131,7 +2201,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
     def ChangeDrawAtomsByIDs(colName,IDs,value):
         atomData = data['Drawing']['Atoms']
-        cx,ct,cs = data['Drawing']['atomPtrs']
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
         if colName == 'Name':
             col = ct-1
         elif colName == 'Type':
@@ -3933,6 +4003,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2gd.wxID_DRAWDISAGLTOR)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRBOND)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRANGLE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRPLANE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
         elif text == 'Pawley reflections':

@@ -54,6 +54,9 @@ htmlFirstUse = True
     wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGLTOR,  wxID_DRAWPLANE,
 ] = [wx.NewId() for item in range(12)]
 
+[ wxID_DRAWRESTRBOND, wxID_DRAWRESTRANGLE, wxID_DRAWRESTRPLANE, wxID_DRAWRESTRCHIRAL,
+] = [wx.NewId() for item in range(4)]
+
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
 
@@ -83,8 +86,8 @@ htmlFirstUse = True
 [ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
 ] = [wx.NewId() for item in range(4)]
 
-[ wxID_RESTRAINTADD,wxID_PWDANALYSIS,
-] = [wx.NewId() for item in range(2)]
+[ wxID_RESTRAINTADD,wxID_PWDANALYSIS, wxID_RESTSELPHASE,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -277,8 +280,10 @@ class DataFrame(wx.Frame):
         self.RestraintEdit = wx.Menu(title='')
         self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
         self.RestraintMenu.Append(menu=MyHelp(self,helpType='Restraints'),title='&Help')
-        self.RestraintEdit.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraint',
-            help='restraint dummy menu item')
+        self.RestraintEdit.Append(id=wxID_RESTSELPHASE, kind=wx.ITEM_NORMAL,text='Select phase',
+            help='Select phase')
+        self.RestraintEdit.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraints',
+            help='Add restraints')
             
 # Sequential results
         self.SequentialMenu = wx.MenuBar()
@@ -499,7 +504,7 @@ class DataFrame(wx.Frame):
         self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
             help='Reload atom drawing list')
         self.AtomCompute.Append(id=wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Distances & Angles',
-            help='Compute distances & angles for selected atoms')   
+            help='Compute distances & angles for selected atoms')
                  
 # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
@@ -509,8 +514,10 @@ class DataFrame(wx.Frame):
         self.DrawAtomsMenu = wx.MenuBar()
         self.DrawAtomEdit = wx.Menu(title='')
         self.DrawAtomCompute = wx.Menu(title='')
+        self.DrawAtomRestraint = wx.Menu(title='')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomEdit, title='Edit')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomCompute,title='Compute')
+        self.DrawAtomsMenu.Append(menu=self.DrawAtomRestraint, title='Restraints')
         self.DrawAtomsMenu.Append(menu=MyHelp(self,helpType='Draw Atoms'),title='&Help')
         self.DrawAtomEdit.Append(id=wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
             help='Select atoms first')
@@ -536,6 +543,14 @@ class DataFrame(wx.Frame):
             help='Compute distance, angle or torsion for 2-4 selected atoms')   
         self.DrawAtomCompute.Append(id=wxID_DRAWPLANE, kind=wx.ITEM_NORMAL,text='Best plane',
             help='Compute best plane for 4+ selected atoms')   
+        self.DrawAtomRestraint.Append(id=wxID_DRAWRESTRBOND, kind=wx.ITEM_NORMAL,text='Add bond restraint',
+            help='Add bond restraint for selected atoms (2)')
+        self.DrawAtomRestraint.Append(id=wxID_DRAWRESTRANGLE, kind=wx.ITEM_NORMAL,text='Add angle restraint',
+            help='Add angle restraint for selected atoms (3: one end 1st)')
+        self.DrawAtomRestraint.Append(id=wxID_DRAWRESTRPLANE, kind=wx.ITEM_NORMAL,text='Add plane restraint',
+            help='Add plane restraint for selected atoms (4+)')
+        self.DrawAtomRestraint.Append(id=wxID_DRAWRESTRCHIRAL, kind=wx.ITEM_NORMAL,text='Add chiral restraint',
+            help='Add chiral restraint for selected atoms (4: center atom 1st)')
             
 # Phase / Texture tab
         self.TextureMenu = wx.MenuBar()
@@ -1568,68 +1583,179 @@ def UpdateConstraints(G2frame,data):
             parent=G2frame.dataFrame)
     elif warnmsg:
         print 'Unexpected contraint warning:\n',warnmsg
-
-def UpdateRestraints(G2frame,data):
-
+        
+def UpdateRestraints(G2frame,data,Phases,phaseName):
+    if not len(Phases):
+        print 'There are no phases to form restraints'
+        return
+    phasedata = Phases[phaseName]
+    if phaseName not in data:
+        data[phaseName] = {}
+    restrData = data[phaseName]
+    if 'Bond' not in restrData:
+        restrData['Bond'] = {'wtFactor':1.0,'Bonds':[]}
+    if 'Angle' not in restrData:
+        restrData['Angle'] = {'wtFactor':1.0,'Angles':[]}
+    if 'Plane' not in restrData:
+        restrData['Plane'] = {'wtFactor':1.0,'Planes':[]}
+    if 'Chiral' not in restrData:
+        restrData['Chiral'] = {'wtFactor':1.0,'Volumes':[]}
+    
+    def OnSelectPhase(event):
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',Phases.keys())
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                phaseName = Phases.keys()[dlg.GetSelection()]
+                UpdateRestraints(G2frame,data,Phases,phaseName)
+        finally:
+            dlg.Destroy()
+    
     def OnAddRestraint(event):
         page = G2frame.dataDisplay.GetSelection()
-        print G2frame.dataDisplay.GetPageText(page)
+        if 'Bond' in G2frame.dataDisplay.GetPageText(page):
+            AddBondRestraint()
+        elif 'Angle' in G2frame.dataDisplay.GetPageText(page):
+            AddAngleRestraint()
+        elif 'Plane' in G2frame.dataDisplay.GetPageText(page):
+            AddPlaneRestraint()
+        elif 'Chiral' in G2frame.dataDisplay.GetPageText(page):
+            AddChiralRestraint()
+            
+    def AddBondRestraint():
+        print 'Bond restraint'
 
-    def UpdateAtomRestr():
-        AtomRestr.DestroyChildren()
-        dataDisplay = wx.Panel(AtomRestr)
+    def AddAngleRestraint():
+        print 'Angle restraint'
+
+    def AddPlaneRestraint():
+        print 'Plane restraint'
+
+    def AddChiralRestraint():
+        print 'Chiral restraint'
+        
+    def WtBox(wind,restData):
+        
+        def OnWtFactor(event):
+            try:
+                value = float(wtfactor.GetValue())
+            except ValueError:
+                value = 1.0
+            restData['wtFactor'] = value
+            wtfactor.SetValue('%.2f'%(value))
+            
+        wtBox = wx.BoxSizer(wx.HORIZONTAL)
+        wtBox.Add(wx.StaticText(wind,-1,'Restraint weight factor:'),0,wx.ALIGN_CENTER_VERTICAL)
+        wtfactor = wx.TextCtrl(wind,-1,value='%.2f'%(restData['wtFactor']),style=wx.TE_PROCESS_ENTER)
+        wtfactor.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
+        wtfactor.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
+        wtBox.Add(wtfactor,0,wx.ALIGN_CENTER_VERTICAL)
+        return wtBox
+        
+    def UpdateBondRestr(bondRestData):
+        BondRestr.DestroyChildren()
+        dataDisplay = wx.Panel(BondRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Atom restraint data:'),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add((5,5),0)
+        mainSizer.Add(WtBox(BondRestr,bondRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        for bond in bondRestData['Bonds']:
+            print bond
 
-
-        dataDisplay.SetSizer(mainSizer)
+        BondRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
-        Size[1] += 26                           #compensate for status bar
-        dataDisplay.SetSize(Size)
+        Size[1] += 25       #make room for tab
+        BondRestr.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
         
-    def UpdatePhaseRestr():
-        PhaseRestr.DestroyChildren()
-        dataDisplay = wx.Panel(PhaseRestr)
+    def UpdateAngleRestr(angleRestData):
+        AngleRestr.DestroyChildren()
+        dataDisplay = wx.Panel(AngleRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,'Phase restraint data:'),0,wx.ALIGN_CENTER_VERTICAL)
-        mainSizer.Add((5,5),0)
+        mainSizer.Add(WtBox(AngleRestr,angleRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        for angle in angleRestData['Angles']:
+            print angle
 
 
-        dataDisplay.SetSizer(mainSizer)
+        AngleRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
-        Size[1] += 26                           #compensate for status bar
-        dataDisplay.SetSize(Size)
+        Size[1] += 25       #make room for tab
+        AngleRestr.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
+    
+    def UpdatePlaneRestr(planeRestData):
+        PlaneRestr.DestroyChildren()
+        dataDisplay = wx.Panel(PlaneRestr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(WtBox(PlaneRestr,planeRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        for plane in planeRestData['Planes']:
+            print plane
+
+
+        PlaneRestr.SetSizer(mainSizer)
+        Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[1] += 25       #make room for tab
+        PlaneRestr.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
+    
+    def UpdateChiralRestr(chiralRestData):
+        ChiralRestr.DestroyChildren()
+        dataDisplay = wx.Panel(ChiralRestr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        for volume in chiralRestData['Volumes']:
+            print volume
+
+
+        ChiralRestr.SetSizer(mainSizer)
+        Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[1] += 25       #make room for tab
+        ChiralRestr.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
     
     def OnPageChanged(event):
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
-        if text == 'Atom restraints':
+        if text == 'Bond restraints':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
-            UpdateAtomRestr()
-        elif text == 'Phase restraints':
-            UpdatePhaseRestr()
+            bondRestData = restrData['Bond']
+            UpdateBondRestr(bondRestData)
+        elif text == 'Angle restraints':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
+            angleRestData = restrData['Angle']
+            UpdateAngleRestr(angleRestData)
+        elif text == 'Plane restraints':
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
+            planeRestData = restrData['Plane']
+            UpdatePlaneRestr(planeRestData)
+        elif text == 'Chiral restraints':
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
+            chiralRestData = restrData['Chiral']
+            UpdateChiralRestr(chiralRestData)
         event.Skip()
 
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
+        
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.RestraintMenu)
-    G2frame.dataFrame.SetLabel('restraints')
-    G2frame.dataFrame.CreateStatusBar()
+    G2frame.dataFrame.SetLabel('restraints for '+phaseName)
+    G2frame.dataFrame.RestraintEdit.Enable(wxID_RESTSELPHASE,False)
+    if len(Phases) > 1:
+        G2frame.dataFrame.RestraintEdit.Enable(wxID_RESTSELPHASE,True)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSelectPhase, id=wxID_RESTSELPHASE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRestraint, id=wxID_RESTRAINTADD)
     G2frame.dataDisplay = GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     
-    PhaseRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(PhaseRestr,'Phase restraints')
-    AtomRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(AtomRestr,'Atom restraints')
-    UpdatePhaseRestr()
-#    AtomRestrData = data['AtomRestr']
+    BondRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(BondRestr,'Bond restraints')
+    AngleRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(AngleRestr,'Angle restraints')
+    PlaneRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(PlaneRestr,'Plane restraints')
+    ChiralRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(ChiralRestr,'Chiral restraints')
+    UpdateBondRestr(restrData['Bond'])
 
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
@@ -1836,7 +1962,11 @@ def MovePatternTreeToGrid(G2frame,item):
             UpdateConstraints(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Restraints':
             data = G2frame.PatternTree.GetItemPyData(item)
-            UpdateRestraints(G2frame,data)
+            Phases = G2frame.GetPhaseData()
+            phase = ''
+            if Phases:
+                phaseName = Phases.keys()[0]
+            UpdateRestraints(G2frame,data,Phases,phaseName)
         elif 'IMG' in G2frame.PatternTree.GetItemText(item):
             G2frame.Image = item
             G2plt.PlotImage(G2frame,newPlot=True)

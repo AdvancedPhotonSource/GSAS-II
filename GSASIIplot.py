@@ -2302,7 +2302,7 @@ def PlotStructure(G2frame,data):
     if 'Flip' in generalData:
         flipData = generalData['Flip']                        
         flipData['mapRoll'] = [0,0,0]
-    cx,ct,cs = drawingData['atomPtrs']
+    cx,ct,cs,ci = drawingData['atomPtrs']
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
@@ -2841,7 +2841,7 @@ def PlotStructure(G2frame,data):
         Zclip = drawingData['Zclip']*cPos/200.
         anglex,angley,anglez = drawingData['Rotation'][:3]
         Tx,Ty,Tz = drawingData['viewPoint'][0]
-        cx,ct,cs = drawingData['atomPtrs']
+        cx,ct,cs,ci = drawingData['atomPtrs']
         bondR = drawingData['bondRadius']
         G,g = G2lat.cell2Gmat(cell)
         GS = G

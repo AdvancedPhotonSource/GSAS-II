@@ -1657,11 +1657,26 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(BondRestr,bondRestData),0,wx.ALIGN_CENTER_VERTICAL)
-        for bond in bondRestData['Bonds']:
-            print bond
+
+        table = []
+        rowLabels = []
+        colLabels = ['A+SymOp  B+SymOp','d-calc','d-obs','esd']
+        Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,3',]
+        for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(bondRestData['Bonds']):
+            table.append([atoms[0]+'+ ('+ops[0]+')  '+atoms[1]+'+ ('+ops[1]+')',dcalc,dobs,esd])
+            rowLabels.append(str(i))
+        bondTable = Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        Bonds = GSGrid(BondRestr)
+        Bonds.SetTable(bondTable, True)
+        Bonds.AutoSizeColumns(False)
+        for r in range(len(bondRestData['Bonds'])):
+            for c in range(2):
+                Bonds.SetReadOnly(r,c,True)
+        mainSizer.Add(Bonds,0,)
 
         BondRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[0] += 5
         Size[1] += 25       #make room for tab
         BondRestr.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
@@ -1672,12 +1687,27 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(AngleRestr,angleRestData),0,wx.ALIGN_CENTER_VERTICAL)
-        for angle in angleRestData['Angles']:
-            print angle
 
+        table = []
+        rowLabels = []
+        colLabels = ['A+SymOp  B+SymOp  C+SymOp','calc','obs','esd']
+        Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
+        for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(angleRestData['Angles']):
+            table.append([atoms[0]+'+ ('+ops[0]+')  '+atoms[1]+'+ ('+ops[1]+')  '+atoms[2]+ \
+            '+ ('+ops[2]+')',dcalc,dobs,esd])
+            rowLabels.append(str(i))
+        angleTable = Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        Angles = GSGrid(AngleRestr)
+        Angles.SetTable(angleTable, True)
+        Angles.AutoSizeColumns(False)
+        for r in range(len(angleRestData['Angles'])):
+            for c in range(2):
+                Angles.SetReadOnly(r,c,True)
+        mainSizer.Add(Angles,0,)
 
         AngleRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[0] += 5
         Size[1] += 25       #make room for tab
         AngleRestr.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
@@ -1688,12 +1718,33 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(PlaneRestr,planeRestData),0,wx.ALIGN_CENTER_VERTICAL)
-        for plane in planeRestData['Planes']:
-            print plane
 
+        table = []
+        rowLabels = []
+        colLabels = ['atom+SymOp','calc','obs','esd']
+        Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
+        for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(planeRestData['Planes']):
+            print [atoms,ops,indx,dcalc,dobs,esd]
+            atString = ''
+            for a,atom in enumerate(atoms):
+                atString += atom+'+ ('+ops[a]+'),'
+                if (a+1)%3 == 0:
+                    atString += '\n'
+            table.append([atString[:-1],dcalc,dobs,esd])
+            rowLabels.append(str(i))
+        planeTable = Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        Planes = GSGrid(PlaneRestr)
+        Planes.SetTable(planeTable, True)
+        Planes.AutoSizeColumns(False)
+        Planes.AutoSizeRows(False)
+        for r in range(len(planeRestData['Planes'])):
+            for c in range(3):
+                Planes.SetReadOnly(r,c,True)
+        mainSizer.Add(Planes,0,)
 
         PlaneRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[0] += 5
         Size[1] += 25       #make room for tab
         PlaneRestr.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
@@ -1704,12 +1755,27 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0,wx.ALIGN_CENTER_VERTICAL)
-        for volume in chiralRestData['Volumes']:
-            print volume
 
+        table = []
+        rowLabels = []
+        colLabels = ['O+SymOp  A+SymOp  B+SymOp  C+SymOp','calc','obs','esd']
+        Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
+        for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(chiralRestData['Volumes']):
+            table.append([atoms[0]+'+ ('+ops[0]+') '+atoms[1]+'+ ('+ops[1]+') '+atoms[2]+ \
+            '+ ('+ops[2]+') '+atoms[3]+'+ ('+ops[3]+')',dcalc,dobs,esd])
+            rowLabels.append(str(i))
+        volumeTable = Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        Volumes = GSGrid(ChiralRestr)
+        Volumes.SetTable(volumeTable, True)
+        Volumes.AutoSizeColumns(False)
+        for r in range(len(chiralRestData['Volumes'])):
+            for c in range(2):
+                Volumes.SetReadOnly(r,c,True)
+        mainSizer.Add(Volumes,0,)
 
         ChiralRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[0] += 5
         Size[1] += 25       #make room for tab
         ChiralRestr.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)

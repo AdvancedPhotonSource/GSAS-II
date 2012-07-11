@@ -127,12 +127,27 @@ def CheckConstraints(GPXfile):
         return 'Error: No Phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,Print=False)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,RestDict=None,Print=False)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = phaseVary+hapVary+histVary
     constrDict,fixedList = GetConstraints(GPXfile)
     return G2mv.CheckConstraints(varyList,constrDict,fixedList)
+    
+def GetRestraints(GPXfile):
+    '''Read the restraints from the GPX file
+    '''
+    fl = open(GPXfile,'rb')
+    while True:
+        try:
+            data = cPickle.load(fl)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Restraints':
+            restDict = datum[1]
+    fl.close()
+    return restDict
     
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -559,7 +574,7 @@ def cellVary(pfx,SGData):
 ##### Phase data
 ################################################################################        
                     
-def GetPhaseData(PhaseData,Print=True):
+def GetPhaseData(PhaseData,RestDict=None,Print=True):
             
     def PrintFFtable(FFtable):
         print '\n X-ray scattering factors:'
@@ -632,7 +647,24 @@ def GetPhaseData(PhaseData,Print=True):
             ptlbls += '%12s'%(item)
             ptstr += '%12.4f'%(SHcoeff[item]) 
         print ptlbls
-        print ptstr    
+        print ptstr
+        
+    def PrintRestraints(phaseRest):
+        if phaseRest:
+            print '\n Restraints:'
+            names = ['Bonds','Angles','Planes','Volumes']
+            for i,name in enumerate(['Bond','Angle','Plane','Chiral']):
+                itemRest = phaseRest[name]
+                if itemRest[names[i]]:
+                    print '\n  %30s %10.3f'%(name+' restraint weight factor',itemRest['wtFactor'])
+                    print '  atoms(symOp), calc, obs, sig: '
+                    for item in phaseRest[name][names[i]]:
+                        text = '   '
+                        for a,at in enumerate(item[0]):
+                            text += at+'+('+item[1][a]+') '
+                            if (a+1)%5 == 0:
+                                text += '\n   '
+                        print text,' %.3f %.3f %.3f'%(item[3],item[4],item[5])
         
     if Print: print ' Phases:'
     phaseVary = []
@@ -740,6 +772,8 @@ def GetPhaseData(PhaseData,Print=True):
                     ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
                     '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
                 PrintTexture(textureData)
+                if name in RestDict:
+                    PrintRestraints(RestDict[name])
                     
         elif PawleyRef:
             pawleyVary = []
@@ -2914,7 +2948,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
 def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
-    Histograms,Phases = HistoPhases
+    Histograms,Phases,restDict = HistoPhases
     nvar = len(varylist)
     dMdv = np.empty(0)
     histoList = Histograms.keys()
@@ -2979,7 +3013,7 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
 def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
-    Histograms,Phases = HistoPhases
+    Histograms,Phases,restDict = HistoPhases
     nvar = len(varylist)
     Hess = np.empty(0)
     histoList = Histograms.keys()
@@ -3065,7 +3099,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     parmdict.update(zip(varylist,values))
     Values2Dict(parmdict, varylist, values)
     G2mv.Dict2Map(parmdict,varylist)
-    Histograms,Phases = HistoPhases
+    Histograms,Phases,restDict = HistoPhases
     M = np.empty(0)
     SumwYo = 0
     Nobs = 0
@@ -3183,6 +3217,7 @@ def Refine(GPXfile,dlg):
     calcControls = {}
     calcControls.update(Controls)            
     constrDict,fixedList = GetConstraints(GPXfile)
+    restDict = GetRestraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no phases! ***'
@@ -3192,7 +3227,7 @@ def Refine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception        
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restDict)
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
     calcControls['BLtables'] = BLtables
@@ -3236,16 +3271,16 @@ def Refine(GPXfile,dlg):
         if 'Jacobian' in Controls['deriv type']:            
             result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
         elif 'Hessian' in Controls['deriv type']:
             result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
         else:           #'numeric'
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                args=([Histograms,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/len(varyList))
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
@@ -3335,6 +3370,7 @@ def SeqRefine(GPXfile,dlg):
     Controls = GetControls(GPXfile)
     ShowControls(Controls)            
     constrDict,fixedList = GetConstraints(GPXfile)
+    restDict = GetRestraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no histograms to refine! ***'
@@ -3344,7 +3380,7 @@ def SeqRefine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,False)
+    Natoms,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restDict,False)
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:
@@ -3422,15 +3458,15 @@ def SeqRefine(GPXfile,dlg):
             if 'Jacobian' in Controls['deriv type']:            
                 result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                     ftol=Ftol,col_deriv=True,factor=Factor,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases,restDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/2)
             elif 'Hessian' in Controls['deriv type']:
                 result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases,restDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = result[2]['num cyc']+1                           
             else:           #'numeric'
                 result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                    args=([Histo,Phases],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases,restDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/len(varyList))
 
 

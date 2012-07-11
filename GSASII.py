@@ -2038,7 +2038,7 @@ class GSASII(wx.Frame):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         print Histograms.keys()
-        Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)        
+        Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestDict=None,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
         varyList = phaseVary+hapVary+histVary

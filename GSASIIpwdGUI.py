@@ -194,6 +194,7 @@ def UpdatePeakGrid(G2frame, data):
             G2frame.dataDisplay.ClearSelection()
             if event.GetKeyCode() == wx.WXK_DELETE:
                 G2frame.dataDisplay.ClearGrid()
+                rowList.sort()
                 rowList.reverse()
                 nDel = 0
                 for row in rowList:

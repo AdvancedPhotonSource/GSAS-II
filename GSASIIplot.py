@@ -790,7 +790,7 @@ def PlotPatterns(G2frame,newPlot=False):
 ##### PlotDeltSig
 ################################################################################
             
-def PlotDeltSig(G2frame):
+def PlotDeltSig(G2frame,kind):
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -805,12 +805,19 @@ def PlotDeltSig(G2frame):
     PatternId = G2frame.PatternId
     Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
     Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
-    limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
-    xye = np.array(Pattern[1])
-    xmin = np.searchsorted(xye[0],limits[0])
-    xmax = np.searchsorted(xye[0],limits[1])
-    X = xye[0][xmin:xmax]
-    DS = xye[5][xmin:xmax]*np.sqrt(xye[2][xmin:xmax])
+    wtFactor = Pattern[0]['wtFactor']
+    if kind == 'PWDR':
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
+        xye = np.array(Pattern[1])
+        xmin = np.searchsorted(xye[0],limits[0])
+        xmax = np.searchsorted(xye[0],limits[1])
+        DS = xye[5][xmin:xmax]*np.sqrt(wtFactor*xye[2][xmin:xmax])
+    elif kind == 'HKLF':
+        refl = Pattern[1]
+        DS = []
+        for ref in refl:
+            if ref[6] > 0.:
+                DS.append((ref[5]-ref[7])/ref[6])
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     DS.sort()

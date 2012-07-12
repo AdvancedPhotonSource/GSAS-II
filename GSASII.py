@@ -498,7 +498,7 @@ class GSASII(wx.Frame):
             print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
             Id = self.PatternTree.AppendItem(parent=self.root,
                                              text='HKLF '+HistName)
-            self.PatternTree.SetItemPyData(Id,['HKLF '+HistName,rd.RefList])
+            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.RefList])
             Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
             self.PatternTree.SetItemPyData(Sub,rd.Parameters)
             self.PatternTree.SetItemPyData(
@@ -617,7 +617,7 @@ class GSASII(wx.Frame):
                 rd.instmsg = instfile + ' bank ' + str(rd.instbank)
                 return Iparm
             else:
-                print 'debug: open/read failed',instfile
+#                print 'debug: open/read failed',instfile
                 pass # fail silently
 
         # did we read the data file from a zip? If so, look there for a
@@ -753,7 +753,8 @@ class GSASII(wx.Frame):
             Id = self.PatternTree.AppendItem(
                 parent=self.root,
                 text='PWDR '+rd.idstring)
-            self.PatternTree.SetItemPyData(Id,[rd.powderentry,rd.powderdata])
+#            self.PatternTree.SetItemPyData(Id,[rd.powderentry,rd.powderdata])
+            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.powderdata])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Comments'),
                 rd.comments)
@@ -1425,7 +1426,7 @@ class GSASII(wx.Frame):
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = G2pdG.SetDefaultSample()
-                        self.PatternTree.SetItemPyData(Id,[[''],[np.array(Xsum),np.array(Ysum),np.array(Wsum),
+                        self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},[np.array(Xsum),np.array(Ysum),np.array(Wsum),
                             np.array(YCsum),np.array(YBsum),np.array(YDsum)]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
@@ -1732,7 +1733,6 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
 
-
     def OnFileClose(self, event):
         if self.dataFrame:
             self.dataFrame.Clear()
@@ -1784,24 +1784,6 @@ class GSASII(wx.Frame):
             self.dataFrame.Clear() 
             self.dataFrame.Destroy()
         self.Close()
-        
-    def OnImportPattern(self,event):
-        dlg = wx.FileDialog(self, 'Choose nonGSAS powder file', '.', '', 
-            '(*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                self.powderfile = dlg.GetPath()
-        finally:
-            dlg.Destroy()
-            
-    def OnImportHKL(self,event):
-        dlg = wx.FileDialog(self, 'Choose structure factor file', '.', '', 
-            '(*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                self.HKLfile = dlg.GetPath()
-        finally:
-            dlg.Destroy()
         
     def OnExportPatterns(self,event):
         names = ['All']
@@ -2038,7 +2020,7 @@ class GSASII(wx.Frame):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         print Histograms.keys()
-        Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestDict=None,Print=False)        
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestDict=None,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
         varyList = phaseVary+hapVary+histVary

@@ -1755,13 +1755,13 @@ def UpdateUnitCellsGrid(G2frame, data):
 #####  Reflection list
 ################################################################################           
        
-def UpdateReflectionGrid(G2frame,data,HKLF=False):
+def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     if not data:
         print 'No phases, no reflections'
         return
     if HKLF:
         G2frame.RefList = 1
-        phaseName = data[0]
+        phaseName = Name
     else:
         phaseName = G2frame.RefList
         phases = data.keys()

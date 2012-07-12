@@ -1108,7 +1108,7 @@ def UpdateConstraints(G2frame,data):
         data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
-    Natoms,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder']:
@@ -1907,23 +1907,46 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
-def UpdatePWDPlot(G2frame,item):
+def UpdatePWHKPlot(G2frame,kind,item):
 
     def OnErrorAnalysis(event):
-        G2plt.PlotDeltSig(G2frame)
-    
-    defWid = [250,150]
+        G2plt.PlotDeltSig(G2frame,kind)
+        
+    def OnWtFactor(event):
+        try:
+            val = float(wtval.GetValue())
+        except ValueError:
+            val = data[0]['wtFactor']
+        data[0]['wtFactor'] = val
+        wtval.SetValue('%.3f'%(val))
+           
+    data = G2frame.PatternTree.GetItemPyData(item)
+    if 'wtFactor' not in data[0]:
+        data[0] = {'wtFactor':1.0}
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ErrorMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU,OnErrorAnalysis, id=wxID_PWDANALYSIS)
-    G2frame.dataFrame.setSizePosLeft(defWid)
-    wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
-        style=wx.TE_MULTILINE,
-        value='See plot window for powder data display\nor select a data item in histogram')
-    G2plt.PlotPatterns(G2frame,newPlot=True)
-           
-             
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,5),)
+    wtSizer = wx.BoxSizer(wx.HORIZONTAL)
+    wtSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Weight factor: '),0,wx.ALIGN_CENTER_VERTICAL)
+    wtval = wx.TextCtrl(G2frame.dataDisplay,-1,'%.3f'%(data[0]['wtFactor']),style=wx.TE_PROCESS_ENTER)
+    wtval.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
+    wtval.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
+    wtSizer.Add(wtval,0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wtSizer)
+    mainSizer.Layout()    
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
+    G2frame.PatternTree.SetItemPyData(item,data)
+    if kind == 'PWDR':
+        G2plt.PlotPatterns(G2frame,newPlot=True)
+    elif kind == 'HKLF':
+        G2plt.PlotSngl(G2frame,newPlot=True)
+                 
 def UpdateHKLControls(G2frame,data):
     
     def OnScaleSlider(event):
@@ -2122,10 +2145,10 @@ def MovePatternTreeToGrid(G2frame,item):
             G2plt.PlotPowderLines(G2frame)
         elif 'PWDR' in G2frame.PatternTree.GetItemText(item):
             G2frame.ExportPattern.Enable(True)
-            UpdatePWDPlot(G2frame,item)
+            UpdatePWHKPlot(G2frame,'PWDR',item)
         elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
             G2frame.Sngl = item
-            G2plt.PlotSngl(G2frame,newPlot=True)
+            UpdatePWHKPlot(G2frame,'HKLF',item)
         elif 'PDF' in G2frame.PatternTree.GetItemText(item):
             G2frame.PatternId = item
             G2frame.ExportPDF.Enable(True)
@@ -2266,5 +2289,6 @@ def MovePatternTreeToGrid(G2frame,item):
         G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Reflection List':    #HKLF reflections
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
-        G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True)
+        G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)

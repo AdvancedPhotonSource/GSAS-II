@@ -1086,8 +1086,9 @@ class ImportBaseclass(object):
         self.repeatcount = 0
         #print 'created',self.__class__
 
-    def BlockSelector(self, ChoiceList, ParentFrame=None,itle='Select a block',
-        size=None, header='Block Selector'):
+    def BlockSelector(self, ChoiceList, ParentFrame=None,
+                      title='Select a block',
+                      size=None, header='Block Selector'):
         ''' Provide a wx dialog to select a block if the file contains more
         than one set of data and one must be selected
         '''

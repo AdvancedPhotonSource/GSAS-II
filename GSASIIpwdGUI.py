@@ -7,6 +7,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+import os.path
 import wx
 import wx.grid as wg
 import numpy as np
@@ -646,6 +647,11 @@ def UpdateInstrumentGrid(G2frame,data):
                     peak[6] = insVal['X']/cosd(peak[0]/2.0)+insVal['Y']*tand(peak[0]/2.0)
                     
     def OnLoad(event):
+        '''Loads instrument parameters from a G2 .instprm file
+        in response to the Instrument Parameters-Operations/Load Profile menu
+        
+        Note that similar code is found in ReadPowderInstprm (GSASII.py)
+        '''
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', '.', '', 
             'instrument parameter files (*.instprm)|*.instprm',wx.OPEN|wx.CHANGE_DIR)
         try:
@@ -675,11 +681,16 @@ def UpdateInstrumentGrid(G2frame,data):
             dlg.Destroy()
         
     def OnSave(event):
+        '''Respond to the Instrument Parameters Operations/Save Profile menu
+        item: writes current parameters to a .instprm file
+        '''
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', '.', '', 
             'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
+                # make sure extension is .instprm
+                filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
                 File.write("#GSAS-II instrument parameter file; do not add/delete or change order of items!\n") 
                 for i,item in enumerate(data[3]):
@@ -1398,7 +1409,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:
             controls[6+ObjId] = value
             if ObjId < 3:
-                Obj.SetValue("%.5f"%(controls[6+ObjId]))
+                Obj.SetValue("%.5f"%(controls[6+ObjId]))
             else:
                 Obj.SetValue("%.3f"%(controls[6+ObjId]))
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))

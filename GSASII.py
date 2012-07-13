@@ -531,6 +531,33 @@ class GSASII(wx.Frame):
             kind=wx.ITEM_NORMAL,text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
             
+    def ReadPowderInstprm(self,instfile):
+        '''Read a GSAS-II (new) instrument parameter file'''
+        if os.path.splitext(instfile)[1].lower() != '.instprm': # invalid file
+            return None            
+        if not os.path.exists(instfile): # no such file
+            return None
+        File = open(instfile,'r')
+        S = File.readline()
+        if not S.startswith('#GSAS-II'): # not a valid file
+            File.close()
+            return None
+        newItems = []
+        newVals = []
+        while S:
+            if S[0] == '#':
+                S = File.readline()
+                continue
+            [item,val] = S[:-1].split(':')
+            newItems.append(item)
+            try:
+                newVals.append(float(val))
+            except ValueError:
+                newVals.append(val)                        
+            S = File.readline()                
+        File.close()
+        return [tuple(newVals),newVals,len(newVals)*[False,],newItems]
+        
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file'''
         if not os.path.exists(instfile): # no such file
@@ -556,13 +583,13 @@ class GSASII(wx.Frame):
             # number of banks in data and prm file not not agree, need a
             # choice from a human here
             choices = []
-            for i in range(1,1+len(ibanks)):
+            for i in range(1,1+ibanks):
                 choices.append('Bank '+str(i))
             bank = rd.BlockSelector(
                 choices, self,
                 title='Select an instrument parameter block for '+
-                rd.powderentry[0]+' block '+str(bank)+
-                '\nCancel: Use default settings',
+                os.path.split(rd.powderentry[0])[1]+' block '+str(bank)+
+                '\nOr use Cancel to select from the default parameter sets',
                 header='Block Selector')
         if bank is None: return {}
         # pull out requested bank # bank from the data, and change the bank to 1
@@ -577,9 +604,55 @@ class GSASII(wx.Frame):
                         
     def GetPowderIparm(self,rd, prevIparm, lastIparmfile, lastdatafile):
         '''Open and read an instrument parameter file for a data file
-        for now, just use old GSAS type files, but someday allow other options.
-        Then update SetPowderInstParms to work with that input
+        Returns the list of parameters used in the data tree
         '''
+        def SetPowderInstParms(Iparm, rd):
+            '''extracts values from instrument parameters in rd.instdict
+            or in array Iparm.
+            Create and return the contents of the instrument parameter tree entry.
+            '''
+            DataType = Iparm['INS   HTYPE '].strip()[0:3]  # take 1st 3 chars
+            # override inst values with values read from data file
+            if rd.instdict.get('type'):
+                DataType = rd.instdict.get('type')
+            wave1 = None
+            wave2 = 0.0
+            if rd.instdict.get('wave'):
+                wl = rd.instdict.get('wave')
+                wave1 = wl[0]
+                if len(wl) > 1: wave2 = wl[1]
+            data = [DataType,]
+            if 'C' in DataType:
+                s = Iparm['INS  1 ICONS']
+                if not wave1:
+                    wave1 = G2IO.sfloat(s[:10])
+                    wave2 = G2IO.sfloat(s[10:20])
+                v = (wave1,wave2,
+                     G2IO.sfloat(s[20:30]),G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
+                if not v[1]:
+                    names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
+                    v = (v[0],v[2],v[4])
+                    codes = [0,0,0,0]
+                else:
+                    names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
+                    codes = [0,0,0,0,0,0]
+                data.extend(v)
+                v1 = Iparm['INS  1PRCF1 '].split()                                                  
+                v = Iparm['INS  1PRCF11'].split()
+                data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
+                azm = Iparm.get('INS  1DETAZM')
+                if azm is None: #not in this Iparm file
+                    azm = 0.0
+                else:
+                    azm = float(azm)
+                v = Iparm['INS  1PRCF12'].split()
+                if v1[0] == 3:
+                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
+                else:
+                    data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
+                codes.extend([0,0,0,0,0,0,0])
+                return [tuple(data),data,codes,names]
+
         # stuff we might need from the reader
         filename = rd.powderentry[0]
         bank = rd.powderentry[2]
@@ -594,12 +667,17 @@ class GSASII(wx.Frame):
                 instfile = lastIparmfile
             if os.path.exists(instfile):
                 #print 'debug: try read',instfile
+                instParmList = self.ReadPowderInstprm(instfile)
+                if instParmList is not None:
+                    rd.instfile = instfile
+                    rd.instmsg = 'GSAS-II file '+instfile
+                    return instParmList
                 Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                 if Iparm:
                     #print 'debug: success'
                     rd.instfile = instfile
                     rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                    return Iparm
+                    return SetPowderInstParms(Iparm,rd)
             else:
                 self.ErrorDialog('Open Error',
                                  'Error opening instrument parameter file '
@@ -608,58 +686,78 @@ class GSASII(wx.Frame):
         # is there an instrument parameter file matching the current file
         # with extension .inst or .prm? If so read it
         basename = os.path.splitext(filename)[0]
-        for ext in '.inst','.prm':
+        for ext in '.instprm','.prm','.inst','.ins':
             instfile = basename + ext
+            instParmList = self.ReadPowderInstprm(instfile)
+            if instParmList is not None:
+                rd.instfile = instfile
+                rd.instmsg = 'GSAS-II file '+instfile
+                return instParmList
             Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
             if Iparm:
                 #print 'debug: success'
                 rd.instfile = instfile
                 rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                return Iparm
+                return SetPowderInstParms(Iparm,rd)
             else:
-#                print 'debug: open/read failed',instfile
+                #print 'debug: open/read failed',instfile
                 pass # fail silently
 
         # did we read the data file from a zip? If so, look there for a
         # instrument parameter file
         if self.zipfile:
-            for ext in '.inst','.prm':
+            for ext in '.instprm','.prm','.inst','.ins':
                 instfile = G2IO.ExtractFileFromZip(
                     self.zipfile,
                     selection=os.path.split(basename + ext)[1],
                     parent=self)
                 if instfile is not None and instfile != self.zipfile:
                     print 'debug:',instfile,'created from ',self.zipfile
+                    instParmList = self.ReadPowderInstprm(instfile)
+                    if instParmList is not None:
+                        rd.instfile = instfile
+                        rd.instmsg = 'GSAS-II file '+instfile
+                        return instParmList
                     Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                     if Iparm:
                         rd.instfile = instfile
                         rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                        return Iparm
+                        return SetPowderInstParms(Iparm,rd)
                     else:
-                        print 'debug: open/read for',instfile,'from',self.zipfile,'failed'
+                        #print 'debug: open/read for',instfile,'from',self.zipfile,'failed'
                         pass # fail silently
 
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
-            dlg = wx.FileDialog(self,
-                                'Choose inst parm file for "'
-                                +rd.idstring
-                                +'" (Cancel for defaults)',
-                                '.', '',
-                                'GSAS iparm file (*.prm)|*.prm|All files(*.*)|*.*', 
-                                wx.OPEN|wx.CHANGE_DIR)
+            dlg = wx.FileDialog(
+                self,
+                'Choose inst. param file for "'
+                +rd.idstring
+                +'" (or Cancel for default)',
+                '.', '',
+                'GSAS-II iparm file (*.instprm)|*.instprm|'
+                'GSAS iparm file (*.prm)|*.prm|'
+                'GSAS iparm file (*.inst)|*.inst|'
+                'GSAS iparm file (*.ins)|*.ins|'
+                'All files (*.*)|*.*', 
+                wx.OPEN|wx.CHANGE_DIR)
             if os.path.exists(lastIparmfile):
                 dlg.SetFilename(lastIparmfile)
             if dlg.ShowModal() == wx.ID_OK:
                 instfile = dlg.GetPath()
             dlg.Destroy()
             if not instfile: break
+            instParmList = self.ReadPowderInstprm(instfile)
+            if instParmList is not None:
+                rd.instfile = instfile
+                rd.instmsg = 'GSAS-II file '+instfile
+                return instParmList
             Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
             if Iparm:
                 #print 'debug: success with',instfile
                 rd.instfile = instfile
                 rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                return Iparm
+                return SetPowderInstParms(Iparm,rd)
             else:
                 self.ErrorDialog('Read Error',
                                  'Error opening/reading file '+str(instfile))
@@ -679,53 +777,7 @@ class GSASII(wx.Frame):
             if res is None: continue
             rd.instfile = ''
             rd.instmsg = 'default: '+rd.defaultIparm_lbl[res]
-            return rd.defaultIparms[res]
-
-    def SetPowderInstParms(self, Iparm, rd):
-        '''extracts values from instrument parameter file and creates
-        the contents of the instrument parameter tree entry
-        '''
-        DataType = Iparm['INS   HTYPE '].strip()[0:3]  # take 1st 3 chars
-        # override inst values with values read from data file
-        if rd.instdict.get('type'):
-            DataType = rd.instdict.get('type')
-        wave1 = None
-        wave2 = 0.0
-        if rd.instdict.get('wave'):
-            wl = rd.instdict.get('wave')
-            wave1 = wl[0]
-            if len(wl) > 1: wave2 = wl[1]
-        data = [DataType,]
-        if 'C' in DataType:
-            s = Iparm['INS  1 ICONS']
-            if not wave1:
-                wave1 = G2IO.sfloat(s[:10])
-                wave2 = G2IO.sfloat(s[10:20])
-            v = (wave1,wave2,
-                 G2IO.sfloat(s[20:30]),G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
-            if not v[1]:
-                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
-                v = (v[0],v[2],v[4])
-                codes = [0,0,0,0]
-            else:
-                names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
-                codes = [0,0,0,0,0,0]
-            data.extend(v)
-            v1 = Iparm['INS  1PRCF1 '].split()                                                  
-            v = Iparm['INS  1PRCF11'].split()
-            data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
-            azm = Iparm.get('INS  1DETAZM')
-            if azm is None: #not in this Iparm file
-                azm = 0.0
-            else:
-                azm = float(azm)
-            v = Iparm['INS  1PRCF12'].split()
-            if v1[0] == 3:
-                data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
-            else:
-                data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
-            codes.extend([0,0,0,0,0,0,0])
-            return [tuple(data),data,codes,names]
+            return SetPowderInstParms(rd.defaultIparms[res],rd)
 
     def OnImportPowder(self,event):
         '''reads powder data using a variety of formats
@@ -742,7 +794,7 @@ class GSASII(wx.Frame):
         lastdatafile = ''
         for rd in rdlist:
             # get instrument parameters for each dataset
-            Iparm = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+            instParmList = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
             lastIparmfile = rd.instfile
             lastdatafile = rd.powderentry[0]
             print 'Read powder data '+str(
@@ -770,7 +822,7 @@ class GSASII(wx.Frame):
                  {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
-                self.SetPowderInstParms(Iparm,rd))
+                instParmList)
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)

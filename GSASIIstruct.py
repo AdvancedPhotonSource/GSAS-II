@@ -1641,7 +1641,7 @@ def GetHistogramData(Histograms,Print=True):
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             pfx = ':'+str(hId)+':'
-            controlDict[pfx+'wtFactor'] =Histogram['wtFactor']
+            controlDict[pfx+'wtFactor'] = Histogram['wtFactor']
             controlDict[pfx+'Limits'] = Histogram['Limits'][1]
             
             Background = Histogram['Background']

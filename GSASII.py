@@ -1982,6 +1982,7 @@ class GSASII(wx.Frame):
                 Data - powder data arrays, Limits, Instrument Parameters, Sample Parameters            
         '''
         PWDRdata = {}
+        PWDRdata.update(self.PatternTree.GetItemPyData(PWDRname)[0])            #wtFactor + ?
         PWDRdata['Data'] = self.PatternTree.GetItemPyData(PWDRname)[1]          #powder data arrays
         PWDRdata['Limits'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Limits'))
         PWDRdata['Background'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Background'))
@@ -1999,6 +2000,7 @@ class GSASII(wx.Frame):
                 HKLF = 
         '''
         HKLFdata = {}
+        HKLFdata.update(self.PatternTree.GetItemPyData(HKLFname)[0])            #wtFactor + ?
         HKLFdata['Data'] = self.PatternTree.GetItemPyData(HKLFname)[1]
         HKLFdata['Instrument Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,HKLFname,'Instrument Parameters'))
         return HKLFdata

@@ -35,7 +35,6 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 ateln2 = 8.0*math.log(2.0)
 DEBUG = False
 
-
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
     input:
@@ -2329,8 +2328,8 @@ def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
     #crystallite size derivatives
     if calcControls[phfx+'SizeType'] == 'isotropic':
         Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size:i']*costh)
-        gamDict[phfx+'Size:i'] = -1.80*wave*parmDict[phfx+'Size:mx']/(np.pi*costh)
-        sigDict[phfx+'Size:i'] = -3.60*Sgam*wave*(1.-parmDict[phfx+'Size:mx'])**2/(np.pi*costh*ateln2)
+        gamDict[phfx+'Size:i'] = -900.*wave*parmDict[phfx+'Size:mx']/(np.pi*costh)
+        sigDict[phfx+'Size:i'] = -1800.*Sgam*wave*(1.-parmDict[phfx+'Size:mx'])**2/(np.pi*costh*ateln2)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])

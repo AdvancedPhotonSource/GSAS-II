@@ -414,7 +414,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if not generalData['AtomTypes']:             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
                     dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-                    UpdateGeneral()         #must use this way!
+                    wx.CallAfter(UpdateGeneral)
                 else:
                     TypeTxt.SetValue(generalData['Type'])                
                 
@@ -436,7 +436,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Text += line+'\n'
                 wx.MessageBox(Text,caption=msg,style=Style)
                 dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-                UpdateGeneral()
+                wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(dataDisplay,-1,' Phase name: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -554,7 +554,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 volVal.SetValue("%.3f"%(cell[7]))
                 generalData['Cell'] = cell
                 dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-                UpdateGeneral()
+                wx.CallAfter(UpdateGeneral)
             
             cell = generalData['Cell']
             laue = generalData['SGData']['SGLaue']
@@ -595,7 +595,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 indx = generalData['AtomTypes'].index(item)
                 data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
                 dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-                UpdateGeneral()
+                wx.CallAfter(UpdateGeneral)
                 
             elemSizer = wx.FlexGridSizer(8,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(dataDisplay,label=' Elements'),0,wx.ALIGN_CENTER_VERTICAL)

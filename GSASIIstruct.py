@@ -408,23 +408,23 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     outfile.close()
     print 'GPX file save successful'
                         
-def ShowBanner():
-    print 80*'*'
-    print '   General Structure Analysis System-II Crystal Structure Refinement'
-    print '              by Robert B. Von Dreele & Brian H. Toby'
-    print '                Argonne National Laboratory(C), 2010'
-    print ' This product includes software developed by the UChicago Argonne, LLC,' 
-    print '            as Operator of Argonne National Laboratory.'
-    print 80*'*','\n'
+def ShowBanner(pFile=None):
+    print >>pFile,80*'*'
+    print >>pFile,'   General Structure Analysis System-II Crystal Structure Refinement'
+    print >>pFile,'              by Robert B. Von Dreele & Brian H. Toby'
+    print >>pFile,'                Argonne National Laboratory(C), 2010'
+    print >>pFile,' This product includes software developed by the UChicago Argonne, LLC,' 
+    print >>pFile,'            as Operator of Argonne National Laboratory.'
+    print >>pFile,80*'*','\n'
 
-def ShowControls(Controls):
-    print ' Least squares controls:'
-    print ' Refinement type: ',Controls['deriv type']
+def ShowControls(Controls,pFile=None):
+    print >>pFile,' Least squares controls:'
+    print >>pFile,' Refinement type: ',Controls['deriv type']
     if 'Hessian' in Controls['deriv type']:
-        print ' Maximum number of cycles:',Controls['max cyc']
+        print >>pFile,' Maximum number of cycles:',Controls['max cyc']
     else:
-        print ' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
-    print ' Initial shift factor: ','%.3f'%(Controls['shift factor'])
+        print >>pFile,' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
+    print >>pFile,' Initial shift factor: ','%.3f'%(Controls['shift factor'])
     
 def GetFFtable(General):
     ''' returns a dictionary of form factor data for atom types found in General
@@ -526,23 +526,23 @@ def cellVary(pfx,SGData):
 ##### Phase data
 ################################################################################        
                     
-def GetPhaseData(PhaseData,RestraintDict=None,Print=True):
+def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
             
     def PrintFFtable(FFtable):
-        print '\n X-ray scattering factors:'
-        print '   Symbol     fa                                      fb                                      fc'
-        print 99*'-'
+        print >>pFile,'\n X-ray scattering factors:'
+        print >>pFile,'   Symbol     fa                                      fb                                      fc'
+        print >>pFile,99*'-'
         for Ename in FFtable:
             ffdata = FFtable[Ename]
             fa = ffdata['fa']
             fb = ffdata['fb']
-            print ' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
+            print >>pFile,' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
                 (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc'])
                 
     def PrintBLtable(BLtable):
-        print '\n Neutron scattering factors:'
-        print '   Symbol   isotope       mass       b       resonant terms'
-        print 99*'-'
+        print >>pFile,'\n Neutron scattering factors:'
+        print >>pFile,'   Symbol   isotope       mass       b       resonant terms'
+        print >>pFile,99*'-'
         for Ename in BLtable:
             bldata = BLtable[Ename]
             isotope = bldata[0]
@@ -554,19 +554,19 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True):
             line = ' %8s%11s %10.3f %8.3f'%(Ename.ljust(8),isotope.center(11),mass,blen)
             for item in bres:
                 line += '%10.5g'%(item)
-            print line
+            print >>pFile,line
                 
     def PrintAtoms(General,Atoms):
-        print '\n Atoms:'
+        print >>pFile,'\n Atoms:'
         line = '   name    type  refine?   x         y         z    '+ \
             '  frac site sym  mult I/A   Uiso     U11     U22     U33     U12     U13     U23'
         if General['Type'] == 'magnetic':
             line += '   Mx     My     Mz'
         elif General['Type'] == 'macromolecular':
             line = ' res no  residue  chain '+line
-        print line
+        print >>pFile,line
         if General['Type'] == 'nuclear':
-            print 135*'-'
+            print >>pFile,135*'-'
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%10.5f'%(at[3])+'%10.5f'%(at[4])+ \
                     '%10.5f'%(at[5])+'%8.3f'%(at[6])+'%7s'%(at[7])+'%5d'%(at[8])+'%5s'%(at[9])
@@ -576,49 +576,49 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True):
                     line += 8*' '
                     for j in range(6):
                         line += '%8.4f'%(at[11+j])
-                print line
+                print >>pFile,line
         
     def PrintTexture(textureData):
         topstr = '\n Spherical harmonics texture: Order:' + \
             str(textureData['Order'])
         if textureData['Order']:
-            print topstr+' Refine? '+str(textureData['SH Coeff'][0])
+            print >>pFile,topstr+' Refine? '+str(textureData['SH Coeff'][0])
         else:
-            print topstr
+            print >>pFile,topstr
             return
         names = ['omega','chi','phi']
         line = '\n'
         for name in names:
             line += ' SH '+name+':'+'%12.4f'%(textureData['Sample '+name][1])+' Refine? '+str(textureData['Sample '+name][0])
-        print line
-        print '\n Texture coefficients:'
+        print >>pFile,line
+        print >>pFile,'\n Texture coefficients:'
         ptlbls = ' names :'
         ptstr =  ' values:'
         SHcoeff = textureData['SH Coeff'][1]
         for item in SHcoeff:
             ptlbls += '%12s'%(item)
             ptstr += '%12.4f'%(SHcoeff[item]) 
-        print ptlbls
-        print ptstr
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
         
     def PrintRestraints(phaseRest):
         if phaseRest:
-            print '\n Restraints:'
+            print >>pFile,'\n Restraints:'
             names = ['Bonds','Angles','Planes','Volumes']
             for i,name in enumerate(['Bond','Angle','Plane','Chiral']):
                 itemRest = phaseRest[name]
                 if itemRest[names[i]]:
-                    print '\n  %30s %10.3f'%(name+' restraint weight factor',itemRest['wtFactor'])
-                    print '  atoms(symOp), calc, obs, sig: '
+                    print >>pFile,'\n  %30s %10.3f'%(name+' restraint weight factor',itemRest['wtFactor'])
+                    print >>pFile,'  atoms(symOp), calc, obs, sig: '
                     for item in phaseRest[name][names[i]]:
                         text = '   '
                         for a,at in enumerate(item[0]):
                             text += at+'+('+item[1][a]+') '
                             if (a+1)%5 == 0:
                                 text += '\n   '
-                        print text,' %.3f %.3f %.3f'%(item[3],item[4],item[5])
+                        print >>pFile,text,' %.3f %.3f %.3f'%(item[3],item[4],item[5])
         
-    if Print: print ' Phases:'
+    if Print:print  >>pFile,' Phases:'
     phaseVary = []
     phaseDict = {}
     phaseConstr = {}
@@ -714,14 +714,14 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True):
                         phaseVary.append(pfx+name)
                 
             if Print:
-                print '\n Phase name: ',General['Name']
-                print 135*'-'
+                print >>pFile,'\n Phase name: ',General['Name']
+                print >>pFile,135*'-'
                 PrintFFtable(FFtable)
                 PrintBLtable(BLtable)
-                print ''
-                for line in SGtext: print line
+                print >>pFile,''
+                for line in SGtext: print >>pFile,line
                 PrintAtoms(General,Atoms)
-                print '\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
+                print >>pFile,'\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
                     ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
                     '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
                 PrintTexture(textureData)
@@ -839,18 +839,18 @@ def getCellEsd(pfx,SGData,A,covData):
     cellSig = [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]  #exchange sig(alp) & sig(gam) to get in right order
     return cellSig            
     
-def SetPhaseData(parmDict,sigDict,Phases,covData):
+def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
     
     def PrintAtomsAndSig(General,Atoms,atomsSig):
-        print '\n Atoms:'
+        print >>pFile,'\n Atoms:'
         line = '   name      x         y         z      frac   Uiso     U11     U22     U33     U12     U13     U23'
         if General['Type'] == 'magnetic':
             line += '   Mx     My     Mz'
         elif General['Type'] == 'macromolecular':
             line = ' res no  residue  chain '+line
-        print line
+        print >>pFile,line
         if General['Type'] == 'nuclear':
-            print 135*'-'
+            print >>pFile,135*'-'
             fmt = {0:'%7s',1:'%7s',3:'%10.5f',4:'%10.5f',5:'%10.5f',6:'%8.3f',10:'%8.5f',
                 11:'%8.5f',12:'%8.5f',13:'%8.5f',14:'%8.5f',15:'%8.5f',16:'%8.5f'}
             noFXsig = {3:[10*' ','%10s'],4:[10*' ','%10s'],5:[10*' ','%10s'],6:[8*' ','%8s']}
@@ -881,12 +881,12 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                             sigstr += fmt[ind]%(atomsSig[sigind])
                         else:
                             sigstr += 8*' '
-                print name
-                print valstr
-                print sigstr
+                print >>pFile,name
+                print >>pFile,valstr
+                print >>pFile,sigstr
                 
     def PrintSHtextureAndSig(textureData,SHtextureSig):
-        print '\n Spherical harmonics texture: Order:' + str(textureData['Order'])
+        print >>pFile,'\n Spherical harmonics texture: Order:' + str(textureData['Order'])
         names = ['omega','chi','phi']
         namstr = '  names :'
         ptstr =  '  values:'
@@ -898,10 +898,10 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                 sigstr += '%12.3f'%(SHtextureSig['Sample '+name])
             else:
                 sigstr += 12*' '
-        print namstr
-        print ptstr
-        print sigstr
-        print '\n Texture coefficients:'
+        print >>pFile,namstr
+        print >>pFile,ptstr
+        print >>pFile,sigstr
+        print >>pFile,'\n Texture coefficients:'
         namstr = '  names :'
         ptstr =  '  values:'
         sigstr = '  esds  :'
@@ -913,14 +913,14 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                 sigstr += '%12.3f'%(SHtextureSig[name])
             else:
                 sigstr += 12*' '
-        print namstr
-        print ptstr
-        print sigstr
+        print >>pFile,namstr
+        print >>pFile,ptstr
+        print >>pFile,sigstr
         
             
-    print '\n Phases:'
+    print >>pFile,'\n Phases:'
     for phase in Phases:
-        print ' Result for phase: ',phase
+        print >>pFile,' Result for phase: ',phase
         Phase = Phases[phase]
         General = Phase['General']
         SGData = General['SGData']
@@ -931,7 +931,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
         if cell[0]:
             A,sigA = cellFill(pfx,SGData,parmDict,sigDict)
             cellSig = getCellEsd(pfx,SGData,A,covData)  #includes sigVol
-            print ' Reciprocal metric tensor: '
+            print >>pFile,' Reciprocal metric tensor: '
             ptfmt = "%15.9f"
             names = ['A11','A22','A33','A12','A13','A23']
             namstr = '  names :'
@@ -944,12 +944,12 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                     sigstr += ptfmt%(siga)
                 else:
                     sigstr += 15*' '
-            print namstr
-            print ptstr
-            print sigstr
+            print >>pFile,namstr
+            print >>pFile,ptstr
+            print >>pFile,sigstr
             cell[1:7] = G2lat.A2cell(A)
             cell[7] = G2lat.calc_V(A)
-            print ' New unit cell:'
+            print >>pFile,' New unit cell:'
             ptfmt = ["%12.6f","%12.6f","%12.6f","%12.4f","%12.4f","%12.4f","%12.3f"]
             names = ['a','b','c','alpha','beta','gamma','Volume']
             namstr = '  names :'
@@ -962,9 +962,9 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
                     sigstr += fmt%(siga)
                 else:
                     sigstr += 12*' '
-            print namstr
-            print ptstr
-            print sigstr
+            print >>pFile,namstr
+            print >>pFile,ptstr
+            print >>pFile,sigstr
             
         if Phase['General'].get('doPawley'):
             pawleyRef = Phase['Pawley ref']
@@ -1020,7 +1020,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData):
 ##### Histogram & Phase data
 ################################################################################        
                     
-def GetHistogramPhaseData(Phases,Histograms,Print=True):
+def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
     
     def PrintSize(hapData):
         if hapData[0] in ['isotropic','uniaxial']:
@@ -1029,9 +1029,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             if hapData[0] == 'uniaxial':
                 line += ' axial:'+'%12.3f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             line += '\n\t LG mixing coeff.: %12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
-            print line
+            print >>pFile,line
         else:
-            print '\n Size model    : %s'%(hapData[0])+ \
+            print >>pFile,'\n Size model    : %s'%(hapData[0])+ \
                 '\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             Snames = ['S11','S22','S33','S12','S13','S23']
             ptlbls = ' names :'
@@ -1041,9 +1041,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.6f' % (hapData[4][i])
                 varstr += '%12s' % (str(hapData[5][i]))
-            print ptlbls
-            print ptstr
-            print varstr
+            print >>pFile,ptlbls
+            print >>pFile,ptstr
+            print >>pFile,varstr
         
     def PrintMuStrain(hapData,SGData):
         if hapData[0] in ['isotropic','uniaxial']:
@@ -1052,9 +1052,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             if hapData[0] == 'uniaxial':
                 line += ' axial:'+'%12.1f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             line +='\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
-            print line
+            print >>pFile,line
         else:
-            print '\n Mustrain model: %s'%(hapData[0])+ \
+            print >>pFile,'\n Mustrain model: %s'%(hapData[0])+ \
                 '\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             Snames = G2spc.MustrainNames(SGData)
             ptlbls = ' names :'
@@ -1064,12 +1064,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.6f' % (hapData[4][i])
                 varstr += '%12s' % (str(hapData[5][i]))
-            print ptlbls
-            print ptstr
-            print varstr
+            print >>pFile,ptlbls
+            print >>pFile,ptstr
+            print >>pFile,varstr
 
     def PrintHStrain(hapData,SGData):
-        print '\n Hydrostatic/elastic strain: '
+        print >>pFile,'\n Hydrostatic/elastic strain: '
         Hsnames = G2spc.HStrainNames(SGData)
         ptlbls = ' names :'
         ptstr =  ' values:'
@@ -1078,20 +1078,20 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
             ptlbls += '%12s' % (name)
             ptstr += '%12.6f' % (hapData[0][i])
             varstr += '%12s' % (str(hapData[1][i]))
-        print ptlbls
-        print ptstr
-        print varstr
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
+        print >>pFile,varstr
 
     def PrintSHPO(hapData):
-        print '\n Spherical harmonics preferred orientation: Order:' + \
+        print >>pFile,'\n Spherical harmonics preferred orientation: Order:' + \
             str(hapData[4])+' Refine? '+str(hapData[2])
         ptlbls = ' names :'
         ptstr =  ' values:'
         for item in hapData[5]:
             ptlbls += '%12s'%(item)
             ptstr += '%12.3f'%(hapData[5][item]) 
-        print ptlbls
-        print ptstr
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
     
     hapDict = {}
     hapVary = []
@@ -1181,13 +1181,13 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                                 hapVary.append(pfx+item+sfx)
                                 
                 if Print: 
-                    print '\n Phase: ',phase,' in histogram: ',histogram
-                    print 135*'-'
-                    print ' Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-                    print ' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
+                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
+                    print >>pFile,135*'-'
+                    print >>pFile,' Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+                    print >>pFile,' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
                     if hapData['Pref.Ori.'][0] == 'MD':
                         Ax = hapData['Pref.Ori.'][3]
-                        print ' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
+                        print >>pFile,' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
                             ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])
                     else: #'SH' for spherical harmonics
                         PrintSHPO(hapData['Pref.Ori.'])
@@ -1236,19 +1236,19 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True):
                     if extParms[eKey][1]:
                         hapVary.append(pfx+eKey)
                 if Print: 
-                    print '\n Phase: ',phase,' in histogram: ',histogram
-                    print 135*'-'
-                    print ' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-                    print ' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
+                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
+                    print >>pFile,135*'-'
+                    print >>pFile,' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+                    print >>pFile,' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
                     text = ' Parameters       :'
                     for eKey in Ekey:
                         text += ' %4s : %10.3g Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
-                    print text
+                    print >>pFile,text
                 Histogram['Reflection Lists'] = phase       
                 
     return hapVary,hapDict,controlDict
     
-def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
+def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=None):
     
     def PrintSizeAndSig(hapData,sizeSig):
         line = '\n Size model:     %9s'%(hapData[0])
@@ -1268,7 +1268,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 refine = True
                 line += ', sig:%8.3f'%(sizeSig[0][2])
             if refine:
-                print line
+                print >>pFile,line
         else:
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if sizeSig[0][2]:
@@ -1287,10 +1287,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 else:
                     sigstr += 12*' '
             if refine:
-                print line
-                print ptlbls
-                print ptstr
-                print sigstr
+                print >>pFile,line
+                print >>pFile,ptlbls
+                print >>pFile,ptstr
+                print >>pFile,sigstr
         
     def PrintMuStrainAndSig(hapData,mustrainSig,SGData):
         line = '\n Mustrain model: %9s'%(hapData[0])
@@ -1309,7 +1309,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 refine = True
                 line += ', sig:%8.3f'%(mustrainSig[0][2])
             if refine:
-                print line
+                print >>pFile,line
         else:
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if mustrainSig[0][2]:
@@ -1328,10 +1328,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 else:
                     sigstr += 12*' '
             if refine:
-                print line
-                print ptlbls
-                print ptstr
-                print sigstr
+                print >>pFile,line
+                print >>pFile,ptlbls
+                print >>pFile,ptstr
+                print >>pFile,sigstr
             
     def PrintHStrainAndSig(hapData,strainSig,SGData):
         Hsnames = G2spc.HStrainNames(SGData)
@@ -1348,13 +1348,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
             else:
                 sigstr += 12*' '
         if refine:
-            print '\n Hydrostatic/elastic strain: '
-            print ptlbls
-            print ptstr
-            print sigstr
+            print >>pFile,'\n Hydrostatic/elastic strain: '
+            print >>pFile,ptlbls
+            print >>pFile,ptstr
+            print >>pFile,sigstr
         
     def PrintSHPOAndSig(hapData,POsig):
-        print '\n Spherical harmonics preferred orientation: Order:'+str(hapData[4])
+        print >>pFile,'\n Spherical harmonics preferred orientation: Order:'+str(hapData[4])
         ptlbls = ' names :'
         ptstr =  ' values:'
         sigstr = ' sig   :'
@@ -1365,9 +1365,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 sigstr += '%12.3f'%(POsig[item])
             else:
                 sigstr += 12*' ' 
-        print ptlbls
-        print ptstr
-        print sigstr
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
+        print >>pFile,sigstr
     
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
@@ -1381,13 +1381,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
             except KeyError:                        
                 #skip if histogram not included e.g. in a sequential refinement
                 continue
-            print '\n Phase: ',phase,' in histogram: ',histogram
-            print 130*'-'
+            print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
+            print >>pFile,130*'-'
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']
             if 'PWDR' in histogram:
                 pfx = str(pId)+':'+str(hId)+':'
-                print ' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
+                print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
                     %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
                 
                 PhFrExtPOSig = {}
@@ -1406,12 +1406,12 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                             PhFrExtPOSig[item] = sigDict[pfx+item]
                 if Print:
                     if 'Scale' in PhFrExtPOSig:
-                        print ' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
+                        print >>pFile,' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
                     if 'Extinction' in PhFrExtPOSig:
-                        print ' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
+                        print >>pFile,' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
                     if hapData['Pref.Ori.'][0] == 'MD':
                         if 'MD' in PhFrExtPOSig:
-                            print ' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
+                            print >>pFile,' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
                     else:
                         PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
                 SizeMuStrSig = {'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
@@ -1453,9 +1453,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                 
             elif 'HKLF' in histogram:
                 pfx = str(pId)+':'+str(hId)+':'
-                print ' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
+                print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
                     %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
-                print ' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
+                print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
                 ScalExtSig = {}
                 for item in ['Scale','Ep','Eg','Es']:
                     if parmDict.get(pfx+item):
@@ -1464,22 +1464,22 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True):
                             ScalExtSig[item] = sigDict[pfx+item]
                 if Print: 
                     if 'Scale' in ScalExtSig:
-                        print ' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig['Scale'])
+                        print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig['Scale'])
 # fix after it runs!                
-#                    print '\n Phase: ',phase,' in histogram: ',histogram
-#                    print 135*'-'
-#                    print ' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-#                    print ' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
+#                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
+#                    print >>pFile,135*'-'
+#                    print >>pFile,' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+#                    print >>pFile,' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
 #                    text = ' Parameters       :'
 #                    for eKey in Ekey:
 #                        text += ' %4s : %10.3g Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
-#                    print text
+#                    print >>pFile,text
     
 ################################################################################
 ##### Histogram data
 ################################################################################        
                     
-def GetHistogramData(Histograms,Print=True):
+def GetHistogramData(Histograms,Print=True,pFile=None):
     
     def GetBackgroundParms(hId,Background):
         Back = Background[0]
@@ -1557,40 +1557,40 @@ def GetHistogramData(Histograms,Print=True):
     def PrintBackground(Background):
         Back = Background[0]
         DebyePeaks = Background[1]
-        print '\n Background function: ',Back[0],' Refine?',bool(Back[1])
+        print >>pFile,'\n Background function: ',Back[0],' Refine?',bool(Back[1])
         line = ' Coefficients: '
         for i,back in enumerate(Back[3:]):
             line += '%10.3f'%(back)
             if i and not i%10:
                 line += '\n'+15*' '
-        print line
+        print >>pFile,line
         if DebyePeaks['nDebye']:
-            print '\n Debye diffuse scattering coefficients'
+            print >>pFile,'\n Debye diffuse scattering coefficients'
             parms = ['DebyeA','DebyeR','DebyeU']
             line = ' names :  '
             for parm in parms:
                 line += '%8s refine?'%(parm)
-            print line
+            print >>pFile,line
             for j,term in enumerate(DebyePeaks['debyeTerms']):
                 line = ' term'+'%2d'%(j)+':'
                 for i in range(3):
                     line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
-                print line
+                print >>pFile,line
         if DebyePeaks['nPeaks']:
-            print '\n Single peak coefficients'
+            print >>pFile,'\n Single peak coefficients'
             parms =    ['BkPkpos','BkPkint','BkPksig','BkPkgam']
             line = ' names :  '
             for parm in parms:
                 line += '%8s refine?'%(parm)
-            print line
+            print >>pFile,line
             for j,term in enumerate(DebyePeaks['peaksList']):
                 line = ' peak'+'%2d'%(j)+':'
                 for i in range(4):
                     line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
-                print line
+                print >>pFile,line
         
     def PrintInstParms(Inst):
-        print '\n Instrument Parameters:'
+        print >>pFile,'\n Instrument Parameters:'
         ptlbls = ' name  :'
         ptstr =  ' value :'
         varstr = ' refine:'
@@ -1602,13 +1602,13 @@ def GetHistogramData(Histograms,Print=True):
                 varstr += 12*' '
             else:
                 varstr += '%12s' % (str(bool(Inst[2][i+1])))
-        print ptlbls
-        print ptstr
-        print varstr
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
+        print >>pFile,varstr
         
     def PrintSampleParms(Sample):
-        print '\n Sample Parameters:'
-        print ' Goniometer omega = %.2f, chi = %.2f, phi = %.2f'% \
+        print >>pFile,'\n Sample Parameters:'
+        print >>pFile,' Goniometer omega = %.2f, chi = %.2f, phi = %.2f'% \
             (Sample['Omega'],Sample['Chi'],Sample['Phi'])
         ptlbls = ' name  :'
         ptstr =  ' value :'
@@ -1625,9 +1625,9 @@ def GetHistogramData(Histograms,Print=True):
                 ptstr += '%14.4f'%(Sample[item][0])
                 varstr += '%14s'%(str(bool(Sample[item][1])))
 
-        print ptlbls
-        print ptstr
-        print varstr
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
+        print >>pFile,varstr
         
 
     histDict = {}
@@ -1667,13 +1667,13 @@ def GetHistogramData(Histograms,Print=True):
             
     
             if Print: 
-                print '\n Histogram: ',histogram,' histogram Id: ',hId
-                print 135*'-'
+                print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
+                print >>pFile,135*'-'
                 Units = {'C':' deg','T':' msec'}
                 units = Units[controlDict[pfx+'histType'][2]]
                 Limits = controlDict[pfx+'Limits']
-                print ' Instrument type: ',Sample['Type']
-                print ' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)     
+                print >>pFile,' Instrument type: ',Sample['Type']
+                print >>pFile,' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)     
                 PrintSampleParms(Sample)
                 PrintInstParms(Inst)
                 PrintBackground(Background)
@@ -1688,7 +1688,7 @@ def GetHistogramData(Histograms,Print=True):
             controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
     return histVary,histDict,controlDict
     
-def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
+def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
         Back = Background[0]
@@ -1756,9 +1756,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
             else:
                 sigstr += 10*' '
         if refine:
-            print '\n Background function: ',Back[0]
-            print valstr
-            print sigstr 
+            print >>pFile,'\n Background function: ',Back[0]
+            print >>pFile,valstr
+            print >>pFile,sigstr 
         if DebyePeaks['nDebye']:
             ifAny = False
             ptfmt = "%12.3f"
@@ -1772,10 +1772,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                     ptstr += ptfmt%(parmDict[item])
                     sigstr += ptfmt%(sigDict[item])
             if ifAny:
-                print '\n Debye diffuse scattering coefficients'
-                print names
-                print ptstr
-                print sigstr
+                print >>pFile,'\n Debye diffuse scattering coefficients'
+                print >>pFile,names
+                print >>pFile,ptstr
+                print >>pFile,sigstr
         if DebyePeaks['nPeaks']:
             ifAny = False
             ptfmt = "%14.3f"
@@ -1789,10 +1789,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                     ptstr += ptfmt%(parmDict[item])
                     sigstr += ptfmt%(sigDict[item])
             if ifAny:
-                print '\n Single peak coefficients'
-                print names
-                print ptstr
-                print sigstr
+                print >>pFile,'\n Single peak coefficients'
+                print >>pFile,names
+                print >>pFile,ptstr
+                print >>pFile,sigstr
         
     def PrintInstParmsSig(Inst,instSig):
         ptlbls = ' names :'
@@ -1809,10 +1809,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
             else:
                 sigstr += 12*' '
         if refine:
-            print '\n Instrument Parameters:'
-            print ptlbls
-            print ptstr
-            print sigstr
+            print >>pFile,'\n Instrument Parameters:'
+            print >>pFile,ptlbls
+            print >>pFile,ptstr
+            print >>pFile,sigstr
         
     def PrintSampleParmsSig(Sample,sampleSig):
         ptlbls = ' names :'
@@ -1840,10 +1840,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
                     sigstr += 14*' '
 
         if refine:
-            print '\n Sample Parameters:'
-            print ptlbls
-            print ptstr
-            print sigstr
+            print >>pFile,'\n Sample Parameters:'
+            print >>pFile,ptlbls
+            print >>pFile,ptstr
+            print >>pFile,sigstr
         
     histoList = Histograms.keys()
     histoList.sort()
@@ -1861,12 +1861,12 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True):
             Sample = Histogram['Sample Parameters']
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
 
-            print '\n Histogram: ',histogram,' histogram Id: ',hId
-            print 135*'-'
-            print ' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['wR'],Histogram['Nobs'])
-            print ' PWDR histogram weight factor = '+'%.3f'%(Histogram['wtFactor'])
+            print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
+            print >>pFile,135*'-'
+            print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['wR'],Histogram['Nobs'])
+            print >>pFile,' PWDR histogram weight factor = '+'%.3f'%(Histogram['wtFactor'])
             if Print:
-                print ' Instrument type: ',Sample['Type']
+                print >>pFile,' Instrument type: ',Sample['Type']
                 PrintSampleParmsSig(Sample,sampSig)
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)
@@ -3175,12 +3175,13 @@ def Refine(GPXfile,dlg):
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
-    ShowBanner()
+    printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
+    ShowBanner(printFile)
     varyList = []
     parmDict = {}
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
-    ShowControls(Controls)
+    ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)            
     constrDict,fixedList = GetConstraints(GPXfile)
@@ -3194,14 +3195,14 @@ def Refine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception        
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,pFile=printFile)
     calcControls['atomIndx'] = atomIndx
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
     calcControls['BLtables'] = BLtables
-    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms)
+    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,pFile=printFile)
     calcControls.update(controlDict)
-    histVary,histDict,controlDict = GetHistogramData(Histograms)
+    histVary,histDict,controlDict = GetHistogramData(Histograms,pFile=printFile)
     calcControls.update(controlDict)
     varyList = phaseVary+hapVary+histVary
     parmDict.update(phaseDict)
@@ -3260,11 +3261,11 @@ def Refine(GPXfile,dlg):
         Rvals['Nobs'] = Histograms['Nobs']
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = Rvals['chisq']/(Histograms['Nobs']-len(varyList))
-        print '\n Refinement results:'
-        print 135*'-'
-        print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
-        print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
-        print ' wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+        print >>printFile,'\n Refinement results:'
+        print >>printFile,135*'-'
+        print >>printFile,' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
+        print >>printFile,' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
+        print >>printFile,' wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
         try:
             covMatrix = result[1]*Rvals['GOF']
             sig = np.sqrt(np.diag(covMatrix))
@@ -3304,11 +3305,14 @@ def Refine(GPXfile,dlg):
         'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
     # add the uncertainties into the esd dictionary (sigDict)
     sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
-    SetPhaseData(parmDict,sigDict,Phases,covData)
-    SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms)
-    SetHistogramData(parmDict,sigDict,Histograms)
-    G2mv.PrintIndependentVars(parmDict,varyList,sigDict)
+    SetPhaseData(parmDict,sigDict,Phases,covData,printFile)
+    SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,pFile=printFile)
+    SetHistogramData(parmDict,sigDict,Histograms,pFile=printFile)
+    G2mv.PrintIndependentVars(parmDict,varyList,sigDict,printFile)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
+    printFile.close()
+    print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
+    print ' ***** Refinement successful *****'
     
 #for testing purposes!!!
     if DEBUG:
@@ -3332,11 +3336,12 @@ def SeqRefine(GPXfile,dlg):
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
-    ShowBanner()
+    printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
     print ' Sequential Refinement'
+    ShowBanner(printFile)
     G2mv.InitVars()    
     Controls = GetControls(GPXfile)
-    ShowControls(Controls)            
+    ShowControls(Controls,printFile)            
     constrDict,fixedList = GetConstraints(GPXfile)
     restraintDict = GetRestraints(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
@@ -3348,7 +3353,7 @@ def SeqRefine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,False,printFile)
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:
@@ -3448,11 +3453,11 @@ def SeqRefine(GPXfile,dlg):
             Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histo['sumwYo'])*100.      #to %
             Rvals['GOF'] = Rvals['Rwp']/(Histo['Nobs']-len(varyList))
             Rvals['Nobs'] = Histo['Nobs']
-            print '\n Refinement results for histogram: v'+histogram
-            print 135*'-'
-            print ' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histo['Nobs'],' Number of parameters: ',len(varyList)
-            print ' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
-            print ' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+            print >>printFile,'\n Refinement results for histogram: v'+histogram
+            print >>printFile,135*'-'
+            print >>printFile,' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histo['Nobs'],' Number of parameters: ',len(varyList)
+            print >>printFile,' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
+            print >>printFile,' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
             try:
                 covMatrix = result[1]*Rvals['GOF']
                 sig = np.sqrt(np.diag(covMatrix))
@@ -3482,12 +3487,15 @@ def SeqRefine(GPXfile,dlg):
         newAtomDict = ApplyXYZshifts(parmDict,varyList)
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
             'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
-        SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint)
-        SetHistogramData(parmDict,sigDict,Histo,ifPrint)
+        SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint,printFile)
+        SetHistogramData(parmDict,sigDict,Histo,ifPrint,printFile)
         SeqResult[histogram] = covData
         SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,covData,makeBack)
         makeBack = False
     SetSeqResult(GPXfile,Histograms,SeqResult)
+    printFile.close()
+    print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
+    print ' ***** Sequential refinement successful *****'
 
 def DistAngle(DisAglCtls,DisAglData):
     import numpy.ma as ma

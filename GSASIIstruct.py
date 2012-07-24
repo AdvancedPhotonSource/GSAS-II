@@ -344,7 +344,6 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
     '''
                         
     GPXback = GPXBackup(GPXfile,makeBack)
-    print '\n',135*'-'
     print 'Read from file:',GPXback
     print 'Save to file  :',GPXfile
     infile = open(GPXback,'rb')
@@ -381,7 +380,6 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
     
 def SetSeqResult(GPXfile,Histograms,SeqResult):
     GPXback = GPXBackup(GPXfile)
-    print '\n',135*'-'
     print 'Read from file:',GPXback
     print 'Save to file  :',GPXfile
     infile = open(GPXback,'rb')
@@ -1406,7 +1404,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                             PhFrExtPOSig[item] = sigDict[pfx+item]
                 if Print:
                     if 'Scale' in PhFrExtPOSig:
-                        print >>pFile,' Phase fraction  : %10.4f, sig %10.4f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
+                        print >>pFile,' Phase fraction  : %10.5f, sig %10.5f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
                     if 'Extinction' in PhFrExtPOSig:
                         print >>pFile,' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
                     if hapData['Pref.Ori.'][0] == 'MD':
@@ -3308,7 +3306,7 @@ def Refine(GPXfile,dlg):
     SetPhaseData(parmDict,sigDict,Phases,covData,printFile)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,pFile=printFile)
     SetHistogramData(parmDict,sigDict,Histograms,pFile=printFile)
-    G2mv.PrintIndependentVars(parmDict,varyList,sigDict,printFile)
+    G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
     printFile.close()
     print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'

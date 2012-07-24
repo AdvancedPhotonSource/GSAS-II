@@ -313,9 +313,9 @@ def CheckConstraints(varyList,constrDict,fixedList):
                 if var in fixVlist:
                     errmsg += '\nParameter '+var+" is Fixed and used in a constraint:\n\t"
                     errmsg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
-                if var in equivVarList:
-                    errmsg += '\nParameter '+var+" is Equivalenced and used in a constraint:\n\t"
-                    errmsg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
+#                if var in equivVarList:
+#                    errmsg += '\nParameter '+var+" is Equivalenced and used in a constraint:\n\t"
+#                    errmsg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
             if varied > 0 and varied != len(constrDict[rel]):
                 warnmsg += "\nNot all variables refined in constraint:\n\t"
                 warnmsg += FormatConstraint(constrDict[rel],fixedList[rel])
@@ -497,15 +497,15 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         msg += '\t'+ s + '\n'
     equivVarList = list(set(indepVarList).union(set(depVarList)))
     #print 'equivVarList',equivVarList
-    inboth = set(fixedVarList).intersection(set(equivVarList))
-    if len(inboth) > 0:
-        msg += "\nError! The following variables are used in both Equivalence and Fixed constraints:\n"
-        s = ''
-        for var in sorted(inboth):
-            if s != "": s+= ", "
-            s += str(var)
-        msg += '\t'+ s + '\n'
-
+#    inboth = set(fixedVarList).intersection(set(equivVarList))
+#    if len(inboth) > 0:
+#        msg += "\nError! The following variables are used in both Equivalence and Fixed constraints:\n"
+#        s = ''
+#        for var in sorted(inboth):
+#            if s != "": s+= ", "
+#            s += str(var)
+#        msg += '\t'+ s + '\n'
+#
     # scan through parameters in each relationship. Are all varied? If only some are
     # varied, create an error message. 
     # If all are varied and this is a constraint equation, then set VaryFree flag
@@ -525,9 +525,9 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                 if var in fixedVarList:
                     msg += '\nError: parameter '+var+" is Fixed and used in a constraint:\n\t"
                     msg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
-                if var in equivVarList:
-                    msg += '\nError: parameter '+var+" is Equivalenced and used in a constraint:\n\t"
-                    msg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
+#                if var in equivVarList:
+#                    msg += '\nError: parameter '+var+" is Equivalenced and used in a constraint:\n\t"
+#                    msg += FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
             if varied > 0 and varied != len(constrDict[rel]):
                 msg += "\nNot all variables refined in constraint:\n\t"
                 msg += FormatConstraint(constrDict[rel],fixedList[rel])

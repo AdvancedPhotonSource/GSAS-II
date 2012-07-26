@@ -325,8 +325,7 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
-#    for key in IFD:
-#        print key,IFD[key]
+#        print Tag,IFD[Tag]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny
@@ -376,6 +375,13 @@ def GetTifData(filename,imageOnly=False):
             if not imageOnly:
                 print 'Read MAR CCD tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        elif IFD[273][2][0] == 512:
+            tiftype = '11-ID-C'
+            pixy = [200,200]
+            File.seek(512)
+            if not imageOnly:
+                print 'Read 11-ID-C tiff file: ',filename
+            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)            
     elif sizexy == [4096,4096]:
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 16:
@@ -503,6 +509,7 @@ def SaveIntegration(G2frame,PickId,data):
         Y = G2frame.Integrate[0][i]
         W = 1./Y                    #probably not true
         Sample = G2pdG.SetDefaultSample()
+        Sample['Gonio. radius'] = data['distance']
         if Id:
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'),Comments)                    
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])

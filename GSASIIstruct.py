@@ -2528,7 +2528,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             ymb = np.array(y-yb)
             ymb = np.where(ymb==0.,1.0,ymb)
             ycmb = np.array(yc-yb)
-            ratio = ymb/ycmb            
+            ratio = np.where(ycmb<>0.,ymb/ycmb,0.0)          
             refLists = Histogram['Reflection Lists']
             for phase in refLists:
                 Phase = Phases[phase]

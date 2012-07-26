@@ -170,7 +170,7 @@ def FitDetector(rings,p0,wave):
         dist,x0,y0,phi,tilt,wave = C
         B = dist,x0,y0,phi,tilt
         return ellipseCalcD(B,xyd,wave)
-        
+                
     names = ['distance','det-X0','det-Y0','rotate','tilt','wavelength']
     fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.5f']   
     result = leastsq(ellipseCalcD,p0,args=(rings.T,wave),full_output=True)
@@ -193,8 +193,9 @@ def FitDetector(rings,p0,wave):
         CalibPrint(ValSig)
         return result[0],resultW[0][-1]        
     except ValueError:
-        print 'Bad wavelength refinement - no result'
+        print 'Bad refinement - no result'
         return result[0],wave
+        
             
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2

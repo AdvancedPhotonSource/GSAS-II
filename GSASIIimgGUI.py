@@ -1072,3 +1072,49 @@ def UpdateMasks(G2frame,data):
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
     G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))    
+
+################################################################################
+##### Stress/Strain
+################################################################################
+
+def UpdateStressStrain(G2frame,data):
+    
+    def OnCopyStrSta(event):
+        print 'Copy stress/strain data - does nothing yet'
+        event.Skip()
+
+    def OnLoadStrSta(event):
+        print 'Load stress/strain data - does nothing yet'
+        event.Skip()
+
+    def OnSaveStrSta(event):
+        print 'Save stress/strain data - does nothing yet'
+        event.Skip()
+
+    def OnFitStrSta(event):
+        print 'Fit stress/strain data - does nothing yet'
+        event.Skip()
+
+
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.StrStaMenu)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadStrSta, id=G2gd.wxID_STRSTALOAD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrSta, id=G2gd.wxID_STRSTASAVE)    
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+        Status.SetStatusText(" test  ")
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    if not data:
+        data = {'d-zero':[],'Sample phi':0.0,'Sample z':0.0,'strain':np.zeros((3,3))}
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,10),0)
+
+
+
+    mainSizer.Layout()    
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
+    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))    

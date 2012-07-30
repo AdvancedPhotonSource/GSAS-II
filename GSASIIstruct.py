@@ -2789,7 +2789,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                             if parmDict[pIdx] < 0.:
                                 dMdpw[iBeg2:iFin2] += 2.*dervDict['int']/refl[9]
                         dMdv[idx] = dMdpw
-                    except ValueError:
+                    except: # ValueError:
                         pass
                 dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],

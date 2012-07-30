@@ -1068,7 +1068,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if Atoms.GetColLabelValue(c) == 'Type':
                 PE = G2elemGUI.PickElement(G2frame)
                 if PE.ShowModal() == wx.ID_OK:
-                    if PE.Elem not in 'None':                        
+                    if PE.Elem != 'None':                        
                         atomData[r][c] = PE.Elem.strip()
                         name = atomData[r][c]
                         if len(name) in [2,4]:

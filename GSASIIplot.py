@@ -1719,6 +1719,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
     Masks = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+    try:    #may be absent
+        StrSta = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Stress/Strain'))
+    except TypeError:   #is missing
+        StrSta = {}
 
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
@@ -2042,6 +2047,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Img.set_picker(True)
     
         Plot.plot(xcent,ycent,'x')
+        #G2frame.PatternTree.GetItemText(item)
         if Data['showLines']:
             LRAzim = Data['LRazimuth']                  #NB: integers
             Nazm = Data['outAzimuths']
@@ -2078,19 +2084,23 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
                     
-        for xring,yring in Data['ring']:
-            Plot.plot(xring,yring,'r+',picker=3)
-        if Data['setRings']:
-#            rings = np.concatenate((Data['rings']),axis=0)
-            N = 0
-            for ring in Data['rings']:
-                xring,yring = np.array(ring).T[:2]
-                Plot.plot(xring,yring,'+',color=colors[N%6])
-                N += 1            
-        for ellipse in Data['ellipses']:
-            cent,phi,[width,height],col = ellipse
-            Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
-            Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+        if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Image Controls':
+            for xring,yring in Data['ring']:
+                Plot.plot(xring,yring,'r+',picker=3)
+            if Data['setRings']:
+    #            rings = np.concatenate((Data['rings']),axis=0)
+                N = 0
+                for ring in Data['rings']:
+                    xring,yring = np.array(ring).T[:2]
+                    Plot.plot(xring,yring,'+',color=colors[N%6])
+                    N += 1            
+            for ellipse in Data['ellipses']:
+                cent,phi,[width,height],col = ellipse
+                Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
+                Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+        if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Stress/Strain':
+            print 'plot stress/strain stuff'
+            print StrSta
         #masks - mask lines numbered after integration limit lines
         spots = Masks['Points']
         rings = Masks['Rings']

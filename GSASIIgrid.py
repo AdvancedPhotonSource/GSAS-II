@@ -70,6 +70,9 @@ htmlFirstUse = True
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
 ] = [wx.NewId() for item in range(3)]
 
+[ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,
+] = [wx.NewId() for item in range(4)]
+
 [ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
 ] = [wx.NewId() for item in range(5)]
 
@@ -435,6 +438,21 @@ class DataFrame(wx.Frame):
             id=wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
         self.MaskEdit.Append(help='Load mask from file', 
             id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
+            
+# IMG / Stress/Strain
+
+        self.StrStaMenu = wx.MenuBar()
+        self.StrStaEdit = wx.Menu(title='')
+        self.StrStaMenu.Append(menu=self.StrStaEdit, title='Operations')
+        self.StrStaMenu.Append(menu=MyHelp(self,helpType='Stress/Strain'),title='&Help')
+        self.StrStaEdit.Append(help='Fit stress/strain data', 
+            id=wxID_STRSTAFIT, kind=wx.ITEM_NORMAL,text='Fit stress/strain')
+        self.StrStaEdit.Append(help='Copy stress/strain data to other images', 
+            id=wxID_STRSTACOPY, kind=wx.ITEM_NORMAL,text='Copy stress/strain')
+        self.StrStaEdit.Append(help='Save stress/strain data to file', 
+            id=wxID_STRSTASAVE, kind=wx.ITEM_NORMAL,text='Save stress/strain')
+        self.StrStaEdit.Append(help='Load stress/strain data from file', 
+            id=wxID_STRSTALOAD, kind=wx.ITEM_NORMAL,text='Load stress/strain')
             
 # PDF / PDF Controls
         self.PDFMenu = wx.MenuBar()
@@ -2198,6 +2216,13 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(item)
         G2imG.UpdateMasks(G2frame,data)
+        G2plt.PlotImage(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Stress/Strain':
+        G2frame.dataFrame.SetTitle('Stress/Strain')
+        G2frame.PickId = item
+        G2frame.Image = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2imG.UpdateStressStrain(G2frame,data)
         G2plt.PlotImage(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'HKL Plot Controls':
         G2frame.PickId = item

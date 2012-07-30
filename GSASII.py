@@ -1208,6 +1208,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
                         Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),{})
                         self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
                         self.Image = Id
@@ -1590,6 +1591,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
                         Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),{})
                         self.PatternTree.SelectItem(Id)
                         self.PatternTree.Expand(Id)
                         self.PickId = G2gd.GetPatternTreeItemId(self,self.root,outname)

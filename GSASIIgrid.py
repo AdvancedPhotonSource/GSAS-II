@@ -37,9 +37,9 @@ if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global
     
 htmlFirstUse = True
 
-[ wxID_FOURCALC, wxID_FOURSEARCH, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, wxID_CHARGEFLIP,
-    wxID_PEAKSUNIQUE, wxID_PEAKSDELETE,
-] = [wx.NewId() for item in range(7)]
+[ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
+    wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE,
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(3)]
@@ -70,8 +70,8 @@ htmlFirstUse = True
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
 ] = [wx.NewId() for item in range(3)]
 
-[ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,
-] = [wx.NewId() for item in range(4)]
+[ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_APPENDDZERO,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
 ] = [wx.NewId() for item in range(5)]
@@ -445,6 +445,8 @@ class DataFrame(wx.Frame):
         self.StrStaEdit = wx.Menu(title='')
         self.StrStaMenu.Append(menu=self.StrStaEdit, title='Operations')
         self.StrStaMenu.Append(menu=MyHelp(self,helpType='Stress/Strain'),title='&Help')
+        self.StrStaEdit.Append(help='Append d-zero for one ring', 
+            id=wxID_APPENDDZERO, kind=wx.ITEM_NORMAL,text='Append d-zero')
         self.StrStaEdit.Append(help='Fit stress/strain data', 
             id=wxID_STRSTAFIT, kind=wx.ITEM_NORMAL,text='Fit stress/strain')
         self.StrStaEdit.Append(help='Copy stress/strain data to other images', 
@@ -485,6 +487,8 @@ class DataFrame(wx.Frame):
             text='Search map')
         self.GeneralCalc.Append(help='Run charge flipping',id=wxID_CHARGEFLIP, kind=wx.ITEM_NORMAL,
             text='Charge flipping')
+        self.GeneralCalc.Append(help='Clear map',id=wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
+            text='Clear map')
         
 # Phase / Data tab
         self.DataMenu = wx.MenuBar()
@@ -1613,13 +1617,13 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         data[phaseName] = {}
     restrData = data[phaseName]
     if 'Bond' not in restrData:
-        restrData['Bond'] = {'wtFactor':1.0,'Bonds':[]}
+        restrData['Bond'] = {'wtFactor':1.0,'Bonds':[],'Use':True}
     if 'Angle' not in restrData:
-        restrData['Angle'] = {'wtFactor':1.0,'Angles':[]}
+        restrData['Angle'] = {'wtFactor':1.0,'Angles':[],'Use':True}
     if 'Plane' not in restrData:
-        restrData['Plane'] = {'wtFactor':1.0,'Planes':[]}
+        restrData['Plane'] = {'wtFactor':1.0,'Planes':[],'Use':True}
     if 'Chiral' not in restrData:
-        restrData['Chiral'] = {'wtFactor':1.0,'Volumes':[]}
+        restrData['Chiral'] = {'wtFactor':1.0,'Volumes':[],'Use':True}
     
     def OnSelectPhase(event):
         dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',Phases.keys())
@@ -1663,12 +1667,19 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             restData['wtFactor'] = value
             wtfactor.SetValue('%.2f'%(value))
             
+        def OnUseData(event):
+            restData['Use'] = Obj.GetValue()
+
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
         wtBox.Add(wx.StaticText(wind,-1,'Restraint weight factor:'),0,wx.ALIGN_CENTER_VERTICAL)
         wtfactor = wx.TextCtrl(wind,-1,value='%.2f'%(restData['wtFactor']),style=wx.TE_PROCESS_ENTER)
         wtfactor.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
         wtfactor.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
         wtBox.Add(wtfactor,0,wx.ALIGN_CENTER_VERTICAL)
+        useData = wx.CheckBox(wind,-1,label=' Use?')
+        useData.Bind(wx.EVT_CHECKBOX, OnUseData)
+        useData.SetValue(restData['Use'])        
+        wtBox.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
         return wtBox
         
     def UpdateBondRestr(bondRestData):
@@ -1709,6 +1720,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             for r in range(len(bondList)):
                 for c in range(2):
                     Bonds.SetReadOnly(r,c,True)
+                    Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
             mainSizer.Add(Bonds,0,)
@@ -1760,6 +1772,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             for r in range(len(angleList)):
                 for c in range(2):
                     Angles.SetReadOnly(r,c,True)
+                    Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Angles.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
             mainSizer.Add(Angles,0,)
@@ -1816,6 +1829,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             for r in range(len(planeList)):
                 for c in range(3):
                     Planes.SetReadOnly(r,c,True)
+                    Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Planes.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
             mainSizer.Add(Planes,0,)
@@ -1867,6 +1881,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             for r in range(len(volumeList)):
                 for c in range(2):
                     Volumes.SetReadOnly(r,c,True)
+                    Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
             mainSizer.Add(Volumes,0,)

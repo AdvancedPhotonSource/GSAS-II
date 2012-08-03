@@ -10,11 +10,10 @@
 ########### SVN repository information ###################
 
 import os
-#import os.path as ospath
 import sys
 import math
 import copy
-#import cPickle
+import random as ran
 import time
 import copy
 import glob
@@ -145,14 +144,10 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
         
     def _init_coll_Data_Items(self,parent):
-#        parent.Append(help='', id=wxID_PWDRREAD, kind=wx.ITEM_NORMAL,
-#            text='Read powder data...')
         parent.Append(help='',id=wxID_IMGREAD, kind=wx.ITEM_NORMAL,
             text='Read image data...')
         parent.Append(help='',id=wxID_READPEAKS, kind=wx.ITEM_NORMAL,
             text='Read Powder Pattern Peaks...')
-#        parent.Append(help='', id=wxID_SNGLREAD, kind=wx.ITEM_NORMAL,
-#            text='Read single crystal data...')
         parent.Append(help='', id=wxID_PWDSUM, kind=wx.ITEM_NORMAL,
             text='Sum powder data')
         parent.Append(help='',id=wxID_IMSUM, kind=wx.ITEM_NORMAL,
@@ -165,7 +160,7 @@ class GSASII(wx.Frame):
             text='Rename data') 
         parent.Append(help='', id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,
             text='Delete data')
-        self.Bind(wx.EVT_MENU, self.OnPwdrRead, id=wxID_PWDRREAD)
+#        self.Bind(wx.EVT_MENU, self.OnPwdrRead, id=wxID_PWDRREAD)
         self.Bind(wx.EVT_MENU, self.OnPwdrSum, id=wxID_PWDSUM)
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=wxID_READPEAKS)
         self.Bind(wx.EVT_MENU, self.OnImageRead, id=wxID_IMGREAD)
@@ -805,7 +800,6 @@ class GSASII(wx.Frame):
             Id = self.PatternTree.AppendItem(
                 parent=self.root,
                 text='PWDR '+rd.idstring)
-#            self.PatternTree.SetItemPyData(Id,[rd.powderentry,rd.powderdata])
             self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.powderdata])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Comments'),
@@ -1033,87 +1027,6 @@ class GSASII(wx.Frame):
             self.oldFocus = wx.Window.FindFocus()
             self.PatternTree.GetNextSibling(item)
                 
-    def OnPwdrRead(self, event):
-        self.CheckNotebook()
-        dlg = wx.FileDialog(self, 'Choose files', '.', '', 
-            'GSAS fxye files (*.fxye)|*.fxye|GSAS fxy files (*.fxy)|*.fxy|Topas xye files (*.xye)|*.xye|All files (*.*)|*.*', 
-            wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                filenames = dlg.GetPaths()
-                filenames.sort()
-                for filename in filenames:
-                    Data,Iparm,Comments,Temperature = G2IO.SelectPowderData(self, filename)              #Data: list of tuples (filename,Pos,Bank)
-                    if not Data:                                                    #if Data rejected by user - go to next one
-                        continue
-                    DataType = Iparm['INS   HTYPE ']                                #expect only 4 char string
-                    DataType = DataType.strip()[0:3]                                #just 1st 3 chars
-                    wx.BeginBusyCursor()
-                    Sample = G2pdG.SetDefaultSample()
-                    Sample['Temperature'] = Temperature
-                    try:
-                        for Item in Data:
-                            vals = Item[2].split()          #split up the BANK record
-                            Id = self.PatternTree.AppendItem(parent=self.root,text='PWDR '+os.path.basename(Item[0])+': '+vals[0]+vals[1])
-                            data = G2IO.GetPowderData(filename,Item[1],Item[2],DataType)
-                            self.PatternTree.SetItemPyData(Id,[Item,data])
-                            '''
-                            Each tree item data is a list with:
-                            Item: the (filename,Pos,Bank) tuple
-                            data: (x,y,w,yc,yb,yd) list  of np.arrays from GetPowderData
-                            '''
-                            
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                           
-                            Tmin = min(data[0])
-                            Tmax = max(data[0])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[(Tmin,Tmax),[Tmin,Tmax]])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',True,3,1.0,0.0,0.0],
-                                {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-        
-                            data = [DataType,]
-                            if 'C' in DataType:
-                                s = Iparm['INS  1 ICONS']
-                                v = (G2IO.sfloat(s[:10]),G2IO.sfloat(s[10:20]),G2IO.sfloat(s[20:30]),G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
-                                if not v[1]:
-                                    names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
-                                    v = (v[0],v[2],v[4])
-                                    codes = [0,0,0,0]
-                                    Sample['Type'] = 'Debye-Scherrer'               #default instrument type
-                                else:
-                                    names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
-                                    codes = [0,0,0,0,0,0]
-                                    Sample['Type'] = 'Bragg-Brentano'               #default instrument type
-                                    Sample['Shift'] = [0.0,False]
-                                    Sample['Transparency'] = [0.0,False]
-                                data.extend(v)
-                                v1 = Iparm['INS  1PRCF1 '].split()                                                  
-                                v = Iparm['INS  1PRCF11'].split()
-                                data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
-                                try:
-                                    azm = float(Iparm['INS  1DETAZM'])
-                                except KeyError:                                                #not in this Iparm file
-                                    azm = 0.0
-                                v = Iparm['INS  1PRCF12'].split()
-                                if v1[0] == '3':
-                                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3]),azm])  #get LX, LY, S+H/L & azimuth
-                                else:
-                                    data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
-                                codes.extend([0,0,0,0,0,0,0])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(data),data,codes,names])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
-                            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Reflection Lists'),{})             
-                            self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
-                    finally:
-                        wx.EndBusyCursor()
-                self.PatternTree.Expand(Id)
-                self.PatternTree.SelectItem(Id)
-    
-        finally:
-            dlg.Destroy()
-        
     def OnReadPowderPeaks(self,event):
         Cuka = 1.54052
         self.CheckNotebook()
@@ -1208,7 +1121,8 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
                         Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),{})
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),
+                            {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'strain':np.zeros((3,3))})
                         self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
                         self.Image = Id
@@ -1751,7 +1665,6 @@ class GSASII(wx.Frame):
                 if result == wx.ID_OK:
                     self.PatternTree.DeleteChildren(self.root)
                     self.GSASprojectfile = ''
-#                    self.PatternTree.DeleteChildren(self.root)
                     if self.HKL: self.HKL = []
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
@@ -1994,6 +1907,9 @@ class GSASII(wx.Frame):
         PWDRdata['Instrument Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Instrument Parameters'))
         PWDRdata['Sample Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Sample Parameters'))
         PWDRdata['Reflection Lists'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Reflection Lists'))
+        if 'ranId' not in PWDRdata['Sample Parameters']:
+            PWDRdata['Sample Parameters']['ranId'] = ran.randint(0,sys.maxint)
+        PWDRdata['ranId'] = PWDRdata['Sample Parameters']['ranId']
         return PWDRdata
 
     def GetHKLFdatafromTree(self,HKLFname):
@@ -2023,7 +1939,10 @@ class GSASII(wx.Frame):
         if sub:
             item, cookie = self.PatternTree.GetFirstChild(sub)
             while item:
-                phaseData[self.PatternTree.GetItemText(item)] =  self.PatternTree.GetItemPyData(item)                
+                phaseName = self.PatternTree.GetItemText(item)
+                phaseData[phaseName] =  self.PatternTree.GetItemPyData(item)
+                if 'ranId' not in phaseData[phaseName]:
+                    phaseData[phaseName]['ranId'] = ran.randint(0,sys.maxint)          
                 item, cookie = self.PatternTree.GetNextChild(sub, cookie)
         return phaseData                
                     

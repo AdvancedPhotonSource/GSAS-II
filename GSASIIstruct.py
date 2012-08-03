@@ -287,30 +287,16 @@ def GetUsedHistogramsAndPhases(GPXfile):
                 Phase['pId'] = pId
                 Phases[phase] = Phase
             for hist in Phase['Histograms']:
-                if hist not in Histograms:
+                if 'Use' not in Phase['Histograms'][hist]:      #patch
+                    Phase['Histograms'][hist]['Use'] = True         
+                if hist not in Histograms and Phase['Histograms'][hist]['Use']:
                     Histograms[hist] = allHistograms[hist]
                     #future restraint, etc. histograms here            
                     hId = histoList.index(hist)
                     Histograms[hist]['hId'] = hId
     return Histograms,Phases
     
-def getBackupName2(GPXfile,makeBack=True):      #not work correctly
-    GPXpath,GPXname = ospath.split(GPXfile)
-    if GPXpath == '': GPXpath = '.'
-    Name = ospath.splitext(GPXname)[0]
-    files = os.listdir(GPXpath)
-    last = 0
-    for name in files:
-        name = name.split('.')
-        if len(name) >= 3 and name[0] == Name and 'bak' in name[-2]:
-            if makeBack:
-                last = max(last,int(name[-2].strip('bak'))+1)
-            else:
-                last = max(last,int(name[-2].strip('bak')))
-    GPXback = ospath.join(GPXpath,GPXname.rstrip('.'.join(name[-2:]))+'.bak'+str(last)+'.gpx')
-    return GPXback
-
-def getBackupName(GPXfile,makeBack):       #recovered old one
+def getBackupName(GPXfile,makeBack):
     GPXpath,GPXname = ospath.split(GPXfile)
     if GPXpath == '': GPXpath = '.'
     Name = ospath.splitext(GPXname)[0]

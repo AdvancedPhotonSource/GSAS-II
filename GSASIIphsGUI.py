@@ -35,7 +35,8 @@ import numpy.ma as ma
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
-
+mapDefault = {'MapType':'','RefList':'','Resolution':0.5,
+                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
@@ -321,8 +322,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'POhkl' not in generalData:
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
-            generalData['Map'] = {'MapType':'','RefList':'','Resolution':0.5,
-                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+            generalData['Map'] = mapDefault
         if 'Flip' not in generalData:
             generalData['Flip'] = {'RefList':'','Resolution':0.5,'Norm element':'None',
                 'k-factor':0.1}
@@ -2815,6 +2815,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             scaleSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
             return scaleSizer
             
+        def OnUseData(event):
+            Obj = event.GetEventObject()
+            hist = Indx[Obj.GetId()]
+            UseList[hist]['Use'] = Obj.GetValue()
+            
         def OnShowData(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -3418,12 +3423,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         for item in keyList:
             histData = UseList[item]
+            if 'Use' not in UseList[item]:      #patch
+                UseList[item]['Use'] = True
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             showData = wx.CheckBox(DData,-1,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
             Indx[showData.GetId()] = item
             showData.Bind(wx.EVT_CHECKBOX, OnShowData)
             showSizer.Add(showData,0,wx.ALIGN_CENTER_VERTICAL)
+            useData = wx.CheckBox(DData,-1,label='Use?')
+            Indx[useData.GetId()] = item
+            showSizer.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
+            useData.Bind(wx.EVT_CHECKBOX, OnUseData)
+            useData.SetValue(UseList[item]['Use'])
             copyData = wx.Button(DData,-1,label=' Copy?')
             Indx[copyData.GetId()] = item
             copyData.Bind(wx.EVT_BUTTON,OnCopyData)
@@ -3849,6 +3861,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
         
+    def OnFourClear(event):
+        generalData = data['General']
+        generalData['Map'] = mapDefault
+        G2plt.PlotStructure(G2frame,data)
+        
     def printRho(SGLaue,rho,rhoMax):                          
 # map printing for testing purposes
         dim = len(rho.shape)
@@ -3882,32 +3899,35 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mags = []
         print ' Begin fourier map search - can take some time'
         time0 = time.time()
-
-        pgbar = wx.ProgressDialog('Map search','No. Peaks found =',301.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-        screenSize = wx.ClientDisplayRect()
-        Size = pgbar.GetSize()
-        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
-        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-        pgbar.SetSize(Size)
-        try:
-            peaks,mags = G2mth.SearchMap(data,keepDup=True,Pgbar=pgbar)
-        finally:
-            pgbar.Destroy()
-        sortIdx = np.argsort(mags.flatten())
-        if len(peaks):
-            data['Map Peaks'] = np.concatenate((mags,peaks),axis=1)            
-            print ' Map search finished, time = %.2fs'%(time.time()-time0)
-        Page = G2frame.dataDisplay.FindPage('Map peaks')
-        G2frame.dataDisplay.ChangeSelection(Page)
-        G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
-        UpdateDrawAtoms()
-        FillMapPeaksGrid()
-        G2plt.PlotStructure(G2frame,data)
+        generalData = data['General']
+        mapData = generalData['Map']
+        if len(mapData['rho']):
+            pgbar = wx.ProgressDialog('Map search','No. Peaks found =',301.0, 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+            screenSize = wx.ClientDisplayRect()
+            Size = pgbar.GetSize()
+            Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+            pgbar.SetSize(Size)
+            try:
+                peaks,mags = G2mth.SearchMap(data,keepDup=True,Pgbar=pgbar)
+            finally:
+                pgbar.Destroy()
+            sortIdx = np.argsort(mags.flatten())
+            if len(peaks):
+                data['Map Peaks'] = np.concatenate((mags,peaks),axis=1)            
+                print ' Map search finished, time = %.2fs'%(time.time()-time0)
+            Page = G2frame.dataDisplay.FindPage('Map peaks')
+            G2frame.dataDisplay.ChangeSelection(Page)
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
+            UpdateDrawAtoms()
+            FillMapPeaksGrid()
+        else:
+            print 'No map available'
         
     def OnChargeFlip(event):
         generalData = data['General']
@@ -3977,6 +3997,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
             UpdateGeneral()
         elif text == 'Data':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataMenu)
@@ -4040,6 +4061,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
     SetupGeneral()
     GeneralData = data['General']
     UpdateGeneral()

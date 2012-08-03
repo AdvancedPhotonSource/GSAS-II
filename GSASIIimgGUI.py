@@ -1079,26 +1079,209 @@ def UpdateMasks(G2frame,data):
 
 def UpdateStressStrain(G2frame,data):
     
+    def OnAppendDzero(event):
+        data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,'ImxyObs':[[],[]],'Imxycalc':[[],[]]})
+        UpdateStressStrain(G2frame,data)
+            
     def OnCopyStrSta(event):
-        print 'Copy stress/strain data - does nothing yet'
-        event.Skip()
+        import copy
+        TextList = [[False,'All IMG',0]]
+        Names = []
+        if G2frame.PatternTree.GetCount():
+            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+            while id:
+                name = G2frame.PatternTree.GetItemText(id)
+                Names.append(name)
+                if 'IMG' in name:
+                    if id == G2frame.Image:
+                        Source = name
+                        Data = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain')))
+                    else:
+                        TextList.append([False,name,id])
+                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            if len(TextList) == 1:
+                G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
+                return
+            dlg = G2frame.CopyDialog(G2frame,'Copy stress/strain controls','Copy controls from '+Source+' to:',TextList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetData()
+                    if result[0][0]:
+                        result = TextList[1:]
+                        for item in result: item[0] = True
+                    for i,item in enumerate(result):
+                        ifcopy,name,id = item
+                        if ifcopy:
+                            oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain')))
+                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'),copy.deepcopy(Data))
+            finally:
+                dlg.Destroy()
 
     def OnLoadStrSta(event):
         print 'Load stress/strain data - does nothing yet'
         event.Skip()
 
     def OnSaveStrSta(event):
-        print 'Save stress/strain data - does nothing yet'
-        event.Skip()
+        dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', '.', '', 
+            'image control files (*.strsta)|*.strsta',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'w')
+                save = {}
+                keys = ['Type','Sample phi','Sample z','strain']
+                keys2 = ['Dset','Dcalc','pixLimit','cutoff']
+                File.write('{\n\t')
+                for key in keys:
+                    if key in 'strain':
+                        File.write("'"+key+"':["+str(data[key][0])+','+str(data[key][1])+','+str(data[key][2])+'],')
+                    else:
+                        File.write("'"+key+"':"+str(data[key])+',')
+                File.write('\n\t'+"'d-zero':[\n")
+                for data2 in data['d-zero']:
+                    File.write('\t\t{')
+                    for key in keys2:
+                        File.write("'"+key+"':"+':'+str(data2[key])+',')
+                    File.write("'ImxyObs':[[],[]],'Imxycalc':[[],[]]},\n")
+                File.write('\t]\n}')
+                File.close()
+        finally:
+            dlg.Destroy()
 
     def OnFitStrSta(event):
         print 'Fit stress/strain data - does nothing yet'
         event.Skip()
-
+        
+    def SamSizer():
+        
+        def OnStrainType(event):
+            data['Type'] = strType.GetValue()
+        
+        def OnSamPhi(event):
+            try:
+                value = float(samPhi.GetValue())
+            except ValueError:
+                value = data['Sample phi']
+            data['Sample phi'] = value
+            samPhi.SetValue("%.3f" % (data['Sample phi']))
+                
+        def OnSamZ(event):
+            try:
+                value = float(samZ.GetValue())
+            except ValueError:
+                value = data['Sample z']
+            data['Sample z'] = value
+            samZ.SetValue("%.3f" % (data['Sample z']))
+                
+        samSizer = wx.BoxSizer(wx.HORIZONTAL)
+        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Strain type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        strType = wx.ComboBox(G2frame.dataDisplay,value=data['Type'],choices=['True','Conventional'],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        strType.SetValue(data['Type'])
+        strType.Bind(wx.EVT_COMBOBOX, OnStrainType)
+        samSizer.Add(strType,0,wx.ALIGN_CENTER_VERTICAL)
+        
+        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample phi: '),0,wx.ALIGN_CENTER_VERTICAL)
+        samPhi = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample phi'])),
+            style=wx.TE_PROCESS_ENTER)
+        samSizer.Add(samPhi,0,wx.ALIGN_CENTER_VERTICAL)
+        samPhi.Bind(wx.EVT_TEXT_ENTER,OnSamPhi)
+        samPhi.Bind(wx.EVT_KILL_FOCUS,OnSamPhi)
+        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample delta-z(mm): '),0,wx.ALIGN_CENTER_VERTICAL)
+        samZ = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample z'])),
+            style=wx.TE_PROCESS_ENTER)
+        samSizer.Add(samZ,0,wx.ALIGN_CENTER_VERTICAL)
+        samZ.Bind(wx.EVT_TEXT_ENTER,OnSamZ)
+        samZ.Bind(wx.EVT_KILL_FOCUS,OnSamZ)
+        return samSizer
+        
+    def DzeroSizer():
+    
+        def OnDzero(event):
+            Obj = event.GetEventObject()
+            try:
+                value = min(10.0,max(1.0,float(Obj.GetValue())))
+            except ValueError:
+                value = 1.0
+            Obj.SetValue("%.5f"%(value))
+            data['d-zero'][Indx[Obj.GetId()]]['Dset'] = value
+            
+        def OnDeleteDzero(event):
+            Obj = event.GetEventObject()
+            del(data['d-zero'][delIndx.index(Obj)])
+            UpdateStressStrain(G2frame,data)
+        
+        def OnCutOff(event):
+            Obj = event.GetEventObject()
+            try:
+                value = min(10.0,max(0.5,float(Obj.GetValue())))
+            except ValueError:
+                value = 10.0
+            Obj.SetValue("%.1f"%(value))
+            data['d-zero'][Indx[Obj.GetId()]]['cutoff'] = value 
+        
+        def OnPixLimit(event):
+            Obj = event.GetEventObject()
+            data['d-zero'][Indx[Obj.GetId()]]['pixLimit'] = int(Obj.GetValue())
+            
+        Indx = {}
+        delIndx = []    
+        dzeroSizer = wx.FlexGridSizer(1,8,5,5)
+        for id,dzero in enumerate(data['d-zero']):
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero #%d: '%(id))),
+                0,wx.ALIGN_CENTER_VERTICAL)
+            dZero = wx.TextCtrl(G2frame.dataDisplay,-1,value=('%.5f'%(dzero['Dset'])),
+                style=wx.TE_PROCESS_ENTER)
+            dzeroSizer.Add(dZero,0,wx.ALIGN_CENTER_VERTICAL)
+            dZero.Bind(wx.EVT_TEXT_ENTER,OnDzero)
+            dZero.Bind(wx.EVT_KILL_FOCUS,OnDzero)
+            Indx[dZero.GetId()] = id
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero calc: %.5f'%(dzero['Dcalc']))),
+                0,wx.ALIGN_CENTER_VERTICAL)
+                
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min ring I/Ib '),0,
+                wx.ALIGN_CENTER_VERTICAL)
+            cutOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.1f" % (dzero['cutoff'])),
+                style=wx.TE_PROCESS_ENTER)
+            cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
+            cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
+            Indx[cutOff.GetId()] = id
+            dzeroSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+        
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Pixel search range '),0,
+                wx.ALIGN_CENTER_VERTICAL)
+            pixLimit = wx.ComboBox(parent=G2frame.dataDisplay,value=str(dzero['pixLimit']),choices=['1','2','5','10','15','20'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
+            Indx[pixLimit.GetId()] = id
+            dzeroSizer.Add(pixLimit,0,wx.ALIGN_CENTER_VERTICAL)                
+                
+            dzeroDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
+            dzeroDelete.Bind(wx.EVT_CHECKBOX,OnDeleteDzero)
+            delIndx.append(dzeroDelete)
+            dzeroSizer.Add(dzeroDelete,0,wx.ALIGN_CENTER_VERTICAL)
+        return dzeroSizer
+        
+    def StrainSizer():
+        
+        strainSizer = wx.BoxSizer(wx.VERTICAL)
+        strainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' Strain tensor:')),
+            0,wx.ALIGN_CENTER_VERTICAL)
+        tensorSizer = wx.FlexGridSizer(3,6,5,5)
+        names = [[' e11','e12','e13'],[' e21','e22','e23'],[' e31','e32','e33']]
+        for i in range(3):
+            for j in range(3):
+                tensorSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=names[i][j]),0,wx.ALIGN_CENTER_VERTICAL)
+                tensorElem = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(data['strain'][i][j]),style=wx.TE_READONLY)
+                tensorElem.SetBackgroundColour(VERY_LIGHT_GREY)
+                tensorSizer.Add(tensorElem,0,wx.ALIGN_CENTER_VERTICAL)
+        strainSizer.Add(tensorSizer)
+        return strainSizer
 
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.StrStaMenu)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadStrSta, id=G2gd.wxID_STRSTALOAD)
@@ -1107,13 +1290,14 @@ def UpdateStressStrain(G2frame,data):
         Status = G2frame.dataFrame.CreateStatusBar()
         Status.SetStatusText(" test  ")
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    if not data:
-        data = {'d-zero':[],'Sample phi':0.0,'Sample z':0.0,'strain':np.zeros((3,3))}
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
-
-
-
+    mainSizer.Add(SamSizer())
+    mainSizer.Add((5,10),0)
+    mainSizer.Add(DzeroSizer())
+    mainSizer.Add((5,10),0)
+    mainSizer.Add(StrainSizer())
+    
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))

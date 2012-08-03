@@ -654,6 +654,7 @@ def IndexPeakListSave(G2frame,peaks):
     
 def SetNewPhase(Name='New Phase',SGData=G2spc.SpcGroup('P 1')[1],cell=[1.0,1.0,1.0,90.,90,90.,1.]):
     phaseData = {
+        'ranId':ran.randint(0,sys.maxint),
         'General':{
             'Name':Name,
             'Type':'nuclear',

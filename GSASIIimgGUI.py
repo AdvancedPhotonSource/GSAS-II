@@ -1149,8 +1149,11 @@ def UpdateStressStrain(G2frame,data):
             dlg.Destroy()
 
     def OnFitStrSta(event):
-        print 'Fit stress/strain data - does nothing yet'
-        event.Skip()
+        Masks = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+        Controls = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+        G2img.FitStrSta(G2frame.ImageZ,data,Controls,Masks)
         
     def SamSizer():
         

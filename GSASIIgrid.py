@@ -60,7 +60,8 @@ htmlFirstUse = True
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
 
-[ wxID_PAWLEYLOAD, wxID_PAWLEYIMPORT, wxID_PAWLEYDELETE, wxID_PAWLEYESTIMATE,
+[ wxID_PAWLEYLOAD, wxID_PAWLEYDELETE, wxID_PAWLEYESTIMATE,
+    wxID_PAWLEYUPDATE,
 ] = [wx.NewId() for item in range(4)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
@@ -595,6 +596,8 @@ class DataFrame(wx.Frame):
             help='Initialize Pawley reflection list')
         self.PawleyEdit.Append(id=wxID_PAWLEYESTIMATE, kind=wx.ITEM_NORMAL,text='Pawley estimate',
             help='Estimate initial Pawley intensities')
+        self.PawleyEdit.Append(id=wxID_PAWLEYUPDATE, kind=wx.ITEM_NORMAL,text='Pawley update',
+            help='Update Pawley intensities from reflection list')
         self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
             help='Delete Pawley reflection list')
             

@@ -742,3 +742,10 @@ def ImageIntegrate(image,data,masks):
     print 'Integration complete'
     print "Elapsed time:","%8.3f"%(t1-t0), "s"
     return H0,H1,H2
+    
+def FitStrSta(Image,StrSta,Controls,Masks):
+    
+    print Image.shape
+    print StrSta
+    print Controls
+    print Masks

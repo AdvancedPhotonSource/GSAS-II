@@ -3747,6 +3747,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             except IndexError:
                 pass
         FillPawleyReflectionsGrid()
+
+    def OnPawleyUpdate(event):
+        try:
+            Refs = data['Pawley ref']
+            Histograms = data['Histograms']
+        except KeyError:
+            print '**** Error - no histograms defined for this phase ****'
+            return
+        HistoNames = Histograms.keys()
+        PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
+        refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))[PhaseName]
+        for iref,ref in enumerate(Refs):
+            try:
+                ref[6] = refData[iref][9]
+                ref[7] = 1.0
+            except IndexError:
+                pass
+        FillPawleyReflectionsGrid()
                             
     def OnPawleyDelete(event):
         dlg = wx.MessageDialog(G2frame,'Do you really want to delete Pawley reflections?','Delete', 
@@ -4034,6 +4052,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.PawleyMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
             FillPawleyReflectionsGrid()
         elif text == 'Texture':

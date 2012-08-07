@@ -2057,7 +2057,13 @@ class GSASII(wx.Frame):
         try:
             Rw = G2str.Refine(self.GSASprojectfile,dlg)
         finally:
-            dlg.Destroy()        
+            dlg.Destroy()
+        oldId =  self.PatternTree.GetSelection()
+        oldName = self.PatternTree.GetItemText(oldId)
+        parentId = self.PatternTree.GetItemParent(oldId)
+        parentName = ''
+        if parentId:
+            parentName = self.PatternTree.GetItemText(parentId)
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -2073,7 +2079,11 @@ class GSASII(wx.Frame):
                     if name[:4] in ['PWDR','HKLF']:
                         Id = item
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
-                if Id:
+                if parentName:
+                    parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
+                    itemId = G2gd.GetPatternTreeItemId(self, parentId, oldName)
+                    self.PatternTree.SelectItem(itemId)
+                elif Id:
                     self.PatternTree.SelectItem(Id)
         finally:
             dlg.Destroy()

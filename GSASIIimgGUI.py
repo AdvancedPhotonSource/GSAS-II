@@ -1080,7 +1080,7 @@ def UpdateMasks(G2frame,data):
 def UpdateStressStrain(G2frame,data):
     
     def OnAppendDzero(event):
-        data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,'ImxyObs':[[],[]],'Imxycalc':[[],[]]})
+        data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,'ImxyObs':[[],[]],'ImxyCalc':[[],[]]})
         UpdateStressStrain(G2frame,data)
             
     def OnCopyStrSta(event):
@@ -1154,6 +1154,7 @@ def UpdateStressStrain(G2frame,data):
         Controls = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
         G2img.FitStrSta(G2frame.ImageZ,data,Controls,Masks)
+        G2plt.PlotExposedImage(G2frame,event=event)
         
     def SamSizer():
         

@@ -2100,7 +2100,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
         if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Stress/Strain':
             print 'plot stress/strain stuff'
-            print StrSta
+            for ring in StrSta['d-zero']:
+                for xring,yring in ring['ImxyObs'].T:
+                    Plot.plot(xring,yring,'r+')
+                for xring,yring in ring['ImxyCalc'].T:
+                    Plot.add_artist(Polygon(ring['ImxyCalc'].T,ec='b',fc='none'))
+                    Plot.plot(xring,yring)
         #masks - mask lines numbered after integration limit lines
         spots = Masks['Points']
         rings = Masks['Rings']

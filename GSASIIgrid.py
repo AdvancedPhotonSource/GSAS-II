@@ -75,7 +75,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(5)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
-] = [wx.NewId() for item in range(5)]
+    wxID_SAMPLESAVE, wxID_SAMPLELOAD,
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE,
@@ -348,6 +349,10 @@ class DataFrame(wx.Frame):
         self.SampleEdit = wx.Menu(title='')
         self.SampleMenu.Append(menu=self.SampleEdit, title='File')
         self.SampleMenu.Append(menu=MyHelp(self,helpType='Sample Parameters'),title='&Help')
+        self.SampleEdit.Append(id=wxID_SAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load',
+            help='Load sample parameters from file')
+        self.SampleEdit.Append(id=wxID_SAMPLESAVE, kind=wx.ITEM_NORMAL,text='Save',
+            help='Save sample parameters to file')
         self.SampleEdit.Append(id=wxID_SAMPLECOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy refinable sample parameters to other histograms')
         self.SampleEdit.Append(id=wxID_SAMPLEFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',

@@ -287,8 +287,75 @@ class SingleFloatDialog(wx.Dialog):
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.EndModal(wx.ID_CANCEL)              
+        self.EndModal(wx.ID_CANCEL)
         
+class GridFractionEditor(wg.PyGridCellEditor):
+    def __init__(self,grid):
+        wg.PyGridCellEditor.__init__(self)
+
+    def Create(self, parent, id, evtHandler):
+        self._tc = wx.TextCtrl(parent, id, "")
+        self._tc.SetInsertionPoint(0)
+        self.SetControl(self._tc)
+
+        if evtHandler:
+            self._tc.PushEventHandler(evtHandler)
+
+        self._tc.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def SetSize(self, rect):
+        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
+                               wx.SIZE_ALLOW_MINUS_ONE)
+
+    def BeginEdit(self, row, col, grid):
+        self.startValue = grid.GetTable().GetValue(row, col)
+        self._tc.SetValue(str(self.startValue))
+        self._tc.SetInsertionPointEnd()
+        self._tc.SetFocus()
+        self._tc.SetSelection(0, self._tc.GetLastPosition())
+
+    def EndEdit(self, row, col, grid):
+        changed = False
+
+        val = self._tc.GetValue()
+        
+        if val != self.startValue:
+            changed = True
+            if '/' in val and '.' not in val:
+                val += '.'
+            try:
+                val = float(eval(val))
+            except (SyntaxError,NameError):
+                val = self.startValue
+            grid.GetTable().SetValue(row, col, val) # update the table
+
+        self.startValue = ''
+        self._tc.SetValue('')
+        return changed
+
+    def Reset(self):
+        self._tc.SetValue(self.startValue)
+        self._tc.SetInsertionPointEnd()
+
+    def Clone(self):
+        return GridFractionEditor(grid)
+
+    def StartingKey(self, evt):
+        self.OnChar(evt)
+        if evt.GetSkipped():
+            self._tc.EmulateKeyPress(evt)
+
+    def OnChar(self, evt):
+        key = evt.GetKeyCode()
+        if key > 255:
+            evt.Skip()
+            return
+        char = chr(key)
+        if char in '.+-/0123456789':
+            self._tc.WriteText(char)
+        else:
+            evt.Skip()
+
 def FindAtomIndexByIDs(atomData,IDs,Draw=True):
     indx = []
     for i,atom in enumerate(atomData):
@@ -1139,9 +1206,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Atoms.AutoSizeColumns(False)
         colType = colLabels.index('Type')
         colSS = colLabels.index('site sym')
+        colX = colLabels.index('x')
         colIA = colLabels.index('I/A')
         colU11 = colLabels.index('U11')
         colUiso = colLabels.index('Uiso')
+        attr = wx.grid.GridCellAttr()
+        attr.SetEditor(GridFractionEditor(Atoms))
+        for c in range(colX,colX+3):
+            Atoms.SetColAttr(c, attr)
         for i in range(colU11-1,colU11+6):
             Atoms.SetColSize(i,50)            
         for row in range(Atoms.GetNumberRows()):

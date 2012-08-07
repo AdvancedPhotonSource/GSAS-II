@@ -195,8 +195,7 @@ def FitDetector(rings,p0,wave):
     except ValueError:
         print 'Bad refinement - no result'
         return result[0],wave
-        
-            
+                    
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
     sizey,sizex = image.shape
@@ -323,6 +322,11 @@ def GetDetectorXY(dsp,azm,data):
     xy0 = [radius*cosd(azm),radius*sind(azm)]
     xy = fsolve(func,xy0,args=(azm,phi,R0,R1,A,B))+cent
     return xy
+    
+def GetDetXYfromThAzm(Th,Azm,data):
+    dsp = data['wavelength']/(2.0*npsind(Th))
+    
+    return GetDetectorXY(dsp,azm,data)
                     
 def GetTthAzmDsp(x,y,data):
     wave = data['wavelength']
@@ -408,7 +412,6 @@ def ImageRecalibrate(self,data):
     wave = data['wavelength']
     cent = data['center']    
     dist = data['distance']
-    cent = data['center']
     tilt = data['tilt']
     phi = data['rotation']
     for H in HKL: 
@@ -745,7 +748,46 @@ def ImageIntegrate(image,data,masks):
     
 def FitStrSta(Image,StrSta,Controls,Masks):
     
-    print Image.shape
-    print StrSta
-    print Controls
-    print Masks
+#    print 'Masks:',Masks
+    wave = Controls['wavelength']
+    dist = Controls['distance']
+    center = Controls['center']
+    rot = Controls['rotation']
+    tilt = Controls['tilt']
+    imSize = Controls['size']
+    pixSize = Controls['pixelSize']
+    azmOff = Controls['azmthOff']
+    scalex = 1000./pixSize[0]
+    scaley = 1000./pixSize[1]
+
+    for ring in StrSta['d-zero']:
+        ellipse = GetEllipse(ring['Dset'],Controls)
+        Ring,delt = makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)
+        Ring = np.array(Ring).T
+        ring['ImxyObs'] = np.array(Ring[:2])      #need to apply masks to this to eliminate bad points
+        [x,y] = np.array(makeIdealRing(ellipse)).T
+        Tth,azm = GetTthAzm(x,y,Controls)
+        th = Tth/2.
+        th += np.sum(StrSta['strain']*calcFij(StrAta['phi'],0.,azm,th))
+        Tth = th*2.
+        
+
+def calcFij(omg,phi,azm,th):
+    ''' Uses parameters as defined by Bob He & Kingsley Smity, Adv. in X-Ray Anal. 41, 501 (1997)
+    omg: his omega = sample omega rotation; 0 when incident beam || sample surface, 90 
+            when perp. to sample surface
+    phi: his phi = sample phi rotation; usually = 0, axis rotates with omg.
+    azm: his chi = azimuth around incident beam
+    th:  his theta = theta
+    '''
+    a = npsind(th)*npcosd(omg)+npsind(azm)*npcosd(th)*npsind(omg)
+    b = -npcosd(azm)*npcosd(th)
+    c = npsind(th)*npsind(omg)-npsind(azm)*npcosd(th)*npcosd(omg)
+    d = a*npcosd(phi)-b*npsind(phi)
+    e = a*npsind(phi)+b*npcosd(phi)
+    Fij = np.array([
+        [d**2,d*e,c*d],
+        [d*e,e**2,c*e],
+        [c*d,c*e,c**2]])
+    return -Fij*nptand(th)
+        

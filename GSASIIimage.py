@@ -12,6 +12,7 @@ import wx
 import time
 import numpy as np
 import numpy.linalg as nl
+import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIplot as G2plt
@@ -385,7 +386,6 @@ def EdgeFinder(image,data):          #this makes list of all x,y where I>edgeMin
     return zip(tax,tay)
     
 def ImageRecalibrate(self,data):
-    import copy
     import ImageCalibrants as calFile
     print 'Image recalibration:'
     time0 = time.time()
@@ -419,7 +419,7 @@ def ImageRecalibrate(self,data):
         ellipse = GetEllipse(dsp,data)
         Ring,delt = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
-            numZ = len(Ring)
+#            numZ = len(Ring)
             data['rings'].append(np.array(Ring))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
         else:
@@ -749,27 +749,24 @@ def ImageIntegrate(image,data,masks):
 def FitStrSta(Image,StrSta,Controls,Masks):
     
 #    print 'Masks:',Masks
-    wave = Controls['wavelength']
-    dist = Controls['distance']
-    center = Controls['center']
-    rot = Controls['rotation']
-    tilt = Controls['tilt']
-    imSize = Controls['size']
-    pixSize = Controls['pixelSize']
-    azmOff = Controls['azmthOff']
+    StaControls = copy.deepcopy(Controls)
+    StaControls['distance'] += StrSta['Sample z']*cosd(StrSta['Sample phi'])
+    pixSize = StaControls['pixelSize']
     scalex = 1000./pixSize[0]
     scaley = 1000./pixSize[1]
 
     for ring in StrSta['d-zero']:
-        ellipse = GetEllipse(ring['Dset'],Controls)
+        ellipse = GetEllipse(ring['Dset'],StaControls)
         Ring,delt = makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)
         Ring = np.array(Ring).T
         ring['ImxyObs'] = np.array(Ring[:2])      #need to apply masks to this to eliminate bad points
         [x,y] = np.array(makeIdealRing(ellipse)).T
-        Tth,azm = GetTthAzm(x,y,Controls)
-        th = Tth/2.
-        th += np.sum(StrSta['strain']*calcFij(StrAta['phi'],0.,azm,th))
-        Tth = th*2.
+        if len(x):
+            Tth,azm = GetTthAzm(x,y,StaControls)
+            azm += Controls['azmthOff']     #account for detector rotation
+            th = Tth/2.
+            th += 180.*np.sum(StrSta['strain']*calcFij(StrSta['Sample phi'],0.,azm,th))/(np.pi*1.e6) #in degrees
+            Tth = th*2.
         
 
 def calcFij(omg,phi,azm,th):
@@ -790,4 +787,27 @@ def calcFij(omg,phi,azm,th):
         [d*e,e**2,c*e],
         [c*d,c*e,c**2]])
     return -Fij*nptand(th)
+
+def FitStrain(rings,p0,wave):
+    from scipy.optimize import leastsq
+
+    def StrainPrint(ValSig):
+        print 'Strain tensor:'
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        for name,fmt,value,sig in ValSig:
+            ptlbls += "%s" % (name.rjust(12))
+            ptstr += fmt % (value)
+            if sig:
+                sigstr += fmt % (sig)
+            else:
+                sigstr += 12*' '
+        print ptlbls
+        print ptstr
+        print sigstr
+        
+    def strainCalc(E,xyd,wave):
+        x,y,dsp = xyd
+        tth = 2.0*npasind(wave/(2.*dsp))
         

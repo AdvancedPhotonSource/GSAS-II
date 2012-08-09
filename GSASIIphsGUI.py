@@ -913,7 +913,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
-        Size[1] += 26                           #compensate for status bar
+        Size[1] += 35                           #compensate for status bar
         dataDisplay.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
 
@@ -2803,7 +2803,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Fit(G2frame.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
+        Size[1] = max(Size[1],250) + 35
         Texture.SetSize(Size)
         Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
@@ -3619,7 +3619,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.FitInside(G2frame.dataFrame)
         Size = mainSizer.GetMinSize()
         Size[0] += 40
-        Size[1] = max(Size[1],290) + 20
+        Size[1] = max(Size[1],290) + 35
         DData.SetSize(Size)
         DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)

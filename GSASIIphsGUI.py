@@ -2493,35 +2493,38 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 FindBondsDraw()
                 G2plt.PlotStructure(G2frame,data)
                 
-            showSizer = wx.FlexGridSizer(5,3,5,0)            
+            showSizer = wx.BoxSizer(wx.VERTICAL)            
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(dataDisplay,-1,' Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
             backColor = wcs.ColourSelect(dataDisplay, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
             backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
             lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
-            showSizer.Add(lineSizer,0,)
             
-            showSizer.Add(wx.StaticText(dataDisplay,-1,' View Point:  '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,-1,' View Point:'),0,wx.ALIGN_CENTER_VERTICAL)
             VP = drawingData['viewPoint'][0]
             viewPoint = wx.TextCtrl(dataDisplay,value='%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]),
-                style=wx.TE_READONLY,size=wx.Size(120,20),name='viewPoint')
+                style=wx.TE_READONLY,size=wx.Size(140,20),name='viewPoint')
             viewPoint.SetBackgroundColour(VERY_LIGHT_GREY)
-            showSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
+            showSizer.Add(lineSizer)
+            showSizer.Add((0,5),0)
             
+            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             showABC = wx.CheckBox(dataDisplay,-1,label=' Show test point?')
             showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
             showABC.SetValue(drawingData['showABC'])
-            showSizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
     
             unitCellBox = wx.CheckBox(dataDisplay,-1,label=' Show unit cell?')
             unitCellBox.Bind(wx.EVT_CHECKBOX, OnShowUnitCell)
             unitCellBox.SetValue(drawingData['unitCellBox'])
-            showSizer.Add(unitCellBox,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(unitCellBox,0,wx.ALIGN_CENTER_VERTICAL)
     
             showHydrogen = wx.CheckBox(dataDisplay,-1,label=' Show hydrogens?')
             showHydrogen.Bind(wx.EVT_CHECKBOX, OnShowHyd)
             showHydrogen.SetValue(drawingData['showHydrogen'])
-            showSizer.Add(showHydrogen,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(showHydrogen,0,wx.ALIGN_CENTER_VERTICAL)
+            showSizer.Add(line2Sizer)
             return showSizer
             
         def RadSizer():
@@ -2573,7 +2576,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
-        Size[1] += 26                           #compensate for status bar
+        Size[1] += 30                           #compensate for status bar
         dataDisplay.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
 

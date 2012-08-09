@@ -2978,7 +2978,7 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             dMdvh = np.sqrt(W[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             if dlg:
-                dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
+                dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             if len(Hess):
                 Vec += np.sum(dMdvh*np.sqrt(W[xB:xF])*dy[xB:xF],axis=1)
                 Hess += np.inner(dMdvh,dMdvh)

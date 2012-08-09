@@ -619,9 +619,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Obj.SetValue("%.3f"%(cell[1+ObjId]))                        
                 cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
                 volVal.SetValue("%.3f"%(cell[7]))
+                denList = denSizer.GetChildren()
+                density,mattCoeff = getDensity()
+                denList[1].GetWindow().SetValue('%.3f'%(density))
+                if len(denList) > 2:
+                    denList[3].GetWindow().SetValue('%.3f'%(mattCoeff))
                 generalData['Cell'] = cell
-                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-                wx.CallAfter(UpdateGeneral)
             
             cell = generalData['Cell']
             laue = generalData['SGData']['SGLaue']
@@ -661,8 +664,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['Isotope'][item] = isotope
                 indx = generalData['AtomTypes'].index(item)
                 data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
-                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
-                wx.CallAfter(UpdateGeneral)
+                denList = denSizer.GetChildren()
+                density,mattCoeff = getDensity()
+                denList[1].GetWindow().SetValue('%.3f'%(density))
+                if len(denList) > 2:
+                    denList[3].GetWindow().SetValue('%.3f'%(mattCoeff))
                 
             elemSizer = wx.FlexGridSizer(8,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(dataDisplay,label=' Elements'),0,wx.ALIGN_CENTER_VERTICAL)
@@ -710,23 +716,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
                 elemSizer.Add(colorTxt,0,wx.ALIGN_CENTER_VERTICAL)
             return elemSizer
-            
-        def DenSizer():
+        
+        def getDensity():
             
             mass = 0.
             for i,elem in enumerate(generalData['AtomTypes']):
                 mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
-            denSizer = wx.BoxSizer(wx.HORIZONTAL)
-            denSizer.Add(wx.StaticText(dataDisplay,-1,' Density: '),0,wx.ALIGN_CENTER_VERTICAL)
             Volume = generalData['Cell'][7]
             density = mass/(0.6022137*Volume)
+            return density,Volume/mass
+            
+        def DenSizer():
+            
+            density,mattCoeff = getDensity()
+            denSizer = wx.BoxSizer(wx.HORIZONTAL)
+            denSizer.Add(wx.StaticText(dataDisplay,-1,' Density: '),0,wx.ALIGN_CENTER_VERTICAL)
             denTxt = wx.TextCtrl(dataDisplay,-1,'%.3f'%(density),style=wx.TE_READONLY)
             denTxt.SetBackgroundColour(VERY_LIGHT_GREY)
             denSizer.Add(denTxt,0,wx.ALIGN_CENTER_VERTICAL)        
             if generalData['Type'] == 'macromolecular' and mass > 0.0:
                 denSizer.Add(wx.StaticText(dataDisplay,-1,' Matthews coeff.: '),
                     0,wx.ALIGN_CENTER_VERTICAL)
-                mattTxt = wx.TextCtrl(dataDisplay,-1,'%.3f'%(Volume/mass),style=wx.TE_READONLY)
+                mattTxt = wx.TextCtrl(dataDisplay,-1,'%.3f'%(mattCoeff),style=wx.TE_READONLY)
                 mattTxt.SetBackgroundColour(VERY_LIGHT_GREY)
                 denSizer.Add(mattTxt,0,wx.ALIGN_CENTER_VERTICAL)
             return denSizer
@@ -887,7 +898,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         Indx = {}
         if len(generalData['AtomTypes']):
-            mainSizer.Add(DenSizer())
+            denSizer = DenSizer()
+            mainSizer.Add(denSizer)
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
             

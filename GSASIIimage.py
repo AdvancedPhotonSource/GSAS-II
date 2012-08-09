@@ -760,13 +760,6 @@ def FitStrSta(Image,StrSta,Controls,Masks):
         Ring,delt = makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)
         Ring = np.array(Ring).T
         ring['ImxyObs'] = np.array(Ring[:2])      #need to apply masks to this to eliminate bad points
-        [x,y] = np.array(makeIdealRing(ellipse)).T
-        if len(x):
-            Tth,azm = GetTthAzm(x,y,StaControls)
-            azm += Controls['azmthOff']     #account for detector rotation
-            th = Tth/2.
-            th += 180.*np.sum(StrSta['strain']*calcFij(StrSta['Sample phi'],0.,azm,th))/(np.pi*1.e6) #in degrees
-            Tth = th*2.
         
 
 def calcFij(omg,phi,azm,th):
@@ -807,7 +800,8 @@ def FitStrain(rings,p0,wave):
         print ptstr
         print sigstr
         
-    def strainCalc(E,xyd,wave):
-        x,y,dsp = xyd
-        tth = 2.0*npasind(wave/(2.*dsp))
+    def strainCalc(E,xyd,wave,phi):
+        th,azm,dsp = xyd
+        th0 = npasind(wave/(2.*dsp))
+        dth = 180.*np.sum(StrSta['strain']*calcFij(phi,0.,azm,th))/(np.pi*1.e6) #in degrees
         

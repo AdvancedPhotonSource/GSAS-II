@@ -1246,6 +1246,33 @@ class GSASII(wx.Frame):
             panel.Fit()
             self.Fit()
 
+        def OnScaleChange(self,event):
+            id = event.GetId()
+            value = self.FindWindowById(id).GetValue()
+            try:
+                self.data[id][0] = float(value)
+                self.FindWindowById(id).SetValue('%.3f'%(self.data[id][0]))
+            except ValueError:
+                if value and '-' not in value[0]:
+                    print 'bad input - numbers only'
+                    self.FindWindowById(id).SetValue('0.000')
+            
+        def OnNameChange(self,event):
+            self.data[-1] = self.name.GetValue() 
+            
+        def OnOk(self,event):
+            parent = self.GetParent()
+            parent.Raise()
+            self.EndModal(wx.ID_OK)              
+            
+        def OnCancel(self,event):
+            parent = self.GetParent()
+            parent.Raise()
+            self.EndModal(wx.ID_CANCEL)              
+            
+        def GetData(self):
+            return self.data
+            
     class ConstraintDialog(wx.Dialog):
         '''Window to edit Constraint values
         '''

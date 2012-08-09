@@ -232,7 +232,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             Y /= scaley
             amin = min(amin,a)
             amax = max(amax,a)
-            ring.append([X,Y,dsp])
+            if [X,Y,dsp] not in ring:
+                ring.append([X,Y,dsp])
     delt = amax-amin
     if len(ring) < 20:             #want more than 20 deg
         return [],delt > 90
@@ -754,12 +755,20 @@ def FitStrSta(Image,StrSta,Controls,Masks):
     pixSize = StaControls['pixelSize']
     scalex = 1000./pixSize[0]
     scaley = 1000./pixSize[1]
+    rings = []
 
-    for ring in StrSta['d-zero']:
+    for ring in StrSta['d-zero']:       #get observed x,y,d points for the d-zeros
         ellipse = GetEllipse(ring['Dset'],StaControls)
         Ring,delt = makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)
         Ring = np.array(Ring).T
         ring['ImxyObs'] = np.array(Ring[:2])      #need to apply masks to this to eliminate bad points
+        Ring[:2] = GetTthAzm(Ring[0],Ring[1],StaControls)       #convert x,y to tth,azm
+        Ring[0] /= 2.                                           #convert to theta
+        if len(rings):
+            rings = np.concatenate((rings,Ring),axis=1)
+        else:
+            rings = np.array(Ring)
+        
         
 
 def calcFij(omg,phi,azm,th):

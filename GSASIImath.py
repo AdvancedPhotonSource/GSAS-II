@@ -156,6 +156,19 @@ def getVCov(varyNames,varyList,covMatrix):
                 vcov[i1][i2] = 0.0
     return vcov
 
+def getMass(generalData):
+    mass = 0.
+    for i,elem in enumerate(generalData['AtomTypes']):
+        mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
+    return mass    
+
+def getDensity(generalData):
+    
+    mass = getMass(generalData)
+    Volume = generalData['Cell'][7]
+    density = mass/(0.6022137*Volume)
+    return density,Volume/mass
+    
 def getRestDist(XYZ,Amat):
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
 

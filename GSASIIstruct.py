@@ -838,7 +838,10 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
             fmt = {0:'%7s',1:'%7s',3:'%10.5f',4:'%10.5f',5:'%10.5f',6:'%8.3f',10:'%8.5f',
                 11:'%8.5f',12:'%8.5f',13:'%8.5f',14:'%8.5f',15:'%8.5f',16:'%8.5f'}
             noFXsig = {3:[10*' ','%10s'],4:[10*' ','%10s'],5:[10*' ','%10s'],6:[8*' ','%8s']}
+            for atyp in General['AtomTypes']:       #zero composition
+                General['NoAtoms'][atyp] = 0.
             for i,at in enumerate(Atoms):
+                General['NoAtoms'][at[1]] += at[6]*float(at[8])     #new composition
                 name = fmt[0]%(at[0])+fmt[1]%(at[1])+':'
                 valstr = ' values:'
                 sigstr = ' sig   :'

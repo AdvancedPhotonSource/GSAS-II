@@ -408,10 +408,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData['Color'] = []
         generalData['Mydir'] = G2frame.dirname
         cx,ct,cs,cia = [3,1,7,9]
-        generalData['AtomPtrs'] = [cx,ct,cs,cia]
         if generalData['Type'] =='macromolecular':
             cx,ct,cs,cia = [6,4,10,12]
-            generalData['AtomPtrs'] = [cx,ct,cs,cia]
+        generalData['AtomPtrs'] = [cx,ct,cs,cia]
         for atom in atomData:
             atom[ct] = atom[ct].lower().capitalize()              #force to standard form
             if generalData['AtomTypes'].count(atom[ct]):
@@ -619,7 +618,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Obj.SetValue("%.3f"%(cell[1+ObjId]))                        
                 cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
                 volVal.SetValue("%.3f"%(cell[7]))
-                density,mattCoeff = getDensity()
+                density,mattCoeff = G2mth.getDensity(generalData)
                 denSizer[1].SetValue('%.3f'%(density))
                 if denSizer[2]:
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
@@ -663,7 +662,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['Isotope'][item] = isotope
                 indx = generalData['AtomTypes'].index(item)
                 data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
-                density,mattCoeff = getDensity()
+                density,mattCoeff = G2mth.getDensity(generalData)
                 denSizer[1].SetValue('%.3f'%(density))
                 if denSizer[2]:
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
@@ -715,18 +714,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 elemSizer.Add(colorTxt,0,wx.ALIGN_CENTER_VERTICAL)
             return elemSizer
         
-        def getDensity():
-            
-            mass = 0.
-            for i,elem in enumerate(generalData['AtomTypes']):
-                mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
-            Volume = generalData['Cell'][7]
-            density = mass/(0.6022137*Volume)
-            return density,Volume/mass
-            
         def DenSizer():
             
-            density,mattCoeff = getDensity()
+            density,mattCoeff = G2mth.getDensity(generalData)
             denSizer = wx.BoxSizer(wx.HORIZONTAL)
             denSizer.Add(wx.StaticText(dataDisplay,-1,' Density: '),0,wx.ALIGN_CENTER_VERTICAL)
             denTxt = wx.TextCtrl(dataDisplay,-1,'%.3f'%(density),style=wx.TE_READONLY)

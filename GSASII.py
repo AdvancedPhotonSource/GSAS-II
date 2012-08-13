@@ -2108,7 +2108,10 @@ class GSASII(wx.Frame):
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                 if parentName:
                     parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
-                    itemId = G2gd.GetPatternTreeItemId(self, parentId, oldName)
+                    if parentId:
+                        itemId = G2gd.GetPatternTreeItemId(self, parentId, oldName)
+                    else:
+                        itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
                     self.PatternTree.SelectItem(itemId)
                 elif Id:
                     self.PatternTree.SelectItem(Id)

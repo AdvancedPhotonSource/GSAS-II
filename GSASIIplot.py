@@ -325,7 +325,7 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('Powder Patterns'):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
-            OnPlotKeyPress(event)
+            wx.CallAfter(OnPlotKeyPress,event)
                         
     def OnPlotKeyPress(event):
         newPlot = False
@@ -923,7 +923,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index(type):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
-            OnPlotKeyPress(event)
+            wx.CallAfter(OnPlotKeyPress,event)
                         
     def OnMotion(event):
         xpos = event.xdata
@@ -1813,7 +1813,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
             if event.key in 'l':
-                OnImPlotKeyPress(event)
+                wx.CallAfter(OnImPlotKeyPress,event)
                         
     def OnImPick(event):
         if G2frame.PatternTree.GetItemText(G2frame.PickId) not in ['Image Controls','Masks']:

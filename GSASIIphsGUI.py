@@ -716,6 +716,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         def DenSizer():
             
+            mass = G2mth.getMass(generalData)
             density,mattCoeff = G2mth.getDensity(generalData)
             denSizer = wx.BoxSizer(wx.HORIZONTAL)
             denSizer.Add(wx.StaticText(dataDisplay,-1,' Density: '),0,wx.ALIGN_CENTER_VERTICAL)

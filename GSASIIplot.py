@@ -2902,7 +2902,7 @@ def PlotStructure(G2frame,data):
 #            else:
 #                G2frame.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
             RenderUnitVectors(x,y,z)
-        Backbone = []
+        Backbones = {}
         BackboneColor = []
         time0 = time.time()
 #        glEnable(GL_BLEND)
@@ -2977,7 +2977,9 @@ def PlotStructure(G2frame,data):
                 RenderPolyhedra(x,y,z,Faces,color)
             elif atom[cs] == 'backbone':
                 if atom[ct-1].split()[0] in ['C','N']:
-                    Backbone.append(list(np.inner(Amat,np.array([x,y,z]))))
+                    if atom[2] not in Backbones:
+                        Backbones[atom[2]] = []
+                    Backbones[atom[2]].append(list(np.inner(Amat,np.array([x,y,z]))))
                     BackboneColor.append(list(color))
                     
             if atom[cs+1] == 'type':
@@ -3001,8 +3003,10 @@ def PlotStructure(G2frame,data):
                     RenderMapPeak(x,y,z,Gr)
                 else:
                     RenderMapPeak(x,y,z,Wt)
-        if Backbone:
-            RenderBackbone(Backbone,BackboneColor,bondR)
+        if Backbones:
+            for chain in Backbones:
+                Backbone = Backbones[chain]
+                RenderBackbone(Backbone,BackboneColor,bondR)
 #        print time.time()-time0
         Page.canvas.SwapBuffers()
        

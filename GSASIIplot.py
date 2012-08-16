@@ -59,7 +59,7 @@ class G2PlotMpl(wx.Panel):
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 10
-        self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,7))
+        self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas)
 

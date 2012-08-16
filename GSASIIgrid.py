@@ -1437,7 +1437,7 @@ def UpdateConstraints(G2frame,data):
             constDel.Bind(wx.EVT_BUTTON,OnConstDel)
             Indx[constDel.GetId()] = [Id,name]
             constSizer.Add(constDel)             # delete button
-            constSizer.Add(wx.StaticText(pageDisplay,-1,typeString))
+            constSizer.Add(wx.StaticText(pageDisplay,-1,typeString),0,wx.ALIGN_CENTER_VERTICAL)
             EqSizer = wx.BoxSizer(wx.VERTICAL)
             for s in eqString:
                 EqSizer.Add(wx.StaticText(pageDisplay,-1,s),0,wx.ALIGN_CENTER_VERTICAL)

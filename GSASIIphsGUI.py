@@ -619,9 +619,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
                 volVal.SetValue("%.3f"%(cell[7]))
                 density,mattCoeff = G2mth.getDensity(generalData)
-                denSizer[1].SetValue('%.3f'%(density))
-                if denSizer[2]:
-                    denSizer[2].SetValue('%.3f'%(mattCoeff))
+                if denSizer:
+                    denSizer[1].SetValue('%.3f'%(density))
+                    if denSizer[2]:
+                        denSizer[2].SetValue('%.3f'%(mattCoeff))
                 generalData['Cell'] = cell
             
             cell = generalData['Cell']
@@ -887,6 +888,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add((5,5),0)
         
         Indx = {}
+        denSizer = None
         if len(generalData['AtomTypes']):
             denSizer = DenSizer()
             mainSizer.Add(denSizer[0])

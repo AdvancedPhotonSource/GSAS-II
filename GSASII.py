@@ -160,12 +160,10 @@ class GSASII(wx.Frame):
             text='Rename data') 
         parent.Append(help='', id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,
             text='Delete data')
-#        self.Bind(wx.EVT_MENU, self.OnPwdrRead, id=wxID_PWDRREAD)
         self.Bind(wx.EVT_MENU, self.OnPwdrSum, id=wxID_PWDSUM)
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=wxID_READPEAKS)
         self.Bind(wx.EVT_MENU, self.OnImageRead, id=wxID_IMGREAD)
         self.Bind(wx.EVT_MENU, self.OnImageSum, id=wxID_IMSUM)
-#        self.Bind(wx.EVT_MENU, self.OnSnglRead, id=wxID_SNGLREAD)
         self.Bind(wx.EVT_MENU, self.OnAddPhase, id=wxID_ADDPHASE)
         self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=wxID_DELETEPHASE)
         self.Bind(wx.EVT_MENU, self.OnRenameData, id=wxID_DATARENAME)
@@ -288,6 +286,8 @@ class GSASII(wx.Frame):
                 else:
                     filename = dlg.GetPath()
                     filelist = [filename,]
+                path = dlg.GetDirectory()           # to get Mac/Linux to change directory!
+                os.chdir(path)
             else: # cancel was pressed
                 return []
         finally:

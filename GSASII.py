@@ -286,8 +286,7 @@ class GSASII(wx.Frame):
                 else:
                     filename = dlg.GetPath()
                     filelist = [filename,]
-                path = dlg.GetDirectory()           # to get Mac/Linux to change directory!
-                os.chdir(path)
+                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
             else: # cancel was pressed
                 return []
         finally:
@@ -1047,6 +1046,7 @@ class GSASII(wx.Frame):
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
                 self.PatternTree.Expand(Id)
                 self.PatternTree.SelectItem(Id)
+                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
         finally:
             dlg.Destroy()
             
@@ -1126,8 +1126,11 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
                         self.Image = Id
+                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
                 self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))             #show last one
         finally:
+            path = dlg.GetDirectory()           # to get Mac/Linux to change directory!
+            os.chdir(path)
             dlg.Destroy()
 
     def CheckNotebook(self):
@@ -1725,6 +1728,7 @@ class GSASII(wx.Frame):
                     if Id:
                         self.PatternTree.SelectItem(Id)
                     self.CheckNotebook()
+                    os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
             finally:
                 dlg.Destroy()
 
@@ -1765,7 +1769,7 @@ class GSASII(wx.Frame):
                 self.SetTitle("GSAS-II data tree: "+
                               os.path.split(self.GSASprojectfile)[1])
                 G2IO.ProjFileSave(self)
-                self.dirname = dlg.GetDirectory()
+                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
         finally:
             dlg.Destroy()
 

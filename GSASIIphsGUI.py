@@ -1769,13 +1769,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     atomData[r][c] = drawAtoms.GetCellValue(r,c)
                     FindBondsDraw()
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
-                    color = atomData[r][c]
-                    colors = wx.ColourData()
-                    colors.SetChooseFull(True)
-                    colors.SetCustomColour(0,color)
-                    colors.SetColour(color)
-                    dlg = wx.ColourDialog(G2frame,colors)
-                    dlg.GetColourData().SetCustomColour(0,color)
+                    dlg = wx.ColourDialog(G2frame)
                     if dlg.ShowModal() == wx.ID_OK:
                         color = dlg.GetColourData().GetColour()
                         attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
@@ -1785,7 +1779,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         drawingData['Atoms'][r][c] = color
                         drawAtoms.SetAttr(i,cs+2,attr)
                     dlg.Destroy()
-                    event.StopPropagation()
+#                    event.StopPropagation()
                     UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
                     
@@ -1912,12 +1906,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         break
             colors = wx.ColourData()
             colors.SetChooseFull(True)
-            for i,color in enumerate(atmColors):
-                colors.SetCustomColour(i,color)
-            dlg = wx.ColourDialog(G2frame,colors)
+            dlg = wx.ColourDialog(G2frame)
             if dlg.ShowModal() == wx.ID_OK:
                 for i in range(len(atmColors)):                    
-                    atmColors[i] = dlg.GetColourData().GetCustomColour(i)
+                    atmColors[i] = dlg.GetColourData().GetColour()
                 colorDict = dict(zip(atmTypes,atmColors))
                 for r in indx:
                     color = colorDict[atomData[r][ct]]

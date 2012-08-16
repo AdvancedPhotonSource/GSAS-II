@@ -626,15 +626,16 @@ def PlotPatterns(G2frame,newPlot=False):
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
     Ymax = 1.0
     lenX = 0
-    if G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
-        Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-        HKL = []
-        if Phases:
-            for peak in Phases[G2frame.RefList]:
-                HKL.append(peak[:6])
-            HKL = np.array(HKL)
-    else:
-        HKL = np.array(G2frame.HKL)
+    if PickId:
+        if G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
+            Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            HKL = []
+            if Phases:
+                for peak in Phases[G2frame.RefList]:
+                    HKL.append(peak[:6])
+                HKL = np.array(HKL)
+        else:
+            HKL = np.array(G2frame.HKL)
     for Pattern in PlotList:
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))

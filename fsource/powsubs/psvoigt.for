@@ -24,7 +24,7 @@
       REAL*4        COFG(6),COFL(6)     !Linear combination coeffs
       REAL*4        ACOFG(7),ACOFL(7)   
       REAL*4        GNORM               !Gaussian Normalization constant
-      REAL*4        COFT(6),COFN(3)     
+      REAL*4        COFT(6),COFN(3) 
 
 !SUBROUTINES CALLED:
 
@@ -36,7 +36,6 @@
       DATA SQ2PI/2.506628275/            !SQRT(2PI)
       DATA COFT/1.0,2.69269,2.42843,4.47163,0.07842,1.0/
       DATA COFN/1.36603,-0.47719,0.11116/
-      DATA ITYPE/1/
 
 !CODE:
 
@@ -80,6 +79,86 @@
       DFWDL = 0.2*DSDL*FWHM/SUMHM
       DFRDL = (1.0-FRAC*DFWDL)/FWHM
       DFDG = DEDF*DFRDL*(TL-TG)+(ETA*DTLDFW+TS)*DFWDL
+
+      RETURN
+      END
+
+      SUBROUTINE PSVOIGT2(DX,SIG,GAM,FUNC,DFDX,DFDS,DFDG)
+
+!PURPOSE: Compute function & derivatives pseudovoigt
+!pseudo Voigt W.I.F. David, J. Appl. Cryst. 19, 63-64 (1986)
+
+      INCLUDE       '../INCLDS/COPYRIGT.FOR' 
+
+!PSEUDOCODE:
+
+!CALLING ARGUMENTS:
+
+      REAL*4        DX                  !Delta-x from center
+      REAL*4        SIG                 !Gaussian variance
+      REAL*4        GAM                 !Lorentzian FWHM
+      REAL*4        FUNC                !Value of pseudo-Voigt at DX
+      REAL*4        DFDX                !dF/dx
+      REAL*4        DFDS                !dF/ds
+      REAL*4        DFDG                !dF/dg
+
+!INCLUDE STATEMENTS:
+
+!LOCAL VARIABLES:
+
+      REAL*4        GNORM               !Gaussian Normalization constant
+      REAL*4        COFEG(7),COFEL(7),COFGG(6),COFGL(6)    
+
+!SUBROUTINES CALLED:
+
+!FUNCTION DEFINITIONS:
+
+!DATA STATEMENTS:
+
+      DATA STOFW/2.35482005/            !2*SQRT(2LN2)
+      DATA SQ2PI/2.506628275/            !SQRT(2PI)
+      DATA ITYPE/1/
+      DATA COFEG/0.00268,0.75458,2.88898,-3.85144,-.55765,3.03824,
+     1  -1.27539/
+      DATA COFEL/1.35248,0.41168,-2.18731,6.42452,-10.29036,6.88093,
+     1  -1.59194/
+      DATA COFGG/-.50734,-.22744,1.63804,-2.28532,1.31943,0.0/
+      DATA COFGL/-.99725,1.14594,2.56150,-6.52088,5.82647,-1.91086/
+
+!CODE:
+
+      SQSG = MAX(SQRT(SIG),0.001)
+      FWHG = STOFW*SQSG
+      FW = FWHG+GAM
+      R1 = FWHG/FW
+      R17 = R1
+      R2 = GAM/FWHG
+      R27 = R2
+      DSDL = 0.0
+      DSDG = 0.0
+      ETAG = 0.0
+      ETAL = 0.0
+      DO ITRM=1,7
+        ETAG = ETAG+R17*COFEG(ITRM)
+        ETAL = ETAL+R27*COFEL(ITRM)
+        R17 = R17*R1
+        R27 = R27*R2
+      END DO
+      WG = 1.0
+      WL = 1.0
+      R16 = R1
+      R26 = R2
+      DO ITRM=1,6
+        WG = WG+R26*COFGG(ITRM)
+        WL = WL+R16*COFGL(ITRM)
+        R16 = R16*R1
+        R26 = R26*R2
+      END DO
+      CALL LORENTZ(DX,WL,TL,DTLDT,DTLDFW)
+      SIGP = (WG/STOFW)**2
+      EX = MAX(-20.0,-0.5*DX**2/SIGP)
+      TG = STOFW*EXP(EX)/(SQ2PI*FWHM)
+      FUNC = ETAL*TL+ETAG*TG
 
       RETURN
       END

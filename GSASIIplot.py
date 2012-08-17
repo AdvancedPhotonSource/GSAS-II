@@ -2780,7 +2780,9 @@ def PlotStructure(G2frame,data):
         glPopMatrix()
 
     def RenderMapPeak(x,y,z,color):
-        vecs = np.array([[[-.01,0,0],[.01,0,0]],[[0,-.01,0],[0,.01,0]],[[0,0,-.01],[0,0,.01]]])
+        vecs = np.array([[[-.1/cell[0],0,0],[.1/cell[0],0,0]],
+            [[0,-.1/cell[1],0],[0,.1/cell[1],0]],
+            [[0,0,-.1/cell[2]],[0,0,.1/cell[2]]]])
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(3)

@@ -795,10 +795,11 @@ def ChargeFlip(data,reflData,pgbar):
         except FloatingPointError:
             Rcf = 100.
             break
+    del MEhkl,Emask,DEhkl,CErho,CEsig
     np.seterr(**old)
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
-    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
+    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
     roll = findOffset(SGData,CEhkl)
         
     mapData['Rcf'] = Rcf
@@ -820,11 +821,24 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         return True
         
     def noDuplicate(xyz,peaks,Amat):
-        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
+        XYZ = np.inner(Amat,xyz)
+        if True in [np.allclose(XYZ,np.inner(Amat,peak),atol=0.5) for peak in peaks]:
             print ' Peak',xyz,' <0.5A from another peak'
             return False
         return True
-                        
+                            
+    def fixSpecialPos(xyz,SGData,Amat):
+        equivs = G2spc.GenAtom(xyz,SGData,Move=True)
+        X = []
+        xyzs = [equiv[0] for equiv in equivs]
+        for x in xyzs:
+            if np.sqrt(np.sum(np.inner(Amat,xyz-x)**2,axis=0))<0.5:
+                X.append(x)
+        if len(X) > 1:
+            return np.average(X,axis=0)
+        else:
+            return xyz
+        
     def findRoll(rhoMask,mapHalf):
         indx = np.array(ma.nonzero(rhoMask)).T
         rhoList = np.array([rho[i,j,k] for i,j,k in indx])
@@ -905,31 +919,47 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         else:
             if keepDup:
                 if noDuplicate(peak,peaks,Amat):
+                    peak = fixSpecialPos(peak,SGData,Amat)
                     peaks.append(peak)
                     mags.append(x1[0])
             elif noEquivalent(peak,peaks,SGData) and x1[0] > 0.:
                 peaks.append(peak)
                 mags.append(x1[0])
             GoOn = Pgbar.Update(len(peaks),newmsg='%s%d'%('No. Peaks found =',len(peaks)))[0]
-            if not GoOn or len(peaks) > 300:
+            if not GoOn or len(peaks) > 500:
                 break
         rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(x1,rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
         rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
     return np.array(peaks),np.array([mags,]).T
 
 def PeaksUnique(data,Ind):
+
+    def noDuplicate(xyz,peaks,Amat):
+        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
+            return False
+        return True
+                            
     generalData = data['General']
     cell = generalData['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     A = G2lat.cell2A(cell)
     SGData = generalData['SGData']
     mapPeaks = data['Map Peaks']
+    Indx = {}
+    XYZ = {}
     for ind in Ind:
-        XYZ = np.array(mapPeaks[ind][1:])                        
-        Equiv = G2spc.GenAtom(XYZ,SGData,Move=True)[1:]     #remove self
-        for equiv in Equiv:                                 #special position fixer
-                Dx = XYZ-np.array(equiv[0])
-                dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
-                if dist < 0.5:
-                    print equiv[0],Dx,dist
-                    mapPeaks[ind][1:] -= Dx/2.
+        XYZ[ind] = np.array(mapPeaks[ind][1:])
+        Indx[ind] = True
+    for ind in Ind:
+        if Indx[ind]:
+            xyz = XYZ[ind]
+            for jnd in Ind:
+                if ind != jnd and Indx[jnd]:                        
+                    Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
+                    xyzs = np.array([equiv[0] for equiv in Equiv])
+                    Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
+    Ind = []
+    for ind in Indx:
+        if Indx[ind]:
+            Ind.append(ind)
+    return Ind

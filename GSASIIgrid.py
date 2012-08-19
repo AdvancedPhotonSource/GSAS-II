@@ -38,8 +38,8 @@ if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global
 htmlFirstUse = True
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
-    wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE,
-] = [wx.NewId() for item in range(8)]
+    wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(3)]
@@ -613,8 +613,10 @@ class DataFrame(wx.Frame):
         self.MapPeaksMenu.Append(menu=MyHelp(self,helpType='Map peaks'),title='&Help')
         self.MapPeaksEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks', 
             help='Move selected peaks to atom list')
+        self.MapPeaksEdit.Append(id=wxID_PEAKSDA, kind=wx.ITEM_NORMAL,text='Calc dist/ang', 
+            help='Calculate distance or angle for selection')
         self.MapPeaksEdit.Append(id=wxID_PEAKSUNIQUE, kind=wx.ITEM_NORMAL,text='Unique peaks', 
-            help='Reduce map peak list to unique set')
+            help='Select unique set')
         self.MapPeaksEdit.Append(id=wxID_PEAKSDELETE, kind=wx.ITEM_NORMAL,text='Delete peaks', 
             help='Delete selected peaks')
         self.MapPeaksEdit.Append(id=wxID_PEAKSCLEAR, kind=wx.ITEM_NORMAL,text='Clear peaks', 
@@ -623,7 +625,8 @@ class DataFrame(wx.Frame):
 # end of GSAS-II menu definitions
         
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
-        wx.Frame.__init__(self,parent=parent,style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,
+        wx.Frame.__init__(self,parent=parent,
+            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT ^ wx.CLOSE_BOX,
             size=size,pos=pos,title='GSAS-II data display')
         self._init_menus()
         if name:

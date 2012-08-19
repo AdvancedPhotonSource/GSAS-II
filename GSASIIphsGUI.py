@@ -44,14 +44,20 @@ cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
 
 class SymOpDialog(wx.Dialog):
-    def __init__(self,parent,SGData,New=True):
+    def __init__(self,parent,SGData,New=True,ForceUnit=False):
         wx.Dialog.__init__(self,parent,-1,'Select symmetry operator',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         panel = wx.Panel(self)
         self.SGData = SGData
         self.New = New
-        self.OpSelected = [0,0,0,[0,0,0],False]
+        self.Force = ForceUnit
+        self.OpSelected = [0,0,0,[0,0,0],False,False]
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if ForceUnit:
+            choice = ['No','Yes']
+            self.force = wx.RadioBox(panel,-1,'Force to unit cell?',choices=choice)
+            self.force.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.force,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add((5,5),0)
         if SGData['SGInv']:
             choice = ['No','Yes']
@@ -123,6 +129,8 @@ class SymOpDialog(wx.Dialog):
             self.OpSelected[3][i] = float(self.cell[i].GetValue())
         if self.New:
             self.OpSelected[4] = self.new.GetSelection()
+        if self.Force:
+            self.OpSelected[5] = self.force.GetSelection()
 
     def GetSelection(self):
         return self.OpSelected
@@ -1428,7 +1436,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg = SymOpDialog(G2frame,SGData,True)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell,New = dlg.GetSelection()
+                    Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
                     Cell = np.array(Cell)
                     cent = SGData['SGCen'][Cent]
                     M,T = SGData['SGOps'][Opr]
@@ -1964,7 +1972,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg = SymOpDialog(G2frame,SGData,False)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell,New = dlg.GetSelection()
+                    Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
                     Cell = np.array(Cell)
                     cent = SGData['SGCen'][Cent]
                     M,T = SGData['SGOps'][Opr]
@@ -2009,7 +2017,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg = SymOpDialog(G2frame,SGData,False)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell,New = dlg.GetSelection()
+                    Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
                     Cell = np.array(Cell)
                     cent = SGData['SGCen'][Cent]
                     M,T = SGData['SGOps'][Opr]
@@ -3923,10 +3931,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapPeaks = data['Map Peaks']
             Ind = MapPeaks.GetSelectedRows()
             if Ind:
-                G2mth.PeaksUnique(data,Ind)
-                FillMapPeaksGrid()
+                Ind = G2mth.PeaksUnique(data,Ind)
+                for r in range(MapPeaks.GetNumberRows()):
+                    if r in Ind:
+                        MapPeaks.SelectRow(r,addToSelected=True)
+                    else:
+                        MapPeaks.DeselectRow(r)
                 G2plt.PlotStructure(G2frame,data)
     
+    def OnPeaksDA(event):
+        #distance, angle 
+        indx = MapPeaks.GetSelectedRows()
+        if len(indx) not in [2,3]:
+            print '**** ERROR - wrong number of atoms for distance or angle calculation'
+            return
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
+        mapPeaks = data['Map Peaks']
+        xyz = []
+        for i in indx:
+            xyz.append(mapPeaks[i][1:4])
+        if len(indx) == 2:
+            print ' distance for atoms %s = %.3f'%(str(indx),G2mth.getRestDist(xyz,Amat))
+        else:
+            print ' angle for atoms %s = %.2f'%(str(indx),G2mth.getRestAngle(xyz,Amat))
+                    
+                
     def OnFourierMaps(event):
         generalData = data['General']
         mapData = generalData['Map']
@@ -3991,7 +4021,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         mapData = generalData['Map']
         if len(mapData['rho']):
-            pgbar = wx.ProgressDialog('Map search','No. Peaks found =',301.0, 
+            pgbar = wx.ProgressDialog('Map search','No. Peaks found =',501.0, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
             screenSize = wx.ClientDisplayRect()
             Size = pgbar.GetSize()
@@ -4010,6 +4040,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataDisplay.ChangeSelection(Page)
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
@@ -4135,6 +4166,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Map peaks':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)

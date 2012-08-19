@@ -2335,6 +2335,10 @@ def PlotStructure(G2frame,data):
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
+    mD = 0.1
+    mV = np.array([[[-mD,0,0],[mD,0,0]],[[0,-mD,0],[0,mD,0]],[[0,0,-mD],[0,0,mD]]])
+    mapPeakVecs = np.inner(mV,Bmat)
+
     uColors = [Rd,Gr,Bl,Wt, Wt,Wt,Wt,Wt, Wt,Wt,Wt,Wt]
     altDown = False
     shiftDown = False
@@ -2408,6 +2412,8 @@ def PlotStructure(G2frame,data):
         Draw()
         
     def OnMouseMove(event):
+        if event.ShiftDown():           #don't want any inadvertant moves when picking
+            return
         newxy = event.GetPosition()
         page = getSelection()
         if event.ControlDown() and drawingData['showABC']:
@@ -2780,16 +2786,13 @@ def PlotStructure(G2frame,data):
         glPopMatrix()
 
     def RenderMapPeak(x,y,z,color):
-        vecs = np.array([[[-.1/cell[0],0,0],[.1/cell[0],0,0]],
-            [[0,-.1/cell[1],0],[0,.1/cell[1],0]],
-            [[0,0,-.1/cell[2]],[0,0,.1/cell[2]]]])
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(3)
         glColor3fv(color)
         glPushMatrix()
         glBegin(GL_LINES)
-        for vec in vecs:
+        for vec in mapPeakVecs:
             glVertex3fv(vec[0]+xyz)
             glVertex3fv(vec[1]+xyz)
         glEnd()

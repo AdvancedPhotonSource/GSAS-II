@@ -2350,7 +2350,7 @@ def PlotStructure(G2frame,data):
         import Image
         Draw()                          #make sure plot is fresh!!
         mode = cb.GetValue()
-        Fname = Mydir+'\\'+generalData['Name']+'.'+mode
+        Fname = os.path.joint(Mydir,generalData['Name']+'.'+mode)
         size = Page.canvas.GetSize()
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         if mode in ['jpeg',]:

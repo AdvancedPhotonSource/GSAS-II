@@ -2834,7 +2834,7 @@ def PlotStructure(G2frame,data):
                 if rho[I,J,K] < 0.:
                     RenderSmallSphere(x,y,z,0.1*alpha,Rd)
                 else:
-                    RenderSmallSphere(x,y,z,0.1*alpha,Bl)
+                    RenderSmallSphere(x,y,z,0.1*alpha,Gr)
                             
     def Draw():
         mapData = generalData['Map']

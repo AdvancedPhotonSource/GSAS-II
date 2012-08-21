@@ -675,11 +675,12 @@ def printRho(SGLaue,rho,rhoMax):
                 print line+'\n'
 ## keep this
                 
-def findOffset(SGData,Fhkl):    
+def findOffset(SGData,A,Fhkl):    
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
     hklShape = Fhkl.shape
     steps = np.array(hklShape)
+    Hmax = 2*np.asarray(G2lat.getHKLmax(4.5,SGData,A),dtype='i')
     Fmax = np.max(np.absolute(Fhkl))
     hklHalf = np.array(hklShape)/2
     sortHKL = np.argsort(Fhkl.flatten())
@@ -695,7 +696,7 @@ def findOffset(SGData,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while i < 20:
+    while i < 20 and len(DH) < 50:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
@@ -709,19 +710,20 @@ def findOffset(SGData,Fhkl):
             ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-Phi[j+1])
             dH = H-hkl
             dang = ang-ang0
-            if np.any(np.abs(dH)-6 > 0):    #keep low order DHs
+            if np.any(np.abs(dH)-Hmax > 0):    #keep low order DHs
                 continue
             DH.append(dH)
             Dphi.append((dang+0.5) % 1.0)
         i += 1
     DH = np.array(DH)
+    print ' map offset no.of terms: %d'%(len(DH))
     Dphi = np.array(Dphi)
     X,Y,Z = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2]]
     XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
     Mmap = np.reshape(np.sum(((np.dot(XYZ,DH.T)+.5)%1.-Dphi)**2,axis=1),newshape=steps)
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    print ' map offset chi**2: %.3f, map offset: %d %d %d, no. terms: %d'%(chisq,DX[0],DX[1],DX[2],len(DH))
+    print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
     return DX
     
 def ChargeFlip(data,reflData,pgbar):
@@ -800,7 +802,7 @@ def ChargeFlip(data,reflData,pgbar):
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
     print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
-    roll = findOffset(SGData,CEhkl)
+    roll = findOffset(SGData,A,CEhkl)
         
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
@@ -913,13 +915,13 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         if np.any(x1 < 0):
             break
         peak = (np.array(x1[1:4])-rMI)/incre
+        peak = fixSpecialPos(peak,SGData,Amat)
         if not len(peaks):
             peaks.append(peak)
             mags.append(x1[0])
         else:
             if keepDup:
                 if noDuplicate(peak,peaks,Amat):
-                    peak = fixSpecialPos(peak,SGData,Amat)
                     peaks.append(peak)
                     mags.append(x1[0])
             elif noEquivalent(peak,peaks,SGData) and x1[0] > 0.:

@@ -1433,7 +1433,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Atoms']
             generalData = data['General']
             SGData = generalData['SGData']
-            dlg = SymOpDialog(G2frame,SGData,True)
+            dlg = SymOpDialog(G2frame,SGData,True,True)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
@@ -1446,6 +1446,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if Inv:
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
+                        if Force:
+                            XYZ = G2spc.MoveToUnitCell(XYZ)
                         if New:
                             atom = copy.copy(atomData[ind])
                         else:
@@ -1969,7 +1971,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
             SGData = generalData['SGData']
-            dlg = SymOpDialog(G2frame,SGData,False)
+            dlg = SymOpDialog(G2frame,SGData,False,True)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
@@ -1982,6 +1984,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if Inv:
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
+                        if Force:
+                            XYZ = G2spc.MoveToUnitCell(XYZ)
                         if noDuplicate(XYZ,atomData):
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = XYZ
@@ -2014,7 +2018,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
             SGData = generalData['SGData']
-            dlg = SymOpDialog(G2frame,SGData,False)
+            dlg = SymOpDialog(G2frame,SGData,False,True)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
@@ -2027,6 +2031,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if Inv:
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
+                        if Force:
+                            XYZ = G2spc.MoveToUnitCell(XYZ)
                         atom = atomData[ind]
                         atom[cx:cx+3] = XYZ
                         atomOp = atom[cx+3]

@@ -22,17 +22,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>16</o:Revision>
-  <o:TotalTime>275</o:TotalTime>
+  <o:Revision>18</o:Revision>
+  <o:TotalTime>293</o:TotalTime>
   <o:Created>2012-05-05T16:28:00Z</o:Created>
-  <o:LastSaved>2012-07-03T19:35:00Z</o:LastSaved>
+  <o:LastSaved>2012-08-21T14:48:00Z</o:LastSaved>
   <o:Pages>9</o:Pages>
-  <o:Words>1831</o:Words>
-  <o:Characters>10439</o:Characters>
+  <o:Words>1902</o:Words>
+  <o:Characters>10843</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>86</o:Lines>
-  <o:Paragraphs>24</o:Paragraphs>
-  <o:CharactersWithSpaces>12246</o:CharactersWithSpaces>
+  <o:Lines>90</o:Lines>
+  <o:Paragraphs>25</o:Paragraphs>
+  <o:CharactersWithSpaces>12720</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -598,7 +598,8 @@ p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast
 	letter-spacing:.25pt;
 	mso-font-kerning:14.0pt;}
 a:link, span.MsoHyperlink
-	{mso-style-priority:99;
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
 	color:blue;
 	text-decoration:underline;
 	text-underline:single;}
@@ -1413,9 +1414,9 @@ src="Fit%20Peaks_files/image010.png" v:shapes="Picture_x0020_9"><![endif]></span
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Now
-add refinement of the peak positions. This can be done by clicking on all the
-refinement flags for the individual peaks or it is possible to set them all at
-the same time using this recipe: </p>
+add refinement of the peak positions. This can be done by clicking on all the refinement
+flags for the individual peaks or it is possible to set them all at the same
+time using this recipe: </p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l2 level2 lfo6'><![if !supportLists]><span
@@ -1428,7 +1429,7 @@ example the first peak position. A black box appears around the value. </p>
 text-indent:-.25in;mso-list:l2 level2 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>b.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-class=GramE>double-click</span> on the refine label above the peak position
+class=GramE>single-click</span> on the refine label above the peak position
 check-boxes. The entire column of checkboxes is highlighted in blue. Press the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
@@ -1437,25 +1438,38 @@ style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-ser
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
 minor-latin'>n</span></b> would turn them off).</p>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Next, repeat the
-refinement using the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Peak
-Fitting/LSQ <span class=SpellE>PeakFit</span></span></b> menu item in the <b
+<p class=MsoNormal style='margin-left:.5in'>Next, repeat the refinement using
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+minor-latin'>Peak Fitting/LSQ <span class=SpellE>PeakFit</span></span></b> menu
+item in the <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-theme-font:minor-latin'>Peak List</span></b> window.</p>
+
+<p class=MsoNormal style='margin-left:.5in'><span
+style='mso-spacerun:yes'> </span>Now, select peak widths for refinement. <span
+style='mso-fareast-font-family:"Times New Roman"'>This can be performed in 2
+different ways. &nbsp;Method&nbsp;1:&nbsp;refine sigma (Gaussian width) and/or
+gamma (Lorentzian width) for individual peaks. &nbsp;To do this, click the
+refinement flags for sigma and/or gamma in the Peak List window.
+&nbsp;&nbsp;Method&nbsp;2: preferably,&nbsp;the LS&nbsp;refinement of&nbsp;peak
+widths can be&nbsp;constrained to&nbsp;follow an instrumental broadening
+equation as described below.&nbsp;Note - one cannot refine ALL peak widths
+using both individual&nbsp;sigma &amp; gamma&nbsp;values AND&nbsp;instrumental
+broadening terms at the same time.<b style='mso-bidi-font-weight:normal'>&nbsp;</b><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in'><span style='mso-fareast-font-family:
+"Times New Roman";mso-bidi-font-weight:bold'>To constrain refined peak widths
+to an instrumental broadening equation, first<b> s</b></span>elect the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Peak List</span></b> window.</p>
+minor-latin'>Instrumental Parameters</span></b> item in the data tree. <span
+class=GramE>This opens a window for peak profile terms<b> </b><span
+style='mso-bidi-font-weight:bold'>and also create</span></span><span
+style='mso-bidi-font-weight:bold'> a new plot window&nbsp;showing the
+instrument profile resolution curve.</span></p>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Now, select peak
-widths for refinement. This can be done by refining sigma (Gaussian width)
-and/or gamma (Lorentzian width) for individual peaks, but here we can constrain
-the peaks to follow an instrumental broadening equation. Select the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Instrumental Parameters</span></b> item in the data tree. This
-opens a window for peak profile terms</p>
-
-<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+<p class=MsoNormal style='margin-left:.5in'><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_10" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:422.25pt;
  height:154.5pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Fit%20Peaks_files/image011.png" o:title=""/>
@@ -1515,8 +1529,8 @@ Parameters</span></b> are also updated.</p>
 class=SpellE>autoindexing</span>. It is found in the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Index
-Peak List</span></b> item in the data tree. In the initially empty window created
-by this action, use menu item <b style='mso-bidi-font-weight:normal'><span
+Peak List</span></b> item in the data tree. In the initially empty window
+created by this action, use menu item <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Index Peaks
 Operations/Load</span></b> to copy the fitted peaks from the <b
@@ -1602,9 +1616,9 @@ src="Fit%20Peaks_files/image017.png" v:shapes="Picture_x0020_16"><![endif]></spa
 
 <h2><span class=GramE>Step 8.</span> Select/Refine Cell</h2>
 
-<p class=MsoNormal>Select the cell with M20 ~ 2900 with a = 4.1568 Å. This indexes
-all peaks with almost a perfect fit to the peak positions (compare dashed red
-lines to solid blue ones). Import the cell information using the <b
+<p class=MsoNormal>Select the cell with M20 ~ 2900 with a = 4.1568 Å. This
+indexes all peaks with almost a perfect fit to the peak positions (compare
+dashed red lines to solid blue ones). Import the cell information using the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
 minor-latin'>Cell Index/Copy Cell</span></b> menu option. Then optimize the
@@ -1660,15 +1674,16 @@ mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phases</span><
 <p class=MsoNormal>To continue with the second part of this exercise, <span
 class=GramE>do the menu item</span> <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>File/Close project</span></b>
-in the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>GSAS-II data tree </span></b>window. You will be asked if you want
-it saved; if <span class=GramE><b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>File/Close
+project</span></b> in the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Yes</span></b></span>
-then all the peak fitting/indexing &amp; cell refinement results will be saved
-to the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data
+tree </span></b>window. You will be asked if you want it saved; if <span
+class=GramE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-theme-font:minor-latin'>Yes</span></b></span> then all the
+peak fitting/indexing &amp; cell refinement results will be saved to the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
 minor-latin'>LaB6.gpx</span></b> file. If <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
@@ -1717,8 +1732,8 @@ minor-latin'>10</span></b>.</p>
 
 <p class=MsoNormal>Pick all peaks you can see between the limits (including the
 small ones). Note some peaks have shoulders most notably at 5.07, 6.04,
-7.81deg. I found 28 peaks (there were a few very weak ones I skipped – they
-might be from a second phase? We’ll see later).</p>
+7.81deg. I found 28 peaks (there were a few very weak ones I skipped – they might
+be from a second phase? We’ll see later).</p>
 
 <p class=MsoNormal><!--[if gte vml 1]><v:shape id="Picture_x0020_19" o:spid="_x0000_s1026"
  type="#_x0000_t75" style='position:absolute;margin-left:0;margin-top:0;
@@ -1790,15 +1805,14 @@ minor-latin'>Cell Index/Refine/Index cell</span></b> in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
 minor-latin'>Unit Cells List</span></b> window. Progress will be much slower
-and suitable results will be slow in coming so be patient. Watch the console
-window; the right answer will have an obviously large M20 (~630) and a volume
-of ~594Å<sup>3</sup> (10<sup>th</sup> column of console display). Once this is
-seen (it may take more than one try to get this) you can stop the indexing
-search by pressing <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Cancel</span></b>
-on the progress bar window. It may take more than one press to fully stop it.
-My result was </p>
+and suitable results will be slow in coming so be patient. Watch the console window;
+the right answer will have an obviously large M20 (~630) and a volume of ~594Å<sup>3</sup>
+(10<sup>th</sup> column of console display). Once this is seen (it may take
+more than one try to get this) you can stop the indexing search by pressing <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+minor-latin'>Cancel</span></b> on the progress bar window. It may take more
+than one press to fully stop it. My result was </p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_20" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:527.25pt;
@@ -1820,13 +1834,13 @@ src="Fit%20Peaks_files/image022.png" v:shapes="Picture_x0020_21"><![endif]></spa
 
 <p class=MsoNormal>Although the weak peak at 2<span style='font-family:Symbol;
 mso-char-type:symbol;mso-symbol-font-family:Symbol'><span style='mso-char-type:
-symbol;mso-symbol-font-family:Symbol'>Q</span></span>~7.3 has a shoulder that wasn’t
-indexed. I presume that is a contaminant. By sliding the cursor over the index
-lines without any visible peak you can see that the missing ones are (010, 100,
-001, 110, 030, 111, 20-1, 10-2, 041, 050, 21-2, 23-1, 22-2, 141, 201,102, 15-1,
-112, &amp; 24-1). Many of these are accidental but the 0k0; k&#8800;2n and h0l;
-h+l&#8800;2n ones characterize the space group P2<sub>1</sub>/n. Armed with
-this information you can <b style='mso-bidi-font-weight:normal'><span
+symbol;mso-symbol-font-family:Symbol'>Q</span></span>~7.3 has a shoulder that
+wasn’t indexed. I presume that is a contaminant. By sliding the cursor over the
+index lines without any visible peak you can see that the missing ones are
+(010, 100, 001, 110, 030, 111, 20-1, 10-2, 041, 050, 21-2, 23-1, 22-2, 141,
+201,102, 15-1, 112, &amp; 24-1). Many of these are accidental but the 0k0; k&#8800;2n
+and h0l; h+l&#8800;2n ones characterize the space group P2<sub>1</sub>/n. Armed
+with this information you can <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Make new
 phase</span></b> for the indexed cell (I called it ‘<b style='mso-bidi-font-weight:

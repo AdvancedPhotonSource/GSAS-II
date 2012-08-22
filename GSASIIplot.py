@@ -2373,7 +2373,7 @@ def PlotStructure(G2frame,data):
             Indx = GetSelectedAtoms()
         if G2frame.dataDisplay.GetPageText(getSelection()) == 'Map peaks':
             for i,peak in enumerate(mapPeaks):
-                x,y,z = peak[1:]
+                x,y,z,d = peak[1:]
                 X,Y,Z = gluProject(x,y,z,Model,Proj,View)
                 XY = [int(X),int(View[3]-Y)]
                 if np.allclose(xy,XY,atol=10) and Z < Zmax:
@@ -3004,7 +3004,7 @@ def PlotStructure(G2frame,data):
         if len(rhoXYZ):
             RenderMap(rho,rhoXYZ,indx,Rok)
         if len(mapPeaks):
-            for ind,[mag,x,y,z] in enumerate(mapPeaks):
+            for ind,[mag,x,y,z,d] in enumerate(mapPeaks):
                 if ind in Ind and pageName == 'Map peaks':
                     RenderMapPeak(x,y,z,Gr)
                 else:

@@ -885,6 +885,7 @@ def SearchMap(data,keepDup=False,Pgbar=None):
     drawingData = data['Drawing']
     peaks = []
     mags = []
+    dzeros = []
     try:
         mapData = generalData['Map']
         contLevel = mapData['cutOff']*mapData['rhoMax']/100.
@@ -915,25 +916,44 @@ def SearchMap(data,keepDup=False,Pgbar=None):
         if np.any(x1 < 0):
             break
         peak = (np.array(x1[1:4])-rMI)/incre
+        dzero = np.sqrt(np.sum(np.inner(Amat,peak)**2))
         peak = fixSpecialPos(peak,SGData,Amat)
         if not len(peaks):
             peaks.append(peak)
             mags.append(x1[0])
+            dzeros.append(dzero)
         else:
             if keepDup:
                 if noDuplicate(peak,peaks,Amat):
                     peaks.append(peak)
                     mags.append(x1[0])
+                    dzeros.append(dzero)
             elif noEquivalent(peak,peaks,SGData) and x1[0] > 0.:
                 peaks.append(peak)
                 mags.append(x1[0])
+                dzeros.append(dzero)
             GoOn = Pgbar.Update(len(peaks),newmsg='%s%d'%('No. Peaks found =',len(peaks)))[0]
             if not GoOn or len(peaks) > 500:
                 break
         rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(x1,rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
         rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
-    return np.array(peaks),np.array([mags,]).T
-
+    return np.array(peaks),np.array([mags,]).T,np.array([dzeros,]).T
+    
+def sortArray(data,pos,reverse=False):
+    #data is a list of items
+    #sort by pos in list; reverse if True
+    T = []
+    for i,M in enumerate(data):
+        T.append((M[pos],i))
+    D = dict(zip(T,data))
+    T.sort()
+    if reverse:
+        T.reverse()
+    X = []
+    for key in T:
+        X.append(D[key])
+    return X
+                
 def PeaksUnique(data,Ind):
 
     def noDuplicate(xyz,peaks,Amat):
@@ -950,7 +970,7 @@ def PeaksUnique(data,Ind):
     Indx = {}
     XYZ = {}
     for ind in Ind:
-        XYZ[ind] = np.array(mapPeaks[ind][1:])
+        XYZ[ind] = np.array(mapPeaks[ind][1:4])
         Indx[ind] = True
     for ind in Ind:
         if Indx[ind]:

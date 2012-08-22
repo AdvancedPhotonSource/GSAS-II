@@ -916,6 +916,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[1] += 35                           #compensate for status bar
         dataDisplay.SetSize(Size)
+        G2frame.dataFrame.SetStatusText('')
         G2frame.dataFrame.setSizePosLeft(Size)
 
 ################################################################################
@@ -1200,6 +1201,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Atoms.SelectCol(c,True)
         
         SGData = data['General']['SGData']
+        G2frame.dataFrame.SetStatusText('')
         if SGData['SGPolax']:
             G2frame.dataFrame.SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'])
         table = []
@@ -1661,6 +1663,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
             
     def UpdateDrawAtoms():
+        G2frame.dataFrame.SetStatusText('')
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
@@ -2560,6 +2563,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             radSizer.Add(radFactor,0,wx.ALIGN_CENTER_VERTICAL)
             return radSizer
 
+        G2frame.dataFrame.SetStatusText('')
         drawOptions.DestroyChildren()
         dataDisplay = wx.Panel(drawOptions)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2583,6 +2587,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
         
     def UpdateTexture():
+        G2frame.dataFrame.SetStatusText('')
         generalData = data['General']        
         SGData = generalData['SGData']
         try:
@@ -2813,6 +2818,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
         
     def UpdateDData():
+        G2frame.dataFrame.SetStatusText('')
         UseList = data['Histograms']
         if UseList:
             G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
@@ -3733,6 +3739,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
 
     def FillPawleyReflectionsGrid():
+        G2frame.dataFrame.SetStatusText('')
                         
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()
@@ -3888,16 +3895,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         MapPeaks.SelectRow(row,True)
                 else:
                     MapPeaks.ClearSelection()
-                    MapPeaks.SelectRow(r,True)                
+                    MapPeaks.SelectRow(r,True)
+            elif r < 0:                 #a column pick
+                mapPeaks = data['Map Peaks']
+                c =  event.GetCol()
+                if colLabels[c] == 'mag':
+                    mapPeaks = G2mth.sortArray(mapPeaks,0,reverse=True)
+                elif colLabels[c] == 'dzero':
+                    mapPeaks = G2mth.sortArray(mapPeaks,4)
+                else:
+                    return
+                data['Map Peaks'] = mapPeaks
+                wx.CallAfter(FillMapPeaksGrid)
             G2plt.PlotStructure(G2frame,data)                    
             
         G2frame.dataFrame.setSizePosLeft([450,300])
+        G2frame.dataFrame.SetStatusText('')
         if 'Map Peaks' in data:
+            G2frame.dataFrame.SetStatusText('Select mag or dzero columns to sort')
             mapPeaks = data['Map Peaks']                        
             rowLabels = []
             for i in range(len(mapPeaks)): rowLabels.append(str(i))
-            colLabels = ['mag','x','y','z']
-            Types = 4*[wg.GRID_VALUE_FLOAT+':10,4',]
+            colLabels = ['mag','x','y','z','dzero']
+            Types = 5*[wg.GRID_VALUE_FLOAT+':10,4',]
             MapPeaksTable = G2gd.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             MapPeaks.SetTable(MapPeaksTable, True)
             MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
@@ -4020,6 +4040,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
     def OnSearchMaps(event):
         
+#        def FindBondsPeaks(peaks):                    #uses numpy & masks - very fast even for proteins!
+#            import numpy.ma as ma
+#            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+#            for peak in peaks:
+#                peak[-1] = []
+#            Indx = range(len(peaks))
+#            Peaks = []
+#            Radii = []
+#            for peak in peaks:
+#                Peaks.append(np.array(peak[1:4]))
+#                Radii.append(1.0)
+#            Atoms = np.array(Atoms)
+#            Radii = np.array(Radii)
+#            IAR = zip(Indx,Atoms,Radii)
+#            for atomA in IAR:
+#                Dx = Atoms-atomA[1]
+#                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of G2frame & disorder "bonds" < 0.5A
+#                sumR = atomA[3]+Radii
+#                IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
+#                i = atomA[0]
+#                for j in IndB[0]:
+#                    if Styles[i] == 'polyhedra':
+#                        atomData[i][-2].append(np.inner(Amat,Dx[j]))
+#                    elif Styles[j] != 'polyhedra' and j > i:
+#                        atomData[i][-2].append(Dx[j]*Radii[i]/sumR[j])
+#                        atomData[j][-2].append(-Dx[j]*Radii[j]/sumR[j])
+                            
         peaks = []
         mags = []
         print ' Begin fourier map search - can take some time'
@@ -4035,12 +4082,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
             pgbar.SetSize(Size)
             try:
-                peaks,mags = G2mth.SearchMap(data,keepDup=True,Pgbar=pgbar)
+                peaks,mags,dzeros = G2mth.SearchMap(data,keepDup=True,Pgbar=pgbar)
             finally:
                 pgbar.Destroy()
             sortIdx = np.argsort(mags.flatten())
             if len(peaks):
-                data['Map Peaks'] = np.concatenate((mags,peaks),axis=1)            
+                data['Map Peaks'] = np.concatenate((mags,peaks,dzeros),axis=1)            
                 print ' Map search finished, time = %.2fs'%(time.time()-time0)
             Page = G2frame.dataDisplay.FindPage('Map peaks')
             G2frame.dataDisplay.ChangeSelection(Page)

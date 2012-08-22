@@ -696,7 +696,7 @@ def findOffset(SGData,A,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while i < 20 and len(DH) < 50:
+    while i < 20 and len(DH) < 30:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
@@ -797,7 +797,7 @@ def ChargeFlip(data,reflData,pgbar):
         except FloatingPointError:
             Rcf = 100.
             break
-    del MEhkl,Emask,DEhkl,CErho,CEsig
+#    del MEhkl,Emask,DEhkl,CErho,CEsig
     np.seterr(**old)
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))

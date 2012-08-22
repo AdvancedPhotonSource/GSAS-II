@@ -3932,7 +3932,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapPeaks = data['Map Peaks']                        
             Ind = MapPeaks.GetSelectedRows()
             for ind in Ind:
-                x,y,z = mapPeaks[ind][1:]
+                x,y,z,d = mapPeaks[ind][1:]
                 AtomAdd(x,y,z,'C')
     
     def OnPeaksClear(event):

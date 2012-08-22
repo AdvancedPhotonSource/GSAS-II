@@ -2379,7 +2379,7 @@ def PlotStructure(G2frame,data):
             Indx = GetSelectedAtoms()
         if G2frame.dataDisplay.GetPageText(getSelection()) == 'Map peaks':
             for i,peak in enumerate(mapPeaks):
-                x,y,z,d = peak[1:]
+                x,y,z = peak[1:4]
                 X,Y,Z = gluProject(x,y,z,Model,Proj,View)
                 XY = [int(X),int(View[3]-Y)]
                 if np.allclose(xy,XY,atol=10) and Z < Zmax:

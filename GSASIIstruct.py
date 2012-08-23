@@ -2515,9 +2515,9 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
             ymb = np.array(y-yb)
-            ymb = np.where(ymb==0.,1.0,ymb)
+            ymb = np.where(ymb,ymb,1.0)
             ycmb = np.array(yc-yb)
-            ratio = np.where(ycmb<>0.,ymb/ycmb,0.0)          
+            ratio = 1./np.where(ycmb,ycmb/ymb,1.e10)          
             refLists = Histogram['Reflection Lists']
             for phase in refLists:
                 Phase = Phases[phase]
@@ -2621,8 +2621,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if Phase['General'].get('doPawley'):
                     try:
                         pInd =pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
-                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
-                        refl[9] = abs(parmDict[pInd])
+#                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
+                        refl[9] = parmDict[pInd]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
@@ -2770,6 +2770,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                     try:
                         pIdx = pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
                         idx = varylist.index(pIdx)
+                        parmDict[pIdx] = max(parmDict[pIdx]/2.,parmDict[pIdx])        
+                        refl[9] = abs(parmDict[pIdx])
                         dMdpw[iBeg:iFin] = dervDict['int']/refl[9]
                         if parmDict[pIdx] < 0.:
                             dMdpw[iBeg:iFin] = -dervDict['int']/refl[9]

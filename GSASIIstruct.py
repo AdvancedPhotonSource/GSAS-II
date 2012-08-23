@@ -1867,14 +1867,14 @@ def penaltyFxn(parmDict,varyList):
     for i,item in enumerate(varyList):
         if 'PWLref' in item and parmDict[item] < 0.:
             pFxn[i] = -parmDict[item]**2        #checked OK
-    return pFxn
+    return pFxn/1000.
     
 def penaltyDeriv(parmDict,varyList):
     pDerv = np.zeros(len(varyList))
     for i,item in enumerate(varyList):
         if 'PWLref' in item and parmDict[item] < 0.:
             pDerv[i] += 2.*parmDict[item]
-    return pDerv/100.
+    return pDerv/1000.
 
 ################################################################################
 ##### Function & derivative calculations

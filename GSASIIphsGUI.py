@@ -3852,7 +3852,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))[PhaseName]
         for iref,ref in enumerate(Refs):
             try:
-                ref[6] = refData[iref][9]
+                ref[6] = abs(refData[iref][9])
                 ref[7] = 1.0
             except IndexError:
                 pass

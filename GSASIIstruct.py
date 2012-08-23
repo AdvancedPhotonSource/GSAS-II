@@ -2775,8 +2775,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         dMdpw[iBeg:iFin] = dervDict['int']/refl[9]
                         if parmDict[pIdx] < 0.:
                             dMdpw[iBeg:iFin] = -dervDict['int']/refl[9]
+#                            dMdpw[iBeg:iFin] = -dervDict['int']/refl[9]
                         if Ka2:
-                            dMdpw[iBeg2:iFin2] += dervDict2['int']/refl[9]
+                            dMdpw[iBeg2:iFin2] -= dervDict2['int']/refl[9]
                             if parmDict[pIdx] < 0.:
                                 dMdpw[iBeg2:iFin2] -= dervDict['int']/refl[9]
                         dMdv[idx] = dMdpw

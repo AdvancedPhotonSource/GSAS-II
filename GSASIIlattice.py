@@ -589,7 +589,7 @@ def GenHBravais(dmin,Bravais,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
     return sortHKLd(HKL,True,False)
-
+    
 def getHKLmax(dmin,SGData,A):
     #finds maximum allowed hkl for given A within dmin
     SGLaue = SGData['SGLaue']

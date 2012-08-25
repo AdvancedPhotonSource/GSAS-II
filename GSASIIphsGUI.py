@@ -4258,5 +4258,3 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     G2frame.dataDisplay.SetSelection(oldPage)
-    
-            

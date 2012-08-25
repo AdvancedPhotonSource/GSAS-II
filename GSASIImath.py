@@ -696,7 +696,7 @@ def findOffset(SGData,A,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while i < 20 and len(DH) < 30:
+    while i < 20 and len(DH) < 20:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
@@ -937,6 +937,19 @@ def SearchMap(data,keepDup=False,Pgbar=None):
                 break
         rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(x1,rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
         rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)
+    if SGData['SGInv']:                 #check origin location & fix it if needed - centrosymmetric only
+        Ocheck = np.zeros_like(rho)
+        for ipeak in peaks:
+            for opeak in peaks:           
+                dx = ((opeak-ipeak)*incre)%incre
+                if np.any(dx):      #avoid self vector
+                    Ocheck[dx[0],dx[1],dx[2]] += 1
+        dxMax = np.unravel_index(np.argmax(Ocheck),rho.shape)
+        print 'Inversion at:',dxMax,' shift by ;',dxMax-mapHalf,' map size:',rho.shape
+        rho = np.roll(np.roll(np.roll(rho,dxMax[2],axis=2),dxMax[1],axis=1),dxMax[0],axis=0)
+        for peak in peaks:
+            peak = (peak-(dxMax+mapHalf)/incre)%1.0
+        
     return np.array(peaks),np.array([mags,]).T,np.array([dzeros,]).T
     
 def sortArray(data,pos,reverse=False):

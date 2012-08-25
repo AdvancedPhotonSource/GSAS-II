@@ -23,6 +23,7 @@ import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
+import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
@@ -819,6 +820,15 @@ def ellipseSizeDerv(H,Sij,GB):
         dSij[i] += delt
         dRdS[i] = (ellipseSize(H,dSij,GB)-lenR)/delt
     return lenR,dRdS
+
+def getHKLpeak(dmin,SGData,A):
+    HKL = G2lat.GenHLaue(dmin,SGData,A)        
+    HKLs = []
+    for h,k,l,d in HKL:
+        ext = G2spc.GenHKLf([h,k,l],SGData)[0]
+        if not ext:
+            HKLs.append([h,k,l,d,-1])
+    return HKLs
 
 def getPeakProfile(parmDict,xdata,varyList,bakType):
     

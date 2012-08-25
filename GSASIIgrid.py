@@ -602,7 +602,7 @@ class DataFrame(wx.Frame):
         self.PawleyEdit.Append(id=wxID_PAWLEYESTIMATE, kind=wx.ITEM_NORMAL,text='Pawley estimate',
             help='Estimate initial Pawley intensities')
         self.PawleyEdit.Append(id=wxID_PAWLEYUPDATE, kind=wx.ITEM_NORMAL,text='Pawley update',
-            help='Update Pawley intensities from reflection list')
+            help='Update Pawley intensities with abs(Fobs) from reflection list')
         self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
             help='Delete Pawley reflection list')
             

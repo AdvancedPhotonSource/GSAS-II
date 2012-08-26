@@ -2074,25 +2074,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData = data['General']
             SGData = generalData['SGData']
             cellArray = G2lat.CellBlock(1)
-            for ind in indx:
-                atomA = atomData[ind]
-                xyzA = np.array(atomA[cx:cx+3])
-                indA = atomTypes.index(atomA[ct])
-                for atomB in atomData[:numAtoms]:
-                    indB = atomTypes.index(atomB[ct])
-                    sumR = radii[indA]+radii[indB]
-                    xyzB = np.array(atomB[cx:cx+3])
-                    for xyz in cellArray+xyzB:
-                        dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
-                        if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
-                            if noDuplicate(xyz,atomData):
-                                oprB = atomB[cx+3]
-                                C = xyz-xyzB
-                                newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
-                                newAtom = atomB[:]
-                                newAtom[cx:cx+3] = xyz
-                                newAtom[cx+3] = G2spc.StringOpsProd(oprB,newOp,SGData)
-                                atomData.append(newAtom)
+            wx.BeginBusyCursor()
+            try:
+                for ind in indx:
+                    atomA = atomData[ind]
+                    xyzA = np.array(atomA[cx:cx+3])
+                    indA = atomTypes.index(atomA[ct])
+                    for atomB in atomData[:numAtoms]:
+                        indB = atomTypes.index(atomB[ct])
+                        sumR = radii[indA]+radii[indB]
+                        xyzB = np.array(atomB[cx:cx+3])
+                        for xyz in cellArray+xyzB:
+                            dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
+                            if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
+                                if noDuplicate(xyz,atomData):
+                                    oprB = atomB[cx+3]
+                                    C = xyz-xyzB
+                                    newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+                                    newAtom = atomB[:]
+                                    newAtom[cx:cx+3] = xyz
+                                    newAtom[cx+3] = G2spc.StringOpsProd(oprB,newOp,SGData)
+                                    atomData.append(newAtom)
+            finally:
+                wx.EndBusyCursor()
             data['Drawing']['Atoms'] = atomData
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
@@ -2109,44 +2113,48 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cuij = cuia+2
             generalData = data['General']
             SGData = generalData['SGData']
-            for ind in indx:
-                atom = atomData[ind]
-                XYZ = np.array(atom[cx:cx+3])
-                if atom[cuia] == 'A':
-                    Uij = atom[cuij:cuij+6]
-                    result = G2spc.GenAtom(XYZ,SGData,False,Uij,False)
-                    for item in result:
-                        atom = copy.copy(atomData[ind])
-                        atom[cx:cx+3] = item[0]
-                        atom[cx+3] = str(item[2])+'+' \
-                            +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
-                        atom[cuij:cuij+6] = item[1]
-                        Opp = G2spc.Opposite(item[0])
-                        for xyz in Opp:
-                            if noDuplicate(xyz,atomData):
-                                cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
-                                cell = '1'+'+'+ \
-                                    str(cell[0])+','+str(cell[1])+','+str(cell[2])
-                                atom[cx:cx+3] = xyz
-                                atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
-                                atomData.append(atom[:])
-                else:
-                    result = G2spc.GenAtom(XYZ,SGData,False,Move=False)
-                    for item in result:
-                        atom = copy.copy(atomData[ind])
-                        atom[cx:cx+3] = item[0]
-                        atom[cx+3] = str(item[1])+'+' \
-                            +str(item[2][0])+','+str(item[2][1])+','+str(item[2][2])
-                        Opp = G2spc.Opposite(item[0])
-                        for xyz in Opp:
-                            if noDuplicate(xyz,atomData):
-                                cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
-                                cell = '1'+'+'+ \
-                                    str(cell[0])+','+str(cell[1])+','+str(cell[2])
-                                atom[cx:cx+3] = xyz
-                                atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
-                                atomData.append(atom[:])               
-                data['Drawing']['Atoms'] = atomData
+            wx.BeginBusyCursor()
+            try:
+                for ind in indx:
+                    atom = atomData[ind]
+                    XYZ = np.array(atom[cx:cx+3])
+                    if atom[cuia] == 'A':
+                        Uij = atom[cuij:cuij+6]
+                        result = G2spc.GenAtom(XYZ,SGData,False,Uij,False)
+                        for item in result:
+                            atom = copy.copy(atomData[ind])
+                            atom[cx:cx+3] = item[0]
+                            atom[cx+3] = str(item[2])+'+' \
+                                +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
+                            atom[cuij:cuij+6] = item[1]
+                            Opp = G2spc.Opposite(item[0])
+                            for xyz in Opp:
+                                if noDuplicate(xyz,atomData):
+                                    cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
+                                    cell = '1'+'+'+ \
+                                        str(cell[0])+','+str(cell[1])+','+str(cell[2])
+                                    atom[cx:cx+3] = xyz
+                                    atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
+                                    atomData.append(atom[:])
+                    else:
+                        result = G2spc.GenAtom(XYZ,SGData,False,Move=False)
+                        for item in result:
+                            atom = copy.copy(atomData[ind])
+                            atom[cx:cx+3] = item[0]
+                            atom[cx+3] = str(item[1])+'+' \
+                                +str(item[2][0])+','+str(item[2][1])+','+str(item[2][2])
+                            Opp = G2spc.Opposite(item[0])
+                            for xyz in Opp:
+                                if noDuplicate(xyz,atomData):
+                                    cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
+                                    cell = '1'+'+'+ \
+                                        str(cell[0])+','+str(cell[1])+','+str(cell[2])
+                                    atom[cx:cx+3] = xyz
+                                    atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
+                                    atomData.append(atom[:])               
+                    data['Drawing']['Atoms'] = atomData
+            finally:
+                wx.EndBusyCursor()
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
@@ -3821,23 +3829,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         posCorr = Inst['Zero']
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         
-        for ref in Refs:
-            pos = 2.0*asind(wave/(2.0*ref[4]))
-            if 'Bragg' in Sample['Type']:
-                pos -= const*(4.*Sample['Shift'][0]*cosd(pos/2.0)+ \
-                    Sample['Transparency'][0]*sind(pos)*100.0)            #trans(=1/mueff) in cm
-            else:               #Debye-Scherrer - simple but maybe not right
-                pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
-            indx = np.searchsorted(xdata[0],pos)
-            try:
-                FWHM = max(0.001,G2pwd.getFWHM(pos,Inst))/2.
-                dx = xdata[0][indx+1]-xdata[0][indx]
-                ref[6] = FWHM*xdata[1][indx]/dx
-                Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
-                pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'],xdata[0][indx],Inst['Azimuth'])
-                ref[6] /= (Lorenz*pola*ref[3])
-            except IndexError:
-                pass
+        wx.BeginBusyCursor()
+        try:
+            for ref in Refs:
+                pos = 2.0*asind(wave/(2.0*ref[4]))
+                if 'Bragg' in Sample['Type']:
+                    pos -= const*(4.*Sample['Shift'][0]*cosd(pos/2.0)+ \
+                        Sample['Transparency'][0]*sind(pos)*100.0)            #trans(=1/mueff) in cm
+                else:               #Debye-Scherrer - simple but maybe not right
+                    pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
+                indx = np.searchsorted(xdata[0],pos)
+                try:
+                    FWHM = max(0.001,G2pwd.getFWHM(pos,Inst))/2.
+                    dx = xdata[0][indx+1]-xdata[0][indx]
+                    ref[6] = FWHM*xdata[1][indx]/dx
+                    Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
+                    pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'],xdata[0][indx],Inst['Azimuth'])
+                    ref[6] /= (Lorenz*pola*ref[3])
+                except IndexError:
+                    pass
+        finally:
+            wx.EndBusyCursor()
         FillPawleyReflectionsGrid()
 
     def OnPawleyUpdate(event):
@@ -3850,12 +3862,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         HistoNames = Histograms.keys()
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))[PhaseName]
-        for iref,ref in enumerate(Refs):
-            try:
-                ref[6] = abs(refData[iref][9])
-                ref[7] = 1.0
-            except IndexError:
-                pass
+        wx.BeginBusyCursor()
+        try:
+            for iref,ref in enumerate(Refs):
+                try:
+                    ref[6] = abs(refData[iref][9])
+                    ref[7] = 1.0
+                except IndexError:
+                    pass
+        finally:
+            wx.EndBusyCursor()
         FillPawleyReflectionsGrid()
                             
     def OnPawleyDelete(event):
@@ -3957,12 +3973,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapPeaks = data['Map Peaks']
             Ind = MapPeaks.GetSelectedRows()
             if Ind:
-                Ind = G2mth.PeaksUnique(data,Ind)
-                for r in range(MapPeaks.GetNumberRows()):
-                    if r in Ind:
-                        MapPeaks.SelectRow(r,addToSelected=True)
-                    else:
-                        MapPeaks.DeselectRow(r)
+                wx.BeginBusyCursor()
+                try:
+                    Ind = G2mth.PeaksUnique(data,Ind)
+                    for r in range(MapPeaks.GetNumberRows()):
+                        if r in Ind:
+                            MapPeaks.SelectRow(r,addToSelected=True)
+                        else:
+                            MapPeaks.DeselectRow(r)
+                finally:
+                    wx.EndBusyCursor()
                 G2plt.PlotStructure(G2frame,data)
     
     def OnPeaksDA(event):

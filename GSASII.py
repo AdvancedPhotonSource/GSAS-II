@@ -1986,6 +1986,8 @@ class GSASII(wx.Frame):
             Phases = dictionary of phases that use histograms
         '''
         phaseData = self.GetPhaseData()
+        if not phaseData:
+            return {},{}
         Histograms = {}
         Phases = {}
         pId = 0

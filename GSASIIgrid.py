@@ -2306,6 +2306,7 @@ def MovePatternTreeToGrid(G2frame,item):
             data = G2frame.PatternTree.GetItemPyData(item)
             Phases = G2frame.GetPhaseData()
             phase = ''
+            phaseName = ''
             if Phases:
                 phaseName = Phases.keys()[0]
             UpdateRestraints(G2frame,data,Phases,phaseName)

@@ -2322,7 +2322,10 @@ def PlotStructure(G2frame,data):
     if 'Map Peaks' in data:
         mapPeaks = data['Map Peaks']
     drawingData = data['Drawing']
-    drawAtoms = drawingData['Atoms']
+    try:
+        drawAtoms = drawingData['Atoms']
+    except KeyError:
+        drawAtoms = []
     mapData = {}
     flipData = {}
     rhoXYZ = []

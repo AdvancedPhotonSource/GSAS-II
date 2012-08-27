@@ -18,6 +18,7 @@ import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
+import GSASIImath as G2mth
 import GSASIIIO as G2IO
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
@@ -91,8 +92,9 @@ htmlFirstUse = True
 [ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
 ] = [wx.NewId() for item in range(4)]
 
-[ wxID_RESTRAINTADD,wxID_PWDANALYSIS, wxID_RESTSELPHASE,wxID_RESTDELETE,
-] = [wx.NewId() for item in range(4)]
+[ wxID_RESTRAINTADD,wxID_PWDANALYSIS, wxID_RESTSELPHASE,wxID_RESTDELETE, wxID_RESRCHANGEVAL, 
+    wxID_RESTCHANGEESD,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -289,6 +291,10 @@ class DataFrame(wx.Frame):
             help='Select phase')
         self.RestraintEdit.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraints',
             help='Add restraints')
+        self.RestraintEdit.Append(id=wxID_RESRCHANGEVAL, kind=wx.ITEM_NORMAL,text='Change value',
+            help='Change observed value')
+        self.RestraintEdit.Append(id=wxID_RESTCHANGEESD, kind=wx.ITEM_NORMAL,text='Change esd',
+            help='Change esd in observed value')
         self.RestraintEdit.Append(id=wxID_RESTDELETE, kind=wx.ITEM_NORMAL,text='Delete restraints',
             help='Delete selected restraints')
             
@@ -626,7 +632,7 @@ class DataFrame(wx.Frame):
         
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,
-            style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT ^ wx.CLOSE_BOX,
+            style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX | wx.FRAME_FLOAT_ON_PARENT ,
             size=size,pos=pos,title='GSAS-II data display')
         self._init_menus()
         if name:
@@ -654,6 +660,10 @@ class DataFrame(wx.Frame):
         self.ClearBackground()
         self.DestroyChildren()
                    
+################################################################################
+#####  GSNotebook
+################################################################################           
+       
 class GSNoteBook(wx.Notebook):
     def __init__(self, parent, name='',size = None):
         wx.Notebook.__init__(self, parent, -1, name=name, style= wx.BK_TOP)
@@ -668,6 +678,10 @@ class GSNoteBook(wx.Notebook):
             if self.GetPageText(page) == name:
                 return page
         
+################################################################################
+#####  GSGrid
+################################################################################           
+       
 class GSGrid(wg.Grid):
     def __init__(self, parent, name=''):
         wg.Grid.__init__(self,parent,-1,name=name)                    
@@ -684,6 +698,10 @@ class GSGrid(wg.Grid):
         #this is to satisfy structure drawing stuff in G2plt when focus changes
         return None
                         
+################################################################################
+#####  Table
+################################################################################           
+       
 class Table(wg.PyGridTableBase):
     def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):
         wg.PyGridTableBase.__init__(self)
@@ -817,6 +835,10 @@ class Table(wg.PyGridTableBase):
                 self.data[row][col] = value
         innerSetValue(row, col, value)
                 
+################################################################################
+#####  Notebook
+################################################################################           
+       
 def UpdateNotebook(G2frame,data):        
     if data:
         G2frame.dataFrame.SetLabel('Notebook')
@@ -826,6 +848,10 @@ def UpdateNotebook(G2frame,data):
             G2frame.dataDisplay.AppendText(line+"\n")
             G2frame.dataDisplay.AppendText('Notebook entry @ '+time.ctime()+"\n")
             
+################################################################################
+#####  Controls
+################################################################################           
+       
 def UpdateControls(G2frame,data):
     #patch
     if 'deriv type' not in data:
@@ -983,6 +1009,10 @@ def UpdateControls(G2frame,data):
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
     G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
      
+################################################################################
+#####  Comments
+################################################################################           
+       
 def UpdateComments(G2frame,data):                   
     G2frame.dataFrame.SetLabel('Comments')
     G2frame.dataDisplay = wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
@@ -993,6 +1023,10 @@ def UpdateComments(G2frame,data):
         else:
             G2frame.dataDisplay.AppendText(line+'\n')
             
+################################################################################
+#####  Sequential Results
+################################################################################           
+       
 def UpdateSeqResults(G2frame,data):
     """ 
     input:
@@ -1133,6 +1167,10 @@ def UpdateSeqResults(G2frame,data):
     G2frame.dataDisplay.AutoSizeColumns(True)
     G2frame.dataFrame.setSizePosLeft([700,350])
     
+################################################################################
+#####  Constraints
+################################################################################           
+       
 def UpdateConstraints(G2frame,data):
     '''Called when Constraints tree item is selected.
     Displays the constraints in the data window
@@ -1619,6 +1657,10 @@ def UpdateConstraints(G2frame,data):
     elif warnmsg:
         print 'Unexpected contraint warning:\n',warnmsg
         
+################################################################################
+#####  Restraints
+################################################################################           
+       
 def UpdateRestraints(G2frame,data,Phases,phaseName):
     if not len(Phases):
         print 'There are no phases to form restraints'
@@ -1695,13 +1737,49 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         
     def UpdateBondRestr(bondRestData):
         
-        def ChangeCell(event):
-            r,c =  event.GetRow(),event.GetCol()
-            if r >= 0 and c >= 0:
-                bondList[r][c+2] = table[r][c]
-                
+        def OnColSort(event):
+            r,c = event.GetRow(),event.GetCol()
+            if r < 0 and c == 0:
+                names = G2mth.sortArray(table,0)
+                bonds = []
+                for name in names:
+                    idx = table.index(name)
+                    bonds.append(bondList[idx])
+                bondRestData['Bonds'] = bonds
+                UpdateBondRestr(bondRestData)                
+        
+        def OnChangeValue(event):
+            rows = Bonds.GetSelectedRows()
+            if not rows:
+                return
+            Bonds.ClearSelection()
+            val = bondList[rows[0]][4]
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.])
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in rows:
+                    bondList[r][4] = parm
+            dlg.Destroy()
+            UpdateBondRestr(bondRestData)                
+
+        def OnChangeEsd(event):
+            rows = Bonds.GetSelectedRows()
+            if not rows:
+                return
+            Bonds.ClearSelection()
+            val = bondList[rows[0]][5]
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.])
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in rows:
+                    bondList[r][5] = parm
+            dlg.Destroy()
+            UpdateBondRestr(bondRestData)                
+                                
         def OnDeleteRestraint(event):
             rows = Bonds.GetSelectedRows()
+            if not rows:
+                return
             Bonds.ClearSelection()
             rows.sort()
             rows.reverse()
@@ -1732,8 +1810,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Bonds.SetReadOnly(r,c,True)
                     Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnColSort)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=wxID_RESRCHANGEVAL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=wxID_RESTCHANGEESD)
             mainSizer.Add(Bonds,0,)
         else:
             mainSizer.Add(wx.StaticText(BondRestr,-1,'No bond distance restraints for this phase'),0,)
@@ -1746,14 +1826,50 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateAngleRestr(angleRestData):
+        
+        def OnColSort(event):
+            r,c = event.GetRow(),event.GetCol()
+            if r < 0 and c == 0:
+                names = G2mth.sortArray(table,0)
+                angles = []
+                for name in names:
+                    idx = table.index(name)
+                    angles.append(angleList[idx])
+                angleRestData['Angles'] = angles
+                UpdateAngleRestr(angleRestData)                
+        
+        def OnChangeValue(event):
+            rows = Angles.GetSelectedRows()
+            if not rows:
+                return
+            Angles.ClearSelection()
+            val = angleList[rows[0]][4]
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.])
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in rows:
+                    angleList[r][4] = parm
+            dlg.Destroy()
+            UpdateAngleRestr(angleRestData)                
 
-        def ChangeCell(event):
-            r,c =  event.GetRow(),event.GetCol()
-            if r >= 0 and c >= 0:
-                angleList[r][c+2] = table[r][c]
-            
+        def OnChangeEsd(event):
+            rows = Angles.GetSelectedRows()
+            if not rows:
+                return
+            Angles.ClearSelection()
+            val = angleList[rows[0]][5]
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.])
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in rows:
+                    angleList[r][5] = parm
+            dlg.Destroy()
+            UpdateAngleRestr(angleRestData)                
+                                            
         def OnDeleteRestraint(event):
             rows = Angles.GetSelectedRows()
+            if not rows:
+                return
             rows.sort()
             rows.reverse()
             for row in rows:
@@ -1784,8 +1900,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Angles.SetReadOnly(r,c,True)
                     Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Angles.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            Angles.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnColSort)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=wxID_RESRCHANGEVAL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=wxID_RESTCHANGEESD)
             mainSizer.Add(Angles,0,)
         else:
             mainSizer.Add(wx.StaticText(AngleRestr,-1,'No bond angle restraints for this phase'),0,)
@@ -1798,14 +1916,16 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.dataFrame.setSizePosLeft(Size)
     
     def UpdatePlaneRestr(planeRestData):
+        
+        items = G2frame.dataFrame.RestraintEdit.GetMenuItems()
+        for item in items:
+            if item.GetLabel() in ['Change value']:
+                item.Enable(False)
 
-        def ChangeCell(event):
-            r,c =  event.GetRow(),event.GetCol()
-            if r >= 0 and c >= 0:
-                planeList[r][c+2] = table[r][c]
-            
         def OnDeleteRestraint(event):
             rows = Planes.GetSelectedRows()
+            if not rows:
+                return
             rows.sort()
             rows.reverse()
             for row in rows:
@@ -1841,7 +1961,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(3):
                     Planes.SetReadOnly(r,c,True)
                     Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Planes.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
             mainSizer.Add(Planes,0,)
         else:
@@ -1856,13 +1975,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     
     def UpdateChiralRestr(chiralRestData):
 
-        def ChangeCell(event):
-            r,c =  event.GetRow(),event.GetCol()
-            if r >= 0 and c >= 0:
-                volumeList[r][c+2] = table[r][c]
-            
         def OnDeleteRestraint(event):
             rows = Volumes.GetSelectedRows()
+            if not rows:
+                return
             rows.sort()
             rows.reverse()
             for row in rows:
@@ -1893,7 +2009,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Volumes.SetReadOnly(r,c,True)
                     Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=wxID_RESTDELETE)
             mainSizer.Add(Volumes,0,)
         else:
@@ -1951,6 +2066,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
+################################################################################
+#####  Main PWDR panel
+################################################################################           
+       
 def UpdatePWHKPlot(G2frame,kind,item):
 
     def OnErrorAnalysis(event):
@@ -1991,6 +2110,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
     elif kind == 'HKLF':
         G2plt.PlotSngl(G2frame,newPlot=True)
                  
+################################################################################
+#####  HKLF controls
+################################################################################           
+       
 def UpdateHKLControls(G2frame,data):
     
     def OnScaleSlider(event):
@@ -2083,6 +2206,10 @@ def UpdateHKLControls(G2frame,data):
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
     G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
 
+################################################################################
+#####  Pattern tree routines
+################################################################################           
+       
 def GetPatternTreeDataNames(G2frame,dataTypes):
     names = []
     item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        

@@ -1288,7 +1288,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         if hapData[0] in ['isotropic','uniaxial']:
             line += ' equatorial:%12.1f'%(hapData[1][0])
             if mustrainSig[0][0]:
-                line += ', sig: %8.1f'%(mustrainSig[0][0])
+                line += ', sig:%8.1f'%(mustrainSig[0][0])
                 refine = True
             if hapData[0] == 'uniaxial':
                 line += ' axial:%12.1f'%(hapData[1][1])
@@ -1343,7 +1343,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
             print >>pFile,ptstr
             print >>pFile,sigstr
         
-    def PrintSHPOAndSig(hapData,POsig):
+    def PrintSHPOAndSig(pdx,hapData,POsig):
         print >>pFile,'\n Spherical harmonics preferred orientation: Order:'+str(hapData[4])
         ptlbls = ' names :'
         ptstr =  ' values:'
@@ -1351,8 +1351,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         for item in hapData[5]:
             ptlbls += '%12s'%(item)
             ptstr += '%12.3f'%(hapData[5][item])
-            if item in POsig:
-                sigstr += '%12.3f'%(POsig[item])
+            if pfx+item in POsig:
+                sigstr += '%12.3f'%(POsig[pfx+item])
             else:
                 sigstr += 12*' ' 
         print >>pFile,ptlbls
@@ -1470,7 +1470,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                         if pfx+'MD' in PhFrExtPOSig:
                             print >>pFile,' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig[pfx+'MD'])
                     else:
-                        PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
+                        PrintSHPOAndSig(pfx,hapData['Pref.Ori.'],PhFrExtPOSig)
                     PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
                     PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
@@ -2232,7 +2232,7 @@ def GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
                 sumMD += A**3
             POcorr = sumMD/len(refl[11])
     else:   #spherical harmonics
-        if calcControls[pfx+'SHord']:
+        if calcControls[phfx+'SHord']:
             POcorr = SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr
     
@@ -2252,7 +2252,7 @@ def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
         POcorr = sumMD/len(refl[11])
         POderv[phfx+'MD'] = sumdMD/len(refl[11])
     else:   #spherical harmonics
-        if calcControls[pfx+'SHord']:
+        if calcControls[phfx+'SHord']:
             POcorr,POderv = SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr,POderv
     

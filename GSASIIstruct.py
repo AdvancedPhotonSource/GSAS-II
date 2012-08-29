@@ -964,6 +964,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
                     refl[7] = 0
         else:
             atomsSig = {}
+            General['Mass'] = 0.
             if General['Type'] == 'nuclear':
                 for i,at in enumerate(Atoms):
                     names = {3:pfx+'Ax:'+str(i),4:pfx+'Ay:'+str(i),5:pfx+'Az:'+str(i),6:pfx+'Afrac:'+str(i),
@@ -986,6 +987,8 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
                             at[ind] = parmDict[names[ind]]
                             if names[ind] in sigDict:
                                 atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
+                    ind = General['AtomTypes'].index(at[1])
+                    General['Mass'] += General['AtomMass'][ind]*at[6]*at[8]
             PrintAtomsAndSig(General,Atoms,atomsSig)
         
         textureData = General['SH Texture']    
@@ -1356,9 +1359,14 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         print >>pFile,ptstr
         print >>pFile,sigstr
     
+    PhFrExtPOSig = {}
+    SizeMuStrSig = {}
+    ScalExtSig = {}
+    wtFrSum = {}
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
-        SGData = Phases[phase]['General']['SGData']
+        General = Phases[phase]['General']
+        SGData = General['SGData']
         pId = Phases[phase]['pId']
         histoList = HistoPhase.keys()
         histoList.sort()
@@ -1368,90 +1376,112 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
             except KeyError:                        
                 #skip if histogram not included e.g. in a sequential refinement
                 continue
-            print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-            print >>pFile,130*'-'
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']
+            pfx = str(pId)+':'+str(hId)+':'
+            if hId not in wtFrSum:
+                wtFrSum[hId] = 0.
             if 'PWDR' in histogram:
-                pfx = str(pId)+':'+str(hId)+':'
-                print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
-                    %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
-                
-                PhFrExtPOSig = {}
                 for item in ['Scale','Extinction']:
                     hapData[item][0] = parmDict[pfx+item]
                     if pfx+item in sigDict:
-                        PhFrExtPOSig[item] = sigDict[pfx+item]
+                        PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
+                wtFrSum[hId] += hapData['Scale'][0]*General['Mass']
                 if hapData['Pref.Ori.'][0] == 'MD':
                     hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
                     if pfx+'MD' in sigDict:
-                        PhFrExtPOSig['MD'] = sigDict[pfx+'MD']
+                        PhFrExtPOSig.update({pfx+'MD':sigDict[pfx+'MD'],})
                 else:                           #'SH' spherical harmonics
                     for item in hapData['Pref.Ori.'][5]:
                         hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
                         if pfx+item in sigDict:
-                            PhFrExtPOSig[item] = sigDict[pfx+item]
-                if Print:
-                    if 'Scale' in PhFrExtPOSig:
-                        print >>pFile,' Phase fraction  : %10.5f, sig %10.5f'%(hapData['Scale'][0],PhFrExtPOSig['Scale'])
-                    if 'Extinction' in PhFrExtPOSig:
-                        print >>pFile,' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig['Extinction'])
-                    if hapData['Pref.Ori.'][0] == 'MD':
-                        if 'MD' in PhFrExtPOSig:
-                            print >>pFile,' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig['MD'])
-                    else:
-                        PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
-                SizeMuStrSig = {'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
-                    'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
-                    'HStrain':{}}                  
+                            PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
+                SizeMuStrSig.update({pfx+'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
+                    pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
+                    pfx+'HStrain':{}})                  
                 for item in ['Mustrain','Size']:
                     hapData[item][1][2] = parmDict[pfx+item+':mx']
                     hapData[item][1][2] = min(1.,max(0.1,hapData[item][1][2]))
                     if pfx+item+':mx' in sigDict:
-                        SizeMuStrSig[item][0][2] = sigDict[pfx+item+':mx']
+                        SizeMuStrSig[pfx+item][0][2] = sigDict[pfx+item+':mx']
                     if hapData[item][0] in ['isotropic','uniaxial']:                    
                         hapData[item][1][0] = parmDict[pfx+item+':i']
                         if item == 'Size':
                             hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
                         if pfx+item+':i' in sigDict: 
-                            SizeMuStrSig[item][0][0] = sigDict[pfx+item+':i']
+                            SizeMuStrSig[pfx+item][0][0] = sigDict[pfx+item+':i']
                         if hapData[item][0] == 'uniaxial':
                             hapData[item][1][1] = parmDict[pfx+item+':a']
                             if item == 'Size':
                                 hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
                             if pfx+item+':a' in sigDict:
-                                SizeMuStrSig[item][0][1] = sigDict[pfx+item+':a']
+                                SizeMuStrSig[pfx+item][0][1] = sigDict[pfx+item+':a']
                     else:       #generalized for mustrain or ellipsoidal for size
                         Nterms = len(hapData[item][4])
                         for i in range(Nterms):
                             sfx = ':'+str(i)
                             hapData[item][4][i] = parmDict[pfx+item+sfx]
                             if pfx+item+sfx in sigDict:
-                                SizeMuStrSig[item][1][i] = sigDict[pfx+item+sfx]
+                                SizeMuStrSig[pfx+item][1][i] = sigDict[pfx+item+sfx]
                 names = G2spc.HStrainNames(SGData)
                 for i,name in enumerate(names):
                     hapData['HStrain'][0][i] = parmDict[pfx+name]
                     if pfx+name in sigDict:
-                        SizeMuStrSig['HStrain'][name] = sigDict[pfx+name]
-                if Print:
-                    PrintSizeAndSig(hapData['Size'],SizeMuStrSig['Size'])
-                    PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig['Mustrain'],SGData)
-                    PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig['HStrain'],SGData)
+                        SizeMuStrSig[pfx+'HStrain'][name] = sigDict[pfx+name]
                 
             elif 'HKLF' in histogram:
-                pfx = str(pId)+':'+str(hId)+':'
-                print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
-                    %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
-                print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
-                ScalExtSig = {}
                 for item in ['Scale','Ep','Eg','Es']:
                     if parmDict.get(pfx+item):
                         hapData[item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict:
-                            ScalExtSig[item] = sigDict[pfx+item]
-                if Print: 
+                            ScalExtSig[pfx+item] = sigDict[pfx+item]
+
+    if Print:
+        for phase in Phases:
+            HistoPhase = Phases[phase]['Histograms']
+            General = Phases[phase]['General']
+            SGData = General['SGData']
+            pId = Phases[phase]['pId']
+            histoList = HistoPhase.keys()
+            histoList.sort()
+            for histogram in histoList:
+                try:
+                    Histogram = Histograms[histogram]
+                except KeyError:                        
+                    #skip if histogram not included e.g. in a sequential refinement
+                    continue
+                print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
+                print >>pFile,130*'-'
+                hapData = HistoPhase[histogram]
+                hId = Histogram['hId']
+                pfx = str(pId)+':'+str(hId)+':'
+                if 'PWDR' in histogram:
+                    print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
+                        %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
+                
+                    if pfx+'Scale' in PhFrExtPOSig:
+                        wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
+                        sigwtFr = PhFrExtPOSig[pfx+'Scale']*wtFr/hapData['Scale'][0]
+                        print >>pFile,' Phase fraction  : %10.5f, sig %10.5f Weight fraction  : %8.5f, sig %10.5f' \
+                            %(hapData['Scale'][0],PhFrExtPOSig[pfx+'Scale'],wtFr,sigwtFr)
+                    if pfx+'Extinction' in PhFrExtPOSig:
+                        print >>pFile,' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig[pfx+'Extinction'])
+                    if hapData['Pref.Ori.'][0] == 'MD':
+                        if pfx+'MD' in PhFrExtPOSig:
+                            print >>pFile,' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig[pfx+'MD'])
+                    else:
+                        PrintSHPOAndSig(hapData['Pref.Ori.'],PhFrExtPOSig)
+                    PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
+                    PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
+                    PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
+                    
+                elif 'HKLF' in histogram:
+                    print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
+                        %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
+                    print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
                     if 'Scale' in ScalExtSig:
-                        print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig['Scale'])
+                        print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale'])
+
 # fix after it runs!                
 #                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
 #                    print >>pFile,135*'-'

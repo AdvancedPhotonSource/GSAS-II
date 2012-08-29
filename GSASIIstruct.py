@@ -953,6 +953,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
             print >>pFile,ptstr
             print >>pFile,sigstr
             
+        General['Mass'] = 0.
         if Phase['General'].get('doPawley'):
             pawleyRef = Phase['Pawley ref']
             for i,refl in enumerate(pawleyRef):
@@ -964,7 +965,6 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
                     refl[7] = 0
         else:
             atomsSig = {}
-            General['Mass'] = 0.
             if General['Type'] == 'nuclear':
                 for i,at in enumerate(Atoms):
                     names = {3:pfx+'Ax:'+str(i),4:pfx+'Ay:'+str(i),5:pfx+'Az:'+str(i),6:pfx+'Afrac:'+str(i),
@@ -2651,7 +2651,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if Phase['General'].get('doPawley'):
                     try:
                         pInd =pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
-#                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
+                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
                         refl[9] = parmDict[pInd]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
@@ -2804,11 +2804,11 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
 #                        refl[9] = parmDict[pIdx]
                         dMdpw[iBeg:iFin] = dervDict['int']/refl[9]
                         if parmDict[pIdx] < 0.:
-                            dMdpw[iBeg:iFin] = dervDict['int']/refl[9]
+                            dMdpw[iBeg:iFin] = 2.*dervDict['int']/refl[9]
                         if Ka2:
                             dMdpw[iBeg2:iFin2] += dervDict2['int']/refl[9]
                             if parmDict[pIdx] < 0.:
-                                dMdpw[iBeg2:iFin2] += dervDict['int']/refl[9]
+                                dMdpw[iBeg2:iFin2] += 2.*dervDict['int']/refl[9]
                         dMdv[idx] = dMdpw
                     except: # ValueError:
                         pass
@@ -3010,16 +3010,22 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             dy = y-yc
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
-            dMdvh = np.sqrt(W[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
+            dMdvh = getPowderProfileDerv(parmdict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
+            Wt = np.sqrt(W[xB:xF])[np.newaxis,:]
+            Dy = dy[xB:xF][np.newaxis,:]
+            print 'Jacobian size: ',dMdvh.shape
+            dMdvh *= Wt
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             if len(Hess):
-                Vec += np.sum(dMdvh*np.sqrt(W[xB:xF])*dy[xB:xF],axis=1)
                 Hess += np.inner(dMdvh,dMdvh)
+                dMdvh *= Wt*Dy
+                Vec += np.sum(dMdvh,axis=1)
             else:
-                Vec = np.sum(dMdvh*np.sqrt(W[xB:xF])*dy[xB:xF],axis=1)
                 Hess = np.inner(dMdvh,dMdvh)
+                dMdvh *= Wt*Dy
+                Vec = np.sum(dMdvh,axis=1)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
             nobs = Histogram['Nobs']
@@ -3183,7 +3189,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     if dlg:
         GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))[0]
         if not GoOn:
-            parmDict['saved values'] = values
+            parmdict['saved values'] = values
             raise Exception         #Abort!!
 #    pFunc = penaltyFxn(parmdict,varylist)
 #    if np.any(pFunc):

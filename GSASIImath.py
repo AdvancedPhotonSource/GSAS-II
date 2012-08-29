@@ -696,7 +696,7 @@ def findOffset(SGData,A,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while i < 20 and len(DH) < 20:
+    while i < 20 and len(DH) < 30:
         F = Flist[i]
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
@@ -778,26 +778,22 @@ def ChargeFlip(data,reflData,pgbar):
     Ncyc = 0
     old = np.seterr(all='raise')
     while True:        
-        try:
-            CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
-            CEsig = np.std(CErho)
-            CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
-            CFhkl = fft.ifftshift(fft.ifftn(CFrho))
-            phase = CFhkl/np.absolute(CFhkl)
-            CEhkl = np.absolute(Ehkl)*phase
-            Ncyc += 1
-            sumCF = np.sum(ma.array(np.absolute(CFhkl),mask=Emask))
-            DEhkl = np.absolute(np.absolute(Ehkl)/sumE-np.absolute(CFhkl)/sumCF)
-            Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
-            if Rcf < 5.:
-                break
-            GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
-            if not GoOn or Ncyc > 10000:
-                break
-        except FloatingPointError:
-            Rcf = 100.
+        CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
+        CEsig = np.std(CErho)
+        CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
+        CFhkl = fft.ifftshift(fft.ifftn(CFrho))
+        CFhkl = np.where(CFhkl,CFhkl,1.0)           #avoid divide by zero
+        phase = CFhkl/np.absolute(CFhkl)
+        CEhkl = np.absolute(Ehkl)*phase
+        Ncyc += 1
+        sumCF = np.sum(ma.array(np.absolute(CFhkl),mask=Emask))
+        DEhkl = np.absolute(np.absolute(Ehkl)/sumE-np.absolute(CFhkl)/sumCF)
+        Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
+        if Rcf < 5.:
             break
-#    del MEhkl,Emask,DEhkl,CErho,CEsig
+        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
+        if not GoOn or Ncyc > 10000:
+            break
     np.seterr(**old)
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))

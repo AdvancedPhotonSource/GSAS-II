@@ -1892,19 +1892,26 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
 ##### Penalty & restraint functions 
 ################################################################################
 
-def penaltyFxn(parmDict,varyList):
-    pFxn = np.zeros(len(varyList))
-    for i,item in enumerate(varyList):
+def penaltyFxn(Phases,parmDict,varyList):
+    pNames = []
+    pVals = []
+    negWt = {}
+    for phase in Phases:
+        negWt[Phases[phase]['pId']] = Phases[phase]['General']['Pawley neg wt'] 
+    for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
-            pFxn[i] = -parmDict[item]**2        #checked OK
-    return pFxn/1000.
+            pId = int(item.split(':')[0])
+            pNames.append(item)
+            pVals.append(-negWt[pId]*parmDict[item]**2)
+    pVals = np.array(pVals)
+    return pNames,pVals
     
-def penaltyDeriv(parmDict,varyList):
-    pDerv = np.zeros(len(varyList))
+def penaltyDeriv(pNames,pVal,Phases,parmDict,varyList):
+    pDerv = np.zeros((len(varyList),len(pVal)))
     for i,item in enumerate(varyList):
-        if 'PWLref' in item and parmDict[item] < 0.:
-            pDerv[i] += 2.*parmDict[item]
-    return pDerv/1000.
+        if item in pNames:            
+            pDerv[i][pNames.index(item)] -= 2.*parmDict[item]
+    return pDerv
 
 ################################################################################
 ##### Function & derivative calculations
@@ -2651,7 +2658,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if Phase['General'].get('doPawley'):
                     try:
                         pInd =pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
-                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
+#                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
                         refl[9] = parmDict[pInd]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
@@ -2803,12 +2810,12 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
 #                        parmDict[pIdx] = max(parmDict[pIdx]/2.,parmDict[pIdx])        
 #                        refl[9] = parmDict[pIdx]
                         dMdpw[iBeg:iFin] = dervDict['int']/refl[9]
-                        if parmDict[pIdx] < 0.:
-                            dMdpw[iBeg:iFin] = 2.*dervDict['int']/refl[9]
+#                        if parmDict[pIdx] < 0.:
+#                            dMdpw[iBeg:iFin] = 2.*dervDict['int']/refl[9]
                         if Ka2:
                             dMdpw[iBeg2:iFin2] += dervDict2['int']/refl[9]
-                            if parmDict[pIdx] < 0.:
-                                dMdpw[iBeg2:iFin2] += 2.*dervDict['int']/refl[9]
+#                            if parmDict[pIdx] < 0.:
+#                                dMdpw[iBeg2:iFin2] += 2.*dervDict['int']/refl[9]
                         dMdv[idx] = dMdpw
                     except: # ValueError:
                         pass
@@ -2985,9 +2992,10 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
         else:
             dMdv = dMdvh
             
-#    dpdv = penaltyDeriv(parmdict,varylist)
-#    if np.any(dpdv):
-#        dMdv = np.concatenate((dMdv.T,np.outer(dpdv,dpdv))).T
+    pNames,pVals = penaltyFxn(Phases,parmdict,varylist)
+    if np.sum(pVals):
+        dpdv = penaltyDeriv(pNames,pVals,Phases,parmdict,varylist)
+        dMdv = np.concatenate((dMdv.T,dpdv.T)).T
     return dMdv
 
 def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
@@ -3014,7 +3022,6 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             Wt = np.sqrt(W[xB:xF])[np.newaxis,:]
             Dy = dy[xB:xF][np.newaxis,:]
-            print 'Jacobian size: ',dMdvh.shape
             dMdvh *= Wt
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
@@ -3074,14 +3081,11 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 Hess = np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
-#    dpdv = penaltyDeriv(parmdict,varylist)
-#    if np.any(dpdv):
-#        pVec = dpdv*penaltyFxn(parmdict,varylist)
-#        Vec += pVec
-#        pHess = np.zeros((len(varylist),len(varylist)))
-#        for i,val in enumerate(dpdv):
-#            pHess[i][i] = dpdv[i]**2
-#        Hess += pHess
+    pNames,pVals = penaltyFxn(Phases,parmdict,varylist)
+    if np.sum(pVals):
+        dpdv = penaltyDeriv(pNames,pVals,Phases,parmdict,varylist)
+        Vec += np.sum(dpdv,axis=1)
+        Hess += np.inner(dpdv,dpdv)
     return Vec,Hess
 
 def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
@@ -3190,10 +3194,12 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
         GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))[0]
         if not GoOn:
             parmdict['saved values'] = values
+            dlg.Destroy()
             raise Exception         #Abort!!
-#    pFunc = penaltyFxn(parmdict,varylist)
-#    if np.any(pFunc):
-#        M = np.concatenate((M,pFunc))
+    pDict,pVals = penaltyFxn(Phases,parmdict,varylist)
+    if np.sum(pVals):
+        print 'Penalty function :',np.sum(pVals)
+        M = np.concatenate((M,pVals))
     return M
                         
 def Refine(GPXfile,dlg):

@@ -609,8 +609,8 @@ class DataFrame(wx.Frame):
             help='Estimate initial Pawley intensities')
         self.PawleyEdit.Append(id=wxID_PAWLEYUPDATE, kind=wx.ITEM_NORMAL,text='Pawley update',
             help='Update Pawley intensities with abs(Fobs) from reflection list')
-        self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
-            help='Delete Pawley reflection list')
+#        self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
+#            help='Delete selected Pawley reflection')
             
 # Phase / Map peaks tab
         self.MapPeaksMenu = wx.MenuBar()

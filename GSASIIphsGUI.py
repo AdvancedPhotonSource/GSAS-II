@@ -405,6 +405,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['doPawley'] = False
         if 'Pawley dmin' not in generalData:
             generalData['Pawley dmin'] = 1.0
+        if 'Pawley neg wt' not in generalData:
+            generalData['Pawley neg wt'] = 0.0
             
 #        if 'SH Texture' not in generalData:
 #            generalData['SH Texture'] = data['SH Texture']
@@ -462,7 +464,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'Cell':[False,10.,10.,10.,90.,90.,90,1000.]
             'AtomPtrs':[]
             'Histogram list':['',]
-            'Pawley dmin':1.0}
+            'Pawley dmin':1.0,
+            'Pawley neg wt':0.0}
         'Atoms':[]
         'Drawing':{}
         '''
@@ -755,6 +758,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pass
                 pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error                
             
+            def OnPawleyNegWt(event):
+                try:
+                    wt = float(pawlNegWt.GetValue())
+                    if 0. <= wt <= 1.:
+                        generalData['Pawley neg wt'] = wt
+                except ValueError:
+                    pass
+                pawlNegWt.SetValue("%.3g"%(generalData['Pawley neg wt']))          #reset in case of error                
+
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(dataDisplay,label=' Pawley controls: '),0,wx.ALIGN_CENTER_VERTICAL)
             pawlRef = wx.CheckBox(dataDisplay,-1,label=' Do Pawley refinement?')
@@ -766,6 +778,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
             pawleySizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
+            pawleySizer.Add(wx.StaticText(dataDisplay,label=' Pawley neg. wt.: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pawlNegWt = wx.TextCtrl(dataDisplay,value='%.3g'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
+            pawlNegWt.Bind(wx.EVT_TEXT_ENTER,OnPawleyNegWt)        
+            pawlNegWt.Bind(wx.EVT_KILL_FOCUS,OnPawleyNegWt)
+            pawleySizer.Add(pawlNegWt,0,wx.ALIGN_CENTER_VERTICAL)
             return pawleySizer
             
         def MapSizer():
@@ -788,7 +805,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnCutOff(event):
                 try:
                     res = float(cutOff.GetValue())
-                    if 1.0 <= res <= 100.:
+                    if 10.0 <= res <= 100.:
                         Map['cutOff'] = res
                 except ValueError:
                     pass
@@ -3874,16 +3891,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wx.EndBusyCursor()
         FillPawleyReflectionsGrid()
                             
-    def OnPawleyDelete(event):
-        dlg = wx.MessageDialog(G2frame,'Do you really want to delete Pawley reflections?','Delete', 
+    def OnPawleyDelete(event):          #doesn't work
+        dlg = wx.MessageDialog(G2frame,'Do you really want to delete selected Pawley reflections?','Delete', 
             wx.YES_NO | wx.ICON_QUESTION)
         try:
             result = dlg.ShowModal()
+            if result == wx.ID_YES: 
+                Refs = data['Pawley ref']
+                Ind = G2frame.PawleyRefl.GetSelectedRows()
+                Ind.sort()
+                Ind.reverse()
+                for ind in Ind:
+                    Refs = np.delete(Refs,ind,0)
+                data['Pawley ref'] = Refs
+                FillPawleyReflectionsGrid()
         finally:
             dlg.Destroy()
-        if result == wx.ID_YES: 
-            data['Pawley ref'] = []
-            FillPawleyReflectionsGrid()
 
 ################################################################################
 ##### Fourier routines

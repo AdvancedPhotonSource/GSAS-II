@@ -46,7 +46,7 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(3)]
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
-    wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSTESTADD, wxID_ATONTESTINSERT,
+    wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,
 ] = [wx.NewId() for item in range(10)]
 
@@ -522,12 +522,12 @@ class DataFrame(wx.Frame):
         self.AtomsMenu.Append(menu=self.AtomCompute, title='Compute')
         self.AtomsMenu.Append(menu=MyHelp(self,helpType='Atoms'),title='&Help')
         self.AtomEdit.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
-            help='Inserted as an H atom')
-        self.AtomEdit.Append(id=wxID_ATOMSTESTADD, kind=wx.ITEM_NORMAL,text='Append test point',
-            help='Inserted as an H atom')
+            help='Appended as an H atom')
+        self.AtomEdit.Append(id=wxID_ATOMSVIEWADD, kind=wx.ITEM_NORMAL,text='Append view point',
+            help='Appended as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
             help='Select atom row to insert before; inserted as an H atom')
-        self.AtomEdit.Append(id=wxID_ATONTESTINSERT, kind=wx.ITEM_NORMAL,text='Insert test point',
+        self.AtomEdit.Append(id=wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
             help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
             help='Select atoms to delete first')

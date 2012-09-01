@@ -2425,16 +2425,6 @@ def PlotStructure(G2frame,data):
             return
         newxy = event.GetPosition()
         page = getSelection()
-        if event.ControlDown() and drawingData['showABC']:
-            if event.LeftIsDown():
-                SetTestRot(newxy)
-            elif event.RightIsDown():
-                SetTestPos(newxy)
-            elif event.MiddleIsDown():
-                SetTestRotZ(newxy)
-            x,y,z = drawingData['testPos'][0]
-            G2frame.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
-            Draw()
                                 
         if event.Dragging() and not event.ControlDown():
             if event.LeftIsDown():
@@ -2525,7 +2515,6 @@ def PlotStructure(G2frame,data):
         indx = drawingData['selectedAtoms']
         if key in ['C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
-            drawingData['testPos'] = [[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]
             drawingData['Rotation'] = [0.0,0.0,0.0,[]]
             SetViewPointText(drawingData['viewPoint'][0])
         elif key in ['N']:
@@ -2614,53 +2603,6 @@ def PlotStructure(G2frame,data):
         drawingData['viewPoint'][0] =  Tx,Ty,Tz
         SetViewPointText([Tx,Ty,Tz])
         
-    def SetTestPos(newxy):
-        Tx,Ty,Tz = drawingData['testPos'][0]
-        anglex,angley,anglez,oldxy = drawingData['Rotation']
-        if not len(oldxy): oldxy = list(newxy)
-        Rx = G2lat.rotdMat(anglex,0)
-        Ry = G2lat.rotdMat(angley,1)
-        Rz = G2lat.rotdMat(anglez,2)
-        dxy = list(newxy-oldxy)+[0,]
-        dxy = np.inner(Rz,np.inner(Ry,np.inner(Rx,dxy)))
-        Tx += dxy[0]*0.001
-        Ty -= dxy[1]*0.001
-        Tz += dxy[2]*0.001
-        drawingData['Rotation'][3] = list(newxy)
-        drawingData['testPos'][0] =  Tx,Ty,Tz
-        
-    def SetTestRot(newxy):
-        Txyz = np.array(drawingData['testPos'][0])
-        oldxy = drawingData['testPos'][2]
-        Ax,Ay,Az = drawingData['testPos'][1]
-        Vxyz = np.array(drawingData['viewPoint'][0])
-        Dxyz = np.inner(Amat,Txyz-Vxyz)
-        dxy = list(newxy-oldxy)+[0,]
-        Ax += dxy[1]*0.01
-        Ay += dxy[0]*0.01
-        Rx = G2lat.rotdMat(Ax,0)
-        Ry = G2lat.rotdMat(Ay,1)
-        Dxyz = np.inner(Ry,np.inner(Rx,Dxyz))        
-        Dxyz = np.inner(Bmat,Dxyz)+Vxyz
-        drawingData['testPos'][1] = [Ax,Ay,Az]
-        drawingData['testPos'][2] = newxy
-        drawingData['testPos'][0] = Dxyz
-        
-    def SetTestRotZ(newxy):
-        Txyz = np.array(drawingData['testPos'][0])
-        oldxy = drawingData['testPos'][2]
-        Ax,Ay,Az = drawingData['testPos'][1]
-        Vxyz = np.array(drawingData['viewPoint'][0])
-        Dxyz = np.inner(Amat,Txyz-Vxyz)        
-        dxy = list(newxy-oldxy)+[0,]
-        Az += (dxy[0]+dxy[1])*.01
-        Rz = G2lat.rotdMat(Az,2)
-        Dxyz = np.inner(Rz,Dxyz)       
-        Dxyz = np.inner(Bmat,Dxyz)+Vxyz
-        drawingData['testPos'][1] = [Ax,Ay,Az]
-        drawingData['testPos'][2] = newxy
-        drawingData['testPos'][0] = Dxyz
-                              
     def SetRotation(newxy):        
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         if not len(oldxy): oldxy = list(newxy)
@@ -2911,11 +2853,7 @@ def PlotStructure(G2frame,data):
         if drawingData['unitCellBox']:
             RenderBox()
         if drawingData['showABC']:
-            x,y,z = drawingData['testPos'][0]
-#            if altDown:
-#                G2frame.G2plotNB.status.SetStatusText('moving test point %.4f,%.4f,%.4f'%(x,y,z),1)
-#            else:
-#                G2frame.G2plotNB.status.SetStatusText('test point %.4f,%.4f,%.4f'%(x,y,z),1)            
+            x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
         Backbones = {}
         BackboneColor = []

@@ -945,15 +945,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.setSizePosLeft([700,300])
         generalData = data['General']
         atomData = data['Atoms']
+        DData = data['Drawing']
         Items = [G2gd.wxID_ATOMSEDITINSERT, G2gd.wxID_ATOMSEDITDELETE, G2gd.wxID_ATOMSREFINE, 
-            G2gd.wxID_ATOMSMODIFY, G2gd.wxID_ATOMSTRANSFORM, G2gd.wxID_ATONTESTINSERT]
+            G2gd.wxID_ATOMSMODIFY, G2gd.wxID_ATOMSTRANSFORM, G2gd.wxID_ATOMVIEWINSERT]
         if atomData:
             for item in Items:    
                 G2frame.dataFrame.AtomsMenu.Enable(item,True)
         else:
             for item in Items:
-                G2frame.dataFrame.AtomsMenu.Enable(item,False)            
-            
+                G2frame.dataFrame.AtomsMenu.Enable(item,False)
+        Items = [G2gd.wxID_ATOMVIEWINSERT, G2gd.wxID_ATOMSVIEWADD]
+        if data['Drawing']['showABC']:
+            for item in Items:
+                G2frame.dataFrame.AtomsMenu.Enable(item,True)
+        else:
+            for item in Items:
+                G2frame.dataFrame.AtomsMenu.Enable(item,False)
+
         AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
@@ -1159,7 +1167,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
                     FindBondsDraw()
-                    
+
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
             if Atoms.GetColLabelValue(c) == 'Type':
@@ -1200,7 +1208,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Atoms.SelectRow(row,True)
                 else:
                     Atoms.ClearSelection()
-                    Atoms.SelectRow(r,True)                
+                    Atoms.SelectRow(r,True)
                 
         def ChangeSelection(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -1274,10 +1282,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillAtomsGrid()
         event.StopPropagation()
         
-    def OnAtomTestAdd(event):
+    def OnAtomViewAdd(event):
         try:
             drawData = data['Drawing']
-            x,y,z = drawData['testPos'][0]
+            x,y,z = drawData['viewPoint'][0]
             AtomAdd(x,y,z)
         except:
             AtomAdd(0,0,0)
@@ -1307,10 +1315,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillAtomsGrid()
         event.StopPropagation()
         
-    def OnAtomTestInsert(event):
+    def OnAtomViewInsert(event):
         if 'Drawing' in data:
             drawData = data['Drawing']
-            x,y,z = drawData['testPos'][0]
+            x,y,z = drawData['viewPoint'][0]
             AtomAdd(x,y,z)
             FillAtomsGrid()
         event.StopPropagation()
@@ -1539,7 +1547,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'Rotation':[0.0,0.0,0.0,[]],
-            'bondList':{},'testPos':[[-.1,-.1,-.1],[0.0,0.0,0.0],[0,0]]}
+            'bondList':{},}
         try:
             drawingData = data['Drawing']
         except KeyError:
@@ -2536,7 +2544,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             showSizer.Add((0,5),0)
             
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            showABC = wx.CheckBox(dataDisplay,-1,label=' Show test point?')
+            showABC = wx.CheckBox(dataDisplay,-1,label=' Show view point?')
             showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
             showABC.SetValue(drawingData['showABC'])
             line2Sizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
@@ -4198,9 +4206,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if text == 'Atoms':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.AtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomTestAdd, id=G2gd.wxID_ATOMSTESTADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomTestInsert, id=G2gd.wxID_ATONTESTINSERT)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)

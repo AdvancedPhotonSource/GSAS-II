@@ -1012,48 +1012,49 @@ def Values2Dict(parmdict, varylist, values):
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
     
+def SetBackgroundParms(Background):
+    if len(Background) == 1:            # fix up old backgrounds
+        BackGround.append({'nDebye':0,'debyeTerms':[]})
+    bakType,bakFlag = Background[0][:2]
+    backVals = Background[0][3:]
+    backNames = ['Back:'+str(i) for i in range(len(backVals))]
+    Debye = Background[1]           #also has background peaks stuff
+    backDict = dict(zip(backNames,backVals))
+    backVary = []
+    if bakFlag:
+        backVary = backNames
+
+    backDict['nDebye'] = Debye['nDebye']
+    debyeDict = {}
+    debyeList = []
+    for i in range(Debye['nDebye']):
+        debyeNames = ['DebyeA:'+str(i),'DebyeR:'+str(i),'DebyeU:'+str(i)]
+        debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2])))
+        debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2])
+    debyeVary = []
+    for item in debyeList:
+        if item[1]:
+            debyeVary.append(item[0])
+    backDict.update(debyeDict)
+    backVary += debyeVary 
+
+    backDict['nPeaks'] = Debye['nPeaks']
+    peaksDict = {}
+    peaksList = []
+    for i in range(Debye['nPeaks']):
+        peaksNames = ['BkPkpos:'+str(i),'BkPkint:'+str(i),'BkPksig:'+str(i),'BkPkgam:'+str(i)]
+        peaksDict.update(dict(zip(peaksNames,Debye['peaksList'][i][::2])))
+        peaksList += zip(peaksNames,Debye['peaksList'][i][1::2])
+    peaksVary = []
+    for item in peaksList:
+        if item[1]:
+            peaksVary.append(item[0])
+    backDict.update(peaksDict)
+    backVary += peaksVary    
+    return bakType,backDict,backVary
+            
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=None,dlg=None):
     
-    def SetBackgroundParms(Background):
-        if len(Background) == 1:            # fix up old backgrounds
-            BackGround.append({'nDebye':0,'debyeTerms':[]})
-        bakType,bakFlag = Background[0][:2]
-        backVals = Background[0][3:]
-        backNames = ['Back:'+str(i) for i in range(len(backVals))]
-        Debye = Background[1]           #also has background peaks stuff
-        backDict = dict(zip(backNames,backVals))
-        backVary = []
-        if bakFlag:
-            backVary = backNames
-
-        backDict['nDebye'] = Debye['nDebye']
-        debyeDict = {}
-        debyeList = []
-        for i in range(Debye['nDebye']):
-            debyeNames = ['DebyeA:'+str(i),'DebyeR:'+str(i),'DebyeU:'+str(i)]
-            debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2])))
-            debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2])
-        debyeVary = []
-        for item in debyeList:
-            if item[1]:
-                debyeVary.append(item[0])
-        backDict.update(debyeDict)
-        backVary += debyeVary 
-   
-        backDict['nPeaks'] = Debye['nPeaks']
-        peaksDict = {}
-        peaksList = []
-        for i in range(Debye['nPeaks']):
-            peaksNames = ['BkPkpos:'+str(i),'BkPkint:'+str(i),'BkPksig:'+str(i),'BkPkgam:'+str(i)]
-            peaksDict.update(dict(zip(peaksNames,Debye['peaksList'][i][::2])))
-            peaksList += zip(peaksNames,Debye['peaksList'][i][1::2])
-        peaksVary = []
-        for item in peaksList:
-            if item[1]:
-                peaksVary.append(item[0])
-        backDict.update(peaksDict)
-        backVary += peaksVary    
-        return bakType,backDict,backVary            
         
     def GetBackgroundParms(parmList,Background):
         iBak = 0

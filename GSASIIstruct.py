@@ -1908,9 +1908,13 @@ def penaltyFxn(Phases,parmDict,varyList):
     
 def penaltyDeriv(pNames,pVal,Phases,parmDict,varyList):
     pDerv = np.zeros((len(varyList),len(pVal)))
+    negWt = {}
+    for phase in Phases:
+        negWt[Phases[phase]['pId']] = np.sqrt(Phases[phase]['General']['Pawley neg wt'])
     for i,item in enumerate(varyList):
-        if item in pNames:            
-            pDerv[i][pNames.index(item)] -= 2.*parmDict[item]
+        if item in pNames:
+            pId = int(item.split(':')[0])
+            pDerv[i][pNames.index(item)] -= 2.*negWt[pId]*parmDict[item]
     return pDerv
 
 ################################################################################
@@ -3198,7 +3202,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             raise Exception         #Abort!!
     pDict,pVals = penaltyFxn(Phases,parmdict,varylist)
     if np.sum(pVals):
-        print 'Penalty function :',np.sum(pVals)
+        print 'Penalty function :',np.sum(pVals),' on ',len(pVals),' terms'
         M = np.concatenate((M,pVals))
     return M
                         

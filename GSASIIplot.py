@@ -2359,20 +2359,80 @@ def PlotStructure(G2frame,data):
         import Image
         Draw()                          #make sure plot is fresh!!
         mode = cb.GetValue()
-        Fname = os.path.joint(Mydir,generalData['Name']+'.'+mode)
-        size = Page.canvas.GetSize()
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        if mode in ['jpeg',]:
-            Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
-            im = Image.new("RGBA", (size[0],size[1]))
+        if mode in ['jpeg','bmp','tiff',]:
+            Fname = os.path.joint(Mydir,generalData['Name']+'.'+mode)
+            size = Page.canvas.GetSize()
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            if mode in ['jpeg',]:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                im = Image.new("RGBA", (size[0],size[1]))
+            else:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                im = Image.new("RGB", (size[0],size[1]))
+            im.fromstring(Pix)
+            im.save(Fname,mode)
+            cb.SetValue(' save as/key:')
+            G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
         else:
-            Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
-            im = Image.new("RGB", (size[0],size[1]))
-        im.fromstring(Pix)
-        im.save(Fname,mode)
-        cb.SetValue(' Save as:')
-        G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
-    
+            event.key = cb.GetValue()[0]
+            cb.SetValue(' save as/key:')
+            wx.CallAfter(OnKey,event)
+
+    def OnKey(event):           #on key UP!!
+        Draw()                          #make sure plot is fresh!!
+        try:
+            keyCode = event.GetKeyCode()
+            if keyCode > 255:
+                keyCode = 0
+            key = chr(keyCode)
+        except AttributeError:       #if from OnKeyBox above
+            key = str(event.key).upper()
+        indx = drawingData['selectedAtoms']
+        if key in ['C']:
+            drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
+            drawingData['Rotation'] = [0.0,0.0,0.0,[]]
+            SetViewPointText(drawingData['viewPoint'][0])
+        elif key in ['N']:
+            drawAtoms = drawingData['Atoms']
+            pI = drawingData['viewPoint'][1]
+            if indx:
+                pI[0] = indx[pI[1]]
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                pI[1] += 1
+                if pI[1] >= len(indx):
+                    pI[1] = 0
+            else:
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
+                pI[0] += 1
+                if pI[0] >= len(drawAtoms):
+                    pI[0] = 0
+            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
+            SetViewPointText(drawingData['viewPoint'][0])
+            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
+                
+        elif key in ['P']:
+            drawAtoms = drawingData['Atoms']
+            pI = drawingData['viewPoint'][1]
+            if indx:
+                pI[0] = indx[pI[1]]
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                pI[1] -= 1
+                if pI[1] < 0:
+                    pI[1] = len(indx)-1
+            else:
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
+                pI[0] -= 1
+                if pI[0] < 0:
+                    pI[0] = len(drawAtoms)-1
+            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
+            SetViewPointText(drawingData['viewPoint'][0])            
+            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
+        elif key in ['U','D','L','R'] and mapData['Flip'] == True:
+            dirDict = {'U':[0,-1],'D':[0,1],'L':[-1,0],'R':[1,0]}
+            SetMapRoll(dirDict[key])
+            SetPeakRoll(dirDict[key])
+        Draw()
+            
     def GetTruePosition(xy,Add=False):
         View = glGetIntegerv(GL_VIEWPORT)
         Proj = glGetDoublev(GL_PROJECTION_MATRIX)
@@ -2507,56 +2567,6 @@ def PlotStructure(G2frame,data):
                 Ind = G2frame.dataDisplay.GetPage(page).GetSelectedRows()      #this is the Atoms grid in Atoms
         return Ind
                                        
-    def OnKey(event):           #on key UP!!
-        keyCode = event.GetKeyCode()
-        if keyCode > 255:
-            keyCode = 0
-        key,xyz = chr(keyCode),event.GetPosition()
-        indx = drawingData['selectedAtoms']
-        if key in ['C']:
-            drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
-            drawingData['Rotation'] = [0.0,0.0,0.0,[]]
-            SetViewPointText(drawingData['viewPoint'][0])
-        elif key in ['N']:
-            drawAtoms = drawingData['Atoms']
-            pI = drawingData['viewPoint'][1]
-            if indx:
-                pI[0] = indx[pI[1]]
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
-                pI[1] += 1
-                if pI[1] >= len(indx):
-                    pI[1] = 0
-            else:
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
-                pI[0] += 1
-                if pI[0] >= len(drawAtoms):
-                    pI[0] = 0
-            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
-            SetViewPointText(drawingData['viewPoint'][0])
-            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
-                
-        elif key in ['P']:
-            drawAtoms = drawingData['Atoms']
-            pI = drawingData['viewPoint'][1]
-            if indx:
-                pI[0] = indx[pI[1]]
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
-                pI[1] -= 1
-                if pI[1] < 0:
-                    pI[1] = len(indx)-1
-            else:
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
-                pI[0] -= 1
-                if pI[0] < 0:
-                    pI[0] = len(drawAtoms)-1
-            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
-            SetViewPointText(drawingData['viewPoint'][0])            
-            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
-        elif key in ['U','D','L','R'] and mapData['Flip'] == True:
-            dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
-            SetMapRoll(dirDict[key])
-        Draw()
-            
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
         glClearColor(R,G,B,A)
@@ -2571,22 +2581,35 @@ def PlotStructure(G2frame,data):
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
-    def SetMapRoll(newxy):
-        global sumroll
+    def GetRoll(newxy,rho):
         anglex,angley,anglez,oldxy = drawingData['Rotation']
         Rx = G2lat.rotdMat(anglex,0)
         Ry = G2lat.rotdMat(angley,1)
         Rz = G2lat.rotdMat(anglez,2)
         dxy = np.inner(Bmat,np.inner(Rz,np.inner(Ry,np.inner(Rx,newxy+[0,]))))
         dxy *= np.array([-1,-1,1])
-        rho = mapData['rho']
         dxy = np.array(dxy*rho.shape)
         roll = np.where(dxy>0.5,1,np.where(dxy<-.5,-1,0))
+        return roll
+                
+    def SetMapRoll(newxy):
+        global sumroll
+        rho = mapData['rho']
+        roll = GetRoll(newxy,rho)
         sumroll += roll
         mapData['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
 #        print 'sumroll',sumroll,rho.shape      #useful debug?
         drawingData['Rotation'][3] = list(newxy)
         
+    def SetPeakRoll(newxy):
+        rho = mapData['rho']
+        roll = GetRoll(newxy,rho)
+        steps = 1./np.array(rho.shape)
+        dxy = roll*steps
+        for peak in mapPeaks:
+            peak[1:4] += dxy
+            peak[1:4] %= 1.
+                
     def SetTranslation(newxy):
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         anglex,angley,anglez,oldxy = drawingData['Rotation']
@@ -2647,8 +2670,8 @@ def PlotStructure(G2frame,data):
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors)[:3]:
             glColor3ubv(color)
-            glVertex3fv(line[0])
-            glVertex3fv(line[1])
+            glVertex3fv(-line[1]/2.)
+            glVertex3fv(line[1]/2.)
         glEnd()
         glPopMatrix()
         glColor4ubv([0,0,0,0])
@@ -2980,10 +3003,13 @@ def PlotStructure(G2frame,data):
         view = False
         altDown = False
     Page.SetFocus()
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
-        choices=(' save as:','jpeg','tiff','bmp'))
+    if mapData['Flip']:
+        choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
+    else:
+        choice = [' save as/key:','jpeg','tiff','bmp','u: roll up','d: roll down','l: roll left','r: roll right']
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
-    cb.SetValue(' save as:')
+    cb.SetValue(' save as/key:')
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)

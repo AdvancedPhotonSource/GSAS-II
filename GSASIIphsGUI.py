@@ -1353,7 +1353,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 del atomData[ind]
             if 'Atoms' in data['Drawing']:
                 DrawAtomsDeleteByIDs(IDs)
-                FillAtomsGrid()
+                wx.CallAfter(FillAtomsGrid)
                 G2plt.PlotStructure(G2frame,data)
             SetupGeneral()
         event.StopPropagation()

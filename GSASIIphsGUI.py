@@ -1387,7 +1387,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Atoms']
             generalData = data['General']
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
-            choices = ['Type','x','y','z','frac','I/A','Uiso']
+            choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
@@ -1412,6 +1412,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
                     FillAtomsGrid()
                 dlg.Destroy()
+            elif parm in ['Name',]:
+                dlg = wx.MessageDialog(G2frame,'Do you really want to rename the selected atoms?','Rename', 
+                    wx.YES_NO | wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                    if result == wx.ID_YES:
+                        for r in indx:
+                            El = atomData[r][cid+1]
+                            if len(El) in [2,4]:
+                                atomData[r][cid] = El[:2]+'(%d)'%(r+1)
+                            else:
+                                atomData[r][cid] = El[:1]+'(%d)'%(r+1)
+                    FillAtomsGrid()
+                finally:
+                    dlg.Destroy()
+                    
             elif parm in ['I/A']:
                 choices = ['Isotropic','Anisotropic']
                 dlg = wx.SingleChoiceDialog(G2frame,'Select','Thermal parameter model',choices)
@@ -3965,8 +3981,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for i in range(len(mapPeaks)): rowLabels.append(str(i))
             colLabels = ['mag','x','y','z','dzero']
             Types = 5*[wg.GRID_VALUE_FLOAT+':10,4',]
-            MapPeaksTable = G2gd.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            MapPeaks.SetTable(MapPeaksTable, True)
+            G2frame.MapPeaksTable = G2gd.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            MapPeaks.SetTable(G2frame.MapPeaksTable, True)
             MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
             for r in range(MapPeaks.GetNumberRows()):
                 for c in range(MapPeaks.GetNumberCols()):

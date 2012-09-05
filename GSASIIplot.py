@@ -2431,6 +2431,7 @@ def PlotStructure(G2frame,data):
             dirDict = {'U':[0,-1],'D':[0,1],'L':[-1,0],'R':[1,0]}
             SetMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
+            SetMapPeaksText(mapPeaks)
         Draw()
             
     def GetTruePosition(xy,Add=False):
@@ -2530,6 +2531,15 @@ def PlotStructure(G2frame,data):
                 panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
                 names = [child.GetName() for child in panel]
                 panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
+                
+    def SetMapPeaksText(mapPeaks):
+        page = getSelection()
+        if page:
+            if G2frame.dataDisplay.GetPageText(page) == 'Map peaks':
+                G2frame.MapPeaksTable.SetData(mapPeaks)
+                panel = G2frame.dataDisplay.GetPage(page).GetChildren()
+                names = [child.GetName() for child in panel]
+                panel[names.index('grid window')].Refresh()
             
     def ClearSelectedAtoms():
         page = getSelection()
@@ -2609,6 +2619,7 @@ def PlotStructure(G2frame,data):
         for peak in mapPeaks:
             peak[1:4] += dxy
             peak[1:4] %= 1.
+            peak[4] = np.sqrt(np.sum(np.inner(Amat,peak[1:4])**2))
                 
     def SetTranslation(newxy):
         Tx,Ty,Tz = drawingData['viewPoint'][0]

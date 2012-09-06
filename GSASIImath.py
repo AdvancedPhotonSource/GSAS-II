@@ -929,7 +929,7 @@ def SearchMap(data,keepDup=False,Pgbar=None):
                 mags.append(x1[0])
                 dzeros.append(dzero)
             GoOn = Pgbar.Update(len(peaks),newmsg='%s%d'%('No. Peaks found =',len(peaks)))[0]
-            if not GoOn or len(peaks) > 500:
+            if not GoOn or len(peaks) > 1000:
                 break
         rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]] = peakFunc(x1,rX,rY,rZ,rhoPeak,res,SGData['SGLaue'])
         rho = np.roll(np.roll(np.roll(rho,-rMI[2],axis=2),-rMI[1],axis=1),-rMI[0],axis=0)

@@ -1563,7 +1563,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'Rotation':[0.0,0.0,0.0,[]],
-            'bondList':{},}
+            'bondList':{},'viewDir':[0,0,1]}
         try:
             drawingData = data['Drawing']
         except KeyError:
@@ -1573,6 +1573,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawingData.update(defaultDrawing)
         if 'contourLevel' not in drawingData:
             drawingData['contourLevel'] = 1.
+        if 'viewDir' not in drawingData:
+            drawingData['viewDir'] = [0,0,1]
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] == 'nuclear':
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
@@ -2543,27 +2545,49 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 FindBondsDraw()
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnViewPoint(event):
+                Obj = event.GetEventObject()
+                viewPt = Obj.GetValue().split()
+                try:
+                    VP = [float(viewPt[i]) for i in range(3)]
+                except (ValueError,IndexError):
+                    VP = drawingData['viewPoint'][0]
+                Obj.SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
+                drawingData['viewPoint'][0] = VP
+                G2plt.PlotStructure(G2frame,data)
+                
+                
             showSizer = wx.BoxSizer(wx.VERTICAL)            
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(dataDisplay,-1,' Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
             backColor = wcs.ColourSelect(dataDisplay, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
             backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
             lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,-1,' View Dir.:'),0,wx.ALIGN_CENTER_VERTICAL)
+            VD = drawingData['viewDir']
+            viewDir = wx.TextCtrl(dataDisplay,value='%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]),
+                style=wx.TE_READONLY,size=wx.Size(140,20),name='viewDir')
+            viewDir.SetBackgroundColour(VERY_LIGHT_GREY)
+            lineSizer.Add(viewDir,0,wx.ALIGN_CENTER_VERTICAL)
+            showSizer.Add(lineSizer)
+            showSizer.Add((0,5),0)
             
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            showABC = wx.CheckBox(dataDisplay,-1,label=' Show view point?')
+            showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
+            showABC.SetValue(drawingData['showABC'])
+            lineSizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
             lineSizer.Add(wx.StaticText(dataDisplay,-1,' View Point:'),0,wx.ALIGN_CENTER_VERTICAL)
             VP = drawingData['viewPoint'][0]
-            viewPoint = wx.TextCtrl(dataDisplay,value='%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]),
-                style=wx.TE_READONLY,size=wx.Size(140,20),name='viewPoint')
-            viewPoint.SetBackgroundColour(VERY_LIGHT_GREY)
+            viewPoint = wx.TextCtrl(dataDisplay,value='%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]),
+                style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewPoint')
+            viewPoint.Bind(wx.EVT_TEXT_ENTER,OnViewPoint)
+            viewPoint.Bind(wx.EVT_KILL_FOCUS,OnViewPoint)
             lineSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
             showSizer.Add(lineSizer)
             showSizer.Add((0,5),0)
             
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            showABC = wx.CheckBox(dataDisplay,-1,label=' Show view point?')
-            showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
-            showABC.SetValue(drawingData['showABC'])
-            line2Sizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
     
             unitCellBox = wx.CheckBox(dataDisplay,-1,label=' Show unit cell?')
             unitCellBox.Bind(wx.EVT_CHECKBOX, OnShowUnitCell)
@@ -4141,7 +4165,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         mapData = generalData['Map']
         if len(mapData['rho']):
-            pgbar = wx.ProgressDialog('Map search','No. Peaks found =',501.0, 
+            pgbar = wx.ProgressDialog('Map search','No. Peaks found =',1001.0, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
             screenSize = wx.ClientDisplayRect()
             Size = pgbar.GetSize()

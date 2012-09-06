@@ -40,7 +40,8 @@ htmlFirstUse = True
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
-] = [wx.NewId() for item in range(9)]
+    wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT,
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(3)]
@@ -53,7 +54,8 @@ htmlFirstUse = True
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
     wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGLTOR,  wxID_DRAWPLANE,
-] = [wx.NewId() for item in range(12)]
+    wxID_DRAWDISTVP,
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_DRAWRESTRBOND, wxID_DRAWRESTRANGLE, wxID_DRAWRESTRPLANE, wxID_DRAWRESTRCHIRAL,
 ] = [wx.NewId() for item in range(4)]
@@ -575,6 +577,8 @@ class DataFrame(wx.Frame):
             help='Fill unit cell with selected atoms')
         self.DrawAtomEdit.Append(id=wxID_DRAWDELETE, kind=wx.ITEM_NORMAL,text='Delete atoms',
             help='Delete atoms from drawing set')
+        self.DrawAtomCompute.Append(id=wxID_DRAWDISTVP, kind=wx.ITEM_NORMAL,text='View pt. dist.',
+            help='Compute distance of selected atoms from view point')   
         self.DrawAtomCompute.Append(id=wxID_DRAWDISAGLTOR, kind=wx.ITEM_NORMAL,text='Dist. Ang. Tors.',
             help='Compute distance, angle or torsion for 2-4 selected atoms')   
         self.DrawAtomCompute.Append(id=wxID_DRAWPLANE, kind=wx.ITEM_NORMAL,text='Best plane',
@@ -619,6 +623,10 @@ class DataFrame(wx.Frame):
         self.MapPeaksMenu.Append(menu=MyHelp(self,helpType='Map peaks'),title='&Help')
         self.MapPeaksEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks', 
             help='Move selected peaks to atom list')
+        self.MapPeaksEdit.Append(id=wxID_PEAKSVIEWPT, kind=wx.ITEM_NORMAL,text='View point',
+            help='View point is 1st peak selected')
+        self.MapPeaksEdit.Append(id=wxID_PEAKSDISTVP, kind=wx.ITEM_NORMAL,text='View pt. dist.',
+            help='Compute distance of selected peaks from view point')   
         self.MapPeaksEdit.Append(id=wxID_PEAKSDA, kind=wx.ITEM_NORMAL,text='Calc dist/ang', 
             help='Calculate distance or angle for selection')
         self.MapPeaksEdit.Append(id=wxID_PEAKSUNIQUE, kind=wx.ITEM_NORMAL,text='Unique peaks', 

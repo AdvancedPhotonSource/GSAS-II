@@ -2368,6 +2368,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         PlaneData['Atoms'] = xyz
         PlaneData['Cell'] = generalData['Cell'][1:] #+ volume
         G2str.BestPlane(PlaneData)
+        
+    def OnDrawDistVP(event):
+        # distance to view point
+        indx = drawAtoms.GetSelectedRows()
+        if not indx:
+            print '***** ERROR - no atoms selected'
+            return
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
+        drawingData = data['Drawing']
+        viewPt = np.array(drawingData['viewPoint'][0])
+        print ' Distance from view point at %.3f %.3f %.3f to:'%(viewPt[0],viewPt[1],viewPt[2])
+        atomDData = drawingData['Atoms']
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        cn = colLabels.index('Name')
+        for i in indx:
+            atom = atomDData[i]
+            Dx = np.array(atom[cx:cx+3])-viewPt
+            dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
+            print 'Atom: %8s (%12s) distance = %.3f'%(atom[cn],atom[cx+3],dist)
     
     def OnDrawDAT(event):
         #distance, angle, torsion 
@@ -2556,7 +2577,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 drawingData['viewPoint'][0] = VP
                 G2plt.PlotStructure(G2frame,data)
                 
-                
+            def OnViewDir(event):
+                Obj = event.GetEventObject()
+                viewDir = Obj.GetValue().split()
+                try:
+                    VD = [float(viewDir[i]) for i in range(3)]
+                except (ValueError,IndexError):
+                    VD = drawingData['viewDir']
+                Obj.SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
+                drawingData['viewDir'] = VP
+                G2plt.PlotStructure(G2frame,data)
+                                
             showSizer = wx.BoxSizer(wx.VERTICAL)            
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(dataDisplay,-1,' Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
@@ -2566,8 +2597,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             lineSizer.Add(wx.StaticText(dataDisplay,-1,' View Dir.:'),0,wx.ALIGN_CENTER_VERTICAL)
             VD = drawingData['viewDir']
             viewDir = wx.TextCtrl(dataDisplay,value='%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]),
-                style=wx.TE_READONLY,size=wx.Size(140,20),name='viewDir')
-            viewDir.SetBackgroundColour(VERY_LIGHT_GREY)
+                style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewDir')
+            viewDir.Bind(wx.EVT_TEXT_ENTER,OnViewDir)
+            viewDir.Bind(wx.EVT_KILL_FOCUS,OnViewDir)
             lineSizer.Add(viewDir,0,wx.ALIGN_CENTER_VERTICAL)
             showSizer.Add(lineSizer)
             showSizer.Add((0,5),0)
@@ -4055,7 +4087,39 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 finally:
                     wx.EndBusyCursor()
                 G2plt.PlotStructure(G2frame,data)
+                
+    def OnPeaksViewPoint(event):
+        # set view point
+        indx = MapPeaks.GetSelectedRows()
+        if not indx:
+            print '***** ERROR - no peaks selected'
+            return
+        mapPeaks = data['Map Peaks']
+        drawingData = data['Drawing']
+        drawingData['viewPoint'][0] = mapPeaks[indx[0]][1:4]
+        G2plt.PlotStructure(G2frame,data)
     
+    def OnPeaksDistVP(event):
+        # distance to view point
+        indx = MapPeaks.GetSelectedRows()
+        if not indx:
+            print '***** ERROR - no peaks selected'
+            return
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
+        mapPeaks = data['Map Peaks']
+        drawingData = data['Drawing']
+        viewPt = np.array(drawingData['viewPoint'][0])
+        print ' Distance from view point at %.3f %.3f %.3f to:'%(viewPt[0],viewPt[1],viewPt[2])
+        colLabels = [MapPeaks.GetColLabelValue(c) for c in range(MapPeaks.GetNumberCols())]
+        cx = colLabels.index('x')
+        cm = colLabels.index('mag')
+        for i in indx:
+            peak = mapPeaks[i]
+            Dx = np.array(peak[cx:cx+3])-viewPt
+            dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
+            print 'Peak: %5d mag= %8.2f distance = %.3f'%(i,peak[cm],dist)
+
     def OnPeaksDA(event):
         #distance, angle 
         indx = MapPeaks.GetSelectedRows()
@@ -4072,8 +4136,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print ' distance for atoms %s = %.3f'%(str(indx),G2mth.getRestDist(xyz,Amat))
         else:
             print ' angle for atoms %s = %.2f'%(str(indx),G2mth.getRestAngle(xyz,Amat))
-                    
-                
+                                    
     def OnFourierMaps(event):
         generalData = data['General']
         mapData = generalData['Map']
@@ -4286,6 +4349,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
             G2frame.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2gd.wxID_DRAWDISTVP)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2gd.wxID_DRAWDISAGLTOR)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRBOND)
@@ -4310,6 +4374,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Map peaks':
             G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)

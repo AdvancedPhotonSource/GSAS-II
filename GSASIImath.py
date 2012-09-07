@@ -994,3 +994,93 @@ def PeaksUnique(data,Ind):
         if Indx[ind]:
             Ind.append(ind)
     return Ind
+    
+def prodQQ(QA,QB):
+    ''' Grassman quaternion product
+        QA,QB quaternions; q=r+ai+bj+ck
+    '''
+    D = np.zeros(4)
+    D[0] = QA[0]*QB[0]-QA[1]*QB[1]-QA[2]*QB[2]-QA[3]*QB[3]
+    D[1] = QA[0]*QB[1]+QA[1]*QB[0]+QA[2]*QB[3]-QA[3]*QB[2]
+    D[2] = QA[0]*QB[2]-QA[1]*QB[3]+QA[2]*QB[0]+QA[3]*QB[1]
+    D[3] = QA[0]*QB[3]+QA[1]*QB[2]-QA[2]*QB[1]+QA[3]*QB[0]
+    return D
+    
+def normQ(QA):
+    ''' get length of quaternion & normalize it
+        q=r+ai+bj+ck
+    '''
+    n = np.sqrt(np.sum(np.array(QA)**2))
+    return QA/n
+    
+def invQ(Q):
+    '''
+        get inverse of quaternion
+        q=r+ai+bj+ck; q* = r-ai-bj-ck
+    '''
+    return Q*np.array([1,-1,-1,-1])
+    
+def prodQVQ(Q,V):
+    ''' compute the quaternion vector rotation qvq-1 = v'
+        q=r+ai+bj+ck
+    '''
+    VP = np.zeros(3)
+    T2 = Q[0]*Q[1]
+    T3 = Q[0]*Q[2]
+    T4 = Q[0]*Q[3]
+    T5 = -Q[1]*Q[1]
+    T6 = Q[1]*Q[2]
+    T7 = Q[1]*Q[3]
+    T8 = -Q[2]*Q[2]
+    T9 = Q[2]*Q[3]
+    T10 = -Q[3]*Q[3]
+    VP[0] = 2.*((T8+T10)*V[0]+(T6-T4)*V[1]+(T3+T7)*V[2])+V[0]
+    VP[1] = 2.*((T4+T6)*V[0]+(T5+T10)*V[1]+(T9-T2)*V[2])+V[1]
+    VP[2] = 2.*((T7-T3)*V[0]+(T2+T9)*V[1]+(T5+T8)*V[2])+V[2] 
+    return VP   
+    
+def Q2Mat(Q):
+    ''' make rotation matrix from quaternion
+        q=r+ai+bj+ck
+    '''
+    aa = Q[0]**2
+    ab = Q[0]*Q[1]
+    ac = Q[0]*Q[2]
+    ad = Q[0]*Q[3]
+    bb = Q[1]**2
+    bc = Q[1]*Q[2]
+    bd = Q[1]*Q[3]
+    cc = Q[2]**2
+    cd = Q[2]*Q[3]
+    dd = Q[3]**2
+    M = [[aa+bb-cc-dd, 2.*(bc-ad),  2.*(ac+bd)],
+        [2*(ad+bc),   aa-bb+cc-dd,  2.*(cd-ab)],
+        [2*(bd-ac),    2.*(ab+cd), aa-bb-cc+dd]]
+    return np.array(M)
+    
+def AV2Q(A,V):
+    ''' convert angle (radians -pi to pi) & vector to quaternion
+        q=r+ai+bj+ck
+    '''
+    Q = np.zeros(4)
+    d = np.sqrt(np.sum(np.array(V)**2))
+    V /= d
+    p = A/2.
+    Q[0] = np.cos(p)
+    s = np.sin(p)
+    Q[1:4] = V*s
+    return Q
+    
+def AVdeg2Q(A,V):
+    ''' convert angle (degrees -180 to 180) & vector to quaternion
+        q=r+ai+bj+ck
+    '''
+    Q = np.zeros(4)
+    d = np.sqrt(np.sum(np.array(V)**2))
+    V /= d
+    p = A/2.
+    Q[0] = cosd(p)
+    S = sind(p)
+    Q[1:4] = V*S
+    return Q
+    

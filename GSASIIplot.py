@@ -30,6 +30,7 @@ import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
+import GSASIImath as G2mth
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
@@ -2314,6 +2315,7 @@ def PlotStructure(G2frame,data):
     cell = generalData['Cell'][1:7]
     Vol = generalData['Cell'][7:8][0]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+    Gmat,gmat = G2lat.cell2Gmat(cell)
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     Mydir = generalData['Mydir']
@@ -2352,8 +2354,6 @@ def PlotStructure(G2frame,data):
     altDown = False
     shiftDown = False
     ctrlDown = False
-    global sumroll
-    sumroll = np.zeros(3)
     
     def OnKeyBox(event):
         import Image
@@ -2390,8 +2390,15 @@ def PlotStructure(G2frame,data):
         indx = drawingData['selectedAtoms']
         if key in ['C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
+            VD = np.inner(Bmat,np.array([0,0,1]))
+            VD /= np.sqrt(np.sum(VD**2))
+            drawingData['viewDir'] = VD
             drawingData['Rotation'] = [0.0,0.0,0.0,[]]
+            drawingData['Quaternion'] = [0.0,0.0,1.0,0.0]
             SetViewPointText(drawingData['viewPoint'][0])
+            SetViewDirText(drawingData['viewDir'])
+            Q = drawingData['Quaternion']
+            G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
         elif key in ['N']:
             drawAtoms = drawingData['Atoms']
             pI = drawingData['viewPoint'][1]
@@ -2428,7 +2435,7 @@ def PlotStructure(G2frame,data):
             SetViewPointText(drawingData['viewPoint'][0])            
             G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
         elif key in ['U','D','L','R'] and mapData['Flip'] == True:
-            dirDict = {'U':[0,-1],'D':[0,1],'L':[-1,0],'R':[1,0]}
+            dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
             SetMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
@@ -2490,16 +2497,16 @@ def PlotStructure(G2frame,data):
         if event.Dragging() and not event.ControlDown():
             if event.LeftIsDown():
                 SetRotation(newxy)
-                angX,angY,angZ = drawingData['Rotation'][:3]
-                G2frame.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f ,%.2f'%(angX,angY,angZ),1)
+                Q = drawingData['Quaternion']
+                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
             elif event.RightIsDown():
                 SetTranslation(newxy)
                 Tx,Ty,Tz = drawingData['viewPoint'][0]
                 G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
-                angX,angY,angZ = drawingData['Rotation'][:3]
-                G2frame.G2plotNB.status.SetStatusText('New rotation: %.2f, %.2f, %.2f'%(angX,angY,angZ),1)
+                Q = drawingData['Quaternion']
+                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
             Draw()
         
     def OnMouseWheel(event):
@@ -2531,6 +2538,14 @@ def PlotStructure(G2frame,data):
                 panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
                 names = [child.GetName() for child in panel]
                 panel[names.index('viewPoint')].SetValue('%.3f, %.3f, %.3f'%(VP[0],VP[1],VP[2]))
+                
+    def SetViewDirText(VD):
+        page = getSelection()
+        if page:
+            if G2frame.dataDisplay.GetPageText(page) == 'Draw Options':
+                panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
+                names = [child.GetName() for child in panel]
+                panel[names.index('viewDir')].SetValue('%.3f, %.3f, %.3f'%(VD[0],VD[1],VD[2]))
                 
     def SetMapPeaksText(mapPeaks):
         page = getSelection()
@@ -2592,23 +2607,16 @@ def PlotStructure(G2frame,data):
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
     def GetRoll(newxy,rho):
-        anglex,angley,anglez,oldxy = drawingData['Rotation']
-        Rx = G2lat.rotdMat(anglex,0)
-        Ry = G2lat.rotdMat(angley,1)
-        Rz = G2lat.rotdMat(anglez,2)
-        dxy = np.inner(Bmat,np.inner(Rz,np.inner(Ry,np.inner(Rx,newxy+[0,]))))
-        dxy *= np.array([-1,-1,1])
-        dxy = np.array(dxy*rho.shape)
+        Q = drawingData['Quaternion']
+        dxy = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,newxy+[0,]))
+        dxy = np.array(dxy*rho.shape)        
         roll = np.where(dxy>0.5,1,np.where(dxy<-.5,-1,0))
         return roll
                 
     def SetMapRoll(newxy):
-        global sumroll
         rho = mapData['rho']
         roll = GetRoll(newxy,rho)
-        sumroll += roll
         mapData['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
-#        print 'sumroll',sumroll,rho.shape      #useful debug?
         drawingData['Rotation'][3] = list(newxy)
         
     def SetPeakRoll(newxy):
@@ -2622,38 +2630,62 @@ def PlotStructure(G2frame,data):
             peak[4] = np.sqrt(np.sum(np.inner(Amat,peak[1:4])**2))
                 
     def SetTranslation(newxy):
-        Tx,Ty,Tz = drawingData['viewPoint'][0]
-        anglex,angley,anglez,oldxy = drawingData['Rotation']
+#first get translation vector in screen coords.       
+        oldxy = drawingData['Rotation'][3]
         if not len(oldxy): oldxy = list(newxy)
-        Rx = G2lat.rotdMat(anglex,0)
-        Ry = G2lat.rotdMat(angley,1)
-        Rz = G2lat.rotdMat(anglez,2)
-        dxy = list(newxy-oldxy)+[0,]
-        dxy = np.inner(Bmat,np.inner(Rz,np.inner(Ry,np.inner(Rx,dxy))))
-        Tx -= dxy[0]*0.01
-        Ty += dxy[1]*0.01
-        Tz -= dxy[2]*0.01
+        dxy = newxy-oldxy
+        drawingData['Rotation'][3] = list(newxy)
+        V = np.array([-dxy[0],dxy[1],0.])
+#then transform to rotated crystal coordinates & apply to view point        
+        Q = drawingData['Quaternion']
+        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
+        Tx,Ty,Tz = drawingData['viewPoint'][0]
+        Tx += V[0]*0.01
+        Ty += V[1]*0.01
+        Tz += V[2]*0.01
         drawingData['Rotation'][3] = list(newxy)
         drawingData['viewPoint'][0] =  Tx,Ty,Tz
         SetViewPointText([Tx,Ty,Tz])
         
-    def SetRotation(newxy):        
-        anglex,angley,anglez,oldxy = drawingData['Rotation']
+    def SetRotation(newxy):
+#first get rotation vector in screen coords. & angle increment        
+        oldxy = drawingData['Rotation'][3]
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
-        anglex += dxy[1]*.25
-        angley += dxy[0]*.25
-        oldxy = newxy
-        drawingData['Rotation'] = [anglex,angley,anglez,list(oldxy)]
+        drawingData['Rotation'][3] = list(newxy)
+        V = np.array([dxy[1],dxy[0],0.])
+        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
+# next transform vector back to xtal coordinates via inverse quaternion
+# & make new quaternion
+        Q = drawingData['Quaternion']
+        V = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,V))
+        DQ = G2mth.AVdeg2Q(A,V)
+        Q = G2mth.prodQQ(Q,DQ)
+        drawingData['Quaternion'] = Q
+# finally get new view vector - last row of rotation matrix
+        VD = np.inner(Bmat,G2mth.Q2Mat(Q)[2])
+        VD /= np.sqrt(np.sum(VD**2))
+        drawingData['viewDir'] = VD
+        SetViewDirText(VD)
         
     def SetRotationZ(newxy):                        
-        anglex,angley,anglez,oldxy = drawingData['Rotation']
+#first get rotation vector (= view vector) in screen coords. & angle increment        
+        View = glGetIntegerv(GL_VIEWPORT)
+        oldxy = drawingData['Rotation'][3]
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
-        anglez += (dxy[0]+dxy[1])*.25
-        oldxy = newxy
-        drawingData['Rotation'] = [anglex,angley,anglez,list(oldxy)]
-        
+        drawingData['Rotation'][3] = list(newxy)
+        V = drawingData['viewDir']
+        X0 = drawingData['viewPoint'][0]
+        A = (dxy[0]+dxy[1])*.25
+# next transform vector back to xtal coordinates via inverse quaternion
+# & make new quaternion
+        Q = drawingData['Quaternion']
+        V = np.inner(Amat,V)
+        DQ = G2mth.AVdeg2Q(A,V)
+        Q = G2mth.prodQQ(Q,DQ)
+        drawingData['Quaternion'] = Q
+
     def RenderBox():
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(2)
@@ -2852,7 +2884,7 @@ def PlotStructure(G2frame,data):
         aspect = float(VS[0])/float(VS[1])
         cPos = drawingData['cameraPos']
         Zclip = drawingData['Zclip']*cPos/200.
-        anglex,angley,anglez = drawingData['Rotation'][:3]
+        Q = drawingData['Quaternion']
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         cx,ct,cs,ci = drawingData['atomPtrs']
         bondR = drawingData['bondRadius']
@@ -2876,10 +2908,7 @@ def PlotStructure(G2frame,data):
             
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        matX = G2lat.rotdMat(anglex,axis=0)
-        matY = G2lat.rotdMat(angley,axis=1)
-        matZ = G2lat.rotdMat(anglez,axis=2)
-        matRot = np.inner(matX,np.inner(matY,matZ))
+        matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         glMultMatrixf(matRot.T)
         glMultMatrixf(A4mat.T)

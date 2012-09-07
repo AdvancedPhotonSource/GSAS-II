@@ -1562,7 +1562,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
-            'showABC':True,'selectedAtoms':[],'Atoms':[],'Rotation':[0.0,0.0,0.0,[]],
+            'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],
             'Quaternion':[0.0,0.0,1.0,0.0],'bondList':{},'viewDir':[0,0,1]}
         try:
             drawingData = data['Drawing']

@@ -2393,7 +2393,7 @@ def PlotStructure(G2frame,data):
             VD = np.inner(Bmat,np.array([0,0,1]))
             VD /= np.sqrt(np.sum(VD**2))
             drawingData['viewDir'] = VD
-            drawingData['Rotation'] = [0.0,0.0,0.0,[]]
+            drawingData['oldxy'] = []
             drawingData['Quaternion'] = [0.0,0.0,1.0,0.0]
             SetViewPointText(drawingData['viewPoint'][0])
             SetViewDirText(drawingData['viewDir'])
@@ -2485,7 +2485,7 @@ def PlotStructure(G2frame,data):
             elif event.RightIsDown():
                 GetTruePosition(xy,True)
         else:
-            drawingData['Rotation'][3] = list(xy)
+            drawingData['oldxy'] = list(xy)
         Draw()
         
     def OnMouseMove(event):
@@ -2617,7 +2617,7 @@ def PlotStructure(G2frame,data):
         rho = mapData['rho']
         roll = GetRoll(newxy,rho)
         mapData['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
-        drawingData['Rotation'][3] = list(newxy)
+        drawingData['oldxy'] = list(newxy)
         
     def SetPeakRoll(newxy):
         rho = mapData['rho']
@@ -2631,10 +2631,10 @@ def PlotStructure(G2frame,data):
                 
     def SetTranslation(newxy):
 #first get translation vector in screen coords.       
-        oldxy = drawingData['Rotation'][3]
+        oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
-        drawingData['Rotation'][3] = list(newxy)
+        drawingData['oldxy'] = list(newxy)
         V = np.array([-dxy[0],dxy[1],0.])
 #then transform to rotated crystal coordinates & apply to view point        
         Q = drawingData['Quaternion']
@@ -2643,16 +2643,16 @@ def PlotStructure(G2frame,data):
         Tx += V[0]*0.01
         Ty += V[1]*0.01
         Tz += V[2]*0.01
-        drawingData['Rotation'][3] = list(newxy)
+        drawingData['oldxy'] = list(newxy)
         drawingData['viewPoint'][0] =  Tx,Ty,Tz
         SetViewPointText([Tx,Ty,Tz])
         
     def SetRotation(newxy):
 #first get rotation vector in screen coords. & angle increment        
-        oldxy = drawingData['Rotation'][3]
+        oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
-        drawingData['Rotation'][3] = list(newxy)
+        drawingData['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
 # next transform vector back to xtal coordinates via inverse quaternion
@@ -2671,10 +2671,10 @@ def PlotStructure(G2frame,data):
     def SetRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
         View = glGetIntegerv(GL_VIEWPORT)
-        oldxy = drawingData['Rotation'][3]
+        oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
-        drawingData['Rotation'][3] = list(newxy)
+        drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
         X0 = drawingData['viewPoint'][0]
         A = (dxy[0]+dxy[1])*.25

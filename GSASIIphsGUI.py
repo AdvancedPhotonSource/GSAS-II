@@ -1563,7 +1563,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],
-            'Quaternion':[0.0,0.0,1.0,0.0],'bondList':{},'viewDir':[0,0,1]}
+            'Quaternion':[1.0,0.0,0.0,0.0],'bondList':{},'viewDir':[0,0,1]}
         try:
             drawingData = data['Drawing']
         except KeyError:
@@ -1576,7 +1576,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'viewDir' not in drawingData:
             drawingData['viewDir'] = [0,0,1]
         if 'Quaternion' not in drawingData:
-            drawingData['Quaternion'] = [0.0,0.0,1.0,0.0]
+            drawingData['Quaternion'] = [1.0,0.0,0.0,0.0]
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] == 'nuclear':
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index

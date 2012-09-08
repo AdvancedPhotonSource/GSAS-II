@@ -2671,19 +2671,26 @@ def PlotStructure(G2frame,data):
     def SetRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
         View = glGetIntegerv(GL_VIEWPORT)
+        cent = [View[2]/2,View[3]/2]
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
-        X0 = drawingData['viewPoint'][0]
-        A = (dxy[0]+dxy[1])*.25
-# next transform vector back to xtal coordinates via inverse quaternion
-# & make new quaternion
+        A = [0,0]
+        A[0] = dxy[1]*.25
+        A[1] = dxy[0]*.25
+        if newxy[0] > cent[0]:
+            A[0] *= -1
+        if newxy[1] < cent[1]:
+            A[1] *= -1        
+# next transform vector back to xtal coordinates & make new quaternion
         Q = drawingData['Quaternion']
         V = np.inner(Amat,V)
-        DQ = G2mth.AVdeg2Q(A,V)
-        Q = G2mth.prodQQ(Q,DQ)
+        Qx = G2mth.AVdeg2Q(A[0],V)
+        Qy = G2mth.AVdeg2Q(A[1],V)
+        Q = G2mth.prodQQ(Q,Qx)
+        Q = G2mth.prodQQ(Q,Qy)
         drawingData['Quaternion'] = Q
 
     def RenderBox():

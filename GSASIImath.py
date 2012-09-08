@@ -1064,7 +1064,10 @@ def AV2Q(A,V):
     '''
     Q = np.zeros(4)
     d = np.sqrt(np.sum(np.array(V)**2))
-    V /= d
+    if d:
+        V /= d
+    else:
+        return [1.,0.,0.,0.]    #identity
     p = A/2.
     Q[0] = np.cos(p)
     s = np.sin(p)
@@ -1077,7 +1080,10 @@ def AVdeg2Q(A,V):
     '''
     Q = np.zeros(4)
     d = np.sqrt(np.sum(np.array(V)**2))
-    V /= d
+    if d:
+        V /= d
+    else:
+        return [1.,0.,0.,0.]    #identity
     p = A/2.
     Q[0] = cosd(p)
     S = sind(p)

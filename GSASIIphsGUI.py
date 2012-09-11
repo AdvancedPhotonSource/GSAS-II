@@ -38,10 +38,11 @@ BLACK = wx.Colour(0,0,0)
 mapDefault = {'MapType':'','RefList':'','Resolution':0.5,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 # trig functions in degrees
-sind = lambda x: math.sin(x*math.pi/180.)
-tand = lambda x: math.tan(x*math.pi/180.)
-cosd = lambda x: math.cos(x*math.pi/180.)
-asind = lambda x: 180.*math.asin(x)/math.pi
+sind = lambda x: np.sin(x*np.pi/180.)
+tand = lambda x: np.tan(x*np.pi/180.)
+cosd = lambda x: np.cos(x*np.pi/180.)
+asind = lambda x: 180.*np.arcsin(x)/np.pi
+acosd = lambda x: 180.*np.arccos(x)/np.pi
 
 class SymOpDialog(wx.Dialog):
     def __init__(self,parent,SGData,New=True,ForceUnit=False):
@@ -2580,14 +2581,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnViewDir(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 viewDir = Obj.GetValue().split()
                 try:
-                    VD = [float(viewDir[i]) for i in range(3)]
+                    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+                    VD = np.array([float(viewDir[i]) for i in range(3)])
+#                    VD = np.inner(Amat,VD)
+                    VD /= np.sqrt(np.sum(VD**2))
+                    V = np.array(drawingData['viewDir'])
+#                    V = np.inner(Amat,V)
+                    V /= np.sqrt(np.sum(V**2))
+                    A = acosd(np.sum(V*VD))
+                    VX = np.cross(V,VD)
+                    QV = G2mth.AVdeg2Q(A,VX)
+                    Q = drawingData['Quaternion']
+                    drawingData['Quaternion'] = G2mth.prodQQ(Q,QV)
                 except (ValueError,IndexError):
                     VD = drawingData['viewDir']
                 Obj.SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
-                drawingData['viewDir'] = VP
+                drawingData['viewDir'] = VD
                 G2plt.PlotStructure(G2frame,data)
                                 
             showSizer = wx.BoxSizer(wx.VERTICAL)            

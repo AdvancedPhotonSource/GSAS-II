@@ -2390,9 +2390,7 @@ def PlotStructure(G2frame,data):
         indx = drawingData['selectedAtoms']
         if key in ['C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
-            VD = np.inner(Bmat,np.array([0,0,1]))
-            VD /= np.sqrt(np.sum(VD**2))
-            drawingData['viewDir'] = VD
+            drawingData['viewDir'] = [0.,0.,1]
             drawingData['oldxy'] = []
             drawingData['Quaternion'] = [0.0,0.0,1.0,0.0]
             SetViewPointText(drawingData['viewPoint'][0])
@@ -2736,6 +2734,22 @@ def PlotStructure(G2frame,data):
         gluSphere(q,radius,20,10)
         glPopMatrix()
         
+    def RenderDots(XYZ,RC):
+        glEnable(GL_COLOR_MATERIAL)
+        XYZ = np.array(XYZ)
+        glPushMatrix()
+        for xyz,rc in zip(XYZ,RC):
+            x,y,z = xyz
+            r,c = rc
+            glColor3ubv(c)
+            glPointSize(r*50)
+            glBegin(GL_POINTS)
+            glVertex3fv(xyz)
+            glEnd()
+        glPopMatrix()
+        glColor4ubv([0,0,0,0])
+        glDisable(GL_COLOR_MATERIAL)
+        
     def RenderSmallSphere(x,y,z,radius,color):
         glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
         glPushMatrix()
@@ -2744,7 +2758,7 @@ def PlotStructure(G2frame,data):
         q = gluNewQuadric()
         gluSphere(q,radius,4,2)
         glPopMatrix()
-        
+                
     def RenderEllipsoid(x,y,z,ellipseProb,E,R4,color):
         s1,s2,s3 = E
         glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
@@ -2848,6 +2862,8 @@ def PlotStructure(G2frame,data):
         
     def RenderMap(rho,rhoXYZ,indx,Rok):
         cLevel = drawingData['contourLevel']
+        XYZ = []
+        RC = []
         for i,xyz in enumerate(rhoXYZ):
             if not Rok[i]:
                 x,y,z = xyz
@@ -2856,9 +2872,12 @@ def PlotStructure(G2frame,data):
                 if cLevel < 1.:
                     alpha = (abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel)
                 if rho[I,J,K] < 0.:
-                    RenderSmallSphere(x,y,z,0.1*alpha,Rd)
+                    XYZ.append(xyz)
+                    RC.append([0.1*alpha,Rd])
                 else:
-                    RenderSmallSphere(x,y,z,0.1*alpha,Gr)
+                    XYZ.append(xyz)
+                    RC.append([0.1*alpha,Gr])
+        RenderDots(XYZ,RC)
                             
     def Draw():
         mapData = generalData['Map']
@@ -3051,9 +3070,9 @@ def PlotStructure(G2frame,data):
         altDown = False
     Page.SetFocus()
     if mapData['Flip']:
-        choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
-    else:
         choice = [' save as/key:','jpeg','tiff','bmp','u: roll up','d: roll down','l: roll left','r: roll right']
+    else:
+        choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')

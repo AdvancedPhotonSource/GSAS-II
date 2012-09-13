@@ -1554,17 +1554,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     def SetupDrawingData():
         generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         atomData = data['Atoms']
         AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
             'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         defaultDrawing = {'Atoms':[],'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
-            'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,
+            'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],
-            'Quaternion':[1.0,0.0,0.0,0.0],'bondList':{},'viewDir':[0,0,1]}
+            'bondList':{},'viewDir':[0,0,1]}
+        defaultDrawing['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
         try:
             drawingData = data['Drawing']
         except KeyError:
@@ -1572,12 +1574,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawingData = data['Drawing']
         if not drawingData:                 #fill with defaults if empty
             drawingData.update(defaultDrawing)
+        if 'Zstep' not in drawingData:
+            drawingData['Zstep'] = 0.5
         if 'contourLevel' not in drawingData:
             drawingData['contourLevel'] = 1.
         if 'viewDir' not in drawingData:
             drawingData['viewDir'] = [0,0,1]
         if 'Quaternion' not in drawingData:
-            drawingData['Quaternion'] = [1.0,0.0,0.0,0.0]
+            drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] == 'nuclear':
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
@@ -2435,6 +2439,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         import copy
         import wx.lib.colourselect as wcs
         generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SetupDrawingData()
         drawingData = data['Drawing']
         if generalData['Type'] == 'nuclear':
@@ -2453,6 +2458,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnZclip(event):
                 drawingData['Zclip'] = Zclip.GetValue()
                 ZclipTxt.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnZstep(event):
+                try:
+                    step = float(Zstep.GetValue())
+                    if not (0.01 <= step <= 1.0):
+                        raise ValueError
+                except ValueError:
+                    step = drawingData['Zstep']
+                drawingData['Zstep'] = step
+                Zstep.SetValue('%.2fA'%(drawingData['Zstep']))
+                
+            def OnMoveZ(event):
+                move = MoveZ.GetValue()*drawingData['Zstep']
+                MoveZ.SetValue(0)
+                VP = np.inner(Amat,np.array(drawingData['viewPoint'][0]))
+                VD = np.inner(Amat,np.array(drawingData['viewDir']))
+                VD /= np.sqrt(np.sum(VD**2))
+                VP += move*VD
+                VP = np.inner(Bmat,VP)
+                drawingData['viewPoint'][0] = VP
+                panel = dataDisplay.GetChildren()
+                names = [child.GetName() for child in panel]
+                panel[names.index('viewPoint')].SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))                
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnVdWScale(event):
@@ -2504,6 +2533,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Zclip.SetRange(1,99)
             Zclip.Bind(wx.EVT_SLIDER, OnZclip)
             slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
+            
+            ZstepSizer = wx.BoxSizer(wx.HORIZONTAL)
+            ZstepSizer.Add(wx.StaticText(dataDisplay,-1,' Z step:'),0,wx.ALIGN_CENTER_VERTICAL)
+            Zstep = wx.TextCtrl(dataDisplay,value='%.2f'%(drawingData['Zstep']),
+                style=wx.TE_PROCESS_ENTER)
+            Zstep.Bind(wx.EVT_TEXT_ENTER,OnZstep)
+            Zstep.Bind(wx.EVT_KILL_FOCUS,OnZstep)
+            ZstepSizer.Add(Zstep,0,wx.ALIGN_CENTER_VERTICAL)
+            slideSizer.Add(ZstepSizer)
+            MoveSizer = wx.BoxSizer(wx.HORIZONTAL)
+            MoveSizer.Add(wx.StaticText(dataDisplay,-1,'   Press to step:'),0,wx.ALIGN_CENTER_VERTICAL)
+            MoveZ = wx.SpinButton(dataDisplay,style=wx.SP_HORIZONTAL,size=wx.Size(100,20))
+            MoveZ.SetValue(0)
+            MoveZ.SetRange(-1,1)
+            MoveZ.Bind(wx.EVT_SPIN, OnMoveZ)
+            MoveSizer.Add(MoveZ)
+            slideSizer.Add(MoveSizer,1,wx.EXPAND|wx.RIGHT)
             
             vdwScaleTxt = wx.StaticText(dataDisplay,-1,' van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
             slideSizer.Add(vdwScaleTxt,0,wx.ALIGN_CENTER_VERTICAL)
@@ -2581,19 +2627,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnViewDir(event):
-                event.Skip()
                 Obj = event.GetEventObject()
                 viewDir = Obj.GetValue().split()
                 try:
                     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
                     VD = np.array([float(viewDir[i]) for i in range(3)])
-#                    VD = np.inner(Amat,VD)
-                    VD /= np.sqrt(np.sum(VD**2))
+                    VC = np.inner(Amat,VD)
+                    VC /= np.sqrt(np.sum(VC**2))
                     V = np.array(drawingData['viewDir'])
-#                    V = np.inner(Amat,V)
-                    V /= np.sqrt(np.sum(V**2))
-                    A = acosd(np.sum(V*VD))
-                    VX = np.cross(V,VD)
+                    VB = np.inner(Amat,V)
+                    VB /= np.sqrt(np.sum(VB**2))
+                    VX = np.cross(VC,VB)
+                    A = acosd(max((2.-np.sum((VB-VC)**2))/2.,-1.))
                     QV = G2mth.AVdeg2Q(A,VX)
                     Q = drawingData['Quaternion']
                     drawingData['Quaternion'] = G2mth.prodQQ(Q,QV)

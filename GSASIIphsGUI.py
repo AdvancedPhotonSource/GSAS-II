@@ -1565,8 +1565,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],
-            'bondList':{},'viewDir':[0,0,1]}
-        defaultDrawing['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
+            'bondList':{},'viewDir':[1,0,0]}
+        V0 = np.array([0,0,1])
+        V = np.inner(Amat,V0)
+        V /= np.sqrt(np.sum(V**2))
+        A = np.arccos(np.sum(V*V0))
+        defaultDrawing['Quaternion'] = G2mth.AV2Q(A,[0,1,0])
         try:
             drawingData = data['Drawing']
         except KeyError:
@@ -1842,7 +1846,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         drawingData['Atoms'][r][c] = color
                         drawAtoms.SetAttr(i,cs+2,attr)
                     dlg.Destroy()
-#                    event.StopPropagation()
                     UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
                     

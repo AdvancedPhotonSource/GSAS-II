@@ -2357,7 +2357,7 @@ def PlotStructure(G2frame,data):
     
     def OnKeyBox(event):
         import Image
-        Draw()                          #make sure plot is fresh!!
+#        Draw()                          #make sure plot is fresh!!
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
             Fname = os.path.joint(Mydir,generalData['Name']+'.'+mode)
@@ -2379,7 +2379,7 @@ def PlotStructure(G2frame,data):
             wx.CallAfter(OnKey,event)
 
     def OnKey(event):           #on key UP!!
-        Draw()                          #make sure plot is fresh!!
+#        Draw()                          #make sure plot is fresh!!
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:
@@ -2390,9 +2390,14 @@ def PlotStructure(G2frame,data):
         indx = drawingData['selectedAtoms']
         if key in ['C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
-            drawingData['viewDir'] = [0.,0.,1]
+            drawingData['viewDir'] = [0,0,1]
             drawingData['oldxy'] = []
-            drawingData['Quaternion'] = [0.0,0.0,1.0,0.0]
+            V0 = np.array([0,0,1])
+            V = np.inner(Amat,V0)
+            V /= np.sqrt(np.sum(V**2))
+            A = np.arccos(np.sum(V*V0))
+            Q = G2mth.AV2Q(A,[0,1,0])
+            drawingData['Quaternion'] = Q
             SetViewPointText(drawingData['viewPoint'][0])
             SetViewDirText(drawingData['viewDir'])
             Q = drawingData['Quaternion']
@@ -2484,7 +2489,7 @@ def PlotStructure(G2frame,data):
                 GetTruePosition(xy,True)
         else:
             drawingData['oldxy'] = list(xy)
-        Draw()
+#        Draw()
         
     def OnMouseMove(event):
         if event.ShiftDown():           #don't want any inadvertant moves when picking

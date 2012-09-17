@@ -2442,7 +2442,7 @@ def PlotStructure(G2frame,data):
             SetMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
-        Draw()
+        Draw('key')
             
     def GetTruePosition(xy,Add=False):
         View = glGetIntegerv(GL_VIEWPORT)
@@ -2510,7 +2510,7 @@ def PlotStructure(G2frame,data):
                 SetRotationZ(newxy)
                 Q = drawingData['Quaternion']
                 G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
-            Draw()
+            Draw('move')
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -2525,7 +2525,7 @@ def PlotStructure(G2frame,data):
                 names = [child.GetName() for child in panel]
                 panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
                 panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
-            Draw()
+            Draw('wheel')
         
     def getSelection():
         try:
@@ -2884,7 +2884,11 @@ def PlotStructure(G2frame,data):
                     RC.append([0.1*alpha,Gr])
         RenderDots(XYZ,RC)
                             
-    def Draw():
+    def Draw(caller=''):
+#useful debug?        
+#        if caller:
+#            print caller
+# end of useful debug
         mapData = generalData['Map']
         pageName = ''
         page = getSelection()
@@ -3058,10 +3062,10 @@ def PlotStructure(G2frame,data):
         Page.canvas.SwapBuffers()
        
     def OnSize(event):
-        Draw()
+        Draw('size')
         
-    def OnFocus(event):
-        Draw()
+    def OnFocus(event):         #not needed?? Bind commented out below
+        Draw('focus')
         
     try:
         plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
@@ -3088,10 +3092,10 @@ def PlotStructure(G2frame,data):
     Page.canvas.Bind(wx.EVT_KEY_UP, OnKey)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
-    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
+#    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
     Page.camera['position'] = drawingData['cameraPos']
     Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
     Page.camera['backColor'] = np.array(list(drawingData['backColor'])+[0,])/255.
     Page.canvas.SetCurrent()
-    Draw()
+    Draw('main')
         

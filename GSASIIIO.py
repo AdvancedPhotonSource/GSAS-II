@@ -734,6 +734,8 @@ def ReadEXPPhase(G2frame,filename):
         elif 'SG SYM' in key:
             SpGrp = EXPphase[key][:15].strip()
             E,SGData = G2spc.SpcGroup(SpGrp)
+            if E:
+                E,SGData = G2spc.SpcGroup('P 1') # unlikely to need this
         elif 'OD    ' in key:
             SHdata = EXPphase[key].split() # may not have all 9 values
             SHvals = 9*[0]
@@ -829,6 +831,11 @@ def ReadPDBPhase(filename):
             AA,AB = G2lat.cell2AB(cell)
             SpGrp = S[55:65]
             E,SGData = G2spc.SpcGroup(SpGrp)
+            # space group processing failed, try to look up name in table
+            if E:
+                SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
+                if SpGrp:
+                    E,SGData = G2spc.SpcGroup(SpGrp)
             while E:
                 print G2spc.SGErrors(E)
                 dlg = wx.TextEntryDialog(None,
@@ -1087,7 +1094,6 @@ class ImportBaseclass(object):
         # the extension matches one in the extensionlist
         self.strictExtension = strictExtension
         self.warnings = ''
-        self.errors = ''
         # used for readers that will use multiple passes to read
         # more than one data block
         self.repeat = False

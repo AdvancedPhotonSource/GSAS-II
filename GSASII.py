@@ -384,7 +384,12 @@ class GSASII(wx.Frame):
                         #                 'Error reading file '+filename
                         #                 +' with format '+ rd.formatName)
                         continue
-                    if flag: break # success reading
+                    if flag:
+                        if rd.warnings:
+                            self.ErrorDialog('Read Warning','The '+ rd.formatName+
+                                             ' reader reported a warning message:\n\n'+
+                                             rd.warnings)
+                        break # success reading
                 else:
                     self.ErrorDialog('Read Error','No reader is able to read from file '+filename+msg)
             except:

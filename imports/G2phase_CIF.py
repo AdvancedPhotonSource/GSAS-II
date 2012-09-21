@@ -125,15 +125,21 @@ class CIFPhaseReader(G2IO.ImportPhase):
             else:
                 blknm = str_blklist[selblk]
                 blk = cf[str_blklist[selblk]]
+                E = True
                 SpGrp = blk.get("_symmetry_space_group_name_H-M")
-                if SpGrp:
-                     E,SGData = G2spc.SpcGroup(SpGrp)
+                # try normalizing the space group, see if we can pick the space group out of a table
+                SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
+                if SpGrpNorm:
+                    E,SGData = G2spc.SpcGroup(SpGrpNorm)
+                # nope, try the space group "out of the Box"
+                if E and SpGrp:
+                    E,SGData = G2spc.SpcGroup(SpGrp)
                 if E:
-                    self.warnings += ' ERROR in space group symbol '+SpGrp
-                    self.warnings += ' N.B.: make sure spaces separate axial fields in symbol' 
+                    self.warnings += 'ERROR in space group symbol '+SpGrp
+                    self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
                     self.warnings += G2spc.SGErrors(E)
-                else:
-                    self.Phase['General']['SGData'] = SGData
+                    SGData = G2IO.SGData # P 1
+                self.Phase['General']['SGData'] = SGData
                 # cell parameters
                 cell = []
                 for lbl in (

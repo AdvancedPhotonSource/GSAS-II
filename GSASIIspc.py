@@ -880,6 +880,32 @@ def U2Uij(U):
 def Uij2U(Uij):
     #returns the thermal motion tensor U from Uij as numpy array
     return np.array([[Uij[0],Uij[3],Uij[4]],[Uij[3],Uij[1],Uij[5]],[Uij[4],Uij[5],Uij[2]]])
+
+def StandardizeSpcName(spcgroup):
+    '''Accept a spacegroup name where spaces may have not been used
+    in the names according to the GSAS convention (spaces between symmetry
+    for each axis) and return the space group name as used in GSAS
+    '''
+    rspc = spcgroup.replace(' ','').upper()
+    # deal with rhombohedral and hexagonal setting designations
+    rhomb = ''
+    if rspc[-1:] == 'R':
+        rspc = rspc[:-1]
+        rhomb = ' R'
+    if rspc[-1:] == 'H': # hexagonal is assumed and thus can be ignored
+        rspc = rspc[:-1]
+    # look for a match in the spacegroup lists
+    for i in spglist.values():
+        for spc in i:
+            if rspc == spc.replace(' ','').upper():
+                return spc + rhomb
+    # how about the post-2002 orthorhombic names?
+    for i,spc in sgequiv_2002_orthorhombic:
+        if rspc == i.replace(' ','').upper():
+            return spc
+    # not found
+    return ''
+
     
 '''A dictionary of space groups as ordered and named in the pre-2002 International 
 Tables Volume A, except that spaces are used following the GSAS convention to 
@@ -924,7 +950,7 @@ spglist = {
         'P n m a','P m n b','P b n m','P c m n','P m c n','P n a m',
         ),
     'Cmmm':('C 2 2 21','C 2 2 2','C m m 2','C m c 21','C c c 2','C m 2 m','C 2 m m',
-        'C m 2 a','C 2 m b','C 2 c m','C c 2 m','C 2 c m','C c 2 m',
+        'C m 2 a','C 2 m b','C 2 c m','C c 2 m','C 2 c m','C c 2 m', # check: C c 2 m & C c 2 m twice
         'C m c a','C m m m','C c c m','C m m a','C c c a','C m c m',),
     'Immm':('I 2 2 2','I 21 21 21','I m m m',
         'I m m 2','I m 2 m','I 2 m m',
@@ -935,7 +961,7 @@ spglist = {
         'I m m a','I m m b','I b m m ','I c m m','I m c m','I m a m',),
     'Fmmm':('F 2 2 2','F m m m', 'F d d d',
         'F m m 2','F m 2 m','F 2 m m',
-        'F d d 2','F d 2 d','F d 2 d',),
+        'F d d 2','F d 2 d','F 2 d d',),
     'P4/mmm':('P 4','P 41','P 42','P 43','P -4','P 4/m','P 42/m','P 4/n','P 42/n',
         'P 4 2 2','P 4 21 2','P 41 2 2','P 41 21 2','P 42 2 2',
         'P 42 21 2','P 43 2 2','P 43 21 2','P 4 m m','P 4 b m','P 42 c m',

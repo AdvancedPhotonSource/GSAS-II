@@ -499,6 +499,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnSpaceGroup(event):
                 SpcGp = SGTxt.GetValue()
                 SGErr,SGData = G2spc.SpcGroup(SpcGp)
+                # try a lookup on the user-supplied name
+                if SGErr:
+                    SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
+                    if SpGrpNorm:
+                        E,SGData = G2spc.SpcGroup(SpGrpNorm)
+                        if not E: SGErr = False
                 if SGErr:
                     text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
                     SGTxt.SetValue(generalData['SGData']['SpGrp'])

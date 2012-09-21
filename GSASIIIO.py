@@ -834,8 +834,8 @@ def ReadPDBPhase(filename):
             # space group processing failed, try to look up name in table
             if E:
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
-                if SpGrp:
-                    E,SGData = G2spc.SpcGroup(SpGrp)
+                if SpGrpNorm:
+                    E,SGData = G2spc.SpcGroup(SpGrpNorm)
             while E:
                 print G2spc.SGErrors(E)
                 dlg = wx.TextEntryDialog(None,

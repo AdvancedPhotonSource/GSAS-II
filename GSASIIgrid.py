@@ -164,7 +164,12 @@ class MyHelp(wx.Menu):
         self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
             text='&About GSAS-II')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
-
+        if GSASIIpath.whichsvn():
+            helpobj = self.Append(
+                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
+                text='&Check for updates')
+            frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
+       
     def OnHelpById(self,event):
         '''Called when Help on... is pressed in a menu. Brings up
         a web page for documentation.
@@ -193,6 +198,90 @@ General Structure Analysis System - GSAS-II
 '''
         wx.AboutBox(info)
 
+    def OnCheckUpdates(self,event):
+        '''Check if the GSAS-II repository has an update for the current source files
+        and perform that update if requested.
+        '''
+        if not GSASIIpath.whichsvn():
+            dlg = wx.MessageDialog(self,'No Subversion','Cannot update GSAS-II because subversion (svn) '+
+                                   'was not found.'
+                                   ,wx.OK)
+            dlg.ShowModal()
+            return
+        wx.BeginBusyCursor()
+        local = GSASIIpath.svnGetRev()
+        if local is None: 
+            wx.EndBusyCursor()
+            dlg = wx.MessageDialog(self.frame,
+                                   'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
+                                   'Subversion error',
+                                   wx.OK)
+            dlg.ShowModal()
+            return
+        print 'Installed GSAS-II version: '+local
+        repos = GSASIIpath.svnGetRev(local=False)
+        wx.EndBusyCursor()
+        if repos is None: 
+            dlg = wx.MessageDialog(self.frame,
+                                   'Unable to access the GSAS-II server. Is this computer on the internet?',
+                                   'Server unavailable',
+                                   wx.OK)
+            dlg.ShowModal()
+            return
+        print 'GSAS-II version on server: '+repos
+        if local == repos:
+            dlg = wx.MessageDialog(self.frame,
+                                   'GSAS-II is up-to-date. Version '+local+' is already loaded.',
+                                   'GSAS-II Up-to-date',
+                                   wx.OK)
+            dlg.ShowModal()
+            return
+        mods = GSASIIpath.svnFindLocalChanges()
+        if mods:
+            dlg = wx.MessageDialog(self.frame,
+                                   'You have version '+local+
+                                   ' of GSAS-II installed, but the current version is '+repos+
+                                   'However, you have modified '+str(len(mods))+
+                                   ' file(s) on your local computer have been modified.'
+                                   ' Updating could wipe out your local changes. Press OK to start an update:',
+                                   'Local GSAS-II Mods',
+                                   wx.OK|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK: return
+        else:
+            dlg = wx.MessageDialog(self.frame,
+                                   'You have version '+local+
+                                   ' of GSAS-II installed, but the current version is '+repos+
+                                   '. Press OK to start an update:',
+                                   'GSAS-II Updates',
+                                   wx.OK|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK: return
+        print 'start updates'
+        wx.BeginBusyCursor()
+        moddict = GSASIIpath.svnUpdateDir()
+        wx.EndBusyCursor()
+        if moddict is None: 
+            dlg = wx.MessageDialog(self.frame,
+                                   'Error accessing the GSAS-II server or performing the update. '+
+                                   'Try again later or perform a manual update',
+                                   'Update Error',
+                                   wx.OK)
+            dlg.ShowModal()
+            return
+        modsbytype = {}
+        for key in moddict:
+            typ = moddict[key]
+            if modsbytype.get(typ) is None:
+                modsbytype[typ] = []
+            modsbytype[typ].append(key)
+        msg = 'Update was completed. Changes will take effect when GSAS-II is next updated. The following files were updated, ordered by status:'
+        for key in modsbytype:
+            msg += '\n' + key + ':\n\t'
+            for fil in modsbytype:
+                msg += fil + ', '
+        dlg = wx.MessageDialog(self.frame,msg, 'Update Completed', wx.OK)
+        dlg.ShowModal()
+        return
+ 
 class MyHtmlPanel(wx.Panel):
     '''Defines a panel to display Help information'''
     def __init__(self, frame, id):

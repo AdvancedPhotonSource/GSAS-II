@@ -54,7 +54,6 @@ def UpdateImageControls(G2frame,data,masks):
         G2plt.PlotExposedImage(G2frame,event=event)
             
     def OnIntegrate(event):
-        
         if data['background image'][0]:
             maskCopy = copy.deepcopy(masks)
             backImg = data['background image'][0]
@@ -71,7 +70,7 @@ def UpdateImageControls(G2frame,data,masks):
             G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks)
         G2plt.PlotIntegration(G2frame,newPlot=True)
         G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
-        G2frame.MakePDF.Enable(True)
+        for item in G2frame.MakePDF: item.Enable(True)
         
     def OnIntegrateAll(event):
         print 'integrate all'
@@ -717,7 +716,7 @@ def UpdateImageControls(G2frame,data,masks):
     typeDict = {'PWDR':typeList[0],'SASD':typeList[1],'REFL':typeList[2]}
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.ImageMenu)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ImageMenu)
     if not G2frame.dataFrame.GetStatusBar():
         G2frame.dataFrame.CreateStatusBar()
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=G2gd.wxID_IMCALIBRATE)
@@ -912,7 +911,7 @@ def UpdateMasks(G2frame,data):
         
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MaskMenu)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MaskMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=G2gd.wxID_MASKCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOAD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)    
@@ -1284,7 +1283,7 @@ def UpdateStressStrain(G2frame,data):
 
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.StrStaMenu)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.StrStaMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)

@@ -98,94 +98,109 @@ atan2d = lambda x,y: 180.*math.atan2(y,x)/math.pi
 def create(parent):
     return GSASII(parent)
 
-[wxID_PATTERNTREE, 
-] = [wx.NewId() for _init_ctrls in range(1)]
-
-[wxID_FILECLOSE, wxID_FILEEXIT, wxID_FILEOPEN,  wxID_FILESAVE, wxID_FILESAVEAS, 
-wxID_REFINE,  wxID_MAKEPDFS, wxID_VIEWLSPARMS, wxID_SEQREFINE,
-] = [wx.NewId() for _init_coll_File_Items in range(9)]
-
-[wxID_PWDRREAD,wxID_SNGLREAD,wxID_ADDPHASE,wxID_DELETEPHASE,
- wxID_DATADELETE,wxID_READPEAKS,wxID_PWDSUM,wxID_IMGREAD,
- wxID_IMSUM, wxID_DATARENAME,
-] = [wx.NewId() for _init_coll_Data_Items in range(10)]
-
-[wxID_EXPORT, wxID_EXPORTPATTERN, wxID_EXPORTHKL, wxID_EXPORTPHASE,
-wxID_EXPORTCIF, wxID_EXPORTPEAKLIST, wxID_EXPORTPDF,
-] = [wx.NewId() for _init_coll_Export_Items in range(7)]
-
 class GSASII(wx.Frame):
     
-    def _init_coll_GSASIIMenu_Menus(self, parent):
-        parent.Append(menu=self.File, title='File')
-        parent.Append(menu=self.Data, title='Data')
-        parent.Append(menu=self.Calculate, title='Calculate')
-        parent.Append(menu=self.Import, title='Import')
-        parent.Append(menu=self.Export, title='Export')
-        self.HelpMenu=G2gd.MyHelp(self,helpType='Data tree',
-            morehelpitems=[('&Tutorials','Tutorials')])
-        parent.Append(menu=self.HelpMenu,title='&Help')
-        
-    def _init_coll_File_Items(self, parent):
-        parent.Append(help='Open a gsasii project file (*.gpx)', id=wxID_FILEOPEN,
-             kind=wx.ITEM_NORMAL,text='Open project...')
-        parent.Append(help='Save project to old file', id=wxID_FILESAVE, 
+    def _Add_FileMenuItems(self, parent):
+        item = parent.Append(
+            help='Open a gsasii project file (*.gpx)', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Open project...')
+        self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
+        item = parent.Append(
+            help='Save project to old file', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='Save project')
-        parent.Append(help='Save project to new file', id=wxID_FILESAVEAS, 
+        self.Bind(wx.EVT_MENU, self.OnFileSave, id=item.GetId())
+        item = parent.Append(
+            help='Save project to new file', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='Save As...')
-        parent.Append(help='Close project, saving is optional', id=wxID_FILECLOSE, 
+        self.Bind(wx.EVT_MENU, self.OnFileSaveas, id=item.GetId())
+        item = parent.Append(
+            help='Close project, saving is optional', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='Close project')
-        parent.Append(help='Exit from gsasii', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
-            text='Exit')
-        self.Bind(wx.EVT_MENU, self.OnFileOpen, id=wxID_FILEOPEN)
-        self.Bind(wx.EVT_MENU, self.OnFileSave, id=wxID_FILESAVE)
-        self.Bind(wx.EVT_MENU, self.OnFileSaveas, id=wxID_FILESAVEAS)
-        self.Bind(wx.EVT_MENU, self.OnFileClose, id=wxID_FILECLOSE)
-        self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
+        self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
+        item = parent.Append(
+            help='Exit from gsasii', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Exit')
+        self.Bind(wx.EVT_MENU, self.OnFileExit, id=item.GetId())
         
-    def _init_coll_Data_Items(self,parent):
-        parent.Append(help='',id=wxID_IMGREAD, kind=wx.ITEM_NORMAL,
+    def _Add_DataMenuItems(self,parent):
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Read image data...')
-        parent.Append(help='',id=wxID_READPEAKS, kind=wx.ITEM_NORMAL,
+        self.Bind(wx.EVT_MENU, self.OnImageRead, id=item.GetId())
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Read Powder Pattern Peaks...')
-        parent.Append(help='', id=wxID_PWDSUM, kind=wx.ITEM_NORMAL,
+        self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Sum powder data')
-        parent.Append(help='',id=wxID_IMSUM, kind=wx.ITEM_NORMAL,
+        self.Bind(wx.EVT_MENU, self.OnPwdrSum, id=item.GetId())
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Sum image data')
-        parent.Append(help='', id=wxID_ADDPHASE, kind=wx.ITEM_NORMAL,
+        self.Bind(wx.EVT_MENU, self.OnImageSum, id=item.GetId())
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Add phase')
-        parent.Append(help='', id=wxID_DELETEPHASE, kind=wx.ITEM_NORMAL,
+        self.Bind(wx.EVT_MENU, self.OnAddPhase, id=item.GetId())
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Delete phase')
-        parent.Append(help='', id=wxID_DATARENAME, kind=wx.ITEM_NORMAL,
+        self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=item.GetId())
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Rename data') 
-        parent.Append(help='', id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,
+        self.Bind(wx.EVT_MENU, self.OnRenameData, id=item.GetId())
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Delete data')
-        self.Bind(wx.EVT_MENU, self.OnPwdrSum, id=wxID_PWDSUM)
-        self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=wxID_READPEAKS)
-        self.Bind(wx.EVT_MENU, self.OnImageRead, id=wxID_IMGREAD)
-        self.Bind(wx.EVT_MENU, self.OnImageSum, id=wxID_IMSUM)
-        self.Bind(wx.EVT_MENU, self.OnAddPhase, id=wxID_ADDPHASE)
-        self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=wxID_DELETEPHASE)
-        self.Bind(wx.EVT_MENU, self.OnRenameData, id=wxID_DATARENAME)
-        self.Bind(wx.EVT_MENU, self.OnDataDelete, id=wxID_DATADELETE)
+        self.Bind(wx.EVT_MENU, self.OnDataDelete, id=item.GetId())
                 
-    def _init_coll_Calculate_Items(self,parent):
-        self.MakePDF = parent.Append(help='Make new PDFs from selected powder patterns', 
-            id=wxID_MAKEPDFS, kind=wx.ITEM_NORMAL,text='Make new PDFs')
-        self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=wxID_MAKEPDFS)
-        self.ViewLSParms = parent.Append(help='View least squares parameters', 
-            id=wxID_VIEWLSPARMS, kind=wx.ITEM_NORMAL,text='View LS parms')
-        self.Bind(wx.EVT_MENU, self.OnViewLSParms, id=wxID_VIEWLSPARMS)
-        self.Refine = parent.Append(help='', id=wxID_REFINE, kind=wx.ITEM_NORMAL,
-            text='Refine')
-        self.Refine.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnRefine, id=wxID_REFINE)
-        self.SeqRefine = parent.Append(help='', id=wxID_SEQREFINE, kind=wx.ITEM_NORMAL,
-            text='Sequental refine')
-        self.SeqRefine.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=wxID_SEQREFINE)
+    def _Add_CalculateMenuItems(self,parent):
+        item = parent.Append(help='Make new PDFs from selected powder patterns', 
+            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='Make new PDFs')
+        self.MakePDF.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=item.GetId())
         
-    def _init_Import_routines(self,parent,prefix,readerlist,errprefix):
+        item = parent.Append(help='View least squares parameters', 
+            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='View LS parms')
+        self.Bind(wx.EVT_MENU, self.OnViewLSParms, id=item.GetId())
+        
+        item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
+            text='Refine')
+        self.Refine.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
+        
+        item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
+            text='Sequental refine')
+        self.SeqRefine.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
+        
+    def _init_Imports(self):
+        '''import all the G2phase*.py & G2sfact*.py & G2pwd*.py files that 
+        are found in the path
+        '''
+
+        self.ImportPhaseReaderlist = []
+        self._init_Import_routines('phase',self.ImportPhaseReaderlist,'Phase')
+        self.ImportSfactReaderlist = []
+        self._init_Import_routines('sfact',self.ImportSfactReaderlist,'Struct_Factor')
+        self.ImportPowderReaderlist = []
+        self._init_Import_routines('pwd',self.ImportPowderReaderlist,'Powder_Data')
+        self.ImportMenuId = {}
+
+    def _init_Import_routines(self,prefix,readerlist,errprefix):
         '''import all the import readers matching the prefix
         '''
         #path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file
@@ -400,14 +415,9 @@ class GSASII(wx.Frame):
                 if fp: fp.close()
         return rd_list
 
-    def _init_Import_Phase(self,parent):
-        '''import all the G2phase*.py files that are found in the
-        path and configure the Import Phase menus accordingly
+    def _Add_ImportMenu_Phase(self,parent):
+        '''configure the Import Phase menus accord to the readers found in _init_Imports
         '''
-        self.ImportPhaseReaderlist = []
-        self._init_Import_routines(parent,'phase',
-                                   self.ImportPhaseReaderlist,
-                                   'Phase')
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Phase',
             submenu, help='Import phase data')
@@ -454,14 +464,9 @@ class GSASII(wx.Frame):
             self.PatternTree.Expand(psub) 
         return # success
         
-    def _init_Import_Sfact(self,parent):
-        '''import all the G2sfact*.py files that are found in the
-        path and configure the Import Structure Factor menus accordingly
+    def _Add_ImportMenu_Sfact(self,parent):
+        '''configure the Import Structure Factor menus accord to the readers found in _init_Imports
         '''
-        self.ImportSfactReaderlist = []
-        self._init_Import_routines(parent,'sfact',
-                                   self.ImportSfactReaderlist,
-                                   'Struct_Factor')
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Structure Factor',
             submenu, help='Import Structure Factor data')
@@ -510,13 +515,9 @@ class GSASII(wx.Frame):
             self.Sngl = Id
         return # success
 
-    def _init_Import_powder(self,parent):
-        '''import all the G2pwd*.py files that are found in the
-        path and configure the Import Powder Data menus accordingly
+    def _Add_ImportMenu_powder(self,parent):
+        '''configure the Powder Data menus accord to the readers found in _init_Imports
         '''
-        self.ImportPowderReaderlist = []
-        self._init_Import_routines(parent,'pwd',self.ImportPowderReaderlist,
-            'Powder_Data')
         submenu = wx.Menu()
         item = parent.AppendMenu(wx.ID_ANY, 'Powder Data',
             submenu, help='Import Powder data')
@@ -841,7 +842,7 @@ class GSASII(wx.Frame):
         return # success
 
     def _init_Exports(self,parent):
-        '''
+        '''This is a place holder for when exports are handled in a manner similar to imports
         '''
 #        submenu = wx.Menu()
 #        item = parent.AppendMenu(
@@ -859,51 +860,82 @@ class GSASII(wx.Frame):
 #        reload(G2export)
 #        G2export.ProjExport(self)
 
-    def _init_coll_Export_Items(self,parent):
-        self.ExportPattern = parent.Append(help='Select PWDR item to enable',id=wxID_EXPORTPATTERN, kind=wx.ITEM_NORMAL,
+    def _Add_ExportMenuItems(self,parent):
+        item = parent.Append(
+            help='Select PWDR item to enable',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
             text='Export Powder Patterns...')
-        self.ExportPeakList = parent.Append(help='',id=wxID_EXPORTPEAKLIST, kind=wx.ITEM_NORMAL,
-            text='Export All Peak Lists...')
-        self.ExportHKL = parent.Append(help='',id=wxID_EXPORTHKL, kind=wx.ITEM_NORMAL,
-            text='Export HKLs...')
-        self.ExportPDF = parent.Append(help='Select PDF item to enable',id=wxID_EXPORTPDF, kind=wx.ITEM_NORMAL,
-            text='Export PDF...')
-        self.ExportPhase = parent.Append(help='',id=wxID_EXPORTPHASE, kind=wx.ITEM_NORMAL,
-            text='Export Phase...')
-        self.ExportCIF = parent.Append(help='',id=wxID_EXPORTCIF, kind=wx.ITEM_NORMAL,
-            text='Export CIF...')
-        self.ExportPattern.Enable(False)
-        self.ExportPeakList.Enable(True)
-        self.ExportHKL.Enable(False)
-        self.ExportPDF.Enable(False)
-        self.ExportPhase.Enable(False)
-        self.ExportCIF.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=wxID_EXPORTPATTERN)
-        self.Bind(wx.EVT_MENU, self.OnExportPeakList, id=wxID_EXPORTPEAKLIST)
-        self.Bind(wx.EVT_MENU, self.OnExportHKL, id=wxID_EXPORTHKL)
-        self.Bind(wx.EVT_MENU, self.OnExportPDF, id=wxID_EXPORTPDF)
-        self.Bind(wx.EVT_MENU, self.OnExportPhase, id=wxID_EXPORTPHASE)
-        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=wxID_EXPORTCIF)
-               
-    def _init_utils(self):
-        self.GSASIIMenu = wx.MenuBar()
-        self.File = wx.Menu(title='')
-        self.Data = wx.Menu(title='')        
-        self.Calculate = wx.Menu(title='')        
-        self.Import = wx.Menu(title='')        
-        self.Export = wx.Menu(title='')        
+        self.ExportPattern.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=item.GetId())
 
-        self._init_coll_GSASIIMenu_Menus(self.GSASIIMenu)
-        self._init_coll_File_Items(self.File)
-        self._init_coll_Data_Items(self.Data)
-        self._init_coll_Calculate_Items(self.Calculate)
-        self.ImportMenuId = {}
-        self._init_Import_Phase(self.Import)
-        self._init_Import_powder(self.Import)
-        self._init_Import_Sfact(self.Import)
-        self._init_coll_Export_Items(self.Export)
-        self._init_Exports(self.Export)
-        
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
+            text='Export All Peak Lists...')
+        self.ExportPeakList.append(item)
+        item.Enable(True)
+        self.Bind(wx.EVT_MENU, self.OnExportPeakList, id=item.GetId())
+
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
+            text='Export HKLs...')
+        self.ExportHKL.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnExportHKL, id=item.GetId())
+
+        item = parent.Append(
+            help='Select PDF item to enable',
+            id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
+            text='Export PDF...')
+        self.ExportPDF.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnExportPDF, id=item.GetId())
+
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
+            text='Export Phase...')
+        self.ExportPhase.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnExportPhase, id=item.GetId())
+
+        item = parent.Append(
+            help='',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,
+            text='Export CIF...')
+        self.ExportCIF.append(item)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=item.GetId())
+               
+    def FillMainMenu(self,menubar):
+        '''Define contents of the main GSAS-II menu for the (main) data tree window
+        in the mac, used also for the data item windows as well.
+        '''
+        File = wx.Menu(title='')
+        menubar.Append(menu=File, title='File')
+        self._Add_FileMenuItems(File)
+        Data = wx.Menu(title='')
+        menubar.Append(menu=Data, title='Data')
+        self._Add_DataMenuItems(Data)
+        Calculate = wx.Menu(title='')        
+        menubar.Append(menu=Calculate, title='Calculate')
+        self._Add_CalculateMenuItems(Calculate)
+        Import = wx.Menu(title='')        
+        menubar.Append(menu=Import, title='Import')
+        self._Add_ImportMenu_Phase(Import)
+        self._Add_ImportMenu_powder(Import)
+        self._Add_ImportMenu_Sfact(Import)
+        Export = wx.Menu(title='')        
+        menubar.Append(menu=Export, title='Export')
+        self._Add_ExportMenuItems(Export)
+        #self._init_Exports(Export)
+        HelpMenu=G2gd.MyHelp(self,helpType='Data tree',
+            morehelpitems=[('&Tutorials','Tutorials')])
+        menubar.Append(menu=HelpMenu,title='&Help')
+
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,
             size=wx.Size(400, 250),style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II data tree')
@@ -911,12 +943,27 @@ class GSASII(wx.Frame):
         Size = self.GetSize()
         xPos = clientSize[2]-Size[0]
         self.SetPosition(wx.Point(xPos,clientSize[1]))
-        self._init_utils()
+        self._init_Imports()
+        #self._init_utils()
+        #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
+        self.MakePDF = []
+        self.Refine = []
+        self.SeqRefine = []
+        self.ExportPattern = []
+        self.ExportPeakList = []
+        self.ExportHKL = []
+        self.ExportPDF = []
+        self.ExportPhase = []
+        self.ExportCIF = []
+        #
+        self.GSASIIMenu = wx.MenuBar()
+        self.FillMainMenu(self.GSASIIMenu)
         self.SetMenuBar(self.GSASIIMenu)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.CreateStatusBar()
         self.mainPanel = wx.Panel(self,-1)
         
+        wxID_PATTERNTREE = wx.NewId()
         self.PatternTree = wx.TreeCtrl(id=wxID_PATTERNTREE,
             parent=self.mainPanel, pos=wx.Point(0, 0),style=wx.TR_DEFAULT_STYLE )
         self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED,
@@ -987,8 +1034,8 @@ class GSASII(wx.Frame):
             if self.dirname: os.chdir(self.dirname)
             G2IO.ProjFileOpen(self)
             self.PatternTree.Expand(self.root)
-            self.Refine.Enable(True)
-            self.SeqRefine.Enable(True)
+            for item in self.Refine: item.Enable(True)
+            for item in self.SeqRefine: item.Enable(True)
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -1727,8 +1774,8 @@ class GSASII(wx.Frame):
                         elif name == 'Controls':
                             data = self.PatternTree.GetItemPyData(item)
                             if data:
-                                self.Refine.Enable(True)
-                                self.SeqRefine.Enable(True)
+                                for item in self.Refine: item.Enable(True)
+                                for item in self.SeqRefine: item.Enable(True)
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
                         self.PatternTree.SelectItem(Id)
@@ -1921,7 +1968,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='F(Q)'+PWDRname),[])        
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='G(R)'+PWDRname),[])        
-                self.ExportPDF.Enable(True)
+                for item in self.ExportPDF: item.Enable(True)
             finally:
                 dlg.Destroy()
                 

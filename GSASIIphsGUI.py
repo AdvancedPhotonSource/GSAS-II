@@ -380,7 +380,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     PhaseName = G2frame.PatternTree.GetItemText(Item)
-    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+    G2gd.SetDataMenuBar(G2frame)
     G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
     G2frame.dataFrame.CreateStatusBar()
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
@@ -2996,10 +2996,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         UseList = data['Histograms']
         if UseList:
             G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
-            G2frame.Refine.Enable(True)
+            for item in G2frame.Refine: item.Enable(True)
         else:
             G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
-            G2frame.Refine.Enable(False)            
+            for item in G2frame.Refine: item.Enable(False)
         generalData = data['General']        
         SGData = generalData['SGData']
         keyList = UseList.keys()
@@ -4309,7 +4309,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print ' No.peaks found:',len(peaks)    
             Page = G2frame.dataDisplay.FindPage('Map peaks')
             G2frame.dataDisplay.ChangeSelection(Page)
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
@@ -4371,7 +4371,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Atoms':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.AtomsMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
@@ -4384,25 +4384,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
             FillAtomsGrid()
         elif text == 'General':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
             UpdateGeneral()
         elif text == 'Data':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
             UpdateDData()
             G2plt.PlotSizeStrainPO(G2frame,data,Start=True)
         elif text == 'Draw Options':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataDrawOptions)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
             UpdateDrawOptions()
             G2plt.PlotStructure(G2frame,data)
         elif text == 'Draw Atoms':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DrawAtomsMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
@@ -4423,20 +4423,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
         elif text == 'Pawley reflections':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.PawleyMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
             FillPawleyReflectionsGrid()
         elif text == 'Texture':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.TextureMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
             UpdateTexture()                        
             G2plt.PlotTexture(G2frame,data,Start=True)
         elif text == 'Map peaks':
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.MapPeaksMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
@@ -4448,12 +4448,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotStructure(G2frame,data)
             
         else:
-            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+            G2gd.SetDataMenuBar(G2frame)
         event.Skip()
         
     General = wx.Window(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(General,'General')
-    G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.DataGeneral)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)

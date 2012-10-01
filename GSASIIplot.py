@@ -2322,7 +2322,8 @@ def PlotStructure(G2frame,data):
     atomData = data['Atoms']
     mapPeaks = []
     if 'Map Peaks' in data:
-        mapPeaks = data['Map Peaks']
+        mapPeaks = np.array(data['Map Peaks'])
+        peakMax = np.max(mapPeaks.T[0])
     drawingData = data['Drawing']
     try:
         drawAtoms = drawingData['Atoms']
@@ -2828,11 +2829,11 @@ def PlotStructure(G2frame,data):
             glEnd()
         glPopMatrix()
 
-    def RenderMapPeak(x,y,z,color):
+    def RenderMapPeak(x,y,z,color,den):
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(3)
-        glColor3fv(color)
+        glColor3fv(color*den/255)
         glPushMatrix()
         glBegin(GL_LINES)
         for vec in mapPeakVecs:
@@ -3051,9 +3052,9 @@ def PlotStructure(G2frame,data):
         if len(mapPeaks):
             for ind,[mag,x,y,z,d] in enumerate(mapPeaks):
                 if ind in Ind and pageName == 'Map peaks':
-                    RenderMapPeak(x,y,z,Gr)
+                    RenderMapPeak(x,y,z,Gr,1.0)
                 else:
-                    RenderMapPeak(x,y,z,Wt)
+                    RenderMapPeak(x,y,z,Wt,mag/peakMax)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]

@@ -14,6 +14,8 @@ Cf2py intent(out) PRFUNC
 Cf2py depend(NPTS) PRFUNC
 
       REAL*4 DTT(0:NPTS-1),PRFUNC(0:NPTS-1)
+      REAL*4 TTHETA,SIG,GAM,SPH
+      INTEGER*4 NPTS,I
       FW = (2.355*SQRT(SIG)+GAM)/100.0
       FMIN = 10.0*(-FW-SPH*COSD(TTHETA))
       FMAX = 15.0*FW
@@ -48,6 +50,8 @@ Cf2py depend(NPTS) GAMPART
 Cf2py intent(out) SLPART
 Cf2py depend(NPTS) SLPART
 
+      INTEGER*4 NPTS
+      REAL*4 TTHETA,SIG,GAM,SPH
       REAL*4 DTT(0:NPTS-1),DPRDT(0:NPTS-1),SIGPART(0:NPTS-1),
      1  GAMPART(0:NPTS-1),SLPART(0:NPTS-1),PRFUNC(0:NPTS-1)
       FW = (2.355*SQRT(SIG)+GAM)/100.0
@@ -76,6 +80,8 @@ Cf2py intent(in) SPH
 Cf2py intent(out) PRFUNC
 Cf2py depend(NPTS) PRFUNC
 
+      INTEGER*4 NPTS
+      REAL*4 TTHETA,SIG,GAM,SPH
       REAL*4 DTT(0:NPTS-1),PRFUNC(0:NPTS-1)
       FW = (2.355*SQRT(SIG)+GAM)/100.0
       FMIN = 10.0*(-FW-SPH*COSD(TTHETA))
@@ -111,6 +117,8 @@ Cf2py depend(NPTS) GAMPART
 Cf2py intent(out) SLPART
 Cf2py depend(NPTS) SLPART
 
+      INTEGER*4 NPTS
+      REAL*4 TTHETA,SIG,GAM,SHL
       REAL*4 DTT(0:NPTS-1),DPRDT(0:NPTS-1),SIGPART(0:NPTS-1),
      1  GAMPART(0:NPTS-1),SLPART(0:NPTS-1),PRFUNC(0:NPTS-1)
       FW = (2.355*SQRT(SIG)+GAM)/100.0
@@ -145,6 +153,7 @@ cf2py depend(NOUT) XOUT
 Cf2py intent(out)  YOUT
 cf2py depend(NOUT) YOUT
 
+      INTEGER NIN,NOUT
       REAL XIN(NIN),YIN(NIN)
       REAL XOUT(NOUT),YOUT(NOUT)
       INTEGER IERROR

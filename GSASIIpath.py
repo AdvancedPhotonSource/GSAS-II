@@ -29,12 +29,13 @@ for loc in sys.path[0],os.path.split(__file__)[0]:
             sys.path.insert(0,os.path.join(loc,bindir))
         # is there a bin directory? (created by a local compile), if so put
         # that at the top of the path
-    if os.path.exists(os.path.join(loc,'bin')):
+    if os.path.exists(os.path.join(loc,'bin')) and os.path.getsize(os.path.join(loc,'bin')):
         bindir = 'bin'
         if os.path.join(loc,'bin') not in sys.path: 
             sys.path.insert(0,os.path.join(loc,bindir))
+print 'GSAS-II binary directory: ',os.path.join(loc,bindir)
 if bindir == None:
-    print "Warning GSAS-II binary libraries not found, some sections of code will not function"
+    raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II fails ****"
 
 # routines for looking a version numbers in files
 version = -1

@@ -1211,7 +1211,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     else:
                         Atoms.SelectRow(r,True)
                 elif event.ShiftDown():
-                    for row in range(r+1):
+                    indxs = Atoms.GetSelectedRows()
+                    Atoms.ClearSelection()
+                    ibeg = 0
+                    if indxs:
+                        ibeg = indxs[-1]
+                    for row in range(ibeg,r+1):
                         Atoms.SelectRow(row,True)
                 else:
                     Atoms.ClearSelection()
@@ -1867,7 +1872,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     else:
                         drawAtoms.SelectRow(r,True)
                 elif event.ShiftDown():
-                    for row in range(r+1):
+                    indxs = drawAtoms.GetSelectedRows()
+                    drawAtoms.ClearSelection()
+                    ibeg = 0
+                    if indxs:
+                        ibeg = indxs[-1]
+                    for row in range(ibeg,r+1):
                         drawAtoms.SelectRow(row,True)
                 else:
                     drawAtoms.ClearSelection()
@@ -4079,7 +4089,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     else:
                         MapPeaks.SelectRow(r,True)
                 elif event.ShiftDown():
-                    for row in range(r+1):
+                    indxs = MapPeaks.GetSelectedRows()
+                    MapPeaks.ClearSelection()
+                    ibeg = 0
+                    if indxs:
+                        ibeg = indxs[-1]
+                    for row in range(ibeg,r+1):
                         MapPeaks.SelectRow(row,True)
                 else:
                     MapPeaks.ClearSelection()

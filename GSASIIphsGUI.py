@@ -4154,6 +4154,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Map Peaks'] = mapPeaks
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
+        
+    def OnPeaksEquiv(event):
+        if 'Map Peaks' in data:
+            mapPeaks = data['Map Peaks']
+            Ind = MapPeaks.GetSelectedRows()
+            if Ind:
+                wx.BeginBusyCursor()
+                try:
+                    Ind = G2mth.PeaksEquiv(data,Ind)
+                    for r in range(MapPeaks.GetNumberRows()):
+                        if r in Ind:
+                            MapPeaks.SelectRow(r,addToSelected=True)
+                        else:
+                            MapPeaks.DeselectRow(r)
+                finally:
+                    wx.EndBusyCursor()
+                G2plt.PlotStructure(G2frame,data)        
                 
     def OnPeaksUnique(event):
         if 'Map Peaks' in data:
@@ -4456,6 +4473,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2gd.wxID_FINDEQVPEAKS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)

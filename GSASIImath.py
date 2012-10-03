@@ -917,8 +917,35 @@ def sortArray(data,pos,reverse=False):
     for key in T:
         X.append(D[key])
     return X
+
+def PeaksEquiv(data,Ind):
+
+    def Duplicate(xyz,peaks,Amat):
+        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
+            return True
+        return False
+                            
+    generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    A = G2lat.cell2A(cell)
+    SGData = generalData['SGData']
+    mapPeaks = data['Map Peaks']
+    XYZ = np.array([xyz[1:4] for xyz in mapPeaks])
+    Indx = {}
+    for ind in Ind:
+        xyz = np.array(mapPeaks[ind][1:4])
+        xyzs = np.array([equiv[0] for equiv in G2spc.GenAtom(xyz,SGData,Move=True)]) 
+        for jnd,xyz in enumerate(XYZ):       
+            Indx[jnd] = Duplicate(xyz,xyzs,Amat)
+    Ind = []
+    for ind in Indx:
+        if Indx[ind]:
+            Ind.append(ind)
+    return Ind
                 
 def PeaksUnique(data,Ind):
+#    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
     def noDuplicate(xyz,peaks,Amat):
         if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:

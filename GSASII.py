@@ -944,7 +944,6 @@ class GSASII(wx.Frame):
         xPos = clientSize[2]-Size[0]
         self.SetPosition(wx.Point(xPos,clientSize[1]))
         self._init_Imports()
-        #self._init_utils()
         #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
         self.MakePDF = []
         self.Refine = []

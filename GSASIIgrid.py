@@ -150,18 +150,6 @@ class MyHelp(wx.Menu):
         wx.Menu.__init__(self,title)
         self.HelpById = {}
         self.frame = frame
-        # add a help item only when helpType is specified
-        if helpType is not None:
-            if helpLbl is None: helpLbl = helpType
-            helpobj = self.Append(text='Help on '+helpLbl,
-                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
-            self.HelpById[helpobj.GetId()] = helpType
-        for lbl,indx in morehelpitems:
-            helpobj = self.Append(text=lbl,
-                id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
-            self.HelpById[helpobj.GetId()] = indx
         self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
             text='&About GSAS-II')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
@@ -170,6 +158,18 @@ class MyHelp(wx.Menu):
                 help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
                 text='&Check for updates')
             frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
+        for lbl,indx in morehelpitems:
+            helpobj = self.Append(text=lbl,
+                id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
+            self.HelpById[helpobj.GetId()] = indx
+        # add a help item only when helpType is specified
+        if helpType is not None:
+            if helpLbl is None: helpLbl = helpType
+            helpobj = self.Append(text='Help on '+helpLbl,
+                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
+            self.HelpById[helpobj.GetId()] = helpType
        
     def OnHelpById(self,event):
         '''Called when Help on... is pressed in a menu. Brings up
@@ -366,16 +366,37 @@ class G2HtmlWindow(wx.html.HtmlWindow):
 class DataFrame(wx.Frame):
     '''Create the dataframe window and its menus
     '''
-    def FillDataMenu(self,menu,helpType,helpLbl=None):
+    def PrefillDataMenu(self,menu,helpType,helpLbl=None,empty=False):
         '''Create the "standard" part of data frame menus. Note that on Linux and
         Windows, this is the standard help Menu. On Mac, this menu duplicates the
         tree menu, but adds an extra help command for the data item and a separator. 
         '''
+        self.datamenu = menu
+        self.helpType = helpType
+        self.helpLbl = helpLbl
         if sys.platform == "darwin": # mac                         
+            self.G2frame.FillMainMenu(menu) # add the data tree menu items
+            if not empty:
+                menu.Append(wx.Menu(title=''),title='|') # add a separator
+        #    menu.Append(AddHelp(self.G2frame,helpType=helpType, helpLbl=helpLbl),
+        #                title='&Help')
+        #else: # other
+        #    menu.Append(menu=MyHelp(self,helpType=helpType, helpLbl=helpLbl),
+        #                title='&Help')
+        
+    def PostfillDataMenu(self,empty=False):
+        '''Create the "standard" part of data frame menus. Note that on Linux and
+        Windows, this is the standard help Menu. On Mac, this menu duplicates the
+        tree menu, but adds an extra help command for the data item and a separator. 
+        '''
+        menu = self.datamenu
+        helpType = self.helpType
+        helpLbl = self.helpLbl
+        if sys.platform == "darwin": # mac
+            if not empty:
+                menu.Append(wx.Menu(title=''),title='|') # add another separator
             menu.Append(AddHelp(self.G2frame,helpType=helpType, helpLbl=helpLbl),
                         title='&Help')
-            self.G2frame.FillMainMenu(menu) # add the data tree menu items
-            menu.Append(wx.Menu(title=''),title='|') # add a separator
         else: # other
             menu.Append(menu=MyHelp(self,helpType=helpType, helpLbl=helpLbl),
                         title='&Help')
@@ -389,19 +410,22 @@ class DataFrame(wx.Frame):
         
 # Controls
         self.ControlsMenu = wx.MenuBar()
-        self.FillDataMenu(self.ControlsMenu,helpType='Controls')
+        self.PrefillDataMenu(self.ControlsMenu,helpType='Controls',empty=True)
+        self.PostfillDataMenu(empty=True)
         
 # Notebook
-        self.DataNotebookMenu = wx.MenuBar()
-        self.FillDataMenu(self.DataNotebookMenu,helpType='Notebook')
+        self.DataNotebookMenu = wx.MenuBar() 
+        self.PrefillDataMenu(self.DataNotebookMenu,helpType='Notebook',empty=True)
+        self.PostfillDataMenu(empty=True)
         
 # Comments
         self.DataCommentsMenu = wx.MenuBar()
-        self.FillDataMenu(self.DataCommentsMenu,helpType='Comments')
+        self.PrefillDataMenu(self.DataCommentsMenu,helpType='Comments',empty=True)
+        self.PostfillDataMenu(empty=True)
         
 # Constraints
         self.ConstraintMenu = wx.MenuBar()
-        self.FillDataMenu(self.ConstraintMenu,helpType='Constraints')
+        self.PrefillDataMenu(self.ConstraintMenu,helpType='Constraints')
         self.ConstraintEdit = wx.Menu(title='')
         self.ConstraintMenu.Append(menu=self.ConstraintEdit, title='Edit')
         self.ConstraintEdit.Append(id=wxID_HOLDADD, kind=wx.ITEM_NORMAL,text='Add hold',
@@ -412,10 +436,11 @@ class DataFrame(wx.Frame):
             help='Add constraint on parameter values')
         self.ConstraintEdit.Append(id=wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add New Var',
             help='Add variable composed of existing parameter')
+        self.PostfillDataMenu()
             
 # Restraints
         self.RestraintMenu = wx.MenuBar()
-        self.FillDataMenu(self.RestraintMenu,helpType='Restraints')
+        self.PrefillDataMenu(self.RestraintMenu,helpType='Restraints')
         self.RestraintEdit = wx.Menu(title='')
         self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
         self.RestraintEdit.Append(id=wxID_RESTSELPHASE, kind=wx.ITEM_NORMAL,text='Select phase',
@@ -428,44 +453,49 @@ class DataFrame(wx.Frame):
             help='Change esd in observed value')
         self.RestraintEdit.Append(id=wxID_RESTDELETE, kind=wx.ITEM_NORMAL,text='Delete restraints',
             help='Delete selected restraints')
+        self.PostfillDataMenu()
             
 # Sequential results
         self.SequentialMenu = wx.MenuBar()
-        self.FillDataMenu(self.SequentialMenu,helpType='Sequential',helpLbl='Sequential Refinement')
+        self.PrefillDataMenu(self.SequentialMenu,helpType='Sequential',helpLbl='Sequential Refinement')
         self.SequentialFile = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialFile, title='File')
         self.SequentialFile.Append(id=wxID_SAVESEQSEL, kind=wx.ITEM_NORMAL,text='Save...',
             help='Save selected sequential refinement results')
+        self.PostfillDataMenu()
             
 # PDR
         self.ErrorMenu = wx.MenuBar()
-        self.FillDataMenu(self.ErrorMenu,helpType='PWD Analysis',helpLbl='Powder Fit Error Analysis')
+        self.PrefillDataMenu(self.ErrorMenu,helpType='PWD Analysis',helpLbl='Powder Fit Error Analysis')
         self.ErrorAnal = wx.Menu(title='')
         self.ErrorMenu.Append(menu=self.ErrorAnal,title='Analysis')
         self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Analyze',
             help='Error analysis on powder pattern')
+        self.PostfillDataMenu()
             
 # PDR / Limits
         self.LimitMenu = wx.MenuBar()
-        self.FillDataMenu(self.LimitMenu,helpType='Limits')
+        self.PrefillDataMenu(self.LimitMenu,helpType='Limits')
         self.LimitEdit = wx.Menu(title='')
         self.LimitMenu.Append(menu=self.LimitEdit, title='File')
         self.LimitEdit.Append(id=wxID_LIMITCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy limits to other histograms')
+        self.PostfillDataMenu()
             
 # PDR / Background
         self.BackMenu = wx.MenuBar()
-        self.FillDataMenu(self.BackMenu,helpType='Background')
+        self.PrefillDataMenu(self.BackMenu,helpType='Background')
         self.BackEdit = wx.Menu(title='')
         self.BackMenu.Append(menu=self.BackEdit, title='File')
         self.BackEdit.Append(id=wxID_BACKCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy background parameters to other histograms')
         self.BackEdit.Append(id=wxID_BACKFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
             help='Copy background refinement flags to other histograms')
+        self.PostfillDataMenu()
             
 # PDR / Instrument Parameters
         self.InstMenu = wx.MenuBar()
-        self.FillDataMenu(self.InstMenu,helpType='Instrument Parameters')
+        self.PrefillDataMenu(self.InstMenu,helpType='Instrument Parameters')
         self.InstEdit = wx.Menu(title='')
         self.InstMenu.Append(menu=self.InstEdit, title='Operations')
         self.InstEdit.Append(help='Reset instrument profile parameters to default', 
@@ -480,10 +510,11 @@ class DataFrame(wx.Frame):
             help='Copy instrument parameter refinement flags to other histograms')
         self.InstEdit.Append(help='Change radiation type (Ka12 - synch)', 
             id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
+        self.PostfillDataMenu()
         
 # PDR / Sample Parameters
         self.SampleMenu = wx.MenuBar()
-        self.FillDataMenu(self.SampleMenu,helpType='Sample Parameters')
+        self.PrefillDataMenu(self.SampleMenu,helpType='Sample Parameters')
         self.SampleEdit = wx.Menu(title='')
         self.SampleMenu.Append(menu=self.SampleEdit, title='File')
         self.SampleEdit.Append(id=wxID_SAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load',
@@ -494,10 +525,11 @@ class DataFrame(wx.Frame):
             help='Copy refinable sample parameters to other histograms')
         self.SampleEdit.Append(id=wxID_SAMPLEFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
             help='Copy sample parameter refinement flags to other histograms')
+        self.PostfillDataMenu()
 
 # PDR / Peak List
         self.PeakMenu = wx.MenuBar()
-        self.FillDataMenu(self.PeakMenu,helpType='Peak List')
+        self.PrefillDataMenu(self.PeakMenu,helpType='Peak List')
         self.PeakEdit = wx.Menu(title='')
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
         self.UnDo = self.PeakEdit.Append(help='Undo last least squares refinement', 
@@ -510,21 +542,23 @@ class DataFrame(wx.Frame):
             text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
         self.PeakEdit.Append(id=wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 
             help='Clear the peak list' )
+        self.PostfillDataMenu()
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)
         self.PFOneCycle.Enable(False)
         
 # PDR / Index Peak List
         self.IndPeaksMenu = wx.MenuBar()
-        self.FillDataMenu(self.IndPeaksMenu,helpType='Index Peak List')
+        self.PrefillDataMenu(self.IndPeaksMenu,helpType='Index Peak List')
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndPeaksMenu.Append(menu=self.IndPeaksEdit,title='Operations')
         self.IndPeaksEdit.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
             kind=wx.ITEM_NORMAL,text='Load/Reload')
+        self.PostfillDataMenu()
         
 # PDR / Unit Cells List
         self.IndexMenu = wx.MenuBar()
-        self.FillDataMenu(self.IndexMenu,helpType='Unit Cells List')
+        self.PrefillDataMenu(self.IndexMenu,helpType='Unit Cells List')
         self.IndexEdit = wx.Menu(title='')
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         self.IndexPeaks = self.IndexEdit.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
@@ -535,6 +569,7 @@ class DataFrame(wx.Frame):
             text='Refine Cell',help='Refine unit cell parameters from indexed peaks')
         self.MakeNewPhase = self.IndexEdit.Append( id=wxID_MAKENEWPHASE, kind=wx.ITEM_NORMAL,
             text='Make new phase',help='Make new phase from selected unit cell')
+        self.PostfillDataMenu()
         self.IndexPeaks.Enable(False)
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)
@@ -542,15 +577,16 @@ class DataFrame(wx.Frame):
         
 # PDR / Reflection Lists
         self.ReflMenu = wx.MenuBar()
-        self.FillDataMenu(self.ReflMenu,helpType='Reflection List')
+        self.PrefillDataMenu(self.ReflMenu,helpType='Reflection List')
         self.ReflEdit = wx.Menu(title='')
         self.ReflMenu.Append(menu=self.ReflEdit, title='Reflection List')
         self.SelectPhase = self.ReflEdit.Append(help='Select phase for reflection list',id=wxID_SELECTPHASE, 
             kind=wx.ITEM_NORMAL,text='Select phase')
+        self.PostfillDataMenu()
         
 # IMG / Image Controls
         self.ImageMenu = wx.MenuBar()
-        self.FillDataMenu(self.ImageMenu,helpType='Image Controls')
+        self.PrefillDataMenu(self.ImageMenu,helpType='Image Controls')
         self.ImageEdit = wx.Menu(title='')
         self.ImageMenu.Append(menu=self.ImageEdit, title='Operations')
         self.ImageEdit.Append(help='Calibrate detector by fitting to calibrant lines', 
@@ -569,10 +605,11 @@ class DataFrame(wx.Frame):
             id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
         self.ImageEdit.Append(help='Load image controls from file', 
             id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
+        self.PostfillDataMenu()
             
 # IMG / Masks
         self.MaskMenu = wx.MenuBar()
-        self.FillDataMenu(self.MaskMenu,helpType='Image Masks')
+        self.PrefillDataMenu(self.MaskMenu,helpType='Image Masks')
         self.MaskEdit = wx.Menu(title='')
         self.MaskMenu.Append(menu=self.MaskEdit, title='Operations')
         self.MaskEdit.Append(help='Copy mask to other images', 
@@ -581,11 +618,12 @@ class DataFrame(wx.Frame):
             id=wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
         self.MaskEdit.Append(help='Load mask from file', 
             id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
+        self.PostfillDataMenu()
             
 # IMG / Stress/Strain
 
         self.StrStaMenu = wx.MenuBar()
-        self.FillDataMenu(self.StrStaMenu,helpType='Stress/Strain')
+        self.PrefillDataMenu(self.StrStaMenu,helpType='Stress/Strain')
         self.StrStaEdit = wx.Menu(title='')
         self.StrStaMenu.Append(menu=self.StrStaEdit, title='Operations')
         self.StrStaEdit.Append(help='Append d-zero for one ring', 
@@ -598,10 +636,11 @@ class DataFrame(wx.Frame):
             id=wxID_STRSTASAVE, kind=wx.ITEM_NORMAL,text='Save stress/strain')
         self.StrStaEdit.Append(help='Load stress/strain data from file', 
             id=wxID_STRSTALOAD, kind=wx.ITEM_NORMAL,text='Load stress/strain')
+        self.PostfillDataMenu()
             
 # PDF / PDF Controls
         self.PDFMenu = wx.MenuBar()
-        self.FillDataMenu(self.PDFMenu,helpType='PDF Controls')
+        self.PrefillDataMenu(self.PDFMenu,helpType='PDF Controls')
         self.PDFEdit = wx.Menu(title='')
         self.PDFMenu.Append(menu=self.PDFEdit, title='PDF Controls')
         self.PDFEdit.Append(help='Add element to sample composition',id=wxID_PDFADDELEMENT, kind=wx.ITEM_NORMAL,
@@ -618,11 +657,12 @@ class DataFrame(wx.Frame):
             text='Compute PDF')
         self.PDFEdit.Append(help='Compute all PDFs', id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
             text='Compute all PDFs')
+        self.PostfillDataMenu()
             
 # Phase / General tab
 
         self.DataGeneral = wx.MenuBar()
-        self.FillDataMenu(self.DataGeneral,helpType='General', helpLbl='Phase/General')
+        self.PrefillDataMenu(self.DataGeneral,helpType='General', helpLbl='Phase/General')
         self.GeneralCalc = wx.Menu(title='')
         self.DataGeneral.Append(menu=self.GeneralCalc,title='Compute')
         self.GeneralCalc.Append(help='Compute Fourier map',id=wxID_FOURCALC, kind=wx.ITEM_NORMAL,
@@ -633,10 +673,11 @@ class DataFrame(wx.Frame):
             text='Charge flipping')
         self.GeneralCalc.Append(help='Clear map',id=wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
             text='Clear map')
+        self.PostfillDataMenu()
         
 # Phase / Data tab
         self.DataMenu = wx.MenuBar()
-        self.FillDataMenu(self.DataMenu,helpType='Data', helpLbl='Phase/Data')
+        self.PrefillDataMenu(self.DataMenu,helpType='Data', helpLbl='Phase/Data')
         self.DataEdit = wx.Menu(title='')
         self.DataMenu.Append(menu=self.DataEdit, title='Edit')
         self.DataEdit.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
@@ -645,10 +686,11 @@ class DataFrame(wx.Frame):
             help='Select new single crystal histograms to be used for this phase')
         self.DataEdit.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Delete histograms',
             help='Delete histograms from use for this phase')
+        self.PostfillDataMenu()
             
 # Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()
-        self.FillDataMenu(self.AtomsMenu,helpType='Atoms')
+        self.PrefillDataMenu(self.AtomsMenu,helpType='Atoms')
         self.AtomEdit = wx.Menu(title='')
         self.AtomCompute = wx.Menu(title='')
         self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit')
@@ -673,14 +715,16 @@ class DataFrame(wx.Frame):
             help='Reload atom drawing list')
         self.AtomCompute.Append(id=wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Distances && Angles',
             help='Compute distances & angles for selected atoms')
+        self.PostfillDataMenu()
                  
 # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
-        self.FillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options')
+        self.PrefillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options',empty=True)
+        self.PostfillDataMenu(empty=True)
         
 # Phase / Draw Atoms tab
         self.DrawAtomsMenu = wx.MenuBar()
-        self.FillDataMenu(self.DrawAtomsMenu,helpType='Draw Atoms')
+        self.PrefillDataMenu(self.DrawAtomsMenu,helpType='Draw Atoms')
         self.DrawAtomEdit = wx.Menu(title='')
         self.DrawAtomCompute = wx.Menu(title='')
         self.DrawAtomRestraint = wx.Menu(title='')
@@ -721,20 +765,22 @@ class DataFrame(wx.Frame):
             help='Add plane restraint for selected atoms (4+)')
         self.DrawAtomRestraint.Append(id=wxID_DRAWRESTRCHIRAL, kind=wx.ITEM_NORMAL,text='Add chiral restraint',
             help='Add chiral restraint for selected atoms (4: center atom 1st)')
+        self.PostfillDataMenu()
             
 # Phase / Texture tab
         self.TextureMenu = wx.MenuBar()
-        self.FillDataMenu(self.TextureMenu,helpType='Texture')
+        self.PrefillDataMenu(self.TextureMenu,helpType='Texture')
         self.TextureEdit = wx.Menu(title='')
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
         self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
             help='Refine the texture coefficients from sequential Pawley results')
         self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
             help='Clear the texture coefficients' )
+        self.PostfillDataMenu()
             
 # Phase / Pawley tab
         self.PawleyMenu = wx.MenuBar()
-        self.FillDataMenu(self.PawleyMenu,helpType='Pawley')
+        self.PrefillDataMenu(self.PawleyMenu,helpType='Pawley')
         self.PawleyEdit = wx.Menu(title='')
         self.PawleyMenu.Append(menu=self.PawleyEdit,title='Operations')
         self.PawleyEdit.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
@@ -745,10 +791,11 @@ class DataFrame(wx.Frame):
             help='Update Pawley intensities with abs(Fobs) from reflection list')
 #        self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
 #            help='Delete selected Pawley reflection')
+        self.PostfillDataMenu()
             
 # Phase / Map peaks tab
         self.MapPeaksMenu = wx.MenuBar()
-        self.FillDataMenu(self.MapPeaksMenu,helpType='Map peaks')
+        self.PrefillDataMenu(self.MapPeaksMenu,helpType='Map peaks')
         self.MapPeaksEdit = wx.Menu(title='')
         self.MapPeaksMenu.Append(menu=self.MapPeaksEdit, title='Map peaks')
         self.MapPeaksEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks', 
@@ -767,6 +814,7 @@ class DataFrame(wx.Frame):
             help='Delete selected peaks')
         self.MapPeaksEdit.Append(id=wxID_PEAKSCLEAR, kind=wx.ITEM_NORMAL,text='Clear peaks', 
             help='Clear the map peak list')
+        self.PostfillDataMenu()
             
 # end of GSAS-II menu definitions
         

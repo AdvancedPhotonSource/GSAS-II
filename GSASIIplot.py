@@ -2323,7 +2323,9 @@ def PlotStructure(G2frame,data):
     mapPeaks = []
     if 'Map Peaks' in data:
         mapPeaks = np.array(data['Map Peaks'])
-        peakMax = np.max(mapPeaks.T[0])
+        peakMax = 100.
+        if len(mapPeaks):
+            peakMax = np.max(mapPeaks.T[0])
     drawingData = data['Drawing']
     try:
         drawAtoms = drawingData['Atoms']

@@ -165,6 +165,7 @@ class MyHelp(wx.Menu):
             self.HelpById[helpobj.GetId()] = indx
         # add a help item only when helpType is specified
         if helpType is not None:
+            self.AppendSeparator()
             if helpLbl is None: helpLbl = helpType
             helpobj = self.Append(text='Help on '+helpLbl,
                                   id=wx.ID_ANY, kind=wx.ITEM_NORMAL)

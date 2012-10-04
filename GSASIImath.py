@@ -830,7 +830,9 @@ def SearchMap(data):
         
     def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
-        return norm*Mag*np.exp(-((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2))/(sig*res**3)
+        z = -((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2)
+#        return norm*Mag*np.exp(z)/(sig*res**3)     #not slower but some faults in LS
+        return norm*Mag*(1.+z+z**2/2.)/(sig*res**3)
         
     def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
         Mag,x0,y0,z0,sig = parms

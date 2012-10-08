@@ -2162,7 +2162,7 @@ def SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict):
     
 def SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict):
     #Spherical harmonics texture derivatives
-    FORPI = 12.5663706143592
+    FORPI = 4.0*np.pi
     IFCoup = 'Bragg' in calcControls[hfx+'instType']
     odfCor = 1.0
     dFdODF = {}

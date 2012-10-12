@@ -1401,6 +1401,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
+            parm = ''
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
                 parm = choices[sel]

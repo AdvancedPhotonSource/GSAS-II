@@ -558,7 +558,7 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
                                     V = G2lat.calc_V(A)
                                     print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f" % (M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)
                                     if M20 >= 2.0:
-                                        cells.append([M20,X20,ibrav,a,b,c,alp,bet,gam,V,False])
+                                        cells.append([M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False])
                             if not GoOn:
                                 break
                             N2 += 1
@@ -588,7 +588,7 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
         cells[0][-1] = True
         return True,dmin,cells
     else:
-        return False,0,0
+        return False,0,[]
         
         
 NeedTestData = True

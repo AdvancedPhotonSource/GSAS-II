@@ -584,8 +584,6 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
                 ', elapsed time = ',G2lat.sec2HMS(time.time()-begin))
             
     if cells:
-        cells = sortM20(cells)
-        cells[0][-1] = True
         return True,dmin,cells
     else:
         return False,0,[]

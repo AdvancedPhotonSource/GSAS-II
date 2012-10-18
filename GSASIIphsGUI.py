@@ -1241,7 +1241,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnRowMove(event):
             frm = event.GetMoveRow()
             to = event.GetBeforeRow()
-            print frm,to
             item = atomData.pop(frm)
             atomData.insert(to,item)
             Paint()

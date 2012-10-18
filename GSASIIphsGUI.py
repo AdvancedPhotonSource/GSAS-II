@@ -1110,7 +1110,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
                             DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
-                    FillAtomsGrid()
+                    Paint()
                     
         def ChangeAtomCell(event):
             
@@ -1174,7 +1174,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
-                    FindBondsDraw()
+                wx.CallAfter(Paint)
 
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -1190,7 +1190,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
                 PE.Destroy()
                 SetupGeneral()
-                FillAtomsGrid()
+                Paint()
                 value = Atoms.GetCellValue(r,c)
                 atomData[r][c] = value
                 ID = atomData[r][-1]
@@ -1202,6 +1202,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
+            if not event.AltDown():
+                Atoms.frm = -1
+                G2frame.dataFrame.SetStatusText('')                    
             if r < 0 and c < 0:
                 if Atoms.IsSelection():
                     Atoms.ClearSelection()
@@ -1219,6 +1222,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         ibeg = indxs[-1]
                     for row in range(ibeg,r+1):
                         Atoms.SelectRow(row,True)
+                elif event.AltDown():
+                    if Atoms.frm < 0:           #pick atom to be moved
+                        Atoms.frm = r
+                        Atoms.SelectRow(r,True)
+                        n = colLabels.index('Name')
+                        G2frame.dataFrame.SetStatusText('Atom '+atomData[r][n]+' is to be moved')
+                    else:                       #move it
+                        item = atomData.pop(Atoms.frm)
+                        atomData.insert(r,item)
+                        Atoms.frm = -1
+                        G2frame.dataFrame.SetStatusText('')
+                        Paint()
                 else:
                     Atoms.ClearSelection()
                     Atoms.SelectRow(r,True)
@@ -1238,16 +1253,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 else:
                     Atoms.SelectCol(c,True)
                     
-        def OnRowMove(event):
-            frm = event.GetMoveRow()
-            to = event.GetBeforeRow()
-            print frm,to
-            if frm == to:
-                return
-            item = atomData.pop(frm)
-            atomData.insert(to,item)
-            wx.CallAfter(Paint)
-            
         def Paint():
         
             table = []
@@ -1257,6 +1262,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 rowLabels.append(str(i))
             atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Atoms.SetTable(atomTable, True)
+            Atoms.frm = -1            
             colType = colLabels.index('Type')
             colSS = colLabels.index('site sym')
             colX = colLabels.index('x')
@@ -1301,8 +1307,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
-        wgmove.GridRowMover(Atoms)
-        Atoms.Bind(wgmove.EVT_GRID_ROW_MOVE,OnRowMove)
         Atoms.SetMargins(0,0)
         Paint()
 

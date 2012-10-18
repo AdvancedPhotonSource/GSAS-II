@@ -887,7 +887,7 @@ class GSGrid(wg.Grid):
     def GetSelection(self):
         #this is to satisfy structure drawing stuff in G2plt when focus changes
         return None
-                        
+                                                
 ################################################################################
 #####  Table
 ################################################################################           
@@ -1024,7 +1024,7 @@ class Table(wg.PyGridTableBase):
                 print self.data
                 self.data[row][col] = value
         innerSetValue(row, col, value)
-                
+
 ################################################################################
 #####  Notebook
 ################################################################################           

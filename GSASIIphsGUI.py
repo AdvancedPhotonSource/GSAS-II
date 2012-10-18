@@ -9,6 +9,7 @@
 ########### SVN repository information ###################
 import wx
 import wx.grid as wg
+import wx.lib.gridmovers as wgmove
 import matplotlib as mpl
 import math
 import copy
@@ -1236,58 +1237,72 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Atoms.DeselectCol(c)
                 else:
                     Atoms.SelectCol(c,True)
+                    
+        def OnRowMove(event):
+            frm = event.GetMoveRow()
+            to = event.GetBeforeRow()
+            print frm,to
+            item = atomData.pop(frm)
+            atomData.insert(to,item)
+            Paint()
+            
+        def Paint():
         
+            table = []
+            rowLabels = []
+            for i,atom in enumerate(atomData):
+                table.append(atom)
+                rowLabels.append(str(i))
+            atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Atoms.SetTable(atomTable, True)
+            colType = colLabels.index('Type')
+            colSS = colLabels.index('site sym')
+            colX = colLabels.index('x')
+            colIA = colLabels.index('I/A')
+            colU11 = colLabels.index('U11')
+            colUiso = colLabels.index('Uiso')
+            attr = wx.grid.GridCellAttr()
+            attr.SetEditor(GridFractionEditor(Atoms))
+            for c in range(colX,colX+3):
+                Atoms.SetColAttr(c, attr)
+            for i in range(colU11-1,colU11+6):
+                Atoms.SetColSize(i,50)            
+            for row in range(Atoms.GetNumberRows()):
+                Atoms.SetReadOnly(row,colType,True)
+                Atoms.SetReadOnly(row,colSS,True)                         #site sym
+                Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
+                if Atoms.GetCellValue(row,colIA) == 'A':
+                    CSI = G2spc.GetCSuinel(atomData[row][colLabels.index('site sym')])
+                    Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
+                    Atoms.SetCellTextColour(row,colUiso,VERY_LIGHT_GREY)
+                    for i in range(6):
+                        ci = colU11+i
+                        Atoms.SetCellTextColour(row,ci,BLACK)
+                        Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
+                        if CSI[2][i]:
+                            Atoms.SetCellStyle(row,ci,WHITE,False)
+                else:
+                    Atoms.SetCellStyle(row,colUiso,WHITE,False)
+                    Atoms.SetCellTextColour(row,colUiso,BLACK)
+                    for i in range(6):
+                        ci = colU11+i
+                        Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
+                        Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
+            Atoms.AutoSizeColumns(False)
+
         SGData = data['General']['SGData']
         G2frame.dataFrame.SetStatusText('')
         if SGData['SGPolax']:
             G2frame.dataFrame.SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'])
-        table = []
-        rowLabels = []
-        for i,atom in enumerate(atomData):
-            table.append(atom)
-            rowLabels.append(str(i))
-        atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        Atoms.SetTable(atomTable, True)
         Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
         Atoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
+        wgmove.GridRowMover(Atoms)
+        Atoms.Bind(wgmove.EVT_GRID_ROW_MOVE,OnRowMove)
         Atoms.SetMargins(0,0)
-        Atoms.AutoSizeColumns(False)
-        colType = colLabels.index('Type')
-        colSS = colLabels.index('site sym')
-        colX = colLabels.index('x')
-        colIA = colLabels.index('I/A')
-        colU11 = colLabels.index('U11')
-        colUiso = colLabels.index('Uiso')
-        attr = wx.grid.GridCellAttr()
-        attr.SetEditor(GridFractionEditor(Atoms))
-        for c in range(colX,colX+3):
-            Atoms.SetColAttr(c, attr)
-        for i in range(colU11-1,colU11+6):
-            Atoms.SetColSize(i,50)            
-        for row in range(Atoms.GetNumberRows()):
-            Atoms.SetReadOnly(row,colType,True)
-            Atoms.SetReadOnly(row,colSS,True)                         #site sym
-            Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
-            if Atoms.GetCellValue(row,colIA) == 'A':
-                CSI = G2spc.GetCSuinel(atomData[row][colLabels.index('site sym')])
-                Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
-                Atoms.SetCellTextColour(row,colUiso,VERY_LIGHT_GREY)
-                for i in range(6):
-                    ci = colU11+i
-                    Atoms.SetCellTextColour(row,ci,BLACK)
-                    Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
-                    if CSI[2][i]:
-                        Atoms.SetCellStyle(row,ci,WHITE,False)
-            else:
-                Atoms.SetCellStyle(row,colUiso,WHITE,False)
-                Atoms.SetCellTextColour(row,colUiso,BLACK)
-                for i in range(6):
-                    ci = colU11+i
-                    Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
-                    Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
+        Paint()
 
     def OnAtomAdd(event):
         AtomAdd(0,0,0)

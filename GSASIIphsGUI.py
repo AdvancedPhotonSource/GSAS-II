@@ -1241,9 +1241,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnRowMove(event):
             frm = event.GetMoveRow()
             to = event.GetBeforeRow()
+            print frm,to
+            if frm == to:
+                return
             item = atomData.pop(frm)
             atomData.insert(to,item)
-            Paint()
+            wx.CallAfter(Paint)
             
         def Paint():
         

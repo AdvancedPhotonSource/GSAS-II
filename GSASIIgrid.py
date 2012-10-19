@@ -34,7 +34,7 @@ helpLocDict = {}
 htmlPanel = None
 htmlFrame = None
 helpMode = 'browser'
-if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global control to set this
+#if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global control to set this
     
 htmlFirstUse = True
 
@@ -130,11 +130,14 @@ def ShowHelp(helpType,frame):
             htmlPanel = MyHtmlPanel(htmlFrame,-1)
             htmlPanel.LoadFile(helplink)
     else:
+        pfx = "file://"
+        if sys.platform.lower().startswith('win'):
+            pfx = ''
         if htmlFirstUse:
-            webbrowser.open_new("file://"+helplink)
+            webbrowser.open_new(pfx+helplink)
             htmlFirstUse = False
         else:
-            webbrowser.open("file://"+helplink, new=0, autoraise=True)
+            webbrowser.open(pfx+helplink, new=0, autoraise=True)
 
 class MyHelp(wx.Menu):
     '''This class creates the contents of a help menu.

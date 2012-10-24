@@ -495,7 +495,7 @@ def SaveIntegration(G2frame,PickId,data):
     name = name.replace('IMG ','PWDR ')
     Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'))
     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
-    codes = [0 for i in range(11)]
+    codes = [0 for i in range(12)]
     LRazm = data['LRazimuth']
     Azms = []
     if data['fullIntegrate'] and data['outAzimuths'] == 1:
@@ -521,7 +521,10 @@ def SaveIntegration(G2frame,PickId,data):
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'),dict(zip(names,zip(parms,parms,codes))))
+            inst = dict(zip(names,zip(parms,parms,codes)))
+            for item in inst:
+                inst[item] = list(inst[item])
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'),inst)
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Index Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Unit Cells List'),[])             
@@ -553,21 +556,20 @@ def powderFxyeSave(G2frame,exports,powderfile):
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
             PickId, 'Instrument Parameters'))
-        print Inst['Type']
         prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
         prm.write( 'INS   BANK      1                                                               '+'\n')
         prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type'][0]))
         if 'Lam1' in Inst:              #Ka1 & Ka2
-            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'],Inst['Lam2'][0]))
+            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'][0],Inst['Lam2'][0]))
         elif 'Lam' in Inst:             #single wavelength
-            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'][0],0.0))
+            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'][1],0.0))
         prm.write( 'INS  1 IRAD     0                                                               '+'\n')
         prm.write( 'INS  1I HEAD                                                                    '+'\n')
         prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
         prm.write(('INS  1DETAZM%10.3f                                                          '+'\n')%(Inst['Azimuth'][0]))
         prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
-        prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'][0],Inst['V'][0],Inst['W'][0],0.0))
-        prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'][0],Inst['Y'][0],Inst['SH/L'][0]/2.,Inst['SH/L'][0]/2.))
+        prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
+        prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
         prm.close()
         file = open(filename,'w')
         print 'save powder pattern to file: ',filename

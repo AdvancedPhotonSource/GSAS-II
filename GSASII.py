@@ -556,7 +556,10 @@ class GSASII(wx.Frame):
                 newVals.append(val)                        
             S = File.readline()                
         File.close()
-        return dict(zip(newItems,zip(newVals,newVals,len(newVals)*[False,])))
+        inst = dict(zip(newItems,zip(newVals,newVals,len(newVals)*[False,])))
+        for item in inst:
+            inst[item] = list(inst[item])
+        return inst
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file'''
@@ -654,7 +657,10 @@ class GSASII(wx.Frame):
                 else:
                     data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                 codes.extend([0,0,0,0,0,0,0])
-                return dict(zip(names,zip(data,data,codes)))
+                inst = dict(zip(names,zip(data,data,codes)))
+                for item in inst:
+                    inst[item] = list(inst[item])
+                return inst
             elif 'T' in DataType:
                 names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1','var-inst','X','Y','Azimuth']
                 codes = [0,0,0,0,0,0,0,0,0,0,0,0]
@@ -681,7 +687,10 @@ class GSASII(wx.Frame):
                     else:
                         s = Iparm['INS  1PRCF12'].split()
                         data.extend([G2IO.sfloat(s[0]),0.0,0.0,azm])
-                return dict(zip(names,zip(data,data,codes)))
+                inst = dict(zip(names,zip(data,data,codes)))
+                for item in inst:
+                    inst[item] = list(inst[item])
+                return inst
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]
@@ -1118,8 +1127,11 @@ class GSASII(wx.Frame):
                 Id = self.PatternTree.AppendItem(parent=self.root,text='PKS '+os.path.basename(self.powderfile))
                 data = ['PKS',Cuka,0.0]
                 names = ['Type','Lam','Zero'] 
-                codes = [0,0]
-                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),dict(zip(names,zip(data,data,codes))))
+                codes = [0,0,0]
+                inst = dict(zip(names,zip(data,data,codes)))
+                for item in inst:
+                    inst[item] = list(inst[item])
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),comments)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),peaks)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
@@ -1429,7 +1441,7 @@ class GSASII(wx.Frame):
         DataList = []
         SumList = []
         Names = []
-        Inst = []
+        Inst = {}
         SumItemList = []
         Comments = ['Sum equals: \n']
         if self.PatternTree.GetCount():

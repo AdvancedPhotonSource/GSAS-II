@@ -1135,12 +1135,15 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
             print sigstr
                             
     def SetInstParms(Inst):
-        insVals,insFlags,insNames = Inst[1:4]
-        dataType = insVals[0]
+        dataType = Inst['Type'][0]
         insVary = []
-        for i,flag in enumerate(insFlags):
-            if flag and insNames[i] in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
-                insVary.append(insNames[i])
+        insNames = []
+        insVals = []
+        for parm in Inst:
+            insNames.append(parm)
+            insVals.append(Inst[parm][1])
+            if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)'] and Inst[parm][2]:
+                insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
         instDict['X'] = max(instDict['X'],0.01)
         instDict['Y'] = max(instDict['Y'],0.01)
@@ -1148,9 +1151,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         return dataType,instDict,insVary
         
     def GetInstParms(parmDict,Inst,varyList,Peaks):
-        instNames = Inst[3]
-        for i,name in enumerate(instNames):
-            Inst[1][i] = parmDict[name]
+        for name in Inst:
+            Inst[name][1] = parmDict[name]
         iPeak = 0
         while True:
             try:
@@ -1171,14 +1173,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
-        instNames = Inst[3][1:]
-        for i,name in enumerate(instNames):
-            ptlbls += "%s" % (name.center(12))
-            ptstr += ptfmt % (Inst[1][i+1])
-            if name in sigDict:
-                sigstr += ptfmt % (sigDict[name])
-            else:
-                sigstr += 12*' '
+        for parm in Inst:
+            if parm in  ['U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
+                ptlbls += "%s" % (parm.center(12))
+                ptstr += ptfmt % (Inst[parm][1])
+                if parm in sigDict:
+                    sigstr += ptfmt % (sigDict[parm])
+                else:
+                    sigstr += 12*' '
         print ptlbls
         print ptstr
         print sigstr

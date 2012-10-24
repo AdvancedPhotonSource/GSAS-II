@@ -440,6 +440,12 @@ def ProjFileOpen(G2frame):
                 G2frame.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
+#patch
+                if datus[0] == 'Instrument Parameters' and not isinstance(datus[1],dict):
+                    datus[1] = dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2])))
+                    for item in datus[1]:               #zip makes tuples - now make lists!
+                        datus[1][item] = list(datus[1][item])
+#end patch
                 G2frame.PatternTree.SetItemPyData(sub,datus[1])
             if 'IMG' in datum[0]:                   #retrieve image default flag & data if set
                 Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
@@ -515,7 +521,7 @@ def SaveIntegration(G2frame,PickId,data):
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'),[tuple(parms),parms[:],codes,names])
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'),dict(zip(names,zip(parms,parms,codes))))
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Index Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Unit Cells List'),[])             
@@ -526,7 +532,7 @@ def SaveIntegration(G2frame,PickId,data):
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(parms),parms[:],codes,names])
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),dict(zip(names,zip(parms,parms,codes))))
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[])
@@ -545,24 +551,23 @@ def powderFxyeSave(G2frame,exports,powderfile):
         prmname = filename.strip(ext)+'prm'
         prm = open(prmname,'w')      #old style GSAS parm file
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
-        Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
-            PickId, 'Instrument Parameters'))[1::2]     #get values & names
-        Inst = dict(zip(Names,Values))
+        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
+            PickId, 'Instrument Parameters'))
         print Inst['Type']
         prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
         prm.write( 'INS   BANK      1                                                               '+'\n')
-        prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type']))
+        prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type'][0]))
         if 'Lam1' in Inst:              #Ka1 & Ka2
-            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'],Inst['Lam2']))
+            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'],Inst['Lam2'][0]))
         elif 'Lam' in Inst:             #single wavelength
-            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'],0.0))
+            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'][0],0.0))
         prm.write( 'INS  1 IRAD     0                                                               '+'\n')
         prm.write( 'INS  1I HEAD                                                                    '+'\n')
         prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
-        prm.write(('INS  1DETAZM%10.3f                                                          '+'\n')%(Inst['Azimuth']))
+        prm.write(('INS  1DETAZM%10.3f                                                          '+'\n')%(Inst['Azimuth'][0]))
         prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
-        prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'],Inst['V'],Inst['W'],0.0))
-        prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'],Inst['Y'],Inst['SH/L']/2.,Inst['SH/L']/2.))
+        prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'][0],Inst['V'][0],Inst['W'][0],0.0))
+        prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'][0],Inst['Y'][0],Inst['SH/L'][0]/2.,Inst['SH/L'][0]/2.))
         prm.close()
         file = open(filename,'w')
         print 'save powder pattern to file: ',filename
@@ -1308,10 +1313,25 @@ class ImportPowderData(ImportBaseclass):
     defaultIparms.append({
         'INS   HTYPE ':'PNC',
         'INS  1 ICONS':'   1.54020   0.00000   0.04000         0',
-        'INS  1PRCF1 ':'    3    8      0.01                                                ',
         'INS  1PRCF1 ':'    3    8     0.005',
         'INS  1PRCF11':'   0.239700E+03  -0.298200E+03   0.180800E+03   0.000000E+00',
         'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.400000E-01   0.300000E-01',
+        })
+    defaultIparm_lbl.append('10m TOF backscattering bank')
+    defaultIparms.append({
+        'INS  1 ICONS':'   5000.00      0.00      0.00',
+        'INS  1BNKPAR':'    1.0000   150.000',       
+        'INS  1PRCF1 ':'    1    8   0.01000',
+        'INS  1PRCF11':'   0.000000E+00   5.000000E+00   3.000000E-02   1.000000E-03',
+        'INS  1PRCF12':'   0.000000E+00   4.000000E+01   0.000000E+00   0.000000E+00',        
+        })
+    defaultIparm_lbl.append('10m TOF 90deg bank')
+    defaultIparms.append({
+        'INS  1 ICONS':'   3500.00      0.00      0.00',
+        'INS  1BNKPAR':'    1.0000    90.000',       
+        'INS  1PRCF1 ':'    1    8   0.01000',
+        'INS  1PRCF11':'   0.000000E+00   5.000000E+00   3.000000E-02   4.000000E-03',
+        'INS  1PRCF12':'   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00',        
         })
     def __init__(self,
                  formatName,

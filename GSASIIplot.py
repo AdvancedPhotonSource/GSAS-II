@@ -321,6 +321,12 @@ def PlotPatterns(G2frame,newPlot=False):
     plotting available.
     '''
     global HKL
+
+    def getWave(Parms):
+        try:
+            return Parms['Lam'][1]
+        except KeyError:
+            return Parms['Lam1'][1]
     
     def OnKeyBox(event):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('Powder Patterns'):
@@ -337,6 +343,12 @@ def PlotPatterns(G2frame,newPlot=False):
                 G2frame.Weight = True
                 G2frame.SinglePlot = True
             newPlot = True
+        elif event.key == 'b':
+            if G2frame.SubBack:
+                G2frame.SubBack = False
+            else:
+                G2frame.SubBack = True
+                G2frame.SinglePlot = True                
         elif event.key == 'n':
             if G2frame.Contour:
                 pass
@@ -421,24 +433,29 @@ def PlotPatterns(G2frame,newPlot=False):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[1::2]
-                Parms = dict(zip(Names,Values))
-                try:
-                    wave = Parms['Lam']
-                except KeyError:
-                    wave = Parms['Lam1']
-                if G2frame.qPlot:
-                    try:
-                        xpos = 2.0*asind(xpos*wave/(4*math.pi))
-                    except ValueError:      #avoid bad value in asin beyond upper limit
-                        pass
-                dsp = 0.0
-                if abs(xpos) > 0.:                  #avoid possible singularity at beam center
-                    dsp = wave/(2.*sind(abs(xpos)/2.0))
-                if G2frame.Contour:
-                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
-                else:
-                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
+                Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+                if 'C' in Parms['Type'][0]:
+                    wave = getWave(Parms)
+                    if G2frame.qPlot:
+                        try:
+                            xpos = 2.0*asind(xpos*wave/(4*math.pi))
+                        except ValueError:      #avoid bad value in asin beyond upper limit
+                            pass
+                    dsp = 0.0
+                    if abs(xpos) > 0.:                  #avoid possible singularity at beam center
+                        dsp = wave/(2.*sind(abs(xpos)/2.0))
+                    if G2frame.Contour:
+                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
+                    else:
+                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
+                else:       #TOF neutrons
+                    dsp = 0.0
+                    difC = Parms['difC'][1]
+                    dsp = xpos/difC             #rough approx.!
+                    if G2frame.Contour:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
+                    else:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
                 if G2frame.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
                 if G2frame.PickId:
@@ -462,14 +479,13 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.itemPicked is not None: return
         PatternId = G2frame.PatternId
         try:
-            Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[1::2]
+            Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         except TypeError:
             return
-        Parms = dict(zip(Names,Values))
-        try:
-            wave = Parms['Lam']
-        except KeyError:
-            wave = Parms['Lam1']
+        if 'C' in Parms['Type'][0]:
+            wave = getWave(Parms)
+        else:
+            difC = Parms['difC'][1]
         PickId = G2frame.PickId
         pick = event.artist
         mouse = event.mouseevent       
@@ -479,14 +495,16 @@ def PlotPatterns(G2frame,newPlot=False):
         xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
-                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
-                    ins = [Parms[x] for x in ['U','V','W','X','Y']]
+                data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
+                if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
+                    ins = [Parms[x][1] for x in ['U','V','W','X','Y']]
                     if G2frame.qPlot:                              #qplot - convert back to 2-theta
                         xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                     sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
                     gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
-                    data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
                     XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
+                else:
+                    XY = [xy[0],0,xy[1],1,1,0,1,0]
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame)
@@ -496,7 +514,7 @@ def PlotPatterns(G2frame,newPlot=False):
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
-                if 'C' in Parms['Type']:                            #CW data - TOF later in an elif
+                if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
                     if G2frame.qPlot:                              #qplot - convert back to 2-theta
                         xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                 if mouse.button==1:
@@ -515,12 +533,11 @@ def PlotPatterns(G2frame,newPlot=False):
         
     def OnRelease(event):
         if G2frame.itemPicked is None: return
-        Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[1::2]
-        Parms = dict(zip(Names,Values))
-        try:
-            wave = Parms['Lam']
-        except KeyError:
-            wave = Parms['Lam1']
+        Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+        if 'C' in Parms['Type'][0]:
+            wave = getWave(Parms)
+        else:
+            difC = Parms['difC'][1]
         xpos = event.xdata
         PickId = G2frame.PickId
         if G2frame.PatternTree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
@@ -533,7 +550,10 @@ def PlotPatterns(G2frame,newPlot=False):
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
                 if G2frame.qPlot:
-                    data[1][lineNo] = 2.0*asind(wave*xpos/(4*math.pi))
+                    if 'C' in Parms['Type'][0]:
+                        data[1][lineNo] = 2.0*asind(wave*xpos/(4*math.pi))
+                    else:
+                        data[1][lineNo] = 2*math.pi*Parms['difC'][1]/xpos
                 else:
                     data[1][lineNo] = xpos
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
@@ -595,7 +615,7 @@ def PlotPatterns(G2frame,newPlot=False):
                 'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
             Choice = (' key press','l: offset left','r: offset right','d: offset down',
-                'u: offset up','o: reset offset','n: log(I) on','c: contour on',
+                'u: offset up','o: reset offset','b: toggle subtr. backgnd','n: log(I) on','c: contour on',
                 'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
         choices=Choice)
@@ -610,8 +630,9 @@ def PlotPatterns(G2frame,newPlot=False):
         Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
         Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
         PlotList = [Pattern,]
-        ParmList = [G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
-            G2frame.PatternId, 'Instrument Parameters'))[1],]
+        Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId, 'Instrument Parameters'))
+        ParmList = [Parms,]
     else:        
         PlotList = []
         ParmList = []
@@ -623,7 +644,7 @@ def PlotPatterns(G2frame,newPlot=False):
                     Pattern.append(G2frame.PatternTree.GetItemText(item))
                 PlotList.append(Pattern)
                 ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
-                    item,'Instrument Parameters'))[1])
+                    item,'Instrument Parameters')))
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
     Ymax = 1.0
     lenX = 0
@@ -647,12 +668,18 @@ def PlotPatterns(G2frame,newPlot=False):
     Plot.set_title(Title)
     if G2frame.qPlot:
         Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
-    else:        
-        Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    else:
+        if 'C' in ParmList[0]['Type'][0]:        
+            Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+        else:
+            Plot.set_xlabel(r'TOF, $\mathsf{\mu}$s',fontsize=14)            
     if G2frame.Weight:
         Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=14)
     else:
-        Plot.set_ylabel('Intensity',fontsize=12)
+        if 'C' in ParmList[0]['Type'][0]:
+            Plot.set_ylabel('Intensity',fontsize=14)
+        else:
+            Plot.set_ylabel('Counts/$\mathsf{\mu}$s',fontsize=14)
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
@@ -661,6 +688,10 @@ def PlotPatterns(G2frame,newPlot=False):
         G2frame.Contour = False
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
+        if 'C' in Parms['Type'][0]:
+            wave = getWave(Parms)
+        else:
+            difC = Parms['difC'][1]
         ifpicked = False
         LimitId = 0
         xye = np.array(Pattern[1])
@@ -669,7 +700,10 @@ def PlotPatterns(G2frame,newPlot=False):
             LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
         if G2frame.qPlot:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
-            X = 4*np.pi*npsind(xye[0]/2.0)/Parms[1]
+            if 'C' in Parms['Type'][0]:
+                X = 4*np.pi*npsind(xye[0]/2.0)/wave
+            else:
+                X = 2*np.pi*Parms['difC'][1]/xye[0]
         else:
             X = xye[0]
         if not lenX:
@@ -678,7 +712,10 @@ def PlotPatterns(G2frame,newPlot=False):
         if LimitId:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
             if G2frame.qPlot:
-                limits = 4*np.pi*npsind(limits/2.0)/Parms[1]
+                if 'C' in Parms['Type'][0]:
+                    limits = 4*np.pi*npsind(limits/2.0)/wave
+                else:
+                    limits = 2*np.pi*difC/limits
             Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
         if G2frame.Contour:
@@ -709,8 +746,12 @@ def PlotPatterns(G2frame,newPlot=False):
                     Plot.plot(X,DS,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
-                    Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
-                    Plot.plot(X,Z,colors[(N+1)%6],picker=False)
+                    if G2frame.SubBack:
+                        Plot.plot(X,Y-W,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)
+                    else:
+                        Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                     Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
@@ -721,7 +762,10 @@ def PlotPatterns(G2frame,newPlot=False):
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
                     for item in data:
                         if G2frame.qPlot:
-                            Lines.append(Plot.axvline(4*math.pi*sind(item[0]/2.)/Parms[1],color=colors[N%6],picker=2.))
+                            if 'C' in Parms['Type'][0]:
+                                Lines.append(Plot.axvline(4*math.pi*sind(item[0]/2.)/wave,color=colors[N%6],picker=2.))
+                            else:
+                                Lines.append(Plot.axvline(2*math.pi*difC/item[0],color=colors[N%6],picker=2.))                                
                         else:
                             Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
                 if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
@@ -734,12 +778,11 @@ def PlotPatterns(G2frame,newPlot=False):
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
     if PickId and not G2frame.Contour:
-        Values,Names = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))[1::2]
-        Parms = dict(zip(Names,Values))
-        try:
-            wave = Parms['Lam']
-        except KeyError:
-            wave = Parms['Lam1']
+        Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        if 'C' in Parms['Type'][0]:
+            wave = getWave(Parms)
+        else:
+            difC = Parms['difC'][1]
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
             peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))
             for peak in peaks:
@@ -1186,14 +1229,26 @@ def PlotPeakWidths(G2frame):
         limits = G2frame.PatternTree.GetItemPyData(limitID)
     else:
         return
-    instParms = G2frame.PatternTree.GetItemPyData( \
+    Parms = G2frame.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-    if instParms[0][0] in ['PXC','PNC']:
-        lam = instParms[1][1]
-        if len(instParms[1]) == 13:
-            GU,GV,GW,LX,LY = instParms[0][6:11]
-        else:
-            GU,GV,GW,LX,LY = instParms[0][4:9]
+    if 'C' in Parms['Type'][0]:
+        try:            
+            lam = Parms['Lam'][1]
+        except KeyError:
+            lam = Parms['Lam1'][1]
+        GU = Parms['U'][0]
+        GV = Parms['V'][0]
+        GW = Parms['W'][0]
+        LX = Parms['X'][0]
+        LY = Parms['Y'][0]
+    else:
+        difC = Parms['difC'][0]
+        alp = Parms['alpha'][0]
+        bet0 = Parms['beta-0'][0]
+        bet1 = Parms['beta-1'][0]
+        sig = Parms['var-inst'][0]
+        LX = Parms['X'][0]
+        LY = Parms['Y'][0]
     peakID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List')
     if peakID:
         peaks = G2frame.PatternTree.GetItemPyData(peakID)
@@ -1230,46 +1285,49 @@ def PlotPeakWidths(G2frame):
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
 #    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
-    try:
-        for theta in thetas:
-            X.append(4.0*math.pi*sind(theta)/lam)              #q
-            s = sig(theta,GU,GV,GW)
-            g = gam(theta,LX,LY)
-            G = gamFW(g,s)
-            Y.append(s/tand(theta))
-            Z.append(g/tand(theta))
-            W.append(G/tand(theta))
-        Plot.set_title('Instrument and sample peak widths')
-        Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
-        Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
-        Plot.plot(X,Y,color='r',label='Gaussian')
-        Plot.plot(X,Z,color='g',label='Lorentzian')
-        Plot.plot(X,W,color='b',label='G+L')
-        X = []
-        Y = []
-        Z = []
-        W = []
-        V = []
-        for peak in peaks:
-            X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
-            try:
-                s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
-            except ValueError:
-                s = 0.01
-            g = peak[6]*math.pi/18000.
-            G = gamFW(g,s)
-            Y.append(s/tand(peak[0]/2.))
-            Z.append(g/tand(peak[0]/2.))
-            W.append(G/tand(peak[0]/2.))
-        Plot.plot(X,Y,'+',color='r',label='G peak')
-        Plot.plot(X,Z,'+',color='g',label='L peak')
-        Plot.plot(X,W,'+',color='b',label='G+L peak')
-        Plot.legend(loc='best')
-        Page.canvas.draw()
-    except ValueError:
-        print '**** ERROR - default U,V,W profile coefficients yield sqrt of negative value at 2theta =', \
-            '%.3f'%(2*theta)
-        G2frame.G2plotNB.Delete('Peak Widths')
+    Plot.set_title('Instrument and sample peak widths')
+    Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
+    Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
+    if 'C' in Parms['Type'][0]:
+        try:
+            for theta in thetas:
+                X.append(4.0*math.pi*sind(theta)/lam)              #q
+                s = sig(theta,GU,GV,GW)
+                g = gam(theta,LX,LY)
+                G = gamFW(g,s)
+                Y.append(s/tand(theta))
+                Z.append(g/tand(theta))
+                W.append(G/tand(theta))
+            Plot.plot(X,Y,color='r',label='Gaussian')
+            Plot.plot(X,Z,color='g',label='Lorentzian')
+            Plot.plot(X,W,color='b',label='G+L')
+            X = []
+            Y = []
+            Z = []
+            W = []
+            V = []
+            for peak in peaks:
+                X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
+                try:
+                    s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
+                except ValueError:
+                    s = 0.01
+                g = peak[6]*math.pi/18000.
+                G = gamFW(g,s)
+                Y.append(s/tand(peak[0]/2.))
+                Z.append(g/tand(peak[0]/2.))
+                W.append(G/tand(peak[0]/2.))
+            Plot.plot(X,Y,'+',color='r',label='G peak')
+            Plot.plot(X,Z,'+',color='g',label='L peak')
+            Plot.plot(X,W,'+',color='b',label='G+L peak')
+            Plot.legend(loc='best')
+            Page.canvas.draw()
+        except ValueError:
+            print '**** ERROR - default U,V,W profile coefficients yield sqrt of negative value at 2theta =', \
+                '%.3f'%(2*theta)
+            G2frame.G2plotNB.Delete('Peak Widths')
+    else:
+        pass    #for TOF peak parms
 
     
 ################################################################################

@@ -490,7 +490,7 @@ def monoCellReduce(ibrav,A):
             A = G2lat.cell2A([a,b,cnew,90,beta,90])
     return A
 
-def DoIndexPeaks(peaks,inst,controls,bravais):
+def DoIndexPeaks(peaks,wave,controls,bravais):
     
     delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
     amin = 2.5
@@ -504,7 +504,6 @@ def DoIndexPeaks(peaks,inst,controls,bravais):
     N2s = [1,1,1,   2,2,  2,2,     2,2,2,2,   2,2,   4]
     Nm  = [1,1,1,   1,1,  1,1,     1,1,1,1,   2,2,   4]
     Nobs = len(peaks)
-    wave = inst[1]
     zero,ncno = controls[1:3]
     ncMax = Nobs*ncno
     print "%s %8.3f %8.3f" % ('lattice parameter range = ',amin,amax)

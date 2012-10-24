@@ -1110,13 +1110,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
             if 'PWDR' in histogram:
                 limits = Histogram['Limits'][1]
                 inst = Histogram['Instrument Parameters']
-                inst = dict(zip(inst[3],inst[1]))
-                Zero = inst['Zero']
-                if 'C' in inst['Type']:
+                Zero = inst['Zero'][1]
+                if 'C' in inst['Type'][1]:
                     try:
-                        wave = inst['Lam']
+                        wave = inst['Lam'][1]
                     except KeyError:
-                        wave = inst['Lam1']
+                        wave = inst['Lam1'][1]
                     dmin = wave/(2.0*sind(limits[1]/2.0))
                 pfx = str(pId)+':'+str(hId)+':'
                 for item in ['Scale','Extinction']:
@@ -1191,7 +1190,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                     mul *= 2      # for powder overlap of Friedel pairs
                     if ext:
                         continue
-                    if 'C' in inst['Type']:
+                    if 'C' in inst['Type'][0]:
                         pos = 2.0*asind(wave/(2.0*d))+Zero
                         if limits[0] < pos < limits[1]:
                             refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0,{}])
@@ -1201,11 +1200,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                 Histogram['Reflection Lists'][phase] = refList
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters']
-                inst = dict(zip(inst[2],inst[1]))
                 hId = Histogram['hId']
                 hfx = ':%d:'%(hId)
                 for item in inst:
-                    hapDict[hfx+item] = inst[item]
+                    hapDict[hfx+item] = inst[item][1]
                 pfx = str(pId)+':'+str(hId)+':'
                 hapDict[pfx+'Scale'] = hapData['Scale'][0]
                 if hapData['Scale'][1]:
@@ -1537,16 +1535,15 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         backVary += peakVary
         return bakType,backDict,backVary            
         
-    def GetInstParms(hId,Inst):
-        insVals,insFlags,insNames = Inst[1:4]
-        dataType = insVals[0]
+    def GetInstParms(hId,Inst):     
+        dataType = Inst['Type'][0]
         instDict = {}
         insVary = []
         pfx = ':'+str(hId)+':'
-        for i,flag in enumerate(insFlags):
-            insName = pfx+insNames[i]
-            instDict[insName] = insVals[i]
-            if flag:
+        for item in Inst:
+            insName = pfx+item
+            instDict[insName] = Inst[item][1]
+            if Inst[item][2]:
                 insVary.append(insName)
         instDict[pfx+'X'] = max(instDict[pfx+'X'],0.001)
         instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.001)
@@ -1611,14 +1608,14 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         ptlbls = ' name  :'
         ptstr =  ' value :'
         varstr = ' refine:'
-        instNames = Inst[3][1:]
-        for i,name in enumerate(instNames):
-            ptlbls += '%12s' % (name)
-            ptstr += '%12.6f' % (Inst[1][i+1])
-            if name in ['Lam1','Lam2','Azimuth']:
-                varstr += 12*' '
-            else:
-                varstr += '%12s' % (str(bool(Inst[2][i+1])))
+        for item in Inst:
+            if item != 'Type':
+                ptlbls += '%12s' % (item)
+                ptstr += '%12.6f' % (Inst[item][1])
+                if item in ['Lam1','Lam2','Azimuth']:
+                    varstr += 12*' '
+                else:
+                    varstr += '%12s' % (str(bool(Inst[item][2])))
         print >>pFile,ptlbls
         print >>pFile,ptstr
         print >>pFile,varstr
@@ -1646,7 +1643,6 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         print >>pFile,ptstr
         print >>pFile,varstr
         
-
     histDict = {}
     histVary = []
     controlDict = {}
@@ -1734,13 +1730,14 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         return backSig
         
     def SetInstParms(pfx,Inst,parmDict,sigDict):
-        insVals,insFlags,insNames = Inst[1:4]
-        instSig = [0 for i in range(len(insVals))]
-        for i,flag in enumerate(insFlags):
-            insName = pfx+insNames[i]
-            insVals[i] = parmDict[insName]
+        instSig = {}
+        for item in Inst:
+            insName = pfx+item
+            Inst[item][1] = parmDict[insName]
             if insName in sigDict:
-                instSig[i] = sigDict[insName]
+                instSig[item] = sigDict[insName]
+            else:
+                instSig[item] = 0
         return instSig
         
     def SetSampleParms(pfx,Sample,parmDict,sigDict):
@@ -1815,16 +1812,16 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         ptlbls = ' names :'
         ptstr =  ' value :'
         sigstr = ' sig   :'
-        instNames = Inst[3][1:]
         refine = False
-        for i,name in enumerate(instNames):
-            ptlbls += '%12s' % (name)
-            ptstr += '%12.6f' % (Inst[1][i+1])
-            if instSig[i+1]:
-                refine = True
-                sigstr += '%12.6f' % (instSig[i+1])
-            else:
-                sigstr += 12*' '
+        for name in instSig:
+            if name not in  ['Type','Lam1','Lam2','Azimuth']:
+                ptlbls += '%12s' % (name)
+                ptstr += '%12.6f' % (Inst[name][1])
+                if instSig[name]:
+                    refine = True
+                    sigstr += '%12.6f' % (instSig[name])
+                else:
+                    sigstr += 12*' '
         if refine:
             print >>pFile,'\n Instrument Parameters:'
             print >>pFile,ptlbls

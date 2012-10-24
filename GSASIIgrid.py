@@ -512,8 +512,8 @@ class DataFrame(wx.Frame):
             id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')
         self.InstEdit.Append(id=wxID_INSTFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
             help='Copy instrument parameter refinement flags to other histograms')
-        self.InstEdit.Append(help='Change radiation type (Ka12 - synch)', 
-            id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
+#        self.InstEdit.Append(help='Change radiation type (Ka12 - synch)', 
+#            id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
         self.PostfillDataMenu()
         
 # PDR / Sample Parameters

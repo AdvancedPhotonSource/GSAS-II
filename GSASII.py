@@ -556,7 +556,7 @@ class GSASII(wx.Frame):
                 newVals.append(val)                        
             S = File.readline()                
         File.close()
-        return [tuple(newVals),newVals,len(newVals)*[False,],newItems]
+        return dict(zip(newItems,zip(newVals,newVals,len(newVals)*[False,])))
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file'''
@@ -576,10 +576,13 @@ class GSASII(wx.Frame):
             ibanks = int(Iparm.get('INS   BANK  ').strip())
         except:
             ibanks = 1
+        hType = Iparm['INS   HTYPE '].strip()
         if ibanks == 1: # there is only one bank here, return it
             rd.instbank = 1
             return Iparm
-        if ibanks != databanks:
+        if 'PNT' in hType:
+            rd.instbank = bank
+        elif ibanks != databanks:
             # number of banks in data and prm file not not agree, need a
             # choice from a human here
             choices = []
@@ -587,8 +590,8 @@ class GSASII(wx.Frame):
                 choices.append('Bank '+str(i))
             bank = rd.BlockSelector(
                 choices, self,
-                title='Select an instrument parameter block for '+
-                os.path.split(rd.powderentry[0])[1]+' block '+str(bank)+
+                title='Select an instrument parameter bank for '+
+                os.path.split(rd.powderentry[0])[1]+' BANK '+str(bank)+
                 '\nOr use Cancel to select from the default parameter sets',
                 header='Block Selector')
         if bank is None: return {}
@@ -611,18 +614,18 @@ class GSASII(wx.Frame):
             or in array Iparm.
             Create and return the contents of the instrument parameter tree entry.
             '''
-            DataType = Iparm['INS   HTYPE '].strip()[0:3]  # take 1st 3 chars
+            DataType = Iparm['INS   HTYPE '].strip()[:3]  # take 1st 3 chars
             # override inst values with values read from data file
             if rd.instdict.get('type'):
                 DataType = rd.instdict.get('type')
-            wave1 = None
-            wave2 = 0.0
-            if rd.instdict.get('wave'):
-                wl = rd.instdict.get('wave')
-                wave1 = wl[0]
-                if len(wl) > 1: wave2 = wl[1]
             data = [DataType,]
             if 'C' in DataType:
+                wave1 = None
+                wave2 = 0.0
+                if rd.instdict.get('wave'):
+                    wl = rd.instdict.get('wave')
+                    wave1 = wl[0]
+                    if len(wl) > 1: wave2 = wl[1]
                 s = Iparm['INS  1 ICONS']
                 if not wave1:
                     wave1 = G2IO.sfloat(s[:10])
@@ -651,7 +654,34 @@ class GSASII(wx.Frame):
                 else:
                     data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                 codes.extend([0,0,0,0,0,0,0])
-                return [tuple(data),data,codes,names]
+                return dict(zip(names,zip(data,data,codes)))
+            elif 'T' in DataType:
+                names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1','var-inst','X','Y','Azimuth']
+                codes = [0,0,0,0,0,0,0,0,0,0,0,0]
+                azm = Iparm.get('INS  1DETAZM')
+                if azm is None: #not in this Iparm file
+                    azm = 0.0
+                else:
+                    azm = float(azm)
+                s = Iparm['INS  1BNKPAR'].split()
+                data.extend([G2IO.sfloat(s[1]),])               #2-theta for bank
+                s = Iparm['INS  1 ICONS'].split()
+                data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])    #difC, difA, Zero
+                s = Iparm['INS  1PRCF1 '].split()
+                pfType = int(s[0])
+                s = Iparm['INS  1PRCF11'].split()
+                if pfType == 1:
+                    data.extend([G2IO.sfloat(s[1]),G2IO.sfloat(s[2]),G2IO.sfloat(s[3])])
+                    s = Iparm['INS  1PRCF12'].split()
+                    data.extend([G2IO.sfloat(s[1]),0.0,0.0,azm])
+                elif pfType in [3,4,5]:
+                    data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])
+                    if pfType == 4:
+                        data.extend([G2IO.sfloat(s[3]),0.0,0.0,azm])
+                    else:
+                        s = Iparm['INS  1PRCF12'].split()
+                        data.extend([G2IO.sfloat(s[0]),0.0,0.0,azm])
+                return dict(zip(names,zip(data,data,codes)))
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]
@@ -784,9 +814,8 @@ class GSASII(wx.Frame):
         reads an instrument parameter file for each dataset
         '''
         reqrdr = self.ImportMenuId.get(event.GetId())  # look up which format was requested
-        rdlist = self.OnImportGeneric(reqrdr,
-                                      self.ImportPowderReaderlist,
-                                      'Powder Data',multiple=True)
+        rdlist = self.OnImportGeneric(reqrdr,self.ImportPowderReaderlist,
+            'Powder Data',multiple=True)
         if len(rdlist) == 0: return
         self.CheckNotebook()
         Iparm = None
@@ -797,13 +826,11 @@ class GSASII(wx.Frame):
             instParmList = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
             lastIparmfile = rd.instfile
             lastdatafile = rd.powderentry[0]
-            print 'Read powder data '+str(
-                rd.idstring)+' from file '+str(
-                self.lastimport) + ' with parameters from '+str(
-                rd.instmsg)
+            print 'Read powder data '+str(rd.idstring)+ \
+                ' from file '+str(self.lastimport) + \
+                ' with parameters from '+str(rd.instmsg)
             # data are read, now store them in the tree
-            Id = self.PatternTree.AppendItem(
-                parent=self.root,
+            Id = self.PatternTree.AppendItem(parent=self.root,
                 text='PWDR '+rd.idstring)
             self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.powderdata])
             self.PatternTree.SetItemPyData(
@@ -1017,6 +1044,7 @@ class GSASII(wx.Frame):
         self.Contour = False
         self.Legend = False
         self.SinglePlot = False
+        self.SubBack = False
         self.plotView = 0
         self.Image = 0
         self.oldImagefile = ''
@@ -1091,7 +1119,7 @@ class GSASII(wx.Frame):
                 data = ['PKS',Cuka,0.0]
                 names = ['Type','Lam','Zero'] 
                 codes = [0,0]
-                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),[tuple(data),data,codes,names])
+                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),dict(zip(names,zip(data,data,codes))))
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),comments)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),peaks)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             

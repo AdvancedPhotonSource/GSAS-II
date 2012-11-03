@@ -27,6 +27,7 @@ import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
+import GSASIImath as G2mth
 import pypowder as pyd
 
 # trig functions in degrees
@@ -194,189 +195,189 @@ def GetNumDensity(ElList,Vol):
         sumNoAtoms += ElList[El]['FormulaNo']
     return sumNoAtoms/Vol
            
-def MultGetQ(Tth,MuT,Geometry,b=88.0,a=0.01):
-    NS = 500
-    Gama = np.linspace(0.,np.pi/2.,NS,False)[1:]
-    Cgama = np.cos(Gama)[:,np.newaxis]
-    Sgama = np.sin(Gama)[:,np.newaxis]
-    CSgama = 1.0/Sgama
-    Delt = Gama[1]-Gama[0]
-    emc = 7.94e-26
-    Navo = 6.023e23
-    Cth = npcosd(Tth/2.0)
-    CTth = npcosd(Tth)
-    Sth = npcosd(Tth/2.0)
-    STth = npsind(Tth)
-    CSth = 1.0/Sth
-    CSTth = 1.0/STth
-    SCth = 1.0/Cth
-    SCTth = 1.0/CTth
-    if 'Bragg' in Geometry:
-        G = 8.0*Delt*Navo*emc*Sth/((1.0-CTth**2)*(1.0-np.exp(-2.0*MuT*CSth)))
-        Y1 = np.pi
-        Y2 = np.pi/2.0
-        Y3 = 3.*np.pi/8. #3pi/4?
-        W = 1.0/(Sth+np.fabs(Sgama))
-        W += np.exp(-MuT*CSth)*(2.0*np.fabs(Sgama)*np.exp(-MuT*np.fabs(CSgama))-
-            (Sth+np.fabs(Sgama))*np.exp(-MuT*CSth))/(Sth**2-Sgama**2)
-        Fac0 = Sth**2*Sgama**2
-        X = Fac0+(Fac0+CTth)**2/2
-        Y = Cgama**2*Cth**2*(1.0-Fac0-CTth)
-        Z = Cgama**4*Cth**4/2.0
-        E = 2.0*(1.0-a)/(b*Cgama/Cth)
-        F1 = (2.0+b*(1.0+Sth*Sgama))/(b*Cth*Cgama) #trouble if < 1
-        F2 = (2.0+b*(1.0-Sth*Sgama))/(b*Cth*Cgama)
-        T1 = np.pi/np.sqrt(F1**2-1.0)
-        T2 = np.pi/np.sqrt(F2**2-1.0)
-        Y4 = T1+T2
-        Y5 = F1**2*T1+F2**2*T2-np.pi*(F1+F2)
-        Y6 = F1**4*T1+F2**4*T2-np.pi*(F1+F2)/2.0-np.pi*(F1**3+F2**3)
-        Y7 = (T2-T1)/(F1-F2)
-        YT = F2**2*T2-F1**2*T1
-        Y8 = Y1+YT/(F1-F2)
-        Y9 = Y2+(F2**4*T2-F1**4*T1)/(F1-F2)+Y1*((F1+F2)**2-F1*F2)
-        M = (a**2*(X*Y1+Y*Y2+Z*Y3)+a*E*(X*Y4+Y*Y5+Z*Y6)+E**2*(X*Y7+Y*Y8+Z*Y9))*Cgama
-        
-        Q = np.sum(W*M,axis=0)
-        return Q*G*NS/(NS-1.)
-#
-#      cos2th=2.0d*costh^2 - 1.0d
-#      G= delta * 8.0d * Na * emc * sinth/(1.0d + cos2th^2)/(1.0d - exp(-2.0d*mut*cscth))
-#      Y1=3.1415926d
-#      Y2=Y1*0.5d
-#      Y3=Y2*0.75d
-#      for i=1,num_steps-1 do begin
-#         cosgama=double(cos(gama[i]))
-#         singama=double(sin(gama[i]))
-#         cscgama=1.0d / singama
-#
-#         W=1.0d/(sinth+abs(singama))
-#         W=W+exp(-1.0*mut*cscth)*(2.0d*abs(singama)*exp(-1.0d*mut*abs(cscgama))- $
-#                 (sinth+abs(singama))*exp(-1.0d*mut*cscth))/(sinth^2-singama^2)
-#
-#         factor0=sinth^2*singama^2
-#         X=factor0+(factor0+cos2th)^2/2.0d
-#         Y=cosgama^2*(1.0d - factor0-cos2th)*costh^2
-#         Z=cosgama^4/2.0d*costh^4
-#         E=2.0d*(1.0-a)/b/cosgama/costh
-#
-#         F1=1.0d/b/cosgama*(2.0d + b*(1.0+sinth*singama))/costh
-#         F2=1.0d/b/cosgama*(2.0d + b*(1.0-sinth*singama))/costh
-#
-#         T1=3.14159/sqrt(F1^2-1.0d)
-#         T2=3.14159/sqrt(F2^2-1.0d)
-#         Y4=T1+T2
-#         Y5=F1^2*T1+F2^2*T2-3.14159*(F1+F2)
-#         Y6=F1^4*T1+F2^4*T2-3.14159*(F1+F2)/2.0-3.14159*(F1^3+F2^3)
-#         Y7=(T2-T1)/(F1-F2)
-#         Y8=Y1+(F2^2*T2-F1^2*T1)/(F1-F2)
-#         Y9=Y2+(F2^4*T2-F1^4*T1)/(F1-F2)+Y1*((F1+F2)^2-F1*F2)
-#         M=(a^2*(X*Y1+Y*Y2+Z*Y3)+a*E*(X*Y4+Y*Y5+Z*Y6)+E^2* $
-#                      (X*Y7+Y*Y8+Z*Y9))*cosgama
-#
-#         Q=Q+W*M
-#
-#      endfor
-#      Q=double(num_steps)/Double(num_steps-1)*Q*G
-#      end
-    elif 'Cylinder' in Geometry:
-        Q = 0.
-    elif 'Fixed' in Geometry:   #Dwiggens & Park, Acta Cryst. A27, 264 (1971) with corrections
-        EMA = np.exp(-MuT*(1.0-SCTth))
-        Fac1 = (1.-EMA)/(1.0-SCTth)
-        G = 2.0*Delt*Navo*emc/((1.0+CTth**2)*Fac1)
-        Fac0 = Cgama/(1-Sgama*SCTth)
-        Wp = Fac0*(Fac1-(EMA-np.exp(-MuT*(CSgama-SCTth)))/(CSgama-1.0))
-        Fac0 = Cgama/(1.0+Sgama*SCTth)
-        Wm = Fac0*(Fac1+(np.exp(-MuT*(1.0+CSgama))-1.0)/(CSgama+1.0))
-        X = (Sgama**2+CTth**2*(1.0-Sgama**2+Sgama**4))/2.0
-        Y = Sgama**3*Cgama*STth*CTth
-        Z = Cgama**2*(1.0+Sgama**2)*STth**2/2.0
-        Fac2 = 1.0/(b*Cgama*STth)
-        U = 2.0*(1.0-a)*Fac2
-        V = (2.0+b*(1.0-CTth*Sgama))*Fac2
-        Mp = 2.0*np.pi*(a+2.0*(1.0-a)/(2.0+b*(1.0-Sgama)))*(a*X+a*Z/2.0-U*Y+U*(X+Y*V+Z*V**2)/np.sqrt(V**2-1.0)-U*Z*V)
-        V = (2.0+b*(1.0+CTth*Sgama))*Fac2
-        Y = -Y
-        Mm = 2.0*np.pi*(a+2.0*(1.0-a)/(2.0+b*(1.0+Sgama)))*(a*X+a*Z/2.0-U*Y+U*(X+Y*V+Z*V**2)/np.sqrt(V**2-1.0)-U*Z*V)
-        Q = np.sum(Wp*Mp+Wm*Mm,axis=0)
-        return Q*G*NS/(NS-1.)
-    elif 'Tilting' in Geometry:
-        EMA = np.exp(-MuT*SCth)
-        G = 2.0*Delt*Navo*emc/((1.0+CTth**2)*EMA)
-#          Wplus = expmutsecth/(1.0d - singama*secth) + singama/mut/(1.0 -singama*secth)/(1.0-singama*secth)* $
-#                                                       (Exp(-1.0*mut*cscgama) - expmutsecth)
-#          Wminus = expmutsecth/(1.0d + singama*secth) - singama/mut/(1.0 +singama*secth)/(1.0+singama*secth)* $
-#                                                        expmutsecth*(1.0d - expmutsecth*Exp(-1.0*mut*cscgama))
-        Wp = EMA/(1.0-Sgama*SCth)+Sgama/MuT/(1.0-Sgama*SCth)/(1.0-Sgama*SCth)*(np.exp(-MuT*CSgama)-EMA)
-#        Wp = EMA/(1.0-Sgama*SCth)+Sgama/MuT/(1.0-Sgama*SCth)**2*(np.exp(-MuT*CSgama)-EMA)
-        Wm = EMA/(1.0+Sgama*SCth)-Sgama/MuT/(1.0+Sgama*SCth)/(1.0+Sgama*SCth)*EMA*(1.0-EMA*np.exp(-MuT*CSgama))
-#        Wm = EMA/(1.0+Sgama*SCth)-Sgama/MuT/(1.0+Sgama*SCth)**2*EMA*(1.0-EMA*np.exp(-MuT*CSgama))
-        X = 0.5*(Cth**2*(Cth**2*Sgama**4-4.0*Sth**2*Cgama**2)+1.0)
-        Y = Cgama**2*(1.0+Cgama**2)*Cth**2*Sth**2
-        Z = 0.5*Cgama**4*Sth**4
-#          X = 0.5*(costh*costh*(costh*costh*singama*singama*singama*singama - $
-#                           4.0*sinth*sinth*cosgama*cosgama) +1.0d)
-#
-#          Y = cosgama*cosgama*(1.0 + cosgama*cosgama)*costh*costh*sinth*sinth
-#
-#          Z= 0.5 *cosgama*cosgama*cosgama*cosgama* (sinth^4)
-#
-        AlP = 2.0+b*(1.0-Cth*Sgama)
-        AlM = 2.0+b*(1.0+Cth*Sgama)
-#          alphaplus = 2.0 + b*(1.0 - costh*singama)
-#          alphaminus = 2.0 + b*(1.0 + costh*singama)
-        BeP = np.sqrt(np.fabs(AlP**2-(b*Cgama*Sth)**2))
-        BeM = np.sqrt(np.fabs(AlM**2-(b*Cgama*Sth)**2))
-#          betaplus = Sqrt(Abs(alphaplus*alphaplus - b*b*cosgama*cosgama*sinth*sinth))
-#          betaminus = Sqrt(Abs(alphaminus*alphaminus - b*b*cosgama*cosgama*sinth*sinth))
-        Mp = Cgama*(np.pi*a**2*(2.0*X+Y+0.75*Z)+(2.0*np.pi*(1.0-a))*(1.0-a+a*AlP)* \
-            (4.0*X/AlP/BeP+(4.0*(1.0+Cgama**2)/b/b*Cth**2)*(AlP/BeP-1.0)+
-            2.0/b**4*AlP/BeP*AlP**2-2.0/b**4*AlP**2-Cgama**2/b/b*Sth*2))
-#          Mplus = cosgama*(!DPI * a * a * (2.0*x + y + 0.75*z) + $
-#                   (2.0*!DPI*(1.0 - a)) *(1.0 - a + a*alphaplus)* $
-#                   (4.0*x/alphaplus/betaplus + (4.0*(1.0+cosgama*cosgama)/b/b*costh*costh)*(alphaplus/betaplus -1.0) + $
-#                   2.0/(b^4)*alphaplus/betaplus*alphaplus*alphaplus - 2.0/(b^4)*alphaplus*alphaplus - $
-#                   cosgama*cosgama/b/b*sinth*sinth))
-        Mm =Cgama*(np.pi*a**2*(2.0*X+Y+0.75*Z)+(2.0*np.pi*(1.0-a))*(1.0-a+a*AlM)* \
-            (4.0*X/AlM/BeM+(4.0*(1.0+Cgama**2)/b/b*Cth**2)*(AlM/BeM-1.0)+
-            2.0/b**4*AlM/BeM*AlM**2-2.0/b**4*AlM**2-Cgama**2/b/b*Sth*2))
-#          Mminus = cosgama*(!DPI * a * a * (2.0*x + y + 0.75*z) + $
-#                   (2.0*!DPI*(1.0 - a)) *(1.0 - a + a*alphaminus)* $
-#                   (4.0*x/alphaminus/betaminus + (4.0*(1.0+cosgama*cosgama)/b/b*costh*costh)*(alphaminus/betaminus -1.0) + $
-#                   2.0/(b^4)*alphaminus/betaminus*alphaminus*alphaminus - 2.0/(b^4)*alphaminus*alphaminus - $
-#                   cosgama*cosgama/b/b*sinth*sinth))
-        Q = np.sum(Wp*Mp+Wm*Mm,axis=0)
-        return Q*G*NS/(NS-1.)
-#       expmutsecth = Exp(-1.0*mut*secth)
-#       G= delta * 2.0 * Na * emc /(1.0+costth^2)/expmutsecth
-#       for i=1, num_steps-1 do begin
-#          cosgama=double(cos(gama[i]))
-#          singama=double(sin(gama[i]))
-#          cscgama=1.0d/singama
-#
-#
-#     ; print, "W", min(wplus), max(wplus), min(wminus), max(wminus)
-#
-#
-#
-#
-#    ;               print, a,b
-#  ; print, "M", min(mplus), max(mplus), min(mminus), max(mminus)
-#          Q=Q+ Wplus*Mplus + Wminus*Mminus
-#      endfor
-#      Q=double(num_steps)/double(num_steps-1)*Q*G
-#   ;   print, min(q), max(q)
-#      end
+#def MultGetQ(Tth,MuT,Geometry,b=88.0,a=0.01):
+#    NS = 500
+#    Gama = np.linspace(0.,np.pi/2.,NS,False)[1:]
+#    Cgama = np.cos(Gama)[:,np.newaxis]
+#    Sgama = np.sin(Gama)[:,np.newaxis]
+#    CSgama = 1.0/Sgama
+#    Delt = Gama[1]-Gama[0]
+#    emc = 7.94e-26
+#    Navo = 6.023e23
+#    Cth = npcosd(Tth/2.0)
+#    CTth = npcosd(Tth)
+#    Sth = npcosd(Tth/2.0)
+#    STth = npsind(Tth)
+#    CSth = 1.0/Sth
+#    CSTth = 1.0/STth
+#    SCth = 1.0/Cth
+#    SCTth = 1.0/CTth
+#    if 'Bragg' in Geometry:
+#        G = 8.0*Delt*Navo*emc*Sth/((1.0-CTth**2)*(1.0-np.exp(-2.0*MuT*CSth)))
+#        Y1 = np.pi
+#        Y2 = np.pi/2.0
+#        Y3 = 3.*np.pi/8. #3pi/4?
+#        W = 1.0/(Sth+np.fabs(Sgama))
+#        W += np.exp(-MuT*CSth)*(2.0*np.fabs(Sgama)*np.exp(-MuT*np.fabs(CSgama))-
+#            (Sth+np.fabs(Sgama))*np.exp(-MuT*CSth))/(Sth**2-Sgama**2)
+#        Fac0 = Sth**2*Sgama**2
+#        X = Fac0+(Fac0+CTth)**2/2
+#        Y = Cgama**2*Cth**2*(1.0-Fac0-CTth)
+#        Z = Cgama**4*Cth**4/2.0
+#        E = 2.0*(1.0-a)/(b*Cgama/Cth)
+#        F1 = (2.0+b*(1.0+Sth*Sgama))/(b*Cth*Cgama) #trouble if < 1
+#        F2 = (2.0+b*(1.0-Sth*Sgama))/(b*Cth*Cgama)
+#        T1 = np.pi/np.sqrt(F1**2-1.0)
+#        T2 = np.pi/np.sqrt(F2**2-1.0)
+#        Y4 = T1+T2
+#        Y5 = F1**2*T1+F2**2*T2-np.pi*(F1+F2)
+#        Y6 = F1**4*T1+F2**4*T2-np.pi*(F1+F2)/2.0-np.pi*(F1**3+F2**3)
+#        Y7 = (T2-T1)/(F1-F2)
+#        YT = F2**2*T2-F1**2*T1
+#        Y8 = Y1+YT/(F1-F2)
+#        Y9 = Y2+(F2**4*T2-F1**4*T1)/(F1-F2)+Y1*((F1+F2)**2-F1*F2)
+#        M = (a**2*(X*Y1+Y*Y2+Z*Y3)+a*E*(X*Y4+Y*Y5+Z*Y6)+E**2*(X*Y7+Y*Y8+Z*Y9))*Cgama
+#        
+#        Q = np.sum(W*M,axis=0)
+#        return Q*G*NS/(NS-1.)
+##
+##      cos2th=2.0d*costh^2 - 1.0d
+##      G= delta * 8.0d * Na * emc * sinth/(1.0d + cos2th^2)/(1.0d - exp(-2.0d*mut*cscth))
+##      Y1=3.1415926d
+##      Y2=Y1*0.5d
+##      Y3=Y2*0.75d
+##      for i=1,num_steps-1 do begin
+##         cosgama=double(cos(gama[i]))
+##         singama=double(sin(gama[i]))
+##         cscgama=1.0d / singama
+##
+##         W=1.0d/(sinth+abs(singama))
+##         W=W+exp(-1.0*mut*cscth)*(2.0d*abs(singama)*exp(-1.0d*mut*abs(cscgama))- $
+##                 (sinth+abs(singama))*exp(-1.0d*mut*cscth))/(sinth^2-singama^2)
+##
+##         factor0=sinth^2*singama^2
+##         X=factor0+(factor0+cos2th)^2/2.0d
+##         Y=cosgama^2*(1.0d - factor0-cos2th)*costh^2
+##         Z=cosgama^4/2.0d*costh^4
+##         E=2.0d*(1.0-a)/b/cosgama/costh
+##
+##         F1=1.0d/b/cosgama*(2.0d + b*(1.0+sinth*singama))/costh
+##         F2=1.0d/b/cosgama*(2.0d + b*(1.0-sinth*singama))/costh
+##
+##         T1=3.14159/sqrt(F1^2-1.0d)
+##         T2=3.14159/sqrt(F2^2-1.0d)
+##         Y4=T1+T2
+##         Y5=F1^2*T1+F2^2*T2-3.14159*(F1+F2)
+##         Y6=F1^4*T1+F2^4*T2-3.14159*(F1+F2)/2.0-3.14159*(F1^3+F2^3)
+##         Y7=(T2-T1)/(F1-F2)
+##         Y8=Y1+(F2^2*T2-F1^2*T1)/(F1-F2)
+##         Y9=Y2+(F2^4*T2-F1^4*T1)/(F1-F2)+Y1*((F1+F2)^2-F1*F2)
+##         M=(a^2*(X*Y1+Y*Y2+Z*Y3)+a*E*(X*Y4+Y*Y5+Z*Y6)+E^2* $
+##                      (X*Y7+Y*Y8+Z*Y9))*cosgama
+##
+##         Q=Q+W*M
+##
+##      endfor
+##      Q=double(num_steps)/Double(num_steps-1)*Q*G
+##      end
+#    elif 'Cylinder' in Geometry:
+#        Q = 0.
+#    elif 'Fixed' in Geometry:   #Dwiggens & Park, Acta Cryst. A27, 264 (1971) with corrections
+#        EMA = np.exp(-MuT*(1.0-SCTth))
+#        Fac1 = (1.-EMA)/(1.0-SCTth)
+#        G = 2.0*Delt*Navo*emc/((1.0+CTth**2)*Fac1)
+#        Fac0 = Cgama/(1-Sgama*SCTth)
+#        Wp = Fac0*(Fac1-(EMA-np.exp(-MuT*(CSgama-SCTth)))/(CSgama-1.0))
+#        Fac0 = Cgama/(1.0+Sgama*SCTth)
+#        Wm = Fac0*(Fac1+(np.exp(-MuT*(1.0+CSgama))-1.0)/(CSgama+1.0))
+#        X = (Sgama**2+CTth**2*(1.0-Sgama**2+Sgama**4))/2.0
+#        Y = Sgama**3*Cgama*STth*CTth
+#        Z = Cgama**2*(1.0+Sgama**2)*STth**2/2.0
+#        Fac2 = 1.0/(b*Cgama*STth)
+#        U = 2.0*(1.0-a)*Fac2
+#        V = (2.0+b*(1.0-CTth*Sgama))*Fac2
+#        Mp = 2.0*np.pi*(a+2.0*(1.0-a)/(2.0+b*(1.0-Sgama)))*(a*X+a*Z/2.0-U*Y+U*(X+Y*V+Z*V**2)/np.sqrt(V**2-1.0)-U*Z*V)
+#        V = (2.0+b*(1.0+CTth*Sgama))*Fac2
+#        Y = -Y
+#        Mm = 2.0*np.pi*(a+2.0*(1.0-a)/(2.0+b*(1.0+Sgama)))*(a*X+a*Z/2.0-U*Y+U*(X+Y*V+Z*V**2)/np.sqrt(V**2-1.0)-U*Z*V)
+#        Q = np.sum(Wp*Mp+Wm*Mm,axis=0)
+#        return Q*G*NS/(NS-1.)
+#    elif 'Tilting' in Geometry:
+#        EMA = np.exp(-MuT*SCth)
+#        G = 2.0*Delt*Navo*emc/((1.0+CTth**2)*EMA)
+##          Wplus = expmutsecth/(1.0d - singama*secth) + singama/mut/(1.0 -singama*secth)/(1.0-singama*secth)* $
+##                                                       (Exp(-1.0*mut*cscgama) - expmutsecth)
+##          Wminus = expmutsecth/(1.0d + singama*secth) - singama/mut/(1.0 +singama*secth)/(1.0+singama*secth)* $
+##                                                        expmutsecth*(1.0d - expmutsecth*Exp(-1.0*mut*cscgama))
+#        Wp = EMA/(1.0-Sgama*SCth)+Sgama/MuT/(1.0-Sgama*SCth)/(1.0-Sgama*SCth)*(np.exp(-MuT*CSgama)-EMA)
+##        Wp = EMA/(1.0-Sgama*SCth)+Sgama/MuT/(1.0-Sgama*SCth)**2*(np.exp(-MuT*CSgama)-EMA)
+#        Wm = EMA/(1.0+Sgama*SCth)-Sgama/MuT/(1.0+Sgama*SCth)/(1.0+Sgama*SCth)*EMA*(1.0-EMA*np.exp(-MuT*CSgama))
+##        Wm = EMA/(1.0+Sgama*SCth)-Sgama/MuT/(1.0+Sgama*SCth)**2*EMA*(1.0-EMA*np.exp(-MuT*CSgama))
+#        X = 0.5*(Cth**2*(Cth**2*Sgama**4-4.0*Sth**2*Cgama**2)+1.0)
+#        Y = Cgama**2*(1.0+Cgama**2)*Cth**2*Sth**2
+#        Z = 0.5*Cgama**4*Sth**4
+##          X = 0.5*(costh*costh*(costh*costh*singama*singama*singama*singama - $
+##                           4.0*sinth*sinth*cosgama*cosgama) +1.0d)
+##
+##          Y = cosgama*cosgama*(1.0 + cosgama*cosgama)*costh*costh*sinth*sinth
+##
+##          Z= 0.5 *cosgama*cosgama*cosgama*cosgama* (sinth^4)
+##
+#        AlP = 2.0+b*(1.0-Cth*Sgama)
+#        AlM = 2.0+b*(1.0+Cth*Sgama)
+##          alphaplus = 2.0 + b*(1.0 - costh*singama)
+##          alphaminus = 2.0 + b*(1.0 + costh*singama)
+#        BeP = np.sqrt(np.fabs(AlP**2-(b*Cgama*Sth)**2))
+#        BeM = np.sqrt(np.fabs(AlM**2-(b*Cgama*Sth)**2))
+##          betaplus = Sqrt(Abs(alphaplus*alphaplus - b*b*cosgama*cosgama*sinth*sinth))
+##          betaminus = Sqrt(Abs(alphaminus*alphaminus - b*b*cosgama*cosgama*sinth*sinth))
+#        Mp = Cgama*(np.pi*a**2*(2.0*X+Y+0.75*Z)+(2.0*np.pi*(1.0-a))*(1.0-a+a*AlP)* \
+#            (4.0*X/AlP/BeP+(4.0*(1.0+Cgama**2)/b/b*Cth**2)*(AlP/BeP-1.0)+
+#            2.0/b**4*AlP/BeP*AlP**2-2.0/b**4*AlP**2-Cgama**2/b/b*Sth*2))
+##          Mplus = cosgama*(!DPI * a * a * (2.0*x + y + 0.75*z) + $
+##                   (2.0*!DPI*(1.0 - a)) *(1.0 - a + a*alphaplus)* $
+##                   (4.0*x/alphaplus/betaplus + (4.0*(1.0+cosgama*cosgama)/b/b*costh*costh)*(alphaplus/betaplus -1.0) + $
+##                   2.0/(b^4)*alphaplus/betaplus*alphaplus*alphaplus - 2.0/(b^4)*alphaplus*alphaplus - $
+##                   cosgama*cosgama/b/b*sinth*sinth))
+#        Mm =Cgama*(np.pi*a**2*(2.0*X+Y+0.75*Z)+(2.0*np.pi*(1.0-a))*(1.0-a+a*AlM)* \
+#            (4.0*X/AlM/BeM+(4.0*(1.0+Cgama**2)/b/b*Cth**2)*(AlM/BeM-1.0)+
+#            2.0/b**4*AlM/BeM*AlM**2-2.0/b**4*AlM**2-Cgama**2/b/b*Sth*2))
+##          Mminus = cosgama*(!DPI * a * a * (2.0*x + y + 0.75*z) + $
+##                   (2.0*!DPI*(1.0 - a)) *(1.0 - a + a*alphaminus)* $
+##                   (4.0*x/alphaminus/betaminus + (4.0*(1.0+cosgama*cosgama)/b/b*costh*costh)*(alphaminus/betaminus -1.0) + $
+##                   2.0/(b^4)*alphaminus/betaminus*alphaminus*alphaminus - 2.0/(b^4)*alphaminus*alphaminus - $
+##                   cosgama*cosgama/b/b*sinth*sinth))
+#        Q = np.sum(Wp*Mp+Wm*Mm,axis=0)
+#        return Q*G*NS/(NS-1.)
+##       expmutsecth = Exp(-1.0*mut*secth)
+##       G= delta * 2.0 * Na * emc /(1.0+costth^2)/expmutsecth
+##       for i=1, num_steps-1 do begin
+##          cosgama=double(cos(gama[i]))
+##          singama=double(sin(gama[i]))
+##          cscgama=1.0d/singama
+##
+##
+##     ; print, "W", min(wplus), max(wplus), min(wminus), max(wminus)
+##
+##
+##
+##
+##    ;               print, a,b
+##  ; print, "M", min(mplus), max(mplus), min(mminus), max(mminus)
+##          Q=Q+ Wplus*Mplus + Wminus*Mminus
+##      endfor
+##      Q=double(num_steps)/double(num_steps-1)*Q*G
+##   ;   print, min(q), max(q)
+##      end
 
-def MultiScattering(Geometry,ElList,Tth):
-    BN = BD = 0.0
-    Amu = 0.0
-    for El in ElList:
-        el = ElList[El]
-        BN += el['Z']*el['FormulaNo']
-        BD += el['FormulaNo']
-        Amu += el['FormulaNo']*el['mu']
+#def MultiScattering(Geometry,ElList,Tth):
+#    BN = BD = 0.0
+#    Amu = 0.0
+#    for El in ElList:
+#        el = ElList[El]
+#        BN += el['Z']*el['FormulaNo']
+#        BD += el['FormulaNo']
+#        Amu += el['FormulaNo']*el['mu']
         
 def CalcPDF(data,inst,xydata):
     auxPlot = []
@@ -401,16 +402,13 @@ def CalcPDF(data,inst,xydata):
     dt = (Tth[1]-Tth[0])
     MuR = Abs*data['Diam']/20.0
     xydata['IofQ'][1][1] /= Absorb(data['Geometry'],MuR,Tth)
-    xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'],Tth,Azm=inst['Azimuth'])[0]
+    xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
     if data['DetType'] == 'Image plate':
         xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
     XY = xydata['IofQ'][1]    
     #convert to Q
     hc = 12.397639
-    if 'Lam' in inst:
-        wave = inst['Lam']
-    else:
-        wave = inst['Lam1']
+    wave = G2mth.getWave(inst)
     keV = hc/wave
     minQ = npT2q(Tth[0],wave)
     maxQ = npT2q(Tth[-1],wave)    
@@ -586,7 +584,7 @@ class fcjde_gen(st.rv_continuous):
         
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
-def getWidths(pos,sig,gam,shl):
+def getWidthsCW(pos,sig,gam,shl):
     widths = [np.sqrt(sig)/100.,gam/200.]
     fwhm = 2.355*widths[0]+2.*widths[1]
     fmin = 10.*(fwhm+shl*abs(npcosd(pos)))
@@ -595,18 +593,25 @@ def getWidths(pos,sig,gam,shl):
         fmin,fmax = [fmax,fmin]          
     return widths,fmin,fmax
     
+def getWidthsTOF(pos,alp,bet,sig,gam):
+    lnf = 3.3      # =log(0.001/2)
+    widths = [np.sqrt(sig),gam]
+    fwhm = 2.355*widths[0]+2.*widths[1]
+    fmin = 10.*fwhm*(1.+1./alp)    
+    fmax = 10.*fwhm*(1.+1./bet)
+    return widths,fmin,fmax
+    
 def getFWHM(TTh,Inst):
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*math.pi/180.
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
-    s = sig(TTh/2.,Inst['U'],Inst['V'],Inst['W'])*100.
-    g = gam(TTh/2.,Inst['X'],Inst['Y'])*100.
-    return gamFW(g,s)
-    
+    s = sig(TTh/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])*100.
+    g = gam(TTh/2.,Inst['X'][1],Inst['Y'][1])*100.
+    return gamFW(g,s)    
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
     DX = xdata[1]-xdata[0]
-    widths,fmin,fmax = getWidths(pos,sig,gam,shl)
+    widths,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
     x = np.linspace(pos-fmin,pos+fmin,256)
     dx = x[1]-x[0]
     Norm = norm.pdf(x,loc=pos,scale=widths[0])
@@ -663,15 +668,18 @@ def getBackground(pfx,parmDict,bakType,xdata):
                 bakVals[i] = parmDict[pfx+'Back:'+str(i)]
             bakInt = si.interp1d(bakPos,bakVals,'linear')
             yb = bakInt(xdata)
+    if 'difC' in parmDict:
+        ff = 1.
+    else:        
+        try:
+            wave = parmDict[pfx+'Lam']
+        except KeyError:
+            wave = parmDict[pfx+'Lam1']
+        q = 4.0*np.pi*npsind(xdata/2.0)/wave
+        SQ = (q/(4.*np.pi))**2
+        FF = G2elem.GetFormFactorCoeff('Si')[0]
+        ff = np.array(G2elem.ScatFac(FF,SQ)[0])**2
     iD = 0        
-    try:
-        wave = parmDict[pfx+'Lam']
-    except KeyError:
-        wave = parmDict[pfx+'Lam1']
-    q = 4.0*np.pi*npsind(xdata/2.0)/wave
-    SQ = (q/(4.*np.pi))**2
-    FF = G2elem.GetFormFactorCoeff('Si')[0]
-    ff = np.array(G2elem.ScatFac(FF,SQ)[0])**2
     while True:
         try:
             dbA = parmDict[pfx+'DebyeA:'+str(iD)]
@@ -689,7 +697,7 @@ def getBackground(pfx,parmDict,bakType,xdata):
             pkS = parmDict[pfx+'BkPksig:'+str(iD)]
             pkG = parmDict[pfx+'BkPkgam:'+str(iD)]
             shl = 0.002
-            Wd,fmin,fmax = getWidths(pkP,pkS,pkG,shl)
+            Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
             iBeg = np.searchsorted(xdata,pkP-fmin)
             iFin = np.searchsorted(xdata,pkP+fmax)
             yb[iBeg:iFin] += pkI*getFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
@@ -744,15 +752,18 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
                     dydb[i] = np.where(xdata>bakPos[i],
                         np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/(bakPos[i+1]-bakPos[i]),0.),
                         np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/(bakPos[i]-bakPos[i-1]),0.))
+    if 'difC' in parmDict:
+        ff = 1.
+    else:
+        try:
+            wave = parmDict[pfx+'Lam']
+        except KeyError:
+            wave = parmDict[pfx+'Lam1']
+        q = 4.0*np.pi*npsind(xdata/2.0)/wave
+        SQ = (q/(4*np.pi))**2
+        FF = G2elem.GetFormFactorCoeff('Si')[0]
+        ff = np.array(G2elem.ScatFac(FF,SQ)[0])
     iD = 0        
-    try:
-        wave = parmDict[pfx+'Lam']
-    except KeyError:
-        wave = parmDict[pfx+'Lam1']
-    q = 4.0*np.pi*npsind(xdata/2.0)/wave
-    SQ = (q/(4*np.pi))**2
-    FF = G2elem.GetFormFactorCoeff('Si')[0]
-    ff = np.array(G2elem.ScatFac(FF,SQ)[0])
     while True:
         try:
             dbA = parmDict[pfx+'DebyeA:'+str(iD)]
@@ -775,7 +786,7 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             pkS = parmDict[pfx+'BkPksig:'+str(iD)]
             pkG = parmDict[pfx+'BkPkgam:'+str(iD)]
             shl = 0.002
-            Wd,fmin,fmax = getWidths(pkP,pkS,pkG,shl)
+            Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
             iBeg = np.searchsorted(xdata,pkP-fmin)
             iFin = np.searchsorted(xdata,pkP+fmax)
             Df,dFdp,dFds,dFdg,dFdsh = getdFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
@@ -802,6 +813,16 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
 #    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     sumDf = np.sum(Df)
     return Df,dFdp,dFds,dFdg,dFdsh
+
+def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
+    Df = pyd.pyepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
+    Df /= np.sum(Df)
+    return Df  
+    
+def getdEpsVoigt(pos,alp,bet,sig,gam,xdata):
+    Df,dFdp,dFda,dFdb,dFds,dFdg = pyd.pydepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
+    sumDf = np.sum(Df)
+    return Df,dFdp,dFda,dFdb,dFds,dFdg   
 
 def ellipseSize(H,Sij,GB):
     HX = np.inner(H.T,GB)
@@ -830,67 +851,123 @@ def getHKLpeak(dmin,SGData,A):
             HKLs.append([h,k,l,d,-1])
     return HKLs
 
-def getPeakProfile(parmDict,xdata,varyList,bakType):
+def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
     
     yb = getBackground('',parmDict,bakType,xdata)
     yc = np.zeros_like(yb)
-    dx = xdata[1]-xdata[0]
-    U = parmDict['U']
-    V = parmDict['V']
-    W = parmDict['W']
-    X = parmDict['X']
-    Y = parmDict['Y']
-    shl = max(parmDict['SH/L'],0.002)
-    Ka2 = False
-    if 'Lam1' in parmDict.keys():
-        Ka2 = True
-        lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
-        kRatio = parmDict['I(L2)/I(L1)']
-    iPeak = 0
-    while True:
-        try:
-            pos = parmDict['pos'+str(iPeak)]
-            theta = (pos-parmDict['Zero'])/2.0
-            intens = parmDict['int'+str(iPeak)]
-            sigName = 'sig'+str(iPeak)
-            if sigName in varyList:
-                sig = parmDict[sigName]
-            else:
-                sig = U*tand(theta)**2+V*tand(theta)+W
-            sig = max(sig,0.001)          #avoid neg sigma
-            gamName = 'gam'+str(iPeak)
-            if gamName in varyList:
-                gam = parmDict[gamName]
-            else:
-                gam = X/cosd(theta)+Y*tand(theta)
-            gam = max(gam,0.001)             #avoid neg gamma
-            Wd,fmin,fmax = getWidths(pos,sig,gam,shl)
-            iBeg = np.searchsorted(xdata,pos-fmin)
-            lenX = len(xdata)
-            if not iBeg:
-                iFin = np.searchsorted(xdata,pos+fmin)
-            elif iBeg == lenX:
-                iFin = iBeg
-            else:
-                iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
-            if not iBeg+iFin:       #peak below low limit
+    if 'C' in dataType:
+        dx = xdata[1]-xdata[0]
+        U = parmDict['U']
+        V = parmDict['V']
+        W = parmDict['W']
+        X = parmDict['X']
+        Y = parmDict['Y']
+        shl = max(parmDict['SH/L'],0.002)
+        Ka2 = False
+        if 'Lam1' in parmDict.keys():
+            Ka2 = True
+            lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
+            kRatio = parmDict['I(L2)/I(L1)']
+        iPeak = 0
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]
+                theta = (pos-parmDict['Zero'])/2.0
+                intens = parmDict['int'+str(iPeak)]
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList:
+                    sig = parmDict[sigName]
+                else:
+                    sig = U*tand(theta)**2+V*tand(theta)+W
+                sig = max(sig,0.001)          #avoid neg sigma
+                gamName = 'gam'+str(iPeak)
+                if gamName in varyList:
+                    gam = parmDict[gamName]
+                else:
+                    gam = X/cosd(theta)+Y*tand(theta)
+                gam = max(gam,0.001)             #avoid neg gamma
+                Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                lenX = len(xdata)
+                if not iBeg:
+                    iFin = np.searchsorted(xdata,pos+fmin)
+                elif iBeg == lenX:
+                    iFin = iBeg
+                else:
+                    iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    return yb+yc
+                yc[iBeg:iFin] += intens*getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
+                if Ka2:
+                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                    kdelt = int((pos2-pos)/dx)               
+                    iBeg = min(lenX,iBeg+kdelt)
+                    iFin = min(lenX,iFin+kdelt)
+                    if iBeg-iFin:
+                        yc[iBeg:iFin] += intens*kRatio*getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
                 iPeak += 1
-                continue
-            elif not iBeg-iFin:     #peak above high limit
+            except KeyError:        #no more peaks to process
                 return yb+yc
-            yc[iBeg:iFin] += intens*getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
-            if Ka2:
-                pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                kdelt = int((pos2-pos)/dx)               
-                iBeg = min(lenX,iBeg+kdelt)
-                iFin = min(lenX,iFin+kdelt)
-                if iBeg-iFin:
-                    yc[iBeg:iFin] += intens*kRatio*getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
-            iPeak += 1
-        except KeyError:        #no more peaks to process
-            return yb+yc
+    else:
+        difC = parmDict['difC']
+        alp0 = parmDict['alpha']
+        bet0 = parmDict['beta-0']
+        bet1 = parmDict['beta-1']
+        sig0 = parmDict['var-inst']
+        X = parmDict['X']
+        Y = parmDict['Y']
+        iPeak = 0
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]                
+                tof = pos-parmDict['Zero']
+                dsp = tof/difC
+                intens = parmDict['int'+str(iPeak)]
+                alpName = 'alp'+str(iPeak)
+                if alpName in varyList:
+                    alp = parmDict[alpName]
+                else:
+                    alp = alp0*dsp
+                betName = 'bet'+str(iPeak)
+                if betName in varyList:
+                    bet = parmDict[betName]
+                else:
+                    bet = bet0+bet1/dsp**4
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList:
+                    sig = parmDict[sigName]
+                else:
+                    sig = sig0*dsp**2
+                gamName = 'gam'+str(iPeak)
+                if gamName in varyList:
+                    gam = parmDict[gamName]
+                else:
+                    gam = X*dsp**2+Y*dsp
+                gam = max(gam,0.001)             #avoid neg gamma
+                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig,gam)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                iFin = np.searchsorted(xdata,pos+fmax)
+                lenX = len(xdata)
+                if not iBeg:
+                    iFin = np.searchsorted(xdata,pos+fmax)
+                elif iBeg == lenX:
+                    iFin = iBeg
+                else:
+                    iFin = np.searchsorted(xdata,pos+fmax)
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    return yb+yc
+                yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])
+                iPeak += 1
+            except KeyError:        #no more peaks to process
+                return yb+yc
             
-def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
+def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
 # needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
     dMdb,dMddb,dMdpk = getBackgroundDerv('',parmDict,bakType,xdata)
@@ -908,98 +985,182 @@ def getPeakProfileDerv(parmDict,xdata,varyList,bakType):
             parm,id = name.split(':')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMdpk[4*int(id)+ip]
-    dx = xdata[1]-xdata[0]
-    U = parmDict['U']
-    V = parmDict['V']
-    W = parmDict['W']
-    X = parmDict['X']
-    Y = parmDict['Y']
-    shl = max(parmDict['SH/L'],0.002)
-    Ka2 = False
-    if 'Lam1' in parmDict.keys():
-        Ka2 = True
-        lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
-        kRatio = parmDict['I(L2)/I(L1)']
-    iPeak = 0
-    while True:
-        try:
-            pos = parmDict['pos'+str(iPeak)]
-            theta = (pos-parmDict['Zero'])/2.0
-            intens = parmDict['int'+str(iPeak)]
-            sigName = 'sig'+str(iPeak)
-            tanth = tand(theta)
-            costh = cosd(theta)
-            if sigName in varyList:
-                sig = parmDict[sigName]
-            else:
-                sig = U*tanth**2+V*tanth+W
-                dsdU = tanth**2
-                dsdV = tanth
-                dsdW = 1.0
-            sig = max(sig,0.001)          #avoid neg sigma
-            gamName = 'gam'+str(iPeak)
-            if gamName in varyList:
-                gam = parmDict[gamName]
-            else:
-                gam = X/costh+Y*tanth
-                dgdX = 1.0/costh
-                dgdY = tanth
-            gam = max(gam,0.001)             #avoid neg gamma
-            Wd,fmin,fmax = getWidths(pos,sig,gam,shl)
-            iBeg = np.searchsorted(xdata,pos-fmin)
-            lenX = len(xdata)
-            if not iBeg:
-                iFin = np.searchsorted(xdata,pos+fmin)
-            elif iBeg == lenX:
-                iFin = iBeg
-            else:
-                iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
-            if not iBeg+iFin:       #peak below low limit
+    if 'C' in dataType:
+        dx = xdata[1]-xdata[0]
+        U = parmDict['U']
+        V = parmDict['V']
+        W = parmDict['W']
+        X = parmDict['X']
+        Y = parmDict['Y']
+        shl = max(parmDict['SH/L'],0.002)
+        Ka2 = False
+        if 'Lam1' in parmDict.keys():
+            Ka2 = True
+            lamRatio = 360*(parmDict['Lam2']-parmDict['Lam1'])/(np.pi*parmDict['Lam1'])
+            kRatio = parmDict['I(L2)/I(L1)']
+        iPeak = 0
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]
+                theta = (pos-parmDict['Zero'])/2.0
+                intens = parmDict['int'+str(iPeak)]
+                sigName = 'sig'+str(iPeak)
+                tanth = tand(theta)
+                costh = cosd(theta)
+                if sigName in varyList:
+                    sig = parmDict[sigName]
+                else:
+                    sig = U*tanth**2+V*tanth+W
+                    dsdU = tanth**2
+                    dsdV = tanth
+                    dsdW = 1.0
+                sig = max(sig,0.001)          #avoid neg sigma
+                gamName = 'gam'+str(iPeak)
+                if gamName in varyList:
+                    gam = parmDict[gamName]
+                else:
+                    gam = X/costh+Y*tanth
+                    dgdX = 1.0/costh
+                    dgdY = tanth
+                gam = max(gam,0.001)             #avoid neg gamma
+                Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                lenX = len(xdata)
+                if not iBeg:
+                    iFin = np.searchsorted(xdata,pos+fmin)
+                elif iBeg == lenX:
+                    iFin = iBeg
+                else:
+                    iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    break
+                dMdpk = np.zeros(shape=(6,len(xdata)))
+                dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
+                for i in range(1,5):
+                    dMdpk[i][iBeg:iFin] += 100.*dx*intens*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += 100.*dx*dMdipk[0]
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
+                if Ka2:
+                    pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                    kdelt = int((pos2-pos)/dx)               
+                    iBeg = min(lenX,iBeg+kdelt)
+                    iFin = min(lenX,iFin+kdelt)
+                    if iBeg-iFin:
+                        dMdipk2 = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
+                        for i in range(1,5):
+                            dMdpk[i][iBeg:iFin] += 100.*dx*intens*kRatio*dMdipk2[i]
+                        dMdpk[0][iBeg:iFin] += 100.*dx*kRatio*dMdipk2[0]
+                        dMdpk[5][iBeg:iFin] += 100.*dx*dMdipk2[0]
+                        dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
+                for parmName in ['pos','int','sig','gam']:
+                    try:
+                        idx = varyList.index(parmName+str(iPeak))
+                        dMdv[idx] = dervDict[parmName]
+                    except ValueError:
+                        pass
+                if 'U' in varyList:
+                    dMdv[varyList.index('U')] += dsdU*dervDict['sig']
+                if 'V' in varyList:
+                    dMdv[varyList.index('V')] += dsdV*dervDict['sig']
+                if 'W' in varyList:
+                    dMdv[varyList.index('W')] += dsdW*dervDict['sig']
+                if 'X' in varyList:
+                    dMdv[varyList.index('X')] += dgdX*dervDict['gam']
+                if 'Y' in varyList:
+                    dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
+                if 'SH/L' in varyList:
+                    dMdv[varyList.index('SH/L')] += dervDict['shl']         #problem here
+                if 'I(L2)/I(L1)' in varyList:
+                    dMdv[varyList.index('I(L2)/I(L1)')] += dervDict['L1/L2']
                 iPeak += 1
-                continue
-            elif not iBeg-iFin:     #peak above high limit
+            except KeyError:        #no more peaks to process
                 break
-            dMdpk = np.zeros(shape=(6,len(xdata)))
-            dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
-            for i in range(1,5):
-                dMdpk[i][iBeg:iFin] += 100.*dx*intens*dMdipk[i]
-            dMdpk[0][iBeg:iFin] += 100.*dx*dMdipk[0]
-            dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
-            if Ka2:
-                pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                kdelt = int((pos2-pos)/dx)               
-                iBeg = min(lenX,iBeg+kdelt)
-                iFin = min(lenX,iFin+kdelt)
-                if iBeg-iFin:
-                    dMdipk2 = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
-                    for i in range(1,5):
-                        dMdpk[i][iBeg:iFin] += 100.*dx*intens*kRatio*dMdipk2[i]
-                    dMdpk[0][iBeg:iFin] += 100.*dx*kRatio*dMdipk2[0]
-                    dMdpk[5][iBeg:iFin] += 100.*dx*dMdipk2[0]
-                    dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
-            for parmName in ['pos','int','sig','gam']:
-                try:
-                    idx = varyList.index(parmName+str(iPeak))
-                    dMdv[idx] = dervDict[parmName]
-                except ValueError:
-                    pass
-            if 'U' in varyList:
-                dMdv[varyList.index('U')] += dsdU*dervDict['sig']
-            if 'V' in varyList:
-                dMdv[varyList.index('V')] += dsdV*dervDict['sig']
-            if 'W' in varyList:
-                dMdv[varyList.index('W')] += dsdW*dervDict['sig']
-            if 'X' in varyList:
-                dMdv[varyList.index('X')] += dgdX*dervDict['gam']
-            if 'Y' in varyList:
-                dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
-            if 'SH/L' in varyList:
-                dMdv[varyList.index('SH/L')] += dervDict['shl']         #problem here
-            if 'I(L2)/I(L1)' in varyList:
-                dMdv[varyList.index('I(L2)/I(L1)')] += dervDict['L1/L2']
-            iPeak += 1
-        except KeyError:        #no more peaks to process
-            break
+    else:
+        difC = parmDict['difC']
+        alp0 = parmDict['alpha']
+        bet0 = parmDict['beta-0']
+        bet1 = parmDict['beta-1']
+        sig0 = parmDict['var-inst']
+        X = parmDict['X']
+        Y = parmDict['Y']
+        iPeak = 0
+        while True:
+            try:
+                pos = parmDict['pos'+str(iPeak)]                
+                tof = pos-parmDict['Zero']
+                dsp = tof/difC
+                intens = parmDict['int'+str(iPeak)]
+                alpName = 'alp'+str(iPeak)
+                if alpName in varyList:
+                    alp = parmDict[alpName]
+                else:
+                    alp = alp0*dsp
+                    dada0 = dsp
+                betName = 'bet'+str(iPeak)
+                if betName in varyList:
+                    bet = parmDict[betName]
+                else:
+                    bet = bet0+bet1/dsp**4
+                    dbdb0 = 1.
+                    dbdb1 = 1/dsp**4
+                sigName = 'sig'+str(iPeak)
+                if sigName in varyList:
+                    sig = parmDict[sigName]
+                else:
+                    sig = sig0*dsp**2
+                    dsds0 = dsp**2
+                gamName = 'gam'+str(iPeak)
+                if gamName in varyList:
+                    gam = parmDict[gamName]
+                else:
+                    gam = X*dsp**2+Y*dsp
+                    dsdX = dsp**2
+                    dsdY = dsp
+                gam = max(gam,0.001)             #avoid neg gamma
+                Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig,gam)
+                iBeg = np.searchsorted(xdata,pos-fmin)
+                lenX = len(xdata)
+                if not iBeg:
+                    iFin = np.searchsorted(xdata,pos+fmax)
+                elif iBeg == lenX:
+                    iFin = iBeg
+                else:
+                    iFin = np.searchsorted(xdata,pos+fmax)
+                if not iBeg+iFin:       #peak below low limit
+                    iPeak += 1
+                    continue
+                elif not iBeg-iFin:     #peak above high limit
+                    break
+                dMdpk = np.zeros(shape=(7,len(xdata)))
+                dMdipk = getdEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])
+                for i in range(1,6):
+                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += dMdipk[0]
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}
+                for parmName in ['pos','int','alp','bet','sig','gam']:
+                    try:
+                        idx = varyList.index(parmName+str(iPeak))
+                        dMdv[idx] = dervDict[parmName]
+                    except ValueError:
+                        pass
+                if 'alpha' in varyList:
+                    dMdv[varyList.index('alpha')] += dada0*dervDict['alp']
+                if 'beta-0' in varyList:
+                    dMdv[varyList.index('beta-0')] += dbdb0*dervDict['bet']
+                if 'beta-1' in varyList:
+                    dMdv[varyList.index('beta-1')] += dbdb1*dervDict['bet']
+                if 'var-inst' in varyList:
+                    dMdv[varyList.index('var-inst')] += dsds0*dervDict['sig']
+                if 'X' in varyList:
+                    dMdv[varyList.index('X')] += dsdX*dervDict['gam']
+                if 'Y' in varyList:
+                    dMdv[varyList.index('Y')] += dsdY*dervDict['gam']         #problem here
+                iPeak += 1
+            except KeyError:        #no more peaks to process
+                break
     return dMdv
         
 def Dict2Values(parmdict, varylist):
@@ -1142,12 +1303,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         for parm in Inst:
             insNames.append(parm)
             insVals.append(Inst[parm][1])
-            if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)'] and Inst[parm][2]:
-                insVary.append(parm)
+            if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+                'beta-0','beta-1','var-inst',] and Inst[parm][2]:
+                    insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
         instDict['X'] = max(instDict['X'],0.01)
         instDict['Y'] = max(instDict['Y'],0.01)
-        instDict['SH/L'] = max(instDict['SH/L'],0.002)
+        if 'SH/L' in instDict:
+            instDict['SH/L'] = max(instDict['SH/L'],0.002)
         return dataType,instDict,insVary
         
     def GetInstParms(parmDict,Inst,varyList,Peaks):
@@ -1159,10 +1322,18 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
                 sigName = 'sig'+str(iPeak)
                 pos = parmDict['pos'+str(iPeak)]
                 if sigName not in varyList:
-                    parmDict[sigName] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
+                    if 'C' in Inst['Type'][0]:
+                        parmDict[sigName] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
+                    else:
+                        dsp = pos/Inst['difC'][1]
+                        parmDict[sigName] = parmDict['var-inst']*dsp**2
                 gamName = 'gam'+str(iPeak)
                 if gamName not in varyList:
-                    parmDict[gamName] = parmDict['X']/cosd(pos/2.0)+parmDict['Y']*tand(pos/2.0)
+                    if 'C' in Inst['Type'][0]:
+                        parmDict[gamName] = parmDict['X']/cosd(pos/2.0)+parmDict['Y']*tand(pos/2.0)
+                    else:
+                        dsp = pos/Inst['difC'][1]
+                        parmDict[sigName] = parmDict['X']*dsp**2+parmDict['Y']*dsp
                 iPeak += 1
             except KeyError:
                 break
@@ -1174,7 +1345,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         ptstr =  'values:'
         sigstr = 'esds  :'
         for parm in Inst:
-            if parm in  ['U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
+            if parm in  ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+                'beta-0','beta-1','var-inst',]:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
                 if parm in sigDict:
@@ -1185,44 +1357,68 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         print ptstr
         print sigstr
 
-    def SetPeaksParms(Peaks):
+    def SetPeaksParms(dataType,Peaks):
         peakNames = []
         peakVary = []
         peakVals = []
-        names = ['pos','int','sig','gam']
+        if 'C' in dataType:
+            names = ['pos','int','sig','gam']
+        else:
+            names = ['pos','int','alpha','beta','sig','gam']
         for i,peak in enumerate(Peaks):
-            for j in range(4):
+            for j,name in enumerate(names):
                 peakVals.append(peak[2*j])
-                parName = names[j]+str(i)
+                parName = name+str(i)
                 peakNames.append(parName)
                 if peak[2*j+1]:
                     peakVary.append(parName)
         return dict(zip(peakNames,peakVals)),peakVary
                 
-    def GetPeaksParms(parmDict,Peaks,varyList):
-        names = ['pos','int','sig','gam']
+    def GetPeaksParms(Inst,parmDict,Peaks,varyList):
+        if 'C' in Inst['Type'][0]:
+            names = ['pos','int','sig','gam']
+        else:
+            names = ['pos','int','alpha','beta','sig','gam']
         for i,peak in enumerate(Peaks):
-            for j in range(4):
-                pos = parmDict['pos'+str(i)]
+            pos = parmDict['pos'+str(i)]
+            if 'difC' in Inst:
+                dsp = pos/Inst['difC'][1]
+            for j in range(len(names)):
                 parName = names[j]+str(i)
                 if parName in varyList:
                     peak[2*j] = parmDict[parName]
+                elif 'alpha' in parName:
+                    peak[2*j] = parmDict['alpha']*dsp
+                elif 'beta' in parName:
+                    peak[2*j] = parmDict['beta-0']+parmDict['beta-1']/dsp**4
                 elif 'sig' in parName:
-                    peak[2*j] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
+                    if 'C' in Inst['Type'][0]:
+                        peak[2*j] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
+                    else:
+                        peak[2*j] = parmDict['var-inst']*dsp**2
                 elif 'gam' in parName:
-                    peak[2*j] = parmDict['X']/cosd(pos/2.0)+parmDict['Y']*tand(pos/2.0)
+                    if 'C' in Inst['Type'][0]:
+                        peak[2*j] = parmDict['X']/cosd(pos/2.0)+parmDict['Y']*tand(pos/2.0)
+                    else:
+                        peak[2*j] = parmDict['X']*dsp**2+parmDict['Y']*dsp
                         
-    def PeaksPrint(parmDict,sigDict,varyList):
+    def PeaksPrint(dataType,parmDict,sigDict,varyList):
         print 'Peak coefficients:'
-        names = ['pos','int','sig','gam']
-        head = 15*' '
+        if 'C' in dataType:
+            names = ['pos','int','sig','gam']
+        else:
+            names = ['pos','int','alpha','beta','sig','gam']            
+        head = 13*' '
         for name in names:
-            head += name.center(12)+'esd'.center(12)
+            head += name.center(10)+'esd'.center(10)
         print head
-        ptfmt = {'pos':"%12.5f",'int':"%12.1f",'sig':"%12.3f",'gam':"%12.3f"}
+        if 'C' in dataType:
+            ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
+        else:
+            ptfmt = {'pos':"%10.2f",'int':"%10.1f",'alpha':"%10.3f",'beta':"%10.5f",'sig':"%10.3f",'gam':"%10.3f"}
         for i,peak in enumerate(Peaks):
             ptstr =  ':'
-            for j in range(4):
+            for j in range(len(names)):
                 name = names[j]
                 parName = name+str(i)
                 ptstr += ptfmt[name] % (parmDict[parName])
@@ -1231,16 +1427,16 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
                     ptstr += ptfmt[name] % (sigDict[parName])
                 else:
 #                    ptstr += G2IO.ValEsd(parmDict[parName],0.0)
-                    ptstr += 12*' '
+                    ptstr += 10*' '
             print '%s'%(('Peak'+str(i+1)).center(8)),ptstr
                 
-    def devPeakProfile(values, xdata, ydata, weights, parmdict, varylist,bakType,dlg):
+    def devPeakProfile(values,xdata,ydata, weights,dataType,parmdict,varylist,bakType,dlg):
         parmdict.update(zip(varylist,values))
-        return np.sqrt(weights)*getPeakProfileDerv(parmdict,xdata,varylist,bakType)
+        return np.sqrt(weights)*getPeakProfileDerv(dataType,parmdict,xdata,varylist,bakType)
             
-    def errPeakProfile(values, xdata, ydata, weights, parmdict, varylist,bakType,dlg):        
+    def errPeakProfile(values,xdata,ydata, weights,dataType,parmdict,varylist,bakType,dlg):        
         parmdict.update(zip(varylist,values))
-        M = np.sqrt(weights)*(getPeakProfile(parmdict,xdata,varylist,bakType)-ydata)
+        M = np.sqrt(weights)*(getPeakProfile(dataType,parmdict,xdata,varylist,bakType)-ydata)
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
         if dlg:
             GoOn = dlg.Update(Rwp,newmsg='%s%8.3f%s'%('Peak fit Rwp =',Rwp,'%'))[0]
@@ -1261,7 +1457,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
     xFin = np.searchsorted(x,Limits[1])
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
     dataType,insDict,insVary = SetInstParms(Inst)
-    peakDict,peakVary = SetPeaksParms(Peaks)
+    peakDict,peakVary = SetPeaksParms(Inst['Type'][0],Peaks)
     parmDict = {}
     parmDict.update(bakDict)
     parmDict.update(insDict)
@@ -1273,7 +1469,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         if FitPgm == 'LSQ':
             try:
                 result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
-                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],parmDict,varyList,bakType,dlg))
+                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
                 ncyc = int(result[2]['nfev']/2)
             finally:
                 dlg.Destroy()
@@ -1304,14 +1500,33 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
         
     sigDict = dict(zip(varyList,sig))
     yb[xBeg:xFin] = getBackground('',parmDict,bakType,x[xBeg:xFin])
-    yc[xBeg:xFin] = getPeakProfile(parmDict,x[xBeg:xFin],varyList,bakType)
+    yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
     BackgroundPrint(Background,sigDict)
     GetInstParms(parmDict,Inst,varyList,Peaks)
     InstPrint(Inst,sigDict)
-    GetPeaksParms(parmDict,Peaks,varyList)    
-    PeaksPrint(parmDict,sigDict,varyList)
+    GetPeaksParms(Inst,parmDict,Peaks,varyList)    
+    PeaksPrint(dataType,parmDict,sigDict,varyList)
+
+def calcIncident(Iparm,xdata):
+    Itype = Iparm['Itype']
+    Icoef = Iparm['Icoeff']
+    Iesd = Iparm['Iesd']
+    Icovar = Iparm['Icovar']
+    intens = np.zeros_like(xdata)
+    x = xdata/1000.
+    if Itype == 1:
+        intens = Icoef[0]
+        for i in range(1,10,2):
+            intens += Icoef[i]*np.exp(-Icoef[i+1]*x**((i+1)/2))
+        
+    elif Itype == 4:
+        intens = Icoef[0]
+        intens += (Icoef[1]/x**5)*np.exp(-Icoef[2]/(x**2))
+        
+    return intens
+
     
 #testing data
 NeedTestData = True

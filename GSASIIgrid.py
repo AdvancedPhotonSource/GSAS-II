@@ -85,8 +85,8 @@ htmlFirstUse = True
     wxID_INSTSAVE,
 ] = [wx.NewId() for item in range(6)]
 
-[ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,
-] = [wx.NewId() for item in range(5)]
+[ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,wxID_AUTOSEARCH,
+] = [wx.NewId() for item in range(6)]
 
 [  wxID_INDXRELOAD, wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for item in range(5)]
@@ -536,6 +536,8 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.PeakMenu,helpType='Peak List')
         self.PeakEdit = wx.Menu(title='')
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
+        self.AutoSearch = self.PeakEdit.Append(help='Automatic peak search', 
+            id=wxID_AUTOSEARCH, kind=wx.ITEM_NORMAL,text='Auto search')
         self.UnDo = self.PeakEdit.Append(help='Undo last least squares refinement', 
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
         self.PeakFit = self.PeakEdit.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='LSQ PeakFit', 

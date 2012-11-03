@@ -60,6 +60,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
+import GSASIIpwd as G2pwd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
 import GSASIIstruct as G2str
@@ -168,7 +169,7 @@ class GSASII(wx.Frame):
         item = parent.Append(help='Make new PDFs from selected powder patterns', 
             id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='Make new PDFs')
         self.MakePDF.append(item)
-        item.Enable(False)
+#        item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=item.GetId())
         
         item = parent.Append(help='View least squares parameters', 
@@ -556,10 +557,7 @@ class GSASII(wx.Frame):
                 newVals.append(val)                        
             S = File.readline()                
         File.close()
-        inst = dict(zip(newItems,zip(newVals,newVals,len(newVals)*[False,])))
-        for item in inst:
-            inst[item] = list(inst[item])
-        return inst
+        return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file'''
@@ -657,18 +655,13 @@ class GSASII(wx.Frame):
                 else:
                     data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                 codes.extend([0,0,0,0,0,0,0])
-                inst = dict(zip(names,zip(data,data,codes)))
-                for item in inst:
-                    inst[item] = list(inst[item])
-                return inst
+                return G2IO.makeInstDict(names,data,codes)
             elif 'T' in DataType:
                 names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1','var-inst','X','Y','Azimuth']
                 codes = [0,0,0,0,0,0,0,0,0,0,0,0]
-                azm = Iparm.get('INS  1DETAZM')
-                if azm is None: #not in this Iparm file
-                    azm = 0.0
-                else:
-                    azm = float(azm)
+                azm = 0.
+                if 'INS  1DETAZM' in Iparm:
+                    azm = float(Iparm['INS  1DETAZM'])
                 s = Iparm['INS  1BNKPAR'].split()
                 data.extend([G2IO.sfloat(s[1]),])               #2-theta for bank
                 s = Iparm['INS  1 ICONS'].split()
@@ -676,21 +669,46 @@ class GSASII(wx.Frame):
                 s = Iparm['INS  1PRCF1 '].split()
                 pfType = int(s[0])
                 s = Iparm['INS  1PRCF11'].split()
-                if pfType == 1:
+                if abs(pfType) == 1:
                     data.extend([G2IO.sfloat(s[1]),G2IO.sfloat(s[2]),G2IO.sfloat(s[3])])
                     s = Iparm['INS  1PRCF12'].split()
                     data.extend([G2IO.sfloat(s[1]),0.0,0.0,azm])
-                elif pfType in [3,4,5]:
+                elif abs(pfType) in [3,4,5]:
                     data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])
-                    if pfType == 4:
+                    if abs(pfType) == 4:
                         data.extend([G2IO.sfloat(s[3]),0.0,0.0,azm])
                     else:
                         s = Iparm['INS  1PRCF12'].split()
-                        data.extend([G2IO.sfloat(s[0]),0.0,0.0,azm])
-                inst = dict(zip(names,zip(data,data,codes)))
-                for item in inst:
-                    inst[item] = list(inst[item])
-                return inst
+                        data.extend([G2IO.sfloat(s[0]),0.0,0.0,azm])                       
+                Inst = G2IO.makeInstDict(names,data,codes)
+                if pfType < 0:
+                    Ipab = 'INS  1PAB'+str(-pfType)
+                    Npab = int(Iparm[Ipab+'  '].strip())
+                    Inst['Pdabc'] = []
+                    for i in range(Npab):
+                        k = Ipab+str(i+1).rjust(2)
+                        s = Iparm[k].split()
+                        Inst['Pdabc'].append([float(t) for t in s])
+                    Inst['Pdabc'] = np.array(Inst['Pdabc'])
+                if 'INS  1I ITYP' in Iparm:
+                    Ityp = int(Iparm['INS  1I ITYP'].split()[0])
+                    if Ityp in [1,2,3,4,5]:
+                        Inst['Itype'] = Ityp
+                        Icoeff = []
+                        Iesd = []
+                        Icovar = []                   
+                        for i in range(3):
+                            s = Iparm['INS  1ICOFF'+str(i+1)].split()
+                            Icoeff += [float(S) for S in s]
+                            s = Iparm['INS  1IECOF'+str(i+1)].split()
+                            Iesd += [float(S) for S in s]
+                        for i in range(8):
+                            s = Iparm['INS  1IECOR'+str(i+1)].split()
+                            Icovar += [float(S) for S in s]
+                        Inst['Icoeff'] = Icoeff
+                        Inst['Iesd'] = Iesd
+                        Inst['Icovar'] = Icovar
+                return Inst
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]
@@ -845,6 +863,18 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Comments'),
                 rd.comments)
+            if 'T' in instParmList['Type'][0]:
+                if not rd.clockWd and rd.GSAS:
+                    rd.powderdata[0] *= 100.
+                cw = np.diff(rd.powderdata[0])
+                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
+                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
+                rd.powderdata[2] = rd.powderdata[2][:-1]
+                rd.powderdata[3] = rd.powderdata[3][:-1]
+                rd.powderdata[4] = rd.powderdata[4][:-1]
+                rd.powderdata[5] = rd.powderdata[5][:-1]
+                if 'Itype' in instParmList:
+                    incident = G2pwd.calcIncident(instParmList,rd.powderdata[0])
             Tmin = min(rd.powderdata[0])
             Tmax = max(rd.powderdata[0])
             self.PatternTree.SetItemPyData(
@@ -1128,9 +1158,7 @@ class GSASII(wx.Frame):
                 data = ['PKS',Cuka,0.0]
                 names = ['Type','Lam','Zero'] 
                 codes = [0,0,0]
-                inst = dict(zip(names,zip(data,data,codes)))
-                for item in inst:
-                    inst[item] = list(inst[item])
+                inst = G2IO.makeInstDict(names,data,codes)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),comments)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),peaks)

@@ -322,12 +322,6 @@ def PlotPatterns(G2frame,newPlot=False):
     '''
     global HKL
 
-    def getWave(Parms):
-        try:
-            return Parms['Lam'][1]
-        except KeyError:
-            return Parms['Lam1'][1]
-    
     def OnKeyBox(event):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('Powder Patterns'):
             event.key = cb.GetValue()[0]
@@ -435,7 +429,7 @@ def PlotPatterns(G2frame,newPlot=False):
             try:
                 Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
                 if 'C' in Parms['Type'][0]:
-                    wave = getWave(Parms)
+                    wave = G2mth.getWave(Parms)
                     if G2frame.qPlot:
                         try:
                             xpos = 2.0*asind(xpos*wave/(4*math.pi))
@@ -483,7 +477,7 @@ def PlotPatterns(G2frame,newPlot=False):
         except TypeError:
             return
         if 'C' in Parms['Type'][0]:
-            wave = getWave(Parms)
+            wave = G2mth.getWave(Parms)
         else:
             difC = Parms['difC'][1]
         PickId = G2frame.PickId
@@ -496,15 +490,7 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-                if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
-                    ins = [Parms[x][1] for x in ['U','V','W','X','Y']]
-                    if G2frame.qPlot:                              #qplot - convert back to 2-theta
-                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
-                    sig = ins[0]*tand(xy[0]/2.0)**2+ins[1]*tand(xy[0]/2.0)+ins[2]
-                    gam = ins[3]/cosd(xy[0]/2.0)+ins[4]*tand(xy[0]/2.0)           
-                    XY = [xy[0],0, xy[1],1, sig,0, gam,0]       #default refine intensity 1st
-                else:
-                    XY = [xy[0],0,xy[1],1,1,0,1,0]
+                XY = G2mth.setPeakparms(Parms,xy[0],xy[1])
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame)
@@ -535,7 +521,7 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.itemPicked is None: return
         Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         if 'C' in Parms['Type'][0]:
-            wave = getWave(Parms)
+            wave = G2mth.getWave(Parms)
         else:
             difC = Parms['difC'][1]
         xpos = event.xdata
@@ -689,7 +675,7 @@ def PlotPatterns(G2frame,newPlot=False):
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         if 'C' in Parms['Type'][0]:
-            wave = getWave(Parms)
+            wave = G2mth.getWave(Parms)
         else:
             difC = Parms['difC'][1]
         ifpicked = False
@@ -780,7 +766,7 @@ def PlotPatterns(G2frame,newPlot=False):
     if PickId and not G2frame.Contour:
         Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if 'C' in Parms['Type'][0]:
-            wave = getWave(Parms)
+            wave = G2mth.getWave(Parms)
         else:
             difC = Parms['difC'][1]
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:

@@ -22,12 +22,13 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             formatName = 'GSAS',
             longFormatName = 'GSAS powder data files'
             )
+        self.clockWd = None
 
     # Validate the contents -- look for a bank line
     def ContentsValidator(self, filepointer):
         #print 'ContentsValidator: '+self.formatName
         for i,line in enumerate(filepointer):
-            self.TimeMap = False
+            self.GSAS = True
             if i==0: # first line is always a comment
                 continue
             if i==1 and line[:4].lower() == 'inst' and ':' in line:
@@ -36,8 +37,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             if line[0] == '#': continue
             if line[:4] == 'BANK':
                 return True
-            if line [:8] == 'TIME_MAP':          #LANSCE TOF data
-                self.TimeMap = True
+            elif line[:7] == 'Monitor': continue
+            elif line [:8] == 'TIME_MAP':          #LANSCE TOF data
                 return True
             else:
                 print 'ContentsValidator: '+self.formatName
@@ -47,7 +48,6 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         return False # no bank records
 
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
-        clockWd = None
         
         def GetFXYEdata(File,Pos,Bank):
             File.seek(Pos)
@@ -92,7 +92,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         def GetESDdata(File,Pos,Bank):
             File.seek(Pos)
             cons = Bank.split()
-            if clockWd:
+            if self.clockWd:
                 start = 0
                 step = 1
             else:
@@ -118,23 +118,20 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     j += 1
                 S = File.readline()
             N = len(x)
-            if clockWd:
-                x,cw = Tmap2TOF(self.TimeMap,clockWd)
-                x = x[:-2]+cw[:-1]/2.
-                return [x,np.array(y)/cw[:-1],np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-            else:
-                return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+            if self.clockWd:
+                x = Tmap2TOF(self.TimeMap,clockWd)
+            return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
         
         def GetSTDdata(File,Pos,Bank):
             File.seek(Pos)
             cons = Bank.split()
             Nch = int(cons[2])
-            if clockWd:
+            if self.clockWd:
                 start = 0
                 step = 1
             else:
                 start = float(cons[5])/100.0               #CW: from centidegrees to degrees
-                step = float(cons[6])/100.0
+                step = float(cons[6])/100.0                 #NB TOF 0.1*ms!
             x = []
             y = []
             w = []
@@ -157,12 +154,9 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                         w.append(1.0/vi)
                 S = File.readline()
             N = len(x)
-            if clockWd:
-                x,cw = Tmap2TOF(self.TimeMap,clockWd)
-                x = x[:-2]+cw[:-1]/2.
-                return [x,np.array(y)/cw[:-1],np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-            else:
-                return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+            if self.clockWd:
+                x = Tmap2TOF(self.TimeMap,self.clockWd)[:-2]
+            return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
             
         def GetTimeMap(File,Pos,TimeMap):
             File.seek(Pos)
@@ -195,8 +189,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 TOF += [T+Step*(i-Tch) for i in range(Tch,tch)]
                 Tch,T,Step = tmap
             TOF = np.array(TOF)*clockWd
-            chWdt = np.diff(TOF)
-            return TOF,chWdt
+            return TOF
 
         x = []
         y = []
@@ -243,7 +236,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                         Banks.append(S)
                         Pos.append(filepointer.tell())
                     if S[:8] == 'TIME_MAP':
-                        self.TimeMap,clockWd = GetTimeMap(filepointer,filepointer.tell(),S)
+                        self.TimeMap,self.clockWd = GetTimeMap(filepointer,filepointer.tell(),S)
             except Exception as detail:
                 print self.formatName+' scan error:'+str(detail) # for testing
                 import traceback
@@ -285,20 +278,15 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         Bank = Banks[selblk]
         try:
             if 'FXYE' in Bank:
-                self.powderdata = GetFXYEdata(filepointer,
-                                              Pos[selblk],Banks[selblk])
+                self.powderdata = GetFXYEdata(filepointer,Pos[selblk],Banks[selblk])
             elif 'FXY' in Bank:
-                self.powderdata = GetFXYdata(filepointer,
-                                             Pos[selblk],Banks[selblk])
+                self.powderdata = GetFXYdata(filepointer,Pos[selblk],Banks[selblk])
             elif 'ESD' in Bank:
-                self.powderdata = GetESDdata(filepointer,
-                                             Pos[selblk],Banks[selblk])
+                self.powderdata = GetESDdata(filepointer,Pos[selblk],Banks[selblk])
             elif 'STD' in Bank:
-                self.powderdata = GetSTDdata(filepointer,
-                                             Pos[selblk],Banks[selblk])
+                self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
             else:
-                self.powderdata = GetSTDdata(filepointer,
-                                             Pos[selblk],Banks[selblk])
+                self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
         except Exception as detail:
             print self.formatName+' read error:'+str(detail) # for testing
             import traceback

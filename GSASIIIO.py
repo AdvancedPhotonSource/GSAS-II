@@ -37,6 +37,13 @@ def sint(S):
     else:
         return 0
 
+def makeInstDict(names,data,codes):
+    inst = dict(zip(names,zip(data,data,codes)))
+    for item in inst:
+        inst[item] = list(inst[item])
+    return inst
+
+
 def FileDlgFixExt(dlg,file):
     #this is needed to fix a problem in linux wx.FileDialog
     ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')
@@ -442,7 +449,10 @@ def ProjFileOpen(G2frame):
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch
                 if datus[0] == 'Instrument Parameters' and not isinstance(datus[1],dict):
-                    datus[1] = dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2])))
+                    if 'PWDR' in datum[0]:
+                        datus[1] = dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2])))
+                    else:
+                        datus[1] = dict(zip(datus[1][2],zip(datus[1][0],datus[1][1])))
                     for item in datus[1]:               #zip makes tuples - now make lists!
                         datus[1][item] = list(datus[1][item])
 #end patch

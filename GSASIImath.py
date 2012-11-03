@@ -779,6 +779,7 @@ def ChargeFlip(data,reflData,pgbar):
         CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
         CEsig = np.std(CErho)
         CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
+        CFrho = np.where(np.real(CErho) <= flipData['k-Max']*CEsig,CFrho,-CFrho)      #solves U atom problem! make 20. adjustible
         CFhkl = fft.ifftshift(fft.ifftn(CFrho))
         CFhkl = np.where(CFhkl,CFhkl,1.0)           #avoid divide by zero
         phase = CFhkl/np.absolute(CFhkl)
@@ -978,6 +979,40 @@ def PeaksUnique(data,Ind):
         if Indx[ind]:
             Ind.append(ind)
     return Ind
+    
+def setPeakparms(Parms,pos,mag,ifQ=False):
+    ins = {}
+    if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
+        for x in ['U','V','W','X','Y']:
+            ins[x] = Parms[x][1]
+        if ifQ:                              #qplot - convert back to 2-theta
+            pos = 2.0*asind(pos*wave/(4*math.pi))
+        sig = ins['U']*tand(pos/2.0)**2+ins['V']*tand(pos/2.0)+ins['W']
+        gam = ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)           
+        XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
+    else:
+        dsp = pos/Parms['difC'][1]
+        if 'Pdabc' in Parms:
+            for x in ['var-inst','X','Y']:
+                ins[x] = Parms[x][1]
+            Pdabc = Parms['Pdabc'].T
+            alp = np.interp(dsp,Pdabc[0],Pdabc[1])
+            bet = np.interp(dsp,Pdabc[0],Pdabc[2])
+        else:
+            for x in ['alpha','beta-0','beta-0','var-inst','X','Y']:
+                ins[x] = Parms[x][1]
+            alp = ins['alpha']*dsp
+            bet = ins['beta-0']+ins['beta-0']/dsp**4
+        sig = ins['var-inst']*dsp**2
+        gam = ins['X']*dsp+ins['Y']*dsp**2
+        XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
+    return XY
+        
+def getWave(Parms):
+    try:
+        return Parms['Lam'][1]
+    except KeyError:
+        return Parms['Lam1'][1]
     
 def prodQQ(QA,QB):
     ''' Grassman quaternion product

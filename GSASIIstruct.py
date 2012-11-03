@@ -1696,8 +1696,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             pfx = ':'+str(hId)+':'
             controlDict[pfx+'wtFactor'] =Histogram['wtFactor']
             Inst = Histogram['Instrument Parameters']
-            controlDict[pfx+'histType'] = Inst[1][0]
-            histDict[pfx+'Lam'] = Inst[1][1]
+            controlDict[pfx+'histType'] = Inst['Type'][0]
+            histDict[pfx+'Lam'] = Inst['Lam'][1]
             controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
     return histVary,histDict,controlDict
     
@@ -2569,14 +2569,14 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 for refl in refList:
                     if 'C' in calcControls[hfx+'histType']:
                         yp = np.zeros_like(yb)
-                        Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
+                        Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5],refl[6],refl[7],shl)
                         iBeg = max(xB,np.searchsorted(x,refl[5]-fmin))
                         iFin = max(xB,min(np.searchsorted(x,refl[5]+fmax),xF))
                         iFin2 = iFin
                         yp[iBeg:iFin] = refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                         if Ka2:
                             pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                            Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
+                            Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6],refl[7],shl)
                             iBeg2 = max(xB,np.searchsorted(x,pos2-fmin))
                             iFin2 = min(np.searchsorted(x,pos2+fmax),xF)
                             if not iBeg2+iFin2:       #peak below low limit - skip peak
@@ -2664,7 +2664,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
                         continue
-                Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
+                Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5],refl[6],refl[7],shl)
                 iBeg = np.searchsorted(x,refl[5]-fmin)
                 iFin = np.searchsorted(x,refl[5]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak
@@ -2674,7 +2674,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 yc[iBeg:iFin] += refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                    Wd,fmin,fmax = G2pwd.getWidths(pos2,refl[6],refl[7],shl)
+                    Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6],refl[7],shl)
                     iBeg = np.searchsorted(x,pos2-fmin)
                     iFin = np.searchsorted(x,pos2+fmax)
                     if not iBeg+iFin:       #peak below low limit - skip peak
@@ -2772,7 +2772,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
                 dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb = GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
-                Wd,fmin,fmax = G2pwd.getWidths(refl[5],refl[6],refl[7],shl)
+                Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5],refl[6],refl[7],shl)
                 iBeg = np.searchsorted(x,refl[5]-fmin)
                 iFin = np.searchsorted(x,refl[5]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak

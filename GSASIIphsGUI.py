@@ -402,7 +402,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Map'] = mapDefault
         if 'Flip' not in generalData:
             generalData['Flip'] = {'RefList':'','Resolution':0.5,'Norm element':'None',
-                'k-factor':0.1}
+                'k-factor':0.1,'k-Max':20.}
         if 'doPawley' not in generalData:
             generalData['doPawley'] = False
         if 'Pawley dmin' not in generalData:
@@ -855,6 +855,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return mapSizer
                 
         def FlipSizer():
+            if 'k-Max' not in Flip: Flip['k-Max'] = 20.
             
             def OnRefList(event):
                 Flip['RefList'] = refList.GetValue()
@@ -884,6 +885,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pass
                 kFactor.SetValue("%.3f"%(Flip['k-factor']))          #reset in case of error
             
+            def OnkMax(event):
+                try:
+                    res = float(kMax.GetValue())
+                    if res >= 10.:
+                        Flip['k-Max'] = res
+                except ValueError:
+                    pass
+                kMax.SetValue("%.0f"%(Flip['k-Max']))          #reset in case of error
+
             refList = data['Histograms'].keys()
             flipSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -892,12 +902,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
             lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
-            flipSizer.Add(lineSizer,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line2Sizer.Add(wx.StaticText(dataDisplay,label=' Normalizing element: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,label=' Normalizing element: '),0,wx.ALIGN_CENTER_VERTICAL)
             normElem = wx.Button(dataDisplay,label=Flip['Norm element'],style=wx.TE_READONLY)
             normElem.Bind(wx.EVT_BUTTON,OnNormElem)
-            line2Sizer.Add(normElem,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(normElem,0,wx.ALIGN_CENTER_VERTICAL)
+            flipSizer.Add(lineSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(dataDisplay,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
             flipRes =  wx.TextCtrl(dataDisplay,value='%.2f'%(Flip['Resolution']),style=wx.TE_PROCESS_ENTER)
             flipRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
@@ -908,6 +918,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
             kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
             line2Sizer.Add(kFactor,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Max (<10.0): '),0,wx.ALIGN_CENTER_VERTICAL)
+            kMax = wx.TextCtrl(dataDisplay,value='%.0f'%(Flip['k-Max']),style=wx.TE_PROCESS_ENTER)
+            kMax.Bind(wx.EVT_TEXT_ENTER,OnkMax)        
+            kMax.Bind(wx.EVT_KILL_FOCUS,OnkMax)
+            line2Sizer.Add(kMax,0,wx.ALIGN_CENTER_VERTICAL)
             flipSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
             return flipSizer
                 
@@ -963,7 +978,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for item in Items:
                 G2frame.dataFrame.AtomsMenu.Enable(item,False)
         Items = [G2gd.wxID_ATOMVIEWINSERT, G2gd.wxID_ATOMSVIEWADD]
-        if data['Drawing']['showABC']:
+        if 'showABC' in data['Drawing']:
             for item in Items:
                 G2frame.dataFrame.AtomsMenu.Enable(item,True)
         else:
@@ -1649,7 +1664,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:11]+list(U)+oldatom[17:]][0]
                 else:
                     X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
-                    atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+[oldatom[-1]]][0]
+                    atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:]+oldatom[17:]][0]
             else:
                 atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
                     ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
@@ -4018,13 +4033,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))
-        Inst = dict(zip(Inst[3],Inst[1]))
         Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Sample Parameters'))
-        if 'Lam' in Inst:
-            wave = Inst['Lam']
-        else:
-            wave = Inst['Lam1']
-        posCorr = Inst['Zero']
+        wave = G2mth.getWave(Inst)
+        posCorr = Inst['Zero'][1]
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         
         wx.BeginBusyCursor()
@@ -4042,7 +4053,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     dx = xdata[0][indx+1]-xdata[0][indx]
                     ref[6] = FWHM*(xdata[1][indx]-xdata[4][indx])*cosd(pos/2.)**3/dx
                     Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
-                    pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'],xdata[0][indx],Inst['Azimuth'])
+                    pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'][1],xdata[0][indx],Inst['Azimuth'][1])
                     ref[6] /= (Lorenz*pola*ref[3])
                 except IndexError:
                     pass

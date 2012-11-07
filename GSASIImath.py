@@ -980,7 +980,7 @@ def PeaksUnique(data,Ind):
             Ind.append(ind)
     return Ind
     
-def setPeakparms(Parms,pos,mag,ifQ=False):
+def setPeakparms(Parms,Parms2,pos,mag,ifQ=False):
     ins = {}
     if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
         for x in ['U','V','W','X','Y']:
@@ -992,10 +992,10 @@ def setPeakparms(Parms,pos,mag,ifQ=False):
         XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
     else:
         dsp = pos/Parms['difC'][1]
-        if 'Pdabc' in Parms:
+        if 'Pdabc' in Parms2:
             for x in ['var-inst','X','Y']:
                 ins[x] = Parms[x][1]
-            Pdabc = Parms['Pdabc'].T
+            Pdabc = Parms2['Pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])
             bet = np.interp(dsp,Pdabc[0],Pdabc[2])
         else:

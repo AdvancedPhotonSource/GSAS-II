@@ -1109,7 +1109,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
             hId = Histogram['hId']
             if 'PWDR' in histogram:
                 limits = Histogram['Limits'][1]
-                inst = Histogram['Instrument Parameters']
+                inst = Histogram['Instrument Parameters'][0]
                 Zero = inst['Zero'][1]
                 if 'C' in inst['Type'][1]:
                     try:
@@ -1199,7 +1199,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                         raise ValueError 
                 Histogram['Reflection Lists'][phase] = refList
             elif 'HKLF' in histogram:
-                inst = Histogram['Instrument Parameters']
+                inst = Histogram['Instrument Parameters'][0]
                 hId = Histogram['hId']
                 hfx = ':%d:'%(hId)
                 for item in inst:
@@ -1662,7 +1662,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             histDict.update(bakDict)
             histVary += bakVary
             
-            Inst = Histogram['Instrument Parameters']
+            Inst = Histogram['Instrument Parameters'][0]
             Type,instDict,insVary = GetInstParms(hId,Inst)
             controlDict[pfx+'histType'] = Type
             if pfx+'Lam1' in instDict:
@@ -1695,7 +1695,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             hId = Histogram['hId']
             pfx = ':'+str(hId)+':'
             controlDict[pfx+'wtFactor'] =Histogram['wtFactor']
-            Inst = Histogram['Instrument Parameters']
+            Inst = Histogram['Instrument Parameters'][0]
             controlDict[pfx+'histType'] = Inst['Type'][0]
             histDict[pfx+'Lam'] = Inst['Lam'][1]
             controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
@@ -1869,7 +1869,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
             Background = Histogram['Background']
             backSig = SetBackgroundParms(pfx,Background,parmDict,sigDict)
             
-            Inst = Histogram['Instrument Parameters']
+            Inst = Histogram['Instrument Parameters'][0]
             instSig = SetInstParms(pfx,Inst,parmDict,sigDict)
         
             Sample = Histogram['Sample Parameters']

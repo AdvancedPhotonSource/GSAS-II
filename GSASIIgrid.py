@@ -2612,7 +2612,7 @@ def MovePatternTreeToGrid(G2frame,item):
     elif G2frame.PatternTree.GetItemText(item) == 'Instrument Parameters':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item
-        data = G2frame.PatternTree.GetItemPyData(item)
+        data = G2frame.PatternTree.GetItemPyData(item)[0]
         G2pdG.UpdateInstrumentGrid(G2frame,data)
         G2plt.PlotPeakWidths(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Sample Parameters':

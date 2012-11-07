@@ -532,7 +532,7 @@ class GSASII(wx.Frame):
             kind=wx.ITEM_NORMAL,text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
             
-    def ReadPowderInstprm(self,instfile):
+    def ReadPowderInstprm(self,instfile):       #fix the write routine for [inst1,inst2] style
         '''Read a GSAS-II (new) instrument parameter file'''
         if os.path.splitext(instfile)[1].lower() != '.instprm': # invalid file
             return None            
@@ -655,7 +655,7 @@ class GSASII(wx.Frame):
                 else:
                     data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                 codes.extend([0,0,0,0,0,0,0])
-                return G2IO.makeInstDict(names,data,codes)
+                return [G2IO.makeInstDict(names,data,codes),{}]
             elif 'T' in DataType:
                 names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1','var-inst','X','Y','Azimuth']
                 codes = [0,0,0,0,0,0,0,0,0,0,0,0]
@@ -680,20 +680,26 @@ class GSASII(wx.Frame):
                     else:
                         s = Iparm['INS  1PRCF12'].split()
                         data.extend([G2IO.sfloat(s[0]),0.0,0.0,azm])                       
-                Inst = G2IO.makeInstDict(names,data,codes)
+                Inst1 = G2IO.makeInstDict(names,data,codes)
+                Inst2 = {}
                 if pfType < 0:
                     Ipab = 'INS  1PAB'+str(-pfType)
                     Npab = int(Iparm[Ipab+'  '].strip())
-                    Inst['Pdabc'] = []
+                    Inst2['Pdabc'] = []
                     for i in range(Npab):
                         k = Ipab+str(i+1).rjust(2)
                         s = Iparm[k].split()
-                        Inst['Pdabc'].append([float(t) for t in s])
-                    Inst['Pdabc'] = np.array(Inst['Pdabc'])
+                        Inst2['Pdabc'].append([float(t) for t in s])
+                    Inst2['Pdabc'] = np.array(Inst2['Pdabc'])
+                    Inst2['Pdabc'][3] += Inst2['Pdabc'][0]*Inst1['difC'][0] #turn 3rd col into TOF
                 if 'INS  1I ITYP' in Iparm:
-                    Ityp = int(Iparm['INS  1I ITYP'].split()[0])
-                    if Ityp in [1,2,3,4,5]:
-                        Inst['Itype'] = Ityp
+                    s = Iparm['INS  1I ITYP'].split()
+                    Ityp = int(s[0])
+                    Tminmax = [float(s[1])*1000.,float(s[2])*1000.]
+                    Itypes = ['Exponential','Maxwell/Exponential','','Maxwell/Chebyschev','']
+                    if Ityp in [1,2,4]:
+                        Inst2['Itype'] = Itypes[Ityp-1]
+                        Inst2['Tminmax'] = Tminmax
                         Icoeff = []
                         Iesd = []
                         Icovar = []                   
@@ -705,10 +711,10 @@ class GSASII(wx.Frame):
                         for i in range(8):
                             s = Iparm['INS  1IECOR'+str(i+1)].split()
                             Icovar += [float(S) for S in s]
-                        Inst['Icoeff'] = Icoeff
-                        Inst['Iesd'] = Iesd
-                        Inst['Icovar'] = Icovar
-                return Inst
+                        Inst2['Icoeff'] = Icoeff
+                        Inst2['Iesd'] = Iesd
+                        Inst2['Icovar'] = Icovar
+                return [Inst1,Inst2]
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]
@@ -736,10 +742,8 @@ class GSASII(wx.Frame):
                     rd.instmsg = instfile + ' bank ' + str(rd.instbank)
                     return SetPowderInstParms(Iparm,rd)
             else:
-                self.ErrorDialog('Open Error',
-                                 'Error opening instrument parameter file '
-                                 +str(instfile)
-                                 +' requested by file '+ filename)
+                self.ErrorDialog('Open Error','Error opening instrument parameter file '
+                    +str(instfile)+' requested by file '+ filename)
         # is there an instrument parameter file matching the current file
         # with extension .inst or .prm? If so read it
         basename = os.path.splitext(filename)[0]
@@ -850,7 +854,7 @@ class GSASII(wx.Frame):
         lastdatafile = ''
         for rd in rdlist:
             # get instrument parameters for each dataset
-            instParmList = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+            Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
             lastIparmfile = rd.instfile
             lastdatafile = rd.powderentry[0]
             print 'Read powder data '+str(rd.idstring)+ \
@@ -859,24 +863,31 @@ class GSASII(wx.Frame):
             # data are read, now store them in the tree
             Id = self.PatternTree.AppendItem(parent=self.root,
                 text='PWDR '+rd.idstring)
-            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.powderdata])
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Comments'),
-                rd.comments)
-            if 'T' in instParmList['Type'][0]:
+            if 'T' in Iparm1['Type'][0]:
                 if not rd.clockWd and rd.GSAS:
                     rd.powderdata[0] *= 100.
                 cw = np.diff(rd.powderdata[0])
                 rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
                 rd.powderdata[1] = rd.powderdata[1][:-1]/cw
-                rd.powderdata[2] = rd.powderdata[2][:-1]
-                rd.powderdata[3] = rd.powderdata[3][:-1]
-                rd.powderdata[4] = rd.powderdata[4][:-1]
-                rd.powderdata[5] = rd.powderdata[5][:-1]
-                if 'Itype' in instParmList:
-                    incident = G2pwd.calcIncident(instParmList,rd.powderdata[0])
+                rd.powderdata[2] = rd.powderdata[2][:-1]/cw**2
+                if 'Itype' in Iparm2:
+                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
+                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
+                    print Ibeg,Ifin,Iparm2['Tminmax']
+                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
+                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
+                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
+                    rd.powderdata[2] = rd.powderdata[2][Ibeg:Ifin]+(rd.powderdata[1]**2+WYI)
+                    rd.powderdata[2] /= YI**2
+                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
+                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
+                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
             Tmin = min(rd.powderdata[0])
             Tmax = max(rd.powderdata[0])
+            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.powderdata])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Comments'),
+                rd.comments)
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Limits'),
                 [(Tmin,Tmax),[Tmin,Tmax]])
@@ -887,7 +898,7 @@ class GSASII(wx.Frame):
                  {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
-                instParmList)
+                [Iparm1,Iparm2])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
@@ -1158,7 +1169,7 @@ class GSASII(wx.Frame):
                 data = ['PKS',Cuka,0.0]
                 names = ['Type','Lam','Zero'] 
                 codes = [0,0,0]
-                inst = G2IO.makeInstDict(names,data,codes)
+                inst = [G2IO.makeInstDict(names,data,codes),{}]
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),comments)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),peaks)
@@ -1469,7 +1480,7 @@ class GSASII(wx.Frame):
         DataList = []
         SumList = []
         Names = []
-        Inst = {}
+        Inst = None
         SumItemList = []
         Comments = ['Sum equals: \n']
         if self.PatternTree.GetCount():

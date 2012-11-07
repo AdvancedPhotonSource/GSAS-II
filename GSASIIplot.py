@@ -163,10 +163,15 @@ class G2PlotNoteBook(wx.Panel):
         
 class GSASIItoolbar(Toolbar):
     ON_MPL_HELP = wx.NewId()
+    ON_MPL_KEY = wx.NewId()
     def __init__(self,plotCanvas):
         Toolbar.__init__(self,plotCanvas)
         POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6
         self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
+        parent = self.GetParent()
+        key = os.path.join(os.path.split(__file__)[0],'key.ico')
+        self.AddSimpleTool(self.ON_MPL_KEY,_load_bitmap(key),'Key press','Select key press')
+        wx.EVT_TOOL(self,self.ON_MPL_KEY,self.OnKey)
         help = os.path.join(os.path.split(__file__)[0],'help.ico')
         self.AddSimpleTool(self.ON_MPL_HELP,_load_bitmap(help),'Help on','Show help on')
         wx.EVT_TOOL(self,self.ON_MPL_HELP,self.OnHelp)
@@ -176,6 +181,16 @@ class GSASIItoolbar(Toolbar):
         bookmark = Page.GetPageText(pageNo)
         bookmark = bookmark.strip(')').replace('(','_')
         G2gd.ShowHelp(bookmark,self.TopLevelParent)
+    def OnKey(self,event):
+        parent = self.GetParent()
+        if parent.Choice:
+            dlg = wx.SingleChoiceDialog(parent,'Select','Key press',list(parent.Choice))
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                event.key = parent.Choice[sel][0]
+                parent.keyPress(event)
+            dlg.Destroy()
+    
 
 ################################################################################
 ##### PlotSngl
@@ -232,6 +247,7 @@ def PlotSngl(self,newPlot=False):
             Plot = Page.figure.gca()          #get previous powder plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
+        Page.Choice = None
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
         Plot = self.G2plotNB.addMpl('Structure Factors').gca()
@@ -240,6 +256,7 @@ def PlotSngl(self,newPlot=False):
 #        Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
         Page.canvas.mpl_connect('pick_event', OnSCPick)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
+    Page.Choice = None
     Page.SetFocus()
     
     Plot.set_aspect(aspect='equal')
@@ -317,17 +334,17 @@ def PlotSngl(self,newPlot=False):
             
 def PlotPatterns(G2frame,newPlot=False):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
-    2-theta or q (future TOF). Can display multiple patterns as "waterfall plots" or contour plots. Log I 
+    2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
     '''
     global HKL
 
-    def OnKeyBox(event):
-        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('Powder Patterns'):
-            event.key = cb.GetValue()[0]
-            cb.SetValue(' key press')
-            wx.CallAfter(OnPlotKeyPress,event)
-                        
+#    def OnKeyBox(event):
+#        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('Powder Patterns'):
+#            event.key = cb.GetValue()[0]
+#            cb.SetValue(' key press')
+#            wx.CallAfter(OnPlotKeyPress,event)
+#                        
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w':
@@ -427,7 +444,7 @@ def PlotPatterns(G2frame,newPlot=False):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+                Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
                 if 'C' in Parms['Type'][0]:
                     wave = G2mth.getWave(Parms)
                     if G2frame.qPlot:
@@ -473,7 +490,7 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.itemPicked is not None: return
         PatternId = G2frame.PatternId
         try:
-            Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+            Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         except TypeError:
             return
         if 'C' in Parms['Type'][0]:
@@ -490,7 +507,7 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-                XY = G2mth.setPeakparms(Parms,xy[0],xy[1])
+                XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame)
@@ -519,7 +536,7 @@ def PlotPatterns(G2frame,newPlot=False):
         
     def OnRelease(event):
         if G2frame.itemPicked is None: return
-        Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+        Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         if 'C' in Parms['Type'][0]:
             wave = G2mth.getWave(Parms)
         else:
@@ -593,20 +610,17 @@ def PlotPatterns(G2frame,newPlot=False):
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
-        Choice = (' key press','d: lower contour max','u: raise contour max',
+        Page.Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
         if G2frame.logPlot:
-            Choice = (' key press','n: log(I) off','l: offset left','r: offset right',
+            Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right',
                 'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
-            Choice = (' key press','l: offset left','r: offset right','d: offset down',
-                'u: offset up','o: reset offset','b: toggle subtr. backgnd','n: log(I) on','c: contour on',
+            Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
+                'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
                 'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
-        choices=Choice)
-    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
-    cb.SetValue(' key press')
+    Page.keyPress = OnPlotKeyPress
     
     PickId = G2frame.PickId
     PatternId = G2frame.PatternId
@@ -616,7 +630,7 @@ def PlotPatterns(G2frame,newPlot=False):
         Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
         Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
         PlotList = [Pattern,]
-        Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+        Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
             G2frame.PatternId, 'Instrument Parameters'))
         ParmList = [Parms,]
     else:        
@@ -630,7 +644,7 @@ def PlotPatterns(G2frame,newPlot=False):
                     Pattern.append(G2frame.PatternTree.GetItemText(item))
                 PlotList.append(Pattern)
                 ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
-                    item,'Instrument Parameters')))
+                    item,'Instrument Parameters'))[0])
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
     Ymax = 1.0
     lenX = 0
@@ -665,7 +679,7 @@ def PlotPatterns(G2frame,newPlot=False):
         if 'C' in ParmList[0]['Type'][0]:
             Plot.set_ylabel('Intensity',fontsize=14)
         else:
-            Plot.set_ylabel('Counts/$\mathsf{\mu}$s',fontsize=14)
+            Plot.set_ylabel('Normalized intensity',fontsize=14)
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
@@ -764,7 +778,7 @@ def PlotPatterns(G2frame,newPlot=False):
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
     if PickId and not G2frame.Contour:
-        Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if 'C' in Parms['Type'][0]:
             wave = G2mth.getWave(Parms)
         else:
@@ -833,6 +847,7 @@ def PlotDeltSig(G2frame,kind):
         Plot = G2frame.G2plotNB.addMpl('Error analysis').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+    Page.Choice = None
     PatternId = G2frame.PatternId
     Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
     Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
@@ -990,15 +1005,12 @@ def PlotISFG(G2frame,newPlot=False,type=''):
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
-        Choice = (' key press','d: lower contour max','u: raise contour max',
+        Page.Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
+        Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
             'o: reset offset','t: toggle legend','c: contour on','s: toggle single plot')
-    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
-        choices=Choice)
-    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
-    cb.SetValue(' key press')
+    Page.keyPress = OnPlotKeyPress
     PatternId = G2frame.PatternId
     PickId = G2frame.PickId
     Plot.set_title(type)
@@ -1124,6 +1136,7 @@ def PlotXY(G2frame,XY,newPlot=False,type=''):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
+    Page.Choice = None
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(type)
@@ -1182,6 +1195,7 @@ def PlotPowderLines(G2frame):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         
+    Page.Choice = None
     Page.SetFocus()
     Plot.set_title('Powder Pattern Lines')
     Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
@@ -1215,7 +1229,7 @@ def PlotPeakWidths(G2frame):
         limits = G2frame.PatternTree.GetItemPyData(limitID)
     else:
         return
-    Parms = G2frame.PatternTree.GetItemPyData( \
+    Parms,Parms2 = G2frame.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
     if 'C' in Parms['Type'][0]:
         try:            
@@ -1250,6 +1264,7 @@ def PlotPeakWidths(G2frame):
         Plot = G2frame.G2plotNB.addMpl('Peak Widths').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+    Page.Choice = None
     Page.SetFocus()
     
     Page.canvas.SetToolTipString('')
@@ -1358,6 +1373,7 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
         Plot = G2frame.G2plotNB.addMpl(plotType).gca()        
     plotNum = G2frame.G2plotNB.plotList.index(plotType)
     Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+    Page.Choice = None
     Page.SetFocus()
     G2frame.G2plotNB.status.SetStatusText('',1)
     if not Page.IsShown():
@@ -1552,6 +1568,7 @@ def PlotTexture(G2frame,data,Start=False):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
 
+    Page.Choice = None
     Page.SetFocus()
     G2frame.G2plotNB.status.SetFields(['',''])    
     PH = np.array(SHData['PFhkl'])
@@ -1670,7 +1687,7 @@ def PlotCovariance(G2frame,Data={}):
                 else:
                     msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
                 Page.canvas.SetToolTipString(msg)
-                G2frame.G2plotNB.status.SetFields(['Key: s to change colors',msg])
+                G2frame.G2plotNB.status.SetFields(['',msg])
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Covariance')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -1685,6 +1702,8 @@ def PlotCovariance(G2frame,Data={}):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
 
+    Page.Choice = ['s: to change colors']
+    Page.keyPress = OnPlotKeyPress
     Page.SetFocus()
     G2frame.G2plotNB.status.SetFields(['',''])    
     acolor = mpl.cm.get_cmap(G2frame.VcovColor)
@@ -1725,10 +1744,12 @@ def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         G2frame.xAxis = False
+    Page.Choice = ['s to toggle x-axis = sample environment parameter']
+    Page.keyPress = OnKeyPress
         
     def Draw(newPlot):
         Page.SetFocus()
-        G2frame.G2plotNB.status.SetFields(['','press s to toggle x-axis = sample environment parameter'])
+        G2frame.G2plotNB.status.SetFields(['','press '])
         if len(SeqData):
             Plot.clear()
             if G2frame.xAxis:    
@@ -2033,6 +2054,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         Page.canvas.mpl_connect('pick_event', OnImPick)
         Page.canvas.mpl_connect('button_release_event', OnImRelease)
         xylim = []
+    Page.Choice = None
     if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
         Page.SetFocus()
     Title = G2frame.PatternTree.GetItemText(G2frame.Image)[4:]
@@ -2042,13 +2064,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Plot.set_title(Title)
     try:
         if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Image Controls',]:
-            Choice = (' key press','l: log(I) on',)
+            Page.Choice = (' key press','l: log(I) on',)
             if G2frame.logPlot:
-                Choice[1] = 'l: log(I) off'
-            cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,
-                choices=Choice)
-            cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
-            cb.SetValue(' key press')
+                Page.Choice[1] = 'l: log(I) off'
+            Page.keyPress = OnImPlotKeyPress
     except TypeError:
         pass
     size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
@@ -2236,6 +2255,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
         view = False
+    Page.Choice = None
     if not event:
         Page.SetFocus()
         
@@ -2302,6 +2322,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
         view = False
+    Page.Choice = None
     Page.SetFocus()
         
     Data = G2frame.PatternTree.GetItemPyData(
@@ -3125,6 +3146,7 @@ def PlotStructure(G2frame,data):
         view = False
         altDown = False
     Page.SetFocus()
+    Page.Choice = None
     if mapData['Flip']:
         choice = [' save as/key:','jpeg','tiff','bmp','u: roll up','d: roll down','l: roll left','r: roll right']
     else:

@@ -1214,7 +1214,7 @@ def SetBackgroundParms(Background):
     backVary += peaksVary    
     return bakType,backDict,backVary
             
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=None,dlg=None):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,controls=None,dlg=None):
     
         
     def GetBackgroundParms(parmList,Background):
@@ -1510,23 +1510,58 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,data,oneCycle=False,controls=N
     PeaksPrint(dataType,parmDict,sigDict,varyList)
 
 def calcIncident(Iparm,xdata):
-    Itype = Iparm['Itype']
-    Icoef = Iparm['Icoeff']
-    Iesd = Iparm['Iesd']
-    Icovar = Iparm['Icovar']
-    intens = np.zeros_like(xdata)
-    x = xdata/1000.
-    if Itype == 1:
-        intens = Icoef[0]
-        for i in range(1,10,2):
-            intens += Icoef[i]*np.exp(-Icoef[i+1]*x**((i+1)/2))
-        
-    elif Itype == 4:
-        intens = Icoef[0]
-        intens += (Icoef[1]/x**5)*np.exp(-Icoef[2]/(x**2))
-        
-    return intens
 
+    def IfunAdv(Iparm,xdata):
+        Itype = Iparm['Itype']
+        Icoef = Iparm['Icoeff']
+        DYI = np.ones((12,xdata.shape[0]))
+        YI = np.ones_like(xdata)*Icoef[0]
+        
+        x = xdata/1000.                 #expressions are in ms
+        if Itype == 'Exponential':
+            for i in range(1,10,2):
+                Eterm = np.exp(-Icoef[i+1]*x**((i+1)/2))
+                YI += Icoef[i]*Eterm
+                DYI[i] *= Eterm
+                DYI[i+1] *= -Icoef[i]*x**((i+1)/2)            
+        elif 'Maxwell'in Itype:
+            Eterm = np.exp(-Icoef[2]/x**2)
+            DYI[1] = Eterm/x**5
+            DYI[2] = -Icoef[1]*DYI[1]/x**2
+            YI += (Icoef[1]*Eterm/x**5)
+            if 'Exponential' in Itype:
+                for i in range(3,12,2):
+                    Eterm = np.exp(-Icoef[i+1]*x**((i+1)/2))
+                    YI += Icoef[i]*Eterm
+                    DYI[i] *= Eterm
+                    DYI[i+1] *= -Icoef[i]*x**((i+1)/2)
+            else:   #Chebyschev
+                T = (2./x)-1.
+                Ccof = np.ones((12,xdata.shape[0]))
+                Ccof[1] = T
+                for i in range(2,12):
+                    Ccof[i] = 2*T*Ccof[i-1]-Ccof[i-2]
+                for i in range(1,10):
+                    YI += Ccof[i]*Icoef[i+2]
+                    DYI[i+2] =Ccof[i]
+        return YI,DYI
+        
+    Iesd = np.array(Iparm['Iesd'])
+    Icovar = Iparm['Icovar']
+    YI,DYI = IfunAdv(Iparm,xdata)
+    YI = np.where(YI>0,YI,1.)
+    WYI = np.zeros_like(xdata)
+    vcov = np.zeros((12,12))
+    k = 0
+    for i in range(12):
+        for j in range(i,12):
+            vcov[i][j] = Icovar[k]*Iesd[i]*Iesd[j]
+            vcov[j][i] = Icovar[k]*Iesd[i]*Iesd[j]
+            k += 1
+    M = np.inner(vcov,DYI.T)
+    WYI = np.sum(M*DYI,axis=0)
+    WYI = np.where(WYI>0.,WYI,0.)
+    return YI,WYI
     
 #testing data
 NeedTestData = True

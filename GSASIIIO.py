@@ -448,13 +448,13 @@ def ProjFileOpen(G2frame):
             for datus in data[1:]:
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch
-                if datus[0] == 'Instrument Parameters' and not isinstance(datus[1],dict):
+                if datus[0] == 'Instrument Parameters' and len(datus[1]) == 1:
                     if 'PWDR' in datum[0]:
-                        datus[1] = dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2])))
+                        datus[1] = [dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2]))),{}]
                     else:
-                        datus[1] = dict(zip(datus[1][2],zip(datus[1][0],datus[1][1])))
-                    for item in datus[1]:               #zip makes tuples - now make lists!
-                        datus[1][item] = list(datus[1][item])
+                        datus[1] = [dict(zip(datus[1][2],zip(datus[1][0],datus[1][1]))),{}]
+                    for item in datus[1][0]:               #zip makes tuples - now make lists!
+                        datus[1][0][item] = list(datus[1][0][item])
 #end patch
                 G2frame.PatternTree.SetItemPyData(sub,datus[1])
             if 'IMG' in datum[0]:                   #retrieve image default flag & data if set
@@ -531,9 +531,9 @@ def SaveIntegration(G2frame,PickId,data):
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            inst = dict(zip(names,zip(parms,parms,codes)))
-            for item in inst:
-                inst[item] = list(inst[item])
+            inst = [dict(zip(names,zip(parms,parms,codes))),{}]
+            for item in inst[0]:
+                inst[0][item] = list(inst[0][item])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'),inst)
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Index Peak List'),[])
@@ -545,9 +545,9 @@ def SaveIntegration(G2frame,PickId,data):
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            inst = dict(zip(names,zip(parms,parms,codes)))
-            for item in inst:
-                inst[item] = list(inst[item])
+            inst = [dict(zip(names,zip(parms,parms,codes))),{}]
+            for item in inst[0]:
+                inst[0][item] = list(inst[0][item])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
@@ -568,7 +568,7 @@ def powderFxyeSave(G2frame,exports,powderfile):
         prm = open(prmname,'w')      #old style GSAS parm file
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
-            PickId, 'Instrument Parameters'))
+            PickId, 'Instrument Parameters'))[0]
         prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
         prm.write( 'INS   BANK      1                                                               '+'\n')
         prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type'][0]))

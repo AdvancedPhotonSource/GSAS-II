@@ -4032,7 +4032,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         HistoNames = Histograms.keys()
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))
+        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
         Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Sample Parameters'))
         wave = G2mth.getWave(Inst)
         posCorr = Inst['Zero'][1]
@@ -4136,9 +4136,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mapPeaks = data['Map Peaks']
                 c =  event.GetCol()
                 if colLabels[c] == 'mag':
-                    mapPeaks = G2mth.sortArray(mapPeaks,0,reverse=True)
-                elif colLabels[c] == 'dzero':
-                    mapPeaks = G2mth.sortArray(mapPeaks,4)
+                    mapPeaks = G2mth.sortArray(mapPeaks,c,reverse=True)
+                elif colLabels[c] in ['x','y','z','dzero']:
+                    mapPeaks = G2mth.sortArray(mapPeaks,c)
                 else:
                     return
                 data['Map Peaks'] = mapPeaks

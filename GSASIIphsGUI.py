@@ -918,7 +918,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
             kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
             line2Sizer.Add(kFactor,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Max (<10.0): '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Max (>=10.0): '),0,wx.ALIGN_CENTER_VERTICAL)
             kMax = wx.TextCtrl(dataDisplay,value='%.0f'%(Flip['k-Max']),style=wx.TE_PROCESS_ENTER)
             kMax.Bind(wx.EVT_TEXT_ENTER,OnkMax)        
             kMax.Bind(wx.EVT_KILL_FOCUS,OnkMax)

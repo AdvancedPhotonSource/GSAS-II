@@ -191,7 +191,6 @@ class GSASIItoolbar(Toolbar):
                 parent.keyPress(event)
             dlg.Destroy()
     
-
 ################################################################################
 ##### PlotSngl
 ################################################################################
@@ -1223,6 +1222,10 @@ def PlotPeakWidths(G2frame):
     ''' Plotting of instrument broadening terms as function of 2-theta (future TOF)
     Seen when "Instrument Parameters" chosen from powder pattern data tree
     '''
+    sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
+    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
+    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
+#    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
     PatternId = G2frame.PatternId
     limitID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
     if limitID:
@@ -1243,6 +1246,8 @@ def PlotPeakWidths(G2frame):
         LY = Parms['Y'][0]
     else:
         difC = Parms['difC'][0]
+        difA = Parms['difA'][0]
+        Zero = Parms['Zero'][0]
         alp = Parms['alpha'][0]
         bet0 = Parms['beta-0'][0]
         bet1 = Parms['beta-1'][0]
@@ -1269,28 +1274,24 @@ def PlotPeakWidths(G2frame):
     
     Page.canvas.SetToolTipString('')
     colors=['b','g','r','c','m','k']
-    Xmin,Xmax = limits[1]
-    Xmin = min(0.5,max(Xmin,1))
-    Xmin /= 2
-    Xmax /= 2
-    nPts = 100
-    delt = (Xmax-Xmin)/nPts
-    thetas = []
-    for i in range(nPts):
-        thetas.append(Xmin+i*delt)
     X = []
     Y = []
     Z = []
     W = []
-    sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
-    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
-    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
-#    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
-    Plot.set_title('Instrument and sample peak widths')
-    Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
-    Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
     if 'C' in Parms['Type'][0]:
+        Plot.set_title('Instrument and sample peak widths')
+        Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
+        Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
         try:
+            Xmin,Xmax = limits[1]
+            Xmin = min(0.5,max(Xmin,1))
+            Xmin /= 2
+            Xmax /= 2
+            nPts = 100
+            delt = (Xmax-Xmin)/nPts
+            thetas = []
+            for i in range(nPts):
+                thetas.append(Xmin+i*delt)
             for theta in thetas:
                 X.append(4.0*math.pi*sind(theta)/lam)              #q
                 s = sig(theta,GU,GV,GW)
@@ -1328,7 +1329,40 @@ def PlotPeakWidths(G2frame):
                 '%.3f'%(2*theta)
             G2frame.G2plotNB.Delete('Peak Widths')
     else:
-        pass    #for TOF peak parms
+        Plot.set_title('Instrument and sample peak coefficients')
+        Plot.set_xlabel(r'$TOF, \mu s$',fontsize=14)
+        Plot.set_ylabel(r'$\alpha, \beta, \Delta T$',fontsize=14)
+        Xmin,Xmax = limits[1]
+        if 'Pabc' in Parms2:
+            Pabc = Parms2['Pabc']
+            print Pabc.shape,Pabc[0]
+            
+        else:            
+            T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
+            ds = T/difC
+            A = alp/ds
+            B = bet0+bet1/ds**4
+            D = difA*ds**2+Zero
+            Plot.plot(T,A,color='r',label='Alpha')
+            Plot.plot(T,B,color='g',label='Beta')
+            Plot.plot(T,D,color='b',label='Delta-T')
+        T = []
+        A = []
+        B = []
+        W = []
+        V = []
+        for peak in peaks:
+            T.append(peak[0])
+            A.append(peak[4])
+            B.append(peak[6])
+            W.append(peak[0]/difC)
+            
+        
+        Plot.plot(T,A,'+',color='r',label='Alpha peak')
+        Plot.plot(T,B,'+',color='g',label='Beta peak')
+        Plot.plot(T,W,'+',color='k',label='T/difC')
+        Plot.legend(loc='best')
+        Page.canvas.draw()
 
     
 ################################################################################

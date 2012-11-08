@@ -1001,7 +1001,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False):
         else:
             for x in ['alpha','beta-0','beta-0','var-inst','X','Y']:
                 ins[x] = Parms[x][1]
-            alp = ins['alpha']*dsp
+            alp = ins['alpha']/dsp
             bet = ins['beta-0']+ins['beta-0']/dsp**4
         sig = ins['var-inst']*dsp**2
         gam = ins['X']*dsp+ins['Y']*dsp**2

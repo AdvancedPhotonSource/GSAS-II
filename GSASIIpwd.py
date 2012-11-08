@@ -930,7 +930,7 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                 if alpName in varyList:
                     alp = parmDict[alpName]
                 else:
-                    alp = alp0*dsp
+                    alp = alp0/dsp
                 betName = 'bet'+str(iPeak)
                 if betName in varyList:
                     bet = parmDict[betName]
@@ -1097,8 +1097,8 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 if alpName in varyList:
                     alp = parmDict[alpName]
                 else:
-                    alp = alp0*dsp
-                    dada0 = dsp
+                    alp = alp0/dsp
+                    dada0 = 1./dsp
                 betName = 'bet'+str(iPeak)
                 if betName in varyList:
                     bet = parmDict[betName]
@@ -1388,7 +1388,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
                 if parName in varyList:
                     peak[2*j] = parmDict[parName]
                 elif 'alpha' in parName:
-                    peak[2*j] = parmDict['alpha']*dsp
+                    peak[2*j] = parmDict['alpha']/dsp
                 elif 'beta' in parName:
                     peak[2*j] = parmDict['beta-0']+parmDict['beta-1']/dsp**4
                 elif 'sig' in parName:

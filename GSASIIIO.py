@@ -1266,8 +1266,7 @@ class ImportStructFactor(ImportBaseclass):
             HistType = Type
         if Wave is not None:
             HistWave = Wave
-        self.Parameters = [(HistType,HistWave),[HistType,HistWave],  # overwrite entire list 
-            ['Type','Lam']]
+        self.Parameters = [{'Type':[HistType,HistType],'Lam':[HistWave,HistWave]},{}]  # overwrite entire list 
             
     def UpdateControls(self,Type='Fosq',FcalcPresent=False):
         '''Scan through the reflections to update the Controls dictionary

@@ -873,12 +873,13 @@ class GSASII(wx.Frame):
                 if 'Itype' in Iparm2:
                     Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
                     Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
-                    print Ibeg,Ifin,Iparm2['Tminmax']
                     rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
                     YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
                     rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
-                    rd.powderdata[2] = rd.powderdata[2][Ibeg:Ifin]+(rd.powderdata[1]**2+WYI)
-                    rd.powderdata[2] /= YI**2
+                    var = 1./rd.powderdata[2][Ibeg:Ifin]
+                    var += rd.powderdata[1]**2+WYI
+                    var /= YI**2
+                    rd.powderdata[2] = 1./var
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
                 rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        

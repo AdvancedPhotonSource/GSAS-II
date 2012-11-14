@@ -195,190 +195,6 @@ def GetNumDensity(ElList,Vol):
         sumNoAtoms += ElList[El]['FormulaNo']
     return sumNoAtoms/Vol
            
-#def MultGetQ(Tth,MuT,Geometry,b=88.0,a=0.01):
-#    NS = 500
-#    Gama = np.linspace(0.,np.pi/2.,NS,False)[1:]
-#    Cgama = np.cos(Gama)[:,np.newaxis]
-#    Sgama = np.sin(Gama)[:,np.newaxis]
-#    CSgama = 1.0/Sgama
-#    Delt = Gama[1]-Gama[0]
-#    emc = 7.94e-26
-#    Navo = 6.023e23
-#    Cth = npcosd(Tth/2.0)
-#    CTth = npcosd(Tth)
-#    Sth = npcosd(Tth/2.0)
-#    STth = npsind(Tth)
-#    CSth = 1.0/Sth
-#    CSTth = 1.0/STth
-#    SCth = 1.0/Cth
-#    SCTth = 1.0/CTth
-#    if 'Bragg' in Geometry:
-#        G = 8.0*Delt*Navo*emc*Sth/((1.0-CTth**2)*(1.0-np.exp(-2.0*MuT*CSth)))
-#        Y1 = np.pi
-#        Y2 = np.pi/2.0
-#        Y3 = 3.*np.pi/8. #3pi/4?
-#        W = 1.0/(Sth+np.fabs(Sgama))
-#        W += np.exp(-MuT*CSth)*(2.0*np.fabs(Sgama)*np.exp(-MuT*np.fabs(CSgama))-
-#            (Sth+np.fabs(Sgama))*np.exp(-MuT*CSth))/(Sth**2-Sgama**2)
-#        Fac0 = Sth**2*Sgama**2
-#        X = Fac0+(Fac0+CTth)**2/2
-#        Y = Cgama**2*Cth**2*(1.0-Fac0-CTth)
-#        Z = Cgama**4*Cth**4/2.0
-#        E = 2.0*(1.0-a)/(b*Cgama/Cth)
-#        F1 = (2.0+b*(1.0+Sth*Sgama))/(b*Cth*Cgama) #trouble if < 1
-#        F2 = (2.0+b*(1.0-Sth*Sgama))/(b*Cth*Cgama)
-#        T1 = np.pi/np.sqrt(F1**2-1.0)
-#        T2 = np.pi/np.sqrt(F2**2-1.0)
-#        Y4 = T1+T2
-#        Y5 = F1**2*T1+F2**2*T2-np.pi*(F1+F2)
-#        Y6 = F1**4*T1+F2**4*T2-np.pi*(F1+F2)/2.0-np.pi*(F1**3+F2**3)
-#        Y7 = (T2-T1)/(F1-F2)
-#        YT = F2**2*T2-F1**2*T1
-#        Y8 = Y1+YT/(F1-F2)
-#        Y9 = Y2+(F2**4*T2-F1**4*T1)/(F1-F2)+Y1*((F1+F2)**2-F1*F2)
-#        M = (a**2*(X*Y1+Y*Y2+Z*Y3)+a*E*(X*Y4+Y*Y5+Z*Y6)+E**2*(X*Y7+Y*Y8+Z*Y9))*Cgama
-#        
-#        Q = np.sum(W*M,axis=0)
-#        return Q*G*NS/(NS-1.)
-##
-##      cos2th=2.0d*costh^2 - 1.0d
-##      G= delta * 8.0d * Na * emc * sinth/(1.0d + cos2th^2)/(1.0d - exp(-2.0d*mut*cscth))
-##      Y1=3.1415926d
-##      Y2=Y1*0.5d
-##      Y3=Y2*0.75d
-##      for i=1,num_steps-1 do begin
-##         cosgama=double(cos(gama[i]))
-##         singama=double(sin(gama[i]))
-##         cscgama=1.0d / singama
-##
-##         W=1.0d/(sinth+abs(singama))
-##         W=W+exp(-1.0*mut*cscth)*(2.0d*abs(singama)*exp(-1.0d*mut*abs(cscgama))- $
-##                 (sinth+abs(singama))*exp(-1.0d*mut*cscth))/(sinth^2-singama^2)
-##
-##         factor0=sinth^2*singama^2
-##         X=factor0+(factor0+cos2th)^2/2.0d
-##         Y=cosgama^2*(1.0d - factor0-cos2th)*costh^2
-##         Z=cosgama^4/2.0d*costh^4
-##         E=2.0d*(1.0-a)/b/cosgama/costh
-##
-##         F1=1.0d/b/cosgama*(2.0d + b*(1.0+sinth*singama))/costh
-##         F2=1.0d/b/cosgama*(2.0d + b*(1.0-sinth*singama))/costh
-##
-##         T1=3.14159/sqrt(F1^2-1.0d)
-##         T2=3.14159/sqrt(F2^2-1.0d)
-##         Y4=T1+T2
-##         Y5=F1^2*T1+F2^2*T2-3.14159*(F1+F2)
-##         Y6=F1^4*T1+F2^4*T2-3.14159*(F1+F2)/2.0-3.14159*(F1^3+F2^3)
-##         Y7=(T2-T1)/(F1-F2)
-##         Y8=Y1+(F2^2*T2-F1^2*T1)/(F1-F2)
-##         Y9=Y2+(F2^4*T2-F1^4*T1)/(F1-F2)+Y1*((F1+F2)^2-F1*F2)
-##         M=(a^2*(X*Y1+Y*Y2+Z*Y3)+a*E*(X*Y4+Y*Y5+Z*Y6)+E^2* $
-##                      (X*Y7+Y*Y8+Z*Y9))*cosgama
-##
-##         Q=Q+W*M
-##
-##      endfor
-##      Q=double(num_steps)/Double(num_steps-1)*Q*G
-##      end
-#    elif 'Cylinder' in Geometry:
-#        Q = 0.
-#    elif 'Fixed' in Geometry:   #Dwiggens & Park, Acta Cryst. A27, 264 (1971) with corrections
-#        EMA = np.exp(-MuT*(1.0-SCTth))
-#        Fac1 = (1.-EMA)/(1.0-SCTth)
-#        G = 2.0*Delt*Navo*emc/((1.0+CTth**2)*Fac1)
-#        Fac0 = Cgama/(1-Sgama*SCTth)
-#        Wp = Fac0*(Fac1-(EMA-np.exp(-MuT*(CSgama-SCTth)))/(CSgama-1.0))
-#        Fac0 = Cgama/(1.0+Sgama*SCTth)
-#        Wm = Fac0*(Fac1+(np.exp(-MuT*(1.0+CSgama))-1.0)/(CSgama+1.0))
-#        X = (Sgama**2+CTth**2*(1.0-Sgama**2+Sgama**4))/2.0
-#        Y = Sgama**3*Cgama*STth*CTth
-#        Z = Cgama**2*(1.0+Sgama**2)*STth**2/2.0
-#        Fac2 = 1.0/(b*Cgama*STth)
-#        U = 2.0*(1.0-a)*Fac2
-#        V = (2.0+b*(1.0-CTth*Sgama))*Fac2
-#        Mp = 2.0*np.pi*(a+2.0*(1.0-a)/(2.0+b*(1.0-Sgama)))*(a*X+a*Z/2.0-U*Y+U*(X+Y*V+Z*V**2)/np.sqrt(V**2-1.0)-U*Z*V)
-#        V = (2.0+b*(1.0+CTth*Sgama))*Fac2
-#        Y = -Y
-#        Mm = 2.0*np.pi*(a+2.0*(1.0-a)/(2.0+b*(1.0+Sgama)))*(a*X+a*Z/2.0-U*Y+U*(X+Y*V+Z*V**2)/np.sqrt(V**2-1.0)-U*Z*V)
-#        Q = np.sum(Wp*Mp+Wm*Mm,axis=0)
-#        return Q*G*NS/(NS-1.)
-#    elif 'Tilting' in Geometry:
-#        EMA = np.exp(-MuT*SCth)
-#        G = 2.0*Delt*Navo*emc/((1.0+CTth**2)*EMA)
-##          Wplus = expmutsecth/(1.0d - singama*secth) + singama/mut/(1.0 -singama*secth)/(1.0-singama*secth)* $
-##                                                       (Exp(-1.0*mut*cscgama) - expmutsecth)
-##          Wminus = expmutsecth/(1.0d + singama*secth) - singama/mut/(1.0 +singama*secth)/(1.0+singama*secth)* $
-##                                                        expmutsecth*(1.0d - expmutsecth*Exp(-1.0*mut*cscgama))
-#        Wp = EMA/(1.0-Sgama*SCth)+Sgama/MuT/(1.0-Sgama*SCth)/(1.0-Sgama*SCth)*(np.exp(-MuT*CSgama)-EMA)
-##        Wp = EMA/(1.0-Sgama*SCth)+Sgama/MuT/(1.0-Sgama*SCth)**2*(np.exp(-MuT*CSgama)-EMA)
-#        Wm = EMA/(1.0+Sgama*SCth)-Sgama/MuT/(1.0+Sgama*SCth)/(1.0+Sgama*SCth)*EMA*(1.0-EMA*np.exp(-MuT*CSgama))
-##        Wm = EMA/(1.0+Sgama*SCth)-Sgama/MuT/(1.0+Sgama*SCth)**2*EMA*(1.0-EMA*np.exp(-MuT*CSgama))
-#        X = 0.5*(Cth**2*(Cth**2*Sgama**4-4.0*Sth**2*Cgama**2)+1.0)
-#        Y = Cgama**2*(1.0+Cgama**2)*Cth**2*Sth**2
-#        Z = 0.5*Cgama**4*Sth**4
-##          X = 0.5*(costh*costh*(costh*costh*singama*singama*singama*singama - $
-##                           4.0*sinth*sinth*cosgama*cosgama) +1.0d)
-##
-##          Y = cosgama*cosgama*(1.0 + cosgama*cosgama)*costh*costh*sinth*sinth
-##
-##          Z= 0.5 *cosgama*cosgama*cosgama*cosgama* (sinth^4)
-##
-#        AlP = 2.0+b*(1.0-Cth*Sgama)
-#        AlM = 2.0+b*(1.0+Cth*Sgama)
-##          alphaplus = 2.0 + b*(1.0 - costh*singama)
-##          alphaminus = 2.0 + b*(1.0 + costh*singama)
-#        BeP = np.sqrt(np.fabs(AlP**2-(b*Cgama*Sth)**2))
-#        BeM = np.sqrt(np.fabs(AlM**2-(b*Cgama*Sth)**2))
-##          betaplus = Sqrt(Abs(alphaplus*alphaplus - b*b*cosgama*cosgama*sinth*sinth))
-##          betaminus = Sqrt(Abs(alphaminus*alphaminus - b*b*cosgama*cosgama*sinth*sinth))
-#        Mp = Cgama*(np.pi*a**2*(2.0*X+Y+0.75*Z)+(2.0*np.pi*(1.0-a))*(1.0-a+a*AlP)* \
-#            (4.0*X/AlP/BeP+(4.0*(1.0+Cgama**2)/b/b*Cth**2)*(AlP/BeP-1.0)+
-#            2.0/b**4*AlP/BeP*AlP**2-2.0/b**4*AlP**2-Cgama**2/b/b*Sth*2))
-##          Mplus = cosgama*(!DPI * a * a * (2.0*x + y + 0.75*z) + $
-##                   (2.0*!DPI*(1.0 - a)) *(1.0 - a + a*alphaplus)* $
-##                   (4.0*x/alphaplus/betaplus + (4.0*(1.0+cosgama*cosgama)/b/b*costh*costh)*(alphaplus/betaplus -1.0) + $
-##                   2.0/(b^4)*alphaplus/betaplus*alphaplus*alphaplus - 2.0/(b^4)*alphaplus*alphaplus - $
-##                   cosgama*cosgama/b/b*sinth*sinth))
-#        Mm =Cgama*(np.pi*a**2*(2.0*X+Y+0.75*Z)+(2.0*np.pi*(1.0-a))*(1.0-a+a*AlM)* \
-#            (4.0*X/AlM/BeM+(4.0*(1.0+Cgama**2)/b/b*Cth**2)*(AlM/BeM-1.0)+
-#            2.0/b**4*AlM/BeM*AlM**2-2.0/b**4*AlM**2-Cgama**2/b/b*Sth*2))
-##          Mminus = cosgama*(!DPI * a * a * (2.0*x + y + 0.75*z) + $
-##                   (2.0*!DPI*(1.0 - a)) *(1.0 - a + a*alphaminus)* $
-##                   (4.0*x/alphaminus/betaminus + (4.0*(1.0+cosgama*cosgama)/b/b*costh*costh)*(alphaminus/betaminus -1.0) + $
-##                   2.0/(b^4)*alphaminus/betaminus*alphaminus*alphaminus - 2.0/(b^4)*alphaminus*alphaminus - $
-##                   cosgama*cosgama/b/b*sinth*sinth))
-#        Q = np.sum(Wp*Mp+Wm*Mm,axis=0)
-#        return Q*G*NS/(NS-1.)
-##       expmutsecth = Exp(-1.0*mut*secth)
-##       G= delta * 2.0 * Na * emc /(1.0+costth^2)/expmutsecth
-##       for i=1, num_steps-1 do begin
-##          cosgama=double(cos(gama[i]))
-##          singama=double(sin(gama[i]))
-##          cscgama=1.0d/singama
-##
-##
-##     ; print, "W", min(wplus), max(wplus), min(wminus), max(wminus)
-##
-##
-##
-##
-##    ;               print, a,b
-##  ; print, "M", min(mplus), max(mplus), min(mminus), max(mminus)
-##          Q=Q+ Wplus*Mplus + Wminus*Mminus
-##      endfor
-##      Q=double(num_steps)/double(num_steps-1)*Q*G
-##   ;   print, min(q), max(q)
-##      end
-
-#def MultiScattering(Geometry,ElList,Tth):
-#    BN = BD = 0.0
-#    Amu = 0.0
-#    for El in ElList:
-#        el = ElList[El]
-#        BN += el['Z']*el['FormulaNo']
-#        BD += el['FormulaNo']
-#        Amu += el['FormulaNo']*el['mu']
-        
 def CalcPDF(data,inst,xydata):
     auxPlot = []
     import copy
@@ -912,11 +728,13 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc
     else:
+        Pdabc = parmDict['Pdabc']
         difC = parmDict['difC']
         alp0 = parmDict['alpha']
         bet0 = parmDict['beta-0']
         bet1 = parmDict['beta-1']
-        sig0 = parmDict['var-inst']
+        sig0 = parmDict['sig-0']
+        sig1 = parmDict['sig-1']
         X = parmDict['X']
         Y = parmDict['Y']
         iPeak = 0
@@ -930,17 +748,23 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                 if alpName in varyList:
                     alp = parmDict[alpName]
                 else:
-                    alp = alp0/dsp
+                    if len(Pdabc):
+                        alp = np.interp(dsp,Pdabc[0],Pdabc[1])
+                    else:
+                        alp = alp0/dsp
                 betName = 'bet'+str(iPeak)
                 if betName in varyList:
                     bet = parmDict[betName]
                 else:
-                    bet = bet0+bet1/dsp**4
+                    if len(Pdabc):
+                        bet = np.interp(dsp,Pdabc[0],Pdabc[2])
+                    else:
+                        bet = bet0+bet1/dsp**4
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList:
                     sig = parmDict[sigName]
                 else:
-                    sig = sig0*dsp**2
+                    sig = sig0+sig1*dsp**2
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
@@ -1079,11 +903,13 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
             except KeyError:        #no more peaks to process
                 break
     else:
+        Pdabc = parmDict['Pdabc']
         difC = parmDict['difC']
         alp0 = parmDict['alpha']
         bet0 = parmDict['beta-0']
         bet1 = parmDict['beta-1']
-        sig0 = parmDict['var-inst']
+        sig0 = parmDict['sig-0']
+        sig1 = parmDict['sig-1']
         X = parmDict['X']
         Y = parmDict['Y']
         iPeak = 0
@@ -1097,21 +923,28 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 if alpName in varyList:
                     alp = parmDict[alpName]
                 else:
-                    alp = alp0/dsp
+                    if len(Pdabc):
+                        alp = np.interp(dsp,Pdabc[0],Pdabc[1])
+                    else:
+                        alp = alp0/dsp
                     dada0 = 1./dsp
                 betName = 'bet'+str(iPeak)
                 if betName in varyList:
                     bet = parmDict[betName]
                 else:
-                    bet = bet0+bet1/dsp**4
+                    if len(Pdabc):
+                        bet = np.interp(dsp,Pdabc[0],Pdabc[2])
+                    else:
+                        bet = bet0+bet1/dsp**4
                     dbdb0 = 1.
                     dbdb1 = 1/dsp**4
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList:
                     sig = parmDict[sigName]
                 else:
-                    sig = sig0*dsp**2
-                    dsds0 = dsp**2
+                    sig = sig0+sig1*dsp**2
+                    dsds0 = 1.
+                    dsds1 = dsp**2
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
@@ -1152,8 +985,10 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                     dMdv[varyList.index('beta-0')] += dbdb0*dervDict['bet']
                 if 'beta-1' in varyList:
                     dMdv[varyList.index('beta-1')] += dbdb1*dervDict['bet']
-                if 'var-inst' in varyList:
-                    dMdv[varyList.index('var-inst')] += dsds0*dervDict['sig']
+                if 'sig-0' in varyList:
+                    dMdv[varyList.index('sig-0')] += dsds0*dervDict['sig']
+                if 'sig-1' in varyList:
+                    dMdv[varyList.index('sig-1')] += dsds1*dervDict['sig']
                 if 'X' in varyList:
                     dMdv[varyList.index('X')] += dsdX*dervDict['gam']
                 if 'Y' in varyList:
@@ -1304,7 +1139,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
             insNames.append(parm)
             insVals.append(Inst[parm][1])
             if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','var-inst',] and Inst[parm][2]:
+                'beta-0','beta-1','sig-0','sig-1',] and Inst[parm][2]:
                     insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
         instDict['X'] = max(instDict['X'],0.01)
@@ -1326,7 +1161,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
                         parmDict[sigName] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
                     else:
                         dsp = pos/Inst['difC'][1]
-                        parmDict[sigName] = parmDict['var-inst']*dsp**2
+                        parmDict[sigName] = parmDict['sig-0']+parmDict['sig-1']*dsp**2
                 gamName = 'gam'+str(iPeak)
                 if gamName not in varyList:
                     if 'C' in Inst['Type'][0]:
@@ -1346,7 +1181,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         sigstr = 'esds  :'
         for parm in Inst:
             if parm in  ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','var-inst',]:
+                'beta-0','beta-1','sig-0','sig-1',]:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
                 if parm in sigDict:
@@ -1364,7 +1199,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
         else:
-            names = ['pos','int','alpha','beta','sig','gam']
+            names = ['pos','int','alp','bet','sig','gam']
         for i,peak in enumerate(Peaks):
             for j,name in enumerate(names):
                 peakVals.append(peak[2*j])
@@ -1378,7 +1213,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         if 'C' in Inst['Type'][0]:
             names = ['pos','int','sig','gam']
         else:
-            names = ['pos','int','alpha','beta','sig','gam']
+            names = ['pos','int','alp','bet','sig','gam']
         for i,peak in enumerate(Peaks):
             pos = parmDict['pos'+str(i)]
             if 'difC' in Inst:
@@ -1395,7 +1230,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
                     if 'C' in Inst['Type'][0]:
                         peak[2*j] = parmDict['U']*tand(pos/2.0)**2+parmDict['V']*tand(pos/2.0)+parmDict['W']
                     else:
-                        peak[2*j] = parmDict['var-inst']*dsp**2
+                        peak[2*j] = parmDict['sig-0']+parmDict['sig-1']*dsp**2
                 elif 'gam' in parName:
                     if 'C' in Inst['Type'][0]:
                         peak[2*j] = parmDict['X']/cosd(pos/2.0)+parmDict['Y']*tand(pos/2.0)
@@ -1407,7 +1242,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
         else:
-            names = ['pos','int','alpha','beta','sig','gam']            
+            names = ['pos','int','alp','bet','sig','gam']            
         head = 13*' '
         for name in names:
             head += name.center(10)+'esd'.center(10)
@@ -1415,7 +1250,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         if 'C' in dataType:
             ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
         else:
-            ptfmt = {'pos':"%10.2f",'int':"%10.1f",'alpha':"%10.3f",'beta':"%10.5f",'sig':"%10.3f",'gam':"%10.3f"}
+            ptfmt = {'pos':"%10.2f",'int':"%10.4f",'alp':"%10.3f",'bet':"%10.5f",'sig':"%10.3f",'gam':"%10.3f"}
         for i,peak in enumerate(Peaks):
             ptstr =  ':'
             for j in range(len(names)):
@@ -1453,6 +1288,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     if oneCycle:
         Ftol = 1.0
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
+    yc *= 0.                            #set calcd ones to zero
+    yb *= 0.
+    yd *= 0.
     xBeg = np.searchsorted(x,Limits[0])
     xFin = np.searchsorted(x,Limits[1])
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
@@ -1462,6 +1300,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     parmDict.update(bakDict)
     parmDict.update(insDict)
     parmDict.update(peakDict)
+    parmDict['Pdabc'] = []      #dummy Pdabc
+    parmDict.update(Inst2)      #put in real one if there
     varyList = bakVary+insVary+peakVary
     while True:
         begin = time.time()

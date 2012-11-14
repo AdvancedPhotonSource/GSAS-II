@@ -657,8 +657,8 @@ class GSASII(wx.Frame):
                 codes.extend([0,0,0,0,0,0,0])
                 return [G2IO.makeInstDict(names,data,codes),{}]
             elif 'T' in DataType:
-                names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1','var-inst','X','Y','Azimuth']
-                codes = [0,0,0,0,0,0,0,0,0,0,0,0]
+                names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1','sig-0','sig-1','X','Y','Azimuth']
+                codes = [0,0,0,0,0,0,0,0,0,0,0,0,0]
                 azm = 0.
                 if 'INS  1DETAZM' in Iparm:
                     azm = float(Iparm['INS  1DETAZM'])
@@ -672,14 +672,14 @@ class GSASII(wx.Frame):
                 if abs(pfType) == 1:
                     data.extend([G2IO.sfloat(s[1]),G2IO.sfloat(s[2]),G2IO.sfloat(s[3])])
                     s = Iparm['INS  1PRCF12'].split()
-                    data.extend([G2IO.sfloat(s[1]),0.0,0.0,azm])
+                    data.extend([0.0,G2IO.sfloat(s[1]),0.0,0.0,azm])
                 elif abs(pfType) in [3,4,5]:
                     data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])
                     if abs(pfType) == 4:
-                        data.extend([G2IO.sfloat(s[3]),0.0,0.0,azm])
+                        data.extend([0.0,G2IO.sfloat(s[3]),0.0,0.0,azm])
                     else:
                         s = Iparm['INS  1PRCF12'].split()
-                        data.extend([G2IO.sfloat(s[0]),0.0,0.0,azm])                       
+                        data.extend([0.0,G2IO.sfloat(s[0]),0.0,0.0,azm])                       
                 Inst1 = G2IO.makeInstDict(names,data,codes)
                 Inst2 = {}
                 if pfType < 0:
@@ -691,7 +691,7 @@ class GSASII(wx.Frame):
                         s = Iparm[k].split()
                         Inst2['Pdabc'].append([float(t) for t in s])
                     Inst2['Pdabc'] = np.array(Inst2['Pdabc'])
-                    Inst2['Pdabc'][3] += Inst2['Pdabc'][0]*Inst1['difC'][0] #turn 3rd col into TOF
+                    Inst2['Pdabc'].T[3] += Inst2['Pdabc'].T[0]*Inst1['difC'][0] #turn 3rd col into TOF
                 if 'INS  1I ITYP' in Iparm:
                     s = Iparm['INS  1I ITYP'].split()
                     Ityp = int(s[0])
@@ -865,11 +865,11 @@ class GSASII(wx.Frame):
                 text='PWDR '+rd.idstring)
             if 'T' in Iparm1['Type'][0]:
                 if not rd.clockWd and rd.GSAS:
-                    rd.powderdata[0] *= 100.
+                    rd.powderdata[0] *= 100.        #put back the CW centideg correction
                 cw = np.diff(rd.powderdata[0])
                 rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
                 rd.powderdata[1] = rd.powderdata[1][:-1]/cw
-                rd.powderdata[2] = rd.powderdata[2][:-1]/cw**2
+                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
                 if 'Itype' in Iparm2:
                     Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
                     Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
@@ -877,7 +877,7 @@ class GSASII(wx.Frame):
                     YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
                     rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
                     var = 1./rd.powderdata[2][Ibeg:Ifin]
-                    var += rd.powderdata[1]**2+WYI
+                    var += WYI*rd.powderdata[1]**2
                     var /= YI**2
                     rd.powderdata[2] = 1./var
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        

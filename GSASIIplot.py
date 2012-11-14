@@ -51,6 +51,7 @@ atand = lambda x: 180.*math.atan(x)/math.pi
 # numpy versions
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
+nptand = lambda x: np.tan(x*np.pi/180.)
 npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
@@ -1219,12 +1220,12 @@ def PlotPowderLines(G2frame):
 ################################################################################
             
 def PlotPeakWidths(G2frame):
-    ''' Plotting of instrument broadening terms as function of 2-theta (future TOF)
+    ''' Plotting of instrument broadening terms as function of 2-theta
     Seen when "Instrument Parameters" chosen from powder pattern data tree
     '''
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
-    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
+    gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
 #    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
     PatternId = G2frame.PatternId
     limitID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
@@ -1235,25 +1236,9 @@ def PlotPeakWidths(G2frame):
     Parms,Parms2 = G2frame.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
     if 'C' in Parms['Type'][0]:
-        try:            
-            lam = Parms['Lam'][1]
-        except KeyError:
-            lam = Parms['Lam1'][1]
-        GU = Parms['U'][0]
-        GV = Parms['V'][0]
-        GW = Parms['W'][0]
-        LX = Parms['X'][0]
-        LY = Parms['Y'][0]
+        lam = G2mth.getWave(Parms)
     else:
         difC = Parms['difC'][0]
-        difA = Parms['difA'][0]
-        Zero = Parms['Zero'][0]
-        alp = Parms['alpha'][0]
-        bet0 = Parms['beta-0'][0]
-        bet1 = Parms['beta-1'][0]
-        sig = Parms['var-inst'][0]
-        LX = Parms['X'][0]
-        LY = Parms['Y'][0]
     peakID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List')
     if peakID:
         peaks = G2frame.PatternTree.GetItemPyData(peakID)
@@ -1285,24 +1270,20 @@ def PlotPeakWidths(G2frame):
         try:
             Xmin,Xmax = limits[1]
             Xmin = min(0.5,max(Xmin,1))
-            Xmin /= 2
-            Xmax /= 2
-            nPts = 100
-            delt = (Xmax-Xmin)/nPts
-            thetas = []
-            for i in range(nPts):
-                thetas.append(Xmin+i*delt)
-            for theta in thetas:
-                X.append(4.0*math.pi*sind(theta)/lam)              #q
-                s = sig(theta,GU,GV,GW)
-                g = gam(theta,LX,LY)
-                G = gamFW(g,s)
-                Y.append(s/tand(theta))
-                Z.append(g/tand(theta))
-                W.append(G/tand(theta))
-            Plot.plot(X,Y,color='r',label='Gaussian')
-            Plot.plot(X,Z,color='g',label='Lorentzian')
-            Plot.plot(X,W,color='b',label='G+L')
+            X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
+            Q = 4.*np.pi*npsind(X/2.)/lam
+            Z = np.ones_like(X)
+            data = G2mth.setPeakparms(Parms,Parms2,X,Z)
+            s = 1.17741*np.sqrt(data[4])*np.pi/18000.
+            g = data[6]*np.pi/18000.
+            G = gamFW(g,s)
+            Y = s/nptand(X/2.)
+            Z = g/nptand(X/2.)
+            W = G/nptand(X/2.)
+            Plot.plot(Q,Y,color='r',label='Gaussian')
+            Plot.plot(Q,Z,color='g',label='Lorentzian')
+            Plot.plot(Q,W,color='b',label='G+L')
+            
             X = []
             Y = []
             Z = []
@@ -1330,37 +1311,44 @@ def PlotPeakWidths(G2frame):
             G2frame.G2plotNB.Delete('Peak Widths')
     else:
         Plot.set_title('Instrument and sample peak coefficients')
-        Plot.set_xlabel(r'$TOF, \mu s$',fontsize=14)
-        Plot.set_ylabel(r'$\alpha, \beta, \Delta T$',fontsize=14)
+        Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
+        Plot.set_ylabel(r'$\alpha, \beta, \Delta q/q, \Delta d/d$',fontsize=14)
         Xmin,Xmax = limits[1]
-        if 'Pabc' in Parms2:
-            Pabc = Parms2['Pabc']
-            print Pabc.shape,Pabc[0]
-            
-        else:            
-            T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
-            ds = T/difC
-            A = alp/ds
-            B = bet0+bet1/ds**4
-            D = difA*ds**2+Zero
-            Plot.plot(T,A,color='r',label='Alpha')
-            Plot.plot(T,B,color='g',label='Beta')
-            Plot.plot(T,D,color='b',label='Delta-T')
+        T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
+        Z = np.ones_like(T)
+        data = G2mth.setPeakparms(Parms,Parms2,T,Z)
+#       = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
+        ds = T/difC
+        Q = 2.*np.pi/ds
+        A = data[4]
+        B = data[6]
+        S = 1.17741*np.sqrt(data[8])/T
+        G = data[10]/T
+        Plot.plot(Q,A,color='r',label='Alpha')
+        Plot.plot(Q,B,color='g',label='Beta')
+        Plot.plot(Q,S,color='b',label='Gaussian')
+        Plot.plot(Q,G,color='m',label='Lorentzian')
         T = []
         A = []
         B = []
+        S = []
+        G = []
         W = []
+        Q = []
         V = []
         for peak in peaks:
             T.append(peak[0])
             A.append(peak[4])
             B.append(peak[6])
-            W.append(peak[0]/difC)
+            Q.append(2.*np.pi*difC/peak[0])
+            S.append(1.17741*np.sqrt(peak[8])/peak[0])
+            G.append(peak[10]/peak[0])
             
         
-        Plot.plot(T,A,'+',color='r',label='Alpha peak')
-        Plot.plot(T,B,'+',color='g',label='Beta peak')
-        Plot.plot(T,W,'+',color='k',label='T/difC')
+        Plot.plot(Q,A,'+',color='r',label='Alpha peak')
+        Plot.plot(Q,B,'+',color='g',label='Beta peak')
+        Plot.plot(Q,S,'+',color='b',label='Gaussian peak')
+        Plot.plot(Q,G,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
         Page.canvas.draw()
 

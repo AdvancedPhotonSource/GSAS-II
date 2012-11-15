@@ -170,7 +170,7 @@ class GSASIItoolbar(Toolbar):
         POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6
         self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
         parent = self.GetParent()
-        key = os.path.join(os.path.split(__file__)[0],'key.ico')
+        key = os.path.join(os.path.split(__file__)[0],'Key.ico')
         self.AddSimpleTool(self.ON_MPL_KEY,_load_bitmap(key),'Key press','Select key press')
         wx.EVT_TOOL(self,self.ON_MPL_KEY,self.OnKey)
         help = os.path.join(os.path.split(__file__)[0],'help.ico')

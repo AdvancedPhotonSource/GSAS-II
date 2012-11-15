@@ -969,9 +969,11 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                     break
                 dMdpk = np.zeros(shape=(7,len(xdata)))
                 dMdipk = getdEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])
+                cw = np.diff(xdata[iBeg:iFin])
+                cw = np.append(cw,cw[-1])
                 for i in range(1,6):
-                    dMdpk[i][iBeg:iFin] += intens*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += dMdipk[0]
+                    dMdpk[i][iBeg:iFin] += intens*cw*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += cw*dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}
                 for parmName in ['pos','int','alp','bet','sig','gam']:
                     try:

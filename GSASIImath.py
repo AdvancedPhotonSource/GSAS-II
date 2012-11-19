@@ -997,7 +997,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False):
         else:
             dsp = pos/Parms['difC'][1]
         if 'Pdabc' in Parms2:
-            for x in ['var-inst','X','Y']:
+            for x in ['sig-0','sig-1','X','Y']:
                 ins[x] = Parms[x][0]
             Pdabc = Parms2['Pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])

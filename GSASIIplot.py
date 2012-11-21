@@ -507,7 +507,7 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-                XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
+                XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])           #what happens for a q-plot???
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame)
@@ -1223,8 +1223,8 @@ def PlotPeakWidths(G2frame):
     ''' Plotting of instrument broadening terms as function of 2-theta
     Seen when "Instrument Parameters" chosen from powder pattern data tree
     '''
-    sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
-    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
+#    sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
+#    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
     gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
 #    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
     PatternId = G2frame.PatternId
@@ -1284,6 +1284,17 @@ def PlotPeakWidths(G2frame):
             Plot.plot(Q,Z,color='g',label='Lorentzian')
             Plot.plot(Q,W,color='b',label='G+L')
             
+            fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
+            sf = 1.17741*np.sqrt(fit[4])*np.pi/18000.
+            gf = fit[6]*np.pi/18000.
+            Gf = gamFW(gf,sf)
+            Yf = sf/nptand(X/2.)
+            Zf = gf/nptand(X/2.)
+            Wf = Gf/nptand(X/2.)
+            Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
+            Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
+            Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
+            
             X = []
             Y = []
             Z = []
@@ -1300,9 +1311,10 @@ def PlotPeakWidths(G2frame):
                 Y.append(s/tand(peak[0]/2.))
                 Z.append(g/tand(peak[0]/2.))
                 W.append(G/tand(peak[0]/2.))
-            Plot.plot(X,Y,'+',color='r',label='G peak')
-            Plot.plot(X,Z,'+',color='g',label='L peak')
-            Plot.plot(X,W,'+',color='b',label='G+L peak')
+            if len(peaks):
+                Plot.plot(X,Y,'+',color='r',label='G peak')
+                Plot.plot(X,Z,'+',color='g',label='L peak')
+                Plot.plot(X,W,'+',color='b',label='G+L peak')
             Plot.legend(loc='best')
             Page.canvas.draw()
         except ValueError:
@@ -1317,7 +1329,6 @@ def PlotPeakWidths(G2frame):
         T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
         Z = np.ones_like(T)
         data = G2mth.setPeakparms(Parms,Parms2,T,Z)
-#       = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
         ds = T/difC
         Q = 2.*np.pi/ds
         A = data[4]
@@ -1328,6 +1339,19 @@ def PlotPeakWidths(G2frame):
         Plot.plot(Q,B,color='g',label='Beta')
         Plot.plot(Q,S,color='b',label='Gaussian')
         Plot.plot(Q,G,color='m',label='Lorentzian')
+
+        fit = G2mth.setPeakparms(Parms,Parms2,T,Z)
+        ds = T/difC
+        Q = 2.*np.pi/ds
+        Af = fit[4]
+        Bf = fit[6]
+        Sf = 1.17741*np.sqrt(fit[8])/T
+        Gf = fit[10]/T
+        Plot.plot(Q,Af,color='r',dashes=(5,5),label='Alpha fit')
+        Plot.plot(Q,Bf,color='g',dashes=(5,5),label='Beta fit')
+        Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
+        Plot.plot(Q,Gf,color='m',dashes=(5,5),label='Lorentzian fit')
+        
         T = []
         A = []
         B = []

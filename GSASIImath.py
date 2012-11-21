@@ -704,21 +704,24 @@ def findOffset(SGData,A,Fhkl):
         Phi = np.concatenate((Phi,-Phi))                      # and their phase shifts
         Fh0 = Fhkl[hkl[0],hkl[1],hkl[2]]
         ang0 = np.angle(Fh0,deg=True)/360.
-        for j,H in enumerate(Uniq[1:]):
-            ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-Phi[j+1])
+        for H,phi in zip(Uniq,Phi)[1:]:
+            ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-phi)
             dH = H-hkl
             dang = ang-ang0
             if np.any(np.abs(dH)-Hmax > 0):    #keep low order DHs
                 continue
             DH.append(dH)
-            Dphi.append((dang+0.5) % 1.0)
+            Dphi.append((dang+.5) % 1.0)
         i += 1
     DH = np.array(DH)
     print ' map offset no.of terms: %d'%(len(DH))
     Dphi = np.array(Dphi)
     X,Y,Z = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2]]
     XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
-    Mmap = np.reshape(np.sum(((np.dot(XYZ,DH.T)+.5)%1.-Dphi)**2,axis=1),newshape=steps)
+    Mmap = np.reshape(np.sum(((np.dot(XYZ,DH.T)+.5)%1.-Dphi)**2,axis=1),newshape=steps)/len(DH)
+#    hist,bins = np.histogram(Mmap,bins=1000)
+#    for i,item in enumerate(hist[:10]):
+#        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
     print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
@@ -751,7 +754,7 @@ def ChargeFlip(data,reflData,pgbar):
             if FFtable:
                 SQ = 0.25/dsp**2
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
-            if ref[8] > 0.:
+            if ref[8] > 0.:         #use only +ve Fobs**2
                 E = np.sqrt(ref[8])/ff
             else:
                 E = 0.
@@ -980,11 +983,14 @@ def PeaksUnique(data,Ind):
             Ind.append(ind)
     return Ind
     
-def setPeakparms(Parms,Parms2,pos,mag,ifQ=False):
+def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
+    ind = 0
+    if useFit:
+        ind = 1
     ins = {}
     if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
         for x in ['U','V','W','X','Y']:
-            ins[x] = Parms[x][0]
+            ins[x] = Parms[x][ind]
         if ifQ:                              #qplot - convert back to 2-theta
             pos = 2.0*asind(pos*wave/(4*math.pi))
         sig = ins['U']*tand(pos/2.0)**2+ins['V']*tand(pos/2.0)+ins['W']
@@ -998,13 +1004,13 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False):
             dsp = pos/Parms['difC'][1]
         if 'Pdabc' in Parms2:
             for x in ['sig-0','sig-1','X','Y']:
-                ins[x] = Parms[x][0]
+                ins[x] = Parms[x][ind]
             Pdabc = Parms2['Pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])
             bet = np.interp(dsp,Pdabc[0],Pdabc[2])
         else:
             for x in ['alpha','beta-0','beta-1','sig-0','sig-1','X','Y']:
-                ins[x] = Parms[x][0]
+                ins[x] = Parms[x][ind]
             alp = ins['alpha']/dsp
             bet = ins['beta-0']+ins['beta-1']/dsp**4
         sig = ins['sig-0']+ins['sig-1']*dsp**2

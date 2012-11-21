@@ -1340,7 +1340,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillAtomsGrid()
         event.StopPropagation()
                 
-    def AtomAdd(x,y,z,El='H'):
+    def AtomAdd(x,y,z,El='H',Name='UNK'):
         atomData = data['Atoms']
         generalData = data['General']
         Ncol = Atoms.GetNumberCols()
@@ -1348,11 +1348,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
         if generalData['Type'] == 'macromolecular':
-            atomData.append([0,'UNK','','UNK',El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
+            atomData.append([0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'nuclear':
-            atomData.append(['UNK',El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'magnetic':
-            atomData.append(['UNK',El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
+            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
@@ -4071,12 +4071,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         HistoNames = Histograms.keys()
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))[PhaseName]
+
         wx.BeginBusyCursor()
         try:
             for iref,ref in enumerate(Refs):
                 try:
-                    ref[6] = abs(refData[iref][9])
-                    ref[7] = 1.0
+                    if refData[iref][9] < 0.:
+                        ref[6] = abs(refData[iref][9])
+                        ref[7] = 1.0
                 except IndexError:
                     pass
         finally:
@@ -4165,11 +4167,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     
     def OnPeaksMove(event):
         if 'Map Peaks' in data:
-            mapPeaks = data['Map Peaks']                        
+            mapPeaks = np.array(data['Map Peaks'])
+            peakMax = np.max(mapPeaks.T[0])
             Ind = MapPeaks.GetSelectedRows()
             for ind in Ind:
-                x,y,z,d = mapPeaks[ind][1:]
-                AtomAdd(x,y,z,'C')
+                mag,x,y,z,d = mapPeaks[ind]
+                AtomAdd(x,y,z,'C',Name='M '+'%d'%(int(100*mag/peakMax)))
     
     def OnPeaksClear(event):
         data['Map Peaks'] = []

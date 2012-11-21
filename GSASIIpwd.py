@@ -449,6 +449,8 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
 def getBackground(pfx,parmDict,bakType,xdata):
     yb = np.zeros_like(xdata)
     nBak = 0
+    cw = np.diff(xdata)
+    cw = np.append(cw,cw[-1])
     while True:
         key = pfx+'Back:'+str(nBak)
         if key in parmDict:
@@ -533,7 +535,8 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
     dydb = np.zeros(shape=(nBak,len(xdata)))
     dyddb = np.zeros(shape=(3*parmDict[pfx+'nDebye'],len(xdata)))
     dydpk = np.zeros(shape=(4*parmDict[pfx+'nPeaks'],len(xdata)))
-    dx = xdata[1]-xdata[0]
+    cw = np.diff(xdata)
+    cw = np.append(cw,cw[-1])
 
     if bakType in ['chebyschev','cosine']:
         for iBak in range(nBak):    
@@ -558,7 +561,6 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
                 bakPos = np.exp(np.linspace(np.log(xdata[0]),np.log(xdata[-1]),nBak,True))
             bakPos[0] = xdata[0]
             bakPos[-1] = xdata[-1]
-            dx = bakPos[1]-bakPos[0]
             for i,pos in enumerate(bakPos):
                 if i == 0:
                     dydb[0] = np.where(xdata<bakPos[1],(bakPos[1]-xdata)/(bakPos[1]-bakPos[0]),0.)
@@ -588,9 +590,9 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             sqr = np.sin(q*dbR)/(q*dbR)
             cqr = np.cos(q*dbR)
             temp = np.exp(-dbU*q**2)
-            dyddb[3*iD] = ff*sqr*temp/(np.pi*dx)
-            dyddb[3*iD+1] = ff*dbA*temp*(cqr-sqr)/(np.pi*dbR*dx)
-            dyddb[3*iD+2] = -ff*dbA*sqr*temp*q**2/(np.pi*dx)
+            dyddb[3*iD] = ff*sqr*temp/(np.pi*cw)
+            dyddb[3*iD+1] = ff*dbA*temp*(cqr-sqr)/(np.pi*dbR*cw)
+            dyddb[3*iD+2] = -ff*dbA*sqr*temp*q**2/(np.pi*cw)
             iD += 1       #ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
         except KeyError:
             break
@@ -606,10 +608,10 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             iBeg = np.searchsorted(xdata,pkP-fmin)
             iFin = np.searchsorted(xdata,pkP+fmax)
             Df,dFdp,dFds,dFdg,dFdsh = getdFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
-            dydpk[4*iD][iBeg:iFin] += 100.*dx*pkI*dFdp
-            dydpk[4*iD+1][iBeg:iFin] += 100.*dx*Df
-            dydpk[4*iD+2][iBeg:iFin] += 100.*dx*pkI*dFds
-            dydpk[4*iD+3][iBeg:iFin] += 100.*dx*pkI*dFdg
+            dydpk[4*iD][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdp
+            dydpk[4*iD+1][iBeg:iFin] += 100.*cw[iBeg:iFin]*Df
+            dydpk[4*iD+2][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFds
+            dydpk[4*iD+3][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdg
             iD += 1       
         except KeyError:
             break
@@ -671,8 +673,9 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
     
     yb = getBackground('',parmDict,bakType,xdata)
     yc = np.zeros_like(yb)
+    cw = np.diff(xdata)
+    cw = np.append(cw,cw[-1])
     if 'C' in dataType:
-        dx = xdata[1]-xdata[0]
         U = parmDict['U']
         V = parmDict['V']
         W = parmDict['W']
@@ -704,13 +707,7 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                 gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
-                lenX = len(xdata)
-                if not iBeg:
-                    iFin = np.searchsorted(xdata,pos+fmin)
-                elif iBeg == lenX:
-                    iFin = iBeg
-                else:
-                    iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
+                iFin = np.searchsorted(xdata,pos+fmin)
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
@@ -719,9 +716,8 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                 yc[iBeg:iFin] += intens*getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                    kdelt = int((pos2-pos)/dx)               
-                    iBeg = min(lenX,iBeg+kdelt)
-                    iFin = min(lenX,iFin+kdelt)
+                    iBeg = np.searchsorted(xdata,pos2-fmin)
+                    iFin = np.searchsorted(xdata,pos2+fmin)
                     if iBeg-iFin:
                         yc[iBeg:iFin] += intens*kRatio*getFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
                 iPeak += 1
@@ -809,8 +805,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
             parm,id = name.split(':')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMdpk[4*int(id)+ip]
+    cw = np.diff(xdata)
+    cw = np.append(cw,cw[-1])
     if 'C' in dataType:
-        dx = xdata[1]-xdata[0]
         U = parmDict['U']
         V = parmDict['V']
         W = parmDict['W']
@@ -849,13 +846,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
-                lenX = len(xdata)
-                if not iBeg:
-                    iFin = np.searchsorted(xdata,pos+fmin)
-                elif iBeg == lenX:
-                    iFin = iBeg
-                else:
-                    iFin = min(lenX,iBeg+int((fmin+fmax)/dx))
+                iFin = np.searchsorted(xdata,pos+fmin)
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
@@ -864,20 +855,19 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 dMdpk = np.zeros(shape=(6,len(xdata)))
                 dMdipk = getdFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])
                 for i in range(1,5):
-                    dMdpk[i][iBeg:iFin] += 100.*dx*intens*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += 100.*dx*dMdipk[0]
+                    dMdpk[i][iBeg:iFin] += 100.*cw[iBeg:iFin]*intens*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += 100.*cw[iBeg:iFin]*dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4]}
                 if Ka2:
                     pos2 = pos+lamRatio*tand(pos/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                    kdelt = int((pos2-pos)/dx)               
-                    iBeg = min(lenX,iBeg+kdelt)
-                    iFin = min(lenX,iFin+kdelt)
+                    iBeg = np.searchsorted(xdata,pos2-fmin)
+                    iFin = np.searchsorted(xdata,pos2+fmin)
                     if iBeg-iFin:
                         dMdipk2 = getdFCJVoigt3(pos2,sig,gam,shl,xdata[iBeg:iFin])
                         for i in range(1,5):
-                            dMdpk[i][iBeg:iFin] += 100.*dx*intens*kRatio*dMdipk2[i]
-                        dMdpk[0][iBeg:iFin] += 100.*dx*kRatio*dMdipk2[0]
-                        dMdpk[5][iBeg:iFin] += 100.*dx*dMdipk2[0]
+                            dMdpk[i][iBeg:iFin] += 100.*cw[iBeg:iFin]*intens*kRatio*dMdipk2[i]
+                        dMdpk[0][iBeg:iFin] += 100.*cw[iBeg:iFin]*kRatio*dMdipk2[0]
+                        dMdpk[5][iBeg:iFin] += 100.*cw[iBeg:iFin]*dMdipk2[0]
                         dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':dMdpk[5]*intens}
                 for parmName in ['pos','int','sig','gam']:
                     try:
@@ -969,11 +959,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                     break
                 dMdpk = np.zeros(shape=(7,len(xdata)))
                 dMdipk = getdEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])
-                cw = np.diff(xdata[iBeg:iFin])
-                cw = np.append(cw,cw[-1])
                 for i in range(1,6):
-                    dMdpk[i][iBeg:iFin] += intens*cw*dMdipk[i]
-                dMdpk[0][iBeg:iFin] += cw*dMdipk[0]
+                    dMdpk[i][iBeg:iFin] += intens*cw[iBeg:iFin]*dMdipk[i]
+                dMdpk[0][iBeg:iFin] += cw[iBeg:iFin]*dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}
                 for parmName in ['pos','int','alp','bet','sig','gam']:
                     try:

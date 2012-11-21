@@ -12,6 +12,7 @@ import os
 import os.path as ospath
 import time
 import math
+import random
 import cPickle
 import numpy as np
 import numpy.linalg as nl
@@ -1899,7 +1900,8 @@ def penaltyFxn(Phases,parmDict,varyList):
         if 'PWLref' in item and parmDict[item] < 0.:
             pId = int(item.split(':')[0])
             pNames.append(item)
-            pVals.append(-negWt[pId]*parmDict[item]**2)
+#            pVals.append(negWt[pId]*parmDict[item]**2)
+            pVals.append(-negWt[pId]*parmDict[item])
     pVals = np.array(pVals)
     return pNames,pVals
     
@@ -1911,7 +1913,8 @@ def penaltyDeriv(pNames,pVal,Phases,parmDict,varyList):
     for i,item in enumerate(varyList):
         if item in pNames:
             pId = int(item.split(':')[0])
-            pDerv[i][pNames.index(item)] -= 2.*negWt[pId]*parmDict[item]
+#            pDerv[i][pNames.index(item)] += 2.*negWt[pId]*parmDict[item]
+            pDerv[i][pNames.index(item)] += negWt[pId]
     return pDerv
 
 ################################################################################
@@ -2659,7 +2662,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 if Phase['General'].get('doPawley'):
                     try:
                         pInd =pfx+'PWLref:%d'%(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
-#                        parmDict[pInd] = max(parmDict[pInd]/2.,parmDict[pInd])        
                         refl[9] = parmDict[pInd]
                     except KeyError:
 #                        print ' ***Error %d,%d,%d missing from Pawley reflection list ***'%(h,k,l)
@@ -2742,8 +2744,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             parm = name[:int(name.rindex(':'))]
             ip = names.index(parm)
             dMdv[varylist.index(name)] = dMdpk[4*id+ip]
+    cw = np.diff(x)
+    cw = np.append(cw,cw[-1])
     if 'C' in calcControls[hfx+'histType']:    
-        dx = x[1]-x[0]
         shl = max(parmDict[hfx+'SH/L'],0.002)
         Ka2 = False
         if hfx+'Lam1' in parmDict.keys():
@@ -2786,37 +2789,30 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])
                 for i in range(1,5):
-                    dMdpk[i] += 100.*dx*refl[13]*refl[9]*dMdipk[i]
-                dMdpk[0] += 100.*dx*refl[13]*refl[9]*dMdipk[0]
+                    dMdpk[i] += 100.*cw[iBeg:iFin]*refl[13]*refl[9]*dMdipk[i]
+                dMdpk[0] += 100.*cw[iBeg:iFin]*refl[13]*refl[9]*dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':np.zeros_like(dMdpk[0])}
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tanth       # + 360/pi * Dlam/lam * tan(th)
-                    kdelt = int((pos2-refl[5])/dx)               
-                    iBeg2 = min(lenX,iBeg+kdelt)
-                    iFin2 = min(lenX,iFin+kdelt)
+                    iBeg2 = np.searchsorted(x,pos2-fmin)
+                    iFin2 = np.searchsorted(x,pos2+fmax)
                     if iBeg2-iFin2:
                         lenBF2 = iFin2-iBeg2
                         dMdpk2 = np.zeros(shape=(6,lenBF2))
                         dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])
                         for i in range(1,5):
-                            dMdpk2[i] = 100.*dx*refl[13]*refl[9]*kRatio*dMdipk2[i]
-                        dMdpk2[0] = 100.*dx*refl[13]*refl[9]*kRatio*dMdipk2[0]
-                        dMdpk2[5] = 100.*dx*refl[13]*dMdipk2[0]
+                            dMdpk2[i] = 100.*cw[iBeg2:iFin2]*refl[13]*refl[9]*kRatio*dMdipk2[i]
+                        dMdpk2[0] = 100.*cw[iBeg2:iFin2]*refl[13]*refl[9]*kRatio*dMdipk2[0]
+                        dMdpk2[5] = 100.*cw[iBeg2:iFin2]*refl[13]*dMdipk2[0]
                         dervDict2 = {'int':dMdpk2[0],'pos':dMdpk2[1],'sig':dMdpk2[2],'gam':dMdpk2[3],'shl':dMdpk2[4],'L1/L2':dMdpk2[5]*refl[9]}
                 if Phase['General'].get('doPawley'):
                     dMdpw = np.zeros(len(x))
                     try:
                         pIdx = pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
                         idx = varylist.index(pIdx)
-#                        parmDict[pIdx] = max(parmDict[pIdx]/2.,parmDict[pIdx])        
-#                        refl[9] = parmDict[pIdx]
                         dMdpw[iBeg:iFin] = dervDict['int']/refl[9]
-#                        if parmDict[pIdx] < 0.:
-#                            dMdpw[iBeg:iFin] = 2.*dervDict['int']/refl[9]
                         if Ka2:
                             dMdpw[iBeg2:iFin2] += dervDict2['int']/refl[9]
-#                            if parmDict[pIdx] < 0.:
-#                                dMdpw[iBeg2:iFin2] += 2.*dervDict['int']/refl[9]
                         dMdv[idx] = dMdpw
                     except: # ValueError:
                         pass

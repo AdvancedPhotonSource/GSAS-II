@@ -59,7 +59,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 vals = S.split()
                 x.append(float(vals[0])/100.)               #CW: from centidegrees to degrees
                 f = float(vals[1])
-                if f <= 0.0:
+                s = float(vals[2])
+                if f <= 0.0 or s <= 0.0:
                     y.append(0.0)
                     w.append(1.0)
                 else:

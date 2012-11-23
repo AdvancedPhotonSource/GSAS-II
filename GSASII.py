@@ -244,8 +244,7 @@ class GSASII(wx.Frame):
             except ImportError:
                 print 'Import_'+errprefix+': Error importing file'+str(filename)
                 pass
-            finally:
-                if fp: fp.close()
+            if fp: fp.close()
 
     def OnImportGeneric(self,reader,readerlist,label,multiple=False):
         '''Call the requested import reader or all of the appropriate

@@ -677,9 +677,6 @@ def findOffset(SGData,A,Fhkl):
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
     hklShape = Fhkl.shape
-    steps = np.array(hklShape)
-    Hmax = 2*np.asarray(G2lat.getHKLmax(4.5,SGData,A),dtype='i')
-    Fmax = np.max(np.absolute(Fhkl))
     hklHalf = np.array(hklShape)/2
     sortHKL = np.argsort(Fhkl.flatten())
     Fdict = {}
@@ -694,8 +691,8 @@ def findOffset(SGData,A,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    while i < 20 and len(DH) < 30:
-        F = Flist[i]
+    Hmax = 2*np.asarray(G2lat.getHKLmax(3.5,SGData,A),dtype='i')
+    for F in Flist:
         hkl = np.unravel_index(Fdict[F],hklShape)
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
         Uniq = np.array(Uniq,dtype='i')
@@ -712,19 +709,24 @@ def findOffset(SGData,A,Fhkl):
                 continue
             DH.append(dH)
             Dphi.append((dang+.5) % 1.0)
+        if i > 20 or len(DH) > 30:
+            break
         i += 1
     DH = np.array(DH)
-    print ' map offset no.of terms: %d'%(len(DH))
+    print ' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist))
     Dphi = np.array(Dphi)
+    steps = np.array(hklShape)
     X,Y,Z = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2]]
     XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
-    Mmap = np.reshape(np.sum(((np.dot(XYZ,DH.T)+.5)%1.-Dphi)**2,axis=1),newshape=steps)/len(DH)
-#    hist,bins = np.histogram(Mmap,bins=1000)
+    Dang = (np.dot(XYZ,DH.T)+.5)%1.-Dphi
+    Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
+    hist,bins = np.histogram(Mmap,bins=1000)
 #    for i,item in enumerate(hist[:10]):
 #        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
     print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
+#    print (np.dot(DX,DH.T)+.5)%1.-Dphi
     return DX
     
 def ChargeFlip(data,reflData,pgbar):
@@ -941,7 +943,8 @@ def PeaksEquiv(data,Ind):
     Indx = {}
     for ind in Ind:
         xyz = np.array(mapPeaks[ind][1:4])
-        xyzs = np.array([equiv[0] for equiv in G2spc.GenAtom(xyz,SGData,Move=True)]) 
+        xyzs = np.array([equiv[0] for equiv in G2spc.GenAtom(xyz,SGData,Move=True)])
+#        for x in xyzs: print x 
         for jnd,xyz in enumerate(XYZ):       
             Indx[jnd] = Duplicate(xyz,xyzs,Amat)
     Ind = []

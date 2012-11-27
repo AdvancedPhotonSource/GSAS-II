@@ -2692,7 +2692,7 @@ def PlotStructure(G2frame,data):
             elif G2frame.dataDisplay.GetPageText(page) == 'Map peaks':
                 G2frame.dataDisplay.GetPage(page).SelectRow(ind,Add)                  
             elif G2frame.dataDisplay.GetPageText(page) == 'Atoms':
-                Id = drawAtoms[ind][-2]
+                Id = drawAtoms[ind][-3]
                 for i,atom in enumerate(atomData):
                     if atom[-1] == Id:
                         G2frame.dataDisplay.GetPage(page).SelectRow(i)      #this is the Atoms grid in Atoms

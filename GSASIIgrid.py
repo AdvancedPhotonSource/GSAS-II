@@ -48,8 +48,8 @@ htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
-    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,
-] = [wx.NewId() for item in range(10)]
+    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -709,6 +709,8 @@ class DataFrame(wx.Frame):
             help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
             help='Select atom row to insert before; inserted as an H atom')
+        self.AtomEdit.Append(id=wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move atom to view point',
+            help='Select single atom to move')
         self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
             help='Select atoms to delete first')
         self.AtomEdit.Append(id=wxID_ATOMSREFINE, kind=wx.ITEM_NORMAL,text='Set atom refinement flags',
@@ -1895,7 +1897,24 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             AddChiralRestraint()
             
     def AddBondRestraint():
-        print 'Bond restraint'
+        General = phasedata['General']
+        cx,ct = General['AtomPtrs'][:2]
+        Atoms = phasedata['Atoms']
+        radiiDict = dict(zip(General['AtomTypes'],General['BondRadii']))
+        Names = ['all '+ name for name in General['AtomTypes']]
+        Types = [name for name in General['AtomTypes']]
+        Names += [atom[ct-1] for atom in Atoms]
+        Types += [atom[ct] for atom in Atoms]
+        Lists = {'origin':[],'target':[]}
+        for listName in ['origin','target']:
+            dlg = wx.MultiChoiceDialog(G2frame,'Bond restraint'+listName+' for '+General['Name'],
+                    'Select bond restraint '+listName+' atoms',Names)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelections()
+                for x in sel:
+                    Lists[listName].append([Names[x],Types[x]])
+        SGData = General['SGData']
+        Bonds = restrData['Bond']['Bonds']
 
     def AddAngleRestraint():
         print 'Angle restraint'
@@ -1950,7 +1969,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Bonds.ClearSelection()
             val = bondList[rows[0]][4]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.])
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1964,7 +1983,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Bonds.ClearSelection()
             val = bondList[rows[0]][5]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.])
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -2040,7 +2059,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Angles.ClearSelection()
             val = angleList[rows[0]][4]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.])
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -2054,7 +2073,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Angles.ClearSelection()
             val = angleList[rows[0]][5]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.])
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:

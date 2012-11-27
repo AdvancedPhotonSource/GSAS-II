@@ -243,13 +243,14 @@ class DisAglDialog(wx.Dialog):
         
 class SingleFloatDialog(wx.Dialog):
     
-    def __init__(self,parent,title,prompt,value,limits=[0.,1.]):
+    def __init__(self,parent,title,prompt,value,limits=[0.,1.],format='%.5g'):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.limits = limits
         self.value = value
         self.prompt = prompt
+        self.format = format
         self.Draw()
         
     def Draw(self):
@@ -262,13 +263,13 @@ class SingleFloatDialog(wx.Dialog):
             except ValueError:
                 val = self.value
             self.value = val
-            valItem.SetValue('%.5g'%(self.value))
+            valItem.SetValue(self.format%(self.value))
             
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
-        valItem = wx.TextCtrl(self.panel,-1,value='%.5g'%(self.value),style=wx.TE_PROCESS_ENTER)
+        valItem = wx.TextCtrl(self.panel,-1,value=self.format%(self.value),style=wx.TE_PROCESS_ENTER)
         mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
         valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
         valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
@@ -969,15 +970,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         atomData = data['Atoms']
         DData = data['Drawing']
-        Items = [G2gd.wxID_ATOMSEDITINSERT, G2gd.wxID_ATOMSEDITDELETE, G2gd.wxID_ATOMSREFINE, 
-            G2gd.wxID_ATOMSMODIFY, G2gd.wxID_ATOMSTRANSFORM, G2gd.wxID_ATOMVIEWINSERT]
+        Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
+            G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
         if atomData:
             for item in Items:    
                 G2frame.dataFrame.AtomsMenu.Enable(item,True)
         else:
             for item in Items:
                 G2frame.dataFrame.AtomsMenu.Enable(item,False)
-        Items = [G2gd.wxID_ATOMVIEWINSERT, G2gd.wxID_ATOMSVIEWADD]
+        Items = [G2gd.wxID_ATOMVIEWINSERT, G2gd.wxID_ATOMSVIEWADD,G2gd.wxID_ATOMMOVE]
         if 'showABC' in data['Drawing']:
             for item in Items:
                 G2frame.dataFrame.AtomsMenu.Enable(item,True)
@@ -1370,6 +1371,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             AtomAdd(x,y,z)
             FillAtomsGrid()
         event.StopPropagation()
+
+    def OnAtomMove(event):
+        drawData = data['Drawing']
+        atomData = data['Atoms']
+        x,y,z = drawData['viewPoint'][0]
+        colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        indx = Atoms.GetSelectedRows()
+        if len(indx) != 1:
+            print '**** ERROR - only one atom can be moved ****'
+        else:
+            atomData[indx[0]][cx:cx+3] = [x,y,z]
+            SetupGeneral()
+            FillAtomsGrid()
+            ID = atomData[indx[0]][-1]
+            DrawAtomsReplaceByID(data['Drawing'],atomData[indx[0]],ID)
+            G2plt.PlotStructure(G2frame,data)
+        event.StopPropagation()
             
     def AtomInsert(x,y,z):
         indx = Atoms.GetSelectedRows()
@@ -1429,7 +1448,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Atoms.ForceRefresh()
             dlg.Destroy()
 
-    def AtomModify(event):                  #intent to implement global modifications (+,-,*,/, etc.)?
+    def AtomModify(event):
         indx = Atoms.GetSelectedRows()
         if indx:
             atomData = data['Atoms']
@@ -1722,7 +1741,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             try:
                 bondData = restData[PhaseName]['Bond']
             except KeyError:
-                bondData = {'wtFactor':1.0,'Bonds':[]}
+                bondData = {'wtFactor':1.0,'Bonds':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Bond'] = bondData
             dist = G2mth.getRestDist(atXYZ,Amat)
@@ -1731,7 +1750,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             try:
                 angleData = restData[PhaseName]['Angle']
             except KeyError:
-                angleData = {'wtFactor':1.0,'Angles':[]}
+                angleData = {'wtFactor':1.0,'Angles':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Angle'] = angleData
             angle = G2mth.getRestAngle(atXYZ,Amat)
@@ -1740,7 +1759,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             try:
                 planeData = restData[PhaseName]['Plane']
             except KeyError:
-                planeData = {'wtFactor':1.0,'Planes':[]}
+                planeData = {'wtFactor':1.0,'Planes':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Plane'] = planeData
             plane = G2mth.getRestPlane(atXYZ,Amat)
@@ -1749,7 +1768,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             try:
                 chiralData = restData[PhaseName]['Chiral']
             except KeyError:
-                chiralData = {'wtFactor':1.0,'Volumes':[]}
+                chiralData = {'wtFactor':1.0,'Volumes':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Chiral'] = chiralData
             volume = G2mth.getRestChiral(atXYZ,Amat)
@@ -4172,7 +4191,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Ind = MapPeaks.GetSelectedRows()
             for ind in Ind:
                 mag,x,y,z,d = mapPeaks[ind]
-                AtomAdd(x,y,z,'C',Name='M '+'%d'%(int(100*mag/peakMax)))
+                AtomAdd(x,y,z,'H',Name='M '+'%d'%(int(100*mag/peakMax)))
     
     def OnPeaksClear(event):
         data['Map Peaks'] = []
@@ -4444,6 +4463,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)

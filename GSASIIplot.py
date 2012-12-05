@@ -701,11 +701,11 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.qPlot:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             if 'C' in Parms['Type'][0]:
-                X = 4*np.pi*npsind(xye[0]/2.0)/wave
+                X = 4*np.pi*npsind((xye[0]-Parms['Zero'][1])/2.0)/wave
             else:
-                X = 2*np.pi*Parms['difC'][1]/xye[0]
+                X = 2*np.pi*Parms['difC'][1]/(xye[0]-Parms['Zero'][1])
         else:
-            X = xye[0]
+            X = xye[0]-Parms['Zero'][1]
         if not lenX:
             lenX = len(X)           
         Y = xye[1]+offset*N

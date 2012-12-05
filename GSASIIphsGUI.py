@@ -367,15 +367,6 @@ class GridFractionEditor(wg.PyGridCellEditor):
         else:
             evt.Skip()
 
-def FindAtomIndexByIDs(atomData,IDs,Draw=True):
-    indx = []
-    for i,atom in enumerate(atomData):
-        if Draw and atom[-3] in IDs:
-            indx.append(i)
-        elif atom[-1] in IDs:
-            indx.append(i)
-    return indx
-        
 def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     Atoms = []
@@ -1545,6 +1536,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData = data['General']
             SGData = generalData['SGData']
             dlg = SymOpDialog(G2frame,SGData,True,True)
+            New = False
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
@@ -1613,7 +1605,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'pId' in data:
                 DisAglData['pId'] = data['pId']
                 DisAglData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
-            G2str.DistAngle(DisAglCtls,DisAglData)
+            try:
+                G2str.DistAngle(DisAglCtls,DisAglData)
+            except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
+                print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
                         
 ################################################################################
 #Structure drawing GUI stuff                
@@ -1715,7 +1710,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def DrawAtomsReplaceByID(drawingData,atom,ID):
         IDs = [ID,]
         atomData = drawingData['Atoms']
-        indx = FindAtomIndexByIDs(atomData,IDs)
+        indx = G2mth.FindAtomIndexByIDs(atomData,IDs)
         for ind in indx:
             atomData[ind] = MakeDrawAtom(atom,atomData[ind])
             
@@ -1733,7 +1728,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atSymOp = []
         atIndx = []
         for item in indx:
-            atNames.append(atomData[item][ct-1])
             atXYZ.append(np.array(atomData[item][cx:cx+3]))
             atSymOp.append(atomData[item][cs-1])
             atIndx.append(atomData[item][ci])
@@ -1745,7 +1739,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Bond'] = bondData
             dist = G2mth.getRestDist(atXYZ,Amat)
-            bondData['Bonds'].append([atNames,atSymOp,atIndx,dist,1.54,0.01])
+            bondData['Bonds'].append([atIndx,atSymOp,dist,1.54,0.01])
         elif event.GetId() == G2gd.wxID_DRAWRESTRANGLE and len(indx) == 3:
             try:
                 angleData = restData[PhaseName]['Angle']
@@ -1754,7 +1748,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Angle'] = angleData
             angle = G2mth.getRestAngle(atXYZ,Amat)
-            angleData['Angles'].append([atNames,atSymOp,atIndx,angle,109.5,1.0])            
+            angleData['Angles'].append([atIndx,atSymOp,angle,109.5,1.0])            
         elif event.GetId() == G2gd.wxID_DRAWRESTRPLANE and len(indx) > 3:
             try:
                 planeData = restData[PhaseName]['Plane']
@@ -1763,7 +1757,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Plane'] = planeData
             plane = G2mth.getRestPlane(atXYZ,Amat)
-            planeData['Planes'].append([atNames,atSymOp,atIndx,plane,0.0,0.01])            
+            planeData['Planes'].append([atIndx,atSymOp,plane,0.0,0.01])            
         elif event.GetId() == G2gd.wxID_DRAWRESTRCHIRAL and len(indx) == 4:
             try:
                 chiralData = restData[PhaseName]['Chiral']
@@ -1772,7 +1766,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Chiral'] = chiralData
             volume = G2mth.getRestChiral(atXYZ,Amat)
-            chiralData['Volumes'].append([atNames,atSymOp,atIndx,volume,2.5,0.1])            
+            chiralData['Volumes'].append([atIndx,atSymOp,volume,2.5,0.1])            
         else:
             print '**** ERROR wrong number of atoms selected for this restraint'
             return
@@ -2401,18 +2395,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
         
-    def FindAtomIndexByIDs(atomData,IDs,Draw=True):
-        indx = []
-        for i,atom in enumerate(atomData):
-            if Draw and atom[-3] in IDs:
-                indx.append(i)
-            elif atom[-1] in IDs:
-                indx.append(i)
-        return indx
-        
     def DrawAtomsDeleteByIDs(IDs):
         atomData = data['Drawing']['Atoms']
-        indx = FindAtomIndexByIDs(atomData,IDs)
+        indx = G2mth.FindAtomIndexByIDs(atomData,IDs)
         indx.reverse()
         for ind in indx:
             del atomData[ind]
@@ -2426,7 +2411,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             col = ct
         elif colName == 'I/A':
             col = cs
-        indx = FindAtomIndexByIDs(atomData,IDs)
+        indx = G2mth.FindAtomIndexByIDs(atomData,IDs)
         for ind in indx:
             atomData[ind][col] = value
                 
@@ -2493,7 +2478,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for i in indx:
             atom = atomDData[i]
             xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
-            id = FindAtomIndexByIDs(atomData,[atom[cid],],False)[0]
+            id = G2mth.FindAtomIndexByIDs(atomData,[atom[cid],],False)[0]
             Oxyz.append([id,]+atomData[id][cx+1:cx+4])
         DATData['Datoms'] = xyz
         DATData['Oatoms'] = Oxyz
@@ -3163,7 +3148,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
             sourceDict = UseList[hist]
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
             copyDict = {}
             for name in copyNames: 
                 copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
@@ -3191,7 +3176,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             hist = Indx[Obj.GetId()]
             sourceDict = UseList[hist]
             copyDict = {}
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+            babNames = ['BabA','BabU']
             for name in copyNames:
                 if name in ['Scale','Extinction','HStrain']:
                     copyDict[name] = sourceDict[name][1]
@@ -3204,7 +3190,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         SHflags = {}
                         for item in SHterms:
                             SHflags[item] = SHterms[item][1]
-                        copyDict[name].append(SHflags)                        
+                        copyDict[name].append(SHflags)
+                elif name == 'Babinet':
+                    copyDict[name] = {}
+                    for bab in babNames:
+                        copyDict[name][bab] = sourceDict[name][bab][1]                       
             keyList = ['All',]+UseList.keys()
             if UseList:
                 copyList = []
@@ -3234,7 +3224,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                         SHflags = copy.copy(copyDict[name][2])
                                         SHterms = copy.copy(sourceDict[name][5])
                                         for item in SHflags:
-                                            SHterms[item][1] = copy.copy(SHflags[item])                                              
+                                            SHterms[item][1] = copy.copy(SHflags[item])
+                                elif name == 'Babinet':
+                                    for bab in babNames:
+                                        UseList[item][name][bab][1] = copy.copy(copyDict[name][bab])                                              
                         wx.CallAfter(UpdateDData)
                 finally:
                     dlg.Destroy()
@@ -3447,7 +3440,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             except ValueError:
                 pass
             Obj.SetValue("%.2f"%(UseList[Indx[Obj.GetId()]]['Extinction'][0]))
+
+        def OnBabRef(event):
+            Obj = event.GetEventObject()
+            item,bab = Indx[Obj.GetId()]
+            UseList[item]['Babinet']['Bab'+bab][1] = Obj.GetValue()
             
+        def OnBabVal(event):
+            Obj = event.GetEventObject()
+            item,bab = Indx[Obj.GetId()]
+            try:
+                val = float(Obj.GetValue())
+                if val >= 0:
+                    UseList[item]['Babinet']['Bab'+bab][0] = val
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[item]['Babinet']['Bab'+bab][0]))
+
         def OnTbarVal(event):
             Obj = event.GetEventObject()
             try:
@@ -3745,6 +3754,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             extSizer.Add(valSizer,0,wx.ALIGN_CENTER_VERTICAL)
             return extSizer
             
+        def BabSizer():
+            babSizer = wx.BoxSizer(wx.HORIZONTAL)
+            for bab in ['A','U']:
+                babRef = wx.CheckBox(DData,-1,label=' Babinet '+bab+': ')
+                babRef.SetValue(UseList[item]['Babinet']['Bab'+bab][1])
+                Indx[babRef.GetId()] = [item,bab]
+                babRef.Bind(wx.EVT_CHECKBOX, OnBabRef)
+                babSizer.Add(babRef,0,wx.ALIGN_CENTER_VERTICAL)
+                babVal = wx.TextCtrl(DData,wx.ID_ANY,
+                    '%.3f'%(UseList[item]['Babinet']['Bab'+bab][0]),style=wx.TE_PROCESS_ENTER)
+                Indx[babVal.GetId()] = [item,bab]
+                babVal.Bind(wx.EVT_TEXT_ENTER,OnBabVal)
+                babVal.Bind(wx.EVT_KILL_FOCUS,OnBabVal)
+                babSizer.Add(babVal,0,wx.ALIGN_CENTER_VERTICAL)
+                babSizer.Add((5,5),0)
+            return babSizer
+            
         if DData.GetSizer():
             DData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -3756,6 +3782,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             histData = UseList[item]
             if 'Use' not in UseList[item]:      #patch
                 UseList[item]['Use'] = True
+            if 'Babinet' not in UseList[item]:
+                UseList[item]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
             showData = wx.CheckBox(DData,-1,label=' Show '+item)
             showData.SetValue(UseList[item]['Show'])
@@ -3853,9 +3881,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 #Extinction  'Extinction':[0.0,False]
                 mainSizer.Add(ExtSizer())
                 mainSizer.Add((0,5),0)
+                mainSizer.Add(BabSizer())
+                mainSizer.Add((0,5),0)
             elif item[:4] == 'HKLF' and UseList[item]['Show']:
                 mainSizer.Add((0,5),0)                
                 mainSizer.Add(SCExtSizer())
+                mainSizer.Add((0,5),0)
+                mainSizer.Add(BabSizer())
                 mainSizer.Add((0,5),0)
                 pass
         mainSizer.Add((5,5),0)
@@ -3888,6 +3920,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for i in result:
                         histoName = TextList[i]
                         UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+                            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                             'Extinction':['Lorentzian','Secondary Type I',
                             {'Tbar':0.0,'Eg':[0.0,False],'Es':[0.0,False],'Ep':[0.0,False]},]}                        
                     data['Histograms'] = UseList
@@ -3943,7 +3976,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
-                            'Extinction':[0.0,False]}
+                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
                         refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'Reflection Lists'))
                         refList[generalData['Name']] = []                       
                     data['Histograms'] = UseList

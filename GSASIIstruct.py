@@ -542,25 +542,38 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
             print >>pFile,line
                 
     def PrintAtoms(General,Atoms):
+        cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,'\n Atoms:'
         line = '   name    type  refine?   x         y         z    '+ \
             '  frac site sym  mult I/A   Uiso     U11     U22     U33     U12     U13     U23'
         if General['Type'] == 'magnetic':
             line += '   Mx     My     Mz'
         elif General['Type'] == 'macromolecular':
-            line = ' res no  residue  chain '+line
+            line = ' res no residue chain'+line
         print >>pFile,line
         if General['Type'] == 'nuclear':
             print >>pFile,135*'-'
             for i,at in enumerate(Atoms):
-                line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%10.5f'%(at[3])+'%10.5f'%(at[4])+ \
-                    '%10.5f'%(at[5])+'%8.3f'%(at[6])+'%7s'%(at[7])+'%5d'%(at[8])+'%5s'%(at[9])
-                if at[9] == 'I':
-                    line += '%8.4f'%(at[10])+48*' '
+                line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
+                    '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs])+'%5d'%(at[cs+1])+'%5s'%(at[cia])
+                if at[cia] == 'I':
+                    line += '%8.4f'%(at[cia+1])+48*' '
                 else:
                     line += 8*' '
                     for j in range(6):
-                        line += '%8.4f'%(at[11+j])
+                        line += '%8.4f'%(at[cia+1+j])
+                print >>pFile,line
+        elif General['Type'] == 'macromolecular':
+            print >>pFile,135*'-'            
+            for i,at in enumerate(Atoms):
+                line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
+                    '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs])+'%5d'%(at[cs+1])+'%5s'%(at[cia])
+                if at[cia] == 'I':
+                    line += '%8.4f'%(at[cia+1])+48*' '
+                else:
+                    line += 8*' '
+                    for j in range(6):
+                        line += '%8.4f'%(at[cia+1+j])
                 print >>pFile,line
         
     def PrintTexture(textureData):
@@ -638,23 +651,24 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
             phaseVary += cellVary(pfx,SGData)
         Natoms[pfx] = 0
         if Atoms and not General.get('doPawley'):
-            if General['Type'] == 'nuclear':
+            cx,ct,cs,cia = General['AtomPtrs']
+            if General['Type'] in ['nuclear','macromolecular']:
                 Natoms[pfx] = len(Atoms)
                 for i,at in enumerate(Atoms):
                     atomIndx[at[-1]] = [pfx,i]      #lookup table for restraints
-                    phaseDict.update({pfx+'Atype:'+str(i):at[1],pfx+'Afrac:'+str(i):at[6],pfx+'Amul:'+str(i):at[8],
-                        pfx+'Ax:'+str(i):at[3],pfx+'Ay:'+str(i):at[4],pfx+'Az:'+str(i):at[5],
+                    phaseDict.update({pfx+'Atype:'+str(i):at[ct],pfx+'Afrac:'+str(i):at[cx+3],pfx+'Amul:'+str(i):at[cs+1],
+                        pfx+'Ax:'+str(i):at[cx],pfx+'Ay:'+str(i):at[cx+1],pfx+'Az:'+str(i):at[cx+2],
                         pfx+'dAx:'+str(i):0.,pfx+'dAy:'+str(i):0.,pfx+'dAz:'+str(i):0.,         #refined shifts for x,y,z
-                        pfx+'AI/A:'+str(i):at[9],})
-                    if at[9] == 'I':
-                        phaseDict[pfx+'AUiso:'+str(i)] = at[10]
+                        pfx+'AI/A:'+str(i):at[cia],})
+                    if at[cia] == 'I':
+                        phaseDict[pfx+'AUiso:'+str(i)] = at[cia+1]
                     else:
-                        phaseDict.update({pfx+'AU11:'+str(i):at[11],pfx+'AU22:'+str(i):at[12],pfx+'AU33:'+str(i):at[13],
-                            pfx+'AU12:'+str(i):at[14],pfx+'AU13:'+str(i):at[15],pfx+'AU23:'+str(i):at[16]})
-                    if 'F' in at[2]:
+                        phaseDict.update({pfx+'AU11:'+str(i):at[cia+2],pfx+'AU22:'+str(i):at[cia+3],pfx+'AU33:'+str(i):at[cia+4],
+                            pfx+'AU12:'+str(i):at[cia+5],pfx+'AU13:'+str(i):at[cia+6],pfx+'AU23:'+str(i):at[cia+7]})
+                    if 'F' in at[ct+1]:
                         phaseVary.append(pfx+'Afrac:'+str(i))
-                    if 'X' in at[2]:
-                        xId,xCoef = G2spc.GetCSxinel(at[7])
+                    if 'X' in at[ct+1]:
+                        xId,xCoef = G2spc.GetCSxinel(at[cs])
                         names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
                         equivs = [[],[],[]]
                         for j in range(3):
@@ -666,11 +680,11 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
                                 name = equiv[0][0]
                                 for eqv in equiv[1:]:
                                     G2mv.StoreEquivalence(name,(eqv,))
-                    if 'U' in at[2]:
+                    if 'U' in at[ct+1]:
                         if at[9] == 'I':
                             phaseVary.append(pfx+'AUiso:'+str(i))
                         else:
-                            uId,uCoef = G2spc.GetCSuinel(at[7])[:2]
+                            uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
                             names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
                                 pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
                             equivs = [[],[],[],[],[],[]]
@@ -1084,6 +1098,20 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
         print >>pFile,ptlbls
         print >>pFile,ptstr
     
+    def PrintBabinet(hapData):
+        print >>pFile,'\n Babinet form factor modification: '
+        ptlbls = ' names :'
+        ptstr =  ' values:'
+        varstr = ' refine:'
+        for name in ['BabA','BabU']:
+            ptlbls += '%12s' % (name)
+            ptstr += '%12.6f' % (hapData[name][0])
+            varstr += '%12s' % (str(hapData[name][1]))
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
+        print >>pFile,varstr
+        
+    
     hapDict = {}
     hapVary = []
     controlDict = {}
@@ -1143,18 +1171,18 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                             hapVary.append(pfx+item)
                 for item in ['Mustrain','Size']:
                     controlDict[pfx+item+'Type'] = hapData[item][0]
-                    hapDict[pfx+item+':mx'] = hapData[item][1][2]
+                    hapDict[pfx+item+';mx'] = hapData[item][1][2]
                     if hapData[item][2][2]:
-                        hapVary.append(pfx+item+':mx')
+                        hapVary.append(pfx+item+';mx')
                     if hapData[item][0] in ['isotropic','uniaxial']:
-                        hapDict[pfx+item+':i'] = hapData[item][1][0]
+                        hapDict[pfx+item+';i'] = hapData[item][1][0]
                         if hapData[item][2][0]:
-                            hapVary.append(pfx+item+':i')
+                            hapVary.append(pfx+item+';i')
                         if hapData[item][0] == 'uniaxial':
                             controlDict[pfx+item+'Axis'] = hapData[item][3]
-                            hapDict[pfx+item+':a'] = hapData[item][1][1]
+                            hapDict[pfx+item+';a'] = hapData[item][1][1]
                             if hapData[item][2][1]:
-                                hapVary.append(pfx+item+':a')
+                                hapVary.append(pfx+item+';a')
                     else:       #generalized for mustrain or ellipsoidal for size
                         Nterms = len(hapData[item][4])
                         if item == 'Mustrain':
@@ -1169,6 +1197,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                             hapDict[pfx+item+sfx] = hapData[item][4][i]
                             if hapData[item][5][i]:
                                 hapVary.append(pfx+item+sfx)
+                for bab in ['BabA','BabU']:
+                    hapDict[pfx+bab] = hapData['Babinet'][bab][0]
+                    if hapData['Babinet'][bab][1]:
+                        hapVary.append(pfx+bab)
                                 
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
@@ -1184,6 +1216,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                     PrintSize(hapData['Size'])
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
+                    PrintBabinet(hapData['Babinet'])
                 HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
                 refList = []
                 for h,k,l,d in HKLd:
@@ -1209,6 +1242,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                 hapDict[pfx+'Scale'] = hapData['Scale'][0]
                 if hapData['Scale'][1]:
                     hapVary.append(pfx+'Scale')
+                                
                 extApprox,extType,extParms = hapData['Extinction']
                 controlDict[pfx+'EType'] = extType
                 controlDict[pfx+'EApprox'] = extApprox
@@ -1224,6 +1258,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                     hapDict[pfx+eKey] = extParms[eKey][0]
                     if extParms[eKey][1]:
                         hapVary.append(pfx+eKey)
+                for bab in ['BabA','BabU']:
+                    hapDict[pfx+bab] = hapData['Babinet'][bab][0]
+                    if hapData['Babinet'][bab][1]:
+                        hapVary.append(pfx+bab)
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
                     print >>pFile,135*'-'
@@ -1233,6 +1271,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                     for eKey in Ekey:
                         text += ' %4s : %10.3g Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
                     print >>pFile,text
+                    PrintBabinet(hapData['Babinet'])
                 Histogram['Reflection Lists'] = phase       
                 
     return hapVary,hapDict,controlDict
@@ -1342,7 +1381,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
             print >>pFile,ptstr
             print >>pFile,sigstr
         
-    def PrintSHPOAndSig(pdx,hapData,POsig):
+    def PrintSHPOAndSig(pfx,hapData,POsig):
         print >>pFile,'\n Spherical harmonics preferred orientation: Order:'+str(hapData[4])
         ptlbls = ' names :'
         ptstr =  ' values:'
@@ -1357,10 +1396,27 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         print >>pFile,ptlbls
         print >>pFile,ptstr
         print >>pFile,sigstr
+        
+    def PrintBabinetAndSig(pfx,hapData,BabSig):
+        print >>pFile,'\n Babinet form factor modification: '
+        ptlbls = ' names :'
+        ptstr =  ' values:'
+        sigstr = ' sig   :'
+        for item in hapData:
+            ptlbls += '%12s'%(item)
+            ptstr += '%12.3f'%(hapData[item][0])
+            if pfx+item in BabSig:
+                sigstr += '%12.3f'%(BabSig[pfx+item])
+            else:
+                sigstr += 12*' ' 
+        print >>pFile,ptlbls
+        print >>pFile,ptstr
+        print >>pFile,sigstr
     
     PhFrExtPOSig = {}
     SizeMuStrSig = {}
     ScalExtSig = {}
+    BabSig = {}
     wtFrSum = {}
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
@@ -1399,22 +1455,22 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                     pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
                     pfx+'HStrain':{}})                  
                 for item in ['Mustrain','Size']:
-                    hapData[item][1][2] = parmDict[pfx+item+':mx']
+                    hapData[item][1][2] = parmDict[pfx+item+';mx']
                     hapData[item][1][2] = min(1.,max(0.1,hapData[item][1][2]))
-                    if pfx+item+':mx' in sigDict:
-                        SizeMuStrSig[pfx+item][0][2] = sigDict[pfx+item+':mx']
+                    if pfx+item+';mx' in sigDict:
+                        SizeMuStrSig[pfx+item][0][2] = sigDict[pfx+item+';mx']
                     if hapData[item][0] in ['isotropic','uniaxial']:                    
-                        hapData[item][1][0] = parmDict[pfx+item+':i']
+                        hapData[item][1][0] = parmDict[pfx+item+';i']
                         if item == 'Size':
                             hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
-                        if pfx+item+':i' in sigDict: 
-                            SizeMuStrSig[pfx+item][0][0] = sigDict[pfx+item+':i']
+                        if pfx+item+';i' in sigDict: 
+                            SizeMuStrSig[pfx+item][0][0] = sigDict[pfx+item+';i']
                         if hapData[item][0] == 'uniaxial':
-                            hapData[item][1][1] = parmDict[pfx+item+':a']
+                            hapData[item][1][1] = parmDict[pfx+item+';a']
                             if item == 'Size':
                                 hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
-                            if pfx+item+':a' in sigDict:
-                                SizeMuStrSig[pfx+item][0][1] = sigDict[pfx+item+':a']
+                            if pfx+item+';a' in sigDict:
+                                SizeMuStrSig[pfx+item][0][1] = sigDict[pfx+item+';a']
                     else:       #generalized for mustrain or ellipsoidal for size
                         Nterms = len(hapData[item][4])
                         for i in range(Nterms):
@@ -1427,6 +1483,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                     hapData['HStrain'][0][i] = parmDict[pfx+name]
                     if pfx+name in sigDict:
                         SizeMuStrSig[pfx+'HStrain'][name] = sigDict[pfx+name]
+                for name in ['BabA','BabU']:
+                    hapData['Babinet'][name][0] = parmDict[pfx+name]
+                    if pfx+name in sigDict:
+                        BabSig[pfx+name] = sigDict[pfx+name]                
                 
             elif 'HKLF' in histogram:
                 for item in ['Scale','Ep','Eg','Es']:
@@ -1434,6 +1494,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                         hapData[item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict:
                             ScalExtSig[pfx+item] = sigDict[pfx+item]
+                for name in ['BabA','BabU']:
+                    hapData['Babinet'][name][0] = parmDict[pfx+name]
+                    if pfx+name in sigDict:
+                        BabSig[pfx+name] = sigDict[pfx+name]                
 
     if Print:
         for phase in Phases:
@@ -1473,6 +1537,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                     PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
                     PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
+                    PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     
                 elif 'HKLF' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
@@ -1480,6 +1545,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                     print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
                     if 'Scale' in ScalExtSig:
                         print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale'])
+                    PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
 
 # fix after it runs!                
 #                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
@@ -1970,6 +2036,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     '''        
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
+    phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
     FFtables = calcControls['FFtables']
@@ -1988,6 +2055,8 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         fbs = np.array([0,0])
         H = refl[:3]
         SQ = 1./(2.*refl[4])**2
+        SQfactor = 4.0*SQ*twopisq
+        Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
         if not len(refl[-1]):                #no form factors
             if 'N' in parmDict[hfx+'Type']:
                 refl[-1] = getBLvalues(BLtables)
@@ -1995,7 +2064,6 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
                 refl[-1] = getFFvalues(FFtables,SQ)
         for i,El in enumerate(Tdata):
             FF[i] = refl[-1][El]           
-        SQfactor = 4.0*SQ*twopisq
         Uniq = refl[11]
         phi = refl[12]
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+phi[:,np.newaxis])
@@ -2007,10 +2075,10 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij
-        fa = np.array([(FF+FP)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
+        fa = np.array([(FF+FP-Bab)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
         fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
         if not SGData['SGInv']:
-            fb = np.array([(FF+FP)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
+            fb = np.array([(FF+FP-Bab)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
             fbs = np.sum(np.sum(fb,axis=1),axis=1)
         fasq = fas**2
         fbsq = fbs**2        #imaginary
@@ -2021,6 +2089,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
 def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
+    phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
     FFtables = calcControls['FFtables']
@@ -2041,12 +2110,15 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdx = np.zeros((len(refList),len(Mdata),3))
     dFdui = np.zeros((len(refList),len(Mdata)))
     dFdua = np.zeros((len(refList),len(Mdata),6))
+    dFdbab = np.zeros((len(refList),2))
     for iref,refl in enumerate(refList):
         H = np.array(refl[:3])
         SQ = 1./(2.*refl[4])**2             # or (sin(theta)/lambda)**2
+        SQfactor = 8.0*SQ*np.pi**2
+        dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
+        Bab = parmDict[phfx+'BabA']*dBabdA
         for i,El in enumerate(Tdata):            
             FF[i] = refl[-1][El]           
-        SQfactor = 8.0*SQ*np.pi**2
         Uniq = refl[11]
         phi = refl[12]
         phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+phi[np.newaxis,:])
@@ -2060,7 +2132,7 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([G2lat.UijtoU6(Uij) for Uij in Hij])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij
-        fot = (FF+FP)*occ*Tcorr
+        fot = (FF+FP-Bab)*occ*Tcorr
         fotp = FPP*occ*Tcorr
         fa = np.array([fot[:,np.newaxis]*cosp,fotp[:,np.newaxis]*cosp])       #non positions
         fb = np.array([fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])
@@ -2074,20 +2146,24 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         dfadx = np.sum(twopi*Uniq*fax[:,:,:,np.newaxis],axis=2)
         dfadui = np.sum(-SQfactor*fa,axis=2)
         dfadua = np.sum(-Hij*fa[:,:,:,np.newaxis],axis=2)
+        dfadba = np.sum(-cosp*(occ*Tcorr)[:,np.newaxis],axis=1)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for      
         dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)
         dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])
         dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
         dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
+        dFdbab[iref] = np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #problem here if occ=0 for some atom
             dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)          
             dfbdui = np.sum(-SQfactor*fb,axis=2)
             dfbdua = np.sum(-Hij*fb[:,:,:,np.newaxis],axis=2)
+            dfbdba = np.sum(-sinp*(occ*Tcorr)[:,np.newaxis],axis=1)
             dFdfr[iref] += 2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(Uniq)
             dFdx[iref] += 2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
             dFdui[iref] += 2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
             dFdua[iref] += 2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
+            dFdbab[iref] += np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):     
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -2101,6 +2177,8 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
         dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'BabA'] = dFdbab.T[0]
+        dFdvDict[pfx+'BabU'] = dFdbab.T[1]
     return dFdvDict
         
 def Dict2Values(parmdict, varylist):
@@ -2315,13 +2393,13 @@ def GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict):
     costh = cosd(refl[5]/2.)
     #crystallite size
     if calcControls[phfx+'SizeType'] == 'isotropic':
-        Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size:i']*costh)
+        Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size;i']*costh)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        Sgam = (1.8*wave/np.pi)/(parmDict[phfx+'Size:i']*parmDict[phfx+'Size:a']*costh)
-        Sgam *= np.sqrt((sinP*parmDict[phfx+'Size:a'])**2+(cosP*parmDict[phfx+'Size:i'])**2)
+        Sgam = (1.8*wave/np.pi)/(parmDict[phfx+'Size;i']*parmDict[phfx+'Size;a']*costh)
+        Sgam *= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
     else:           #ellipsoidal crystallites
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
         H = np.array(refl[:3])
@@ -2329,13 +2407,13 @@ def GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict):
         Sgam = 1.8*wave/(np.pi*costh*lenR)
     #microstrain                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
-        Mgam = 0.018*parmDict[phfx+'Mustrain:i']*tand(refl[5]/2.)/np.pi
+        Mgam = 0.018*parmDict[phfx+'Mustrain;i']*tand(refl[5]/2.)/np.pi
     elif calcControls[phfx+'MustrainType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'MustrainAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        Si = parmDict[phfx+'Mustrain:i']
-        Sa = parmDict[phfx+'Mustrain:a']
+        Si = parmDict[phfx+'Mustrain;i']
+        Sa = parmDict[phfx+'Mustrain;a']
         Mgam = 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
     else:       #generalized - P.W. Stephens model
         pwrs = calcControls[phfx+'MuPwrs']
@@ -2343,8 +2421,8 @@ def GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict):
         for i,pwr in enumerate(pwrs):
             sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
         Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*sum
-    gam = Sgam*parmDict[phfx+'Size:mx']+Mgam*parmDict[phfx+'Mustrain:mx']
-    sig = (Sgam*(1.-parmDict[phfx+'Size:mx']))**2+(Mgam*(1.-parmDict[phfx+'Mustrain:mx']))**2
+    gam = Sgam*parmDict[phfx+'Size;mx']+Mgam*parmDict[phfx+'Mustrain;mx']
+    sig = (Sgam*(1.-parmDict[phfx+'Size;mx']))**2+(Mgam*(1.-parmDict[phfx+'Mustrain;mx']))**2
     sig /= ateln2
     return sig,gam
         
@@ -2355,25 +2433,25 @@ def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
     tanth = tand(refl[5]/2.)
     #crystallite size derivatives
     if calcControls[phfx+'SizeType'] == 'isotropic':
-        Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size:i']*costh)
-        gamDict[phfx+'Size:i'] = -900.*wave*parmDict[phfx+'Size:mx']/(np.pi*costh)
-        sigDict[phfx+'Size:i'] = -1800.*Sgam*wave*(1.-parmDict[phfx+'Size:mx'])**2/(np.pi*costh*ateln2)
+        Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size;i']*costh)
+        gamDict[phfx+'Size;i'] = -900.*wave*parmDict[phfx+'Size;mx']/(np.pi*costh)
+        sigDict[phfx+'Size;i'] = -1800.*Sgam*wave*(1.-parmDict[phfx+'Size;mx'])**2/(np.pi*costh*ateln2)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        Si = parmDict[phfx+'Size:i']
-        Sa = parmDict[phfx+'Size:a']
+        Si = parmDict[phfx+'Size;i']
+        Sa = parmDict[phfx+'Size;a']
         gami = (1.8*wave/np.pi)/(Si*Sa)
         sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
         Sgam = gami*sqtrm
         gam = Sgam/costh
         dsi = (gami*Si*cosP**2/(sqtrm*costh)-gam/Si)
         dsa = (gami*Sa*sinP**2/(sqtrm*costh)-gam/Sa)
-        gamDict[phfx+'Size:i'] = dsi*parmDict[phfx+'Size:mx']
-        gamDict[phfx+'Size:a'] = dsa*parmDict[phfx+'Size:mx']
-        sigDict[phfx+'Size:i'] = 2.*dsi*Sgam*(1.-parmDict[phfx+'Size:mx'])**2/ateln2
-        sigDict[phfx+'Size:a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size:mx'])**2/ateln2
+        gamDict[phfx+'Size;i'] = dsi*parmDict[phfx+'Size;mx']
+        gamDict[phfx+'Size;a'] = dsa*parmDict[phfx+'Size;mx']
+        sigDict[phfx+'Size;i'] = 2.*dsi*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
+        sigDict[phfx+'Size;a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
     else:           #ellipsoidal crystallites
         const = 1.8*wave/(np.pi*costh)
         Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
@@ -2381,31 +2459,31 @@ def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
         lenR,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
         Sgam = 1.8*wave/(np.pi*costh*lenR)
         for i,item in enumerate([phfx+'Size:%d'%(j) for j in range(6)]):
-            gamDict[item] = -(const/lenR**2)*dRdS[i]*parmDict[phfx+'Size:mx']
-            sigDict[item] = -2.*Sgam*(const/lenR**2)*dRdS[i]*(1.-parmDict[phfx+'Size:mx'])**2/ateln2
-    gamDict[phfx+'Size:mx'] = Sgam
-    sigDict[phfx+'Size:mx'] = -2.*Sgam**2*(1.-parmDict[phfx+'Size:mx'])/ateln2
+            gamDict[item] = -(const/lenR**2)*dRdS[i]*parmDict[phfx+'Size;mx']
+            sigDict[item] = -2.*Sgam*(const/lenR**2)*dRdS[i]*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
+    gamDict[phfx+'Size;mx'] = Sgam
+    sigDict[phfx+'Size;mx'] = -2.*Sgam**2*(1.-parmDict[phfx+'Size;mx'])/ateln2
             
     #microstrain derivatives                
     if calcControls[phfx+'MustrainType'] == 'isotropic':
-        Mgam = 0.018*parmDict[phfx+'Mustrain:i']*tand(refl[5]/2.)/np.pi
-        gamDict[phfx+'Mustrain:i'] =  0.018*tanth*parmDict[phfx+'Mustrain:mx']/np.pi
-        sigDict[phfx+'Mustrain:i'] =  0.036*Mgam*tanth*(1.-parmDict[phfx+'Mustrain:mx'])**2/(np.pi*ateln2)        
+        Mgam = 0.018*parmDict[phfx+'Mustrain;i']*tand(refl[5]/2.)/np.pi
+        gamDict[phfx+'Mustrain;i'] =  0.018*tanth*parmDict[phfx+'Mustrain;mx']/np.pi
+        sigDict[phfx+'Mustrain;i'] =  0.036*Mgam*tanth*(1.-parmDict[phfx+'Mustrain;mx'])**2/(np.pi*ateln2)        
     elif calcControls[phfx+'MustrainType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'MustrainAxis'])
         cosP,sinP = G2lat.CosSinAngle(H,P,G)
-        Si = parmDict[phfx+'Mustrain:i']
-        Sa = parmDict[phfx+'Mustrain:a']
+        Si = parmDict[phfx+'Mustrain;i']
+        Sa = parmDict[phfx+'Mustrain;a']
         gami = 0.018*Si*Sa*tanth/np.pi
         sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
         Mgam = gami/sqtrm
         dsi = -gami*Si*cosP**2/sqtrm**3
         dsa = -gami*Sa*sinP**2/sqtrm**3
-        gamDict[phfx+'Mustrain:i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain:mx']
-        gamDict[phfx+'Mustrain:a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain:mx']
-        sigDict[phfx+'Mustrain:i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain:mx'])**2/ateln2
-        sigDict[phfx+'Mustrain:a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain:mx'])**2/ateln2       
+        gamDict[phfx+'Mustrain;i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain;mx']
+        gamDict[phfx+'Mustrain;a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain;mx']
+        sigDict[phfx+'Mustrain;i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
+        sigDict[phfx+'Mustrain;a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
     else:       #generalized - P.W. Stephens model
         pwrs = calcControls[phfx+'MuPwrs']
         const = 0.018*refl[4]**2*tanth
@@ -2413,14 +2491,14 @@ def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
         for i,pwr in enumerate(pwrs):
             term = refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
             sum += parmDict[phfx+'Mustrain:'+str(i)]*term
-            gamDict[phfx+'Mustrain:'+str(i)] = const*term*parmDict[phfx+'Mustrain:mx']
+            gamDict[phfx+'Mustrain:'+str(i)] = const*term*parmDict[phfx+'Mustrain;mx']
             sigDict[phfx+'Mustrain:'+str(i)] = \
-                2.*const*term*(1.-parmDict[phfx+'Mustrain:mx'])**2/ateln2
+                2.*const*term*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
         Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*sum
         for i in range(len(pwrs)):
             sigDict[phfx+'Mustrain:'+str(i)] *= Mgam
-    gamDict[phfx+'Mustrain:mx'] = Mgam
-    sigDict[phfx+'Mustrain:mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain:mx'])/ateln2
+    gamDict[phfx+'Mustrain;mx'] = Mgam
+    sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
     return sigDict,gamDict
         
 def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
@@ -2705,15 +2783,12 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         elif SGData['SGLaue'] in ['mmm',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]]]
         elif SGData['SGLaue'] in ['4/m','4/mmm']:
-#            return [[pfx+'A0',dpdA[0]+dpdA[1]],[pfx+'A2',dpdA[2]]]
             return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
         elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
-#            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[3]],[pfx+'A2',dpdA[2]]]
             return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
         elif SGData['SGLaue'] in ['3R', '3mR']:
             return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]],[pfx+'A3',dpdA[3]+dpdA[4]+dpdA[5]]]                       
         elif SGData['SGLaue'] in ['m3m','m3']:
-#            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]]]
             return [[pfx+'A0',dpdA[0]]]
     # create a list of dependent variables and set up a dictionary to hold their derivatives
     dependentVars = G2mv.GetDependentVars()
@@ -2788,9 +2863,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                 lenBF = iFin-iBeg
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])
-                for i in range(1,5):
+                for i in range(5):
                     dMdpk[i] += 100.*cw[iBeg:iFin]*refl[13]*refl[9]*dMdipk[i]
-                dMdpk[0] += 100.*cw[iBeg:iFin]*refl[13]*refl[9]*dMdipk[0]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':np.zeros_like(dMdpk[0])}
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tanth       # + 360/pi * Dlam/lam * tan(th)
@@ -2800,9 +2874,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         lenBF2 = iFin2-iBeg2
                         dMdpk2 = np.zeros(shape=(6,lenBF2))
                         dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])
-                        for i in range(1,5):
+                        for i in range(5):
                             dMdpk2[i] = 100.*cw[iBeg2:iFin2]*refl[13]*refl[9]*kRatio*dMdipk2[i]
-                        dMdpk2[0] = 100.*cw[iBeg2:iFin2]*refl[13]*refl[9]*kRatio*dMdipk2[0]
                         dMdpk2[5] = 100.*cw[iBeg2:iFin2]*refl[13]*dMdipk2[0]
                         dervDict2 = {'int':dMdpk2[0],'pos':dMdpk2[1],'sig':dMdpk2[2],'gam':dMdpk2[3],'shl':dMdpk2[4],'L1/L2':dMdpk2[5]*refl[9]}
                 if Phase['General'].get('doPawley'):
@@ -2900,7 +2973,15 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
                         depDerivDict[name][iBeg:iFin] += sigDict[name]*dervDict['sig']
                         if Ka2:
                             depDerivDict[name][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
-                                               
+                for name in ['BabA','BabU']:
+                    if phfx+name in varylist:
+                        dMdv[varylist.index(phfx+name)][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']*cw[iBeg:iFin]
+                        if Ka2:
+                            dMdv[varylist.index(phfx+name)][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']*cw[iBeg2:iFin2]
+                    elif phfx+name in dependentVars:                    
+                        depDerivDict[phfx+name][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']*cw[iBeg:iFin]
+                        if Ka2:
+                            depDerivDict[phfx+name][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']*cw[iBeg2:iFin2]                  
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet

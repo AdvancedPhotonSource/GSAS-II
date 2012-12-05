@@ -13,6 +13,7 @@ import time
 import cPickle
 import sys
 import numpy as np
+import numpy.ma as ma
 import os.path
 import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
@@ -20,11 +21,13 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth
 import GSASIIIO as G2IO
+import GSASIIlattice as G2lat
 import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
 import GSASIIstruct as G2str
+import GSASIIspc as G2spc
 import GSASIImapvars as G2mv
 
 # globals we will use later
@@ -1384,12 +1387,19 @@ def UpdateConstraints(G2frame,data):
             phaseList.append(item)
     phaseList.sort()
     phaseAtNames = {}
+    phaseAtTypes = {}
+    TypeList = []
     for item in phaseList:
         Split = item.split(':')
         if Split[2][:2] in ['AU','Af','dA']:
-            phaseAtNames[item] = AtomDict[int(Split[0])][int(Split[3])][0]
+            Id = int(Split[0])
+            phaseAtNames[item] = AtomDict[Id][int(Split[3])][0]
+            phaseAtTypes[item] = AtomDict[Id][int(Split[3])][1]
+            if phaseAtTypes[item] not in TypeList:
+                TypeList.append(phaseAtTypes[item])
         else:
             phaseAtNames[item] = ''
+            phaseAtTypes[item] = ''
             
     hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
     hapList = hapDict.keys()
@@ -1451,6 +1461,8 @@ def UpdateConstraints(G2frame,data):
         #future -  add 'all:all:name', '0:all:name', etc. to the varList
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in varList]
+            atchoice += [FrstVarb+' for all']
+            atchoice += [FrstVarb+' for all '+atype for atype in TypeList]
             dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,
                 'Constrain '+FrstVarb+' and...',atchoice)
         else:
@@ -1459,8 +1471,22 @@ def UpdateConstraints(G2frame,data):
         varbs = [FrstVarb,]
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
-            for x in sel:
-                varbs.append(varList[x])
+            try:
+                for x in sel:
+                    varbs.append(varList[x])
+            except IndexError:      # one of the 'all' chosen - supercedes any individual selection
+                varbs = [FrstVarb,]
+                Atypes = []
+                for x in sel:
+                    item = atchoice[x]
+                    if 'all' in item:
+                        Atypes.append(item.split('all')[1].strip())
+                if '' in Atypes:
+                    varbs += varList
+                else:
+                    for item in varList:
+                        if phaseAtTypes[item] in Atypes:
+                            varbs.append(item)  
         dlg.Destroy()
         if len(varbs) > 1:
             if 'equivalence' in constType:
@@ -1875,6 +1901,22 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         restrData['Plane'] = {'wtFactor':1.0,'Planes':[],'Use':True}
     if 'Chiral' not in restrData:
         restrData['Chiral'] = {'wtFactor':1.0,'Volumes':[],'Use':True}
+    General = phasedata['General']
+    Cell = General['Cell'][1:7]          #skip flag & volume    
+    Amat,Bmat = G2lat.cell2AB(Cell)
+    SGData = General['SGData']
+    cx,ct = General['AtomPtrs'][:2]
+    Atoms = phasedata['Atoms']
+    AtLookUp = G2mth.FillAtomLookUp(Atoms)
+    Names = ['all '+ name for name in General['AtomTypes']]
+    iBeg = len(Names)
+    Types = [name for name in General['AtomTypes']]
+    Coords = [ [] for type in Types]
+    Ids = [ 0 for type in Types]
+    Names += [atom[ct-1] for atom in Atoms]
+    Types += [atom[ct] for atom in Atoms]
+    Coords += [atom[cx:cx+3] for atom in Atoms]
+    Ids += [atom[-1] for atom in Atoms]
     
     def OnSelectPhase(event):
         dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',Phases.keys())
@@ -1888,36 +1930,121 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     def OnAddRestraint(event):
         page = G2frame.dataDisplay.GetSelection()
         if 'Bond' in G2frame.dataDisplay.GetPageText(page):
-            AddBondRestraint()
+            bondRestData = restrData['Bond']
+            AddBondRestraint(bondRestData)
         elif 'Angle' in G2frame.dataDisplay.GetPageText(page):
-            AddAngleRestraint()
+            angleRestData = restrData['Angle']
+            AddAngleRestraint(angleRestData)
         elif 'Plane' in G2frame.dataDisplay.GetPageText(page):
             AddPlaneRestraint()
         elif 'Chiral' in G2frame.dataDisplay.GetPageText(page):
             AddChiralRestraint()
             
-    def AddBondRestraint():
-        General = phasedata['General']
-        cx,ct = General['AtomPtrs'][:2]
-        Atoms = phasedata['Atoms']
-        radiiDict = dict(zip(General['AtomTypes'],General['BondRadii']))
-        Names = ['all '+ name for name in General['AtomTypes']]
-        Types = [name for name in General['AtomTypes']]
-        Names += [atom[ct-1] for atom in Atoms]
-        Types += [atom[ct] for atom in Atoms]
+    def AddBondRestraint(bondRestData):
+        Radii = dict(zip(General['AtomTypes'],General['BondRadii']))
         Lists = {'origin':[],'target':[]}
         for listName in ['origin','target']:
-            dlg = wx.MultiChoiceDialog(G2frame,'Bond restraint'+listName+' for '+General['Name'],
+            dlg = wx.MultiChoiceDialog(G2frame,'Bond restraint '+listName+' for '+General['Name'],
                     'Select bond restraint '+listName+' atoms',Names)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
                 for x in sel:
-                    Lists[listName].append([Names[x],Types[x]])
-        SGData = General['SGData']
-        Bonds = restrData['Bond']['Bonds']
+                    if 'all' in Names[x]:
+                        allType = Types[x]
+                        for name,Type,coords,id in zip(Names,Types,Coords,Ids):
+                            if Type == allType and 'all' not in name:
+                                Lists[listName].append([id,Type,coords])
+                    else:
+                        Lists[listName].append([Ids[x],Types[x],Coords[x],])
+        Factor = .85
+        indices = (-1,0,1)
+        Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+        origAtoms = Lists['origin']
+        targAtoms = Lists['target']
+        for Oid,Otype,Ocoord in origAtoms:
+            for Tid,Ttype,Tcoord in targAtoms:
+                result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
+                BsumR = (Radii[Otype]+Radii[Ttype])*Factor
+                for Txyz,Top,Tunit in result:
+                    Dx = (Txyz-np.array(Ocoord))+Units
+                    dx = np.inner(Amat,Dx)
+                    dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+                    IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
+                    if np.any(IndB):
+                        for indb in IndB:
+                            for i in range(len(indb)):
+                                unit = Units[indb][i]+Tunit
+                                if np.any(unit):
+                                    Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
+                                else:
+                                    Topstr = str(Top)
+                                bondRestData['Bonds'].append([[Oid,Tid],['1',Topstr], \
+                                    ma.getdata(dist[indb])[i],1.54,0.01])
+        UpdateBondRestr(bondRestData)                
 
-    def AddAngleRestraint():
-        print 'Angle restraint'
+    def AddAngleRestraint(angleRestData):
+        Radii = dict(zip(General['AtomTypes'],General['AngleRadii']))
+        origAtoms = []
+        targAtoms = [[Ids[x],Types[x],Coords[x]] for x in enumerate(Names[iBeg:])]
+        dlg = wx.MultiChoiceDialog(G2frame,'Select atom B for angle A-B-C for '+General['Name'],
+                'Select angle restraint origin atoms',Names)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            for x in sel:
+                if 'all' in Names[x]:
+                    allType = Types[x]
+                    for name,Type,coords,id in zip(Names,Types,Coords,Ids):
+                        if Type == allType and 'all' not in name:
+                            origAtoms.append([id,Type,coords])
+                else:
+                    origAtoms.append([Ids[x],Types[x],Coords[x]])
+
+        Factor = .85
+        indices = (-1,0,1)
+        Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+        for Oid,Otype,Ocoord in origAtoms:
+            IndBlist = []
+            Dist = []
+            Vect = []
+            VectA = []
+            angles = []
+            for Tid,Ttype,Tcoord in targAtoms:
+                result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
+                BsumR = (Radii[Otype]+Radii[Ttype])*Factor
+                AsumR = (Radii[Otype]+Radii[Ttype])*Factor
+                for Txyz,Top,Tunit in result:
+                    Dx = (Txyz-np.array(Ocoord))+Units
+                    dx = np.inner(Amat,Dx)
+                    dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+                    IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
+                    if np.any(IndB):
+                        for indb in IndB:
+                            for i in range(len(indb)):
+                                if str(dx.T[indb][i]) not in IndBlist:
+                                    IndBlist.append(str(dx.T[indb][i]))
+                                    unit = Units[indb][i]+Tunit
+                                if np.any(unit):
+                                    Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
+                                else:
+                                    Topstr = str(Top)
+                                    tunit = '[%2d%2d%2d]'%(unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
+                                    Dist.append([Oatom[1],Tatom[1],tunit,Top,ma.getdata(dist[indb])[i],sig])
+                                    if (Dist[-1][-1]-AsumR) <= 0.:
+                                        Vect.append(dx.T[indb][i]/Dist[-1][-2])
+                                        VectA.append([OxyzNames,np.array(Oatom[3:6]),TxyzNames,np.array(Tatom[3:6]),unit,Top])
+                                    else:
+                                        Vect.append([0.,0.,0.])
+                                        VectA.append([])
+            Vect = np.array(Vect)
+            angles = np.zeros((len(Vect),len(Vect)))
+            angsig = np.zeros((len(Vect),len(Vect)))
+            for i,veca in enumerate(Vect):
+                if np.any(veca):
+                    for j,vecb in enumerate(Vect):
+                        if np.any(vecb):
+                            angles[i][j] = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData)[0]
+
+
 
     def AddPlaneRestraint():
         print 'Plane restraint'
@@ -2009,12 +2136,15 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         mainSizer.Add(WtBox(BondRestr,bondRestData),0,wx.ALIGN_CENTER_VERTICAL)
 
         bondList = bondRestData['Bonds']
+        if len(bondList[0]) == 6:   #patch
+            bondList = bondRestData['Bonds'] = []
         if len(bondList):
             table = []
             rowLabels = []
             colLabels = ['A+SymOp  B+SymOp','d-calc','d-obs','esd']
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,3',]
-            for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(bondList):
+            for i,[indx,ops,dcalc,dobs,esd] in enumerate(bondList):
+                atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
                 table.append([atoms[0]+'+ ('+ops[0]+')  '+atoms[1]+'+ ('+ops[1]+')',dcalc,dobs,esd])
                 rowLabels.append(str(i))
             bondTable = Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
@@ -2103,7 +2233,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             rowLabels = []
             colLabels = ['A+SymOp  B+SymOp  C+SymOp','calc','obs','esd']
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
-            for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(angleList):
+            for i,[indx,ops,dcalc,dobs,esd] in enumerate(angleList):
+                atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
                 table.append([atoms[0]+'+ ('+ops[0]+')  '+atoms[1]+'+ ('+ops[1]+')  '+atoms[2]+ \
                 '+ ('+ops[2]+')',dcalc,dobs,esd])
                 rowLabels.append(str(i))
@@ -2159,7 +2290,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             rowLabels = []
             colLabels = ['atom+SymOp','calc','obs','esd']
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
-            for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(planeList):
+            for i,[indx,ops,dcalc,dobs,esd] in enumerate(planeList):
+                atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
                 atString = ''
                 for a,atom in enumerate(atoms):
                     atString += atom+'+ ('+ops[a]+'),'
@@ -2212,7 +2344,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             rowLabels = []
             colLabels = ['O+SymOp  A+SymOp  B+SymOp  C+SymOp','calc','obs','esd']
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
-            for i,[atoms,ops,indx,dcalc,dobs,esd] in enumerate(volumeList):
+            for i,[indx,ops,dcalc,dobs,esd] in enumerate(volumeList):
+                atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
                 table.append([atoms[0]+'+ ('+ops[0]+') '+atoms[1]+'+ ('+ops[1]+') '+atoms[2]+ \
                 '+ ('+ops[2]+') '+atoms[3]+'+ ('+ops[3]+')',dcalc,dobs,esd])
                 rowLabels.append(str(i))

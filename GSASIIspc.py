@@ -987,9 +987,9 @@ spglist = {
         'P 43 3 2','P 41 3 2','P -4 3 m','P -4 3 n','P m 3 m','P n 3 n',
         'P m 3 n','P n 3 m',),
     'Im3m':('I 2 3','I 21 3','I m -3','I a -3', 'I 4 3 2','I 41 3 2',
-        'I -4 3 m', 'I -4 3 d','I m -3 m','I a -3 d',),
+        'I -4 3 m', 'I -4 3 d','I m -3 m','I m 3 m','I a -3 d',),
     'Fm3m':('F 2 3','F m -3','F d -3','F 4 3 2','F 41 3 2','F -4 3 m',
-        'F -4 3 c','F m -3 m','F m -3 c','F d -3 m','F d -3 c',),
+        'F -4 3 c','F m -3 m','F m 3 m','F m -3 c','F d -3 m','F d -3 c',),
 }
 'A few non-standard space groups for test use'
 nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h', 

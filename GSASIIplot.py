@@ -797,6 +797,7 @@ def PlotPatterns(G2frame,newPlot=False):
                     Plot.axvline(hkl[5],color='r',dashes=(5,5))
         elif G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists'] or \
             'PWDR' in G2frame.PatternTree.GetItemText(PickId):
+            refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
                 peaks = Phases[phase]
@@ -805,9 +806,9 @@ def PlotPatterns(G2frame,newPlot=False):
                 peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = G2frame.refOffset-pId*Ymax*G2frame.refDelt*np.ones_like(peak)
                 if G2frame.qPlot:
-                    Plot.plot(2*np.pi/peak.T[0],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
                 else:
-                    Plot.plot(peak.T[1],pos,colors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Plot.plot(peak.T[1],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
             if len(Phases):
                 handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
                 if handles:

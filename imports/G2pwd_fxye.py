@@ -31,7 +31,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             self.GSAS = True
             if i==0: # first line is always a comment
                 continue
-            if i==1 and line[:4].lower() == 'inst' and ':' in line:
+#            if i==1 and line[:4].lower() == 'inst' and ':' in line:
+            if i==1 and line[:4].lower() == 'inst':
                 # 2nd line is optional instrument parameter file
                 continue
             if line[0] == '#': continue

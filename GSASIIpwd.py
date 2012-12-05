@@ -521,6 +521,9 @@ def getBackground(pfx,parmDict,bakType,xdata):
             yb[iBeg:iFin] += pkI*getFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
             iD += 1       
         except KeyError:
+            break
+        except ValueError:
+            print '**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****'
             break        
     return yb
     
@@ -615,6 +618,9 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
             iD += 1       
         except KeyError:
             break
+        except ValueError:
+            print '**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****'
+            break        
     return dydb,dyddb,dydpk
 
 #use old fortran routine

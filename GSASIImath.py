@@ -154,6 +154,36 @@ def getVCov(varyNames,varyList,covMatrix):
                 vcov[i1][i2] = 0.0
     return vcov
 
+def FindAtomIndexByIDs(atomData,IDs,Draw=True):
+    indx = []
+    for i,atom in enumerate(atomData):
+        if Draw and atom[-3] in IDs:
+            indx.append(i)
+        elif atom[-1] in IDs:
+            indx.append(i)
+    return indx
+
+def FillAtomLookUp(atomData):
+    atomLookUp = {}
+    for iatm,atom in enumerate(atomData):
+        atomLookUp[atom[-1]] = iatm
+    return atomLookUp
+
+def GetAtomsById(atomData,atomLookUp,IdList):
+    atoms = []
+    for id in IdList:
+        atoms.append(atomData[atomLookUp[id]])
+    return atoms
+    
+def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
+    Items = []
+    for id in IdList:
+        if numItems == 1:
+            Items.append(atomData[atomLookUp[id]][itemLoc])
+        else:
+            Items.append(atomData[atomLookUp[id]][itemLoc:itemLoc+numItems])
+    return Items
+        
 def getMass(generalData):
     mass = 0.
     for i,elem in enumerate(generalData['AtomTypes']):

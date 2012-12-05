@@ -1440,15 +1440,22 @@ def UpdateConstraints(G2frame,data):
         
     def FindEquivVarb(name,nameList):
         outList = []
-        namelist = [name.split(':')[2],]
+        phlist = []
+        items = name.split(':')
+        namelist = [items[2],]
         if 'dA' in name:
             namelist = ['dAx','dAy','dAz']
         elif 'AU' in name:
             namelist = ['AUiso','AU11','AU22','AU33','AU12','AU13','AU23']
         for item in nameList:
-            key = item.split(':')[2]
-            if key in namelist and item != name:
+            keys = item.split(':')
+            if keys[0] not in phlist:
+                phlist.append(keys[0])
+            if keys[2] in namelist and item != name:
                 outList.append(item)
+        if items[1]:
+            for key in phlist:
+                outList.append(key+':all:'+items[2])
         return outList
         
     def SelectVarbs(page,FrstVarb,varList,legend,constType):
@@ -1473,7 +1480,15 @@ def UpdateConstraints(G2frame,data):
             sel = dlg.GetSelections()
             try:
                 for x in sel:
-                    varbs.append(varList[x])
+                    if ':all:' in varList[x]:       #a histogram 'all' - supercedes any individual selection
+                        varbs = [FrstVarb,]
+                        items = varList[x].split(':')
+                        for item in varList:
+                            if items[0] == item.split(':')[0]:
+                                varbs.append(item)
+                        break
+                    else:
+                        varbs.append(varList[x])
             except IndexError:      # one of the 'all' chosen - supercedes any individual selection
                 varbs = [FrstVarb,]
                 Atypes = []

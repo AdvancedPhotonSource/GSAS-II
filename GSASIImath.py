@@ -177,6 +177,8 @@ def GetAtomsById(atomData,atomLookUp,IdList):
     
 def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
     Items = []
+    if not isinstance(IdList,list):
+        IdList = [IdList,]
     for id in IdList:
         if numItems == 1:
             Items.append(atomData[atomLookUp[id]][itemLoc])

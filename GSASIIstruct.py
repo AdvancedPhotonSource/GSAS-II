@@ -3679,7 +3679,7 @@ def DistAngle(DisAglCtls,DisAglData):
                                 if len(Xvcov):
                                     sig = np.sqrt(np.inner(pdpx,np.inner(Xvcov,pdpx)))
                                 Dist.append([Oatom[1],Tatom[1],tunit,Top,ma.getdata(dist[indb])[i],sig])
-                                if (Dist[-1][-1]-AsumR) <= 0.:
+                                if (Dist[-1][-2]-AsumR) <= 0.:
                                     Vect.append(dx.T[indb][i]/Dist[-1][-2])
                                     VectA.append([OxyzNames,np.array(Oatom[3:6]),TxyzNames,np.array(Tatom[3:6]),unit,Top])
                                 else:

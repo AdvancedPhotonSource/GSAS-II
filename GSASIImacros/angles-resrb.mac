@@ -1,0 +1,7 @@
+!standard angle restraints for amino acids using flexible rigid bodies - Engh & Huber
+F 1.5
+S * 116.20 2.00 CA C N+
+S * 123.00 1.60 O C N+
+S * 121.70 1.80 C N+ CA+
+S PRO 104.53 2.00 CA CB CG
+S PRO 106.07 2.00 CB CG CD

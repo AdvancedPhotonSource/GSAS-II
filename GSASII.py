@@ -287,12 +287,8 @@ class GSASII(wx.Frame):
             mode = style=wx.OPEN | wx.CHANGE_DIR | wx.MULTIPLE
         else:
             mode = style=wx.OPEN | wx.CHANGE_DIR
-        dlg = wx.FileDialog(
-            self, message="Choose "+label+" input file",
-            #defaultDir=os.getcwd(), 
-            defaultFile="",
-            wildcard=choices, style=mode
-            )
+        dlg = wx.FileDialog(self, message="Choose "+label+" input file",
+            defaultFile="",wildcard=choices, style=mode)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 if multiple:

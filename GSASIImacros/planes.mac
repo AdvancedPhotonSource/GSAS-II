@@ -1,0 +1,24 @@
+!standard plane restraints for amino acids using flexible rigid bodies
+F 0.5
+S ARG .01 NE CZ NH1 NH2
+
+S ARG .01 CD NE CZ NH1 NH2
+
+S ASN .01 CB CG OD1 ND2
+
+S ASP .01 CB CG OD1 OD2
+
+S GLN .01 CG CD OE1 NE2
+
+S GLU .01 CG CD OE1 OE2
+
+S HIS .01 CB CG ND1 CD2 CE1 NE2
+
+S PHE .01 CB CG CD1 CD2 CE1 CE2 CZ
+
+S TRP .01 CB CG CD1 NE1 CD2 CE2 CE3 CZ2 CZ3 CH2
+
+S TYR .01 CB CG CD1 CD2 CE1 CE2 CZ OH
+
+S * .01 CA C O N+
+

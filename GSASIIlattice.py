@@ -640,9 +640,10 @@ def GenHLaue(dmin,SGData,A):
                 for h in range(hmin,Hmax[0]+1):
                     H = []
                     if CentCheck(SGLatt,[h,k,l]): H=[h,k,l]
-                    rdsq = calc_rDsq(H,A)
-                    if 0 < rdsq <= dminsq:
-                        HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                    if H:
+                        rdsq = calc_rDsq(H,A)
+                        if 0 < rdsq <= dminsq:
+                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
     elif SGLaue == '2/m':                #monoclinic
         axisnum = 1 + ['a','b','c'].index(SGUniq)
         Hmax = SwapIndx(axisnum,Hmax)

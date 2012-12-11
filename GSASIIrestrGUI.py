@@ -192,40 +192,35 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if not macro:
             return
         macStr = macro.readline()
-        atoms = zip(Names,Types,Coords,Ids)
+        atoms = zip(Names,Coords,Ids)
         
-        Factor = .85
+        Factor = .90
         while macStr:
             items = macStr.split()
             if 'F' in items[0]:
                 restrData['Bond']['wtFactor'] = float(items[1])
             elif 'S' in items[0]:
                 oIds = []
-                oTypes = []
                 oCoords = []
                 tIds = []
-                tTypes = []
                 tCoords = []
                 res = items[1]
                 dist = float(items[2])
                 esd = float(items[3])
                 oAtm,tAtm = items[4:6]
-                for Name,Type,coords,Id in atoms:
+                for Name,coords,Id in atoms:
                     names = Name.split()
                     if res == '*' or res in names[0]:
                         if oAtm == names[2]:
                             oIds.append(Id)
-                            oTypes.append(Type)
                             oCoords.append(np.array(coords))
                         if tAtm == names[2]:
                             tIds.append(Id)
-                            tTypes.append(Type)
                             tCoords.append(np.array(coords))
-                for oId,oType,oCoord in zip(oIds,oTypes,oCoords):
-                    for tId,tType,tCoord in zip(tIds,tTypes,tCoords):
-                        BsumR = (Radii[oType]+Radii[tType])*Factor
+                for i,[oId,oCoord] in enumerate(zip(oIds,oCoords)):
+                    for tId,tCoord in zip(tIds,tCoords)[i:]:
                         obsd = np.sqrt(np.sum(np.inner(Amat,tCoord-oCoord)**2))
-                        if 0.2 < obsd <= BsumR:
+                        if dist*Factor < obsd < dist/Factor:
                             bondRestData['Bonds'].append([[oId,tId],['1','1'],obsd,dist,esd])                          
             macStr = macro.readline()
         macro.close()

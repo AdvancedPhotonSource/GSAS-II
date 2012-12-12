@@ -484,7 +484,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnPhaseType(event):
                 if not generalData['AtomTypes']:             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
-                    dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
                     wx.CallAfter(UpdateGeneral)
                 else:
                     TypeTxt.SetValue(generalData['Type'])                
@@ -512,7 +511,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for line in text:
                     Text += line+'\n'
                 wx.MessageBox(Text,caption=msg,style=Style)
-                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
+#                dataDisplay.DestroyChildren()           #needed to clear away bad cellSizer, etc.
                 wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)

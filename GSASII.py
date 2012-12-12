@@ -104,11 +104,11 @@ class GSASII(wx.Frame):
     def _Add_FileMenuItems(self, parent):
         item = parent.Append(
             help='Open a gsasii project file (*.gpx)', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Open project...')
+            kind=wx.ITEM_NORMAL,text='&Open project...')
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
         item = parent.Append(
             help='Save project to old file', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Save project')
+            kind=wx.ITEM_NORMAL,text='&Save project')
         self.Bind(wx.EVT_MENU, self.OnFileSave, id=item.GetId())
         item = parent.Append(
             help='Save project to new file', id=wx.ID_ANY,
@@ -116,11 +116,11 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileSaveas, id=item.GetId())
         item = parent.Append(
             help='Close project, saving is optional', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Close project')
+            kind=wx.ITEM_NORMAL,text='&Close project')
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
         item = parent.Append(
             help='Exit from gsasii', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Exit')
+            kind=wx.ITEM_NORMAL,text='&Exit')
         self.Bind(wx.EVT_MENU, self.OnFileExit, id=item.GetId())
         
     def _Add_DataMenuItems(self,parent):
@@ -173,11 +173,11 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=item.GetId())
         
         item = parent.Append(help='View least squares parameters', 
-            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='View LS parms')
+            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='&View LS parms')
         self.Bind(wx.EVT_MENU, self.OnViewLSParms, id=item.GetId())
         
         item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-            text='Refine')
+            text='&Refine')
         self.Refine.append(item)
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
@@ -988,7 +988,7 @@ class GSASII(wx.Frame):
         in the mac, used also for the data item windows as well.
         '''
         File = wx.Menu(title='')
-        menubar.Append(menu=File, title='File')
+        menubar.Append(menu=File, title='&File')
         self._Add_FileMenuItems(File)
         Data = wx.Menu(title='')
         menubar.Append(menu=Data, title='Data')

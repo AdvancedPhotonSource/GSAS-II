@@ -180,8 +180,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                         Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
                                     else:
                                         Topstr = str(Top)
-                                    bondRestData['Bonds'].append([[Oid,Tid],['1',Topstr], \
-                                        ma.getdata(dist[indb])[i],1.54,0.01])
+                                    newBond = [[Oid,Tid],['1',Topstr], \
+                                        ma.getdata(dist[indb])[i],1.54,0.01]
+                                    if newBond not in bondRestData['Bonds']:
+                                        bondRestData['Bonds'].append(newBond)
         finally:
             dlg.Destroy()
         UpdateBondRestr(bondRestData)                
@@ -221,7 +223,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     for tId,tCoord in zip(tIds,tCoords)[i:]:
                         obsd = np.sqrt(np.sum(np.inner(Amat,tCoord-oCoord)**2))
                         if dist*Factor < obsd < dist/Factor:
-                            bondRestData['Bonds'].append([[oId,tId],['1','1'],obsd,dist,esd])                          
+                            newBond = [[oId,tId],['1','1'],obsd,dist,esd]
+                            if newBond not in bondRestData['Bonds']:
+                                bondRestData['Bonds'].append(newBond)                          
             macStr = macro.readline()
         macro.close()
         UpdateBondRestr(bondRestData)                
@@ -249,7 +253,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         VectA = []
         for Oid,Otype,Ocoord in origAtoms:
             IndBlist = []
-            angles = []
             VectB = []
             for Tid,Ttype,Tcoord in targAtoms:
                 result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
@@ -282,8 +285,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         ops = [vecta[4],vecta[1],vectb[4]]
                         XYZ = np.array([vecta[5],vecta[2],vectb[5]])
                         angle = G2mth.getRestAngle(XYZ,Amat)
-                        angles.append([ids,ops,angle,109.5,1.0])
-            angleRestData['Angles'] += angles
+                        if angle not in angleRestData['Angles']:
+                            angleRestData['Angles'].append([ids,ops,angle,109.5,1.0])
         UpdateAngleRestr(angleRestData)                
 
     def AddAAAngleRestraint(angleRestData):
@@ -435,18 +438,34 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         wtBox.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
         return wtBox
         
+    def OnRowSelect(event):
+        r,c =  event.GetRow(),event.GetCol()
+        Obj = event.GetEventObject()
+        if r < 0 and c < 0:
+            if Obj.IsSelection():
+                Obj.ClearSelection()
+            else:
+                for row in range(Bonds.GetNumberRows()):
+                    Obj.SelectRow(row,True)
+        elif c < 0:                   #only row clicks
+            if event.ControlDown():                    
+                if r in Obj.GetSelectedRows():
+                    Obj.DeselectRow(r)
+                else:
+                    Obj.SelectRow(r,True)
+            elif event.ShiftDown():
+                indxs = Obj.GetSelectedRows()
+                Obj.ClearSelection()
+                ibeg = 0
+                if indxs:
+                    ibeg = indxs[-1]
+                for row in range(ibeg,r+1):
+                    Obj.SelectRow(row,True)
+            else:
+                Obj.ClearSelection()
+                Obj.SelectRow(r,True)
+                    
     def UpdateBondRestr(bondRestData):
-        
-        def OnColSort(event):
-            r,c = event.GetRow(),event.GetCol()
-            if r < 0 and c == 0:
-                names = G2mth.sortArray(table,0)
-                bonds = []
-                for name in names:
-                    idx = table.index(name)
-                    bonds.append(bondList[idx])
-                bondRestData['Bonds'] = bonds
-                UpdateBondRestr(bondRestData)                
         
         def OnChangeValue(event):
             rows = Bonds.GetSelectedRows()
@@ -523,7 +542,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Bonds.SetReadOnly(r,c,True)
                     Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnColSort)
+            Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
@@ -625,7 +644,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Angles.SetReadOnly(r,c,True)
                     Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Angles.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnColSort)
+            Angles.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
@@ -714,6 +733,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(3):
                     Planes.SetReadOnly(r,c,True)
                     Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            Planes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
             mainSizer.Add(Planes,0,)
@@ -803,6 +823,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Volumes.SetReadOnly(r,c,True)
                     Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            Volumes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
@@ -865,6 +886,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Torsions.SetReadOnly(r,c,True)
                     Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
             mainSizer.Add(Torsions,0,)
@@ -926,6 +948,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for c in range(2):
                     Ramas.SetReadOnly(r,c,True)
                     Ramas.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            Ramas.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
             mainSizer.Add(Ramas,0,)

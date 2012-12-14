@@ -1,4 +1,3 @@
 !standard plane restraints for amino acids using flexible rigid bodies
 F 0.5
 S * .01 CA C O N+
-

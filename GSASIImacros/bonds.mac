@@ -1,12 +1,15 @@
 !standard bond restraints for amino acids - Engh & Huber
 F 0.3
-S * 1.329 .01 C N              !peptide chain
+!peptide chain
+S * 1.329 .01 C N              
 S * 1.249 .01 C OXT
-S ALA 1.458 .01 N CA             !alanine
+!alanine
+S ALA 1.458 .01 N CA             
 S ALA 1.525 .01 CA C 
 S ALA 1.231 .01 C O
 S ALA 1.521 .01 CA CB
-S ARG 1.458 .01 N CA              !arginine
+!arginine
+S ARG 1.458 .01 N CA              
 S ARG 1.525 .01 CA C
 S ARG 1.231 .01 C O
 S ARG 1.530 .01 CA CB
@@ -16,27 +19,31 @@ S ARG 1.460 .01 CD NE
 S ARG 1.326 .01 NE CZ
 S ARG 1.326 .01 CZ NH1
 S ARG 1.326 .01 CZ NH2
-S ASN 1.458 .01 N CA                !aspargine 
+!aspargine 
+S ASN 1.458 .01 N CA                
 S ASN 1.525 .01 CA C
 S ASN 1.231 .01 C O
 S ASN 1.530 .01 CA CB
 S ASN 1.516 .01 CB CG
 S ASN 1.328 .01 CG ND2
 S ASN 1.231 .01 CG OD1
-S ASP 1.458 .01 N CA              !aspartate
+!aspartate
+S ASP 1.458 .01 N CA              
 S ASP 1.525 .01 CA C
 S ASP 1.231 .01 C O
 S ASP 1.530 .01 CA CB
 S ASP 1.516 .01 CB CG
 S ASP 1.249 .01 CG OD1
 S ASP 1.249 .01 CG OD2
-S CYS 1.458 .01 N CA             !cysteine
+!cystine
+S CYS 1.458 .01 N CA             
 S CYS 1.525 .01 CA C
 S CYS 1.231 .01 C O
 S CYS 1.530 .01 CA CB
 S CYS 1.808 .01 CB SG
 S CYS 2.031 .01 SG SG
-S GLN 1.458 .01 N CA                 !glutamine
+!glutamine
+S GLN 1.458 .01 N CA                 
 S GLN 1.525 .01 CA C
 S GLN 1.231 .01 C O
 S GLN 1.530 .01 CA CB
@@ -44,7 +51,8 @@ S GLN 1.520 .01 CB CG
 S GLN 1.516 .01 CG CD
 S GLN 1.231 .01 CD OE1
 S GLN 1.328 .01 CD NE2
-S GLU 1.458 .01 N CA                 !glutamate
+!glutamate
+S GLU 1.458 .01 N CA                 
 S GLU 1.525 .01 CA C
 S GLU 1.231 .01 C O
 S GLU 1.530 .01 CA CB
@@ -52,10 +60,12 @@ S GLU 1.520 .01 CB CG
 S GLU 1.516 .01 CG CD
 S GLU 1.249 .01 CD OE1
 S GLU 1.249 .01 CD OE2
-S GLY 1.451 .01 N CA               !glycine
+!glycine
+S GLY 1.451 .01 N CA               
 S GLY 1.516 .01 CA C
 S GLY 1.231 .01 O C
-S HIS 1.458 .01 N CA             !histidine
+!histidine
+S HIS 1.458 .01 N CA             
 S HIS 1.525 .01 CA C
 S HIS 1.231 .01 C O
 S HIS 1.530 .01 CA CB
@@ -64,22 +74,25 @@ S HIS 1.378 .01 CG ND1
 S HIS 1.321 .01 ND1 CE1
 S HIS 1.321 .01 CE1 NE2
 S HIS 1.374 .01 CD2 NE2
-S HIS 1.354 .01 CG CD2 
-S ILE 1.458 .01 N CA                  !isoleucine
+S HIS 1.354 .01 CG CD2
+!isoleucine
+S ILE 1.458 .01 N CA                  
 S ILE 1.525 .01 CA C
 S ILE 1.231 .01 C O
 S ILE 1.540 .01 CA CB
 S ILE 1.530 .01 CB CG1
 S ILE 1.521 .01 CB CG2
 S ILE 1.513 .01 CG1 CD1
-S LEU 1.458 .01 N CA                !leucine
+!leucine
+S LEU 1.458 .01 N CA                
 S LEU 1.525 .01 CA C
 S LEU 1.231 .01 C O
 S LEU 1.530 .01 CA CB
 S LEU 1.530 .01 CB CG
 S LEU 1.521 .01 CG CD1
 S LEU 1.521 .01 CG CD2
-S LYS 1.458 .01 N CA                 !lysine
+!lysine
+S LYS 1.458 .01 N CA                 
 S LYS 1.525 .01 CA C
 S LYS 1.231 .01 C O
 S LYS 1.530 .01 CA CB
@@ -87,14 +100,16 @@ S LYS 1.520 .01 CB CG
 S LYS 1.520 .01 CG CD
 S LYS 1.520 .01 CD CE
 S LYS 1.489 .01 CE NZ
-S MET 1.458 .01 N CA               !methionine
+!methionine
+S MET 1.458 .01 N CA               
 S MET 1.525 .01 CA C
 S MET 1.231 .01 C O
 S MET 1.530 .01 CA CB
 S MET 1.520 .01 CB CG
 S MET 1.803 .01 CG SD
 S MET 1.791 .01 SD CE
-S PHE 1.458 .01 N CA               !phenylalanine
+!phenylalanine
+S PHE 1.458 .01 N CA               
 S PHE 1.525 .01 CA C
 S PHE 1.231 .01 C O
 S PHE 1.530 .01 CA CB
@@ -105,25 +120,29 @@ S PHE 1.382 .01 CD1 CE1
 S PHE 1.382 .01 CD2 CE2
 S PHE 1.382 .01 CE1 CZ
 S PHE 1.382 .01 CE2 CZ
-S PRO 1.466 .01 N CA                 !proline
+!proline
+S PRO 1.466 .01 N CA                 
 S PRO 1.525 .01 CA C
 S PRO 1.231 .01 C O
 S PRO 1.473 .01 N CD
 S PRO 1.530 .01 CA CB
 S PRO 1.492 .01 CB CG
 S PRO 1.503 .01 CD CG
-S SER 1.458 .01 N CA              !serine
+!serine
+S SER 1.458 .01 N CA              
 S SER 1.525 .01 CA C
 S SER 1.231 .01 C O
 S SER 1.530 .01 CA CB
 S SER 1.417 .01 CB OG
-S THR 1.458 .01 N CA             !threonine
+!threonine
+S THR 1.458 .01 N CA             
 S THR 1.525 .01 CA C
 S THR 1.231 .01 C O
 S THR 1.540 .01 CA CB
 S THR 1.433 .01 CB OG1
 S THR 1.521 .01 CB CG2
-S TRP 1.458 .01 N CA               !tryptophan
+!tryptophan
+S TRP 1.458 .01 N CA               
 S TRP 1.525 .01 CA C
 S TRP 1.231 .01 C O
 S TRP 1.530 .01 CA CB
@@ -138,7 +157,8 @@ S TRP 1.394 .01 CE2 CZ2
 S TRP 1.382 .01 CE3 CZ3
 S TRP 1.368 .01 CZ2 CH2
 S TRP 1.400 .01 CZ3 CH2
-S TYR 1.458 .01 N CA                   !tyrosine
+!tyrosine
+S TYR 1.458 .01 N CA                   
 S TYR 1.525 .01 CA C
 S TYR 1.231 .01 C O
 S TYR 1.530 .01 CA CB
@@ -150,7 +170,8 @@ S TYR 1.382 .01 CD1 CE1
 S TYR 1.378 .01 CE2 CZ
 S TYR 1.378 .01 CE1 CZ
 S TYR 1.376 .01 CZ OH
-S VAL 1.458 .01 N CA                 !valine
+!valine
+S VAL 1.458 .01 N CA                 
 S VAL 1.525 .01 CA C
 S VAL 1.231 .01 C O
 S VAL 1.540 .01 CA CB

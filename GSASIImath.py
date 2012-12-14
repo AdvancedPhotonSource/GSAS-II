@@ -199,8 +199,41 @@ def getDensity(generalData):
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
     
+def getSyXYZ(XYZ,ops,SGData):
+    XYZout = np.zeros_like(XYZ)
+    for i,[xyz,op] in enumerate(zip(XYZ,ops)):
+        if op == '1':
+            XYZout[i] = xyz
+        else:
+            oprs = op.split('+')
+            unit = [0,0,0]
+            if oprs[1]:
+                unit = np.array(list(eval(oprs[1])))
+            syop =int(oprs[0])
+            inv = syop/abs(syop)
+            syop *= inv
+            cent = syop/100
+            syop %= 100
+            syop -= 1
+            M,T = SGData['SGOps'][syop]
+            XYZout[i] = (np.inner(M,xyz)+T)*inv+SGData['SGCen'][cent]+unit
+    return XYZout
+    
 def getRestDist(XYZ,Amat):
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
+    
+def getRestDeriv(Func,XYZ,Amat):
+    deriv = np.array((3,len(XYZ)))
+    dx = 0.00001
+    for j,xyz in enumerate(XYZ):
+        for i,x in enumerate(xyz):
+            x += dx
+            d1 = Func(XYZ,Amat)
+            x -= 2*dx
+            d2 = Func(XYZ,Amat)
+            x += dx
+            deriv[i][j] = (d1-d2)/(2*dx)
+    return deriv
 
 def getRestAngle(XYZ,Amat):
     
@@ -232,14 +265,39 @@ def getRestPlane(XYZ,Amat):
     Order = np.argsort(Evec)
     return Evec[Order[0]]
     
-def getRestChiral(XYZ,Amat):
-    
+def getRestChiral(XYZ,Amat):    
     VecA = np.empty((3,3))    
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
     VecA[1] = np.inner(XYZ[2]-XYZ[0],Amat)
     VecA[2] = np.inner(XYZ[3]-XYZ[0],Amat)
     return nl.det(VecA)
-        
+    
+def getRestTorsion(XYZ,Amat,Coeff=[]):
+    VecA = np.empty((3,3))
+    VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
+    VecA[1] = np.inner(XYZ[2]-XYZ[1],Amat)
+    VecA[2] = np.inner(XYZ[3]-XYZ[2],Amat)
+    D = nl.det(VecA)
+    Mag = np.sqrt(np.sum(VecA*VecA,axis=1))
+    P12 = np.sum(VecA[0]*VecA[1])/(Mag[0]*Mag[1])
+    P13 = np.sum(VecA[0]*VecA[2])/(Mag[0]*Mag[2])
+    P23 = np.sum(VecA[1]*VecA[2])/(Mag[1]*Mag[2])
+    Ang = 1.0
+    if abs(P12) < 1.0 and abs(P23) < 1.0:
+        Ang = (P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2))
+    TOR = (acosd(Ang)*D/abs(D)+720.)%360.
+    sum = 0.
+    if len(Coeff):
+        cof = np.reshape(Coeff,(3,3)).T
+        delt = TOR-cof[1]
+        delt = np.where(delt<-180.,delt+360.,delt)
+        delt = np.where(delt>180.,delt-360.,delt)
+#        pMax = np.min(cof[0])
+        pMax = cof[0][np.argmin(delt)]
+        term = -cof[2]*delt**2
+        sum = np.sum(cof[0]*np.exp(term/1000.0))-pMax
+    return TOR,sum
+    
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):

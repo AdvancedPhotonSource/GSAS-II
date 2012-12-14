@@ -1738,7 +1738,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Bond'] = bondData
             dist = G2mth.getRestDist(atXYZ,Amat)
-            bondData['Bonds'].append([atIndx,atSymOp,dist,1.54,0.01])
+            bondData['Bonds'].append([atIndx,atSymOp,1.54,0.01])
         elif event.GetId() == G2gd.wxID_DRAWRESTRANGLE and len(indx) == 3:
             try:
                 angleData = restData[PhaseName]['Angle']
@@ -1747,7 +1747,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Angle'] = angleData
             angle = G2mth.getRestAngle(atXYZ,Amat)
-            angleData['Angles'].append([atIndx,atSymOp,angle,109.5,1.0])            
+            angleData['Angles'].append([atIndx,atSymOp,109.5,1.0])            
         elif event.GetId() == G2gd.wxID_DRAWRESTRPLANE and len(indx) > 3:
             try:
                 planeData = restData[PhaseName]['Plane']
@@ -1756,7 +1756,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Plane'] = planeData
             plane = G2mth.getRestPlane(atXYZ,Amat)
-            planeData['Planes'].append([atIndx,atSymOp,plane,0.0,0.01])            
+            planeData['Planes'].append([atIndx,atSymOp,0.0,0.01])            
         elif event.GetId() == G2gd.wxID_DRAWRESTRCHIRAL and len(indx) == 4:
             try:
                 chiralData = restData[PhaseName]['Chiral']
@@ -1765,7 +1765,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 restData[PhaseName] = {}
                 restData[PhaseName]['Chiral'] = chiralData
             volume = G2mth.getRestChiral(atXYZ,Amat)
-            chiralData['Volumes'].append([atIndx,atSymOp,volume,2.5,0.1])            
+            chiralData['Volumes'].append([atIndx,atSymOp,2.5,0.1])            
         else:
             print '**** ERROR wrong number of atoms selected for this restraint'
             return

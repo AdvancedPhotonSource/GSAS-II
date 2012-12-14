@@ -994,7 +994,7 @@ class GSASII(wx.Frame):
         menubar.Append(menu=Data, title='Data')
         self._Add_DataMenuItems(Data)
         Calculate = wx.Menu(title='')        
-        menubar.Append(menu=Calculate, title='Calculate')
+        menubar.Append(menu=Calculate, title='&Calculate')
         self._Add_CalculateMenuItems(Calculate)
         Import = wx.Menu(title='')        
         menubar.Append(menu=Import, title='Import')

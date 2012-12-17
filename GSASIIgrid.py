@@ -448,16 +448,14 @@ class DataFrame(wx.Frame):
         self.PostfillDataMenu()
             
 # Restraints
-        self.RestraintMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.RestraintMenu,helpType='Restraints')
         self.RestraintEdit = wx.Menu(title='')
-        self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
         self.RestraintEdit.Append(id=wxID_RESTSELPHASE, kind=wx.ITEM_NORMAL,text='Select phase',
             help='Select phase')
         self.RestraintEdit.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraints',
             help='Add restraints')
+        self.RestraintEdit.Enable(wxID_RESTRAINTADD,True)    #gets disenabled if macromolecule phase
         self.RestraintEdit.Append(id=wxID_AARESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add residue restraints',
-            help='Add residue based restraints for macromolecules')
+            help='Add residue based restraints for macromolecules from macro file')
         self.RestraintEdit.Enable(wxID_AARESTRAINTADD,False)    #gets enabled if macromolecule phase
         self.RestraintEdit.Append(id=wxID_RESRCHANGEVAL, kind=wx.ITEM_NORMAL,text='Change value',
             help='Change observed value')
@@ -465,6 +463,9 @@ class DataFrame(wx.Frame):
             help='Change esd in observed value')
         self.RestraintEdit.Append(id=wxID_RESTDELETE, kind=wx.ITEM_NORMAL,text='Delete restraints',
             help='Delete selected restraints')
+        self.RestraintMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.RestraintMenu,helpType='Restraints')
+        self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
         self.PostfillDataMenu()
             
 # Sequential results

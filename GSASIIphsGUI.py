@@ -1624,7 +1624,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         defaultDrawing = {'Atoms':[],'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
             'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
-            'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':False,
+            'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],
             'bondList':{},'viewDir':[1,0,0]}
         V0 = np.array([0,0,1])
@@ -3302,6 +3302,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
                         
+        def OnResetSize(event):
+            Obj = event.GetEventObject()
+            Obj.SetValue(False)
+            item,name = Indx[Obj.GetId()]
+            if name == 'isotropic':
+                UseList[item]['Size'][1][0] = 1.0
+            elif name == 'uniaxial':
+                UseList[item]['Size'][1][0] = 1.0
+                UseList[item]['Size'][1][1] = 1.0
+            elif name == 'ellipsoidal':
+                for i in range(3):
+                    UseList[item]['Size'][4][i] = 1.0
+                    UseList[item]['Size'][4][i+3] = 0.0
+            G2plt.PlotSizeStrainPO(G2frame,data)
+            wx.CallAfter(UpdateDData)
+                
         def OnStrainType(event):
             Obj = event.GetEventObject()
             hist = Indx[Obj.GetId()]
@@ -3354,6 +3370,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
             G2plt.PlotSizeStrainPO(G2frame,data)
             
+        def OnResetStrain(event):
+            Obj = event.GetEventObject()
+            Obj.SetValue(False)
+            item,name = Indx[Obj.GetId()]
+            if name == 'isotropic':
+                UseList[item]['Mustrain'][1][0] = 1000.0
+            elif name == 'uniaxial':
+                UseList[item]['Mustrain'][1][0] = 1000.0
+                UseList[item]['Mustrain'][1][1] = 1000.0
+            elif name == 'generalized':
+                nTerm = len(UseList[item]['Mustrain'][4])
+                for i in range(nTerm):
+                    UseList[item]['Mustrain'][4][i] = 0.01
+            wx.CallAfter(UpdateDData)
+            G2plt.PlotSizeStrainPO(G2frame,data)
+                
         def OnHstrainRef(event):
             Obj = event.GetEventObject()
             hist,pid = Indx[Obj.GetId()]
@@ -3520,6 +3552,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             lgmixSizer.Add(lgmixVal,0,wx.ALIGN_CENTER_VERTICAL)
             return lgmixSizer
                         
+        def ResetSizer(name,OnReset):
+            resetSizer = wx.BoxSizer(wx.HORIZONTAL)
+            resetSizer.Add((5,0),0)
+            reset = wx.CheckBox(DData,-1,label='Reset?')
+            reset.thisown = False
+            reset.SetValue(False)
+            Indx[reset.GetId()] = [item,name]
+            reset.Bind(wx.EVT_CHECKBOX,OnReset)
+            resetSizer.Add(reset,0,wx.ALIGN_CENTER_VERTICAL)
+            return resetSizer
+            
         def IsoSizer(name,parm,fmt,OnVal,OnRef):
             isoSizer = wx.BoxSizer(wx.HORIZONTAL)
             sizeRef = wx.CheckBox(DData,-1,label=name)
@@ -3605,7 +3648,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
                 dataSizer.Add(strainVal,0,wx.ALIGN_CENTER_VERTICAL)
             return dataSizer
-            
+
         def HstrainSizer():
             hstrainSizer = wx.FlexGridSizer(1,6,5,5)
             Hsnames = G2spc.HStrainNames(SGData)
@@ -3816,6 +3859,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     isoSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     isoSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
+                    isoSizer.Add(ResetSizer('isotropic',OnResetSize),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(isoSizer)
                     mainSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.3f',
                         OnSizeVal,OnSizeRef),0,wx.ALIGN_CENTER_VERTICAL)
@@ -3824,7 +3868,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     uniSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
-                    uniSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
+                    uniSizer.Add(ResetSizer('uniaxial',OnResetSize),0,wx.ALIGN_CENTER_VERTICAL)
+                    mainSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(uniSizer)
                     mainSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
                 elif UseList[item]['Size'][0] == 'ellipsoidal':
@@ -3832,6 +3877,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
                         'Size',OnSizeType),0,wx.ALIGN_CENTER_VERTICAL)
                     ellSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
+                    ellSizer.Add(ResetSizer('ellipsoidal',OnResetSize),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(ellSizer)
                     mainSizer.Add(EllSizeDataSizer())
                 mainSizer.Add((0,5),0)                    
@@ -3841,6 +3887,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     isoSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     isoSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
+                    isoSizer.Add(ResetSizer('isotropic',OnResetStrain),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(isoSizer)
                     mainSizer.Add(IsoSizer(' microstrain: ','Mustrain','%.1f',
                         OnStrainVal,OnStrainRef),0,wx.ALIGN_CENTER_VERTICAL)                   
@@ -3850,14 +3897,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     uniSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     uniSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
-                    uniSizer.Add(UniSizer('Mustrain',OnStrainAxis),0,wx.ALIGN_CENTER_VERTICAL)
+                    uniSizer.Add(ResetSizer('uniaxial',OnResetStrain),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(uniSizer)
+                    mainSizer.Add(UniSizer('Mustrain',OnStrainAxis),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(UniDataSizer('mustrain: ','Mustrain','%.1f',OnStrainVal,OnStrainRef))
                 elif UseList[item]['Mustrain'][0] == 'generalized':
                     genSizer = wx.BoxSizer(wx.HORIZONTAL)
                     genSizer.Add(TopSizer(' Mustrain model: ',['isotropic','uniaxial','generalized',],
                         'Mustrain',OnStrainType),0,wx.ALIGN_CENTER_VERTICAL)
                     genSizer.Add(LGmixSizer('Mustrain',OnLGmixVal,OnLGmixRef))
+                    genSizer.Add(ResetSizer('generalized',OnResetStrain),0,wx.ALIGN_CENTER_VERTICAL)
                     mainSizer.Add(genSizer)
                     mainSizer.Add(GenStrainDataSizer())                        
                 mainSizer.Add((0,5),0)

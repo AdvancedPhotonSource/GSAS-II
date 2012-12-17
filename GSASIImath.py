@@ -293,10 +293,29 @@ def getRestTorsion(XYZ,Amat,Coeff=[]):
         delt = np.where(delt<-180.,delt+360.,delt)
         delt = np.where(delt>180.,delt-360.,delt)
 #        pMax = np.min(cof[0])
-        pMax = cof[0][np.argmin(delt)]
         term = -cof[2]*delt**2
-        sum = np.sum(cof[0]*np.exp(term/1000.0))-pMax
+        val = cof[0]*np.exp(term/1000.0)
+        pMax = cof[0][np.argmin(val)]
+        sum = np.sum(val)-pMax
     return TOR,sum
+
+def getRestRama(XYZ,Amat,Coeff=[]):
+    phi,x = getRestTorsion(XYZ[:5],Amat)
+    psi,x = getRestTorsion(XYZ[1:],Amat)
+    sum = 0
+    if len(Coeff):
+        cof = Coeff.T
+        dPhi = phi-cof[1]
+        dPhi = np.where(dPhi<-180.,dPhi+360.,dPhi)
+        dPhi = np.where(dPhi>180.,dPhi-360.,dPhi)
+        dPsi = psi-cof[2]
+        dPsi = np.where(dPsi<-180.,dPsi+360.,dPsi)
+        dPsi = np.where(dPsi>180.,dPsi-360.,dPsi)
+        val = -cof[3]*dPhi**2-cof[4]*dPsi**2-2.0*cof[5]*dPhi*dPsi
+        val = cof[0]*np.exp(val/1000.)
+        pMax = cof[0][np.argmin(val)]
+        sum = np.sum(val)-pMax
+    return phi,psi,sum
     
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     

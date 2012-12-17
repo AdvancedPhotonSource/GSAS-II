@@ -31,6 +31,7 @@ import GSASIIphsGUI as G2phG
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIImath as G2mth
+import GSASIIdata as G2data
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
@@ -1270,7 +1271,6 @@ def PlotPeakWidths(G2frame):
         Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
         try:
             Xmin,Xmax = limits[1]
-            Xmin = min(0.5,max(Xmin,1))
             X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
             Q = 4.*np.pi*npsind(X/2.)/lam
             Z = np.ones_like(X)
@@ -1719,8 +1719,7 @@ def PlotCovariance(G2frame,Data={}):
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(varyList),ytics,-1)
             ylabs = [np.where(0<=i ,varyList[int(i)],' ') for i in ytics]
-            imgAx.set_yticklabels(ylabs)
-            
+            imgAx.set_yticklabels(ylabs)            
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = int(event.xdata+.5)
             ypos = int(event.ydata+.5)
@@ -1735,6 +1734,7 @@ def PlotCovariance(G2frame,Data={}):
                     msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
                 Page.canvas.SetToolTipString(msg)
                 G2frame.G2plotNB.status.SetFields(['',msg])
+                
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Covariance')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -1748,7 +1748,6 @@ def PlotCovariance(G2frame,Data={}):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
-
     Page.Choice = ['s: to change colors']
     Page.keyPress = OnPlotKeyPress
     Page.SetFocus()
@@ -1765,6 +1764,70 @@ def PlotCovariance(G2frame,Data={}):
     Plot.set_ylabel('Variable name')
     Page.canvas.draw()
     
+################################################################################
+##### PlotRama
+################################################################################
+
+def PlotRama(G2frame,phaseName):
+
+    Data = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Restraints'))
+    Rama = Data[phaseName]['Rama']
+    rama = np.log(G2data.ramachandranDist)
+    ramaMax = np.max(rama)
+    rama /= float(ramaMax)
+    rama = np.reshape(rama,(45,45))
+
+    def OnPlotKeyPress(event):
+        newPlot = False
+        if event.key == 's':
+            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice.sort()
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                G2frame.RamaColor = choice[sel]
+            else:
+                G2frame.RamaColor = 'RdYlGn'
+            dlg.Destroy()
+        PlotRama(G2frame,phaseName)
+
+    def OnMotion(event):
+        if event.xdata and event.ydata:                 #avoid out of frame errors
+            xpos = event.xdata
+            ypos = event.ydata
+            msg = 'phi/psi: %5.3f %5.3f'%(xpos,ypos)
+            Page.canvas.SetToolTipString(msg)
+            G2frame.G2plotNB.status.SetFields(['',msg])
+
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index('Ramachandran')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
+        Plot = G2frame.G2plotNB.addMpl('Ramachandran').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Ramachandran')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+
+    Page.Choice = ['s: to change colors']
+    Page.keyPress = OnPlotKeyPress
+    Page.SetFocus()
+    G2frame.G2plotNB.status.SetFields(['',''])    
+    acolor = mpl.cm.get_cmap(G2frame.RamaColor)
+    Img = Plot.imshow(rama,aspect='equal',cmap=acolor,interpolation='nearest',
+        extent=[-180,180,-180,180],origin='lower')
+    colorBar = Page.figure.colorbar(Img)
+    Plot.set_title('Ramachandran for '+phaseName)
+    Plot.set_xlabel(r'$\phi$',fontsize=16)
+    Plot.set_ylabel(r'$\psi$',fontsize=16)
+    Page.canvas.draw()
+
+
 ################################################################################
 ##### PlotSeq
 ################################################################################

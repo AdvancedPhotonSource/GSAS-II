@@ -1084,7 +1084,7 @@ class GSASII(wx.Frame):
         self.Interpolate = 'nearest'
         self.ContourColor = 'Paired'
         self.VcovColor = 'RdYlGn'
-        self.RamaColor = 'RdYlGn'
+        self.RamaColor = 'Blues'
         self.Projection = 'equal area'
         self.logPlot = False
         self.qPlot = False

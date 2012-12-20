@@ -272,7 +272,7 @@ def getRestChiral(XYZ,Amat):
     VecA[2] = np.inner(XYZ[3]-XYZ[0],Amat)
     return nl.det(VecA)
     
-def getRestTorsion(XYZ,Amat,Coeff=[]):
+def getRestTorsion(XYZ,Amat):
     VecA = np.empty((3,3))
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
     VecA[1] = np.inner(XYZ[2]-XYZ[1],Amat)
@@ -286,23 +286,29 @@ def getRestTorsion(XYZ,Amat,Coeff=[]):
     if abs(P12) < 1.0 and abs(P23) < 1.0:
         Ang = (P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2))
     TOR = (acosd(Ang)*D/abs(D)+720.)%360.
+    return TOR
+    
+def calcTorsionEnergy(TOR,Coeff=[]):
     sum = 0.
     if len(Coeff):
         cof = np.reshape(Coeff,(3,3)).T
         delt = TOR-cof[1]
         delt = np.where(delt<-180.,delt+360.,delt)
         delt = np.where(delt>180.,delt-360.,delt)
-#        pMax = np.min(cof[0])
         term = -cof[2]*delt**2
         val = cof[0]*np.exp(term/1000.0)
         pMax = cof[0][np.argmin(val)]
-        sum = np.sum(val)-pMax
-    return TOR,sum
+        Eval = np.sum(val)
+        sum = Eval-pMax
+    return sum,Eval
 
 def getRestRama(XYZ,Amat,Coeff=[]):
-    phi,x = getRestTorsion(XYZ[:5],Amat)
-    psi,x = getRestTorsion(XYZ[1:],Amat)
-    sum = 0
+    phi = getRestTorsion(XYZ[:5],Amat)
+    psi = getRestTorsion(XYZ[1:],Amat)
+    return phi,psi
+    
+def calcRamaEnergy(phi,psi,Coeff=[]):
+    sum = 0.
     if len(Coeff):
         cof = Coeff.T
         dPhi = phi-cof[1]
@@ -314,9 +320,10 @@ def getRestRama(XYZ,Amat,Coeff=[]):
         val = -cof[3]*dPhi**2-cof[4]*dPsi**2-2.0*cof[5]*dPhi*dPsi
         val = cof[0]*np.exp(val/1000.)
         pMax = cof[0][np.argmin(val)]
-        sum = np.sum(val)-pMax
-    return phi,psi,sum
-    
+        Eval = np.sum(val)
+        sum = Eval-pMax
+    return sum,Eval
+        
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):

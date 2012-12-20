@@ -100,8 +100,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(4)]
 
 [ wxID_RESTRAINTADD, wxID_RESTSELPHASE,wxID_RESTDELETE, wxID_RESRCHANGEVAL, 
-    wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,
-] = [wx.NewId() for item in range(6)]
+    wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -457,6 +457,9 @@ class DataFrame(wx.Frame):
         self.RestraintEdit.Append(id=wxID_AARESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add residue restraints',
             help='Add residue based restraints for macromolecules from macro file')
         self.RestraintEdit.Enable(wxID_AARESTRAINTADD,False)    #gets enabled if macromolecule phase
+        self.RestraintEdit.Append(id=wxID_AARESTRAINTPLOT, kind=wx.ITEM_NORMAL,text='Plot residue restraints',
+            help='Plot selected residue based restraints for macromolecules from macro file')
+        self.RestraintEdit.Enable(wxID_AARESTRAINTPLOT,False)    #gets enabled if macromolecule phase
         self.RestraintEdit.Append(id=wxID_RESRCHANGEVAL, kind=wx.ITEM_NORMAL,text='Change value',
             help='Change observed value')
         self.RestraintEdit.Append(id=wxID_RESTCHANGEESD, kind=wx.ITEM_NORMAL,text='Change esd',

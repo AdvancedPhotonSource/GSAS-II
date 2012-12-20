@@ -31,7 +31,6 @@ import GSASIIphsGUI as G2phG
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIImath as G2mth
-import GSASIIdata as G2data
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
@@ -1765,18 +1764,76 @@ def PlotCovariance(G2frame,Data={}):
     Page.canvas.draw()
     
 ################################################################################
+##### PlotTorsion
+################################################################################
+
+def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
+    
+    global names
+    names = Names
+    sum = np.sum(Torsion)
+    torsion = np.log(2*Torsion+1.)/sum
+    tMin = np.min(torsion)
+    tMax = np.max(torsion)
+    torsion = 3.*(torsion-tMin)/(tMax-tMin)
+    X = np.linspace(0.,360.,num=45)
+    
+    def OnMotion(event):
+        if event.xdata and event.ydata:                 #avoid out of frame errors
+            xpos = event.xdata
+            ypos = event.ydata
+            msg = 'torsion,energy: %5.3f %5.3f'%(xpos,ypos)
+            Page.canvas.SetToolTipString(msg)
+            G2frame.G2plotNB.status.SetFields(['',msg])
+            if len(Angles):
+                fX = np.where(np.fabs(Angles-xpos)<1.0)[0]
+                if len(fX):
+                    msg = 'atoms:'+names[fX[0]-1]
+                    Page.canvas.SetToolTipString(msg)                    
+
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index('Torsion')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
+        Plot = G2frame.G2plotNB.addMpl('Torsion').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Torsion')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    
+    Page.SetFocus()
+    G2frame.G2plotNB.status.SetFields(['',''])
+    Plot.plot(X,torsion,'b+')
+    if len(Coeff):
+        X2 = np.linspace(0.,360.,45)
+        Y2 = np.array([-G2mth.calcTorsionEnergy(x,Coeff)[1] for x in X2])
+        Plot.plot(X2,Y2,'r')
+    if len(Angles):
+        Eval = np.array([-G2mth.calcTorsionEnergy(x,Coeff)[1] for x in Angles])
+        Plot.plot(Angles,Eval,'ro')
+    Plot.set_xlim((0.,360.))
+    Plot.set_title('Torsion angles for '+TorName+' in '+phaseName)
+    Plot.set_xlabel('angle',fontsize=16)
+    Plot.set_ylabel('Energy',fontsize=16)
+    Page.canvas.draw()
+    
+################################################################################
 ##### PlotRama
 ################################################################################
 
-def PlotRama(G2frame,phaseName):
+def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
 
-    Data = G2frame.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Restraints'))
-    Rama = Data[phaseName]['Rama']
-    rama = np.log(G2data.ramachandranDist)
+    global names
+    names = Names
+    rama = np.log(2*Rama+1.)
     ramaMax = np.max(rama)
-    rama /= float(ramaMax)
     rama = np.reshape(rama,(45,45))
+    global Phi,Psi
+    Phi = []
+    Psi = []
 
     def OnPlotKeyPress(event):
         newPlot = False
@@ -1790,7 +1847,7 @@ def PlotRama(G2frame,phaseName):
             else:
                 G2frame.RamaColor = 'RdYlGn'
             dlg.Destroy()
-        PlotRama(G2frame,phaseName)
+        PlotRama(G2frame,phaseName,Rama)
 
     def OnMotion(event):
         if event.xdata and event.ydata:                 #avoid out of frame errors
@@ -1799,7 +1856,13 @@ def PlotRama(G2frame,phaseName):
             msg = 'phi/psi: %5.3f %5.3f'%(xpos,ypos)
             Page.canvas.SetToolTipString(msg)
             G2frame.G2plotNB.status.SetFields(['',msg])
-
+            if len(Phi):
+                fPhi = np.where(np.fabs(Phi-xpos)<1.0)[0]
+                fPsi = np.where(np.fabs(Psi-ypos)<1.0)[0]
+                if len(fPhi) and len(fPsi) and fPhi[0] == fPsi[0]:
+                    msg = 'atoms:'+names[fPhi[0]-1]
+                    Page.canvas.SetToolTipString(msg)
+            
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Ramachandran')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -1819,12 +1882,36 @@ def PlotRama(G2frame,phaseName):
     Page.SetFocus()
     G2frame.G2plotNB.status.SetFields(['',''])    
     acolor = mpl.cm.get_cmap(G2frame.RamaColor)
-    Img = Plot.imshow(rama,aspect='equal',cmap=acolor,interpolation='nearest',
-        extent=[-180,180,-180,180],origin='lower')
-    colorBar = Page.figure.colorbar(Img)
-    Plot.set_title('Ramachandran for '+phaseName)
+    if RamaName == 'All' or '-1' in RamaName:
+        if len(Coeff): 
+            X,Y = np.meshgrid(np.linspace(-180.,180.,45),np.linspace(-180.,180.,45))
+            Z = np.array([-G2mth.calcRamaEnergy(x,y,Coeff)[1] for x,y in zip(X.flatten(),Y.flatten())])
+            Plot.contour(X,Y,np.reshape(Z,(45,45)))
+        Img = Plot.imshow(rama,aspect='equal',cmap=acolor,interpolation='nearest',
+            extent=[-180,180,-180,180],origin='lower')
+        if len(PhiPsi):
+            Phi,Psi = PhiPsi.T
+            Phi = np.where(Phi>180.,Phi-360.,Phi)
+            Psi = np.where(Psi>180.,Psi-360.,Psi)
+            Plot.plot(Phi,Psi,'ro',picker=3)
+        Plot.set_xlim((-180.,180.))
+        Plot.set_ylim((-180.,180.))
+    else:
+        if len(Coeff): 
+            X,Y = np.meshgrid(np.linspace(0.,360.,45),np.linspace(0.,360.,45))
+            Z = np.array([-G2mth.calcRamaEnergy(x,y,Coeff)[1] for x,y in zip(X.flatten(),Y.flatten())])
+            Plot.contour(X,Y,np.reshape(Z,(45,45)))
+        Img = Plot.imshow(rama,aspect='equal',cmap=acolor,interpolation='nearest',
+            extent=[0,360,0,360],origin='lower')
+        if len(PhiPsi):
+            Phi,Psi = PhiPsi.T
+            Plot.plot(Phi,Psi,'ro',picker=3)
+        Plot.set_xlim((0.,360.))
+        Plot.set_ylim((0.,360.))
+    Plot.set_title('Ramachandran for '+RamaName+' in '+phaseName)
     Plot.set_xlabel(r'$\phi$',fontsize=16)
     Plot.set_ylabel(r'$\psi$',fontsize=16)
+    colorBar = Page.figure.colorbar(Img)
     Page.canvas.draw()
 
 

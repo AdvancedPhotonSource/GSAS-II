@@ -602,19 +602,20 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
     def PrintRestraints(phaseRest):
         if phaseRest:
             print >>pFile,'\n Restraints:'
-            names = ['Bonds','Angles','Planes','Volumes']
-            for i,name in enumerate(['Bond','Angle','Plane','Chiral']):
+            names = ['Bonds','Angles','Planes','Volumes','Torsions','Ramas']
+            for i,name in enumerate(['Bond','Angle','Plane','Chiral','Torsion','Rama']):
                 itemRest = phaseRest[name]
                 if itemRest[names[i]]:
-                    print >>pFile,'\n  %30s %10.3f'%(name+' restraint weight factor',itemRest['wtFactor'])
+                    print >>pFile,'\n  %30s %10.3f Use: %s'%(name+' restraint weight factor',itemRest['wtFactor'],str(itemRest['Use']))
                     print >>pFile,'  atoms(symOp), calc, obs, sig: '
                     for item in phaseRest[name][names[i]]:
-                        text = '   '
-                        for a,at in enumerate(item[0]):
-                            text += at+'+('+item[1][a]+') '
-                            if (a+1)%5 == 0:
-                                text += '\n   '
-                        print >>pFile,text,' %.3f %.3f %.3f'%(item[3],item[4],item[5])
+                        print item
+#                        text = '   '
+#                        for a,at in enumerate(item[0]):
+#                            text += at+'+('+item[1][a]+') '
+#                            if (a+1)%5 == 0:
+#                                text += '\n   '
+#                        print >>pFile,text,' %.3f %.3f %.3f'%(item[3],item[4],item[5])
         
     if Print:print  >>pFile,' Phases:'
     phaseVary = []

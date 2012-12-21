@@ -38,17 +38,17 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         data[phaseName] = {}
     restrData = data[phaseName]
     if 'Bond' not in restrData:
-        restrData['Bond'] = {'wtFactor':1.0,'Range':0.9,'Bonds':[],'Use':True}
+        restrData['Bond'] = {'wtFactor':1.0,'Range':1.1,'Bonds':[],'Use':True}
     if 'Angle' not in restrData:
         restrData['Angle'] = {'wtFactor':1.0,'Range':0.85,'Angles':[],'Use':True}
     if 'Plane' not in restrData:
-        restrData['Plane'] = {'wtFactor':1.0,'Range':0.9,'Planes':[],'Use':True}
+        restrData['Plane'] = {'wtFactor':1.0,'Planes':[],'Use':True}
     if 'Chiral' not in restrData:
-        restrData['Chiral'] = {'wtFactor':1.0,'Range':0.9,'Volumes':[],'Use':True}
+        restrData['Chiral'] = {'wtFactor':1.0,'Volumes':[],'Use':True}
     if 'Torsion' not in restrData:
-        restrData['Torsion'] = {'wtFactor':1.0,'Range':0.9,'Coeff':{},'Torsions':[],'Use':True}
+        restrData['Torsion'] = {'wtFactor':1.0,'Coeff':{},'Torsions':[],'Use':True}
     if 'Rama' not in restrData:
-        restrData['Rama'] = {'wtFactor':1.0,'Range':0.9,'Coeff':{},'Ramas':[],'Use':True}
+        restrData['Rama'] = {'wtFactor':1.0,'Coeff':{},'Ramas':[],'Use':True}
     General = phasedata['General']
     Cell = General['Cell'][1:7]          #skip flag & volume    
     Amat,Bmat = G2lat.cell2AB(Cell)
@@ -167,12 +167,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             AddAngleRestraint(restrData['Angle'])
         elif 'Plane' in G2frame.dataDisplay.GetPageText(page):
             AddPlaneRestraint(restrData['Plane'])
-        elif 'Chiral' in G2frame.dataDisplay.GetPageText(page):
-            AddChiralRestraint(restrData['Chiral'])
-#        elif 'Torsion' in G2frame.dataDisplay.GetPageText(page):
-#            AddTorsionRestraint(restrData['Torsion'])
-#        elif 'Rama' in G2frame.dataDisplay.GetPageText(page):
-#            AddRamaRestraint(restrData['Rama'])
             
     def OnAddAARestraint(event):
         page = G2frame.dataDisplay.GetSelection()
@@ -190,7 +184,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             AddAARamaRestraint(restrData['Rama'])
             
     def AddBondRestraint(bondRestData):
-        Radii = dict(zip(General['AtomTypes'],General['BondRadii']))
         Lists = {'origin':[],'target':[]}
         for listName in ['origin','target']:
             dlg = wx.MultiChoiceDialog(G2frame,'Bond restraint '+listName+' for '+General['Name'],
@@ -205,6 +198,11 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 Lists[listName].append([id,Type,coords])
                     else:
                         Lists[listName].append([Ids[x],Types[x],Coords[x],])
+        bond = 1.54
+        dlg = G2phG.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[1.,4.],'%.4f')
+        if dlg.ShowModal() == wx.ID_OK:
+            bond = dlg.GetValue()
+        dlg.Destroy()
         Factor = bondRestData['Range']
         indices = (-1,0,1)
         Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
@@ -222,12 +220,11 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         result = [[Tcoord,1,[0,0,0]],]
                     else:
                         result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
-                    BsumR = (Radii[Otype]+Radii[Ttype])*Factor
                     for Txyz,Top,Tunit in result:
                         Dx = (Txyz-np.array(Ocoord))+Units
                         dx = np.inner(Amat,Dx)
-                        dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
-                        IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
+                        dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),bond/Factor)
+                        IndB = ma.nonzero(ma.masked_greater(dist,bond*Factor))
                         if np.any(IndB):
                             for indb in IndB:
                                 for i in range(len(indb)):
@@ -236,7 +233,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                         Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
                                     else:
                                         Topstr = str(Top)
-                                    newBond = [[Oid,Tid],['1',Topstr],1.54,0.01]
+                                    newBond = [[Oid,Tid],['1',Topstr],bond,0.01]
                                     if newBond not in bondRestData['Bonds']:
                                         bondRestData['Bonds'].append(newBond)
         finally:
@@ -277,7 +274,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for i,[oId,oCoord] in enumerate(zip(oIds,oCoords)):
                     for tId,tCoord in zip(tIds,tCoords)[i:]:
                         obsd = np.sqrt(np.sum(np.inner(Amat,tCoord-oCoord)**2))
-                        if dist*Factor < obsd < dist/Factor:
+                        if dist/Factor < obsd < dist*Factor:
                             newBond = [[oId,tId],['1','1'],dist,esd]
                             if newBond not in bondRestData['Bonds']:
                                 bondRestData['Bonds'].append(newBond)                          
@@ -301,6 +298,11 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 else:
                     origAtoms.append([Ids[x],Types[x],Coords[x]])
         targAtoms = [[Ids[x+iBeg],Types[x+iBeg],Coords[x+iBeg]] for x in range(len(Names[iBeg:]))]
+        value = 109.54
+        dlg = G2phG.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
+        if dlg.ShowModal() == wx.ID_OK:
+            value = dlg.GetValue()
+        dlg.Destroy()
 
         Factor = angleRestData['Range']
         indices = (-1,0,1)
@@ -339,9 +341,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         ids = [vecta[3],vecta[0],vectb[3]]
                         ops = [vecta[4],vecta[1],vectb[4]]
                         XYZ = np.array([vecta[5],vecta[2],vectb[5]])
-                        angle = G2mth.getRestAngle(XYZ,Amat)
+                        angle = [ids,ops,value,1.0]
                         if angle not in angleRestData['Angles']:
-                            angleRestData['Angles'].append([ids,ops,109.5,1.0])
+                            angleRestData['Angles'].append(angle)
         UpdateAngleRestr(angleRestData)                
 
     def AddAAAngleRestraint(angleRestData):
@@ -410,7 +412,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 if plane not in restrData['Planes']:
                     restrData['Planes'].append(plane)
             else:
-                print '**** ERROR - not enough atoms fro a plane restraint - try again ****'
+                print '**** ERROR - not enough atoms for a plane restraint - try again ****'
         UpdatePlaneRestr(restrData)                
 
     def AddAAPlaneRestraint(planeRestData):
@@ -465,9 +467,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         macro.close()
         UpdatePlaneRestr(planeRestData)                
 
-    def AddChiralRestraint():
-        print 'Chiral restraint'
-        
     def AddAAChiralRestraint(chiralRestData):
         macro = getMacroFile('chiral')
         if not macro:
@@ -516,7 +515,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             Residues[int(rnum)].append([res,items[2],id])
         return Chains
         
-#        
     def AddAATorsionRestraint(torsionRestData):
         macro = getMacroFile('torsion')
         if not macro:
@@ -664,7 +662,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         UpdateRamaRestr(ramaRestData)                
                
     def WtBox(wind,restData):
-        if 'Range' not in restData: restData['Range'] = 0.9     #patch
+        if 'Range' not in restData: restData['Range'] = 1.1     #patch
         
         def OnWtFactor(event):
             try:
@@ -695,7 +693,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(restData['Use'])        
         wtBox.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
-        if 'Bond' in restData or 'Angle' in restData:
+        if 'Bonds' in restData or 'Angles' in restData:
             wtBox.Add(wx.StaticText(wind,-1,'Search range:'),0,wx.ALIGN_CENTER_VERTICAL)
             sRange = wx.TextCtrl(wind,-1,value='%.2f'%(restData['Range']),style=wx.TE_PROCESS_ENTER)
             sRange.Bind(wx.EVT_TEXT_ENTER,OnRange)
@@ -737,12 +735,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Bonds.ClearSelection()
-            val = bondList[rows[0]][3]
+            val = bondList[rows[0]][2]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    bondList[r][3] = parm
+                    bondRestData['Bonds'][r][2] = parm
             dlg.Destroy()
             UpdateBondRestr(bondRestData)                
 
@@ -751,12 +749,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Bonds.ClearSelection()
-            val = bondList[rows[0]][4]
+            val = bondList[rows[0]][3]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    bondList[r][4] = parm
+                    bondRestData['Bonds'][r][3] = parm
             dlg.Destroy()
             UpdateBondRestr(bondRestData)                
                                 
@@ -797,13 +795,16 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     rowLabels.append(str(i))                
             else:
                 colLabels = ['A+SymOp - B+SymOp','calc','obs','esd']
-                for i,[indx,ops,obs,esd] in enumerate(bondList):
-                    names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                    calc = G2mth.getRestDist(XYZ,Amat)
-                    table.append([names[0]+'+('+ops[0]+') - '+names[1]+'+('+ops[1]+')',calc,obs,esd])
-                    rowLabels.append(str(i))
+                try:
+                    for i,[indx,ops,obs,esd] in enumerate(bondList):
+                        names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                        calc = G2mth.getRestDist(XYZ,Amat)
+                        table.append([names[0]+'+('+ops[0]+') - '+names[1]+'+('+ops[1]+')',calc,obs,esd])
+                        rowLabels.append(str(i))
+                except ValueError:              #patch - old restraints!
+                    bondList = []
             bondTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Bonds = G2gd.GSGrid(BondRestr)
             Bonds.SetTable(bondTable, True)
@@ -835,12 +836,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Angles.ClearSelection()
-            val = angleList[rows[0]][3]
+            val = angleList[rows[0]][2]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    angleList[r][3] = parm
+                    angleRestData['Angles'][r][2] = parm
             dlg.Destroy()
             UpdateAngleRestr(angleRestData)                
 
@@ -849,12 +850,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Angles.ClearSelection()
-            val = angleList[rows[0]][4]
+            val = angleList[rows[0]][3]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    angleList[r][4] = parm
+                    angleRestData['Angles'][r][3] = parm
             dlg.Destroy()
             UpdateAngleRestr(angleRestData)                
                                             
@@ -924,7 +925,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         AngleRestr.SetSize(Size)
         AngleRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
-#        G2frame.dataFrame.setSizePosLeft(Size)
     
     def UpdatePlaneRestr(planeRestData):
         
@@ -938,12 +938,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Planes.ClearSelection()
-            val = planeList[rows[0]][4]
+            val = planeList[rows[0]][3]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for plane',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    planeList[r][4] = parm
+                    planeRestData['Planes'][r][3] = parm
             dlg.Destroy()
             UpdatePlaneRestr(planeRestData)                
                                             
@@ -1037,12 +1037,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Volumes.ClearSelection()
-            val = volumeList[rows[0]][3]
+            val = volumeList[rows[0]][2]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for chiral volume',val,[0.,360.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    volumeList[r][3] = parm
+                    chiralRestData['Volumes'][r][2] = parm
             dlg.Destroy()
             UpdateChiralRestr(chiralRestData)                
 
@@ -1051,12 +1051,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Volumes.ClearSelection()
-            val = volumeList[rows[0]][4]
+            val = volumeList[rows[0]][3]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for chiral volume',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    volumeList[r][4] = parm
+                    chiralRestData['Volumes'][r][3] = parm
             dlg.Destroy()
             UpdateChiralRestr(chiralRestData)                
                                             
@@ -1116,7 +1116,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         ChiralRestr.SetSize(Size)
         ChiralRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
-#        G2frame.dataFrame.setSizePosLeft(Size)
     
     def UpdateTorsionRestr(torsionRestData):
 
@@ -1140,7 +1139,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    volumeList[r][4] = parm
+                    torsionRestData['Torsions'][r][4] = parm
             dlg.Destroy()
             UpdateTorsionRestr(torsionRestData)                
                                             
@@ -1210,7 +1209,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         TorsionRestr.SetSize(Size)
         TorsionRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
-#        G2frame.dataFrame.setSizePosLeft(Size)
 
     def UpdateRamaRestr(ramaRestData):
 
@@ -1229,12 +1227,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             Ramas.ClearSelection()
-            val = ramaList[rows[0]][5]
+            val = ramaList[rows[0]][4]
             dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for energy',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
-                    ramaList[r][4] = parm
+                    ramaRestData['Ramas'][r][4] = parm
             dlg.Destroy()
             UpdateRamaRestr(ramaRestData)                
                                             
@@ -1330,7 +1328,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdatePlaneRestr(planeRestData)
         elif text == 'Chiral restraints':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
-            G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
+            G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,False)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,True)
             chiralRestData = restrData['Chiral']
             UpdateChiralRestr(chiralRestData)

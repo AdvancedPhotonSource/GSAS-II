@@ -292,7 +292,6 @@ def GetUsedHistogramsAndPhases(GPXfile):
                     Phase['Histograms'][hist]['Use'] = True         
                 if hist not in Histograms and Phase['Histograms'][hist]['Use']:
                     Histograms[hist] = allHistograms[hist]
-                    #future restraint, etc. histograms here            
                     hId = histoList.index(hist)
                     Histograms[hist]['hId'] = hId
     return Histograms,Phases
@@ -511,7 +510,7 @@ def cellVary(pfx,SGData):
 ##### Phase data
 ################################################################################        
                     
-def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
+def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
             
     def PrintFFtable(FFtable):
         print >>pFile,'\n X-ray scattering factors:'
@@ -599,24 +598,6 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
         print >>pFile,ptlbls
         print >>pFile,ptstr
         
-    def PrintRestraints(phaseRest):
-        if phaseRest:
-            print >>pFile,'\n Restraints:'
-            names = ['Bonds','Angles','Planes','Volumes','Torsions','Ramas']
-            for i,name in enumerate(['Bond','Angle','Plane','Chiral','Torsion','Rama']):
-                itemRest = phaseRest[name]
-                if itemRest[names[i]]:
-                    print >>pFile,'\n  %30s %10.3f Use: %s'%(name+' restraint weight factor',itemRest['wtFactor'],str(itemRest['Use']))
-                    print >>pFile,'  atoms(symOp), calc, obs, sig: '
-                    for item in phaseRest[name][names[i]]:
-                        print item
-#                        text = '   '
-#                        for a,at in enumerate(item[0]):
-#                            text += at+'+('+item[1][a]+') '
-#                            if (a+1)%5 == 0:
-#                                text += '\n   '
-#                        print >>pFile,text,' %.3f %.3f %.3f'%(item[3],item[4],item[5])
-        
     if Print:print  >>pFile,' Phases:'
     phaseVary = []
     phaseDict = {}
@@ -639,6 +620,7 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
         FFtables.update(FFtable)
         BLtables.update(BLtable)
         Atoms = PhaseData[name]['Atoms']
+        AtLookup = G2mth.FillAtomLookUp(Atoms)
         try:
             PawleyRef = PhaseData[name]['Pawley ref']
         except KeyError:
@@ -647,6 +629,7 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
         SGtext = G2spc.SGPrint(SGData)
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
+        Amat,Bmat = G2lat.cell2AB(cell[1:7])
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5]})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
@@ -726,7 +709,7 @@ def GetPhaseData(PhaseData,RestraintDict=None,Print=True,pFile=None):
                     '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
                 PrintTexture(textureData)
                 if name in RestraintDict:
-                    PrintRestraints(RestraintDict[name])
+                    PrintRestraints(Amat,SGData,General['AtomPtrs'],Atoms,AtLookup,RestraintDict[name],pFile)
                     
         elif PawleyRef:
             pawleyVary = []
@@ -780,6 +763,59 @@ def cellFill(pfx,SGData,parmDict,sigDict):
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],0,0,0]
         sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
     return A,sigA
+        
+def PrintRestraints(Amat,SGData,AtPtrs,Atoms,AtLookup,phaseRest,pFile):
+    if phaseRest:
+        cx,ct = AtPtrs[:2]
+        names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
+            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas']]
+        for name,rest in names:
+            itemRest = phaseRest[name]
+            if itemRest[rest] and itemRest['Use']:
+                print >>pFile,'\n  %s %10.3f Use: %s'%(name+' restraint weight factor',itemRest['wtFactor'],str(itemRest['Use']))
+                if name in ['Bond','Angle','Plane','Chiral']:
+                    print >>pFile,'     calc       obs      sig   delt/sig  atoms(symOp): '
+                    for indx,ops,obs,esd in itemRest[rest]:
+                        try:
+                            AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
+                            AtName = ''
+                            for i,Aname in enumerate(AtNames):
+                                AtName += Aname
+                                if ops[i] == '1':
+                                    AtName += '-'
+                                else:
+                                    AtName += '+('+ops[i]+')-'
+                            XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cx,3))
+                            XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                            if name == 'Bond':
+                                calc = G2mth.getRestDist(XYZ,Amat)
+                            elif name == 'Angle':
+                                calc = G2mth.getRestAngle(XYZ,Amat)
+                            elif name == 'Plane':
+                                calc = G2mth.getRestPlane(XYZ,Amat)
+                            elif name == 'Chiral':
+                                calc = G2mth.getRestChiral(XYZ,Amat)
+                            print >>pFile,' %9.3f %9.3f %8.3f %8.3f   %s'%(calc,obs,esd,(obs-calc)/esd,AtName[:-1])
+                        except KeyError:
+                            del itemRest[rest]
+                else:
+                    print >>pFile,'  atoms(symOp)  calc  obs  sig  delt/sig  torsions: '
+                    coeffDict = itemRest['Coeff']
+                    for indx,ops,cofName,esd in enumerate(torsionList):
+                        AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
+                        AtName = ''
+                        for i,Aname in enumerate(AtNames):
+                            AtName += Aname+'+('+ops[i]+')-'
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cx,3))
+                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                        if name == 'Torsion':
+                            tor = G2mth.getRestTorsion(XYZ,Amat)
+                            restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
+                            print >>pFile,' %8.3f %8.3f %.3f %8.3f %8.3f %s'%(AtName[:-1],calc,obs,esd,(obs-calc)/esd,tor)
+                        else:
+                            phi,psi = G2mth.getRestRama(XYZ,Amat)
+                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
+                            print >>pFile,' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s'%(AtName[:-1],calc,obs,esd,(obs-calc)/esd,phi,psi)
         
 def getCellEsd(pfx,SGData,A,covData):
     dpr = 180./np.pi
@@ -839,7 +875,7 @@ def getCellEsd(pfx,SGData,A,covData):
     cellSig = [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]  #exchange sig(alp) & sig(gam) to get in right order
     return cellSig            
     
-def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
+def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
     
     def PrintAtomsAndSig(General,Atoms,atomsSig):
         print >>pFile,'\n Atoms:'
@@ -928,7 +964,9 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
         General = Phase['General']
         SGData = General['SGData']
         Atoms = Phase['Atoms']
+        AtLookup = G2mth.FillAtomLookUp(Atoms)
         cell = General['Cell']
+        Amat,Bmat = G2lat.cell2AB(cell[1:7])
         pId = Phase['pId']
         pfx = str(pId)+'::'
         if cell[0]:
@@ -981,7 +1019,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
                     refl[7] = 0
         else:
             atomsSig = {}
-            if General['Type'] == 'nuclear':
+            if General['Type'] == 'nuclear':        #this needs macromolecular variant!
                 for i,at in enumerate(Atoms):
                     names = {3:pfx+'Ax:'+str(i),4:pfx+'Ay:'+str(i),5:pfx+'Az:'+str(i),6:pfx+'Afrac:'+str(i),
                         10:pfx+'AUiso:'+str(i),11:pfx+'AU11:'+str(i),12:pfx+'AU22:'+str(i),13:pfx+'AU33:'+str(i),
@@ -1021,6 +1059,9 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,pFile=None):
                 if aname in sigDict:
                     SHtextureSig[name] = sigDict[aname]
             PrintSHtextureAndSig(textureData,SHtextureSig)
+        if phase in RestraintDict:
+            PrintRestraints(Amat,SGData,General['AtomPtrs'],Atoms,AtLookup,RestraintDict[phase],pFile)
+                    
 
 ################################################################################
 ##### Histogram & Phase data
@@ -1957,31 +1998,120 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
 ##### Penalty & restraint functions 
 ################################################################################
 
-def penaltyFxn(Phases,parmDict,varyList):
+def penaltyFxn(HistoPhases,parmDict,varyList):
+    Histograms,Phases,restraintDict = HistoPhases
     pNames = []
     pVals = []
+    pWt = []
     negWt = {}
     for phase in Phases:
-        negWt[Phases[phase]['pId']] = Phases[phase]['General']['Pawley neg wt'] 
+        pId = Phases[phase]['pId']
+        negWt[pId] = Phases[phase]['General']['Pawley neg wt']
+        General = Phases[phase]['General']
+        SGData = General['SGData']
+        AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'])
+        Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
+        if phase not in restraintDict:
+            continue
+        phaseRest = restraintDict[phase]
+        names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
+            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas']]
+        for name,rest in names:
+            itemRest = phaseRest[name]
+            if itemRest[rest] and itemRest['Use']:
+                wt = itemRest['wtFactor']
+                if name in ['Bond','Angle','Plane','Chiral']:
+                    for i,[indx,ops,obs,esd] in enumerate(itemRest[rest]):
+                        pNames.append(str(pId)+':'+name+':'+str(i))
+                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                        if name == 'Bond':
+                            calc = G2mth.getRestDist(XYZ,Amat)
+                        elif name == 'Angle':
+                            calc = G2mth.getRestAngle(XYZ,Amat)
+                        elif name == 'Plane':
+                            calc = G2mth.getRestPlane(XYZ,Amat)
+                        elif name == 'Chiral':
+                            calc = G2mth.getRestChiral(XYZ,Amat)
+                        pVals.append(obs-calc)
+                        pWt.append(wt/esd**2)
+                else:
+                    coeffDict = itemRest['Coeff']
+                    for i,[indx,ops,cofName,esd] in enumerate(torsionList):
+                        pNames.append(str(pId)+':'+name+':'+str(i))
+                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                        if name == 'Torsion':
+                            tor = G2mth.getRestTorsion(XYZ,Amat)
+                            restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
+                        else:
+                            phi,psi = G2mth.getRestRama(XYZ,Amat)
+                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
+                        pVals.append(obs-calc)
+                        pWt.append(wt/esd**2)
+         
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
             pId = int(item.split(':')[0])
             pNames.append(item)
-#            pVals.append(negWt[pId]*parmDict[item]**2)
-            pVals.append(-negWt[pId]*parmDict[item])
+            pVals.append(-parmDict[item])
+            pWt.append(negWt[pId])
     pVals = np.array(pVals)
-    return pNames,pVals
+    pWt = np.array(pWt)
+    return pNames,pVals,pWt
     
-def penaltyDeriv(pNames,pVal,Phases,parmDict,varyList):
+def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
+    Histograms,Phases,restraintDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
-    negWt = {}
     for phase in Phases:
-        negWt[Phases[phase]['pId']] = np.sqrt(Phases[phase]['General']['Pawley neg wt'])
+        pId = Phases[phase]['pId']
+        General = Phases[phase]['General']
+        SGData = General['SGData']
+        AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'])
+        Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
+        phaseRest = restraintDict[phase]
+        names = {'Bond':'Bonds','Angle':'Angles','Plane':'Planes',
+            'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas'}
+        for ip,pName in enumerate(pNames):
+            pnames = pName.split(':')
+            if pId == int(pnames[0]):
+                name = pnames[1]
+                id = int(pnames[2]) 
+                itemRest = phaseRest[name]
+                if name in ['Bond','Angle','Plane','Chiral']:
+                    indx,ops,obs,esd = itemRest[names[name]][id]
+                    dNames = []
+                    for ind in indx:
+                        dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
+                    XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                    if name == 'Bond':
+                        deriv = G2mth.getRestDeriv(G2mth.getRestDist,XYZ,Amat,ops,SGData)
+                    elif name == 'Angle':
+                        deriv = G2mth.getRestDeriv(G2mth.getRestAngle,XYZ,Amat,ops,SGData)
+                    elif name == 'Plane':
+                        deriv = G2mth.getRestDeriv(G2mth.getRestPlane,XYZ,Amat,ops,SGData)
+                    elif name == 'Chiral':
+                        deriv = G2mth.getRestDeriv(G2mth.getRestChiral,XYZ,Amat,ops,SGData)
+                else:
+                    coeffDict = itemRest['Coeff']
+                    for indx,ops,obs,esd in itemRest[id]:
+                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+#                        if name == 'Torsion':
+#                            tor = G2mth.getRestTorsion(XYZ,Amat)
+#                            restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
+#                        else:
+#                            phi,psi = G2mth.getRestRama(XYZ,Amat)
+#                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
+                for dName,drv in zip(dNames,deriv):
+                    try:
+                        ind = varyList.index(dName)
+                        pDerv[ind][ip] += drv
+                    except ValueError:
+                        pass
     for i,item in enumerate(varyList):
         if item in pNames:
             pId = int(item.split(':')[0])
-#            pDerv[i][pNames.index(item)] += 2.*negWt[pId]*parmDict[item]
-            pDerv[i][pNames.index(item)] += negWt[pId]
+            pDerv[i][pNames.index(item)] += 1.
     return pDerv
 
 ################################################################################
@@ -3071,10 +3201,11 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
         else:
             dMdv = dMdvh
             
-    pNames,pVals = penaltyFxn(Phases,parmdict,varylist)
-    if np.sum(pVals):
-        dpdv = penaltyDeriv(pNames,pVals,Phases,parmdict,varylist)
+    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
+    if np.any(pVals):
+        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmdict,varylist)
         dMdv = np.concatenate((dMdv.T,dpdv.T)).T
+        
     return dMdv
 
 def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
@@ -3160,11 +3291,11 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 Hess = np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
-    pNames,pVals = penaltyFxn(Phases,parmdict,varylist)
-    if np.sum(pVals):
-        dpdv = penaltyDeriv(pNames,pVals,Phases,parmdict,varylist)
-        Vec += np.sum(dpdv,axis=1)
-        Hess += np.inner(dpdv,dpdv)
+    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
+    if np.any(pVals):
+        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmdict,varylist)
+        Vec += np.sum(dpdv*pWt*pVals,axis=1)
+        Hess += np.inner(dpdv*pWt,dpdv)
     return Vec,Hess
 
 def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
@@ -3275,10 +3406,10 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             parmdict['saved values'] = values
             dlg.Destroy()
             raise Exception         #Abort!!
-    pDict,pVals = penaltyFxn(Phases,parmdict,varylist)
-    if np.sum(pVals):
-        print 'Penalty function :',np.sum(pVals),' on ',len(pVals),' terms'
-        M = np.concatenate((M,pVals))
+    pDict,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
+    if np.any(pVals):
+        print 'Penalty function: %.3f on %d terms'%(np.sum(pWt*pVals**2),len(pVals))
+        M = np.concatenate((M,pWt*pVals))
     return M
                         
 def Refine(GPXfile,dlg):
@@ -3416,7 +3547,7 @@ def Refine(GPXfile,dlg):
     # add the uncertainties into the esd dictionary (sigDict)
     sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
-    SetPhaseData(parmDict,sigDict,Phases,covData,printFile)
+    SetPhaseData(parmDict,sigDict,Phases,covData,restraintDict,printFile)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,pFile=printFile)
     SetHistogramData(parmDict,sigDict,Histograms,pFile=printFile)
     SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)

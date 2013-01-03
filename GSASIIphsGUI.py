@@ -4019,8 +4019,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
-                            'Size':['isotropic',[1.,1.,1.0],[False,False,False],[0,0,1],
-                                [4.,4.,4.,0.,0.,0.],6*[False,]],
+                            'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
+                                [1.,1.,1.,0.,0.,0.],6*[False,]],
                             'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          

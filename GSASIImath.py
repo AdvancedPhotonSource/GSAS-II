@@ -185,6 +185,16 @@ def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
         else:
             Items.append(atomData[atomLookUp[id]][itemLoc:itemLoc+numItems])
     return Items
+    
+def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
+    pfx = [str(pId)+'::A'+i+':' for i in ['x','y','z']]
+    dpfx = [str(pId)+'::dA'+i+':' for i in ['x','y','z']]
+    XYZ = []
+    for ind in indx:
+        names = [pfx[i]+str(AtLookup[ind]) for i in range(3)]
+        dnames = [dpfx[i]+str(AtLookup[ind]) for i in range(3)]
+        XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
+    return XYZ
         
 def getMass(generalData):
     mass = 0.
@@ -222,18 +232,18 @@ def getSyXYZ(XYZ,ops,SGData):
 def getRestDist(XYZ,Amat):
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
     
-def getRestDeriv(Func,XYZ,Amat):
-    deriv = np.array((3,len(XYZ)))
+def getRestDeriv(Func,XYZ,Amat,ops,SGData):
+    deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
-        for i,x in enumerate(xyz):
-            x += dx
-            d1 = Func(XYZ,Amat)
-            x -= 2*dx
-            d2 = Func(XYZ,Amat)
-            x += dx
-            deriv[i][j] = (d1-d2)/(2*dx)
-    return deriv
+        for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
+            XYZ[j] += x
+            d1 = Func(getSyXYZ(XYZ,ops,SGData),Amat)
+            XYZ[j] -= 2*x
+            d2 = Func(getSyXYZ(XYZ,ops,SGData),Amat)
+            XYZ[j] += x
+            deriv[j][i] = (d1-d2)/(2*dx)
+    return deriv.flatten()
 
 def getRestAngle(XYZ,Amat):
     

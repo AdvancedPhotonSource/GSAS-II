@@ -199,7 +199,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     else:
                         Lists[listName].append([Ids[x],Types[x],Coords[x],])
         bond = 1.54
-        dlg = G2phG.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[1.,4.],'%.4f')
+        dlg = G2phG.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[0.01,4.],'%.4f')
         if dlg.ShowModal() == wx.ID_OK:
             bond = dlg.GetValue()
         dlg.Destroy()
@@ -681,6 +681,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             sRange.SetValue('%.2f'%(value))
             
         def OnUseData(event):
+            Obj = event.GetEventObject()
             restData['Use'] = Obj.GetValue()
 
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -781,30 +782,40 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if len(bondList):
             table = []
             rowLabels = []
+            bad = []
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,3',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A - (res) B','calc','obs','esd']
                 for i,[indx,ops,obs,esd] in enumerate(bondList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
-                    name = ''
-                    for atom in atoms:
-                        name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    calc = G2mth.getRestDist(XYZ,Amat)
-                    table.append([name[:-3],calc,obs,esd])
-                    rowLabels.append(str(i))                
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
+                        name = ''
+                        for atom in atoms:
+                            name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        calc = G2mth.getRestDist(XYZ,Amat)
+                        table.append([name[:-3],calc,obs,esd])
+                        rowLabels.append(str(i))                
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
             else:
                 colLabels = ['A+SymOp - B+SymOp','calc','obs','esd']
-                try:
-                    for i,[indx,ops,obs,esd] in enumerate(bondList):
+                for i,[indx,ops,obs,esd] in enumerate(bondList):
+                    try:
                         names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
                         calc = G2mth.getRestDist(XYZ,Amat)
                         table.append([names[0]+'+('+ops[0]+') - '+names[1]+'+('+ops[1]+')',calc,obs,esd])
                         rowLabels.append(str(i))
-                except ValueError:              #patch - old restraints!
-                    bondList = []
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
+            if len(bad):
+                bad.reverse()
+                for ibad in bad:
+                    del bondList[ibad]
             bondTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Bonds = G2gd.GSGrid(BondRestr)
             Bonds.SetTable(bondTable, True)
@@ -879,29 +890,42 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if len(angleList):
             table = []
             rowLabels = []
+            bad = []
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A - (res) B - (res) C','calc','obs','esd']
                 for i,[indx,ops,obs,esd] in enumerate(angleList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
-                    name = ''
-                    for atom in atoms:
-                        name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    calc = G2mth.getRestAngle(XYZ,Amat)
-                    table.append([name[:-3],calc,obs,esd])
-                    rowLabels.append(str(i))                                
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
+                        name = ''
+                        for atom in atoms:
+                            name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        calc = G2mth.getRestAngle(XYZ,Amat)
+                        table.append([name[:-3],calc,obs,esd])
+                        rowLabels.append(str(i))                                
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
             else:
                 colLabels = ['A+SymOp - B+SymOp - C+SymOp','calc','obs','esd']
                 for i,[indx,ops,obs,esd] in enumerate(angleList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
-                    name = atoms[0]+'+('+ops[0]+') - '+atoms[1]+'+('+ops[1]+') - '+atoms[2]+ \
-                    '+('+ops[2]+')'
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                    calc = G2mth.getRestAngle(XYZ,Amat)
-                    table.append([name,calc,obs,esd])
-                    rowLabels.append(str(i))
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+                        name = atoms[0]+'+('+ops[0]+') - '+atoms[1]+'+('+ops[1]+') - '+atoms[2]+ \
+                        '+('+ops[2]+')'
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                        calc = G2mth.getRestAngle(XYZ,Amat)
+                        table.append([name,calc,obs,esd])
+                        rowLabels.append(str(i))
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
+            if len(bad):
+                bad.reverse()
+                for ibad in bad:
+                    del angleList[ibad]
             angleTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Angles = G2gd.GSGrid(AngleRestr)
             Angles.SetTable(angleTable, True)
@@ -967,34 +991,47 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if len(planeList):
             table = []
             rowLabels = []
+            bad = []
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) atom','calc','obs','esd']
                 for i,[indx,ops,obs,esd] in enumerate(planeList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
-                    name = ''
-                    for a,atom in enumerate(atoms):
-                        name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
-                        if (a+1)%3 == 0:
-                            name += '\n'
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    calc = G2mth.getRestPlane(XYZ,Amat)
-                    table.append([name[:-3],calc,obs,esd])
-                    rowLabels.append(str(i))
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
+                        name = ''
+                        for a,atom in enumerate(atoms):
+                            name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
+                            if (a+1)%3 == 0:
+                                name += '\n'
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        calc = G2mth.getRestPlane(XYZ,Amat)
+                        table.append([name[:-3],calc,obs,esd])
+                        rowLabels.append(str(i))
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
             else:                                
                 colLabels = ['atom+SymOp','calc','obs','esd']
                 for i,[indx,ops,obs,esd] in enumerate(planeList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                    calc = G2mth.getRestPlane(XYZ,Amat)
-                    name = ''
-                    for a,atom in enumerate(atoms):
-                        name += atom+'+ ('+ops[a]+'),'
-                        if (a+1)%3 == 0:
-                            name += '\n'
-                    table.append([name[:-1],calc,obs,esd])
-                    rowLabels.append(str(i))
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                        calc = G2mth.getRestPlane(XYZ,Amat)
+                        name = ''
+                        for a,atom in enumerate(atoms):
+                            name += atom+'+ ('+ops[a]+'),'
+                            if (a+1)%3 == 0:
+                                name += '\n'
+                        table.append([name[:-1],calc,obs,esd])
+                        rowLabels.append(str(i))
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
+            if len(bad):
+                bad.reverse()
+                for ibad in bad:
+                    del planeList[ibad]
             planeTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Planes = G2gd.GSGrid(PlaneRestr)
             Planes.SetTable(planeTable, True)
@@ -1070,29 +1107,42 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if len(volumeList):
             table = []
             rowLabels = []
+            bad = []
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) O (res) A (res) B (res) C','calc','obs','esd']
                 for i,[indx,ops,obs,esd] in enumerate(volumeList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
-                    name = ''
-                    for atom in atoms:
-                        name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' '
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    calc = G2mth.getRestChiral(XYZ,Amat)
-                    table.append([name,calc,obs,esd])
-                    rowLabels.append(str(i))
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
+                        name = ''
+                        for atom in atoms:
+                            name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' '
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        calc = G2mth.getRestChiral(XYZ,Amat)
+                        table.append([name,calc,obs,esd])
+                        rowLabels.append(str(i))
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
             else:
                 colLabels = ['O+SymOp  A+SymOp  B+SymOp  C+SymOp)','calc','obs','esd']
                 for i,[indx,ops,obs,esd] in enumerate(volumeList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
-                    name = atoms[0]+'+('+ops[0]+') '+atoms[1]+'+('+ops[1]+') '+atoms[2]+ \
-                        '+('+ops[2]+') '+atoms[3]+'+('+ops[3]+')'
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
-                    calc = G2mth.getRestChiral(XYZ,Amat)
-                    table.append([name,calc,obs,esd])
-                    rowLabels.append(str(i))
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+                        name = atoms[0]+'+('+ops[0]+') '+atoms[1]+'+('+ops[1]+') '+atoms[2]+ \
+                            '+('+ops[2]+') '+atoms[3]+'+('+ops[3]+')'
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
+                        calc = G2mth.getRestChiral(XYZ,Amat)
+                        table.append([name,calc,obs,esd])
+                        rowLabels.append(str(i))
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
+            if len(bad):
+                bad.reverse()
+                for ibad in bad:
+                    del volumeList[ibad]
             volumeTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Volumes = G2gd.GSGrid(ChiralRestr)
             Volumes.SetTable(volumeTable, True)
@@ -1155,19 +1205,28 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if len(torsionList):
             table = []
             rowLabels = []
+            bad = []
             Types = 2*[wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A  B  C  D','coef name','torsion','obs E','restr','esd']
                 for i,[indx,ops,cofName,esd] in enumerate(torsionList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
-                    name = '('+atoms[2][1]+atoms[2][0].strip()+atoms[2][2]+')'
-                    for atom in atoms:
-                        name += '  '+atom[3]
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    tor = G2mth.getRestTorsion(XYZ,Amat)
-                    restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
-                    table.append([name,cofName,tor,calc,restr,esd])
-                    rowLabels.append(str(i))
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
+                        name = '('+atoms[2][1]+atoms[2][0].strip()+atoms[2][2]+')'
+                        for atom in atoms:
+                            name += '  '+atom[3]
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        tor = G2mth.getRestTorsion(XYZ,Amat)
+                        restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
+                        table.append([name,cofName,tor,calc,restr,esd])
+                        rowLabels.append(str(i))
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
+            if len(bad):
+                bad.reverse()
+                for ibad in bad:
+                    del torsionList[ibad]
             torsionTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Torsions = G2gd.GSGrid(TorsionRestr)
             Torsions.SetTable(torsionTable, True)
@@ -1248,19 +1307,28 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran restraints:'),0,wx.ALIGN_CENTER_VERTICAL)
             table = []
             rowLabels = []
+            bad = []
             Types = 2*[wg.GRID_VALUE_STRING,]+5*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A  B  C  D  E','coef name','phi','psi','obs E','restr','esd']
                 for i,[indx,ops,cofName,esd] in enumerate(ramaList):
-                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
-                    name = '('+atoms[3][1]+atoms[3][0].strip()+atoms[3][2]+')'
-                    for atom in atoms:
-                        name += '  '+atom[3]
-                    XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
-                    phi,psi = G2mth.getRestRama(XYZ,Amat)
-                    restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])
-                    table.append([name,cofName,phi,psi,calc,restr,esd])
-                    rowLabels.append(str(i))
+                    try:
+                        atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
+                        name = '('+atoms[3][1]+atoms[3][0].strip()+atoms[3][2]+')'
+                        for atom in atoms:
+                            name += '  '+atom[3]
+                        XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
+                        phi,psi = G2mth.getRestRama(XYZ,Amat)
+                        restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])
+                        table.append([name,cofName,phi,psi,calc,restr,esd])
+                        rowLabels.append(str(i))
+                    except KeyError:
+                        print '**** WARNING - missing atom - restraint deleted ****'
+                        bad.append(i)
+            if len(bad):
+                bad.reverse()
+                for ibad in bad:
+                    del ramaList[ibad]
             ramaTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Ramas = G2gd.GSGrid(RamaRestr)
             Ramas.SetTable(ramaTable, True)

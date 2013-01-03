@@ -52,6 +52,10 @@
     HSTRY 50 EXPEDT  Win32  Sep 30 16:22:17 2007             L   O              
     HSTRY 51 EXPEDT  Win32  Sep 30 16:25:23 2007             L   O              
     HSTRY 52 EXPEDT  Win32  Oct 19 09:36:53 2011             LA                 
+    HSTRY 53 EXPEDT  Win32  Jan 03 10:20:47 2013 P  H        LA LO              
+    HSTRY 54 POWPREF Win32  Jan 03 10:20:58 2013                                
+    HSTRY 55 EXPEDT  Win32  Jan 03 12:11:16 2013             L S  D             
+    HSTRY 56 EXPEDT  Win32  Jan 03 10:23:42 2013             L   O              
   DSGL CDAT1  DRAD ARAD NOFO                                                    
   DSGL CDAT2  DRAD ARAD NOFO                                                    
   GNLS  RUN on Apr 04 14:35:43 2007    Total cycles run 167       24879.        
@@ -75,9 +79,9 @@
  AFAC  O_XAB  988.0 590.6 293.1 30.48 17.21 1730. 478.0                         
  AFAC  O_XF1  0.093 0.072 0.049 0.011 0.006 0.121 0.063-0.002-0.003-0.003       
  AFAC  O_XF2  0.073 0.052 0.032 0.006 0.004 0.106 0.044 0.000 0.000 0.000       
- EXPR  HTYP1  PXC                                                               
+ EXPR  HTYP1  PXC  RSN                                                          
  EXPR  NATYP    3                                                               
- EXPR  NHST     1                                                               
+ EXPR  NHST     2                                                               
  EXPR ATYP 1  O          11      1.09      0.89 1.45   96 1.40                  
  EXPR ATYP 2  C          12      1.12      0.92 1.65    3                       
  EXPR ATYP 3  H          22      0.98      0.78 1.20  118                       
@@ -87,56 +91,56 @@
  REFN STATS  Cycle 167 There were  3613 observations. Total CHI**2 = 2.4879E+04 
 CRS1    PNAM  SUCROSE                                                           
 CRS1   NATOM   45                                                               
-CRS1  ABC    10.863168  8.703946  7.757701    Y    0                            
+CRS1  ABC    10.863168  8.703946  7.757701    N    0                            
 CRS1  ABCSIG  0.000153  0.000120  0.000107                                      
-CRS1  ANGLES   90.0000  102.9426   90.0000                                      
+CRS1  ANGLES  90.00000 102.94260  90.00000                                      
 CRS1  ANGSIG    0.0000    0.0005    0.0000                                      
 CRS1  AT  1A  O        -0.164254 -0.157852  0.607290  1.000000O1         2 000  
-CRS1  AT  1B  0.040561                                                    I XU  
+CRS1  AT  1B  0.040561                                                    I     
 CRS1  AT  2A  O        -0.231485 -0.061788  0.265443  1.000000O2         2 000  
-CRS1  AT  2B  0.057560                                                    I XU  
+CRS1  AT  2B  0.057560                                                    I     
 CRS1  AT  3A  O        -0.295166  0.245759  0.317444  1.000000O3         2 000  
-CRS1  AT  3B  0.109726                                                    I XU  
+CRS1  AT  3B  0.109726                                                    I     
 CRS1  AT  4A  O        -0.340114  0.326551  0.654647  1.000000O4         2 000  
-CRS1  AT  4B  0.138454                                                    I XU  
+CRS1  AT  4B  0.138454                                                    I     
 CRS1  AT  5A  O        -0.392465 -0.103270  0.623136  1.000000O5         2 000  
-CRS1  AT  5B  0.028472                                                    I XU  
+CRS1  AT  5B  0.028472                                                    I     
 CRS1  AT  6A  O        -0.576481  0.051765  0.726621  1.000000O6         2 000  
-CRS1  AT  6B  0.047865                                                    I XU  
+CRS1  AT  6B  0.047865                                                    I     
 CRS1  AT  7A  O        -0.026064 -0.269992  0.384540  1.000000O11        2 000  
-CRS1  AT  7B  0.067787                                                    I XU  
+CRS1  AT  7B  0.067787                                                    I     
 CRS1  AT  8A  O        -0.219269 -0.443970  0.672126  1.000000O21        2 000  
-CRS1  AT  8B  0.053494                                                    I XU  
+CRS1  AT  8B  0.053494                                                    I     
 CRS1  AT  9A  O         0.067388 -0.191789  0.783754  1.000000O31        2 000  
-CRS1  AT  9B  0.061425                                                    I XU  
+CRS1  AT  9B  0.061425                                                    I     
 CRS1  AT 10A  O         0.018320 -0.397973  1.080663  1.000000O41        2 000  
-CRS1  AT 10B  0.111212                                                    I XU  
+CRS1  AT 10B  0.111212                                                    I     
 CRS1  AT 11A  O        -0.328317 -0.287414  0.964056  1.000000O61        2 000  
-CRS1  AT 11B  0.096466                                                    I XU  
+CRS1  AT 11B  0.096466                                                    I     
 CRS1  AT 12A  C        -0.299305 -0.166713  0.523976  1.000000C1         2 000  
-CRS1  AT 12B  0.021275                                                    I XU  
+CRS1  AT 12B  0.021275                                                    I     
 CRS1  AT 13A  C        -0.333469 -0.017226  0.345055  1.000000C2         2 000  
-CRS1  AT 13B  0.019679                                                    I XU  
+CRS1  AT 13B  0.019679                                                    I     
 CRS1  AT 14A  C        -0.267194  0.121736  0.461451  1.000000C3         2 000  
-CRS1  AT 14B  0.018025                                                    I XU  
+CRS1  AT 14B  0.018025                                                    I     
 CRS1  AT 15A  C        -0.374575  0.172912  0.565194  1.000000C4         2 000  
-CRS1  AT 15B  0.000268                                                    I XU  
+CRS1  AT 15B  0.000268                                                    I     
 CRS1  AT 16A  C        -0.349910  0.106966  0.716598  1.000000C5         2 000  
-CRS1  AT 16B  0.032578                                                    I XU  
+CRS1  AT 16B  0.032578                                                    I     
 CRS1  AT 17A  C        -0.446764  0.038868  0.802935  1.000000C6         2 000  
-CRS1  AT 17B  0.022298                                                    I XU  
+CRS1  AT 17B  0.022298                                                    I     
 CRS1  AT 18A  C        -0.102176 -0.408149  0.454657  1.000000C11        2 000  
-CRS1  AT 18B  0.002823                                                    I XU  
+CRS1  AT 18B  0.002823                                                    I     
 CRS1  AT 19A  C        -0.117978 -0.322890  0.643846  1.000000C21        2 000  
-CRS1  AT 19B -0.019107                                                    I XU  
+CRS1  AT 19B -0.019107                                                    I     
 CRS1  AT 20A  C        -0.014363 -0.345739  0.794304  1.000000C31        2 000  
-CRS1  AT 20B  0.095309                                                    I XU  
+CRS1  AT 20B  0.095309                                                    I     
 CRS1  AT 21A  C        -0.076372 -0.348567  0.921647  1.000000C41        2 000  
-CRS1  AT 21B  0.001039                                                    I XU  
+CRS1  AT 21B  0.001039                                                    I     
 CRS1  AT 22A  C        -0.197330 -0.436359  0.845452  1.000000C51        2 000  
-CRS1  AT 22B  0.047428                                                    I XU  
+CRS1  AT 22B  0.047428                                                    I     
 CRS1  AT 23A  C        -0.285790 -0.475785  0.972198  1.000000C61        2 000  
-CRS1  AT 23B  0.002722                                                    I XU  
+CRS1  AT 23B  0.002722                                                    I     
 CRS1  AT 24A  H        -0.334700 -0.254900  0.461200  1.000000H1         2 000  
 CRS1  AT 24B  0.029000                                                    I     
 CRS1  AT 25A  H        -0.411600 -0.030700  0.288300  1.000000H2         2 000  
@@ -191,7 +195,7 @@ HAP1 1 ZONE     0    0    0    0
 HAP1 1EXTPOW    0.00000E+00    N    0                                           
 HAP1 1NAXIS     1                                                               
 HAP1 1PHSFR      1.0000        N    0                                           
-HAP1 1PRCF      5   17     0.005      YY YY  Y YY                               
+HAP1 1PRCF      5   17   0.00500    0NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
 HAP1 1PRCF 1   0.000000E+00  -0.998165E+00   0.202298E+01   0.000000E+00        
 HAP1 1PRCF 2   0.985688E+00   0.209294E+01   0.100000E-02   0.100000E-02        
 HAP1 1PRCF 3  -0.429964E+01   0.000000E+00   0.697807E+01  -0.726388E+00        
@@ -199,24 +203,25 @@ HAP1 1PRCF 4   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00
 HAP1 1PRCF 5   0.000000E+00                                                     
 HAP1 1PREFO1  1.000000  1.000000  0.000000  0.000000  1.000000   NN    0    0   
 HAP1 1RADDAM    0.00000E+00    N    0      0.00                                 
-HST  1  HFIL  C:\RBVD\sucrose\sucrose_1sec_A_0.GSA                              
-HST  1  HNAM  F:\Oct_2003\disk1\sucrose_std_745mm_0.mar3450: Azimuth/2-theta    
-HST  1  IFIL  C:\RBVD\sucrose\inst_xry.prm                                      
+HST  1  HFIL  D:\pyGSAS\Exercises\sucrose\11bmb_8716.fxye                       
+HST  1  HNAM  /data/jul12/11bmb_8716.mda JUL 26, 2012 15:09:18.910830           
+HST  1  IFIL  D:\pyGSAS\Exercises\sucrose\11bmb_8716.prm                        
 HST  1 BANK     1                                                               
 HST  1 BIGFO   0.166072E+06                                                     
-HST  1 CHANS      1386         1      3613  30744340      5000                  
+HST  1 CHANS      1501         1     22405  87900360     49493    0    0        
 HST  1 EPHAS    0    0    0    0    0    0    0    0    0    Y                  
-HST  1 ICONR 0.6194280 0.0000000  -0.13099    Z    0   0.95000    0   0.50000   
-HST  1 ICONS 0.6194280 0.0000000  -1.84763    Z    0   0.95000    0   0.50000   
+HST  1 ICONR 0.4133190    0.0000    0.0000               0.990    0     0.      
+HST  1 ICONS 0.4133190    0.0000    0.0000               0.990    0     0.      
 HST  1 IRAD     0                                                               
-HST  1 MAXRF    8                                                               
+HST  1 MAXRF   62                                                               
 HST  1 NEXC     2                                                               
+HST  1 NFOBS  855    0    0    0    0    0    0    0    0                       
 HST  1 NPHAS    1    0    0    0    0    0    0    0    0                       
-HST  1 NREF   133    1.8765    Y    Y                                           
+HST  1 NREF   888    0.9777                                                     
 HST  1 R-FAC  123   0.01160   5.233365E+04                                      
 HST  1 RPOWD    0.0234    0.0196   3613  24879.                                 
-HST  1 TRNGE   7.00092  18.91080                                                
-HST  1 WREXP    0.0089                                                          
+HST  1 TRNGE   2.00100  24.40500                                                
+HST  1 WREXP    0.0354                                                          
 HST  1ABSCOR   0.000000E+00   0.000000E+00    N    0                            
 HST  1BAKGD     7   20    Y    0    Y                                           
 HST  1BAKGD1   0.422923E+04   0.425598E+04   0.378613E+04   0.304949E+04        
@@ -225,20 +230,24 @@ HST  1BAKGD3   0.176586E+04   0.165544E+04   0.148281E+04   0.143475E+04
 HST  1BAKGD4   0.137137E+04   0.133823E+04   0.130461E+04   0.116757E+04        
 HST  1BAKGD5   0.112117E+04   0.104554E+04   0.102951E+04   0.102649E+04        
 HST  1CHI         0.00                                                          
-HST  1EXC  1     0.000     7.000                                                
-HST  1EXC  2    19.000  1000.000                                                
+HST  1EXC  1     0.000     2.000                                                
+HST  1EXC  2    24.406  1000.000                                                
 HST  1EXMNMX   1.00000   1.00000                                                
 HST  1FFANS1  O            0.000     0.000   NN    0                            
 HST  1FFANS2  C            0.000     0.000   NN    0                            
 HST  1FFANS3  H            0.000     0.000   NN    0                            
 HST  1HSCALE     54.989        Y    0                                           
-HST  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER                  
+HST  1I HEAD  11-BM profile SRM 660a (LaB6) fit (Feb 2009)                      
 HST  1I ITYP    0    0.0000  180.0000         1                                 
+HST  1INAME   APS11BM                                                           
 HST  1MNREF     0    1.9792                                                     
 HST  1ODMNMX   1.00000   1.00000                                                
-HST  1PRCF1     5    8     0.005                                                
-HST  1PRCF11   0.000000E+00   0.418369E+01   0.162835E+01   0.000000E+00        
-HST  1PRCF12   0.000000E+00   0.000000E+00   0.010000E-01   0.010000E-01        
+HST  1PRCF1     3   19   0.00100                                                
+HST  1PRCF11       1.163000      -0.126000       0.063000   0.000000E+00        
+HST  1PRCF12       0.173000       0.000000       0.001700       0.001700        
+HST  1PRCF13   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HST  1PRCF14   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
+HST  1PRCF15   0.000000E+00   0.000000E+00   0.000000E+00                       
 HST  1RSP    0.0308 0.0199 0.0274 0.0097 0.0113 0.0094 0.0119 0.0086 0.0106     
 HST  1RSPA   0.0455 0.0310 0.0354 0.0146 0.0124 0.0091 0.0123 0.0092 0.0102     
 HST  1RSPTT   7.00  8.32  9.65 10.97 12.29 13.62 14.94 16.26 17.59 18.91        
@@ -246,3 +255,50 @@ HST  1RSPW   0.0463 0.0259 0.0352 0.0137 0.0144 0.0125 0.0149 0.0110 0.0138
 HST  1RSPWA  0.0629 0.0390 0.0449 0.0176 0.0146 0.0112 0.0153 0.0105 0.0116     
 HST  1TRMNMX   1.00000   1.00000                                                
 ZZZZZZZZZZZZ  Last EXP file record                                              
+    HSTRY 57 POWPREF Win32  Jan 03 10:23:52 2013                                
+    HSTRY 58 GENLES  Win32  Jan 03 10:24:02 2013 Sdsq= 0.580E+07 S/E= 0.260E-03 
+    HSTRY 59 EXPEDT  Win32  Jan 03 10:25:59 2013             L   O              
+    HSTRY 60 POWPREF Win32  Jan 03 10:26:05 2013                                
+    HSTRY 61 GENLES  Win32  Jan 03 10:26:11 2013 Sdsq= 0.338E+07 S/E= 0.306E-04 
+    HSTRY 62 EXPEDT  Win32  Jan 03 10:27:27 2013             L   O              
+    HSTRY 63 GENLES  Win32  Jan 03 10:27:34 2013 Sdsq= 0.108E+07 S/E=  55.2     
+    HSTRY 64 EXPEDT  Win32  Jan 03 10:28:36 2013             LA                 
+    HSTRY 65 POWPREF Win32  Jan 03 10:28:39 2013                                
+    HSTRY 66 GENLES  Win32  Jan 03 10:28:52 2013 Sdsq= 0.544E+06 S/E=  4.70     
+    HSTRY 67 EXPEDT  Win32  Jan 03 10:30:47 2013             LA  O              
+    HSTRY 68 GENLES  Win32  Jan 03 10:31:00 2013 Sdsq= 0.256E+06 S/E=  110.     
+    HSTRY 69 EXPEDT  Win32  Jan 03 10:35:34 2013             LAS  D             
+HST  2  HNAM  Bond distance restraints                                          
+HST  2 FACTR    1.00000                                                         
+HST  2 NBNDS   22                                                               
+HST  2BD0001  1   12   24  1  0  0  0  0 1.090 0.010                            
+HST  2BD0002  1   13   25  1  0  0  0  0 1.090 0.010                            
+HST  2BD0003  1   14   26  1  0  0  0  0 1.090 0.010                            
+HST  2BD0004  1   15   27  1  0  0  0  0 1.090 0.010                            
+HST  2BD0005  1   16   28  1  0  0  0  0 1.090 0.010                            
+HST  2BD0006  1   17   29  1  0  0  0  0 1.090 0.010                            
+HST  2BD0007  1   17   38  1  0  0  0  0 1.090 0.010                            
+HST  2BD0008  1   18   31  1  0  0  0  0 1.090 0.010                            
+HST  2BD0009  1   20   33  1  0  0  0  0 1.090 0.010                            
+HST  2BD000A  1   21   35  1  0  0  0  0 1.090 0.010                            
+HST  2BD000B  1   22   37  1  0  0  0  0 1.090 0.010                            
+HST  2BD000C  1   23   39  1  0  0  0  0 1.090 0.010                            
+HST  2BD000D  1   23   45  1  0  0  0  0 1.090 0.010                            
+HST  2BD000E  1    2   32  1  0  0  0  0 1.090 0.010                            
+HST  2BD000F  1    3   34  1  0  0  0  0 1.090 0.010                            
+HST  2BD0010  1    4   36  1  0  0  0  0 1.090 0.010                            
+HST  2BD0011  1    6   40  1  0  0  0  0 1.090 0.010                            
+HST  2BD0012  1    7   41  1  0  0  0  0 1.090 0.010                            
+HST  2BD0013  1    9   42  1  0  0  0  0 1.090 0.010                            
+HST  2BD0014  1   10   43  1  0  0  0  0 1.090 0.010                            
+HST  2BD0015  1   11   44  1  0  0  0  0 1.090 0.010                            
+    HSTRY 70 GENLES  Win32  Jan 03 10:35:53 2013 Sdsq= 0.209E+06 S/E=  129.     
+    HSTRY 71 EXPEDT  Win32  Jan 03 10:40:04 2013             L S  D             
+ REFN RESTR      22  27.197                                                     
+HST  2 RMSD    22    0.0004    27.1966                                          
+HST  2BD0016  1   18   30  1  0  0  0  0 1.090 0.010                            
+    HSTRY 72 POWPREF Win32  Jan 03 10:40:08 2013                                
+    HSTRY 73 GENLES  Win32  Jan 03 10:40:27 2013 Sdsq= 0.204E+06 S/E=  90.4     
+    HSTRY 74 EXPEDT  Win32  Jan 03 11:35:16 2013             L S  D             
+    HSTRY 75 GENLES  Win32  Jan 03 11:35:35 2013 Sdsq= 0.208E+06 S/E=  12.9     
+    HSTRY 76 EXPEDT  Win32  Jan 03 11:36:50 2013             L S  D             

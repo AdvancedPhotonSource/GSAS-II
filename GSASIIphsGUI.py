@@ -764,7 +764,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         generalData['Pawley neg wt'] = wt
                 except ValueError:
                     pass
-                pawlNegWt.SetValue("%.3g"%(generalData['Pawley neg wt']))          #reset in case of error                
+                pawlNegWt.SetValue("%.2f"%(generalData['Pawley neg wt']))          #reset in case of error                
 
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(dataDisplay,label=' Pawley controls: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -778,7 +778,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
             pawleySizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
             pawleySizer.Add(wx.StaticText(dataDisplay,label=' Pawley neg. wt.: '),0,wx.ALIGN_CENTER_VERTICAL)
-            pawlNegWt = wx.TextCtrl(dataDisplay,value='%.3g'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
+            pawlNegWt = wx.TextCtrl(dataDisplay,value='%.2f'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
             pawlNegWt.Bind(wx.EVT_TEXT_ENTER,OnPawleyNegWt)        
             pawlNegWt.Bind(wx.EVT_KILL_FOCUS,OnPawleyNegWt)
             pawleySizer.Add(pawlNegWt,0,wx.ALIGN_CENTER_VERTICAL)
@@ -883,7 +883,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Flip['k-Max'] = res
                 except ValueError:
                     pass
-                kMax.SetValue("%.0f"%(Flip['k-Max']))          #reset in case of error
+                kMax.SetValue("%.1f"%(Flip['k-Max']))          #reset in case of error
 
             refList = data['Histograms'].keys()
             flipSizer = wx.BoxSizer(wx.VERTICAL)
@@ -910,7 +910,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
             line2Sizer.Add(kFactor,0,wx.ALIGN_CENTER_VERTICAL)
             line2Sizer.Add(wx.StaticText(dataDisplay,label=' k-Max (>=10.0): '),0,wx.ALIGN_CENTER_VERTICAL)
-            kMax = wx.TextCtrl(dataDisplay,value='%.0f'%(Flip['k-Max']),style=wx.TE_PROCESS_ENTER)
+            kMax = wx.TextCtrl(dataDisplay,value='%.1f'%(Flip['k-Max']),style=wx.TE_PROCESS_ENTER)
             kMax.Bind(wx.EVT_TEXT_ENTER,OnkMax)        
             kMax.Bind(wx.EVT_KILL_FOCUS,OnkMax)
             line2Sizer.Add(kMax,0,wx.ALIGN_CENTER_VERTICAL)

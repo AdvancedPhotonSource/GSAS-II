@@ -2053,9 +2053,10 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
             pId = int(item.split(':')[0])
-            pNames.append(item)
-            pVals.append(-parmDict[item])
-            pWt.append(negWt[pId])
+            if negWt[pId]:
+                pNames.append(item)
+                pVals.append(-parmDict[item])
+                pWt.append(negWt[pId])
     pVals = np.array(pVals)
     pWt = np.array(pWt)
     return pNames,pVals,pWt
@@ -2064,6 +2065,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
     Histograms,Phases,restraintDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
     for phase in Phases:
+        if phase not in restraintDict:
+            continue
         pId = Phases[phase]['pId']
         General = Phases[phase]['General']
         SGData = General['SGData']

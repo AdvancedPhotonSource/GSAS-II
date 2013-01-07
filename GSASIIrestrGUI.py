@@ -49,11 +49,15 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         restrData['Torsion'] = {'wtFactor':1.0,'Coeff':{},'Torsions':[],'Use':True}
     if 'Rama' not in restrData:
         restrData['Rama'] = {'wtFactor':1.0,'Coeff':{},'Ramas':[],'Use':True}
+    if 'Texture' not in restrData:
+        restrData['Texture'] = {'wtFactor':1.0,'HKLs':[],'Use':True}
+    if 'ChemComp' not in restrData:
+        restrData['ChemComp'] = {'wtFactor':1.0,'Sites':[],'Use':True}
     General = phasedata['General']
     Cell = General['Cell'][1:7]          #skip flag & volume    
     Amat,Bmat = G2lat.cell2AB(Cell)
     SGData = General['SGData']
-    cx,ct = General['AtomPtrs'][:2]
+    cx,ct,cs = General['AtomPtrs'][:3]
     Atoms = phasedata['Atoms']
     AtLookUp = G2mth.FillAtomLookUp(Atoms)
     if 'macro' in General['Type']:
@@ -167,6 +171,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             AddAngleRestraint(restrData['Angle'])
         elif 'Plane' in G2frame.dataDisplay.GetPageText(page):
             AddPlaneRestraint(restrData['Plane'])
+        elif 'Chem' in G2frame.dataDisplay.GetPageText(page):
+            AddChemCompRestraint(restrData['ChemComp'])
             
     def OnAddAARestraint(event):
         page = G2frame.dataDisplay.GetSelection()
@@ -198,11 +204,14 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 Lists[listName].append([id,Type,coords])
                     else:
                         Lists[listName].append([Ids[x],Types[x],Coords[x],])
-        bond = 1.54
-        dlg = G2phG.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[0.01,4.],'%.4f')
-        if dlg.ShowModal() == wx.ID_OK:
-            bond = dlg.GetValue()
-        dlg.Destroy()
+            else:
+                break
+        if len(Lists['origin']) and len(Lists['target']):
+            bond = 1.54
+            dlg = G2phG.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[0.01,4.],'%.4f')
+            if dlg.ShowModal() == wx.ID_OK:
+                bond = dlg.GetValue()
+            dlg.Destroy()
         Factor = bondRestData['Range']
         indices = (-1,0,1)
         Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
@@ -282,33 +291,107 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         macro.close()
         UpdateBondRestr(bondRestData)                
             
+#    def AddAngleRestraint(angleRestData):
+#        Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
+#        origAtoms = []
+#        dlg = wx.MultiChoiceDialog(G2frame,'Select atom B for angle A-B-C for '+General['Name'],
+#                'Select angle restraint origin atoms',Names)
+#        if dlg.ShowModal() == wx.ID_OK:
+#            sel = dlg.GetSelections()
+#            for x in sel:
+#                if 'all' in Names[x]:
+#                    allType = Types[x]
+#                    for name,Type,coords,id in zip(Names,Types,Coords,Ids):
+#                        if Type == allType and 'all' not in name:
+#                            origAtoms.append([id,Type,coords])
+#                else:
+#                    origAtoms.append([Ids[x],Types[x],Coords[x]])
+#        targAtoms = [[Ids[x+iBeg],Types[x+iBeg],Coords[x+iBeg]] for x in range(len(Names[iBeg:]))]
+#        value = 109.54
+#        dlg = G2phG.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
+#        if dlg.ShowModal() == wx.ID_OK:
+#            value = dlg.GetValue()
+#        dlg.Destroy()
+#
+#        Factor = angleRestData['Range']
+#        indices = (-1,0,1)
+#        Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+#        VectA = []
+#        for Oid,Otype,Ocoord in origAtoms:
+#            IndBlist = []
+#            VectB = []
+#            for Tid,Ttype,Tcoord in targAtoms:
+#                result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
+#                BsumR = (Radii[Otype][0]+Radii[Ttype][0])*Factor
+#                AsumR = (Radii[Otype][1]+Radii[Ttype][1])*Factor
+#                for Txyz,Top,Tunit in result:
+#                    Dx = (Txyz-Ocoord)+Units
+#                    dx = np.inner(Amat,Dx)
+#                    dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+#                    IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
+#                    if np.any(IndB):
+#                        for indb in IndB:
+#                            for i in range(len(indb)):
+#                                if str(dx.T[indb][i]) not in IndBlist:
+#                                    IndBlist.append(str(dx.T[indb][i]))
+#                                    unit = Units[indb][i]+Tunit
+#                                if np.any(unit):
+#                                    Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
+#                                else:
+#                                    Topstr = str(Top)
+#                                    tunit = '[%2d%2d%2d]'%(unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
+#                                    Dist = ma.getdata(dist[indb])[i]
+#                                    if (Dist-AsumR) <= 0.:
+#                                        VectB.append([Oid,'1',Ocoord,Tid,Topstr,Tcoord,Dist])
+#            VectA.append(VectB)
+#            for Vects in VectA:
+#                for i,vecta in enumerate(Vects):                    
+#                    for vectb in Vects[:i]:
+#                        ids = [vecta[3],vecta[0],vectb[3]]
+#                        ops = [vecta[4],vecta[1],vectb[4]]
+#                        XYZ = np.array([vecta[5],vecta[2],vectb[5]])
+#                        angle = [ids,ops,value,1.0]
+#                        if angle not in angleRestData['Angles']:
+#                            angleRestData['Angles'].append(angle)
+#        UpdateAngleRestr(angleRestData)                
+
     def AddAngleRestraint(angleRestData):
         Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
-        origAtoms = []
-        dlg = wx.MultiChoiceDialog(G2frame,'Select atom B for angle A-B-C for '+General['Name'],
-                'Select angle restraint origin atoms',Names)
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelections()
-            for x in sel:
-                if 'all' in Names[x]:
-                    allType = Types[x]
-                    for name,Type,coords,id in zip(Names,Types,Coords,Ids):
-                        if Type == allType and 'all' not in name:
-                            origAtoms.append([id,Type,coords])
-                else:
-                    origAtoms.append([Ids[x],Types[x],Coords[x]])
-        targAtoms = [[Ids[x+iBeg],Types[x+iBeg],Coords[x+iBeg]] for x in range(len(Names[iBeg:]))]
-        value = 109.54
-        dlg = G2phG.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
-        if dlg.ShowModal() == wx.ID_OK:
-            value = dlg.GetValue()
-        dlg.Destroy()
+        Lists = {'A-atom':[],'B-atom':[],'C-atom':[]}
+        for listName in ['A-atom','B-atom']:
+            dlg = wx.MultiChoiceDialog(G2frame,'Select '+listName+' for angle A-B-C for '+General['Name']                                                                           ,
+                    'Select angle restraint '+listName,Names)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelections()
+                for x in sel:
+                    if 'all' in Names[x]:
+                        allType = Types[x]
+                        for name,Type,coords,id in zip(Names,Types,Coords,Ids):
+                            if Type == allType and 'all' not in name:
+                                if 'A' in listName:
+                                    Lists[listName].append(Type)
+                                else:
+                                    Lists[listName].append([id,Type,coords])
+                    else:
+                        if 'A' in listName:
+                            Lists[listName].append(Types[x])
+                        else:
+                            Lists[listName].append([Ids[x],Types[x],Coords[x],])
+            else:
+                break
+            targAtoms = [[Ids[x+iBeg],Types[x+iBeg],Coords[x+iBeg]] for x in range(len(Names[iBeg:]))]
+        if len(Lists['B-atom']):
+            value = 109.54
+            dlg = G2phG.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
+            if dlg.ShowModal() == wx.ID_OK:
+                value = dlg.GetValue()
+            dlg.Destroy()
 
         Factor = angleRestData['Range']
         indices = (-1,0,1)
         Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
         VectA = []
-        for Oid,Otype,Ocoord in origAtoms:
+        for Oid,Otype,Ocoord in Lists['B-atom']:
             IndBlist = []
             VectB = []
             for Tid,Ttype,Tcoord in targAtoms:
@@ -319,7 +402,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     Dx = (Txyz-Ocoord)+Units
                     dx = np.inner(Amat,Dx)
                     dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
-                    IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
+                    IndB = ma.nonzero(ma.masked_greater(dist,BsumR))
                     if np.any(IndB):
                         for indb in IndB:
                             for i in range(len(indb)):
@@ -330,17 +413,17 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                     Topstr = '%d+%d,%d,%d'%(Top,unit[0],unit[1],unit[2])
                                 else:
                                     Topstr = str(Top)
-                                    tunit = '[%2d%2d%2d]'%(unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
-                                    Dist = ma.getdata(dist[indb])[i]
-                                    if (Dist-AsumR) <= 0.:
-                                        VectB.append([Oid,'1',Ocoord,Tid,Topstr,Tcoord,Dist])
+                                Dist = ma.getdata(dist[indb])[i]
+                                if (Dist-AsumR) <= 0.:
+                                    VectB.append([Oid,'1',Ocoord,Ttype,Tid,Topstr,Tcoord,Dist])
             VectA.append(VectB)
-            for Vects in VectA:
-                for i,vecta in enumerate(Vects):                    
-                    for vectb in Vects[:i]:
-                        ids = [vecta[3],vecta[0],vectb[3]]
-                        ops = [vecta[4],vecta[1],vectb[4]]
-                        XYZ = np.array([vecta[5],vecta[2],vectb[5]])
+        for Vects in VectA:
+            for i,vecta in enumerate(Vects):                    
+                for vectb in Vects[:i]:
+                    if vecta[3] in Lists['A-atom']:
+                        ids = [vecta[4],vecta[0],vectb[4]]
+                        ops = [vecta[5],vecta[1],vectb[5]]
+                        XYZ = np.array([vecta[6],vecta[2],vectb[6]])
                         angle = [ids,ops,value,1.0]
                         if angle not in angleRestData['Angles']:
                             angleRestData['Angles'].append(angle)
@@ -659,7 +742,40 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 ids = np.array([0,0,0,0,0])
             macStr = macro.readline()
         macro.close()
-        UpdateRamaRestr(ramaRestData)                
+        UpdateRamaRestr(ramaRestData)
+        
+    def AddChemCompRestraint(chemcompRestData):
+        ids = []
+        factors = []
+        dlg = wx.MultiChoiceDialog(G2frame,'Select atoms for chemical restraint in '+General['Name'],
+                'Select atoms',Names)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            for x in sel:
+                if 'all' in Names[x]:
+                    allType = Types[x]
+                    for name,Type,id in zip(Names,Types,Ids):
+                        if Type == allType and 'all' not in name:
+                            ids.append(id)
+                            factors.append(1.0)
+                else:
+                    ids.append(Ids[x])
+                    factors.append(1.0)
+            dlg.Destroy()
+            if len(ids) > 2:
+                value = 1.0
+                dlg = G2phG.SingleFloatDialog(G2frame,'Angle','Enter unit cell sum ',value,[-1.e6,1.e6],'%.2f')
+                if dlg.ShowModal() == wx.ID_OK:
+                    value = dlg.GetValue()                
+                    comp = [ids,factors,value,0.01]
+                    if comp not in chemcompRestData['Sites']:
+                        chemcompRestData['Sites'].append(comp)
+                UpdateChemcompRestr(chemcompRestData)
+            else:
+                print '**** ERROR - not enough atoms for a composition restraint - try again ****'
+        
+    def AddTextureRestraint(textureRestData):
+        print 'Add texture restraint'         
                
     def WtBox(wind,restData):
         if 'Range' not in restData: restData['Range'] = 1.1     #patch
@@ -728,9 +844,22 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             else:
                 Obj.ClearSelection()
                 Obj.SelectRow(r,True)
+                
                     
     def UpdateBondRestr(bondRestData):
         
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            val = bondRestData['Bonds'][r][c]
+            try:
+                new = float(bondTable.GetValue(r,c))
+                if new <= 0.:
+                    raise ValueError
+                bondRestData['Bonds'][r][c] = new
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdateBondRestr,bondRestData)                
+            
         def OnChangeValue(event):
             rows = Bonds.GetSelectedRows()
             if not rows:
@@ -825,6 +954,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     Bonds.SetReadOnly(r,c,True)
                     Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
@@ -842,6 +972,18 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         
     def UpdateAngleRestr(angleRestData):
         
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            val = angleRestData['Angles'][r][c]
+            try:
+                new = float(angleTable.GetValue(r,c))
+                if new <= 0. or new > 180.:
+                    raise ValueError
+                angleRestData['Angles'][r][c] = new
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdateAngleRestr,angleRestData)                
+            
         def OnChangeValue(event):
             rows = Angles.GetSelectedRows()
             if not rows:
@@ -935,6 +1077,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     Angles.SetReadOnly(r,c,True)
                     Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Angles.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            Angles.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
@@ -957,6 +1100,18 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if item.GetLabel() in ['Change value']:
                 item.Enable(False)
 
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            val = planeRestData['Planes'][r][c]
+            try:
+                new = float(planeTable.GetValue(r,c))
+                if new <= 0.:
+                    raise ValueError
+                planeRestData['Planes'][r][c] = new
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdatePlaneRestr,planeRestData)                
+            
         def OnChangeEsd(event):
             rows = Planes.GetSelectedRows()
             if not rows:
@@ -1042,6 +1197,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     Planes.SetReadOnly(r,c,True)
                     Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Planes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
             mainSizer.Add(Planes,0,)
@@ -1059,6 +1215,18 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     
     def UpdateChiralRestr(chiralRestData):
 
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            val = chiralRestData['Volumes'][r][c]
+            try:
+                new = float(volumeTable.GetValue(r,c))
+                if new <= 0.:
+                    raise ValueError
+                chiralRestData['Volumes'][r][c] = new
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdateChiralRestr,chiralRestData)                
+            
         def OnDeleteRestraint(event):
             rows = Volumes.GetSelectedRows()
             if not rows:
@@ -1152,6 +1320,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     Volumes.SetReadOnly(r,c,True)
                     Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Volumes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
@@ -1169,6 +1338,18 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     
     def UpdateTorsionRestr(torsionRestData):
 
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            val = torsionRestData['Torsions'][r][c]
+            try:
+                new = float(torsionTable.GetValue(r,c))
+                if new <= 0. or new > 5.:
+                    raise ValueError
+                torsionRestData['Torsions'][r][3] = new     #only esd is editable
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
+            
         def OnDeleteRestraint(event):
             rows = Torsions.GetSelectedRows()
             if not rows:
@@ -1232,10 +1413,11 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             Torsions.SetTable(torsionTable, True)
             Torsions.AutoSizeColumns(False)
             for r in range(len(torsionList)):
-                for c in range(2):
+                for c in range(5):
                     Torsions.SetReadOnly(r,c,True)
                     Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
             mainSizer.Add(Torsions,0,)
@@ -1271,6 +1453,18 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
     def UpdateRamaRestr(ramaRestData):
 
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            val = ramaRestData['Ramas'][r][c]
+            try:
+                new = float(ramaTable.GetValue(r,c))
+                if new <= 0. or new > 5.:
+                    raise ValueError
+                ramaRestData['Ramas'][r][4] = new     #only esd is editable
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdateRamaRestr,ramaRestData)                
+            
         def OnDeleteRestraint(event):
             rows = Ramas.GetSelectedRows()
             if not rows:
@@ -1334,10 +1528,11 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             Ramas.SetTable(ramaTable, True)
             Ramas.AutoSizeColumns(False)
             for r in range(len(ramaList)):
-                for c in range(2):
+                for c in range(6):
                     Ramas.SetReadOnly(r,c,True)
                     Ramas.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             Ramas.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
             mainSizer.Add(Ramas,0,)
@@ -1371,11 +1566,153 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         RamaRestr.SetSize(Size)
         RamaRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
-#        G2frame.dataFrame.setSizePosLeft(Size)
+
+    def UpdateChemcompRestr(chemcompRestData):
+        
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            rowLabl = ChemComps.GetRowLabelValue(r)
+            row = int(rowLabl.split(':')[1])
+            if 'Restr' in rowLabl:
+                try:
+                    new = float(chemcompTable.GetValue(r,c))
+                    chemcompRestData['Sites'][row][c-2] = new         #obsd or esd
+                except ValueError:
+                    pass
+            else:
+                try:
+                    new = float(chemcompTable.GetValue(r,c))
+                    id = int(rowLabl.split(':')[2])
+                    chemcompRestData['Sites'][row][1][id] = new     #only factor
+                except ValueError:
+                    pass
+            wx.CallAfter(UpdateChemcompRestr,chemcompRestData)                
+            
+        def OnDeleteRestraint(event):
+            r = ChemComps.GetSelectedRows()[0]
+            if not rows:
+                return
+            rowLabl = ChemComps.GetRowLabelValue(r)
+            row = int(rowLabl.split(':')[1])
+            if 'Restr' in rowLabl:
+                del chemcompList[row]
+            else:
+                term = int(rowLabl.split(':')[2])
+                del chemcompList[row][0][term]
+                del chemcompList[row][1][term]
+            UpdateChemcompRestr(chemcompRestData)                
+            
+        def OnChangeValue(event):
+            rows = ChemComps.GetSelectedRows()
+            if not rows:
+                return
+            ChemComps.ClearSelection()
+            dlg = G2phG.SingleFloatDialog(G2frame,'New value',
+                'Enter new value for restraint multiplier',1.0,[-1.e6,1.e6],'%.2f')
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in rows:
+                    rowLabl = ChemComps.GetRowLabelValue(r)
+                    if 'term' in rowLabl:
+                        items = rowLabl.split(':')
+                        chemcompRestData['Sites'][int(items[1])][1][int(items[2])] = parm
+            dlg.Destroy()
+            UpdateChemcompRestr(chemcompRestData)                
+
+        ChemCompRestr.DestroyChildren()
+        dataDisplay = wx.Panel(ChemCompRestr)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(WtBox(ChemCompRestr,chemcompRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(wx.StaticText(ChemCompRestr,-1, 
+            'NB: The chemical restraint sum is over the unit cell contents'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+
+        chemcompList = chemcompRestData['Sites']
+        if len(chemcompList):
+            table = []
+            rowLabels = []
+            bad = []
+            Types = [wg.GRID_VALUE_STRING,]+5*[wg.GRID_VALUE_FLOAT+':10,2',]
+            colLabels = ['Atoms','mul*frac','factor','calc','obs','esd']
+            for i,[indx,factors,obs,esd] in enumerate(chemcompList):
+                try:
+                    atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
+                    mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs+1))
+                    frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs-1))
+                    mulfrac = mul*frac
+                    calcs = mul*frac*factors
+                    for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
+                        table.append([atom,mf,fr,clc,'',''])
+                        rowLabels.append('term:'+str(i)+':'+str(iatm))
+                    table.append(['Sum','','',np.sum(calcs),obs,esd])
+                    rowLabels.append('Restr:'+str(i))
+                except KeyError:
+                    print '**** WARNING - missing atom - restraint deleted ****'
+                    bad.append(i)
+            if len(bad):
+                bad.reverse()
+                for ibad in bad:
+                    del chemcompList[ibad]
+            chemcompTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            ChemComps = G2gd.GSGrid(ChemCompRestr)
+            ChemComps.SetTable(chemcompTable, True)
+            ChemComps.AutoSizeColumns(False)
+            for r in range(chemcompTable.GetNumberRows()):
+                for c in range(2):
+                    ChemComps.SetReadOnly(r,c,True)
+                    ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                if 'Restr' in ChemComps.GetRowLabelValue(r):
+                    for c in range(4):
+                        ChemComps.SetReadOnly(r,c,True)
+                        ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                    for c in [1,2]:
+                        ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
+                else:
+                    for c in [3,4,5]:
+                        ChemComps.SetReadOnly(r,c,True)
+                        ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                    for c in [4,5]:
+                        ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
+                        
+                        
+            ChemComps.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
+            mainSizer.Add(ChemComps,0,)
+        else:
+            mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
+
+        ChemCompRestr.SetSizer(mainSizer)
+        Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[0] = 600
+        Size[1] += 50       #make room for tab
+        ChemCompRestr.SetSize(Size)
+        ChemCompRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2frame.dataFrame.SetSize(Size)
+    
+        
+    def UpdateTextureRestr(textureRestData):
+
+        def OnCellChange(event):
+            r,c =  event.GetRow(),event.GetCol()
+            val = chiralRestData['Volumes'][r][c]
+            try:
+                new = float(volumeTable.GetValue(r,c))
+                if new <= 0.:
+                    raise ValueError
+                chiralRestData['Volumes'][r][c] = new
+            except ValueError:
+                pass            
+            wx.CallAfter(UpdateChiralRestr,chiralRestData)                
+            
+        pass
 
     def OnPageChanged(event):
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
+        G2frame.dataFrame.RestraintEdit.SetLabel(G2gd.wxID_RESRCHANGEVAL,'Change value')
         if text == 'Bond restraints':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
@@ -1415,6 +1752,21 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             ramaRestData = restrData['Rama']
             UpdateRamaRestr(ramaRestData)
             G2plt.PlotRama(G2frame,phaseName,rama,ramaName)
+        elif text == 'Chem. comp. restraints':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
+            G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
+            G2frame.dataFrame.RestraintEdit.SetLabel(G2gd.wxID_RESRCHANGEVAL,'Change factor')
+            G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,True)
+            G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTCHANGEESD,False)
+            chemcompRestData = restrData['ChemComp']
+            UpdateChemcompRestr(chemcompRestData)
+        elif text == 'Texture restraints':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
+            G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
+            G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,True)
+            textureRestData = restrData['Texture']
+            UpdateTextureRestr(textureRestData)
+            
         event.Skip()
 
     def SetStatusLine(text):
@@ -1453,6 +1805,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.dataDisplay.AddPage(TorsionRestr,'Torsion restraints')
         RamaRestr = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(RamaRestr,'Ramachandran restraints')
+    ChemCompRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(ChemCompRestr,'Chem. comp. restraints')
+    TextureRestr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(TextureRestr,'Texture restraints')
     
     UpdateBondRestr(restrData['Bond'])
 

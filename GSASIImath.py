@@ -312,7 +312,22 @@ def calcTorsionEnergy(TOR,Coeff=[]):
         sum = Eval-pMax
     return sum,Eval
 
-def getRestRama(XYZ,Amat,Coeff=[]):
+def getTorsionDeriv(XYZ,Amat,Coeff):
+    deriv = np.zeros((len(XYZ),3))
+    dx = 0.00001
+    for j,xyz in enumerate(XYZ):
+        for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
+            XYZ[j] += x
+            tor = getRestTorsion(XYZ,Amat)
+            p,d1 = calcTorsionEnergy(tor,Coeff)
+            XYZ[j] -= 2*x
+            tor = getRestTorsion(XYZ,Amat)
+            p,d2 = calcTorsionEnergy(tor,Coeff)            
+            XYZ[j] += x
+            deriv[j][i] = (d1-d2)/(2*dx)
+    return deriv.flatten()
+
+def getRestRama(XYZ,Amat):
     phi = getRestTorsion(XYZ[:5],Amat)
     psi = getRestTorsion(XYZ[1:],Amat)
     return phi,psi
@@ -333,6 +348,21 @@ def calcRamaEnergy(phi,psi,Coeff=[]):
         Eval = np.sum(val)
         sum = Eval-pMax
     return sum,Eval
+
+def getRamaDeriv(XYZ,Amat,Coeff):
+    deriv = np.zeros((len(XYZ),3))
+    dx = 0.00001
+    for j,xyz in enumerate(XYZ):
+        for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
+            XYZ[j] += x
+            phi,psi = getRestRama(XYZ,Amat)
+            p,d1 = calcRamaEnergy(phi,psi,Coeff)
+            XYZ[j] -= 2*x
+            phi,psi = getRestRama(XYZ,Amat)
+            p,d2 = calcRamaEnergy(phi,psi,Coeff)
+            XYZ[j] += x
+            deriv[j][i] = (d1-d2)/(2*dx)
+    return deriv.flatten()
         
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     

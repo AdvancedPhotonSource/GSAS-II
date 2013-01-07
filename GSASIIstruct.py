@@ -2096,15 +2096,16 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                     elif name == 'Chiral':
                         deriv = G2mth.getRestDeriv(G2mth.getRestChiral,XYZ,Amat,ops,SGData)
                 else:
-                    coeffDict = itemRest['Coeff']
-                    for indx,ops,obs,esd in itemRest[id]:
-                        XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
-#                        if name == 'Torsion':
-#                            tor = G2mth.getRestTorsion(XYZ,Amat)
-#                            restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
-#                        else:
-#                            phi,psi = G2mth.getRestRama(XYZ,Amat)
-#                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
+                    coffDict = itemRest['Coeff']
+                    indx,ops,cofName,esd = itemRest[names[name]][id]
+                    dNames = []
+                    for ind in indx:
+                        dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
+                    XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
+                    if name == 'Torsion':
+                        deriv = G2mth.getTorsionDeriv(XYZ,Amat,coffDict[cofName])
+                    else:
+                        deriv = G2mth.getRamaDeriv(XYZ,Amat,coffDict[cofName])
                 for dName,drv in zip(dNames,deriv):
                     try:
                         ind = varyList.index(dName)

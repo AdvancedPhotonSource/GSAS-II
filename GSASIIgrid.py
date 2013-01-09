@@ -103,6 +103,9 @@ htmlFirstUse = True
     wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
 ] = [wx.NewId() for item in range(7)]
 
+[ wxID_RIGIDBODYADD,
+] = [wx.NewId() for item in range(1)]
+
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
 
@@ -446,6 +449,18 @@ class DataFrame(wx.Frame):
         self.ConstraintEdit.Append(id=wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add New Var',
             help='Add variable composed of existing parameter')
         self.PostfillDataMenu()
+        
+# Rigid bodies
+        self.RigidBodyMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.RigidBodyMenu,helpType='Rigid bodies')
+        self.RigidBodyEdit = wx.Menu(title='')
+        self.RigidBodyMenu.Append(menu=self.RigidBodyEdit, title='Edit')
+        self.RigidBodyEdit.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
+            help='Add rigid body')
+        
+        self.PostfillDataMenu()
+        
+        
             
 # Restraints
         self.RestraintEdit = wx.Menu(title='')
@@ -1613,6 +1628,9 @@ def MovePatternTreeToGrid(G2frame,item):
         elif G2frame.PatternTree.GetItemText(item) == 'Constraints':
             data = G2frame.PatternTree.GetItemPyData(item)
             G2cnstG.UpdateConstraints(G2frame,data)
+        elif G2frame.PatternTree.GetItemText(item) == 'Rigid bodies':
+            data = G2frame.PatternTree.GetItemPyData(item)
+            G2cnstG.UpdateRigidBodies(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Restraints':
             data = G2frame.PatternTree.GetItemPyData(item)
             Phases = G2frame.GetPhaseData()

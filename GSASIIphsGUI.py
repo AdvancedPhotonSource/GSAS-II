@@ -402,8 +402,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'Pawley neg wt' not in generalData:
             generalData['Pawley neg wt'] = 0.0
             
-#        if 'SH Texture' not in generalData:
-#            generalData['SH Texture'] = data['SH Texture']
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []

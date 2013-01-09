@@ -30,6 +30,7 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
+atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
@@ -363,6 +364,18 @@ def getRamaDeriv(XYZ,Amat,Coeff):
             XYZ[j] += x
             deriv[j][i] = (d1-d2)/(2*dx)
     return deriv.flatten()
+
+def getRestPolefig(ODFln,SamSym,Grid):
+    X,Y = np.meshgrid(np.linspace(1.,-1.,Grid),np.linspace(-1.,1.,Grid))
+    R,P = np.sqrt(X**2+Y**2).flatten(),atan2d(X,Y).flatten()
+    R = np.where(R <= 1.,2.*atand(R),0.0)
+    Z = np.zeros_like(R)
+    Z = G2lat.polfcal(ODFln,SamSym,R,P)
+    Z = np.reshape(Z,(Grid,Grid))
+    return np.reshape(R,(Grid,Grid)),np.reshape(P,(Grid,Grid)),Z
+
+def getRestPolefigDerv(HKL,Grid,SHCoeff):
+    pass
         
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     

@@ -15,6 +15,7 @@ import math
 import random
 import cPickle
 import numpy as np
+import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.optimize as so
 import GSASIIpath
@@ -629,7 +630,6 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
         SGtext = G2spc.SGPrint(SGData)
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
-        Amat,Bmat = G2lat.cell2AB(cell[1:7])
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5]})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
@@ -687,14 +687,14 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
                 phaseDict[pfx+'SHmodel'] = SamSym[textureData['Model']]
-                for name in ['omega','chi','phi']:
-                    phaseDict[pfx+'SH '+name] = textureData['Sample '+name][1]
-                    if textureData['Sample '+name][0]:
-                        phaseVary.append(pfx+'SH '+name)
-                for name in textureData['SH Coeff'][1]:
-                    phaseDict[pfx+name] = textureData['SH Coeff'][1][name]
+                for item in ['omega','chi','phi']:
+                    phaseDict[pfx+'SH '+item] = textureData['Sample '+item][1]
+                    if textureData['Sample '+item][0]:
+                        phaseVary.append(pfx+'SH '+item)
+                for item in textureData['SH Coeff'][1]:
+                    phaseDict[pfx+item] = textureData['SH Coeff'][1][item]
                     if textureData['SH Coeff'][0]:
-                        phaseVary.append(pfx+name)
+                        phaseVary.append(pfx+item)
                 
             if Print:
                 print >>pFile,'\n Phase name: ',General['Name']
@@ -709,7 +709,8 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
                     '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
                 PrintTexture(textureData)
                 if name in RestraintDict:
-                    PrintRestraints(Amat,SGData,General['AtomPtrs'],Atoms,AtLookup,RestraintDict[name],pFile)
+                    PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
+                        textureData,RestraintDict[name],pFile)
                     
         elif PawleyRef:
             pawleyVary = []
@@ -764,11 +765,13 @@ def cellFill(pfx,SGData,parmDict,sigDict):
         sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
     return A,sigA
         
-def PrintRestraints(Amat,SGData,AtPtrs,Atoms,AtLookup,phaseRest,pFile):
+def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):
     if phaseRest:
-        cx,ct = AtPtrs[:2]
+        Amat = G2lat.cell2AB(cell)[0]
+        cx,ct,cs = AtPtrs[:3]
         names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
-            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas']]
+            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
+            ['ChemComp','Sites'],['Texture','HKLs']]
         for name,rest in names:
             itemRest = phaseRest[name]
             if itemRest[rest] and itemRest['Use']:
@@ -798,10 +801,10 @@ def PrintRestraints(Amat,SGData,AtPtrs,Atoms,AtLookup,phaseRest,pFile):
                             print >>pFile,' %9.3f %9.3f %8.3f %8.3f   %s'%(calc,obs,esd,(obs-calc)/esd,AtName[:-1])
                         except KeyError:
                             del itemRest[rest]
-                else:
+                elif name in ['Torsion','Rama']:
                     print >>pFile,'  atoms(symOp)  calc  obs  sig  delt/sig  torsions: '
                     coeffDict = itemRest['Coeff']
-                    for indx,ops,cofName,esd in enumerate(torsionList):
+                    for indx,ops,cofName,esd in enumerate(itemRest[rest]):
                         AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
                         AtName = ''
                         for i,Aname in enumerate(AtNames):
@@ -816,6 +819,37 @@ def PrintRestraints(Amat,SGData,AtPtrs,Atoms,AtLookup,phaseRest,pFile):
                             phi,psi = G2mth.getRestRama(XYZ,Amat)
                             restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
                             print >>pFile,' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s'%(AtName[:-1],calc,obs,esd,(obs-calc)/esd,phi,psi)
+                elif name == 'ChemComp':
+                    print >>pFile,'     atoms   mul*frac  factor     prod'
+                    for indx,factors,obs,esd in itemRest[rest]:
+                        try:
+                            atoms = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
+                            mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
+                            frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs-1))
+                            mulfrac = mul*frac
+                            calcs = mul*frac*factors
+                            for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
+                                print >>pFile,' %10s %8.3f %8.3f %8.3f'%(atom,mf,fr,clc)
+                            print >>pFile,' Sum:                   calc: %8.3f obs: %8.3f esd: %8.3f'%(np.sum(calcs),obs,esd)
+                        except KeyError:
+                            del itemRest[rest]
+                elif name == 'Texture' and textureData['Order']:
+                    Start = False
+                    SHCoef = textureData['SH Coeff'][1]
+                    shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+                    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+                    print '    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd  '
+                    for hkl,grid,esd1,ifesd2,esd2 in itemRest[rest]:
+                        PH = np.array(hkl)
+                        phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+                        ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+                        R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
+                        Z = ma.masked_greater(Z,0.0)
+                        num = ma.count(Z)
+                        sum = 0
+                        if num:
+                            sum = np.sum(Z)
+                        print '   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2)
         
 def getCellEsd(pfx,SGData,A,covData):
     dpr = 180./np.pi
@@ -966,7 +1000,6 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
         Atoms = Phase['Atoms']
         AtLookup = G2mth.FillAtomLookUp(Atoms)
         cell = General['Cell']
-        Amat,Bmat = G2lat.cell2AB(cell[1:7])
         pId = Phase['pId']
         pfx = str(pId)+'::'
         if cell[0]:
@@ -1060,9 +1093,9 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
                     SHtextureSig[name] = sigDict[aname]
             PrintSHtextureAndSig(textureData,SHtextureSig)
         if phase in RestraintDict:
-            PrintRestraints(Amat,SGData,General['AtomPtrs'],Atoms,AtLookup,RestraintDict[phase],pFile)
+            PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
+                textureData,RestraintDict[phase],pFile)
                     
-
 ################################################################################
 ##### Histogram & Phase data
 ################################################################################        
@@ -2008,14 +2041,17 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
         pId = Phases[phase]['pId']
         negWt[pId] = Phases[phase]['General']['Pawley neg wt']
         General = Phases[phase]['General']
+        textureData = General['SH Texture']
         SGData = General['SGData']
         AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'])
-        Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
+        cell = General['Cell'][1:7]
+        Amat,Bmat = G2lat.cell2AB(cell)
         if phase not in restraintDict:
             continue
         phaseRest = restraintDict[phase]
         names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
-            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas']]
+            ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
+            ['ChemComp','Sites'],['Texture','HKLs']]
         for name,rest in names:
             itemRest = phaseRest[name]
             if itemRest[rest] and itemRest['Use']:
@@ -2035,7 +2071,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                             calc = G2mth.getRestChiral(XYZ,Amat)
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)
-                else:
+                elif name in ['Torsion','Rama']:
                     coeffDict = itemRest['Coeff']
                     for i,[indx,ops,cofName,esd] in enumerate(torsionList):
                         pNames.append(str(pId)+':'+name+':'+str(i))
@@ -2049,6 +2085,25 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                             restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)
+                elif name == 'ChemComp':
+                    for i,[indx,factors,obs,esd] in enumerate(itemRest[rest]):
+                        pNames.append(str(pId)+':'+name+':'+str(i))
+                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs+1))
+                        frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs-1))
+                        calc = np.sum(mul*frac*factors)
+                        pVals.append(obs-calc)
+                        pWt.append(wt/esd**2)                    
+                elif name == 'Texture':
+                    SHCoef = textureData['SH Coeff'][1]
+                    shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+                    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+                    for i,[hkl,grid,esd1,ifesd2,esd2] in enumerate(itemRest[rest]):
+                        PH = np.array(hkl)
+                        phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+                        ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
+                        R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
+                        Z = ma.masked_greater(Z,0.0)
+                    raise Exception
          
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
@@ -2074,7 +2129,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
         Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
         phaseRest = restraintDict[phase]
         names = {'Bond':'Bonds','Angle':'Angles','Plane':'Planes',
-            'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas'}
+            'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas',
+            'ChemComp':'Sites','Texture':'HKLs'}
         for ip,pName in enumerate(pNames):
             pnames = pName.split(':')
             if pId == int(pnames[0]):
@@ -2095,7 +2151,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                         deriv = G2mth.getRestDeriv(G2mth.getRestPlane,XYZ,Amat,ops,SGData)
                     elif name == 'Chiral':
                         deriv = G2mth.getRestDeriv(G2mth.getRestChiral,XYZ,Amat,ops,SGData)
-                else:
+                elif name in ['Torsion','Rama']:
                     coffDict = itemRest['Coeff']
                     indx,ops,cofName,esd = itemRest[names[name]][id]
                     dNames = []
@@ -2106,6 +2162,15 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                         deriv = G2mth.getTorsionDeriv(XYZ,Amat,coffDict[cofName])
                     else:
                         deriv = G2mth.getRamaDeriv(XYZ,Amat,coffDict[cofName])
+                elif name == 'ChemComp':
+                    indx,factors,obs,esd = itemRest[names[name]][id]
+                    dNames = []
+                    for ind in indx:
+                        dNames += str(pId)+'::Afrac:'+str(AtLookup[ind])
+                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs+1))
+                        deriv = mul*factors
+                elif name == 'Texture':
+                    raise Exception
                 for dName,drv in zip(dNames,deriv):
                     try:
                         ind = varyList.index(dName)

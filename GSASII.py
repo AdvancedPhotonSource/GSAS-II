@@ -1279,7 +1279,9 @@ class GSASII(wx.Frame):
         if not G2gd.GetPatternTreeItemId(self,self.root,'Restraints'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Restraints')
             self.PatternTree.SetItemPyData(sub,{})
-            
+        if not G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'):
+            sub = self.PatternTree.AppendItem(parent=self.root,text='Rigid bodies')
+            self.PatternTree.SetItemPyData(sub,{})
                 
     class CopyDialog(wx.Dialog):
         def __init__(self,parent,title,text,data):
@@ -2161,7 +2163,6 @@ class GSASII(wx.Frame):
     def OnViewLSParms(self,event):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
-        print Histograms.keys()
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestraintDict=None,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)

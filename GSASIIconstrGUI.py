@@ -545,3 +545,102 @@ def UpdateConstraints(G2frame,data):
             parent=G2frame.dataFrame)
     elif warnmsg:
         print 'Unexpected contraint warning:\n',warnmsg
+        
+################################################################################
+#### Rigid bodies
+################################################################################
+
+def UpdateRigidBodies(G2frame,data):
+    '''Called when Rigid bodies tree item is selected.
+    Displays the rigid bodies in the data window
+    '''
+    if not data:
+        data.update({'Vector':{},'Residue':{},'Z-matrix':{}})       #empty dict - fill it
+
+    def OnPageChanged(event):
+        if event:       #page change event!
+            page = event.GetSelection()
+        else:
+            page = G2frame.dataDisplay.GetSelection()
+        oldPage = G2frame.dataDisplay.ChangeSelection(page)
+        text = G2frame.dataDisplay.GetPageText(page)
+        if text == 'Vector rigid bodies':
+            G2frame.Page = [page,'vrb']
+            UpdateVectorRB()
+        elif text == 'Residue rigid bodies':
+            G2frame.Page = [page,'rrb']
+            UpdateResidueRB()
+        elif text == 'Z-matrix rigid bodies':
+            G2frame.Page = [page,'zrb']
+            UpdateZMatrixRB()
+
+    def UpdateVectorRB():
+        VectorRB.DestroyChildren()
+        VectorRBDisplay = wx.Panel(VectorRB)
+        VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
+        VectorRBSizer.Add((5,5),0)        
+#        VectorRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
+        VectorRBDisplay.SetSizer(VectorRBSizer,True)
+        Size = VectorRBSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
+        VectorRBDisplay.SetSize(Size)
+        VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],250)
+        G2frame.dataFrame.setSizePosLeft(Size)
+        
+    def UpdateResidueRB():
+        ResidueRB.DestroyChildren()
+        ResidueRBDisplay = wx.Panel(ResidueRB)
+        ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
+        ResidueRBSizer.Add((5,5),0)        
+#        VectorRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
+        ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
+        Size = ResidueRBSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
+        ResidueRBDisplay.SetSize(Size)
+        ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],250)
+        G2frame.dataFrame.setSizePosLeft(Size)
+        
+    def UpdateZMatrixRB():
+        ZMatrixRB.DestroyChildren()
+        ZMatrixRBDisplay = wx.Panel(ZMatrixRB)
+        ZMatrixRBSizer = wx.BoxSizer(wx.VERTICAL)
+        ZMatrixRBSizer.Add((5,5),0)        
+#        ZMatrixRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
+        ZMatrixRBDisplay.SetSizer(ZMatrixRBSizer,True)
+        Size = ZMatrixRBSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
+        ZMatrixRBDisplay.SetSize(Size)
+        ZMatrixRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],250)
+        G2frame.dataFrame.setSizePosLeft(Size)
+        
+
+
+    def SetStatusLine(text):
+        Status.SetStatusText(text)                                      
+
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
+    G2frame.dataFrame.SetLabel('Rigid bodies')
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    SetStatusLine('')
+
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)    
+    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+
+    VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(VectorRB,'Vector rigid bodies')
+    ResidueRB = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(ResidueRB,'Residue rigid bodies')
+    ZMatrix = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(ZMatrix,'Z-matrix rigid bodies')
+    UpdateVectorRB()
+    

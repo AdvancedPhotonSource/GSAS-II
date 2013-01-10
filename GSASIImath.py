@@ -367,7 +367,7 @@ def getRamaDeriv(XYZ,Amat,Coeff):
 
 def getRestPolefig(ODFln,SamSym,Grid):
     X,Y = np.meshgrid(np.linspace(1.,-1.,Grid),np.linspace(-1.,1.,Grid))
-    R,P = np.sqrt(X**2+Y**2).flatten(),atan2d(X,Y).flatten()
+    R,P = np.sqrt(X**2+Y**2).flatten(),atan2d(Y,X).flatten()
     R = np.where(R <= 1.,2.*atand(R),0.0)
     Z = np.zeros_like(R)
     Z = G2lat.polfcal(ODFln,SamSym,R,P)

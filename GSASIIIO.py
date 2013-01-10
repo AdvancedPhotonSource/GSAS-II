@@ -93,8 +93,9 @@ def GetPowderPeaks(fileName):
 def CheckImageFile(G2frame,imagefile):
     if not ospath.exists(imagefile):
         dlg = wx.FileDialog(G2frame, 'Bad image file name; choose name', '.', '',\
-        'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
-        |*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|\
+        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
+        |*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|\
+        European detector file (*.edf)|*.edf|\
         Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
         MAR file (*.mar*)|*.mar*|\
         GE Image (*.avg;*.sum)|*.avg;*.sum|\
@@ -115,6 +116,8 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     Comments = []
     if ext == '.tif' or ext == '.tiff':
         Comments,Data,Npix,Image = GetTifData(imagefile)
+    elif ext == '.edf':
+        Comments,Data,Npix,Image = GetEdfData(imagefile)
     elif ext == '.img':
         Comments,Data,Npix,Image = GetImgData(imagefile)
         Image[0][0] = 0
@@ -141,6 +144,55 @@ def GetG2Image(filename):
     File.close()
     return Comments,Data,Npix,image
     
+def GetEdfData(filename,imageOnly=False):    
+    import struct as st
+    import array as ar
+    if not imageOnly:
+        print 'Read European detector data edf file: ',filename
+    File = open(filename,'rb')
+    head = File.read(3072)
+    lines = head.split('\n')
+    sizexy = [0,0]
+    pixSize = [0,0]
+    cent = [0,0]
+    head = ['European detector data',]
+    for line in lines:
+        fields = line.split()
+        if 'Dim_1' in line:
+            sizexy[0] = int(fields[2])
+        elif 'Dim_2' in line:
+            sizexy[1] = int(fields[2])
+        elif 'DataType' in line:
+            dType = fields[2]
+        elif 'refined_wavelength' in line:
+            wave = float(fields[2])
+        elif 'Size' in line:
+            imSize = int(fields[2])
+        elif 'DataType' in lines:
+            dType = fields[2]
+        elif 'pixel_size_x' in line:
+            pixSize[0] = float(fields[2])
+        elif 'pixel_size_y' in line:
+            pixSize[1] = float(fields[2])
+        elif 'beam_center_x' in line:
+            cent[0] = float(fields[2])
+        elif 'beam_center_y' in line:
+            cent[1] = float(fields[2])
+        elif 'refined_distance' in line:
+            dist = float(fields[2])
+        if line:
+            head.append(line)
+    if dType == 'UnsignedShort':        
+        image = np.array(ar.array('H',File.read(imSize)),dtype=np.int32)
+    image = np.reshape(image,(sizexy[1],sizexy[0]))
+    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
+    Npix = sizexy[0]*sizexy[1]
+    File.close()    
+    if imageOnly:
+        return image
+    else:
+        return head,data,Npix,image
+        
 def GetGEsumData(filename,imageOnly=False):
     import struct as st
     import array as ar
@@ -284,7 +336,7 @@ def GetMAR345Data(filename,imageOnly=False):
         return image.T              #transpose to get it right way around
     else:
         return head,data,Npix,image.T
-        
+
 def GetTifData(filename,imageOnly=False):
     import struct as st
     import array as ar

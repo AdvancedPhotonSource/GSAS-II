@@ -2102,8 +2102,18 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
                         ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
                         R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
-                        Z = ma.masked_greater(Z,0.0)
-                    raise Exception
+                        Z1 = -ma.masked_greater(Z,0.0)
+                        IndZ1 = np.array(ma.nonzero(Z1))
+                        for ind in IndZ1.T:
+                            pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
+                            pVals.append(Z1[ind[0]][ind[1]])
+                            pWt.append(wt/esd1**2)
+                        if ifesd2:
+                            Z2 = 1.-Z
+                            for ind in np.ndindex(grid,grid):
+                                pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
+                                pVals.append(Z1[ind[0]][ind[1]])
+                                pWt.append(wt/esd2**2)
          
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
@@ -2126,11 +2136,18 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
         General = Phases[phase]['General']
         SGData = General['SGData']
         AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'])
-        Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
+        cell = General['Cell'][1:7]
+        Amat,Bmat = G2lat.cell2AB(cell)
+        textureData = General['SH Texture']
+
+        SHCoef = textureData['SH Coeff'][1]
+        shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
         phaseRest = restraintDict[phase]
         names = {'Bond':'Bonds','Angle':'Angles','Plane':'Planes',
             'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas',
             'ChemComp':'Sites','Texture':'HKLs'}
+        lasthkl = np.array([0,0,0])
         for ip,pName in enumerate(pNames):
             pnames = pName.split(':')
             if pId == int(pnames[0]):
@@ -2169,7 +2186,21 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                         dNames += str(pId)+'::Afrac:'+str(AtLookup[ind])
                         mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs+1))
                         deriv = mul*factors
-                elif name == 'Texture':
+                elif 'Texture' in name:
+                    hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][id]
+                    if np.any(lasthkl-hkl):
+                        PH = np.array(hkl)
+                        phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+                        ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
+#                        R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
+                        lasthkl = copy.copy(hkl)                        
+                    if 'unit' in name:
+                        pass
+                    else:
+                        gam = float(pnames[3])
+                        phi = float(pnames[4])
+                        pass
+                    
                     raise Exception
                 for dName,drv in zip(dNames,deriv):
                     try:

@@ -1181,8 +1181,9 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         dlg = wx.FileDialog(
             self, 'Choose image files', '.', '',
-            'Any image file (*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img)|'
-            '*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img;*.zip|'
+            'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img)|'
+            '*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img;*.zip|'
+            'European detector file (*.edf)|*.edf|'
             'Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|'
             'MAR file (*.mar*)|*.mar*|'
             'GE Image (*.avg;*.sum)|*.avg;*.sum|'

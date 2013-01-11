@@ -34,6 +34,11 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ################################################################################                    
 def UpdateImageControls(G2frame,data,masks):
     import ImageCalibrants as calFile
+#patch
+    if 'GonioAngles' not in data:
+        data['GonioAngles'] = [0.,0.,0.]
+#end patch
+
     
 # Menu items
             
@@ -162,7 +167,8 @@ def UpdateImageControls(G2frame,data,masks):
                         if ifcopy:
                             oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')))
                             Data['range'] = oldData['range']
-                            Data['size'] = oldData['size']                                
+                            Data['size'] = oldData['size']
+                            Data['GonioAngles'] = oldData['GonioAngles']
                             Data['ring'] = []
                             Data['rings'] = []
                             Data['ellipses'] = []
@@ -694,6 +700,33 @@ def UpdateImageControls(G2frame,data,masks):
         calibSizer.Add(comboSizer,0)
         return calibSizer
         
+    def GonioSizer():
+        
+        ValObj = {}
+        
+        def OnGonioAngle(event):
+            Obj = event.GetEventObject()
+            item = ValObj[Obj.GetId()]
+            try:
+                value = float(Obj.GetValue())
+            except ValueError:
+                value = data['GonioAngles'][item]
+            data['GonioAngles'][item] = value
+            Obj.SetValue('%8.2f'%(value))
+        
+        gonioSizer = wx.BoxSizer(wx.HORIZONTAL)
+        names = ['Omega','Chi','Phi']
+        gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'Sample goniometer angles: '),0,wx.ALIGN_CENTER_VERTICAL)
+        for i,name in enumerate(names):
+            gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,name),0,wx.ALIGN_CENTER_VERTICAL)
+            angle = wx.TextCtrl(G2frame.dataDisplay,-1,value='%8.2f'%(data['GonioAngles'][i]),
+                style=wx.TE_PROCESS_ENTER)
+            angle.Bind(wx.EVT_TEXT_ENTER,OnGonioAngle)
+            angle.Bind(wx.EVT_KILL_FOCUS,OnGonioAngle)
+            ValObj[angle.GetId()] = i
+            gonioSizer.Add(angle,0,wx.ALIGN_CENTER_VERTICAL)
+        return gonioSizer
+        
 # Image Controls main code             
                             
     #fix for old files:
@@ -748,6 +781,8 @@ def UpdateImageControls(G2frame,data,masks):
         wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add((5,5),0)
     mainSizer.Add(CalibSizer(),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(GonioSizer(),0,wx.ALIGN_CENTER_VERTICAL)   
         
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

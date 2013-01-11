@@ -1220,6 +1220,7 @@ class GSASII(wx.Frame):
                             Data['calibskip'] = 0
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
+                            Data['GonioAngles'] = [0.,0.,0.]
                         else:
                             Data['type'] = 'PWDR'
                             Data['color'] = 'Paired'
@@ -1234,6 +1235,7 @@ class GSASII(wx.Frame):
                             Data['calibskip'] = 0
                             Data['edgemin'] = 100000000
                             Data['ellipses'] = []
+                            Data['GonioAngles'] = [0.,0.,0.]
                             Data['calibrant'] = ''
                             Data['IOtth'] = [2.0,5.0]
                             Data['LRazimuth'] = [135,225]

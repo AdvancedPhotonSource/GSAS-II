@@ -578,6 +578,9 @@ def SaveIntegration(G2frame,PickId,data):
         W = 1./Y                    #probably not true
         Sample = G2pdG.SetDefaultSample()
         Sample['Gonio. radius'] = data['distance']
+        Sample['Omega'] = data['GonioAngles'][0]
+        Sample['Chi'] = data['GonioAngles'][1]
+        Sample['Phi'] = data['GonioAngles'][2]
         if Id:
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'),Comments)                    
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])

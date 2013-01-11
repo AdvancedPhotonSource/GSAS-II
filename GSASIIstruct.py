@@ -2095,7 +2095,8 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)                    
                 elif name == 'Texture':
-                    SHCoef = textureData['SH Coeff'][1]
+                    SHkeys = textureData['SH Coeff'][1].keys()
+                    SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
                     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
                     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
                     for i,[hkl,grid,esd1,ifesd2,esd2] in enumerate(itemRest[rest]):
@@ -2141,7 +2142,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
         Amat,Bmat = G2lat.cell2AB(cell)
         textureData = General['SH Texture']
 
-        SHCoef = textureData['SH Coeff'][1]
+        SHkeys = textureData['SH Coeff'][1].keys()
+        SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
         sam = SamSym[textureData['Model']]
@@ -2154,7 +2156,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
             pnames = pName.split(':')
             if pId == int(pnames[0]):
                 name = pnames[1]
-                if not name:        #empty for Pawley restraints; pName has '::' in it - skip the rest
+                if not name:        #empty for Pawley restraints; pName has '::' in it
+                    pDerv[varyList.index(pName)][ip] += 1.
                     continue
                 id = int(pnames[2]) 
                 itemRest = phaseRest[name]
@@ -2216,9 +2219,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                         pDerv[ind][ip] += drv
                     except ValueError:
                         pass
-    for i,item in enumerate(varyList):
-        if item in pNames:
-            pDerv[i][pNames.index(item)] += 1.
+    print np.sum(pDerv),pDerv.shape
     return pDerv
 
 ################################################################################

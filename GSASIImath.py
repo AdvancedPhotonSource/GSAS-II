@@ -196,6 +196,13 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         dnames = [dpfx[i]+str(AtLookup[ind]) for i in range(3)]
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
+
+def GetSHCoeff(pId,parmDict,SHkeys):
+    SHCoeff = {}
+    for shkey in SHkeys:
+        shname = str(pId)+'::'+shkey
+        SHCoeff[shkey] = parmDict[shname]
+    return SHCoeff
         
 def getMass(generalData):
     mass = 0.

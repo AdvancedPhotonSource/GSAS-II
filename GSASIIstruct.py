@@ -12,6 +12,7 @@ import os
 import os.path as ospath
 import time
 import math
+import copy
 import random
 import cPickle
 import numpy as np
@@ -2143,6 +2144,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
         SHCoef = textureData['SH Coeff'][1]
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+        sam = SamSym[textureData['Model']]
         phaseRest = restraintDict[phase]
         names = {'Bond':'Bonds','Angle':'Angles','Plane':'Planes',
             'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas',
@@ -2152,6 +2154,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
             pnames = pName.split(':')
             if pId == int(pnames[0]):
                 name = pnames[1]
+                if not name:        #empty for Pawley restraints; pName has '::' in it - skip the rest
+                    continue
                 id = int(pnames[2]) 
                 itemRest = phaseRest[name]
                 if name in ['Bond','Angle','Plane','Chiral']:
@@ -2183,25 +2187,29 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                     indx,factors,obs,esd = itemRest[names[name]][id]
                     dNames = []
                     for ind in indx:
-                        dNames += str(pId)+'::Afrac:'+str(AtLookup[ind])
+                        dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
                         mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs+1))
                         deriv = mul*factors
                 elif 'Texture' in name:
+                    deriv = []
+                    dNames = []
                     hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][id]
+                    hkl = np.array(hkl)
                     if np.any(lasthkl-hkl):
                         PH = np.array(hkl)
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
                         ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
-#                        R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
                         lasthkl = copy.copy(hkl)                        
                     if 'unit' in name:
                         pass
                     else:
                         gam = float(pnames[3])
-                        phi = float(pnames[4])
-                        pass
-                    
-                    raise Exception
+                        psi = float(pnames[4])
+                        for SHname in ODFln:
+                            l,m,n = eval(SHname[1:])
+                            Ksl = G2lat.GetKsl(l,m,sam,psi,gam)[0]
+                            dNames += [str(pId)+'::'+SHname]
+                            deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
                 for dName,drv in zip(dNames,deriv):
                     try:
                         ind = varyList.index(dName)
@@ -2210,7 +2218,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                         pass
     for i,item in enumerate(varyList):
         if item in pNames:
-            pId = int(item.split(':')[0])
             pDerv[i][pNames.index(item)] += 1.
     return pDerv
 
@@ -3509,6 +3516,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     pDict,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
     if np.any(pVals):
         print 'Penalty function: %.3f on %d terms'%(np.sum(pWt*pVals**2),len(pVals))
+        Nobs += len(pVals)
         M = np.concatenate((M,pWt*pVals))
     return M
                         

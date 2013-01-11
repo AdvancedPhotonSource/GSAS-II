@@ -1539,7 +1539,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateChemcompRestr,chemcompRestData)                
             
         def OnDeleteRestraint(event):
-            r = ChemComps.GetSelectedRows()[0]
+            rows = ChemComps.GetSelectedRows()[0]
             if not rows:
                 return
             rowLabl = ChemComps.GetRowLabelValue(r)

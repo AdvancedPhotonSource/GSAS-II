@@ -770,7 +770,7 @@ def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
                         else:
                             coeffNames.append('C(%d,%d)'%(iord,n))
     return coeffNames
-
+    
 def CrsAng(H,cell,SGData):
     a,b,c,al,be,ga = cell
     SQ3 = 1.732050807569

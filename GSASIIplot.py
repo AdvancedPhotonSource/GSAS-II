@@ -633,7 +633,9 @@ def PlotPatterns(G2frame,newPlot=False):
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
             G2frame.PatternId, 'Instrument Parameters'))
         ParmList = [Parms,]
+        Title = Pattern[-1]
     else:        
+        Title = os.path.split(G2frame.GSASprojectfile)[1]
         PlotList = []
         ParmList = []
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
@@ -662,7 +664,6 @@ def PlotPatterns(G2frame,newPlot=False):
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
     offset = G2frame.Offset[0]*Ymax/100.0
-    Title = 'Powder Patterns: '+os.path.split(G2frame.GSASprojectfile)[1]
     if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)

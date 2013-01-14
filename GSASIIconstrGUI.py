@@ -134,7 +134,7 @@ def UpdateConstraints(G2frame,data):
                         varbs = [FrstVarb,]
                         items = varList[x].split(':')
                         for item in varList:
-                            if items[0] == item.split(':')[0]:
+                            if items[0] == item.split(':')[0] and ':all:' not in item:
                                 varbs.append(item)
                         break
                     else:

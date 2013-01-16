@@ -1127,7 +1127,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
                             DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
-                    Paint()
+                    wx.CallAfter(Paint)
                     
         def ChangeAtomCell(event):
             
@@ -1207,7 +1207,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
                 PE.Destroy()
                 SetupGeneral()
-                Paint()
+                wx.CallAfter(Paint)
                 value = Atoms.GetCellValue(r,c)
                 atomData[r][c] = value
                 ID = atomData[r][-1]
@@ -1250,7 +1250,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         atomData.insert(r,item)
                         Atoms.frm = -1
                         G2frame.dataFrame.SetStatusText('')
-                        Paint()
+                        wx.CallAfter(Paint)
                 else:
                     Atoms.ClearSelection()
                     Atoms.SelectRow(r,True)

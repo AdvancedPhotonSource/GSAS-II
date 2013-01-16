@@ -328,12 +328,25 @@ class GridFractionEditor(wg.PyGridCellEditor):
     def EndEdit(self, row, col, grid):
         changed = False
 
-        val = self._tc.GetValue()
+        val = self._tc.GetValue().lower()
         
         if val != self.startValue:
             changed = True
+            neg = False
+            if '-' in val:
+                neg = True
             if '/' in val and '.' not in val:
                 val += '.'
+            elif 's' in val and not 'sind(' in val:
+                if neg:
+                    val = '-sind('+val.strip('-s')+')'
+                else:
+                    val = 'sind('+val.strip('s')+')'
+            elif 'c' in val and not 'cosd(' in val:
+                if neg:
+                    val = '-cosd('+val.strip('-c')+')'
+                else:
+                    val = 'cosd('+val.strip('c')+')'
             try:
                 val = float(eval(val))
             except (SyntaxError,NameError):
@@ -1769,6 +1782,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return
         G2frame.PatternTree.SetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Restraints'),restData)
+
+    def OnDefineRB(event):
+        indx = drawAtoms.GetSelectedRows()
+        RBData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        drawingData = data['Drawing']
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
+        cx,ct,cs,ci = drawingData['atomPtrs']
+        atomData = drawingData['Atoms']
+        rbXYZ = []
+        rbType = []
+        AtInfo = {}
+        for item in indx:
+            rbtype = atomData[item][ct]
+            rbType.append(rbtype)
+            if rbtype not in AtInfo:
+                Info = G2elem.GetAtomInfo(rbtype)
+                AtInfo[rbtype] = [Info['Drad'],Info['Color']]
+            rbXYZ.append(np.inner(np.array(atomData[item][cx:cx+3]),Amat))
+        rbXYZ = np.array(rbXYZ)
+        rbXYZ -= rbXYZ[0]
+        rbId = ran.randint(0,sys.maxint)
+        RBData['Vector'][rbId] = {'RBname':'UNKRB','VectMag':[1.0,],
+            'VectRef':[False,],'rbTypes':rbType,'rbVect':[rbXYZ,],'AtInfo':AtInfo}
+        print 'New rigid body added to set of rigid bodies'
+
 
 ################################################################################
 ##### Atom draw routines
@@ -4587,6 +4627,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRANGLE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRPLANE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
         elif text == 'Pawley reflections':

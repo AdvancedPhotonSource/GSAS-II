@@ -3366,3 +3366,242 @@ def PlotStructure(G2frame,data):
     Page.canvas.SetCurrent()
     Draw('main')
         
+################################################################################
+#### Plot Rigid Body
+################################################################################
+
+def PlotRigidBody(G2frame,rbType,rbData,defaults):
+    '''RB plotting package. Can show rigid body structures as balls & sticks
+    '''
+
+    def FindBonds(XYZ,rbData):                    #uses numpy & masks - very fast even for proteins!
+        import numpy.ma as ma
+        AtInfo = rbData['AtInfo']
+        rbTypes = rbData['rbTypes']
+        Radii = []
+        for Atype in rbTypes:
+            Radii.append(AtInfo[Atype][0])
+        Radii = np.array(Radii)
+        Bonds = [[] for i in range(len(Radii))]
+        for i,xyz in enumerate(XYZ):
+            Dx = XYZ-xyz
+            dist = np.sqrt(np.sum(Dx**2,axis=1))
+            sumR = Radii[i]+Radii
+            IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
+            for j in IndB[0]:
+                Bonds[i].append(Dx[j]*Radii[i]/sumR[j])
+                Bonds[j].append(-Dx[j]*Radii[j]/sumR[j])
+        return Bonds
+                        
+    Wt = np.array([255,255,255])
+    Rd = np.array([255,0,0])
+    Gr = np.array([0,255,0])
+    Bl = np.array([0,0,255])
+    uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
+    uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
+    uColors = [Rd,Gr,Bl]
+    if rbType == 'Vector':
+        XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
+        for imag,mag in enumerate(rbData['VectMag']):
+            XYZ += mag*rbData['rbVect'][imag]
+        Bonds = FindBonds(XYZ,rbData)
+    elif rbType == 'Residue':
+        pass
+    elif rbType == 'Z-matrix':
+        pass
+
+    def OnMouseDown(event):
+        xy = event.GetPosition()
+        defaults['oldxy'] = list(xy)
+
+    def OnMouseMove(event):
+        newxy = event.GetPosition()
+                                
+        if event.Dragging():
+            if event.LeftIsDown():
+                SetRotation(newxy)
+                Q = defaults['Quaternion']
+                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+            elif event.MiddleIsDown():
+                SetRotationZ(newxy)
+                Q = defaults['Quaternion']
+                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+            Draw('move')
+        
+    def OnMouseWheel(event):
+        defaults['cameraPos'] += event.GetWheelRotation()/24
+        defaults['cameraPos'] = max(10,min(500,defaults['cameraPos']))
+        G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(defaults['cameraPos']),1)
+        Draw('wheel')
+        
+    def SetBackground():
+        R,G,B,A = Page.camera['backColor']
+        glClearColor(R,G,B,A)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+    def SetLights():
+        glEnable(GL_DEPTH_TEST)
+        glShadeModel(GL_SMOOTH)
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
+        glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
+        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        
+    def SetRotation(newxy):
+#first get rotation vector in screen coords. & angle increment        
+        oldxy = defaults['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        defaults['oldxy'] = list(newxy)
+        V = np.array([dxy[1],dxy[0],0.])
+        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
+# next transform vector back to xtal coordinates via inverse quaternion
+# & make new quaternion
+        Q = defaults['Quaternion']
+        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
+        DQ = G2mth.AVdeg2Q(A,V)
+        Q = G2mth.prodQQ(Q,DQ)
+        defaults['Quaternion'] = Q
+# finally get new view vector - last row of rotation matrix
+        VD = G2mth.Q2Mat(Q)[2]
+        VD /= np.sqrt(np.sum(VD**2))
+        defaults['viewDir'] = VD
+        
+    def SetRotationZ(newxy):                        
+#first get rotation vector (= view vector) in screen coords. & angle increment        
+        View = glGetIntegerv(GL_VIEWPORT)
+        cent = [View[2]/2,View[3]/2]
+        oldxy = defaults['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        defaults['oldxy'] = list(newxy)
+        V = defaults['viewDir']
+        A = [0,0]
+        A[0] = dxy[1]*.25
+        A[1] = dxy[0]*.25
+        if newxy[0] > cent[0]:
+            A[0] *= -1
+        if newxy[1] < cent[1]:
+            A[1] *= -1        
+# next transform vector back to xtal coordinates & make new quaternion
+        Q = defaults['Quaternion']
+        Qx = G2mth.AVdeg2Q(A[0],V)
+        Qy = G2mth.AVdeg2Q(A[1],V)
+        Q = G2mth.prodQQ(Q,Qx)
+        Q = G2mth.prodQQ(Q,Qy)
+        defaults['Quaternion'] = Q
+
+    def RenderUnitVectors(x,y,z):
+        xyz = np.array([x,y,z])
+        glEnable(GL_COLOR_MATERIAL)
+        glLineWidth(1)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glBegin(GL_LINES)
+        for line,color in zip(uEdges,uColors):
+            glColor3ubv(color)
+            glVertex3fv(-line[1])
+            glVertex3fv(line[1])
+        glEnd()
+        glPopMatrix()
+        glColor4ubv([0,0,0,0])
+        glDisable(GL_COLOR_MATERIAL)
+                
+    def RenderSphere(x,y,z,radius,color):
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        q = gluNewQuadric()
+        gluSphere(q,radius,20,10)
+        glPopMatrix()
+        
+    def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        for Dx in Bonds:
+            glPushMatrix()
+            Z = np.sqrt(np.sum(Dx**2))
+            if Z:
+                azm = atan2d(-Dx[1],-Dx[0])
+                phi = acosd(Dx[2]/Z)
+                glRotate(-azm,0,0,1)
+                glRotate(phi,1,0,0)
+                q = gluNewQuadric()
+                gluCylinder(q,radius,radius,Z,slice,2)
+            glPopMatrix()            
+        glPopMatrix()
+                
+    def RenderLabel(x,y,z,label,r):       
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glDisable(GL_LIGHTING)
+        glColor3f(0,1.,0)
+        glRasterPos3f(r,r,r)
+        for c in list(label):
+            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        glEnable(GL_LIGHTING)
+        glPopMatrix()
+        
+    def Draw(caller=''):
+#useful debug?        
+#        if caller:
+#            print caller
+# end of useful debug
+        cPos = defaults['cameraPos']
+        VS = np.array(Page.canvas.GetSize())
+        aspect = float(VS[0])/float(VS[1])
+        Zclip = 500.0
+        Q = defaults['Quaternion']
+        SetBackground()
+        glInitNames()
+        glPushName(0)
+        
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glViewport(0,0,VS[0],VS[1])
+        gluPerspective(20.,aspect,0.1,500.)
+        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        SetLights()            
+            
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        matRot = G2mth.Q2Mat(Q)
+        matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+        glMultMatrixf(matRot.T)
+        RenderUnitVectors(0.,0.,0.)
+        radius = 0.4
+        for iat,atom in enumerate(XYZ):
+            x,y,z = atom
+            CL = rbData['AtInfo'][rbData['rbTypes'][iat]][1]
+            color = np.array(CL)/255.
+            RenderSphere(x,y,z,radius,color)
+            RenderBonds(x,y,z,Bonds[iat],0.1,color)
+            RenderLabel(x,y,z,str(iat),radius)
+        Page.canvas.SwapBuffers()
+
+    def OnSize(event):
+        Draw('size')
+        
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index(rbData['RBname'])
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
+    except ValueError:
+        Plot = G2frame.G2plotNB.addOgl(rbData['RBname'])
+        plotNum = G2frame.G2plotNB.plotList.index(rbData['RBname'])
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.views = False
+        view = False
+        altDown = False
+    Page.SetFocus()
+    Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
+    Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
+    Page.canvas.Bind(wx.EVT_SIZE, OnSize)
+    Page.camera['position'] = defaults['cameraPos']
+    Page.camera['backColor'] = np.array([0,0,0,0])
+    Page.canvas.SetCurrent()
+    Draw('main')

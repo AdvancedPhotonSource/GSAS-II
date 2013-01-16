@@ -7,17 +7,87 @@
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIconstrGUI.py $
 # $Id: GSASIIconstrGUI.py 810 2012-12-05 21:38:26Z vondreele $
 ########### SVN repository information ###################
+import sys
 import wx
+import wx.grid as wg
 import time
+import random as ran
 import numpy as np
 import numpy.ma as ma
 import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 810 $")
+import GSASIIElem as G2elem
+import GSASIIElemGUI as G2elemGUI
+import GSASIIphsGUI as G2phG
 import GSASIIstruct as G2str
 import GSASIImapvars as G2mv
 import GSASIIgrid as G2gd
+import GSASIIplot as G2plt
+VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
+class MultiIntegerDialog(wx.Dialog):
+    
+    def __init__(self,parent,title,prompts,values):
+        wx.Dialog.__init__(self,parent,-1,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.values = values
+        self.prompts = prompts
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnValItem(event):
+            Obj = event.GetEventObject()
+            ind = Indx[Obj.GetId()]
+            try:
+                val = int(Obj.GetValue())
+                if val <= 0:
+                    raise ValueError
+            except ValueError:
+                val = self.values[ind]
+            self.values[ind] = val
+            Obj.SetValue('%d'%(val))
+            
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        Indx = {}
+        for ival,[prompt,value] in enumerate(zip(self.prompts,self.values)):
+            mainSizer.Add(wx.StaticText(self.panel,-1,prompt),0,wx.ALIGN_CENTER)
+            valItem = wx.TextCtrl(self.panel,-1,value='%d'%(value),style=wx.TE_PROCESS_ENTER)
+            mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
+            Indx[valItem.GetId()] = ival
+            valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+            valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetValues(self):
+        return self.values
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+        
 ################################################################################
 #####  Constraints
 ################################################################################           
@@ -556,6 +626,9 @@ def UpdateRigidBodies(G2frame,data):
     '''
     if not data:
         data.update({'Vector':{},'Residue':{},'Z-matrix':{}})       #empty dict - fill it
+            
+    Indx = {}
+    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[1.,0.,0.,0.],'cameraPos':20.,'viewDir':[0,0,1],}
 
     def OnPageChanged(event):
         if event:       #page change event!
@@ -573,20 +646,196 @@ def UpdateRigidBodies(G2frame,data):
         elif text == 'Z-matrix rigid bodies':
             G2frame.Page = [page,'zrb']
             UpdateZMatrixRB()
+            
+    def OnAddRigidBody(event):
+        page = G2frame.dataDisplay.GetSelection()
+        if 'Vector' in G2frame.dataDisplay.GetPageText(page):
+            AddVectorRB()
+        elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
+            AddResidueRB()
+        elif 'Z-matrix' in G2frame.dataDisplay.GetPageText(page):
+            AddZMatrixRB()
+            
+    def AddVectorRB():
+        dlg = MultiIntegerDialog(G2frame.dataDisplay,'New Rigid Body',['No. atoms','No. translations'],[1,1])
+        if dlg.ShowModal() == wx.ID_OK:
+            nAtoms,nTrans = dlg.GetValues()
+            vectorRB = data['Vector']
+            rbId = ran.randint(0,sys.maxint)
+            vecMag = [1.0 for i in range(nTrans)]
+            vecRef = [False for i in range(nTrans)]
+            vecVal = [np.zeros((nAtoms,3)) for j in range(nTrans)]
+            rbTypes = ['C' for i in range(nAtoms)]
+            Info = G2elem.GetAtomInfo('C')
+            AtInfo= {'C':[Info['Drad'],Info['Color']]}
+            data['Vector'][rbId] = {'RBname':'UNKRB','VectMag':vecMag,
+                'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'AtInfo':AtInfo}
+        dlg.Destroy()
+        UpdateVectorRB()
+        
+    def AddResidueRB():
+        pass
+        
+    def AddZMatrixRB():
+        pass
 
     def UpdateVectorRB():
+        SetStatusLine(' You may use e.g. "sind(60)", "cos(60)", "c60" or "s60" for a vector entry')
+        def rbNameSizer(rbId,rbData):
+
+            def OnRBName(event):
+                Obj = event.GetEventObject()
+                rbId = Indx[Obj.GetId()]
+                rbData['RBname'] = Obj.GetValue()
+                
+            def OnDelRB(event):
+                Obj = event.GetEventObject()
+                rbId = Indx[Obj.GetId()]
+                del data['Vector'][rbId]
+                wx.CallAfter(UpdateVectorRB)
+                
+            def OnPlotRB(event):
+                Obj = event.GetEventObject()
+                rbId = Indx[Obj.GetId()]
+                Obj.SetValue(False)
+                G2plt.PlotRigidBody(G2frame,'Vector',data['Vector'][rbId],plotDefaults)
+            
+            nameSizer = wx.BoxSizer(wx.HORIZONTAL)
+            nameSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Rigid body name: '),
+                0,wx.ALIGN_CENTER_VERTICAL)
+            RBname = wx.TextCtrl(VectorRBDisplay,-1,rbData['RBname'])
+            Indx[RBname.GetId()] = rbId
+            RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
+            RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
+            nameSizer.Add(RBname,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add((5,0),)
+            plotRB = wx.CheckBox(VectorRBDisplay,-1,'Plot?')
+            Indx[plotRB.GetId()] = rbId
+            plotRB.Bind(wx.EVT_CHECKBOX,OnPlotRB)
+            nameSizer.Add(plotRB,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add((5,0),)
+            delRB = wx.CheckBox(VectorRBDisplay,-1,'Delete?')
+            Indx[delRB.GetId()] = rbId
+            delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
+            nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+            return nameSizer
+            
+        def rbVectMag(rbId,imag,rbData):
+            
+            def OnRBVectorMag(event):
+                Obj = event.GetEventObject()
+                rbId,imag = Indx[Obj.GetId()]
+                try:
+                    val = float(Obj.GetValue())
+                    if val <= 0.:
+                        raise ValueError
+                    rbData['VectMag'][imag] = val
+                except ValueError:
+                    pass
+                Obj.SetValue('%8.3f'%(val))
+                UpdateVectorRB()
+                G2plt.PlotRigidBody(G2frame,'Vector',data['Vector'][rbId],plotDefaults)
+                
+            def OnRBVectorRef(event):
+                Obj = event.GetEventObject()
+                rbId,imag = Indx[Obj.GetId()]
+                rbData['VectRef'][imag] = Obj.GetValue()
+                        
+            magSizer = wx.wx.BoxSizer(wx.HORIZONTAL)
+            magSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Translation magnitude: '),
+                0,wx.ALIGN_CENTER_VERTICAL)
+            magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.3f'%(rbData['VectMag'][imag]))
+            Indx[magValue.GetId()] = [rbId,imag]
+            magValue.Bind(wx.EVT_TEXT_ENTER,OnRBVectorMag)
+            magValue.Bind(wx.EVT_KILL_FOCUS,OnRBVectorMag)
+            magSizer.Add(magValue,0,wx.ALIGN_CENTER_VERTICAL)
+            magSizer.Add((5,0),)
+            magref = wx.CheckBox(VectorRBDisplay,-1,label=' Refine?') 
+            magref.SetValue(rbData['VectRef'][imag])
+            magref.Bind(wx.EVT_CHECKBOX,OnRBVectorRef)
+            Indx[magref.GetId()] = [rbId,imag]
+            magSizer.Add(magref,0,wx.ALIGN_CENTER_VERTICAL)
+            return magSizer
+            
+        def OnRBVectorVal(event):
+            Obj = event.GetEventObject()
+            rbId,imag,i = Indx[Obj.GetId()]
+            try:
+                val = float(Obj.GetValue())
+                data['Vector'][rbId]['rbVect'][imag][i] = val
+            except ValueError:
+                pass
+            UpdateVectorRB()
+            G2plt.PlotRigidBody(G2frame,'Vector',data['Vector'][rbId],plotDefaults)
+            
+        def rbVectors(rbId,imag,mag,XYZ,rbData):
+
+            def TypeSelect(event):
+                r,c = event.GetRow(),event.GetCol()
+                if vecGrid.GetColLabelValue(c) == 'Type':
+                    PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+                    if PE.ShowModal() == wx.ID_OK:
+                        if PE.Elem != 'None':
+                            El = PE.Elem.strip().lower().capitalize()
+                            if El not in rbData['rbRadii']:
+                                rbData['rbRadii'][El] = G2elem.GetAtomInfo(El)['Drad']                            
+                            rbData['rbTypes'][r] = El
+                            vecGrid.SetCellValue(r,c,El)
+                    PE.Destroy()
+
+            def ChangeCell(event):
+                r,c =  event.GetRow(),event.GetCol()
+                if r >= 0 and (0 <= c < 3):
+                    try:
+                        val = float(vecGrid.GetCellValue(r,c))
+                        rbData['rbVect'][imag][r][c] = val
+                    except ValueError:
+                        pass
+                wx.CallAfter(UpdateVectorRB)
+
+            vecSizer = wx.BoxSizer()
+            Types = 3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
+            colLabels = ['Vector x','Vector y','Vector z','Type','Cart x','Cart y','Cart z']
+            table = []
+            rowLabels = []
+            for ivec,xyz in enumerate(rbData['rbVect'][imag]):
+                table.append(list(xyz)+[rbData['rbTypes'][ivec],]+list(XYZ[ivec]))
+                rowLabels.append(str(ivec))
+            vecTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            vecGrid = G2gd.GSGrid(VectorRBDisplay)
+            vecGrid.SetTable(vecTable, True)
+            vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
+            attr = wx.grid.GridCellAttr()
+            attr.SetEditor(G2phG.GridFractionEditor(vecGrid))
+            for c in range(3):
+                vecGrid.SetColAttr(c, attr)
+            for row in range(vecTable.GetNumberRows()):
+                for col in [4,5,6]:
+                    vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
+            vecSizer.Add(vecGrid)
+            return vecSizer
+        
         VectorRB.DestroyChildren()
         VectorRBDisplay = wx.Panel(VectorRB)
         VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
-        VectorRBSizer.Add((5,5),0)        
-#        VectorRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
+        for rbId in data['Vector']:
+            rbData = data['Vector'][rbId]
+            VectorRBSizer.Add(rbNameSizer(rbId,rbData),0)
+            XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
+            for imag,mag in enumerate(rbData['VectMag']):
+                XYZ += mag*rbData['rbVect'][imag]
+                VectorRBSizer.Add(rbVectMag(rbId,imag,rbData),0)
+                VectorRBSizer.Add(rbVectors(rbId,imag,mag,XYZ,rbData),0)
+            VectorRBSizer.Add((5,5),0)        
+        VectorRBSizer.Layout()    
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
         Size = VectorRBSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20
         VectorRBDisplay.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],250)
+#        Size[1] = min(Size[1],450)
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateResidueRB():
@@ -595,13 +844,14 @@ def UpdateRigidBodies(G2frame,data):
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         ResidueRBSizer.Add((5,5),0)        
 #        VectorRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
+        ResidueRBSizer.Layout()    
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
         Size = ResidueRBSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20
         ResidueRBDisplay.SetSize(Size)
         ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],250)
+#        Size[1] = min(Size[1],250)
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateZMatrixRB():
@@ -610,16 +860,15 @@ def UpdateRigidBodies(G2frame,data):
         ZMatrixRBSizer = wx.BoxSizer(wx.VERTICAL)
         ZMatrixRBSizer.Add((5,5),0)        
 #        ZMatrixRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
+        ZMatrixRBSizer.Layout()    
         ZMatrixRBDisplay.SetSizer(ZMatrixRBSizer,True)
         Size = ZMatrixRBSizer.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],250) + 20
         ZMatrixRBDisplay.SetSize(Size)
         ZMatrixRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],250)
+#        Size[1] = min(Size[1],250)
         G2frame.dataFrame.setSizePosLeft(Size)
-        
-
 
     def SetStatusLine(text):
         Status.SetStatusText(text)                                      
@@ -633,7 +882,7 @@ def UpdateRigidBodies(G2frame,data):
     SetStatusLine('')
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)    
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)

@@ -103,8 +103,8 @@ htmlFirstUse = True
     wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
 ] = [wx.NewId() for item in range(7)]
 
-[ wxID_RIGIDBODYADD,
-] = [wx.NewId() for item in range(1)]
+[ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,
+] = [wx.NewId() for item in range(2)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -459,8 +459,6 @@ class DataFrame(wx.Frame):
             help='Add rigid body')
         
         self.PostfillDataMenu()
-        
-        
             
 # Restraints
         self.RestraintEdit = wx.Menu(title='')
@@ -757,15 +755,17 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options',empty=True)
         self.PostfillDataMenu(empty=True)
         
-# Phase / Draw Atoms tab
+# Phase / Draw Atoms tab 
         self.DrawAtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.DrawAtomsMenu,helpType='Draw Atoms')
         self.DrawAtomEdit = wx.Menu(title='')
         self.DrawAtomCompute = wx.Menu(title='')
         self.DrawAtomRestraint = wx.Menu(title='')
+        self.DrawAtomRigidBody = wx.Menu(title='')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomEdit, title='Edit')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomCompute,title='Compute')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomRestraint, title='Restraints')
+        self.DrawAtomsMenu.Append(menu=self.DrawAtomRigidBody, title='Rigid body')
         self.DrawAtomEdit.Append(id=wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
             help='Select atoms first')
         self.DrawAtomEdit.Append(id=wxID_DRAWATOMLABEL, kind=wx.ITEM_NORMAL,text='Atom label',
@@ -800,6 +800,8 @@ class DataFrame(wx.Frame):
             help='Add plane restraint for selected atoms (4+)')
         self.DrawAtomRestraint.Append(id=wxID_DRAWRESTRCHIRAL, kind=wx.ITEM_NORMAL,text='Add chiral restraint',
             help='Add chiral restraint for selected atoms (4: center atom 1st)')
+        self.DrawAtomRigidBody.Append(id=wxID_DRAWDEFINERB, kind=wx.ITEM_NORMAL,text='Define rigid body',
+            help='Define rigid body with selected atoms')
         self.PostfillDataMenu()
             
 # Phase / Texture tab

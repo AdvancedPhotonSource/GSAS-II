@@ -10,6 +10,7 @@
 import math
 import time
 import copy
+import sys
 import os.path
 import numpy as np
 import numpy.ma as ma
@@ -75,7 +76,11 @@ class G2PlotMpl(wx.Panel):
 class G2PlotOgl(wx.Panel):
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         self.figure = wx.Panel.__init__(self,parent,id=id,**kwargs)
-        self.canvas = wx.glcanvas.GLCanvas(self,-1,**kwargs)
+        if 'win' in sys.platform:           #Windows already double buffered
+            self.canvas = wx.glcanvas.GLCanvas(self,-1,**kwargs)
+        else:                               #fix from Jim Hester for X systems
+            attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,)         
+            self.canvas = wx.glcanvas.GLCanvas(self,-1,attribList=attribs,**kwargs)
         self.camera = {}
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)

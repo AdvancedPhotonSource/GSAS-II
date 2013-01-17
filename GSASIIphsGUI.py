@@ -1287,6 +1287,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             colU11 = colLabels.index('U11')
             colUiso = colLabels.index('Uiso')
             attr = wx.grid.GridCellAttr()
+            attr.IncRef()               #fix from Jim Hester
             attr.SetEditor(GridFractionEditor(Atoms))
             for c in range(colX,colX+3):
                 Atoms.SetColAttr(c, attr)

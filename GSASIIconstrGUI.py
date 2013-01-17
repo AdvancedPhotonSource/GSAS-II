@@ -625,7 +625,7 @@ def UpdateRigidBodies(G2frame,data):
     Displays the rigid bodies in the data window
     '''
     if not data:
-        data.update({'Vector':{},'Residue':{},'Z-matrix':{}})       #empty dict - fill it
+        data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},'Z-matrix':{'AtInfo':{}}})       #empty dict - fill it
             
     Indx = {}
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[1.,0.,0.,0.],'cameraPos':20.,'viewDir':[0,0,1],}
@@ -647,6 +647,26 @@ def UpdateRigidBodies(G2frame,data):
             G2frame.Page = [page,'zrb']
             UpdateZMatrixRB()
             
+    def getMacroFile(macName):
+        defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
+        dlg = wx.FileDialog(G2frame,message='Choose '+macName+' rigid body macro file',
+            defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
+            style=wx.OPEN | wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                macfile = dlg.GetPath()
+                macro = open(macfile,'Ur')
+                head = macro.readline()
+                if macName not in head:
+                    print head
+                    print '**** ERROR - wrong restraint macro file selected, try again ****'
+                    macro = []
+            else: # cancel was pressed
+                macxro = []
+        finally:
+            dlg.Destroy()
+        return macro        #advanced past 1st line
+        
     def OnAddRigidBody(event):
         page = G2frame.dataDisplay.GetSelection()
         if 'Vector' in G2frame.dataDisplay.GetPageText(page):
@@ -657,6 +677,7 @@ def UpdateRigidBodies(G2frame,data):
             AddZMatrixRB()
             
     def AddVectorRB():
+        AtInfo = data['Vector']['AtInfo']
         dlg = MultiIntegerDialog(G2frame.dataDisplay,'New Rigid Body',['No. atoms','No. translations'],[1,1])
         if dlg.ShowModal() == wx.ID_OK:
             nAtoms,nTrans = dlg.GetValues()
@@ -667,19 +688,61 @@ def UpdateRigidBodies(G2frame,data):
             vecVal = [np.zeros((nAtoms,3)) for j in range(nTrans)]
             rbTypes = ['C' for i in range(nAtoms)]
             Info = G2elem.GetAtomInfo('C')
-            AtInfo= {'C':[Info['Drad'],Info['Color']]}
+            AtInfo['C'] = [Info['Drad'],Info['Color']]
             data['Vector'][rbId] = {'RBname':'UNKRB','VectMag':vecMag,
-                'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'AtInfo':AtInfo}
+                'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal}
         dlg.Destroy()
         UpdateVectorRB()
         
     def AddResidueRB():
-        pass
+        AtInfo = data['Residue']['AtInfo']
+        macro = getMacroFile('rigid body')
+        if not macro:
+            return
+        macStr = macro.readline()
+        while macStr:
+            items = macStr.split()
+            print items
+            if 'I' == items[0]:
+                rbId = ran.randint(0,sys.maxint)
+                rbName = items[1]
+                rbTypes = []
+                rbXYZ = []
+                rbSeq = []
+                atNames = []
+                nAtms,nSeq,nOrig,mRef,nRef = [int(items[i]) for i in [2,3,4,5,6]]
+                for iAtm in range(nAtms):
+                    macStr = macro.readline().split()
+                    atName = macStr[0]
+                    atNames.append(atName)
+                    rbXYZ.append([float(macStr[i]) for i in [1,2,3]])
+                    atNames.append(atName[0])          #might not always work
+                    if atName[0] not in AtInfo:
+                        Info = G2elem.GetAtomInfo(atName[0])
+                        AtInfo[atName[0]] = [Info['Drad'],Info['Color']]
+                rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[nOrig-1])
+                for iSeq in range(nSeq):
+                    macStr = macro.readline().split()
+                    mSeq = int(macStr[0])
+                    rbseq = []
+                    for jSeq in range(mSeq):
+                        macStr = macro.readline().split()
+                        iBeg = int(macStr[0])-1
+                        iFin = int(macStr[1])-1
+                        nMove = int(macStr[2])
+                        iMove = [int(macStr[i]) for i in range(3,nMove+3)]
+                        rbseq.append([iBeg,iFin,iMove])
+                    rbSeq.append(rbseq)
+                data['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
+                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq}
+            macStr = macro.readline()
+        macro.close()
         
     def AddZMatrixRB():
         pass
 
     def UpdateVectorRB():
+        AtInfo = data['Vector']['AtInfo']
         SetStatusLine(' You may use e.g. "sind(60)", "cos(60)", "c60" or "s60" for a vector entry')
         def rbNameSizer(rbId,rbData):
 
@@ -698,7 +761,7 @@ def UpdateRigidBodies(G2frame,data):
                 Obj = event.GetEventObject()
                 rbId = Indx[Obj.GetId()]
                 Obj.SetValue(False)
-                G2plt.PlotRigidBody(G2frame,'Vector',data['Vector'][rbId],plotDefaults)
+                G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,rbData,plotDefaults)
             
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Rigid body name: '),
@@ -734,7 +797,7 @@ def UpdateRigidBodies(G2frame,data):
                     pass
                 Obj.SetValue('%8.3f'%(val))
                 UpdateVectorRB()
-                G2plt.PlotRigidBody(G2frame,'Vector',data['Vector'][rbId],plotDefaults)
+                G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,data['Vector'][rbId],plotDefaults)
                 
             def OnRBVectorRef(event):
                 Obj = event.GetEventObject()
@@ -757,28 +820,19 @@ def UpdateRigidBodies(G2frame,data):
             magSizer.Add(magref,0,wx.ALIGN_CENTER_VERTICAL)
             return magSizer
             
-        def OnRBVectorVal(event):
-            Obj = event.GetEventObject()
-            rbId,imag,i = Indx[Obj.GetId()]
-            try:
-                val = float(Obj.GetValue())
-                data['Vector'][rbId]['rbVect'][imag][i] = val
-            except ValueError:
-                pass
-            UpdateVectorRB()
-            G2plt.PlotRigidBody(G2frame,'Vector',data['Vector'][rbId],plotDefaults)
-            
         def rbVectors(rbId,imag,mag,XYZ,rbData):
 
             def TypeSelect(event):
+                AtInfo = data['Vector']['AtInfo']
                 r,c = event.GetRow(),event.GetCol()
                 if vecGrid.GetColLabelValue(c) == 'Type':
                     PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
                     if PE.ShowModal() == wx.ID_OK:
                         if PE.Elem != 'None':
                             El = PE.Elem.strip().lower().capitalize()
-                            if El not in rbData['rbRadii']:
-                                rbData['rbRadii'][El] = G2elem.GetAtomInfo(El)['Drad']                            
+                            if El not in AtInfo:
+                                Info = G2elem.GetAtomInfo(El)
+                                AtInfo[El] = [Info['Drad']['Color']]
                             rbData['rbTypes'][r] = El
                             vecGrid.SetCellValue(r,c,El)
                     PE.Destroy()
@@ -820,14 +874,15 @@ def UpdateRigidBodies(G2frame,data):
         VectorRBDisplay = wx.Panel(VectorRB)
         VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['Vector']:
-            rbData = data['Vector'][rbId]
-            VectorRBSizer.Add(rbNameSizer(rbId,rbData),0)
-            XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
-            for imag,mag in enumerate(rbData['VectMag']):
-                XYZ += mag*rbData['rbVect'][imag]
-                VectorRBSizer.Add(rbVectMag(rbId,imag,rbData),0)
-                VectorRBSizer.Add(rbVectors(rbId,imag,mag,XYZ,rbData),0)
-            VectorRBSizer.Add((5,5),0)        
+            if rbId != 'AtInfo':
+                rbData = data['Vector'][rbId]
+                VectorRBSizer.Add(rbNameSizer(rbId,rbData),0)
+                XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
+                for imag,mag in enumerate(rbData['VectMag']):
+                    XYZ += mag*rbData['rbVect'][imag]
+                    VectorRBSizer.Add(rbVectMag(rbId,imag,rbData),0)
+                    VectorRBSizer.Add(rbVectors(rbId,imag,mag,XYZ,rbData),0)
+                VectorRBSizer.Add((5,5),0)        
         VectorRBSizer.Layout()    
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
         Size = VectorRBSizer.GetMinSize()

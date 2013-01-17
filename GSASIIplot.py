@@ -3375,13 +3375,12 @@ def PlotStructure(G2frame,data):
 #### Plot Rigid Body
 ################################################################################
 
-def PlotRigidBody(G2frame,rbType,rbData,defaults):
+def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     '''RB plotting package. Can show rigid body structures as balls & sticks
     '''
 
-    def FindBonds(XYZ,rbData):                    #uses numpy & masks - very fast even for proteins!
+    def FindBonds(XYZ):                    #uses numpy & masks - very fast even for proteins!
         import numpy.ma as ma
-        AtInfo = rbData['AtInfo']
         rbTypes = rbData['rbTypes']
         Radii = []
         for Atype in rbTypes:
@@ -3409,7 +3408,7 @@ def PlotRigidBody(G2frame,rbType,rbData,defaults):
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
         for imag,mag in enumerate(rbData['VectMag']):
             XYZ += mag*rbData['rbVect'][imag]
-        Bonds = FindBonds(XYZ,rbData)
+        Bonds = FindBonds(XYZ)
     elif rbType == 'Residue':
         pass
     elif rbType == 'Z-matrix':
@@ -3579,7 +3578,7 @@ def PlotRigidBody(G2frame,rbType,rbData,defaults):
         radius = 0.4
         for iat,atom in enumerate(XYZ):
             x,y,z = atom
-            CL = rbData['AtInfo'][rbData['rbTypes'][iat]][1]
+            CL = AtInfo[rbData['rbTypes'][iat]][1]
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.1,color)

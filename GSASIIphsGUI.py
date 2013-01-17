@@ -375,7 +375,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
             evt.Skip()
             return
         char = chr(key)
-        if char in '.+-/0123456789':
+        if char in '.+-/0123456789cosind()':
             self._tc.WriteText(char)
         else:
             evt.Skip()
@@ -1795,7 +1795,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atomData = drawingData['Atoms']
         rbXYZ = []
         rbType = []
-        AtInfo = {}
+        AtInfo = RBData['Vector']['AtInfo']
         for item in indx:
             rbtype = atomData[item][ct]
             rbType.append(rbtype)
@@ -1807,7 +1807,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         rbXYZ -= rbXYZ[0]
         rbId = ran.randint(0,sys.maxint)
         RBData['Vector'][rbId] = {'RBname':'UNKRB','VectMag':[1.0,],
-            'VectRef':[False,],'rbTypes':rbType,'rbVect':[rbXYZ,],'AtInfo':AtInfo}
+            'VectRef':[False,],'rbTypes':rbType,'rbVect':[rbXYZ,]}
         print 'New rigid body added to set of rigid bodies'
 
 

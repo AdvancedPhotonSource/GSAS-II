@@ -1284,7 +1284,8 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(sub,{})
         if not G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Rigid bodies')
-            self.PatternTree.SetItemPyData(sub,{'Vector':{},'Residue':{},'Z-matrix':{}})
+            self.PatternTree.SetItemPyData(sub,{'Vector':{'AtInfo':{}},
+                'Residue':{'AtInfo':{}},'Z-matrix':{'AtInfo':{}}})
                 
     class CopyDialog(wx.Dialog):
         def __init__(self,parent,title,text,data):

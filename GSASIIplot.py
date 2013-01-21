@@ -3405,12 +3405,24 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
     uColors = [Rd,Gr,Bl]
     if rbType == 'Vector':
+        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
         for imag,mag in enumerate(rbData['VectMag']):
             XYZ += mag*rbData['rbVect'][imag]
         Bonds = FindBonds(XYZ)
     elif rbType == 'Residue':
-        pass
+        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['atNames'])]
+        XYZ = np.copy(rbData['rbXYZ'])      #don't mess with original!
+        Seq = rbData['rbSeq']
+        for seq in Seq:
+            for ia,ib,ang,mv in seq:
+                va = XYZ[ia]-XYZ[ib]
+                Q = G2mth.AVdeg2Q(ang,va)
+                for im in mv:
+                    vb = XYZ[im]-XYZ[ib]
+                    vb = G2mth.prodQVQ(Q,vb)
+                    XYZ[im] = XYZ[ib]+vb
+        Bonds = FindBonds(XYZ)
     elif rbType == 'Z-matrix':
         pass
 
@@ -3541,7 +3553,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         glPushMatrix()
         glTranslate(x,y,z)
         glDisable(GL_LIGHTING)
-        glColor3f(0,1.,0)
+        glColor3f(1.0,1.0,1.0)
         glRasterPos3f(r,r,r)
         for c in list(label):
             glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
@@ -3582,7 +3594,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.1,color)
-            RenderLabel(x,y,z,str(iat),radius)
+            RenderLabel(x,y,z,atNames[iat],radius)
         Page.canvas.SwapBuffers()
 
     def OnSize(event):

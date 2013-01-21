@@ -628,7 +628,7 @@ def UpdateRigidBodies(G2frame,data):
         data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},'Z-matrix':{'AtInfo':{}}})       #empty dict - fill it
             
     Indx = {}
-    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[1.,0.,0.,0.],'cameraPos':20.,'viewDir':[0,0,1],}
+    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[1.,0.,0.,0.],'cameraPos':30.,'viewDir':[0,0,1],}
 
     def OnPageChanged(event):
         if event:       #page change event!
@@ -702,7 +702,6 @@ def UpdateRigidBodies(G2frame,data):
         macStr = macro.readline()
         while macStr:
             items = macStr.split()
-            print items
             if 'I' == items[0]:
                 rbId = ran.randint(0,sys.maxint)
                 rbName = items[1]
@@ -714,12 +713,13 @@ def UpdateRigidBodies(G2frame,data):
                 for iAtm in range(nAtms):
                     macStr = macro.readline().split()
                     atName = macStr[0]
+                    atType = macStr[1]
                     atNames.append(atName)
-                    rbXYZ.append([float(macStr[i]) for i in [1,2,3]])
-                    atNames.append(atName[0])          #might not always work
-                    if atName[0] not in AtInfo:
-                        Info = G2elem.GetAtomInfo(atName[0])
-                        AtInfo[atName[0]] = [Info['Drad'],Info['Color']]
+                    rbXYZ.append([float(macStr[i]) for i in [2,3,4]])
+                    rbTypes.append(atType)
+                    if atType not in AtInfo:
+                        Info = G2elem.GetAtomInfo(atType)
+                        AtInfo[atType] = [Info['Drad'],Info['Color']]
                 rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[nOrig-1])
                 for iSeq in range(nSeq):
                     macStr = macro.readline().split()
@@ -729,14 +729,17 @@ def UpdateRigidBodies(G2frame,data):
                         macStr = macro.readline().split()
                         iBeg = int(macStr[0])-1
                         iFin = int(macStr[1])-1
+                        angle = 0.0
                         nMove = int(macStr[2])
-                        iMove = [int(macStr[i]) for i in range(3,nMove+3)]
-                        rbseq.append([iBeg,iFin,iMove])
+                        iMove = [int(macStr[i])-1 for i in range(3,nMove+3)]
+                        rbseq.append([iBeg,iFin,angle,iMove])
                     rbSeq.append(rbseq)
                 data['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
-                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq}
+                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq,'SelSeq':[0,0,0]}
+                print 'Residue '+rbName+' added'
             macStr = macro.readline()
         macro.close()
+        UpdateResidueRB()
         
     def AddZMatrixRB():
         pass
@@ -867,6 +870,8 @@ def UpdateRigidBodies(G2frame,data):
             for row in range(vecTable.GetNumberRows()):
                 for col in [4,5,6]:
                     vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
+            vecGrid.SetMargins(0,0)
+            vecGrid.AutoSizeColumns(False)
             vecSizer.Add(vecGrid)
             return vecSizer
         
@@ -894,11 +899,192 @@ def UpdateRigidBodies(G2frame,data):
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateResidueRB():
+        AtInfo = data['Residue']['AtInfo']
+        Indx = {}
+
+        def rbNameSizer(rbId,rbData):
+
+            def OnRBName(event):
+                Obj = event.GetEventObject()
+                rbId = Indx[Obj.GetId()]
+                rbData['RBname'] = Obj.GetValue()
+                
+            def OnDelRB(event):
+                Obj = event.GetEventObject()
+                rbId = Indx[Obj.GetId()]
+                del data['Residue'][rbId]
+                wx.CallAfter(UpdateResidueRB)
+                
+            def OnPlotRB(event):
+                Obj = event.GetEventObject()
+                rbId = Indx[Obj.GetId()]
+                Obj.SetValue(False)
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
+            
+            nameSizer = wx.BoxSizer(wx.HORIZONTAL)
+            nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),
+                0,wx.ALIGN_CENTER_VERTICAL)
+            RBname = wx.TextCtrl(ResidueRBDisplay,-1,rbData['RBname'])
+            Indx[RBname.GetId()] = rbId
+            RBname.Bind(wx.EVT_TEXT_ENTER,OnRBName)
+            RBname.Bind(wx.EVT_KILL_FOCUS,OnRBName)
+            nameSizer.Add(RBname,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add((5,0),)
+            plotRB = wx.CheckBox(ResidueRBDisplay,-1,'Plot?')
+            Indx[plotRB.GetId()] = rbId
+            plotRB.Bind(wx.EVT_CHECKBOX,OnPlotRB)
+            nameSizer.Add(plotRB,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add((5,0),)
+            delRB = wx.CheckBox(ResidueRBDisplay,-1,'Delete?')
+            Indx[delRB.GetId()] = rbId
+            delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
+            nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+            return nameSizer
+            
+        def rbResidues(rbId,XYZ,rbData):
+            
+            def TypeSelect(event):
+                AtInfo = data['Residue']['AtInfo']
+                r,c = event.GetRow(),event.GetCol()
+                if vecGrid.GetColLabelValue(c) == 'Type':
+                    PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+                    if PE.ShowModal() == wx.ID_OK:
+                        if PE.Elem != 'None':
+                            El = PE.Elem.strip().lower().capitalize()
+                            if El not in AtInfo:
+                                Info = G2elem.GetAtomInfo(El)
+                                AtInfo[El] = [Info['Drad']['Color']]
+                            rbData['rbTypes'][r] = El
+                            vecGrid.SetCellValue(r,c,El)
+                    PE.Destroy()
+
+            def ChangeCell(event):
+                r,c =  event.GetRow(),event.GetCol()
+                if r >= 0 and (0 <= c < 3):
+                    try:
+                        val = float(vecGrid.GetCellValue(r,c))
+                        rbData['rbVect'][imag][r][c] = val
+                    except ValueError:
+                        pass
+
+            vecSizer = wx.BoxSizer()
+            Types = 2*[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
+            colLabels = ['Name','Type','Cart x','Cart y','Cart z']
+            table = []
+            rowLabels = []
+            for ivec,xyz in enumerate(rbData['rbXYZ']):
+                table.append([rbData['atNames'][ivec],]+[rbData['rbTypes'][ivec],]+list(xyz))
+                rowLabels.append(str(ivec))
+            vecTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            vecGrid = G2gd.GSGrid(ResidueRBDisplay)
+            vecGrid.SetTable(vecTable, True)
+            vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
+            attr = wx.grid.GridCellAttr()
+            attr.SetEditor(G2phG.GridFractionEditor(vecGrid))
+            for c in range(3):
+                vecGrid.SetColAttr(c, attr)
+            for row in range(vecTable.GetNumberRows()):
+                for col in [4,5,6]:
+                    vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
+            vecGrid.SetMargins(0,0)
+            vecGrid.AutoSizeColumns(False)
+            vecSizer.Add(vecGrid)
+            return vecSizer
+            
+        def SeqSizer(angSlide,rbId,iSeq,Seq,atNames):
+            
+            def ChangeAngle(event):
+                Obj = event.GetEventObject()
+                rbId,iSeq,iseq,Seq = Indx[Obj.GetId()]
+                val = Seq[iseq][2]
+                try:
+                    val = float(Obj.GetValue())
+                    Seq[iseq][2] = val
+                except ValueError:
+                    pass
+                Obj.SetValue('%8.2f'%(val))
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,data['Residue'][rbId],plotDefaults)
+                
+            def OnRadBtn(event):
+                Obj = event.GetEventObject()
+                isel,Seq,iSeq,ang = Indx[Obj.GetId()]
+                data['Residue'][rbId]['SelSeq'] = [iSeq,isel,ang]
+                angSlide.SetValue(int(100*Seq[isel][2]))
+            
+            seqSizer = wx.FlexGridSizer(0,4,2,2)
+            seqSizer.AddGrowableCol(3,0)
+            for isel,sel in enumerate(Seq):
+                iBeg,iFin,angle,iMove = sel
+                ang = wx.TextCtrl(ResidueRBDisplay,-1,'%8.2f'%(angle),size=(50,20))
+                if not iSeq:
+                    radBt = wx.RadioButton(ResidueRBDisplay,-1,'',style=wx.RB_GROUP)
+                    data['Residue'][rbId]['SelSeq'] = [iSeq,isel,ang]
+                else:
+                    radBt = wx.RadioButton(ResidueRBDisplay,-1,'')
+                radBt.Bind(wx.EVT_RADIOBUTTON,OnRadBtn)                   
+                seqSizer.Add(radBt)
+                bond = wx.TextCtrl(ResidueRBDisplay,-1,'%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
+                seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
+                Indx[radBt.GetId()] = [isel,Seq,iSeq,ang]
+                Indx[ang.GetId()] = [rbId,iSeq,isel,Seq]
+                ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
+                ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
+                seqSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)
+                atms = ''
+                for i in iMove:    
+                    atms += ' %s,'%(atNames[i])
+                moves = wx.TextCtrl(ResidueRBDisplay,-1,atms[:-1],size=(200,20))
+                seqSizer.Add(moves,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.RIGHT)
+            return seqSizer
+            
+        def SlideSizer():
+            
+            def OnSlider(event):
+                Obj = event.GetEventObject()
+                rbData = Indx[Obj.GetId()]
+                iSeq,isel,ang = rbData['SelSeq']
+                val = float(Obj.GetValue())/100.
+                rbData['rbSeq'][iSeq][isel][2] = val
+                ang.SetValue('%8.2f'%(val))
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
+            
+            slideSizer = wx.BoxSizer(wx.HORIZONTAL)
+            slideSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Selected torsion angle:'),0)
+            iSeq,isel,ang = rbData['SelSeq']
+            angSlide = wx.Slider(ResidueRBDisplay,-1,
+                int(100*rbData['rbSeq'][iSeq][isel][2]),0,36000,size=(200,20),
+                style=wx.SL_HORIZONTAL)
+            angSlide.Bind(wx.EVT_SLIDER, OnSlider)
+            Indx[angSlide.GetId()] = rbData
+            slideSizer.Add(angSlide,0)            
+            return slideSizer,angSlide            
+            
         ResidueRB.DestroyChildren()
         ResidueRBDisplay = wx.Panel(ResidueRB)
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
-        ResidueRBSizer.Add((5,5),0)        
-#        VectorRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
+        rbKeys = data['Residue'].keys()
+        rbKeys.remove('AtInfo')
+        rbNames = [data['Residue'][k]['RBname'] for k in rbKeys]
+        rbIds = dict(zip(rbNames,rbKeys))
+        rbNames.sort()
+        for name in rbNames:
+            rbId = rbIds[name]
+            rbData = data['Residue'][rbId]
+            ResidueRBSizer.Add(rbNameSizer(rbId,rbData),0)
+            XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
+            ResidueRBSizer.Add(rbResidues(rbId,XYZ,rbData),0)
+            ResidueRBSizer.Add((5,5),0)
+            slideSizer,angSlide = SlideSizer()
+            for iSeq,Seq in enumerate(rbData['rbSeq']):
+                ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Seq: %d'%(iSeq)),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+                ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
+                    'Sel  Bond             Angle      Riding atoms'),
+                    0,wx.ALIGN_CENTER_VERTICAL)                        
+                ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
+            ResidueRBSizer.Add(slideSizer,)
+        ResidueRBSizer.Add((5,25),)
         ResidueRBSizer.Layout()    
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
         Size = ResidueRBSizer.GetMinSize()
@@ -906,7 +1092,6 @@ def UpdateRigidBodies(G2frame,data):
         Size[1] = max(Size[1],250) + 20
         ResidueRBDisplay.SetSize(Size)
         ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        Size[1] = min(Size[1],250)
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateZMatrixRB():

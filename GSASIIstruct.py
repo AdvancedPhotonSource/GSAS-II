@@ -3287,21 +3287,23 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 if ref[6] > 0:
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
+                            w = wtFactor/ref[6]
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]
                     else:
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
                         sig = ref[6]/(2.0*Fo)
                         if Fo/sig >= calcControls['minF/sig']:
+                            w = wtFactor/sig
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]                            
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]                            
         else:
             continue        #skip non-histogram entries
         if len(dMdv):
@@ -3372,23 +3374,26 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 if ref[6] > 0:
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
-                            wdf[iref] = (ref[5]-ref[7])/ref[6]
+                            w =  wtFactor/ref[6]
+                            wdf[iref] = w*(ref[5]-ref[7])
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]
                     else:
-                        Fo = np.sqrt(ref[5])
-                        Fc = np.sqrt(ref[7])
-                        sig = ref[6]/(2.0*Fo)
-                        wdf[iref] = (Fo-Fc)/sig
-                        if Fo/sig >= calcControls['minF/sig']:
-                            for j,var in enumerate(varylist):
-                                if var in dFdvDict:
-                                    dMdvh[j][iref] = dFdvDict[var][iref]/ref[6]
-                            if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = ref[9]/ref[6]                            
+                        if ref[5] > 0.:
+                            Fo = np.sqrt(ref[5])
+                            Fc = np.sqrt(ref[7])
+                            sig = ref[6]/(2.0*Fo)
+                            w = wtFactor/sig
+                            wdf[iref] = w*(Fo-Fc)
+                            if Fo/sig >= calcControls['minF/sig']:
+                                for j,var in enumerate(varylist):
+                                    if var in dFdvDict:
+                                        dMdvh[j][iref] = w*dFdvDict[var][iref]
+                                if phfx+'Scale' in varylist:
+                                    dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]                           
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             if len(Hess):
@@ -3479,8 +3484,8 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
                             sumdF += abs(Fo-np.sqrt(ref[7]))
                             sumdF2 += abs(ref[5]-ref[7])
                             nobs += 1
-                            df[i] = -(ref[5]-ref[7])/ref[6]
-                            sumwYo += (ref[5]/ref[6])**2
+                            df[i] = -np.sqrt(wtFactor)*(ref[5]-ref[7])/ref[6]
+                            sumwYo += wtFactor*(ref[5]/ref[6])**2
                     else:
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
@@ -3491,8 +3496,8 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
                             sumdF += abs(Fo-Fc)
                             sumdF2 += abs(ref[5]-ref[7])
                             nobs += 1
-                            df[i] = -(Fo-Fc)/sig
-                            sumwYo += (Fo/sig)**2
+                            df[i] = -np.sqrt(wtFactor)*(Fo-Fc)/sig
+                            sumwYo += wtFactor*(Fo/sig)**2
             Histogram['Nobs'] = nobs
             Histogram['sumwYo'] = sumwYo
             SumwYo += sumwYo

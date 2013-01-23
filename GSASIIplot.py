@@ -2584,6 +2584,7 @@ def PlotStructure(G2frame,data):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra
     '''
+
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
     cell = generalData['Cell'][1:7]
@@ -2632,6 +2633,17 @@ def PlotStructure(G2frame,data):
     shiftDown = False
     ctrlDown = False
     
+    def FindPeaksBonds(XYZ):
+        Bonds = [[] for x in XYZ]
+        for i,xyz in enumerate(XYZ):
+            Dx = XYZ-xyz
+            dist = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=1))
+            IndB = ma.nonzero(ma.masked_greater(dist,2.1))
+            for j in IndB[0]:
+                Bonds[i].append(Dx[j]/2.)
+                Bonds[j].append(-Dx[j]/2.)
+        return Bonds
+
     def OnKeyBox(event):
         import Image
 #        Draw()                          #make sure plot is fresh!!
@@ -3326,11 +3338,14 @@ def PlotStructure(G2frame,data):
         if len(rhoXYZ):
             RenderMap(rho,rhoXYZ,indx,Rok)
         if len(mapPeaks):
+            XYZ = mapPeaks.T[1:4].T
+            mapBonds = FindPeaksBonds(XYZ)
             for ind,[mag,x,y,z,d] in enumerate(mapPeaks):
                 if ind in Ind and pageName == 'Map peaks':
                     RenderMapPeak(x,y,z,Gr,1.0)
                 else:
                     RenderMapPeak(x,y,z,Wt,mag/peakMax)
+                RenderLines(x,y,z,mapBonds[ind],Wt)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]
@@ -3385,8 +3400,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     '''RB plotting package. Can show rigid body structures as balls & sticks
     '''
 
-    def FindBonds(XYZ):                    #uses numpy & masks - very fast even for proteins!
-        import numpy.ma as ma
+    def FindBonds(XYZ):
         rbTypes = rbData['rbTypes']
         Radii = []
         for Atype in rbTypes:

@@ -103,8 +103,8 @@ htmlFirstUse = True
     wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
 ] = [wx.NewId() for item in range(7)]
 
-[ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,
-] = [wx.NewId() for item in range(2)]
+[ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -457,6 +457,8 @@ class DataFrame(wx.Frame):
         self.RigidBodyMenu.Append(menu=self.RigidBodyEdit, title='Edit')
         self.RigidBodyEdit.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
             help='Add rigid body')
+        self.RigidBodyEdit.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ from txt file',
+            help='Import rigid body XYZ')
         
         self.PostfillDataMenu()
             
@@ -1476,10 +1478,11 @@ def UpdateHKLControls(G2frame,data):
     zones = ['100','010','001']
     HKLmax = data['HKLmax']
     HKLmin = data['HKLmin']
-    if data['ifFc']:
-        typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
-    else:
-        typeChoices = ['Fosq','Fo']
+    typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
+#    if data['ifFc']:
+#        typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
+#    else:
+#        typeChoices = ['Fosq','Fo']
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     SetDataMenuBar(G2frame)
     G2frame.dataFrame.SetTitle('HKL Plot Controls')
@@ -1620,7 +1623,7 @@ def MovePatternTreeToGrid(G2frame,item):
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
-                text = '\nFinal residuals: \nRwp = %.3f%% \nchi**2 = %.1f \nGOF = %.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+                text = '\nFinal residuals: \nRw = %.3f%% \nchi**2 = %.1f \nGOF = %.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\nNobs = %d \nNvals = %d'%(Rvals['Nobs'],Nvars)
                 if 'lamMax' in Rvals:
                     text += '\nlog10 MaxLambda = %.1f'%(np.log10(Rvals['lamMax']))

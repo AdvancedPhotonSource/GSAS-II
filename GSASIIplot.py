@@ -242,9 +242,6 @@ def PlotSngl(self,newPlot=False):
             HKLtxt = '(%3d,%3d,%3d %.2f %.3f %.2f %.2f)'%(h,k,l,Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
             self.G2plotNB.status.SetFields(['','HKL, Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt])
                                  
-    def OnSCKeyPress(event):
-        print event.key
-
     try:
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
         Page = self.G2plotNB.nb.GetPage(plotNum)
@@ -258,7 +255,6 @@ def PlotSngl(self,newPlot=False):
         Plot = self.G2plotNB.addMpl('Structure Factors').gca()
         plotNum = self.G2plotNB.plotList.index('Structure Factors')
         Page = self.G2plotNB.nb.GetPage(plotNum)
-#        Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
         Page.canvas.mpl_connect('pick_event', OnSCPick)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
     Page.Choice = None
@@ -274,7 +270,6 @@ def PlotSngl(self,newPlot=False):
     HKLmin = Data['HKLmin']
     FosqMax = Data['FoMax']
     FoMax = math.sqrt(FosqMax)
-    ifFc = Data['ifFc']
     xlabel = ['k, h=','h, k=','h, l=']
     ylabel = ['l','l','k']
     zones = ['100','010','001']
@@ -285,10 +280,11 @@ def PlotSngl(self,newPlot=False):
     HKLF = []
     for refl in HKLref:
         H = np.array(refl[:3])
-        sig,Fosq,Fcsq = refl[7:10]
+        Fosq,sig,Fcsq = refl[5:8]
         HKL.append(H)
         HKLF.append([Fosq,sig,Fcsq])
         if H[izone] == Data['Layer']:
+            A = 0
             B = 0
             if Type == 'Fosq':
                 A = scale*Fosq/FosqMax
@@ -299,13 +295,21 @@ def PlotSngl(self,newPlot=False):
                 B = scale*math.sqrt(max(0,Fcsq))/FoMax
                 C = abs(A-B)
             elif Type == '|DFsq|/sig':
-                A = abs(Fosq-Fcsq)/(scale*sig)
+                if sig > 0.:
+                    A = abs(Fosq-Fcsq)/(scale*sig)
+                B = 0
             elif Type == '|DFsq|>sig':
-                A = abs(Fosq-Fcsq)/(scale*sig)
-                if A < 1.0: A = 0                    
+                if sig > 0.:
+                    A = abs(Fosq-Fcsq)/sig
+                if A < 1.0: A = 0
+                A /= scale
+                B = 0                    
             elif Type == '|DFsq|>3sig':
-                A = abs(Fosq-Fcsq)/(scale*sig)
-                if A < 3.0: A = 0                    
+                if sig > 0.:
+                    A = abs(Fosq-Fcsq)/sig
+                if A < 3.0: A = 0
+                A /= scale
+                B = 0                    
             xy = (H[pzone[izone][0]],H[pzone[izone][1]])
             if A > 0.0:
                 Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
@@ -323,15 +327,16 @@ def PlotSngl(self,newPlot=False):
     Plot.set_ylabel(ylabel[izone],fontsize=12)
     Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
     Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
-    if not newPlot:
-        Page.toolbar.push_current()
-        Plot.set_xlim(xylim[0])
-        Plot.set_ylim(xylim[1])
-        xylim = []
-        Page.toolbar.push_current()
-        Page.toolbar.draw()
-    else:
-        Page.canvas.draw()
+    Page.canvas.draw()
+#    if not newPlot:
+#        Page.toolbar.push_current()
+#        Plot.set_xlim(xylim[0])
+#        Plot.set_ylim(xylim[1])
+#        xylim = []
+#        Page.toolbar.push_current()
+#        Page.toolbar.draw()
+#    else:
+#        Page.canvas.draw()
        
 ################################################################################
 ##### PlotPatterns
@@ -1758,7 +1763,8 @@ def PlotCovariance(G2frame,Data={}):
     Page.SetFocus()
     G2frame.G2plotNB.status.SetFields(['',''])    
     acolor = mpl.cm.get_cmap(G2frame.VcovColor)
-    Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower')
+    Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
+        vmin=-1.,vmax=1.)
     imgAx = Img.get_axes()
     ytics = imgAx.get_yticks()
     ylabs = [varyList[int(i)] for i in ytics[:-1]]
@@ -2631,7 +2637,7 @@ def PlotStructure(G2frame,data):
 #        Draw()                          #make sure plot is fresh!!
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
-            Fname = os.path.joint(Mydir,generalData['Name']+'.'+mode)
+            Fname = os.path.join(Mydir,generalData['Name']+'.'+mode)
             size = Page.canvas.GetSize()
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
@@ -3601,11 +3607,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         Draw('size')
         
     try:
-        plotNum = G2frame.G2plotNB.plotList.index(rbData['RBname'])
+        plotNum = G2frame.G2plotNB.plotList.index('Rigid body')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
     except ValueError:
-        Plot = G2frame.G2plotNB.addOgl(rbData['RBname'])
-        plotNum = G2frame.G2plotNB.plotList.index(rbData['RBname'])
+        Plot = G2frame.G2plotNB.addOgl('Rigid body')
+        plotNum = G2frame.G2plotNB.plotList.index('Rigid body')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.views = False
         view = False

@@ -19,8 +19,8 @@ class CIFhklReader(G2IO.ImportStructFactor):
     'Routines to import Phase information from a CIF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.CIF','.cif','.HKL','.hkl'),
-            strictExtension=False,
+            extensionlist = ('.CIF','.cif','.FCF','.fcf','.HKL','.hkl'),
+            strictExtension = False,
             formatName = 'CIF',
             longFormatName = 'CIF format structure factor file (.cif or .hkl)'
             )

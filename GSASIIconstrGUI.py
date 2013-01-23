@@ -662,10 +662,25 @@ def UpdateRigidBodies(G2frame,data):
                     print '**** ERROR - wrong restraint macro file selected, try again ****'
                     macro = []
             else: # cancel was pressed
-                macxro = []
+                macro = []
         finally:
             dlg.Destroy()
         return macro        #advanced past 1st line
+        
+    def getTextFile():
+        defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
+        dlg = wx.FileDialog(G2frame,message='Choose rigid body text file',
+            defaultDir=defDir,defaultFile="",wildcard="GSAS-II text file (*.txt)|*.txt",
+            style=wx.OPEN | wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                txtfile = dlg.GetPath()
+                text = open(txtfile,'Ur')
+            else: # cancel was pressed
+                text = []
+        finally:
+            dlg.Destroy()
+        return text
         
     def OnAddRigidBody(event):
         page = G2frame.dataDisplay.GetSelection()
@@ -675,6 +690,16 @@ def UpdateRigidBodies(G2frame,data):
             AddResidueRB()
         elif 'Z-matrix' in G2frame.dataDisplay.GetPageText(page):
             AddZMatrixRB()
+            
+    def OnImportRigidBody(event):
+        page = G2frame.dataDisplay.GetSelection()
+        if 'Vector' in G2frame.dataDisplay.GetPageText(page):
+            pass
+        elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
+            ImportResidueRB()
+        elif 'Z-matrix' in G2frame.dataDisplay.GetPageText(page):
+            pass
+        
             
     def AddVectorRB():
         AtInfo = data['Vector']['AtInfo']
@@ -736,9 +761,39 @@ def UpdateRigidBodies(G2frame,data):
                     rbSeq.append(rbseq)
                 data['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
                     'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq,'SelSeq':[0,0,0]}
-                print 'Residue '+rbName+' added'
+                print 'Rigid body '+rbName+' added'
             macStr = macro.readline()
         macro.close()
+        UpdateResidueRB()
+        
+    def ImportResidueRB():
+        AtInfo = data['Residue']['AtInfo']
+        text = getTextFile()
+        if not text:
+            return
+        rbId = ran.randint(0,sys.maxint)
+        rbTypes = []
+        rbXYZ = []
+        rbSeq = []
+        atNames = []
+        txtStr = text.readline()
+        items = txtStr.split()
+        while len(items):
+            atName = items[0]
+            atType = items[1]
+            atNames.append(atName)
+            rbXYZ.append([float(items[i]) for i in [2,3,4]])
+            rbTypes.append(atType)
+            if atType not in AtInfo:
+                Info = G2elem.GetAtomInfo(atType)
+                AtInfo[atType] = [Info['Drad'],Info['Color']]
+            txtStr = text.readline()
+            items = txtStr.split()
+        rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
+        data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
+            'atNames':atNames,'rbRef':[0,1,2],'rbSeq':[],'SelSeq':[0,0,0]}
+        print 'Rigid body UNKRB added'
+        text.close()
         UpdateResidueRB()
         
     def AddZMatrixRB():
@@ -1075,7 +1130,8 @@ def UpdateRigidBodies(G2frame,data):
             XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
             ResidueRBSizer.Add(rbResidues(rbId,XYZ,rbData),0)
             ResidueRBSizer.Add((5,5),0)
-            slideSizer,angSlide = SlideSizer()
+            if rbData['rbSeq']:
+                slideSizer,angSlide = SlideSizer()
             for iSeq,Seq in enumerate(rbData['rbSeq']):
                 ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Seq: %d'%(iSeq)),
                     0,wx.ALIGN_CENTER_VERTICAL)
@@ -1083,7 +1139,8 @@ def UpdateRigidBodies(G2frame,data):
                     'Sel  Bond             Angle      Riding atoms'),
                     0,wx.ALIGN_CENTER_VERTICAL)                        
                 ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
-            ResidueRBSizer.Add(slideSizer,)
+            if rbData['rbSeq']:
+                ResidueRBSizer.Add(slideSizer,)
         ResidueRBSizer.Add((5,25),)
         ResidueRBSizer.Layout()    
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
@@ -1123,6 +1180,7 @@ def UpdateRigidBodies(G2frame,data):
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)    
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)

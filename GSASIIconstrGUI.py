@@ -638,12 +638,18 @@ def UpdateRigidBodies(G2frame,data):
         oldPage = G2frame.dataDisplay.ChangeSelection(page)
         text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Vector rigid bodies':
+            G2frame.dataFrame.RigidBodyMenu.Remove(0)   #NB: wx.MenuBar.Replace gives error
+            G2frame.dataFrame.RigidBodyMenu.Insert(0,G2frame.dataFrame.VectorRBEdit,title='Edit')
             G2frame.Page = [page,'vrb']
             UpdateVectorRB()
         elif text == 'Residue rigid bodies':
+            G2frame.dataFrame.RigidBodyMenu.Remove(0)
+            G2frame.dataFrame.RigidBodyMenu.Insert(0,G2frame.dataFrame.ResidueRBMenu,title='Edit')
             G2frame.Page = [page,'rrb']
             UpdateResidueRB()
         elif text == 'Z-matrix rigid bodies':
+            G2frame.dataFrame.RigidBodyMenu.Remove(0)
+            G2frame.dataFrame.RigidBodyMenu.Insert(0,G2frame.dataFrame.ZMatrixRBMenu,title='Edit')
             G2frame.Page = [page,'zrb']
             UpdateZMatrixRB()
             
@@ -699,8 +705,7 @@ def UpdateRigidBodies(G2frame,data):
             ImportResidueRB()
         elif 'Z-matrix' in G2frame.dataDisplay.GetPageText(page):
             pass
-        
-            
+                        
     def AddVectorRB():
         AtInfo = data['Vector']['AtInfo']
         dlg = MultiIntegerDialog(G2frame.dataDisplay,'New Rigid Body',['No. atoms','No. translations'],[1,1])
@@ -749,7 +754,6 @@ def UpdateRigidBodies(G2frame,data):
                 for iSeq in range(nSeq):
                     macStr = macro.readline().split()
                     mSeq = int(macStr[0])
-                    rbseq = []
                     for jSeq in range(mSeq):
                         macStr = macro.readline().split()
                         iBeg = int(macStr[0])-1
@@ -757,10 +761,9 @@ def UpdateRigidBodies(G2frame,data):
                         angle = 0.0
                         nMove = int(macStr[2])
                         iMove = [int(macStr[i])-1 for i in range(3,nMove+3)]
-                        rbseq.append([iBeg,iFin,angle,iMove])
-                    rbSeq.append(rbseq)
+                        rbSeq.append([iBeg,iFin,angle,iMove])
                 data['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
-                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq,'SelSeq':[0,0,0]}
+                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq,'SelSeq':[0,0]}
                 print 'Rigid body '+rbName+' added'
             macStr = macro.readline()
         macro.close()
@@ -791,11 +794,92 @@ def UpdateRigidBodies(G2frame,data):
             items = txtStr.split()
         rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
         data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
-            'atNames':atNames,'rbRef':[0,1,2],'rbSeq':[],'SelSeq':[0,0,0]}
+            'atNames':atNames,'rbRef':[0,1,2],'rbSeq':[],'SelSeq':[0,0]}
         print 'Rigid body UNKRB added'
         text.close()
         UpdateResidueRB()
         
+    def FindNeighbors(Orig,XYZ,atTypes,atNames,AtInfo):
+        Radii = []
+        for Atype in atTypes:
+            Radii.append(AtInfo[Atype][0])
+        Radii = np.array(Radii)
+        Neigh = []
+        Dx = XYZ-XYZ[Orig]
+        dist = np.sqrt(np.sum(Dx**2,axis=1))
+        sumR = Radii[Orig]+Radii
+        IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
+        for j in IndB[0]:
+            if j != Orig:
+                Neigh.append(atNames[j])
+        return Neigh
+        
+    def FindAllNeighbors(XYZ,atTypes,atNames,AtInfo):
+        NeighDict = {}
+        for iat,xyz in enumerate(atNames):
+            NeighDict[atNames[iat]] = FindNeighbors(iat,XYZ,atTypes,atNames,AtInfo)
+        return NeighDict
+        
+    def FindRiding(Orig,Pivot,NeighDict):
+        riding = [Orig,Pivot]
+        iAdd = 1
+        new = True
+        while new:
+            newAtms = NeighDict[riding[iAdd]]
+            for At in newAtms:
+                new = False
+                if At not in riding:
+                    riding.append(At)
+                    new = True
+            iAdd += 1
+            if iAdd < len(riding):
+                new = True
+        return riding[2:]
+                        
+    def OnDefineTorsSeq(event):
+        rbKeys = data['Residue'].keys()
+        rbKeys.remove('AtInfo')
+        rbNames = [data['Residue'][k]['RBname'] for k in rbKeys]
+        rbIds = dict(zip(rbNames,rbKeys))
+        rbNames.sort()
+        rbId = 0
+        if len(rbNames) > 1:
+            dlg = wx.SingleChoiceDialog(G2frame,'Select rigid body for torsion sequence','Torsion sequence',rbNames)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                rbId = rbIds[rbNames[sel]]
+                rbData = data['Residue'][rbId]
+            dlg.Destroy()
+        else:
+            rbId = rbIds[rbNames[0]]
+            rbData = data['Residue'][rbId]
+        if not len(rbData):
+            return
+        atNames = rbData['atNames']
+        AtInfo = data['Residue']['AtInfo']
+        atTypes = rbData['rbTypes']
+        XYZ = rbData['rbXYZ']
+        neighDict = FindAllNeighbors(XYZ,atTypes,atNames,AtInfo)
+        TargList = []            
+        dlg = wx.SingleChoiceDialog(G2frame,'Select origin atom for torsion sequence','Origin atom',rbData['atNames'])
+        if dlg.ShowModal() == wx.ID_OK:
+            Orig = dlg.GetSelection()
+            xyz = XYZ[Orig]
+            TargList = neighDict[atNames[Orig]]
+        dlg.Destroy()
+        if not len(TargList):
+            return
+        dlg = wx.SingleChoiceDialog(G2frame,'Select pivot atom for torsion sequence','Pivot atom',TargList)
+        if dlg.ShowModal() == wx.ID_OK:
+            Piv = atNames.index(TargList[dlg.GetSelection()])
+            riding = FindRiding(atNames[Orig],atNames[Piv],neighDict)
+            Riding = []
+            for atm in riding:
+                Riding.append(atNames.index(atm))
+            rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
+        dlg.Destroy()
+        UpdateResidueRB()        
+
     def AddZMatrixRB():
         pass
 
@@ -1051,11 +1135,11 @@ def UpdateRigidBodies(G2frame,data):
             
             def ChangeAngle(event):
                 Obj = event.GetEventObject()
-                rbId,iSeq,iseq,Seq = Indx[Obj.GetId()]
-                val = Seq[iseq][2]
+                rbId,Seq = Indx[Obj.GetId()]
+                val = Seq[2]
                 try:
                     val = float(Obj.GetValue())
-                    Seq[iseq][2] = val
+                    Seq[2] = val
                 except ValueError:
                     pass
                 Obj.SetValue('%8.2f'%(val))
@@ -1063,34 +1147,33 @@ def UpdateRigidBodies(G2frame,data):
                 
             def OnRadBtn(event):
                 Obj = event.GetEventObject()
-                isel,Seq,iSeq,ang = Indx[Obj.GetId()]
-                data['Residue'][rbId]['SelSeq'] = [iSeq,isel,ang]
-                angSlide.SetValue(int(100*Seq[isel][2]))
+                Seq,iSeq,ang = Indx[Obj.GetId()]
+                data['Residue'][rbId]['SelSeq'] = [iSeq,ang]
+                angSlide.SetValue(int(100*Seq[2]))
             
             seqSizer = wx.FlexGridSizer(0,4,2,2)
             seqSizer.AddGrowableCol(3,0)
-            for isel,sel in enumerate(Seq):
-                iBeg,iFin,angle,iMove = sel
-                ang = wx.TextCtrl(ResidueRBDisplay,-1,'%8.2f'%(angle),size=(50,20))
-                if not iSeq:
-                    radBt = wx.RadioButton(ResidueRBDisplay,-1,'',style=wx.RB_GROUP)
-                    data['Residue'][rbId]['SelSeq'] = [iSeq,isel,ang]
-                else:
-                    radBt = wx.RadioButton(ResidueRBDisplay,-1,'')
-                radBt.Bind(wx.EVT_RADIOBUTTON,OnRadBtn)                   
-                seqSizer.Add(radBt)
-                bond = wx.TextCtrl(ResidueRBDisplay,-1,'%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
-                seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
-                Indx[radBt.GetId()] = [isel,Seq,iSeq,ang]
-                Indx[ang.GetId()] = [rbId,iSeq,isel,Seq]
-                ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
-                ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
-                seqSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)
-                atms = ''
-                for i in iMove:    
-                    atms += ' %s,'%(atNames[i])
-                moves = wx.TextCtrl(ResidueRBDisplay,-1,atms[:-1],size=(200,20))
-                seqSizer.Add(moves,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.RIGHT)
+            iBeg,iFin,angle,iMove = Seq
+            ang = wx.TextCtrl(ResidueRBDisplay,-1,'%8.2f'%(angle),size=(50,20))
+            if not iSeq:
+                radBt = wx.RadioButton(ResidueRBDisplay,-1,'',style=wx.RB_GROUP)
+                data['Residue'][rbId]['SelSeq'] = [iSeq,ang]
+            else:
+                radBt = wx.RadioButton(ResidueRBDisplay,-1,'')
+            radBt.Bind(wx.EVT_RADIOBUTTON,OnRadBtn)                   
+            seqSizer.Add(radBt)
+            bond = wx.TextCtrl(ResidueRBDisplay,-1,'%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
+            seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
+            Indx[radBt.GetId()] = [Seq,iSeq,ang]
+            Indx[ang.GetId()] = [rbId,Seq]
+            ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
+            ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
+            seqSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)
+            atms = ''
+            for i in iMove:    
+                atms += ' %s,'%(atNames[i])
+            moves = wx.TextCtrl(ResidueRBDisplay,-1,atms[:-1],size=(200,20))
+            seqSizer.Add(moves,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.RIGHT)
             return seqSizer
             
         def SlideSizer():
@@ -1098,17 +1181,17 @@ def UpdateRigidBodies(G2frame,data):
             def OnSlider(event):
                 Obj = event.GetEventObject()
                 rbData = Indx[Obj.GetId()]
-                iSeq,isel,ang = rbData['SelSeq']
+                iSeq,ang = rbData['SelSeq']
                 val = float(Obj.GetValue())/100.
-                rbData['rbSeq'][iSeq][isel][2] = val
+                rbData['rbSeq'][iSeq][2] = val
                 ang.SetValue('%8.2f'%(val))
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
             
             slideSizer = wx.BoxSizer(wx.HORIZONTAL)
             slideSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Selected torsion angle:'),0)
-            iSeq,isel,ang = rbData['SelSeq']
+            iSeq,ang = rbData['SelSeq']
             angSlide = wx.Slider(ResidueRBDisplay,-1,
-                int(100*rbData['rbSeq'][iSeq][isel][2]),0,36000,size=(200,20),
+                int(100*rbData['rbSeq'][iSeq][2]),0,36000,size=(200,20),
                 style=wx.SL_HORIZONTAL)
             angSlide.Bind(wx.EVT_SLIDER, OnSlider)
             Indx[angSlide.GetId()] = rbData
@@ -1132,12 +1215,10 @@ def UpdateRigidBodies(G2frame,data):
             ResidueRBSizer.Add((5,5),0)
             if rbData['rbSeq']:
                 slideSizer,angSlide = SlideSizer()
+            ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
+                'Sel  Bond             Angle      Riding atoms'),
+                0,wx.ALIGN_CENTER_VERTICAL)                        
             for iSeq,Seq in enumerate(rbData['rbSeq']):
-                ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Seq: %d'%(iSeq)),
-                    0,wx.ALIGN_CENTER_VERTICAL)
-                ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
-                    'Sel  Bond             Angle      Riding atoms'),
-                    0,wx.ALIGN_CENTER_VERTICAL)                        
                 ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
             if rbData['rbSeq']:
                 ResidueRBSizer.Add(slideSizer,)
@@ -1149,6 +1230,7 @@ def UpdateRigidBodies(G2frame,data):
         Size[1] = max(Size[1],250) + 20
         ResidueRBDisplay.SetSize(Size)
         ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(600,Size[1])
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateZMatrixRB():
@@ -1180,14 +1262,16 @@ def UpdateRigidBodies(G2frame,data):
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)    
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(VectorRB,'Vector rigid bodies')
     ResidueRB = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(ResidueRB,'Residue rigid bodies')
-    ZMatrix = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(ZMatrix,'Z-matrix rigid bodies')
+    ZMatrixRB = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(ZMatrixRB,'Z-matrix rigid bodies')
     UpdateVectorRB()
     

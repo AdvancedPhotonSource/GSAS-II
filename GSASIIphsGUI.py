@@ -36,7 +36,7 @@ import numpy.ma as ma
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
-mapDefault = {'MapType':'','RefList':'','Resolution':0.5,
+mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -4345,7 +4345,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             MapPeaks.DeselectRow(r)
                 finally:
                     wx.EndBusyCursor()
-                G2plt.PlotStructure(G2frame,data)        
+                G2plt.PlotStructure(G2frame,data)
+
+    def OnShowBonds(event):
+        generalData = data['General']
+        if generalData['Map']['Show bonds']:
+            generalData['Map']['Show bonds'] = False
+            G2frame.dataFrame.MapPeaksEdit.SetLabel(G2gd.wxID_SHOWBONDS,'Show bonds')
+        else:
+            generalData['Map']['Show bonds'] = True
+            G2frame.dataFrame.MapPeaksEdit.SetLabel(G2gd.wxID_SHOWBONDS,'Hide bonds')
+        FillMapPeaksGrid()
+        G2plt.PlotStructure(G2frame,data)
                 
     def OnPeaksUnique(event):
         if 'Map Peaks' in data:
@@ -4469,34 +4480,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ## keep this                
     
     def OnSearchMaps(event):
-        
-#        def FindBondsPeaks(peaks):                    #uses numpy & masks - very fast even for proteins!
-#            import numpy.ma as ma
-#            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-#            for peak in peaks:
-#                peak[-1] = []
-#            Indx = range(len(peaks))
-#            Peaks = []
-#            Radii = []
-#            for peak in peaks:
-#                Peaks.append(np.array(peak[1:4]))
-#                Radii.append(1.0)
-#            Atoms = np.array(Atoms)
-#            Radii = np.array(Radii)
-#            IAR = zip(Indx,Atoms,Radii)
-#            for atomA in IAR:
-#                Dx = Atoms-atomA[1]
-#                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of G2frame & disorder "bonds" < 0.5A
-#                sumR = atomA[3]+Radii
-#                IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
-#                i = atomA[0]
-#                for j in IndB[0]:
-#                    if Styles[i] == 'polyhedra':
-#                        atomData[i][-2].append(np.inner(Amat,Dx[j]))
-#                    elif Styles[j] != 'polyhedra' and j > i:
-#                        atomData[i][-2].append(Dx[j]*Radii[i]/sumR[j])
-#                        atomData[j][-2].append(-Dx[j]*Radii[j]/sumR[j])
-                            
+                                    
         peaks = []
         mags = []
         print ' Begin fourier map search - can take some time'
@@ -4650,6 +4634,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnShowBonds, id=G2gd.wxID_SHOWBONDS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2gd.wxID_FINDEQVPEAKS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)

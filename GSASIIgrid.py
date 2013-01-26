@@ -45,8 +45,8 @@ htmlFirstUse = True
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
-    wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,
-] = [wx.NewId() for item in range(12)]
+    wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_PWDRADD, wxID_HKLFADD,wxID_PWDANALYSIS,wxID_DATADELETE,
 ] = [wx.NewId() for item in range(4)]
@@ -103,8 +103,9 @@ htmlFirstUse = True
     wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
 ] = [wx.NewId() for item in range(7)]
 
-[ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,
-] = [wx.NewId() for item in range(3)]
+[ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
+    wxID_ZMATRIXADD,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -451,15 +452,23 @@ class DataFrame(wx.Frame):
         self.PostfillDataMenu()
         
 # Rigid bodies
+        self.VectorRBEdit = wx.Menu(title='')
+        self.VectorRBEdit.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
+            help='Add rigid body')
+        self.ResidueRBMenu = wx.Menu(title='')
+        self.ResidueRBMenu.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Import rigid bodies',
+            help='Import residue rigid bodies from macro file')
+        self.ResidueRBMenu.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ from txt file',
+            help='Import rigid body XYZ from txt file')
+        self.ResidueRBMenu.Append(id=wxID_RESIDUETORSSEQ, kind=wx.ITEM_NORMAL,text='Define sequence',
+            help='Define torsion sequence')
+        self.ZMatrixRBMenu = wx.Menu(title='')
+        self.ZMatrixRBMenu.Append(id=wxID_ZMATRIXADD, kind=wx.ITEM_NORMAL,text='Add Z-matrix',
+            help='Add Z-matrix')
+            
         self.RigidBodyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RigidBodyMenu,helpType='Rigid bodies')
-        self.RigidBodyEdit = wx.Menu(title='')
-        self.RigidBodyMenu.Append(menu=self.RigidBodyEdit, title='Edit')
-        self.RigidBodyEdit.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
-            help='Add rigid body')
-        self.RigidBodyEdit.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ from txt file',
-            help='Import rigid body XYZ')
-        
+        self.RigidBodyMenu.Append(menu=self.VectorRBEdit, title='Edit')        
         self.PostfillDataMenu()
             
 # Restraints
@@ -481,6 +490,7 @@ class DataFrame(wx.Frame):
             help='Change esd in observed value')
         self.RestraintEdit.Append(id=wxID_RESTDELETE, kind=wx.ITEM_NORMAL,text='Delete restraints',
             help='Delete selected restraints')
+
         self.RestraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RestraintMenu,helpType='Restraints')
         self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
@@ -843,6 +853,8 @@ class DataFrame(wx.Frame):
             help='View point is 1st peak selected')
         self.MapPeaksEdit.Append(id=wxID_PEAKSDISTVP, kind=wx.ITEM_NORMAL,text='View pt. dist.',
             help='Compute distance of selected peaks from view point')   
+        self.MapPeaksEdit.Append(id=wxID_SHOWBONDS, kind=wx.ITEM_NORMAL,text='Hide bonds',
+            help='Hide or show bonds between peak positions')   
         self.MapPeaksEdit.Append(id=wxID_PEAKSDA, kind=wx.ITEM_NORMAL,text='Calc dist/ang', 
             help='Calculate distance or angle for selection')
         self.MapPeaksEdit.Append(id=wxID_FINDEQVPEAKS, kind=wx.ITEM_NORMAL,text='Equivalent peaks', 

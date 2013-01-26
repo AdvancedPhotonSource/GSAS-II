@@ -296,31 +296,37 @@ def PlotSngl(self,newPlot=False):
                 C = abs(A-B)
             elif Type == '|DFsq|/sig':
                 if sig > 0.:
-                    A = abs(Fosq-Fcsq)/(scale*sig)
+                    A = (Fosq-Fcsq)/(scale*sig)
                 B = 0
             elif Type == '|DFsq|>sig':
                 if sig > 0.:
-                    A = abs(Fosq-Fcsq)/sig
-                if A < 1.0: A = 0
+                    A = (Fosq-Fcsq)/sig
+                if abs(A) < 1.0: A = 0
                 A /= scale
                 B = 0                    
             elif Type == '|DFsq|>3sig':
                 if sig > 0.:
-                    A = abs(Fosq-Fcsq)/sig
-                if A < 3.0: A = 0
+                    A = (Fosq-Fcsq)/sig
+                if abs(A) < 3.0: A = 0
                 A /= scale
                 B = 0                    
             xy = (H[pzone[izone][0]],H[pzone[izone][1]])
-            if A > 0.0:
-                Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
-            if B:
-                Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
-                radius = C
-                if radius > 0:
-                    if A > B:
-                        Plot.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
-                    else:                    
-                        Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
+            if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
+                if A > 0.0:
+                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
+                else:
+                    Plot.add_artist(Circle(xy,radius=-A,ec='r',fc='w',picker=3))
+            else:
+                if A > 0.0:
+                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
+                if B:
+                    Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
+                    radius = C
+                    if radius > 0:
+                        if A > B:
+                            Plot.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
+                        else:                    
+                            Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
     HKL = np.array(HKL,dtype=np.int)
     HKLF = np.array(HKLF)
     Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
@@ -2602,6 +2608,7 @@ def PlotStructure(G2frame,data):
         if len(mapPeaks):
             peakMax = np.max(mapPeaks.T[0])
     drawingData = data['Drawing']
+    
     try:
         drawAtoms = drawingData['Atoms']
     except KeyError:
@@ -2609,8 +2616,10 @@ def PlotStructure(G2frame,data):
     mapData = {}
     flipData = {}
     rhoXYZ = []
+    showBonds = False
     if 'Map' in generalData:
         mapData = generalData['Map']
+        showBonds = mapData['Show bonds']
     if 'Flip' in generalData:
         flipData = generalData['Flip']                        
         flipData['mapRoll'] = [0,0,0]
@@ -2634,11 +2643,12 @@ def PlotStructure(G2frame,data):
     ctrlDown = False
     
     def FindPeaksBonds(XYZ):
+        rFact = drawingData['radiusFactor']
         Bonds = [[] for x in XYZ]
         for i,xyz in enumerate(XYZ):
             Dx = XYZ-xyz
             dist = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=1))
-            IndB = ma.nonzero(ma.masked_greater(dist,2.1))
+            IndB = ma.nonzero(ma.masked_greater(dist,rFact*2.2))
             for j in IndB[0]:
                 Bonds[i].append(Dx[j]/2.)
                 Bonds[j].append(-Dx[j]/2.)
@@ -3345,7 +3355,8 @@ def PlotStructure(G2frame,data):
                     RenderMapPeak(x,y,z,Gr,1.0)
                 else:
                     RenderMapPeak(x,y,z,Wt,mag/peakMax)
-                RenderLines(x,y,z,mapBonds[ind],Wt)
+                if showBonds:
+                    RenderLines(x,y,z,mapBonds[ind],Wt)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]
@@ -3434,14 +3445,13 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['atNames'])]
         XYZ = np.copy(rbData['rbXYZ'])      #don't mess with original!
         Seq = rbData['rbSeq']
-        for seq in Seq:
-            for ia,ib,ang,mv in seq:
-                va = XYZ[ia]-XYZ[ib]
-                Q = G2mth.AVdeg2Q(ang,va)
-                for im in mv:
-                    vb = XYZ[im]-XYZ[ib]
-                    vb = G2mth.prodQVQ(Q,vb)
-                    XYZ[im] = XYZ[ib]+vb
+        for ia,ib,ang,mv in Seq:
+            va = XYZ[ia]-XYZ[ib]
+            Q = G2mth.AVdeg2Q(ang,va)
+            for im in mv:
+                vb = XYZ[im]-XYZ[ib]
+                vb = G2mth.prodQVQ(Q,vb)
+                XYZ[im] = XYZ[ib]+vb
         Bonds = FindBonds(XYZ)
     elif rbType == 'Z-matrix':
         pass

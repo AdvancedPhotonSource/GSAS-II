@@ -414,7 +414,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Pawley dmin'] = 1.0
         if 'Pawley neg wt' not in generalData:
             generalData['Pawley neg wt'] = 0.0
-            
+        if 'MCSA controls' not in generalData:
+            generalData['MCSA controls'] = {'Data source':'','Annealing':[50.0,0.001,0.90,1000],
+            'dmin':2.0,'Algolrithm':'Normal','Jump coeff':[0.95,0.5]} #'Normal','Random jump','Tremayne jump'
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
@@ -479,7 +481,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SetupGeneral()
         generalData = data['General']
         Map = generalData['Map']
-        Flip = generalData['Flip']  
+        Flip = generalData['Flip']
+        MCSA = generalData['MCSA controls']  
         PWDR = any(['PWDR' in item for item in data['Histograms'].keys()])
         
         def NameSizer():
@@ -927,6 +930,108 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             line2Sizer.Add(kMax,0,wx.ALIGN_CENTER_VERTICAL)
             flipSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
             return flipSizer
+            
+        def MCSASizer():
+            Ind = {}
+            
+            def OnRefList(event):
+                MCSA['Data source'] = refList.GetValue()
+            
+            def OnDmin(event):
+                try:
+                    val = float(dmin.GetValue())
+                    if 1.0 <= val < 5.0:
+                        MCSA['dmin'] = val
+                except ValueError:
+                    pass
+                dmin.SetValue("%.3f"%(MCSA['dmin']))          #reset in case of error
+            
+            def OnAlist(event):
+                MCSA['Algolrithm'] = Alist.GetValue()
+                if 'Tremayne' in MCSA['Algolrithm']:
+                    wx.CallAfter(UpdateGeneral)
+            
+            def OnAjump(event):
+                Obj = event.GetEventObject()
+                ind = Indx[Obj.GetId()]
+                try:
+                    val = float(Obj.GetValue())
+                    if .0 <= val <= 1.0:
+                        MCSA['Jump coeff'][ind] = val
+                except ValueError:
+                    pass
+                Obj.SetValue("%.3f"%(MCSA['Jump coeff'][ind]))          #reset in case of error
+            
+            def OnAnneal(event):
+                Obj = event.GetEventObject()
+                ind,fmt = Indx[Obj.GetId()]
+                if ind < 3:
+                    try:
+                        val = float(Obj.GetValue())
+                        if .0 <= val:
+                            MCSA['Annealing'][ind] = val
+                    except ValueError:
+                        pass
+                else:
+                    try:
+                        val = int(Obj.GetValue())
+                        if 1 <= val:
+                            MCSA['Annealing'][3] = val
+                    except ValueError:
+                        pass
+                    
+                Obj.SetValue(fmt%(MCSA['Annealing'][ind]))          #reset in case of error
+                       
+            refList = []
+            if len(data['Pawley ref']):
+                refList = ['Pawley reflections']
+            for item in data['Histograms'].keys():
+                if 'HKLF' in item:
+                    refList.append(item)
+            mcsaSizer = wx.BoxSizer(wx.VERTICAL)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,label=' Monte Carlo/Simulated Annealing controls: Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
+            refList = wx.ComboBox(dataDisplay,-1,value=MCSA['Data source'],choices=refList,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            refList.Bind(wx.EVT_COMBOBOX,OnRefList)
+            lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(dataDisplay,label=' d-min: '),0,wx.ALIGN_CENTER_VERTICAL)
+            dmin = wx.TextCtrl(dataDisplay,-1,value='%.3f'%(MCSA['dmin']),style=wx.TE_PROCESS_ENTER)
+            dmin.Bind(wx.EVT_TEXT_ENTER,OnDmin)        
+            dmin.Bind(wx.EVT_KILL_FOCUS,OnDmin)
+            lineSizer.Add(dmin,0,wx.ALIGN_CENTER_VERTICAL)
+            mcsaSizer.Add(lineSizer)
+            mcsaSizer.Add((5,5),)
+            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            Achoice = ['Normal','Random jump','Tremayne jump']
+            line2Sizer.Add(wx.StaticText(dataDisplay,label=' MC/SA algorithm: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Alist = wx.ComboBox(dataDisplay,-1,value=MCSA['Algolrithm'],choices=Achoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Alist.Bind(wx.EVT_COMBOBOX,OnAlist)
+            line2Sizer.Add(Alist,0,wx.ALIGN_CENTER_VERTICAL)
+            if 'Tremayne' in MCSA['Algolrithm']:
+                for i,name in enumerate([' A-jump: ',' B-jump: ']):
+                    line2Sizer.Add(wx.StaticText(dataDisplay,label=name),0,wx.ALIGN_CENTER_VERTICAL)
+                    Ajump =  wx.TextCtrl(dataDisplay,-1,value='%.3f'%(MCSA['Jump coeff'][i]),style=wx.TE_PROCESS_ENTER)
+                    Ajump.Bind(wx.EVT_TEXT_ENTER,OnAjump)        
+                    Ajump.Bind(wx.EVT_KILL_FOCUS,OnAjump)
+                    Indx[Ajump.GetId()] = i
+                    line2Sizer.Add(Ajump,0,wx.ALIGN_CENTER_VERTICAL)
+            mcsaSizer.Add(line2Sizer)
+            mcsaSizer.Add((5,5),)
+            line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            line3Sizer.Add(wx.StaticText(dataDisplay,label=' Annealing schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
+            names = [' Start temp: ',' Final temp: ',' Slope: ',' No. trials: ']
+            fmts = ['%.1f','%.5f','%.2f','%d']
+            for i,[name,fmt] in enumerate(zip(names,fmts)):
+                line3Sizer.Add(wx.StaticText(dataDisplay,label=name),0,wx.ALIGN_CENTER_VERTICAL)
+                anneal =  wx.TextCtrl(dataDisplay,-1,value=fmt%(MCSA['Annealing'][i]),style=wx.TE_PROCESS_ENTER)
+                anneal.Bind(wx.EVT_TEXT_ENTER,OnAnneal)        
+                anneal.Bind(wx.EVT_KILL_FOCUS,OnAnneal)
+                Indx[anneal.GetId()] = [i,fmt]
+                line3Sizer.Add(anneal,0,wx.ALIGN_CENTER_VERTICAL)
+            mcsaSizer.Add(line3Sizer)            
+            return mcsaSizer
                 
         General.DestroyChildren()
         dataDisplay = wx.Panel(General)
@@ -953,6 +1058,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         mainSizer.Add((5,5),0)
         mainSizer.Add(FlipSizer())
+
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(MCSASizer())
 
         dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
@@ -4093,6 +4201,31 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     wx.CallAfter(UpdateDData)
             finally:
                 dlg.Destroy()
+                
+################################################################################
+##### Rigid bodies
+################################################################################
+
+    def FillRigidBodyGrid():
+        G2frame.dataFrame.SetStatusText('')
+        RigidBodies.DestroyChildren()
+        dataDisplay = wx.Panel(RigidBodies)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,' :'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)        
+#        mainSizer.Add(SlopSizer(),0)
+#        mainSizer.Add((5,5),0)
+#        mainSizer.Add(ShowSizer(),0,)
+#        mainSizer.Add((5,5),0)
+#        mainSizer.Add(RadSizer(),0,)
+
+        dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(G2frame.dataFrame)
+        Size[1] += 35                           #compensate for status bar
+        dataDisplay.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
+        
 
 ################################################################################
 ##### Pawley routines
@@ -4615,6 +4748,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
+        elif text == 'Rigid bodies':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
+            
+            
+            FillRigidBodyGrid()
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
@@ -4622,12 +4760,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
             FillPawleyReflectionsGrid()
-        elif text == 'Texture':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
-            UpdateTexture()                        
-            G2plt.PlotTexture(G2frame,data,Start=True)
         elif text == 'Map peaks':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
@@ -4641,6 +4773,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
             FillMapPeaksGrid()
             G2plt.PlotStructure(G2frame,data)
+        elif text == 'Texture':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
+            UpdateTexture()                        
+            G2plt.PlotTexture(G2frame,data,Start=True)
             
         else:
             G2gd.SetDataMenuBar(G2frame)
@@ -4665,10 +4803,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
     drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
-    Texture = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(Texture,'Texture')
+    RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(RigidBodies,'Rigid bodies')
     MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
+    Texture = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(Texture,'Texture')
     G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
             

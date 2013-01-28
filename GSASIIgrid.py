@@ -866,6 +866,14 @@ class DataFrame(wx.Frame):
         self.MapPeaksEdit.Append(id=wxID_PEAKSCLEAR, kind=wx.ITEM_NORMAL,text='Clear peaks', 
             help='Clear the map peak list')
         self.PostfillDataMenu()
+
+# Phase / Rigid bodies tab
+        self.RigidBodiesMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.MapPeaksMenu,helpType='Rigid bodies')
+        self.RigidBodiesEdit = wx.Menu(title='')
+        self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit')
+
+        self.PostfillDataMenu()
             
 # end of GSAS-II menu definitions
         

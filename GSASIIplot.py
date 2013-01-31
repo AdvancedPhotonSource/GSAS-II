@@ -296,19 +296,19 @@ def PlotSngl(self,newPlot=False):
                 C = abs(A-B)
             elif Type == '|DFsq|/sig':
                 if sig > 0.:
-                    A = (Fosq-Fcsq)/(scale*sig)
+                    A = scale*(Fosq-Fcsq)/(sig)
                 B = 0
             elif Type == '|DFsq|>sig':
                 if sig > 0.:
                     A = (Fosq-Fcsq)/sig
                 if abs(A) < 1.0: A = 0
-                A /= scale
+                A *= scale
                 B = 0                    
             elif Type == '|DFsq|>3sig':
                 if sig > 0.:
                     A = (Fosq-Fcsq)/sig
                 if abs(A) < 3.0: A = 0
-                A /= scale
+                A *= scale
                 B = 0                    
             xy = (H[pzone[izone][0]],H[pzone[izone][1]])
             if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
@@ -317,10 +317,12 @@ def PlotSngl(self,newPlot=False):
                 else:
                     Plot.add_artist(Circle(xy,radius=-A,ec='r',fc='w',picker=3))
             else:
-                if A > 0.0:
+                if A > 0.0 and A > B:
                     Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
                 if B:
                     Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
+                    if A < B:
+                        Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
                     radius = C
                     if radius > 0:
                         if A > B:

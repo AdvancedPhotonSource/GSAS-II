@@ -1272,7 +1272,9 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(sub,[''])
         if not G2gd.GetPatternTreeItemId(self,self.root,'Controls'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
-            self.PatternTree.SetItemPyData(sub,{})
+            self.PatternTree.SetItemPyData(sub,{'deriv type':'analytic Hessian',    #default controls
+                'min dM/M':0.0001,'shift factor':1.,'max cyc':3,'F**2':True,
+                'minF/sig':0,})
         if not G2gd.GetPatternTreeItemId(self,self.root,'Covariance'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Covariance')
             self.PatternTree.SetItemPyData(sub,{})

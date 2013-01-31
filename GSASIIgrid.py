@@ -1469,7 +1469,7 @@ def UpdateHKLControls(G2frame,data):
     def OnScaleSlider(event):
         scale = int(scaleSel.GetValue())/1000.
         scaleSel.SetValue(int(scale*1000.))
-        data['Scale'] = scale*10.
+        data['Scale'] = scale*1.
         G2plt.PlotSngl(G2frame)
         
     def OnLayerSlider(event):
@@ -1499,10 +1499,6 @@ def UpdateHKLControls(G2frame,data):
     HKLmax = data['HKLmax']
     HKLmin = data['HKLmin']
     typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
-#    if data['ifFc']:
-#        typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
-#    else:
-#        typeChoices = ['Fosq','Fo']
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     SetDataMenuBar(G2frame)
     G2frame.dataFrame.SetTitle('HKL Plot Controls')
@@ -1513,7 +1509,7 @@ def UpdateHKLControls(G2frame,data):
     scaleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Scale'),0,
         wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
     scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=1,
-        style=wx.SL_HORIZONTAL,value=int(data['Scale']*100))
+        style=wx.SL_HORIZONTAL,value=int(data['Scale']*10))
     scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
     scaleSel.SetLineSize(10)
     scaleSel.SetPageSize(10)

@@ -371,6 +371,8 @@ class GridFractionEditor(wg.PyGridCellEditor):
 
     def OnChar(self, evt):
         key = evt.GetKeyCode()
+        if key == 15:
+            return
         if key > 255:
             evt.Skip()
             return
@@ -3639,22 +3641,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Obj = event.GetEventObject()
             try:
                 tbar = float(Obj.GetValue())
-                if tbar >= 0:
+                if tbar > 0:
                     UseList[Indx[Obj.GetId()]]['Extinction'][2]['Tbar'] = tbar
             except ValueError:
                 pass
-            Obj.SetValue("%.2f"%(UseList[Indx[Obj.GetId()]]['Extinction'][2]['Tbar']))
+            Obj.SetValue("%.3f"%(UseList[Indx[Obj.GetId()]]['Extinction'][2]['Tbar']))
+
+        def OnCos2TM(event):
+            Obj = event.GetEventObject()
+            try:
+                val = float(Obj.GetValue())
+                if 0. < val <= 1.:
+                    UseList[Indx[Obj.GetId()]]['Extinction'][2]['Cos2TM'] = val
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[Indx[Obj.GetId()]]['Extinction'][2]['Cos2TM']))
             
         def OnEval(event):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             try:
                 val = float(Obj.GetValue())
-                if val >= 0:
+                if val > 0:
                     UseList[item[0]]['Extinction'][2][item[1]][0] = val
             except ValueError:
                 pass
-            Obj.SetValue("%9.3g"%(UseList[item[0]]['Extinction'][2][item[1]][0]))
+            Obj.SetValue("%10.3e"%(UseList[item[0]]['Extinction'][2][item[1]][0]))
             
         def OnEref(event):
             Obj = event.GetEventObject()
@@ -3896,7 +3908,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             extSizer = wx.BoxSizer(wx.VERTICAL)
             typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
             typeSizer.Add(wx.StaticText(DData,-1,' Extinction type: '),0,wx.ALIGN_CENTER_VERTICAL)
-            Choices = ['Primary','Secondary Type I','Secondary Type II','Secondary Type I & II']
+            Choices = ['None','Primary','Secondary Type I','Secondary Type II','Secondary Type I & II']
             typeTxt = wx.ComboBox(DData,-1,choices=Choices,value=UseList[item]['Extinction'][1],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[typeTxt.GetId()] = [item,1]
@@ -3910,37 +3922,47 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
             typeSizer.Add(approxTxT)
             extSizer.Add(typeSizer,0,wx.ALIGN_CENTER_VERTICAL)
-            extSizer.Add((0,5),)
-            valSizer =wx.BoxSizer(wx.HORIZONTAL)
-            valSizer.Add(wx.StaticText(DData,-1,' Tbar(mm):'),0,wx.ALIGN_CENTER_VERTICAL)
-            tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
-                '%.3f'%(UseList[item]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
-            Indx[tbarVal.GetId()] = item
-            tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
-            tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
-            valSizer.Add(tbarVal,0,wx.ALIGN_CENTER_VERTICAL)
-            if 'Primary' in UseList[item]['Extinction'][1]:
-                Ekey = ['Ep',]
-            elif 'Secondary Type II' == UseList[item]['Extinction'][1]:
-                Ekey = ['Es',]
-            elif 'Secondary Type I' == UseList[item]['Extinction'][1]:
-                Ekey = ['Eg',]
-            else:
-                Ekey = ['Eg','Es']
-            for ekey in Ekey:
-                Eref = wx.CheckBox(DData,-1,label=ekey+' : ')
-                Eref.SetValue(UseList[item]['Extinction'][2][ekey][1])
-                Indx[Eref.GetId()] = [item,ekey]
-                Eref.Bind(wx.EVT_CHECKBOX, OnEref)
-                valSizer.Add(Eref,0,wx.ALIGN_CENTER_VERTICAL)
-                Eval = wx.TextCtrl(DData,wx.ID_ANY,
-                    '%9.3g'%(UseList[item]['Extinction'][2][ekey][0]),style=wx.TE_PROCESS_ENTER)
-                Indx[Eval.GetId()] = [item,ekey]
-                Eval.Bind(wx.EVT_TEXT_ENTER,OnEval)
-                Eval.Bind(wx.EVT_KILL_FOCUS,OnEval)
-                valSizer.Add(Eval,0,wx.ALIGN_CENTER_VERTICAL)
-
-            extSizer.Add(valSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            if UseList[item]['Extinction'][1] != 'None':
+                extSizer.Add((0,5),)
+                valSizer =wx.BoxSizer(wx.HORIZONTAL)
+                valSizer.Add(wx.StaticText(DData,-1,' Tbar(mm):'),0,wx.ALIGN_CENTER_VERTICAL)
+                tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
+                    '%.3f'%(UseList[item]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
+                Indx[tbarVal.GetId()] = item
+                tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
+                tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
+                valSizer.Add(tbarVal,0,wx.ALIGN_CENTER_VERTICAL)
+                valSizer.Add(wx.StaticText(DData,-1,' cos(2ThM):'),0,wx.ALIGN_CENTER_VERTICAL)
+                cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
+                    '%.3f'%(UseList[item]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
+                Indx[cos2tm.GetId()] = item
+                cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
+                cos2tm.Bind(wx.EVT_KILL_FOCUS,OnCos2TM)
+                valSizer.Add(cos2tm,0,wx.ALIGN_CENTER_VERTICAL)
+                extSizer.Add(valSizer,0,wx.ALIGN_CENTER_VERTICAL)
+                val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
+                if 'Primary' in UseList[item]['Extinction'][1]:
+                    Ekey = ['Ep',]
+                elif 'Secondary Type II' == UseList[item]['Extinction'][1]:
+                    Ekey = ['Es',]
+                elif 'Secondary Type I' == UseList[item]['Extinction'][1]:
+                    Ekey = ['Eg',]
+                else:
+                    Ekey = ['Eg','Es']
+                for ekey in Ekey:
+                    Eref = wx.CheckBox(DData,-1,label=ekey+' : ')
+                    Eref.SetValue(UseList[item]['Extinction'][2][ekey][1])
+                    Indx[Eref.GetId()] = [item,ekey]
+                    Eref.Bind(wx.EVT_CHECKBOX, OnEref)
+                    val2Sizer.Add(Eref,0,wx.ALIGN_CENTER_VERTICAL)
+                    Eval = wx.TextCtrl(DData,wx.ID_ANY,
+                        '%10.3e'%(UseList[item]['Extinction'][2][ekey][0]),style=wx.TE_PROCESS_ENTER)
+                    Indx[Eval.GetId()] = [item,ekey]
+                    Eval.Bind(wx.EVT_TEXT_ENTER,OnEval)
+                    Eval.Bind(wx.EVT_KILL_FOCUS,OnEval)
+                    val2Sizer.Add(Eval,0,wx.ALIGN_CENTER_VERTICAL)
+    
+                extSizer.Add(val2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
             return extSizer
             
         def BabSizer():
@@ -4073,7 +4095,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         
                 mainSizer.Add(poSizer)
                 mainSizer.Add((0,5),0)                
-                #Extinction  'Extinction':[0.0,False]
                 mainSizer.Add(ExtSizer())
                 mainSizer.Add((0,5),0)
                 mainSizer.Add(BabSizer())
@@ -4116,8 +4137,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         histoName = TextList[i]
                         UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
                             'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-                            'Extinction':['Lorentzian','Secondary Type I',
-                            {'Tbar':0.0,'Eg':[0.0,False],'Es':[0.0,False],'Ep':[0.0,False]},]}                        
+                            'Extinction':['Lorentzian','None',
+                            {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]},]}                        
                     data['Histograms'] = UseList
                     wx.BeginBusyCursor()
                     UpdateHKLFdata(histoName)

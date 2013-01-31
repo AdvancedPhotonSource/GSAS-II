@@ -631,7 +631,8 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
         SGtext = G2spc.SGPrint(SGData)
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
-        phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5]})
+        phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],
+            pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5],pfx+'Vol':G2lat.calc_V(A)})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
         Natoms[pfx] = 0
@@ -1322,14 +1323,18 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                 extApprox,extType,extParms = hapData['Extinction']
                 controlDict[pfx+'EType'] = extType
                 controlDict[pfx+'EApprox'] = extApprox
+                controlDict[pfx+'Tbar'] = extParms['Tbar']
+                controlDict[pfx+'Cos2TM'] = extParms['Cos2TM']
                 if 'Primary' in extType:
                     Ekey = ['Ep',]
+                elif 'I & II' in extType:
+                    Ekey = ['Eg','Es']
                 elif 'Secondary Type II' == extType:
                     Ekey = ['Es',]
                 elif 'Secondary Type I' == extType:
                     Ekey = ['Eg',]
-                else:
-                    Ekey = ['Eg','Es']
+                else:   #'None'
+                    Ekey = []
                 for eKey in Ekey:
                     hapDict[pfx+eKey] = extParms[eKey][0]
                     if extParms[eKey][1]:
@@ -1342,11 +1347,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
                     print >>pFile,135*'-'
                     print >>pFile,' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-                    print >>pFile,' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
-                    text = ' Parameters       :'
-                    for eKey in Ekey:
-                        text += ' %4s : %10.3g Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
-                    print >>pFile,text
+                    if extType != 'None':
+                        print >>pFile,' Extinction  Type: %15s'%(extType),' approx: %10s'%(extApprox),' tbar: %6.3f'%(extParms['Tbar'])
+                        text = ' Parameters       :'
+                        for eKey in Ekey:
+                            text += ' %4s : %10.3e Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
+                        print >>pFile,text
                     PrintBabinet(hapData['Babinet'])
                 Histogram['Reflection Lists'] = phase       
                 
@@ -1473,6 +1479,17 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         print >>pFile,ptstr
         print >>pFile,sigstr
         
+    def PrintExtAndSig(pfx,hapData,ScalExtSig):
+        print >>pFile,'\n Single crystal extinction: Type: ',hapData[0],' Approx: ',hapData[1]
+        text = ''
+        for item in hapData[2]:
+            if pfx+item in ScalExtSig:
+                text += '       %s: '%(item)
+                text += '%12.2e'%(hapData[2][item][0])
+                if pfx+item in ScalExtSig:
+                    text += ' sig: %12.2e'%(ScalExtSig[pfx+item])
+        print >>pFile,text        
+        
     def PrintBabinetAndSig(pfx,hapData,BabSig):
         print >>pFile,'\n Babinet form factor modification: '
         ptlbls = ' names :'
@@ -1565,9 +1582,14 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                         BabSig[pfx+name] = sigDict[pfx+name]                
                 
             elif 'HKLF' in histogram:
-                for item in ['Scale','Ep','Eg','Es']:
+                for item in ['Scale',]:
                     if parmDict.get(pfx+item):
                         hapData[item][0] = parmDict[pfx+item]
+                        if pfx+item in sigDict:
+                            ScalExtSig[pfx+item] = sigDict[pfx+item]
+                for item in ['Ep','Eg','Es']:
+                    if parmDict.get(pfx+item):
+                        hapData['Extinction'][2][item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict:
                             ScalExtSig[pfx+item] = sigDict[pfx+item]
                 for name in ['BabA','BabU']:
@@ -1619,20 +1641,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
                         %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
                     print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
-                    if 'Scale' in ScalExtSig:
+                    if pfx+'Scale' in ScalExtSig:
                         print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale'])
-                    PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
+                    if hapData['Extinction'][0] != 'None':
+                        PrintExtAndSig(pfx,hapData['Extinction'],ScalExtSig)
+                    if len(BabSig):
+                        PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
 
-# fix after it runs!                
-#                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-#                    print >>pFile,135*'-'
-#                    print >>pFile,' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-#                    print >>pFile,' Extinction approx: %10s'%(extApprox),' Type: %15s'%(extType),' tbar: %6.3f'%(extParms['Tbar'])
-#                    text = ' Parameters       :'
-#                    for eKey in Ekey:
-#                        text += ' %4s : %10.3g Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
-#                    print >>pFile,text
-    
 ################################################################################
 ##### Histogram data
 ################################################################################        
@@ -2419,7 +2434,75 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'BabA'] = dFdbab.T[0]
         dFdvDict[pfx+'BabU'] = dFdbab.T[1]
     return dFdvDict
+    
+def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
+    ''' Single crystal extinction function; puts correction in ref[13] and returns
+    corrections needed for derivatives
+    '''
+    ref[13] = 1.0
+    dervCor = 1.0
+    dervDict = {}
+    if calcControls[phfx+'EType'] != 'None':
+        cos2T = 1.0-0.5*(parmDict[hfx+'Lam']/ref[4])**2         #cos(2theta)
+        if 'SXC' in parmDict[hfx+'Type']:
+            AV = 7.9406e5/parmDict[pfx+'Vol']**2
+            PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
+            P12 = (calcControls[phfx+'Cos2TM']+cos2T**4)/(calcControls[phfx+'Cos2TM']+cos2T**2)
+        elif 'SNT' in parmDict[hfx+'Type']:
+            AV = 1.e7/parmDict[pfx+'Vol']**2
+            PL = 1./(4.*refl[4]**2)
+            P12 = 1.0
+        elif 'SNC' in parmDict[hfx+'Type']:
+            AV = 1.e7/parmDict[pfx+'Vol']**2
+            PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
+            P12 = 1.0
+            
+        PLZ = AV*P12*parmDict[hfx+'Lam']**2*ref[7]
+        if 'Primary' in calcControls[phfx+'EType']:
+            PLZ *= 1.5
+        else:
+            PLZ *= calcControls[phfx+'Tbar']
+                        
+        if 'Primary' in calcControls[phfx+'EType']:
+            PSIG = parmDict[phfx+'Ep']
+        elif 'I & II' in calcControls[phfx+'EType']:
+            PSIG = parmDict[phfx+'Eg']/np.sqrt(1.+(parmDict[phfx+'Es']*PL/parmDict[phfx+'Eg'])**2)
+        elif 'Type II' in calcControls[phfx+'EType']:
+            PSIG = parmDict[phfx+'Es']
+        else:       # 'Secondary Type I'
+            PSIG = parmDict[phfx+'Eg']/PL
+            
+        AG = 0.58+0.48*cos2T+0.24*cos2T**2
+        AL = 0.025+0.285*cos2T
+        BG = 0.02-0.025*cos2T
+        BL = 0.15-0.2*(0.75-cos2T)**2
+        if cos2T < 0.:
+            BL = -0.45*cos2T
+        CG = 2.
+        CL = 2.
+        PF = PLZ*PSIG
         
+        if 'Gaussian' in calcControls[phfx+'EApprox']:
+            PF4 = 1.+CG*PF+AG*PF**2/(1.+BG*PF)
+            extCor = np.sqrt(PF4)
+            PF3 = 0.5*(CG+2.*AG*PF/(1.+BG*PF)-AG*PF**2*BG/(1.+BG*PF)**2)/(PF4*extCor)
+        else:
+            PF4 = 1.+CL*PF+AL*PF**2/(1.+BL*PF)
+            extCor = np.sqrt(PF4)
+            PF3 = 0.5*(CL+2.*AL*PF/(1.+BL*PF)-AL*PF**2*BL/(1.+BL*PF)**2)/(PF4*extCor)
+
+        dervCor = (1.+PF)*PF3
+        if 'Primary' in calcControls[phfx+'EType'] and phfx+'Ep' in varyList:
+            dervDict[phfx+'Ep'] = -ref[7]*PLZ*PF3
+        if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
+            dervDict[phfx+'Es'] = -ref[7]*PLZ*PF3*(PSIG/parmDict[phfx+'Es'])**3
+        if 'I' in calcControls[phfx+'EType'] and phfx+'Eg' in varyList:
+            dervDict[phfx+'Eg'] = -ref[7]*PLZ*PF3*(PSIG/parmDict[phfx+'Eg'])**3*PL**2
+               
+        ref[13] = 1./extCor
+    return dervCor,dervDict
+        
+    
 def Dict2Values(parmdict, varylist):
     '''Use before call to leastsq to setup list of values for the parameters 
     in parmdict, as selected by key in varylist'''
@@ -3285,14 +3368,15 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             dMdvh = np.zeros((len(varylist),len(refList)))
             for iref,ref in enumerate(refList):
                 if ref[6] > 0:
+                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmdict,varylist) #puts correction in refl[13]
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
                             w = wtFactor/ref[6]
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = w*dFdvDict[var][iref]
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*dervCor
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
                     else:
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
@@ -3301,9 +3385,12 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                             w = wtFactor/sig
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = w*dFdvDict[var][iref]
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*np.sqrt(dervCor)
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]                            
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*np.sqrt(dervCor)                            
+                    for item in ['Ep','Es','Eg']:
+                        if phfx+item in varylist:
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]
         else:
             continue        #skip non-histogram entries
         if len(dMdv):
@@ -3372,15 +3459,16 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             wdf = np.zeros(len(refList))
             for iref,ref in enumerate(refList):
                 if ref[6] > 0:
+                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmdict,varylist) #puts correction in refl[13]
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
                             w =  wtFactor/ref[6]
                             wdf[iref] = w*(ref[5]-ref[7])
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = w*dFdvDict[var][iref]
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*dervCor
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
                     else:
                         if ref[5] > 0.:
                             Fo = np.sqrt(ref[5])
@@ -3391,9 +3479,12 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                             if Fo/sig >= calcControls['minF/sig']:
                                 for j,var in enumerate(varylist):
                                     if var in dFdvDict:
-                                        dMdvh[j][iref] = w*dFdvDict[var][iref]
+                                        dMdvh[j][iref] = w*dFdvDict[var][iref]*np.sqrt(dervCor)
                                 if phfx+'Scale' in varylist:
-                                    dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]                           
+                                    dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*np.sqrt(dervCor)                           
+                    for item in ['Ep','Es','Eg']:
+                        if phfx+item in varylist:
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             if len(Hess):
@@ -3473,7 +3564,9 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             nobs = 0
             for i,ref in enumerate(refList):
                 if ref[6] > 0:
+                    SCExtinction(ref,phfx,hfx,pfx,calcControls,parmdict,varylist) #puts correction in refl[13]
                     ref[7] = parmdict[phfx+'Scale']*ref[9]
+                    ref[7] *= ref[13]
                     ref[8] = ref[5]/parmdict[phfx+'Scale']
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:

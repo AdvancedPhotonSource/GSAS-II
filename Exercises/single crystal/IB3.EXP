@@ -7,6 +7,8 @@
     HSTRY  5 EXPEDT  Win32  Oct 09 15:28:00 2011             LA LO              
     HSTRY  6 GENLES  Win32  Oct 09 15:28:00 2011 Sdsq= 0.111E+05 S/E= 0.776E-04 
     HSTRY  7 EXPEDT  Win32  Oct 09 15:28:00 2011             LA                 
+    HSTRY  8 GENLES  Win32  Oct 09 15:28:00 2011 Sdsq= 0.599E+04 S/E= 0.280E-02 
+    HSTRY  9 EXPEDT  Win32  Jan 30 15:32:30 2013             L   O              
   DSGL CDAT1  DRAD ARAD NOFO                                                    
   FOUR CDAT1  PTSN X    1 NOPR   0.00      999.99                               
   GNLS  RUN on Oct 09 15:28:00 2011    Total cycles run   9       5994.5        
@@ -49,6 +51,7 @@
  EXPR PTSNRL      2603                                                          
  REFN GDNFT  Reduced CHI**2 =  25.19     for   14 variables                     
  REFN STATS  Cycle   9 There were   252 observations. Total CHI**2 = 5.9945E+03 
+CIF AUTHOR    rvd                                                               
 CRS1    PNAM  H3OSbF6                                                           
 CRS1   ABSCO  1229.96   799.59   441.55    54.09    28.01     0.48     0.48     
 CRS1   ATYPS    4                                                               
@@ -74,6 +77,8 @@ CRS1  FMHST1  1
 CRS1  FMPCTL  100  100  100    0    0    0   25   50   50                       
 CRS1  SG SYM  I b 3                                                             
 CRS1  SPAXIS    0    0    1                                                     
+CRS11 EXTSN     1  YNN  000    G                                                
+CRS11 EXTSN1 1.000E-10 1.000E-10 1.000E-10                                      
 HAP1 1ELMFR1     1.0000        N    0                                           
 HAP1 1EXTMAX Max. Extinction is 1.00000                                         
 HAP1 1XTLELM   1 0 0 0 0 0 0 0 0                                                
@@ -81,6 +86,7 @@ HST  1  HFIL  ..\example\OXONIUM.DAT
 HST  1  HNAM  KENT'S H3O+SBF5- LOW TEMP -50C       173 4.0 1.3 5.9              
 HST  1  INST    1                                                               
 HST  1 CDAT1  MoKa  SPHR+PSI F 0.150 0.010 2.000 0    0.0000                    
+HST  1 INAME  cad4                                                              
 HST  1 IRAD     4                                                               
 HST  1 NFOBS  259    0    0    0    0    0    0    0    0                       
 HST  1 NPSI1   37   14    8    0                                                
@@ -118,6 +124,4 @@ INST 1CHIR     1.
 INST 1OMGR     1.                                                               
 INST 1PHIR    -1.                                                               
 ZZZZZZZZZZZZ  Last EXP file record                                              
-    HSTRY  8 GENLES  Win32  Oct 09 15:28:00 2011 Sdsq= 0.599E+04 S/E= 0.280E-02 
-CIF AUTHOR    rvd                                                               
-HST  1 INAME  cad4                                                              
+    HSTRY 10 GENLES  Win32  Jan 30 15:32:35 2013                                

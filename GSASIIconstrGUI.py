@@ -974,10 +974,11 @@ def UpdateRigidBodies(G2frame,data):
                             El = PE.Elem.strip().lower().capitalize()
                             if El not in AtInfo:
                                 Info = G2elem.GetAtomInfo(El)
-                                AtInfo[El] = [Info['Drad']['Color']]
+                                AtInfo[El] = [Info['Drad'],Info['Color']]
                             rbData['rbTypes'][r] = El
                             vecGrid.SetCellValue(r,c,El)
                     PE.Destroy()
+                wx.CallAfter(UpdateVectorRB)
 
             def ChangeCell(event):
                 r,c =  event.GetRow(),event.GetCol()
@@ -1001,12 +1002,15 @@ def UpdateRigidBodies(G2frame,data):
             vecGrid = G2gd.GSGrid(VectorRBDisplay)
             vecGrid.SetTable(vecTable, True)
             vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
-            vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
+            if not imag:
+                vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             attr = wx.grid.GridCellAttr()
             attr.SetEditor(G2phG.GridFractionEditor(vecGrid))
             for c in range(3):
                 vecGrid.SetColAttr(c, attr)
             for row in range(vecTable.GetNumberRows()):
+                if imag:
+                    vecGrid.SetCellStyle(row,3,VERY_LIGHT_GREY,True)                    
                 for col in [4,5,6]:
                     vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
             vecGrid.SetMargins(0,0)
@@ -1031,10 +1035,10 @@ def UpdateRigidBodies(G2frame,data):
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
         Size = VectorRBSizer.GetMinSize()
         Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
+        Size[1] = max(Size[1],450) + 20
         VectorRBDisplay.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        Size[1] = min(Size[1],450)
+        Size[1] = min(Size[1],450)
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateResidueRB():

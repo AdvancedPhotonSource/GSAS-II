@@ -1051,17 +1051,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(denSizer[0])
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
             
-        mainSizer.Add((5,5),0)
         mainSizer.Add(PawleySizer())
-
-        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
+        
         mainSizer.Add(MapSizer())
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
 
-        mainSizer.Add((5,5),0)
         mainSizer.Add(FlipSizer())
+        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
 
-        mainSizer.Add((5,5),0)
         mainSizer.Add(MCSASizer())
 
         dataDisplay.SetSizer(mainSizer)
@@ -4106,6 +4106,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mainSizer.Add(BabSizer())
                 mainSizer.Add((0,5),0)
                 pass
+            mainSizer.Add(wx.StaticText(DData,-1,150*'-'),0,)
         mainSizer.Add((5,5),0)
 
         DData.SetSizer(mainSizer,True)

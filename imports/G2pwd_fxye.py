@@ -309,9 +309,14 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     Temperature = float(S.split('=')[1])
                 except:
                     pass
+            elif 'Gonio' in S.split('=')[0]:
+                try:
+                    Radius = float(S.split('=')[1])
+                except:
+                    pass
         self.Sample['Temperature'] = Temperature
-        return True
-        
+        self.Sample['Gonio. radius'] = Radius
+        return True        
 
 def sfloat(S):
     'convert a string to a float, treating an all-blank string as zero'

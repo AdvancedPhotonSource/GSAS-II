@@ -303,6 +303,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         self.numbanks=len(Banks)
         # scan comments for temperature
         Temperature = 300
+        Radius = 200
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:
                 try:

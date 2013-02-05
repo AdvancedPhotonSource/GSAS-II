@@ -1698,7 +1698,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         instDict = {}
         insVary = []
         pfx = ':'+str(hId)+':'
-        for item in Inst:
+        insKeys = Inst.keys()
+        insKeys.sort()
+        for item in insKeys:
             insName = pfx+item
             instDict[insName] = Inst[item][1]
             if Inst[item][2]:
@@ -1766,7 +1768,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         ptlbls = ' name  :'
         ptstr =  ' value :'
         varstr = ' refine:'
-        for item in Inst:
+        insKeys = Inst.keys()
+        insKeys.sort()
+        for item in insKeys:
             if item != 'Type':
                 ptlbls += '%12s' % (item)
                 ptstr += '%12.6f' % (Inst[item][1])
@@ -1889,7 +1893,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         
     def SetInstParms(pfx,Inst,parmDict,sigDict):
         instSig = {}
-        for item in Inst:
+        insKeys = Inst.keys()
+        insKeys.sort()
+        for item in insKeys:
             insName = pfx+item
             Inst[item][1] = parmDict[insName]
             if insName in sigDict:
@@ -1971,7 +1977,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         ptstr =  ' value :'
         sigstr = ' sig   :'
         refine = False
-        for name in instSig:
+        insKeys = instSig.keys()
+        insKeys.sort()
+        for name in insKeys:
             if name not in  ['Type','Lam1','Lam2','Azimuth']:
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.6f' % (Inst[name][1])

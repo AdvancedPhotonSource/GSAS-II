@@ -150,6 +150,7 @@ def GetEdfData(filename,imageOnly=False):
     if not imageOnly:
         print 'Read European detector data edf file: ',filename
     File = open(filename,'rb')
+    fileSize = os.stat(filename).st_size
     head = File.read(3072)
     lines = head.split('\n')
     sizexy = [0,0]
@@ -182,6 +183,7 @@ def GetEdfData(filename,imageOnly=False):
             dist = float(fields[2])
         if line:
             head.append(line)
+    File.seek(fileSize-imSize)
     if dType == 'UnsignedShort':        
         image = np.array(ar.array('H',File.read(imSize)),dtype=np.int32)
     image = np.reshape(image,(sizexy[1],sizexy[0]))

@@ -53,8 +53,9 @@ htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
-    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,
-] = [wx.NewId() for item in range(11)]
+    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_RBAPPEND,
+    wxID_ASSIGNATMS2RB
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -104,8 +105,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
-    wxID_ZMATRIXADD,
-] = [wx.NewId() for item in range(5)]
+    wxID_ZMATRIXADD,wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -119,34 +120,346 @@ htmlFirstUse = True
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
-def ShowHelp(helpType,frame):
-    '''Called to bring up a web page for documentation.'''
-    global htmlFirstUse
-    # look up a definition for help info from dict
-    helplink = helpLocDict.get(helpType)
-    if helplink is None:
-        # no defined link to use, create a default based on key
-        helplink = 'gsasII.html#'+helpType.replace(' ','_')
-    helplink = os.path.join(path2GSAS2,'help',helplink)
-    if helpMode == 'internal':
-        try:
-            htmlPanel.LoadFile(helplink)
-            htmlFrame.Raise()
-        except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
-            htmlFrame.Show(True)
-            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
-            htmlPanel = MyHtmlPanel(htmlFrame,-1)
-            htmlPanel.LoadFile(helplink)
-    else:
-        pfx = "file://"
-        if sys.platform.lower().startswith('win'):
-            pfx = ''
-        if htmlFirstUse:
-            webbrowser.open_new(pfx+helplink)
-            htmlFirstUse = False
+################################################################################
+#### GSAS-II class definitions
+################################################################################
+
+class SymOpDialog(wx.Dialog):
+    def __init__(self,parent,SGData,New=True,ForceUnit=False):
+        wx.Dialog.__init__(self,parent,-1,'Select symmetry operator',
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        panel = wx.Panel(self)
+        self.SGData = SGData
+        self.New = New
+        self.Force = ForceUnit
+        self.OpSelected = [0,0,0,[0,0,0],False,False]
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if ForceUnit:
+            choice = ['No','Yes']
+            self.force = wx.RadioBox(panel,-1,'Force to unit cell?',choices=choice)
+            self.force.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.force,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+        if SGData['SGInv']:
+            choice = ['No','Yes']
+            self.inv = wx.RadioBox(panel,-1,'Choose inversion?',choices=choice)
+            self.inv.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.inv,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+        if SGData['SGLatt'] != 'P':
+            LattOp = G2spc.Latt2text(SGData['SGLatt']).split(';')
+            self.latt = wx.RadioBox(panel,-1,'Choose cell centering?',choices=LattOp)
+            self.latt.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.latt,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+        if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
+            Ncol = 2
         else:
-            webbrowser.open(pfx+helplink, new=0, autoraise=True)
+            Ncol = 3
+        OpList = []
+        for M,T in SGData['SGOps']:
+            OpList.append(G2spc.MT2text(M,T))
+        self.oprs = wx.RadioBox(panel,-1,'Choose space group operator?',choices=OpList,
+            majorDimension=Ncol)
+        self.oprs.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+        mainSizer.Add(self.oprs,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(panel,-1,"   Choose unit cell?"),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+        cellSizer = wx.BoxSizer(wx.HORIZONTAL)
+        cellSizer.Add((5,0),0)
+        cellName = ['X','Y','Z']
+        self.cell = []
+        for i in range(3):
+            self.cell.append(wx.SpinCtrl(panel,-1,cellName[i],size=wx.Size(50,20)))
+            self.cell[-1].SetRange(-3,3)
+            self.cell[-1].SetValue(0)
+            self.cell[-1].Bind(wx.EVT_SPINCTRL, self.OnOpSelect)
+            cellSizer.Add(self.cell[-1],0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(cellSizer,0,)
+        if self.New:
+            choice = ['No','Yes']
+            self.new = wx.RadioBox(panel,-1,'Generate new positions?',choices=choice)
+            self.new.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.new,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add((5,5),0)
+
+        OkBtn = wx.Button(panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        panel.SetSizer(mainSizer)
+        panel.Fit()
+        self.Fit()
+
+    def OnOpSelect(self,event):
+        if self.SGData['SGInv']:
+            self.OpSelected[0] = self.inv.GetSelection()
+        if self.SGData['SGLatt'] != 'P':
+            self.OpSelected[1] = self.latt.GetSelection()
+        self.OpSelected[2] = self.oprs.GetSelection()
+        for i in range(3):
+            self.OpSelected[3][i] = float(self.cell[i].GetValue())
+        if self.New:
+            self.OpSelected[4] = self.new.GetSelection()
+        if self.Force:
+            self.OpSelected[5] = self.force.GetSelection()
+
+    def GetSelection(self):
+        return self.OpSelected
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+class DisAglDialog(wx.Dialog):
+    
+    def __default__(self,data,default):
+        if data:
+            self.data = data
+        else:
+            self.data = {}
+            self.data['Name'] = default['Name']
+            self.data['Factors'] = [0.85,0.85]
+            self.data['AtomTypes'] = default['AtomTypes']
+            self.data['BondRadii'] = default['BondRadii']
+            self.data['AngleRadii'] = default['AngleRadii']
+        
+    def __init__(self,parent,data,default):
+        wx.Dialog.__init__(self,parent,-1,'Distance Angle Controls', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.default = default
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.__default__(data,self.default)
+        self.Draw(self.data)
+                
+    def Draw(self,data):
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,'Controls for phase '+data['Name']),
+            0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
+        mainSizer.Add((10,10),1)
+        
+        radiiSizer = wx.FlexGridSizer(2,3,5,5)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,' Type'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,'Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,'Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
+        self.objList = {}
+        for id,item in enumerate(self.data['AtomTypes']):
+            radiiSizer.Add(wx.StaticText(self.panel,-1,' '+item),0,wx.ALIGN_CENTER_VERTICAL)
+            bRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['BondRadii'][id]),style=wx.TE_PROCESS_ENTER)
+            self.objList[bRadii.GetId()] = ['BondRadii',id]
+            bRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
+            bRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
+            radiiSizer.Add(bRadii,0,wx.ALIGN_CENTER_VERTICAL)
+            aRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['AngleRadii'][id]),style=wx.TE_PROCESS_ENTER)
+            self.objList[aRadii.GetId()] = ['AngleRadii',id]
+            aRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
+            aRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
+            radiiSizer.Add(aRadii,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(radiiSizer,0,wx.EXPAND)
+        factorSizer = wx.FlexGridSizer(2,2,5,5)
+        Names = ['Bond','Angle']
+        for i,name in enumerate(Names):
+            factorSizer.Add(wx.StaticText(self.panel,-1,name+' search factor'),0,wx.ALIGN_CENTER_VERTICAL)
+            bondFact = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['Factors'][i]),style=wx.TE_PROCESS_ENTER)
+            self.objList[bondFact.GetId()] = ['Factors',i]
+            bondFact.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
+            bondFact.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
+            factorSizer.Add(bondFact)
+        mainSizer.Add(factorSizer,0,wx.EXPAND)
+        
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        ResetBtn = wx.Button(self.panel,-1,'Reset')
+        ResetBtn.Bind(wx.EVT_BUTTON, self.OnReset)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(ResetBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+    
+    def OnRadiiVal(self,event):
+        Obj = event.GetEventObject()
+        item = self.objList[Obj.GetId()]
+        try:
+            self.data[item[0]][item[1]] = float(Obj.GetValue())
+        except ValueError:
+            pass
+        Obj.SetValue("%.3f"%(self.data[item[0]][item[1]]))          #reset in case of error
+        
+    def GetData(self):
+        return self.data
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnReset(self,event):
+        data = {}
+        self.__default__(data,self.default)
+        self.Draw(self.data)
+        
+class SingleFloatDialog(wx.Dialog):
+    
+    def __init__(self,parent,title,prompt,value,limits=[0.,1.],format='%.5g'):
+        wx.Dialog.__init__(self,parent,-1,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.limits = limits
+        self.value = value
+        self.prompt = prompt
+        self.format = format
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnValItem(event):
+            try:
+                val = float(valItem.GetValue())
+                if val < self.limits[0] or val > self.limits[1]:
+                    raise ValueError
+            except ValueError:
+                val = self.value
+            self.value = val
+            valItem.SetValue(self.format%(self.value))
+            
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        valItem = wx.TextCtrl(self.panel,-1,value=self.format%(self.value),style=wx.TE_PROCESS_ENTER)
+        mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
+        valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+        valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetValue(self):
+        return self.value
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+        
+class GridFractionEditor(wg.PyGridCellEditor):
+    def __init__(self,grid):
+        wg.PyGridCellEditor.__init__(self)
+
+    def Create(self, parent, id, evtHandler):
+        self._tc = wx.TextCtrl(parent, id, "")
+        self._tc.SetInsertionPoint(0)
+        self.SetControl(self._tc)
+
+        if evtHandler:
+            self._tc.PushEventHandler(evtHandler)
+
+        self._tc.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def SetSize(self, rect):
+        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
+                               wx.SIZE_ALLOW_MINUS_ONE)
+
+    def BeginEdit(self, row, col, grid):
+        self.startValue = grid.GetTable().GetValue(row, col)
+        self._tc.SetValue(str(self.startValue))
+        self._tc.SetInsertionPointEnd()
+        self._tc.SetFocus()
+        self._tc.SetSelection(0, self._tc.GetLastPosition())
+
+    def EndEdit(self, row, col, grid):
+        changed = False
+
+        val = self._tc.GetValue().lower()
+        
+        if val != self.startValue:
+            changed = True
+            neg = False
+            if '-' in val:
+                neg = True
+            if '/' in val and '.' not in val:
+                val += '.'
+            elif 's' in val and not 'sind(' in val:
+                if neg:
+                    val = '-sind('+val.strip('-s')+')'
+                else:
+                    val = 'sind('+val.strip('s')+')'
+            elif 'c' in val and not 'cosd(' in val:
+                if neg:
+                    val = '-cosd('+val.strip('-c')+')'
+                else:
+                    val = 'cosd('+val.strip('c')+')'
+            try:
+                val = float(eval(val))
+            except (SyntaxError,NameError):
+                val = self.startValue
+            grid.GetTable().SetValue(row, col, val) # update the table
+
+        self.startValue = ''
+        self._tc.SetValue('')
+        return changed
+
+    def Reset(self):
+        self._tc.SetValue(self.startValue)
+        self._tc.SetInsertionPointEnd()
+
+    def Clone(self):
+        return GridFractionEditor(grid)
+
+    def StartingKey(self, evt):
+        self.OnChar(evt)
+        if evt.GetSkipped():
+            self._tc.EmulateKeyPress(evt)
+
+    def OnChar(self, evt):
+        key = evt.GetKeyCode()
+        if key == 15:
+            return
+        if key > 255:
+            evt.Skip()
+            return
+        char = chr(key)
+        if char in '.+-/0123456789cosind()':
+            self._tc.WriteText(char)
+        else:
+            evt.Skip()
 
 class MyHelp(wx.Menu):
     '''This class creates the contents of a help menu.
@@ -742,10 +1055,14 @@ class DataFrame(wx.Frame):
             help='Appended as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMSVIEWADD, kind=wx.ITEM_NORMAL,text='Append view point',
             help='Appended as an H atom')
+        self.AtomEdit.Append(id=wxID_RBAPPEND, kind=wx.ITEM_NORMAL,text='Append rigid body',
+            help='Append atoms for rigid body')
         self.AtomEdit.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
             help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
             help='Select atom row to insert before; inserted as an H atom')
+        self.AtomEdit.Append(id=wxID_ASSIGNATMS2RB, kind=wx.ITEM_NORMAL,text='Assign atoms to rigid body',
+            help='Select atom row to start assignment')
         self.AtomEdit.Append(id=wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move atom to view point',
             help='Select single atom to move')
         self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
@@ -872,6 +1189,10 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.MapPeaksMenu,helpType='Rigid bodies')
         self.RigidBodiesEdit = wx.Menu(title='')
         self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit')
+        self.RigidBodiesEdit.Append(id=wxID_AUTOFINDRESRB, kind=wx.ITEM_NORMAL,text='Auto find residues',
+            help='Auto find of residue RBs in macromolecule')
+        self.RigidBodiesEdit.Append(id=wxID_GLOBALRESREFINE, kind=wx.ITEM_NORMAL,text='Global residue refine',
+            help='Global setting of residue RB refinement flags')
 
         self.PostfillDataMenu()
             
@@ -1082,6 +1403,39 @@ class Table(wg.PyGridTableBase):
                 print self.data
                 self.data[row][col] = value
         innerSetValue(row, col, value)
+        
+################################################################################
+#### Help
+################################################################################
+
+def ShowHelp(helpType,frame):
+    '''Called to bring up a web page for documentation.'''
+    global htmlFirstUse
+    # look up a definition for help info from dict
+    helplink = helpLocDict.get(helpType)
+    if helplink is None:
+        # no defined link to use, create a default based on key
+        helplink = 'gsasII.html#'+helpType.replace(' ','_')
+    helplink = os.path.join(path2GSAS2,'help',helplink)
+    if helpMode == 'internal':
+        try:
+            htmlPanel.LoadFile(helplink)
+            htmlFrame.Raise()
+        except:
+            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
+            htmlFrame.Show(True)
+            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
+            htmlPanel = MyHtmlPanel(htmlFrame,-1)
+            htmlPanel.LoadFile(helplink)
+    else:
+        pfx = "file://"
+        if sys.platform.lower().startswith('win'):
+            pfx = ''
+        if htmlFirstUse:
+            webbrowser.open_new(pfx+helplink)
+            htmlFirstUse = False
+        else:
+            webbrowser.open(pfx+helplink, new=0, autoraise=True)
 
 ################################################################################
 #####  Notebook
@@ -1282,7 +1636,7 @@ def UpdateSeqResults(G2frame,data):
         data - dictionary
             'histNames' - list of histogram names in order as processed by Sequential Refinement
             'varyList' - list of variables - identical over all refinements insequence
-            histName - dictionaries for all data sets processed:
+            'histName' - dictionaries for all data sets processed:
                 'variables'- result[0] from leastsq call
                 'varyList' - list of variables; same as above
                 'sig' - esds for variables

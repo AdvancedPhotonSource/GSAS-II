@@ -19,7 +19,6 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 810 $")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
-import GSASIIphsGUI as G2phG
 import GSASIIstruct as G2str
 import GSASIImapvars as G2mv
 import GSASIIgrid as G2gd
@@ -878,7 +877,8 @@ def UpdateRigidBodies(G2frame,data):
                 Riding.append(atNames.index(atm))
             rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
         dlg.Destroy()
-        UpdateResidueRB()        
+        UpdateResidueRB()
+        
 
     def AddZMatrixRB():
         pass
@@ -1005,7 +1005,7 @@ def UpdateRigidBodies(G2frame,data):
             if not imag:
                 vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             attr = wx.grid.GridCellAttr()
-            attr.SetEditor(G2phG.GridFractionEditor(vecGrid))
+            attr.SetEditor(G2gd.GridFractionEditor(vecGrid))
             for c in range(3):
                 vecGrid.SetColAttr(c, attr)
             for row in range(vecTable.GetNumberRows()):
@@ -1124,11 +1124,11 @@ def UpdateRigidBodies(G2frame,data):
             vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             attr = wx.grid.GridCellAttr()
-            attr.SetEditor(G2phG.GridFractionEditor(vecGrid))
+            attr.SetEditor(G2gd.GridFractionEditor(vecGrid))
             for c in range(3):
                 vecGrid.SetColAttr(c, attr)
             for row in range(vecTable.GetNumberRows()):
-                for col in [4,5,6]:
+                for col in range(5):
                     vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
             vecGrid.SetMargins(0,0)
             vecGrid.AutoSizeColumns(False)
@@ -1151,8 +1151,8 @@ def UpdateRigidBodies(G2frame,data):
                 
             def OnRadBtn(event):
                 Obj = event.GetEventObject()
-                Seq,iSeq,ang = Indx[Obj.GetId()]
-                data['Residue'][rbId]['SelSeq'] = [iSeq,ang]
+                Seq,iSeq,angId = Indx[Obj.GetId()]
+                data['Residue'][rbId]['SelSeq'] = [iSeq,angId]
                 angSlide.SetValue(int(100*Seq[2]))
             
             seqSizer = wx.FlexGridSizer(0,4,2,2)
@@ -1161,15 +1161,15 @@ def UpdateRigidBodies(G2frame,data):
             ang = wx.TextCtrl(ResidueRBDisplay,-1,'%8.2f'%(angle),size=(50,20))
             if not iSeq:
                 radBt = wx.RadioButton(ResidueRBDisplay,-1,'',style=wx.RB_GROUP)
-                data['Residue'][rbId]['SelSeq'] = [iSeq,ang]
+                data['Residue'][rbId]['SelSeq'] = [iSeq,ang.GetId()]
             else:
                 radBt = wx.RadioButton(ResidueRBDisplay,-1,'')
             radBt.Bind(wx.EVT_RADIOBUTTON,OnRadBtn)                   
             seqSizer.Add(radBt)
             bond = wx.TextCtrl(ResidueRBDisplay,-1,'%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
             seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
-            Indx[radBt.GetId()] = [Seq,iSeq,ang]
-            Indx[ang.GetId()] = [rbId,Seq]
+            Indx[radBt.GetId()] = [Seq,iSeq,ang.GetId()]
+            Indx[ang.GetId()] = [rbId,Seq,ang]
             ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
             ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
             seqSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1185,15 +1185,15 @@ def UpdateRigidBodies(G2frame,data):
             def OnSlider(event):
                 Obj = event.GetEventObject()
                 rbData = Indx[Obj.GetId()]
-                iSeq,ang = rbData['SelSeq']
+                iSeq,angId = rbData['SelSeq']
                 val = float(Obj.GetValue())/100.
                 rbData['rbSeq'][iSeq][2] = val
-                ang.SetValue('%8.2f'%(val))
+                Indx[angId][2].SetValue('%8.2f'%(val))
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
             
             slideSizer = wx.BoxSizer(wx.HORIZONTAL)
             slideSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Selected torsion angle:'),0)
-            iSeq,ang = rbData['SelSeq']
+            iSeq,angId = rbData['SelSeq']
             angSlide = wx.Slider(ResidueRBDisplay,-1,
                 int(100*rbData['rbSeq'][iSeq][2]),0,36000,size=(200,20),
                 style=wx.SL_HORIZONTAL)
@@ -1226,6 +1226,8 @@ def UpdateRigidBodies(G2frame,data):
                 ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
             if rbData['rbSeq']:
                 ResidueRBSizer.Add(slideSizer,)
+            ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,100*'-'))
+
         ResidueRBSizer.Add((5,25),)
         ResidueRBSizer.Layout()    
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)

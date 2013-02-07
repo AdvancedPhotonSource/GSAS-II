@@ -1202,6 +1202,31 @@ def getWave(Parms):
         return Parms['Lam'][1]
     except KeyError:
         return Parms['Lam1'][1]
+
+def UpdateResRBAtoms(Amat,Bmat,Atoms,AtLookUp,RBObj,RBData):
+    RBIds = GetResRBIds(RBData)
+    RBRes = RBData[RBIds[RBObj['ResName']]]
+    XYZ = np.array(RBRes['rbXYZ'])
+    for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
+        QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
+        for ride in seq[3]:
+            VB = prodQVQ(QuatA,XYZ[ride]-XYZ[seq[1]])
+            XYZ[ride] += VB
+    for i,xyz in enumerate(XYZ):
+        xyz = prodQVQ(RBObj['Orient'][0],xyz)
+        xyz = np.inner(Bmat,xyz)
+        xyz += RBObj['Orig'][0]
+        XYZ[i] = xyz
+    Atxyz = GetAtomsById(Atoms,AtLookUp,RBObj['Ids'])
+    
+def GetResRBIds(RBData):    
+    rbKeys = RBData.keys()
+    rbKeys.remove('AtInfo')
+    if not len(rbKeys):
+        return {}
+    RBNames = [RBData[k]['RBname'] for k in rbKeys]
+    return dict(zip(RBNames,rbKeys))
+    
     
 def prodQQ(QA,QB):
     ''' Grassman quaternion product
@@ -1297,4 +1322,36 @@ def AVdeg2Q(A,V):
     S = sind(p)
     Q[1:4] = V*S
     return Q
+
+def makeQuat(A,B,C):
+    ''' Make quaternion from rotation of A vector to B vector about C axis
+        A,B,C are np.array Cartesian 3-vectors
+    Returns quaternion & rotation angle in radians
+    '''
+
+    V1 = np.cross(A,C)
+    V2 = np.cross(B,C)
+    if nl.norm(V1)*nl.norm(V2):
+        V1 /= nl.norm(V1)
+        V2 /= nl.norm(V2)
+        V3 = np.cross(V1,V2)
+    else:
+        v3 = np.zero(3)
+    Q = np.array([1.0,0.0,0.0,0.0])
+    D = 0.
+    if nl.norm(V3):
+        V3 /= nl.norm(V3)
+        D1 = min(1.0,max(-1.0,np.vdot(V1,V2)))
+        D = np.arccos(D1)/2.0
+        V1 = C-V3
+        V2 = C+V3
+        DM = nl.norm(V1)
+        DP = nl.norm(V2)
+        S = np.sin(D)
+        Q[0] = np.cos(D)
+        Q[1:] = V3*S
+        D *= 2.
+        if DM > DP:
+            D *= -1.
+    return Q,D
     

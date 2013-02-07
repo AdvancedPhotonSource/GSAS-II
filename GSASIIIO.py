@@ -754,7 +754,7 @@ def SetNewPhase(Name='New Phase',SGData=G2spc.SpcGroup('P 1')[1],cell=[1.0,1.0,1
         'Drawing':{},
         'Histograms':{},
         'Pawley ref':[],
-        'Models':{},
+        'RBModels':{},
         }
     return phaseData
     

@@ -3899,8 +3899,6 @@ def SeqRefine(GPXfile,dlg):
                     args=([Histo,Phases,restraintDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/len(varyList))
 
-
-
             runtime = time.time()-begin
             Rvals['chisq'] = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])

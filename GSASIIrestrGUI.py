@@ -17,7 +17,6 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 810 $")
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
-import GSASIIphsGUI as G2phG
 import GSASIIspc as G2spc
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
@@ -320,7 +319,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             targAtoms = [[Ids[x+iBeg],Types[x+iBeg],Coords[x+iBeg]] for x in range(len(Names[iBeg:]))]
         if len(Lists['B-atom']):
             value = 109.54
-            dlg = G2phG.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 value = dlg.GetValue()
             dlg.Destroy()
@@ -702,7 +701,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             dlg.Destroy()
             if len(ids) > 2:
                 value = 1.0
-                dlg = G2phG.SingleFloatDialog(G2frame,'Angle','Enter unit cell sum ',value,[-1.e6,1.e6],'%.2f')
+                dlg = G2gd.SingleFloatDialog(G2frame,'Angle','Enter unit cell sum ',value,[-1.e6,1.e6],'%.2f')
                 if dlg.ShowModal() == wx.ID_OK:
                     value = dlg.GetValue()                
                     comp = [ids,factors,value,0.01]
@@ -816,7 +815,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Bonds.ClearSelection()
             val = bondList[rows[0]][2]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.],'%.4f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -830,7 +829,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Bonds.ClearSelection()
             val = bondList[rows[0]][3]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.],'%.4f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -940,7 +939,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Angles.ClearSelection()
             val = angleList[rows[0]][2]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -954,7 +953,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Angles.ClearSelection()
             val = angleList[rows[0]][3]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1068,7 +1067,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Planes.ClearSelection()
             val = planeList[rows[0]][3]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for plane',val,[0.,5.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for plane',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1193,7 +1192,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Volumes.ClearSelection()
             val = volumeList[rows[0]][2]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new value for chiral volume',val,[0.,360.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new value for chiral volume',val,[0.,360.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1207,7 +1206,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Volumes.ClearSelection()
             val = volumeList[rows[0]][3]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for chiral volume',val,[0.,5.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for chiral volume',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1316,7 +1315,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Torsions.ClearSelection()
             val = torsionList[rows[0]][4]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for torsion restraints',val,[0.,5.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for torsion restraints',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1431,7 +1430,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Ramas.ClearSelection()
             val = ramaList[rows[0]][4]
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value','Enter new esd for energy',val,[0.,5.],'%.2f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for energy',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1557,7 +1556,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             ChemComps.ClearSelection()
-            dlg = G2phG.SingleFloatDialog(G2frame,'New value',
+            dlg = G2gd.SingleFloatDialog(G2frame,'New value',
                 'Enter new value for restraint multiplier',1.0,[-1.e6,1.e6],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()

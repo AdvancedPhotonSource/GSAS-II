@@ -197,6 +197,29 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
 
+def UpdateResRBAtoms(Amat,Bmat,cx,Atoms,AtLookUp,RBObj,RBData):
+    RBIds = GetResRBIds(RBData)
+    ObjIds = RBObj['Ids']
+    RBRes = RBData[RBIds[RBObj['ResName']]]
+    XYZ = np.array(RBRes['rbXYZ'])
+    for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
+        QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
+        for ride in seq[3]:
+            XYZ[ride] = prodQVQ(QuatA,XYZ[ride]-XYZ[seq[1]])+XYZ[seq[1]]
+    for i,xyz in enumerate(XYZ):
+        xyz = prodQVQ(RBObj['Orient'][0],xyz)
+        xyz = np.inner(Bmat,xyz)
+        xyz += RBObj['Orig'][0]
+        Atoms[AtLookUp[ObjIds[i]]][cx:cx+3] = xyz
+    
+def GetResRBIds(RBData):    
+    rbKeys = RBData.keys()
+    rbKeys.remove('AtInfo')
+    if not len(rbKeys):
+        return {}
+    RBNames = [RBData[k]['RBname'] for k in rbKeys]
+    return dict(zip(RBNames,rbKeys))
+    
 def GetSHCoeff(pId,parmDict,SHkeys):
     SHCoeff = {}
     for shkey in SHkeys:
@@ -1202,31 +1225,6 @@ def getWave(Parms):
         return Parms['Lam'][1]
     except KeyError:
         return Parms['Lam1'][1]
-
-def UpdateResRBAtoms(Amat,Bmat,Atoms,AtLookUp,RBObj,RBData):
-    RBIds = GetResRBIds(RBData)
-    RBRes = RBData[RBIds[RBObj['ResName']]]
-    XYZ = np.array(RBRes['rbXYZ'])
-    for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
-        QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
-        for ride in seq[3]:
-            VB = prodQVQ(QuatA,XYZ[ride]-XYZ[seq[1]])
-            XYZ[ride] += VB
-    for i,xyz in enumerate(XYZ):
-        xyz = prodQVQ(RBObj['Orient'][0],xyz)
-        xyz = np.inner(Bmat,xyz)
-        xyz += RBObj['Orig'][0]
-        XYZ[i] = xyz
-    Atxyz = GetAtomsById(Atoms,AtLookUp,RBObj['Ids'])
-    
-def GetResRBIds(RBData):    
-    rbKeys = RBData.keys()
-    rbKeys.remove('AtInfo')
-    if not len(rbKeys):
-        return {}
-    RBNames = [RBData[k]['RBname'] for k in rbKeys]
-    return dict(zip(RBNames,rbKeys))
-    
     
 def prodQQ(QA,QB):
     ''' Grassman quaternion product
@@ -1303,8 +1301,7 @@ def AV2Q(A,V):
         return [1.,0.,0.,0.]    #identity
     p = A/2.
     Q[0] = np.cos(p)
-    s = np.sin(p)
-    Q[1:4] = V*s
+    Q[1:4] = V*np.sin(p)
     return Q
     
 def AVdeg2Q(A,V):
@@ -1319,14 +1316,14 @@ def AVdeg2Q(A,V):
         return [1.,0.,0.,0.]    #identity
     p = A/2.
     Q[0] = cosd(p)
-    S = sind(p)
-    Q[1:4] = V*S
+    Q[1:4] = V*sind(p)
     return Q
 
 def makeQuat(A,B,C):
     ''' Make quaternion from rotation of A vector to B vector about C axis
         A,B,C are np.array Cartesian 3-vectors
     Returns quaternion & rotation angle in radians
+        q=r+ai+bj+ck
     '''
 
     V1 = np.cross(A,C)

@@ -719,7 +719,7 @@ def UpdateRigidBodies(G2frame,data):
             Info = G2elem.GetAtomInfo('C')
             AtInfo['C'] = [Info['Drad'],Info['Color']]
             data['Vector'][rbId] = {'RBname':'UNKRB','VectMag':vecMag,
-                'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal}
+                'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'useCount':0}
         dlg.Destroy()
         UpdateVectorRB()
         
@@ -762,7 +762,8 @@ def UpdateRigidBodies(G2frame,data):
                         iMove = [int(macStr[i])-1 for i in range(3,nMove+3)]
                         rbSeq.append([iBeg,iFin,angle,iMove])
                 data['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
-                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq,'SelSeq':[0,0]}
+                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq,
+                    'SelSeq':[0,0],'useCount':0}
                 print 'Rigid body '+rbName+' added'
             macStr = macro.readline()
         macro.close()
@@ -793,7 +794,7 @@ def UpdateRigidBodies(G2frame,data):
             items = txtStr.split()
         rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
         data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
-            'atNames':atNames,'rbRef':[0,1,2],'rbSeq':[],'SelSeq':[0,0]}
+            'atNames':atNames,'rbRef':[0,1,2],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
         print 'Rigid body UNKRB added'
         text.close()
         UpdateResidueRB()
@@ -919,10 +920,11 @@ def UpdateRigidBodies(G2frame,data):
             plotRB.Bind(wx.EVT_CHECKBOX,OnPlotRB)
             nameSizer.Add(plotRB,0,wx.ALIGN_CENTER_VERTICAL)
             nameSizer.Add((5,0),)
-            delRB = wx.CheckBox(VectorRBDisplay,-1,'Delete?')
-            Indx[delRB.GetId()] = rbId
-            delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
-            nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+            if not rbData['useCount']:
+                delRB = wx.CheckBox(VectorRBDisplay,-1,'Delete?')
+                Indx[delRB.GetId()] = rbId
+                delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
+                nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
             return nameSizer
             
         def rbVectMag(rbId,imag,rbData):
@@ -1078,10 +1080,11 @@ def UpdateRigidBodies(G2frame,data):
             plotRB.Bind(wx.EVT_CHECKBOX,OnPlotRB)
             nameSizer.Add(plotRB,0,wx.ALIGN_CENTER_VERTICAL)
             nameSizer.Add((5,0),)
-            delRB = wx.CheckBox(ResidueRBDisplay,-1,'Delete?')
-            Indx[delRB.GetId()] = rbId
-            delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
-            nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+            if not rbData['useCount']:
+                delRB = wx.CheckBox(ResidueRBDisplay,-1,'Delete?')
+                Indx[delRB.GetId()] = rbId
+                delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
+                nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
             return nameSizer
             
         def rbResidues(rbId,XYZ,rbData):

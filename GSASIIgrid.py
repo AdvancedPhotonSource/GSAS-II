@@ -105,8 +105,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
-    wxID_ZMATRIXADD,wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE
-] = [wx.NewId() for item in range(7)]
+    wxID_ZMATRIXADD,wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -1193,7 +1193,8 @@ class DataFrame(wx.Frame):
             help='Auto find of residue RBs in macromolecule')
         self.RigidBodiesEdit.Append(id=wxID_GLOBALRESREFINE, kind=wx.ITEM_NORMAL,text='Global residue refine',
             help='Global setting of residue RB refinement flags')
-
+        self.RigidBodiesEdit.Append(id=wxID_RBREMOVEALL, kind=wx.ITEM_NORMAL,text='Remove all rigid bodies',
+            help='Remove all rigid body assignment for atoms')
         self.PostfillDataMenu()
             
 # end of GSAS-II menu definitions

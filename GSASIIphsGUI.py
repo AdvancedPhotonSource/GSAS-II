@@ -52,8 +52,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     if 'RBModels' not in data:
         data['RBModels'] = {}
 #end patch    
-    
-#    Atoms = []         #not needed??
+
+    global rbAtmDict   
+    rbAtmDict = {}
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     PhaseName = G2frame.PatternTree.GetItemText(Item)
@@ -747,6 +748,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         atomData = data['Atoms']
         DData = data['Drawing']
+        resRBData = data['RBModels'].get('Residue',[])
+        vecRBData = data['RBModels'].get('Vector',[])
+        rbAtmDict = {}
+        for rbObj in resRBData:
+            exclList = ['X' for i in range(len(rbObj['Ids']))]
+            rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
+        # for vector one exclList will be 'x' or 'xu' if TLS used in RB
         Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
             G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
         if atomData:
@@ -900,7 +908,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     ci = ui+i
                                     atomData[r][ci] = 0.0
                                     Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
-                        atomData[r][c] = parms
+                        if not Atoms.IsReadOnly(r,c):
+                            if Atoms.GetColLabelValue(c) == 'refine':
+                                atomData[r][c] = parms.replace(rbAtmDict.get(atomData[r][-1],''),'')
+                            else: 
+                                atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
                             DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
                     wx.CallAfter(Paint)
@@ -965,6 +977,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for i in range(6):
                         if iUij == CSI[0][i]:
                             atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
+                elif Atoms.GetColLabelValue(c) == 'refine':
+                    atomData[r][c] = atomData[r][c].replace(rbAtmDict.get(atomData[r][-1],''),'')
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
                 wx.CallAfter(Paint)
@@ -1016,17 +1030,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for row in range(ibeg,r+1):
                         Atoms.SelectRow(row,True)
                 elif event.AltDown():
-                    if Atoms.frm < 0:           #pick atom to be moved
-                        Atoms.frm = r
-                        Atoms.SelectRow(r,True)
-                        n = colLabels.index('Name')
-                        G2frame.dataFrame.SetStatusText('Atom '+atomData[r][n]+' is to be moved')
-                    else:                       #move it
-                        item = atomData.pop(Atoms.frm)
-                        atomData.insert(r,item)
+                    if atomData[r][-1] in rbAtmDict:
+                        G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be moved ****')
                         Atoms.frm = -1
-                        G2frame.dataFrame.SetStatusText('')
-                        wx.CallAfter(Paint)
+                        Atoms.ClearSelection()
+                    else:    
+                        if Atoms.frm < 0:           #pick atom to be moved
+                            Atoms.frm = r
+                            Atoms.SelectRow(r,True)
+                            n = colLabels.index('Name')
+                            G2frame.dataFrame.SetStatusText('Atom '+atomData[r][n]+' is to be moved')
+                        else:                       #move it
+                            item = atomData.pop(Atoms.frm)
+                            atomData.insert(r,item)
+                            Atoms.frm = -1
+                            G2frame.dataFrame.SetStatusText('')
+                            wx.CallAfter(Paint)
                 else:
                     Atoms.ClearSelection()
                     Atoms.SelectRow(r,True)
@@ -1057,6 +1076,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Atoms.SetTable(atomTable, True)
             Atoms.frm = -1            
             colType = colLabels.index('Type')
+            colR = colLabels.index('refine')
             colSS = colLabels.index('site sym')
             colX = colLabels.index('x')
             colIA = colLabels.index('I/A')
@@ -1070,6 +1090,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for i in range(colU11-1,colU11+6):
                 Atoms.SetColSize(i,50)            
             for row in range(Atoms.GetNumberRows()):
+                atId = atomData[row][-1]
+                if 'X' in rbAtmDict.get(atId,''):
+                    for c in range(0,colX+3):
+                        if c != colR:
+                            Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)                        
                 Atoms.SetReadOnly(row,colType,True)
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
@@ -1166,6 +1191,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         indx = Atoms.GetSelectedRows()
         if len(indx) != 1:
             print '**** ERROR - only one atom can be moved ****'
+        elif atomData[indx[0]][-1] in rbAtmDict:
+            print '**** ERROR - Atoms in rigid bodies can not be moved ****'
         else:
             atomData[indx[0]][cx:cx+3] = [x,y,z]
             SetupGeneral()
@@ -1249,8 +1276,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             indx.reverse()
             for ind in indx:
                 atom = atomData[ind]
-                IDs.append(atom[-1])
-                del atomData[ind]
+                if atom[-1] in rbAtmDict:
+                    G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****')
+                else:
+                    IDs.append(atom[-1])
+                    del atomData[ind]
             if 'Atoms' in data['Drawing']:
                 DrawAtomsDeleteByIDs(IDs)
                 wx.CallAfter(FillAtomsGrid,Atoms)
@@ -1277,7 +1307,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for x in sel:
                     parms += choice[x][0]
                 for r in indx:
-                    atomData[r][c] = parms
+                    if not Atoms.IsReadOnly(r,c):
+                        atomData[r][c] = parms
                 Atoms.ForceRefresh()
             dlg.Destroy()
 
@@ -1301,11 +1332,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     if dlg.Elem not in ['None']:
                         El = dlg.Elem.strip()
                         for r in indx:                        
-                            atomData[r][cid] = El
-                            if len(El) in [2,4]:
-                                atomData[r][cid-1] = El[:2]+'(%d)'%(r+1)
-                            else:
-                                atomData[r][cid-1] = El[:1]+'(%d)'%(r+1)
+                            if not Atoms.IsReadOnly(r,cid):
+                                atomData[r][cid] = El
+                                if len(El) in [2,4]:
+                                    atomData[r][cid-1] = El[:2]+'(%d)'%(r+1)
+                                else:
+                                    atomData[r][cid-1] = El[:1]+'(%d)'%(r+1)
                         SetupGeneral()
                         if 'Atoms' in data['Drawing']:
                             for r in indx:
@@ -1320,11 +1352,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     result = dlg.ShowModal()
                     if result == wx.ID_YES:
                         for r in indx:
-                            El = atomData[r][cid+1]
-                            if len(El) in [2,4]:
-                                atomData[r][cid] = El[:2]+'(%d)'%(r+1)
-                            else:
-                                atomData[r][cid] = El[:1]+'(%d)'%(r+1)
+                            if not Atoms.IsReadOnly(r,cid+1):
+                                El = atomData[r][cid+1]
+                                if len(El) in [2,4]:
+                                    atomData[r][cid] = El[:2]+'(%d)'%(r+1)
+                                else:
+                                    atomData[r][cid] = El[:1]+'(%d)'%(r+1)
                     FillAtomsGrid(Atoms)
                 finally:
                     dlg.Destroy()
@@ -1336,7 +1369,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     sel = dlg.GetSelection()
                     parm = choices[sel][0]
                     for r in indx:                        
-                        atomData[r][cid] = parm
+                        if not Atoms.IsReadOnly(r,cid):
+                            atomData[r][cid] = parm
                     FillAtomsGrid(Atoms)
                 dlg.Destroy()
             elif parm in ['frac','Uiso']:
@@ -1349,7 +1383,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if dlg.ShowModal() == wx.ID_OK:
                     parm = dlg.GetValue()
                     for r in indx:                        
-                        atomData[r][cid] = parm
+                        if not Atoms.IsReadOnly(r,cid):
+                            atomData[r][cid] = parm
                     SetupGeneral()
                     FillAtomsGrid(Atoms)
                 dlg.Destroy()
@@ -1360,7 +1395,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if dlg.ShowModal() == wx.ID_OK:
                     parm = dlg.GetValue()
                     for r in indx:                        
-                        atomData[r][cid] += parm
+                        if not Atoms.IsReadOnly(r,cid):
+                            atomData[r][cid] += parm
                     SetupGeneral()
                     FillAtomsGrid(Atoms)
                 dlg.Destroy()
@@ -1567,7 +1603,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.PatternTree.SetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Restraints'),restData)
 
-    def OnDefineRB(event):
+    def OnDefineRB(event):      #suppose this made a residue type RB instead?
         indx = drawAtoms.GetSelectedRows()
         RBData = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -2972,10 +3008,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ##### Rigid bodies
 ################################################################################
 
-    def FillRigidBodyGrid():
+    def FillRigidBodyGrid(refresh=False):
+        if refresh:
+            RigidBodies.DestroyChildren()
         AtLookUp = G2mth.FillAtomLookUp(data['Atoms'])
         general = data['General']
+        cx = general['AtomPtrs'][0]
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
+        RBData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))['Residue']
         Indx = {}
         
         def ResrbSizer(RBObj):
@@ -2997,17 +3038,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 try:
                     val = float(Obj.GetValue())
                     RBObj['Torsions'][item][0] = val
-                    RBData = G2frame.PatternTree.GetItemPyData(   
-                        G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))['Residue']
-                    G2mth.UpdateResRBAtoms(Amat,Bmat,data['Atoms'],AtLookUp,RBObj,RBData)
+                    G2mth.UpdateResRBAtoms(Amat,Bmat,cx,data['Atoms'],AtLookUp,RBObj,RBData)
                 except ValueError:
                     pass
                 Obj.SetValue("%10.3f"%(RBObj['Torsions'][item][0]))                
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms()
+                drawAtoms.ClearSelection()
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnDelRB(event):
+                RBId = RBObj['RBId']
+                RBData[RBId]['useCount'] -= 1                
+                del RBObj
+                wx.CallAfter(FillRigidBodyGrid,True)
              
             resrbSizer = wx.BoxSizer(wx.VERTICAL)
             resrbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
-            resrbSizer.Add(wx.StaticText(RigidBodies,-1,
-                'Name: '+RBObj['ResName']+RBObj['numChain']),0,wx.ALIGN_CENTER_VERTICAL)
+            topLine = wx.BoxSizer(wx.HORIZONTAL)
+            topLine.Add(wx.StaticText(RigidBodies,-1,
+                'Name: '+RBObj['ResName']+RBObj['numChain']+'   '),0,wx.ALIGN_CENTER_VERTICAL)
+            delRB = wx.CheckBox(RigidBodies,-1,'Delete?')
+            delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
+            topLine.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+            resrbSizer.Add(topLine)
             topSizer = wx.FlexGridSizer(2,2,5,5)
             Orig = RBObj['Orig'][0]
             Orien = RBObj['Orient'][0]
@@ -3089,9 +3143,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 atom = Atoms[iatm]
                 res = atom[1].strip()
                 numChain = ' %s %s'%(atom[0],atom[2])
-                if res not in RBIds:
+                if res not in RBIds or atom[ct-1] == 'OXT':
                     iatm += 1
-                    continue        #for water molecules, etc.
+                    continue        #skip for OXT, water molecules, etc.
                 rbRes = RBData[RBIds[res]]
                 rbRef = rbRes['rbRef']
                 VAR = rbRes['rbXYZ'][rbRef[1]]-rbRes['rbXYZ'][rbRef[0]]
@@ -3104,10 +3158,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     rbIds.append(Atoms[iatm][20])
                     iatm += 1    #puts this at beginning of next residue?
                 Orig = rbAtoms[rbRef[0]]
+                rbObj['RBId'] = RBIds[res]
                 rbObj['Ids'] = rbIds
                 rbObj['Orig'] = [Orig,False]
-    #            print ' residue '+rbRes['RBname']+str(atom[0]).strip()+ \
-    #                ' origin at: ','%.5f %.5f %.5f'%(Orig[0],Orig[1],Orig[2])
+#                print ' residue '+rbRes['RBname']+str(atom[0]).strip()+ \
+#                    ' origin at: ','%.5f %.5f %.5f'%(Orig[0],Orig[1],Orig[2])
                 VAC = np.inner(Amat,rbAtoms[rbRef[1]]-Orig)
                 VBC = np.inner(Amat,rbAtoms[rbRef[2]]-Orig)
                 VCC = np.cross(VAR,VAC)
@@ -3132,13 +3187,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     rbObj['Torsions'].append([ang,False])
                     for ride in Riders:
                         SXYZ[ride] = G2mth.prodQVQ(QuatA,SXYZ[ride]-SXYZ[Patm])+SXYZ[Patm]
+                RBData[RBIds[res]]['useCount'] += 1
                 RBObjs.append(rbObj)
             data['RBModels']['Residue'] = RBObjs
             for RBObj in RBObjs:
-                G2mth.UpdateResRBAtoms(Amat,Bmat,Atoms,AtLookUp,RBObj,RBData)
+                G2mth.UpdateResRBAtoms(Amat,Bmat,cx,Atoms,AtLookUp,RBObj,RBData)
         finally:
             wx.EndBusyCursor()
-        FillRigidBodyGrid()
+        wx.CallAfter(FillRigidBodyGrid,True)
+        
+    def OnRBRemoveAll(event):
+        print 'remove all RBs'
+        
         
     def OnGlobalResRBRef(event):
         RBObjs = data['RBModels']['Residue']
@@ -3701,6 +3761,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2gd.wxID_AUTOFINDRESRB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2gd.wxID_GLOBALRESREFINE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2gd.wxID_RBREMOVEALL)
             FillRigidBodyGrid()
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)

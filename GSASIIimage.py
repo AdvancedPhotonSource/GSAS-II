@@ -292,6 +292,7 @@ def GetEllipse(dsp,data):
         elcent = [cent[0]-zdis*sind(phi),cent[1]+zdis*cosd(phi)]
         return elcent,phi,radii
     else:
+        print 'bad ellipse - radii:',radii
         return False
         
 def GetDetectorXY(dsp,azm,data):
@@ -462,7 +463,7 @@ def ImageCalibrate(self,data):
     data['ellipses'] = []
     outE = FitRing(ring,True)
     if outE:
-#        print 'start ellipse:',outE
+        print 'start ellipse:',outE
         ellipse = outE
     else:
         return False
@@ -476,7 +477,7 @@ def ImageCalibrate(self,data):
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
-#    print 'inner ring:',ellipse
+    print 'inner ring:',ellipse     #cent,phi,radii
     data['center'] = copy.copy(ellipse[0])           #not right!! (but useful for now)
     data['ellipses'].append(ellipse[:]+('r',))
     G2plt.PlotImage(self,newImage=True)

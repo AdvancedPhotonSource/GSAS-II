@@ -72,7 +72,7 @@ loop_
     _atom_type_symbol
     _atom_type_scat_source
     Li 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
-    Na 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
+    Na1+ 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
     B 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
     Si 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
     O 'D. Waasmaier & A. Kirfel. Acta Cryst. (1995). A51, 416-413'
@@ -93,7 +93,7 @@ loop_
     _atom_site_calc_flag
     _atom_site_occupancy
     Li Li1 0.462(2) 0.1995(6) 0.1383(15) 0.046(3) Uiso d 1.000
-    Na Na1 0.9733(3) 0.99060(10) 0.7544(3) 0.0764 Uani d 1.000
+    Na1+ Na1 0.9733(3) 0.99060(10) 0.7544(3) 0.0764 Uani d 1.000
     B B1 0.2096(17) 0.1602(8) 0.6623(18) 0.091(3) Uiso d 1.000
     B B2 0.6920(14) 0.3493(6) 0.4160(15) 0.054(2) Uiso d 1.000
     B B3 0.5290(10) 0.5022(4) 0.7860(9) 0.0947 Uani d 1.000

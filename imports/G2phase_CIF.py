@@ -200,6 +200,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                             if col:
                                 atomlist[col] = cif.get_number_with_esd(val)[0]
                     atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)
+                    atomlist[1] = G2elem.FixValence(atomlist[1])
                     self.Phase['Atoms'].append(atomlist)
                 for lbl in phasenamefields: # get a name for the phase
                     name = blk.get(lbl)

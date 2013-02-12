@@ -10,6 +10,7 @@
 import wx
 import wx.grid as wg
 import wx.lib.gridmovers as wgmove
+import wx.wizard as wz
 import matplotlib as mpl
 import math
 import copy
@@ -1176,11 +1177,55 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         event.StopPropagation()
         
     def OnRBAppend(event):
-
-        print 'RB append'
+        rbData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        general = data['General']
+        atomData = data['Atoms']
         
     def OnRBAssign(event):
-        print 'RB assign'
+        
+        RBObjs = []
+        rbType = ''
+        rbName = ''
+        rbId = None
+        
+        def OnSelectRB(event):
+            rbName = selectRB.GetValue()
+            rbType,rbId = rbNames[rbName]
+            RBObjs = data['RBModels'].get(rbType,[])
+            page2.mainSizer.Add(wx.StaticText(page2,-1,'Select origin for '+rbName))
+            
+        rbData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        RBwizard = wz.Wizard(G2frame.dataFrame,-1,"Rigid body assign wizard")
+        rbNames = {}
+        for rbVec in rbData['Vector']:
+            if rbVec != 'AtInfo':
+                rbNames[rbData['Vector'][rbVec]['RBname']] =['Vector',rbVec]
+        for rbRes in rbData['Residue']:
+            if rbRes != 'AtInfo':
+                rbNames[rbData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
+        if not rbNames:
+            print '**** ERROR - no rigid bodies defined ****'
+            return
+        page1 = G2gd.GSASWizard(RBwizard,"Select rigid body")
+        page1.mainSizer.Add(wx.StaticText(page1,-1,'Select rigid body'))
+        selectRB = wx.ComboBox(page1,-1,value=' ',choices=rbNames.keys(),
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        selectRB.Bind(wx.EVT_COMBOBOX,OnSelectRB)
+        page1.mainSizer.Add(selectRB)
+        
+        page2 = G2gd.GSASWizard(RBwizard,"Select origin")
+        page3 = G2gd.GSASWizard(RBwizard,"Select 1st reference atom")
+        page4 = G2gd.GSASWizard(RBwizard,"Select 2nd reference atom")
+        page3.mainSizer.Add(wx.StaticText(page3,-1,'Select 1st reference atom'))
+        page3.mainSizer.Add(wx.StaticText(page4,-1,'Select 2nd reference atom'))
+        wz.WizardPageSimple_Chain(page1,page2)
+        wz.WizardPageSimple_Chain(page2,page3)
+        wz.WizardPageSimple_Chain(page3,page4)
+        RBwizard.FitToPage(page1)
+        if RBwizard.RunWizard(page1):
+            print 'done'
 
     def OnAtomMove(event):
         drawData = data['Drawing']
@@ -1603,8 +1648,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.PatternTree.SetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Restraints'),restData)
 
-    def OnDefineRB(event):      #suppose this made a residue type RB instead?
+    def OnDefineRB(event):
         indx = drawAtoms.GetSelectedRows()
+        indx.sort()
         RBData = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         drawingData = data['Drawing']
@@ -1614,9 +1660,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atomData = drawingData['Atoms']
         rbXYZ = []
         rbType = []
-        AtInfo = RBData['Vector']['AtInfo']
-        for item in indx:
+        atNames = []
+        AtInfo = RBData['Residue']['AtInfo']
+        for i,item in enumerate(indx):
             rbtype = atomData[item][ct]
+            atNames.append(rbtype+str(i))
             rbType.append(rbtype)
             if rbtype not in AtInfo:
                 Info = G2elem.GetAtomInfo(rbtype)
@@ -1625,10 +1673,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         rbXYZ = np.array(rbXYZ)
         rbXYZ -= rbXYZ[0]
         rbId = ran.randint(0,sys.maxint)
-        RBData['Vector'][rbId] = {'RBname':'UNKRB','VectMag':[1.0,],
-            'VectRef':[False,],'rbTypes':rbType,'rbVect':[rbXYZ,]}
-        print 'New rigid body added to set of rigid bodies'
-
+        RBData['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbType,
+            'atNames':atNames,'rbRef':[0,1,2],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
+        G2frame.dataFrame.SetStatusText('New rigid body UNKRB added to set of Residue rigid bodies')
 
 ################################################################################
 ##### Atom draw routines

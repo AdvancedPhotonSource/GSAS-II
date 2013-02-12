@@ -235,7 +235,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             if [X,Y,dsp] not in ring:
                 ring.append([X,Y,dsp])
     delt = amax-amin
-    if len(ring) < 20:             #want more than 20 deg
+    if len(ring) < 10:             #want more than 20 deg
         return [],delt > 90
     return ring,delt > 90
     

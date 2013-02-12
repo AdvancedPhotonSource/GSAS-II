@@ -80,7 +80,16 @@ def CheckElement(El):
     if El.capitalize() in Elements:
         return True
     else:
-        return False  
+        return False 
+
+def FixValence(El): 
+    if '+' in El[-1]: #converts An+/- to A+/-n
+        num = El[-2]
+        El = El.split(num)[0]+'+'+num
+    if '-' in El[-1]:
+        num = El[-2]
+        El = El.split(num)[0]+'-'+num
+    return El
         
 def GetAtomInfo(El):
     

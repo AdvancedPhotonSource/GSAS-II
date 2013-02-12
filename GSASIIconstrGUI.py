@@ -626,10 +626,14 @@ def UpdateRigidBodies(G2frame,data):
     if not data:
         data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},'Z-matrix':{'AtInfo':{}}})       #empty dict - fill it
             
+    global resList
     Indx = {}
+    resList = []
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[1.,0.,0.,0.],'cameraPos':30.,'viewDir':[0,0,1],}
 
     def OnPageChanged(event):
+        global resList
+        resList = []
         if event:       #page change event!
             page = event.GetSelection()
         else:
@@ -704,6 +708,51 @@ def UpdateRigidBodies(G2frame,data):
             ImportResidueRB()
         elif 'Z-matrix' in G2frame.dataDisplay.GetPageText(page):
             pass
+            
+    def OnNewOrigin(event): #only for Residue RBs
+        for res in resList:
+            if res.IsSelection():
+                rbId = Indx[res.GetId()]
+                ind = res.GetSelectedRows()[0]
+                if data['Residue'][rbId]['useCount'] or data['Residue'][rbId]['rbSeq']:
+                    return
+                rbXYZ = data['Residue'][rbId]['rbXYZ']
+                rbXYZ -= rbXYZ[ind]
+                data['Residue'][rbId]['rbRef'][0] = ind
+                res.ClearSelection()
+                resTable = res.GetTable()
+                for r in range(res.GetNumberRows()):
+                    row = resTable.GetRowValues(r)
+                    row[2:4] = rbXYZ[r]
+                    resTable.SetRowValues(r,row)
+                res.ForceRefresh()
+                       
+    def OnNewRefAtoms(event):
+        for res in resList:
+            if res.IsSelection():
+                rbId = Indx[res.GetId()]
+                if data['Residue'][rbId]['useCount']:
+                    return
+                rbRef = data['Residue'][rbId]['rbRef']
+                rbSeq = data['Residue'][rbId]['rbSeq']
+                atNames = data['Residue'][rbId]['atNames']
+                choices = [atNames[rbRef[1]],atNames[rbRef[2]]]
+                names = []
+                for i,name in enumerate(atNames):
+                    ok = True
+                    for seq in rbSeq:   #remove atom in flexible side chains
+                        if i in seq[3]:
+                            ok = False
+                    if i == rbRef[0]:   #remove origin choice
+                        ok = False
+                    if ok:
+                        names.append(atNames[i])
+                dlg = G2gd.PickTwoDialog(G2frame.dataDisplay,'Select reference atoms',
+                    'Pick 2 atoms non-colinear with origin atom',names,choices)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    rbRef[1:] = [atNames.index(sel[0]),atNames.index(sel[1])]
+                dlg.Destroy()
                         
     def AddVectorRB():
         AtInfo = data['Vector']['AtInfo']
@@ -1045,7 +1094,6 @@ def UpdateRigidBodies(G2frame,data):
         
     def UpdateResidueRB():
         AtInfo = data['Residue']['AtInfo']
-        Indx = {}
 
         def rbNameSizer(rbId,rbData):
 
@@ -1112,6 +1160,13 @@ def UpdateRigidBodies(G2frame,data):
                         rbData['rbVect'][imag][r][c] = val
                     except ValueError:
                         pass
+                        
+            def RowSelect(event):
+                r,c =  event.GetRow(),event.GetCol()
+                if c < 0:                   #only row clicks
+                    for vecgrid in resList:
+                        vecgrid.ClearSelection()
+                    vecGrid.SelectRow(r,True)
 
             vecSizer = wx.BoxSizer()
             Types = 2*[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
@@ -1123,9 +1178,12 @@ def UpdateRigidBodies(G2frame,data):
                 rowLabels.append(str(ivec))
             vecTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             vecGrid = G2gd.GSGrid(ResidueRBDisplay)
+            Indx[vecGrid.GetId()] = rbId
+            resList.append(vecGrid)
             vecGrid.SetTable(vecTable, True)
             vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
+            vecGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
             attr = wx.grid.GridCellAttr()
             attr.SetEditor(G2gd.GridFractionEditor(vecGrid))
             for c in range(3):
@@ -1222,9 +1280,10 @@ def UpdateRigidBodies(G2frame,data):
             ResidueRBSizer.Add((5,5),0)
             if rbData['rbSeq']:
                 slideSizer,angSlide = SlideSizer()
-            ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
-                'Sel  Bond             Angle      Riding atoms'),
-                0,wx.ALIGN_CENTER_VERTICAL)                        
+            if len(rbData['rbSeq']):
+                ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
+                    'Sel  Bond             Angle      Riding atoms'),
+                    0,wx.ALIGN_CENTER_VERTICAL)                       
             for iSeq,Seq in enumerate(rbData['rbSeq']):
                 ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
             if rbData['rbSeq']:
@@ -1272,6 +1331,8 @@ def UpdateRigidBodies(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)    
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewOrigin, id=G2gd.wxID_RBNEWORIGIN)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewRefAtoms, id=G2gd.wxID_RBREFATMS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)

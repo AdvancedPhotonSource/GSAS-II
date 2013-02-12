@@ -1364,26 +1364,26 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         line = '\n Size model:     %9s'%(hapData[0])
         refine = False
         if hapData[0] in ['isotropic','uniaxial']:
-            line += ' equatorial:%12.3f'%(hapData[1][0])
+            line += ' equatorial:%12.4f'%(hapData[1][0])
             if sizeSig[0][0]:
-                line += ', sig:%8.3f'%(sizeSig[0][0])
+                line += ', sig:%8.4f'%(sizeSig[0][0])
                 refine = True
             if hapData[0] == 'uniaxial':
-                line += ' axial:%12.3f'%(hapData[1][1])
+                line += ' axial:%12.4f'%(hapData[1][1])
                 if sizeSig[0][1]:
                     refine = True
-                    line += ', sig:%8.3f'%(sizeSig[0][1])
+                    line += ', sig:%8.4f'%(sizeSig[0][1])
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if sizeSig[0][2]:
                 refine = True
-                line += ', sig:%8.3f'%(sizeSig[0][2])
+                line += ', sig:%8.4f'%(sizeSig[0][2])
             if refine:
                 print >>pFile,line
         else:
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if sizeSig[0][2]:
                 refine = True
-                line += ', sig:%8.3f'%(sizeSig[0][2])
+                line += ', sig:%8.4f'%(sizeSig[0][2])
             Snames = ['S11','S22','S33','S12','S13','S23']
             ptlbls = ' name  :'
             ptstr =  ' value :'

@@ -9,6 +9,7 @@
 ########### SVN repository information ###################
 import wx
 import wx.grid as wg
+import wx.wizard as wz
 import time
 import cPickle
 import sys
@@ -31,6 +32,11 @@ import GSASIIspc as G2spc
 import GSASIImapvars as G2mv
 import GSASIIconstrGUI as G2cnstG
 import GSASIIrestrGUI as G2restG
+
+# trig functions in degrees
+sind = lambda x: np.sin(x*np.pi/180.)
+tand = lambda x: np.tan(x*np.pi/180.)
+cosd = lambda x: np.cos(x*np.pi/180.)
 
 # globals we will use later
 __version__ = None # gets overridden in GSASII.py
@@ -105,8 +111,9 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
-    wxID_ZMATRIXADD,wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL
-] = [wx.NewId() for item in range(8)]
+    wxID_ZMATRIXADD,wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,
+    wxID_RBNEWORIGIN,wxID_RBREFATMS
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -123,6 +130,15 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 ################################################################################
 #### GSAS-II class definitions
 ################################################################################
+
+class GSASWizard(wz.WizardPageSimple):
+    def __init__(self,parent,title):
+        wz.WizardPageSimple.__init__(self,parent)
+        self.mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.mainSizer)
+        titleText = wx.StaticText(self,-1,title)
+        titleText.SetFont(wx.Font(16,wx.SWISS,wx.NORMAL,wx.BOLD))
+        self.mainSizer.Add(titleText,0,wx.ALIGN_CENTRE|wx.ALL,5)
 
 class SymOpDialog(wx.Dialog):
     def __init__(self,parent,SGData,New=True,ForceUnit=False):
@@ -319,6 +335,71 @@ class DisAglDialog(wx.Dialog):
         data = {}
         self.__default__(data,self.default)
         self.Draw(self.data)
+        
+class PickTwoDialog(wx.Dialog):
+    
+    def __init__(self,parent,title,prompt,names,choices):
+        wx.Dialog.__init__(self,parent,-1,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.prompt = prompt
+        self.choices = choices
+        self.names = names
+        self.Draw()
+
+    def Draw(self):
+        Indx = {}
+        
+        def OnSelection(event):
+            Obj = event.GetEventObject()
+            id = Indx[Obj.GetId()]
+            self.choices[id] = Obj.GetValue().encode()  #to avoid Unicode versions
+            self.Draw()
+            
+        self.panel.DestroyChildren()
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        for isel,name in enumerate(self.choices):
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(self.panel,-1,'Reference atom '+str(isel+1)),0,wx.ALIGN_CENTER)
+            nameList = self.names[:]
+            if isel:
+                if self.choices[0] in nameList:
+                    nameList.remove(self.choices[0])
+            choice = wx.ComboBox(self.panel,-1,value=name,choices=nameList,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[choice.GetId()] = isel
+            choice.Bind(wx.EVT_COMBOBOX, OnSelection)
+            lineSizer.Add(choice,0,wx.ALIGN_CENTER)
+            mainSizer.Add(lineSizer)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        return self.choices
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
         
 class SingleFloatDialog(wx.Dialog):
     
@@ -773,6 +854,10 @@ class DataFrame(wx.Frame):
             help='Import residue rigid bodies from macro file')
         self.ResidueRBMenu.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ from txt file',
             help='Import rigid body XYZ from txt file')
+        self.ResidueRBMenu.Append(id=wxID_RBNEWORIGIN, kind=wx.ITEM_NORMAL,text='Set origin',
+            help='Select atom to be origin in RB to be edited')
+        self.ResidueRBMenu.Append(id=wxID_RBREFATMS, kind=wx.ITEM_NORMAL,text='Set reference atoms',
+            help='Select any atom in RB to be edited')
         self.ResidueRBMenu.Append(id=wxID_RESIDUETORSSEQ, kind=wx.ITEM_NORMAL,text='Define sequence',
             help='Define torsion sequence')
         self.ZMatrixRBMenu = wx.Menu(title='')

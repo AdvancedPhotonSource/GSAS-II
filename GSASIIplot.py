@@ -2604,17 +2604,15 @@ def PlotStructure(G2frame,data):
     Mydir = generalData['Mydir']
     atomData = data['Atoms']
     mapPeaks = []
+    drawingData = data['Drawing']    
     if 'Map Peaks' in data:
         mapPeaks = np.array(data['Map Peaks'])
         peakMax = 100.
         if len(mapPeaks):
             peakMax = np.max(mapPeaks.T[0])
-    drawingData = data['Drawing']
-    
-    try:
-        drawAtoms = drawingData['Atoms']
-    except KeyError:
-        drawAtoms = []
+    testRBObj = data.get('testRBObj',{})
+    rbObj = testRBObj.get('rbObj',{})
+    drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
     flipData = {}
     rhoXYZ = []
@@ -2790,28 +2788,42 @@ def PlotStructure(G2frame,data):
                 GetTruePosition(xy,True)
         else:
             drawingData['oldxy'] = list(xy)
-#        Draw()
         
     def OnMouseMove(event):
         if event.ShiftDown():           #don't want any inadvertant moves when picking
             return
         newxy = event.GetPosition()
-        page = getSelection()
                                 
-        if event.Dragging() and not event.ControlDown():
-            if event.LeftIsDown():
-                SetRotation(newxy)
-                Q = drawingData['Quaternion']
-                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
-            elif event.RightIsDown():
-                SetTranslation(newxy)
-                Tx,Ty,Tz = drawingData['viewPoint'][0]
-                G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
-            elif event.MiddleIsDown():
-                SetRotationZ(newxy)
-                Q = drawingData['Quaternion']
-                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
-            Draw('move')
+        if event.Dragging():
+            if event.AltDown():
+                if event.LeftIsDown():
+                    SetRBRotation(newxy)
+                    Q = rbObj['Orient'][0]
+                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                elif event.RightIsDown():
+                    SetRBTranslation(newxy)
+                    Tx,Ty,Tz = rbObj['Orig'][0]
+                    G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
+                elif event.MiddleIsDown():
+                    SetRBRotationZ(newxy)
+                    Q = rbObj['Orient'][0]
+                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                Draw('move')
+            elif not event.ControlDown():
+                if event.LeftIsDown():
+                    SetRotation(newxy)
+                    Q = drawingData['Quaternion']
+                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                elif event.RightIsDown():
+                    SetTranslation(newxy)
+                    Tx,Ty,Tz = drawingData['viewPoint'][0]
+                    G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
+                elif event.MiddleIsDown():
+                    SetRotationZ(newxy)
+                    Q = drawingData['Quaternion']
+                    G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+                Draw('move')
+            
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -2842,6 +2854,20 @@ def PlotStructure(G2frame,data):
                 panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
                 names = [child.GetName() for child in panel]
                 panel[names.index('viewPoint')].SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
+                
+    def SetRBOrigText():
+        page = getSelection()
+        if page:
+            if G2frame.dataDisplay.GetPageText(page) == 'RB Models':
+                for i,sizer in enumerate(testRBObj['Sizers']['Xsizers']):
+                    sizer.SetValue('%8.5f'%(testRBObj['rbObj']['Orig'][0][i]))
+                    
+    def SetRBOrienText():
+        page = getSelection()
+        if page:
+            if G2frame.dataDisplay.GetPageText(page) == 'RB Models':
+                for i,sizer in enumerate(testRBObj['Sizers']['Osizers']):
+                    sizer.SetValue('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
                 
     def SetViewDirText(VD):
         page = getSelection()
@@ -2951,6 +2977,24 @@ def PlotStructure(G2frame,data):
         drawingData['viewPoint'][0] =  Tx,Ty,Tz
         SetViewPointText([Tx,Ty,Tz])
         
+    def SetRBTranslation(newxy):
+#first get translation vector in screen coords.       
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        drawingData['oldxy'] = list(newxy)
+        V = np.array([-dxy[0],dxy[1],0.])
+#then transform to rotated crystal coordinates & apply to RB origin        
+        Q = drawingData['Quaternion']
+        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
+        Tx,Ty,Tz = rbObj['Orig'][0]
+        Tx -= V[0]*0.01
+        Ty -= V[1]*0.01
+        Tz -= V[2]*0.01
+        drawingData['oldxy'] = list(newxy)
+        rbObj['Orig'][0] =  Tx,Ty,Tz
+        SetRBOrigText()
+        
     def SetRotation(newxy):
 #first get rotation vector in screen coords. & angle increment        
         oldxy = drawingData['oldxy']
@@ -2996,6 +3040,52 @@ def PlotStructure(G2frame,data):
         Q = G2mth.prodQQ(Q,Qx)
         Q = G2mth.prodQQ(Q,Qy)
         drawingData['Quaternion'] = Q
+
+    def SetRBRotation(newxy):
+#first get rotation vector in screen coords. & angle increment        
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        drawingData['oldxy'] = list(newxy)
+        V = np.array([dxy[1],dxy[0],0.])
+        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
+# next transform vector back to xtal coordinates via inverse quaternion
+# & make new quaternion
+        Q = rbObj['Orient'][0]              #rotate RB to Cart
+        QC = drawingData['Quaternion']      #rotate Cart to drawing
+        V = G2mth.prodQVQ(G2mth.invQ(QC),V)
+        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
+        DQ = G2mth.AVdeg2Q(A,V)
+        Q = G2mth.prodQQ(Q,DQ)
+        rbObj['Orient'][0] = Q
+        SetRBOrienText()
+        
+    def SetRBRotationZ(newxy):                        
+#first get rotation vector (= view vector) in screen coords. & angle increment        
+        View = glGetIntegerv(GL_VIEWPORT)
+        cent = [View[2]/2,View[3]/2]
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        drawingData['oldxy'] = list(newxy)
+        V = drawingData['viewDir']
+        A = [0,0]
+        A[0] = dxy[1]*.25
+        A[1] = dxy[0]*.25
+        if newxy[0] < cent[0]:
+            A[0] *= -1
+        if newxy[1] > cent[1]:
+            A[1] *= -1        
+# next transform vector back to RB coordinates & make new quaternion
+        Q = rbObj['Orient'][0]              #rotate RB to cart
+        V = np.inner(Amat,V)
+        V = -G2mth.prodQVQ(G2mth.invQ(Q),V)
+        Qx = G2mth.AVdeg2Q(A[0],V)
+        Qy = G2mth.AVdeg2Q(A[1],V)
+        Q = G2mth.prodQQ(Q,Qx)
+        Q = G2mth.prodQQ(Q,Qy)
+        rbObj['Orient'][0] = Q
+        SetRBOrienText()
 
     def RenderBox():
         glEnable(GL_COLOR_MATERIAL)
@@ -3154,12 +3244,12 @@ def PlotStructure(G2frame,data):
         glPopMatrix()        
         glDisable(GL_COLOR_MATERIAL)
         
-    def RenderLabel(x,y,z,label,r):       
+    def RenderLabel(x,y,z,label,r,color):       
         glPushMatrix()
         glTranslate(x,y,z)
         glMultMatrixf(B4mat.T)
         glDisable(GL_LIGHTING)
-        glColor3f(0,1.,0)
+        glColor3fv(color)
         glRasterPos3f(r,r,r)
         for c in list(label):
             glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
@@ -3335,17 +3425,17 @@ def PlotStructure(G2frame,data):
                     BackboneColor.append(list(color))
                     
             if atom[cs+1] == 'type':
-                RenderLabel(x,y,z,atom[ct],radius)
+                RenderLabel(x,y,z,atom[ct],radius,Gr)
             elif atom[cs+1] == 'name':
-                RenderLabel(x,y,z,atom[ct-1],radius)
+                RenderLabel(x,y,z,atom[ct-1],radius,Gr)
             elif atom[cs+1] == 'number':
-                RenderLabel(x,y,z,str(iat),radius)
+                RenderLabel(x,y,z,str(iat),radius,Gr)
             elif atom[cs+1] == 'residue' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,atom[ct-4],radius)
+                RenderLabel(x,y,z,atom[ct-4],radius,Gr)
             elif atom[cs+1] == '1-letter' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,atom[ct-3],radius)
+                RenderLabel(x,y,z,atom[ct-3],radius,Gr)
             elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,atom[ct-2],radius)
+                RenderLabel(x,y,z,atom[ct-2],radius,Gr)
 #        glDisable(GL_BLEND)
         if len(rhoXYZ):
             RenderMap(rho,rhoXYZ,indx,Rok)
@@ -3359,6 +3449,17 @@ def PlotStructure(G2frame,data):
                     RenderMapPeak(x,y,z,Wt,mag/peakMax)
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
+        if len(testRBObj) and pageName == 'RB Models':
+            XYZ = G2mth.UpdateRBAtoms(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])
+            rbBonds = FindPeaksBonds(XYZ)
+            for ind,[x,y,z] in enumerate(XYZ):
+                aType = testRBObj['rbAtTypes'][ind]
+                name = aType+str(ind)
+                color = np.array(testRBObj['AtInfo'][aType][1])
+                RenderSphere(x,y,z,0.2,color/255.)
+#                RenderMapPeak(x,y,z,color,1.0)
+                RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
+                RenderLabel(x,y,z,name,0.2,Bl)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]

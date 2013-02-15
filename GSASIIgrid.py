@@ -111,9 +111,9 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
-    wxID_ZMATRIXADD,wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,
+    wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,
     wxID_RBNEWORIGIN,wxID_RBREFATMS
-] = [wx.NewId() for item in range(10)]
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -130,16 +130,7 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 ################################################################################
 #### GSAS-II class definitions
 ################################################################################
-
-class GSASWizard(wz.WizardPageSimple):
-    def __init__(self,parent,title):
-        wz.WizardPageSimple.__init__(self,parent)
-        self.mainSizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.mainSizer)
-        titleText = wx.StaticText(self,-1,title)
-        titleText.SetFont(wx.Font(16,wx.SWISS,wx.NORMAL,wx.BOLD))
-        self.mainSizer.Add(titleText,0,wx.ALIGN_CENTRE|wx.ALL,5)
-
+        
 class SymOpDialog(wx.Dialog):
     def __init__(self,parent,SGData,New=True,ForceUnit=False):
         wx.Dialog.__init__(self,parent,-1,'Select symmetry operator',
@@ -860,9 +851,6 @@ class DataFrame(wx.Frame):
             help='Select any atom in RB to be edited')
         self.ResidueRBMenu.Append(id=wxID_RESIDUETORSSEQ, kind=wx.ITEM_NORMAL,text='Define sequence',
             help='Define torsion sequence')
-        self.ZMatrixRBMenu = wx.Menu(title='')
-        self.ZMatrixRBMenu.Append(id=wxID_ZMATRIXADD, kind=wx.ITEM_NORMAL,text='Add Z-matrix',
-            help='Add Z-matrix')
             
         self.RigidBodyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RigidBodyMenu,helpType='Rigid bodies')
@@ -1146,8 +1134,6 @@ class DataFrame(wx.Frame):
             help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
             help='Select atom row to insert before; inserted as an H atom')
-        self.AtomEdit.Append(id=wxID_ASSIGNATMS2RB, kind=wx.ITEM_NORMAL,text='Assign atoms to rigid body',
-            help='Select atom row to start assignment')
         self.AtomEdit.Append(id=wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move atom to view point',
             help='Select single atom to move')
         self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
@@ -1276,6 +1262,8 @@ class DataFrame(wx.Frame):
         self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit')
         self.RigidBodiesEdit.Append(id=wxID_AUTOFINDRESRB, kind=wx.ITEM_NORMAL,text='Auto find residues',
             help='Auto find of residue RBs in macromolecule')
+        self.RigidBodiesEdit.Append(id=wxID_ASSIGNATMS2RB, kind=wx.ITEM_NORMAL,text='Assign atoms to rigid body',
+            help='Select & position rigid body in structure for existing atoms')
         self.RigidBodiesEdit.Append(id=wxID_GLOBALRESREFINE, kind=wx.ITEM_NORMAL,text='Global residue refine',
             help='Global setting of residue RB refinement flags')
         self.RigidBodiesEdit.Append(id=wxID_RBREMOVEALL, kind=wx.ITEM_NORMAL,text='Remove all rigid bodies',

@@ -197,10 +197,9 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
 
-def UpdateResRBAtoms(Amat,Bmat,cx,Atoms,AtLookUp,RBObj,RBData):
+def UpdateResRBAtoms(Bmat,RBObj,RBData):
     RBIds = GetResRBIds(RBData)
-    ObjIds = RBObj['Ids']
-    RBRes = RBData[RBIds[RBObj['ResName']]]
+    RBRes = RBData[RBIds[RBObj['RBname']]]
     XYZ = np.array(RBRes['rbXYZ'])
     for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
         QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
@@ -210,7 +209,30 @@ def UpdateResRBAtoms(Amat,Bmat,cx,Atoms,AtLookUp,RBObj,RBData):
         xyz = prodQVQ(RBObj['Orient'][0],xyz)
         xyz = np.inner(Bmat,xyz)
         xyz += RBObj['Orig'][0]
-        Atoms[AtLookUp[ObjIds[i]]][cx:cx+3] = xyz
+        XYZ[i] = xyz
+    return XYZ
+    
+def UpdateRBAtoms(Bmat,RBObj,RBData,RBType):
+    RBIds = GetResRBIds(RBData[RBType])
+    RBRes = RBData[RBType][RBIds[RBObj['RBname']]]
+    if RBType == 'Vector':
+        vecs = RBRes['rbVect']
+        mags = RBRes['VectMag']
+        XYZ = np.zeros_like(vecs[0])
+        for vec,mag in zip(vecs,mags):
+            XYZ += vec*mag
+    elif RBType == 'Residue':
+        XYZ = np.array(RBRes['rbXYZ'])
+        for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
+            QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
+            for ride in seq[3]:
+                XYZ[ride] = prodQVQ(QuatA,XYZ[ride]-XYZ[seq[1]])+XYZ[seq[1]]
+    for i,xyz in enumerate(XYZ):
+        xyz = prodQVQ(RBObj['Orient'][0],xyz)
+        xyz = np.inner(Bmat,xyz)
+        xyz += RBObj['Orig'][0]
+        XYZ[i] = xyz
+    return XYZ    
     
 def GetResRBIds(RBData):    
     rbKeys = RBData.keys()

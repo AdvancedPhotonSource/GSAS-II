@@ -678,18 +678,23 @@ def UpdateRigidBodies(G2frame,data):
         
     def getTextFile():
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
-        dlg = wx.FileDialog(G2frame,message='Choose rigid body text file',
-            defaultDir=defDir,defaultFile="",wildcard="GSAS-II text file (*.txt)|*.txt",
-            style=wx.OPEN | wx.CHANGE_DIR)
+        dlg = wx.FileDialog(G2frame,'Choose rigid body text file', '.', '',
+            "GSAS-II text file (*.txt)|*.txt|XYZ file (*.xyz)|*.xyz|"
+            "Sybyl mol2 file (*.mol2)|*.mol2|PDB file (*.pdb;*.ent)|*.pdb;*.ent",
+            wx.OPEN | wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 txtfile = dlg.GetPath()
+                ext = os.path.splitext(txtfile)[1]
                 text = open(txtfile,'Ur')
             else: # cancel was pressed
+                ext = ''
                 text = []
         finally:
             dlg.Destroy()
-        return text
+        if 'ent' in ext:
+            ext = '.pdb'
+        return text,ext.lower()
         
     def OnAddRigidBody(event):
         page = G2frame.dataDisplay.GetSelection()
@@ -697,8 +702,6 @@ def UpdateRigidBodies(G2frame,data):
             AddVectorRB()
         elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
             AddResidueRB()
-        elif 'Z-matrix' in G2frame.dataDisplay.GetPageText(page):
-            AddZMatrixRB()
             
     def OnImportRigidBody(event):
         page = G2frame.dataDisplay.GetSelection()
@@ -706,8 +709,6 @@ def UpdateRigidBodies(G2frame,data):
             pass
         elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
             ImportResidueRB()
-        elif 'Z-matrix' in G2frame.dataDisplay.GetPageText(page):
-            pass
             
     def OnNewOrigin(event): #only for Residue RBs
         for res in resList:
@@ -767,7 +768,7 @@ def UpdateRigidBodies(G2frame,data):
             rbTypes = ['C' for i in range(nAtoms)]
             Info = G2elem.GetAtomInfo('C')
             AtInfo['C'] = [Info['Drad'],Info['Color']]
-            data['Vector'][rbId] = {'RBname':'UNKRB','VectMag':vecMag,
+            data['Vector'][rbId] = {'RBname':'UNKRB','VectMag':vecMag,'rbXYZ':np.zeros((nAtoms,3)),
                 'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'useCount':0}
         dlg.Destroy()
         UpdateVectorRB()
@@ -820,7 +821,7 @@ def UpdateRigidBodies(G2frame,data):
         
     def ImportResidueRB():
         AtInfo = data['Residue']['AtInfo']
-        text = getTextFile()
+        text,ext = getTextFile()
         if not text:
             return
         rbId = ran.randint(0,sys.maxint)
@@ -829,17 +830,46 @@ def UpdateRigidBodies(G2frame,data):
         rbSeq = []
         atNames = []
         txtStr = text.readline()
+        if 'xyz' in ext:
+            txtStr = text.readline()
+            txtStr = text.readline()
+        elif 'mol2' in ext:
+            while 'ATOM' not in txtStr:
+                txtStr = text.readline()
+            txtStr = text.readline()
+        elif 'pdb' in ext:
+            while 'ATOM' not in txtStr[:6] and 'HETATM' not in txtStr[:6]:
+                txtStr = text.readline()
+                print txtStr
         items = txtStr.split()
         while len(items):
-            atName = items[0]
-            atType = items[1]
+            if 'txt' in ext:
+                atName = items[0]
+                atType = items[1]
+                rbXYZ.append([float(items[i]) for i in [2,3,4]])
+            elif 'xyz' in ext:
+                atType = items[0]
+                rbXYZ.append([float(items[i]) for i in [1,2,3]])
+                atName = atType+str(len(rbXYZ))
+            elif 'mol2' in ext:
+                atType = items[1]
+                atName = items[1]+items[0]
+                rbXYZ.append([float(items[i]) for i in [2,3,4]])
+            elif 'pdb' in ext:
+                atType = items[-1]
+                atName = items[2]
+                xyz = txtStr[30:55].split()                    
+                rbXYZ.append([float(x) for x in xyz])
             atNames.append(atName)
-            rbXYZ.append([float(items[i]) for i in [2,3,4]])
             rbTypes.append(atType)
             if atType not in AtInfo:
                 Info = G2elem.GetAtomInfo(atType)
                 AtInfo[atType] = [Info['Drad'],Info['Color']]
             txtStr = text.readline()
+            if 'mol2' in ext and 'BOND' in txtStr:
+                break
+            if 'pdb' in ext and ('ATOM' not in txtStr[:6] and 'HETATM' not in txtStr[:6]):
+                break
             items = txtStr.split()
         rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
         data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
@@ -929,9 +959,6 @@ def UpdateRigidBodies(G2frame,data):
         dlg.Destroy()
         UpdateResidueRB()
         
-
-    def AddZMatrixRB():
-        pass
 
     def UpdateVectorRB():
         AtInfo = data['Vector']['AtInfo']
@@ -1081,7 +1108,8 @@ def UpdateRigidBodies(G2frame,data):
                     XYZ += mag*rbData['rbVect'][imag]
                     VectorRBSizer.Add(rbVectMag(rbId,imag,rbData),0)
                     VectorRBSizer.Add(rbVectors(rbId,imag,mag,XYZ,rbData),0)
-                VectorRBSizer.Add((5,5),0)        
+                VectorRBSizer.Add((5,5),0)
+                data['Vector'][rbId]['rbXYZ'] = XYZ        
         VectorRBSizer.Layout()    
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
         Size = VectorRBSizer.GetMinSize()
@@ -1301,22 +1329,6 @@ def UpdateRigidBodies(G2frame,data):
         Size[1] = min(600,Size[1])
         G2frame.dataFrame.setSizePosLeft(Size)
         
-    def UpdateZMatrixRB():
-        ZMatrixRB.DestroyChildren()
-        ZMatrixRBDisplay = wx.Panel(ZMatrixRB)
-        ZMatrixRBSizer = wx.BoxSizer(wx.VERTICAL)
-        ZMatrixRBSizer.Add((5,5),0)        
-#        ZMatrixRBSizer.Add(ConstSizer('Phase',PhaseDisplay))
-        ZMatrixRBSizer.Layout()    
-        ZMatrixRBDisplay.SetSizer(ZMatrixRBSizer,True)
-        Size = ZMatrixRBSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
-        ZMatrixRBDisplay.SetSize(Size)
-        ZMatrixRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        Size[1] = min(Size[1],250)
-        G2frame.dataFrame.setSizePosLeft(Size)
-
     def SetStatusLine(text):
         Status.SetStatusText(text)                                      
 
@@ -1341,7 +1353,5 @@ def UpdateRigidBodies(G2frame,data):
     G2frame.dataDisplay.AddPage(VectorRB,'Vector rigid bodies')
     ResidueRB = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(ResidueRB,'Residue rigid bodies')
-    ZMatrixRB = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(ZMatrixRB,'Z-matrix rigid bodies')
     UpdateVectorRB()
     

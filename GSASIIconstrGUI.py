@@ -710,51 +710,6 @@ def UpdateRigidBodies(G2frame,data):
         elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
             ImportResidueRB()
             
-    def OnNewOrigin(event): #only for Residue RBs
-        for res in resList:
-            if res.IsSelection():
-                rbId = Indx[res.GetId()]
-                ind = res.GetSelectedRows()[0]
-                if data['Residue'][rbId]['useCount'] or data['Residue'][rbId]['rbSeq']:
-                    return
-                rbXYZ = data['Residue'][rbId]['rbXYZ']
-                rbXYZ -= rbXYZ[ind]
-                data['Residue'][rbId]['rbRef'][0] = ind
-                res.ClearSelection()
-                resTable = res.GetTable()
-                for r in range(res.GetNumberRows()):
-                    row = resTable.GetRowValues(r)
-                    row[2:4] = rbXYZ[r]
-                    resTable.SetRowValues(r,row)
-                res.ForceRefresh()
-                       
-    def OnNewRefAtoms(event):
-        for res in resList:
-            if res.IsSelection():
-                rbId = Indx[res.GetId()]
-                if data['Residue'][rbId]['useCount']:
-                    return
-                rbRef = data['Residue'][rbId]['rbRef']
-                rbSeq = data['Residue'][rbId]['rbSeq']
-                atNames = data['Residue'][rbId]['atNames']
-                choices = [atNames[rbRef[1]],atNames[rbRef[2]]]
-                names = []
-                for i,name in enumerate(atNames):
-                    ok = True
-                    for seq in rbSeq:   #remove atom in flexible side chains
-                        if i in seq[3]:
-                            ok = False
-                    if i == rbRef[0]:   #remove origin choice
-                        ok = False
-                    if ok:
-                        names.append(atNames[i])
-                dlg = G2gd.PickTwoDialog(G2frame.dataDisplay,'Select reference atoms',
-                    'Pick 2 atoms non-colinear with origin atom',names,choices)
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    rbRef[1:] = [atNames.index(sel[0]),atNames.index(sel[1])]
-                dlg.Destroy()
-                        
     def AddVectorRB():
         AtInfo = data['Vector']['AtInfo']
         dlg = MultiIntegerDialog(G2frame.dataDisplay,'New Rigid Body',['No. atoms','No. translations'],[1,1])
@@ -812,7 +767,7 @@ def UpdateRigidBodies(G2frame,data):
                         iMove = [int(macStr[i])-1 for i in range(3,nMove+3)]
                         rbSeq.append([iBeg,iFin,angle,iMove])
                 data['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
-                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1],'rbSeq':rbSeq,
+                    'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1,True],'rbSeq':rbSeq,
                     'SelSeq':[0,0],'useCount':0}
                 print 'Rigid body '+rbName+' added'
             macStr = macro.readline()
@@ -873,7 +828,7 @@ def UpdateRigidBodies(G2frame,data):
             items = txtStr.split()
         rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
         data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
-            'atNames':atNames,'rbRef':[0,1,2],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
+            'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
         print 'Rigid body UNKRB added'
         text.close()
         UpdateResidueRB()
@@ -960,8 +915,9 @@ def UpdateRigidBodies(G2frame,data):
         UpdateResidueRB()
         
 
-    def UpdateVectorRB():
+    def UpdateVectorRB(Scroll=0):
         AtInfo = data['Vector']['AtInfo']
+        refChoice = {}
         SetStatusLine(' You may use e.g. "sind(60)", "cos(60)", "c60" or "s60" for a vector entry')
         def rbNameSizer(rbId,rbData):
 
@@ -1003,6 +959,35 @@ def UpdateRigidBodies(G2frame,data):
                 nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
             return nameSizer
             
+        def rbRefAtmSizer(rbId,rbData):
+            
+            def OnRefSel(event):
+                Obj = event.GetEventObject()
+                iref = Indx[Obj.GetId()]
+                sel = Obj.GetValue()
+                rbData['rbRef'][iref] = atNames.index(sel)
+            
+            refAtmSizer = wx.BoxSizer(wx.HORIZONTAL)
+            atNames = [name+str(i) for i,name in enumerate(rbData['rbTypes'])]
+            rbRef = rbData.get('rbRef',[0,1,2,False])
+            rbData['rbRef'] = rbRef
+            if rbData['useCount']:
+                refAtmSizer.Add(wx.StaticText(VectorRBDisplay,-1,
+                    'Orientation reference atoms A-B-C: %s, %s, %s'%(atNames[rbRef[0]], \
+                     atNames[rbRef[1]],atNames[rbRef[2]])),0)
+            else:
+                refAtmSizer.Add(wx.StaticText(VectorRBDisplay,-1,
+                    'Orientation reference atoms A-B-C: '),0,wx.ALIGN_CENTER_VERTICAL)
+                for i in range(3):
+                    choices = [atNames[j] for j in refChoice[rbId][i]]
+                    refSel = wx.ComboBox(VectorRBDisplay,-1,value='',
+                        choices=choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    refSel.SetValue(atNames[rbRef[i]])
+                    refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
+                    Indx[refSel.GetId()] = i
+                    refAtmSizer.Add(refSel,0,wx.ALIGN_CENTER_VERTICAL)
+            return refAtmSizer
+                        
         def rbVectMag(rbId,imag,rbData):
             
             def OnRBVectorMag(event):
@@ -1016,7 +1001,7 @@ def UpdateRigidBodies(G2frame,data):
                 except ValueError:
                     pass
                 Obj.SetValue('%8.3f'%(val))
-                UpdateVectorRB()
+                wx.CallAfter(UpdateVectorRB,VectorRB.GetScrollPos(wx.VERTICAL))
                 G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,data['Vector'][rbId],plotDefaults)
                 
             def OnRBVectorRef(event):
@@ -1056,7 +1041,7 @@ def UpdateRigidBodies(G2frame,data):
                             rbData['rbTypes'][r] = El
                             vecGrid.SetCellValue(r,c,El)
                     PE.Destroy()
-                wx.CallAfter(UpdateVectorRB)
+                wx.CallAfter(UpdateVectorRB,VectorRB.GetScrollPos(wx.VERTICAL))
 
             def ChangeCell(event):
                 r,c =  event.GetRow(),event.GetCol()
@@ -1066,7 +1051,8 @@ def UpdateRigidBodies(G2frame,data):
                         rbData['rbVect'][imag][r][c] = val
                     except ValueError:
                         pass
-                wx.CallAfter(UpdateVectorRB)
+                G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,data['Vector'][rbId],plotDefaults)
+                wx.CallAfter(UpdateVectorRB,VectorRB.GetScrollPos(wx.VERTICAL))
 
             vecSizer = wx.BoxSizer()
             Types = 3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
@@ -1096,13 +1082,26 @@ def UpdateRigidBodies(G2frame,data):
             vecSizer.Add(vecGrid)
             return vecSizer
         
+        def FillRefChoice(rbId,rbData):
+            choiceIds = [i for i in range(len(rbData['rbTypes']))]
+            
+            rbRef = rbData.get('rbRef',[0,1,2,False])
+            for i in range(3):
+                choiceIds.remove(rbRef[i])
+            refChoice[rbId] = [choiceIds[:],choiceIds[:],choiceIds[:]]
+            for i in range(3):
+                refChoice[rbId][i].append(rbRef[i])
+                refChoice[rbId][i].sort()     
+            
         VectorRB.DestroyChildren()
         VectorRBDisplay = wx.Panel(VectorRB)
         VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['Vector']:
             if rbId != 'AtInfo':
                 rbData = data['Vector'][rbId]
+                FillRefChoice(rbId,rbData)
                 VectorRBSizer.Add(rbNameSizer(rbId,rbData),0)
+                VectorRBSizer.Add(rbRefAtmSizer(rbId,rbData),0)
                 XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
                 for imag,mag in enumerate(rbData['VectMag']):
                     XYZ += mag*rbData['rbVect'][imag]
@@ -1117,11 +1116,13 @@ def UpdateRigidBodies(G2frame,data):
         Size[1] = max(Size[1],450) + 20
         VectorRBDisplay.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        VectorRB.SetScrollPos(wx.VERTICAL,Scroll)
         Size[1] = min(Size[1],450)
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateResidueRB():
         AtInfo = data['Residue']['AtInfo']
+        refChoice = {}
 
         def rbNameSizer(rbId,rbData):
 
@@ -1163,7 +1164,7 @@ def UpdateRigidBodies(G2frame,data):
                 nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
             return nameSizer
             
-        def rbResidues(rbId,XYZ,rbData):
+        def rbResidues(rbId,rbData):
             
             def TypeSelect(event):
                 AtInfo = data['Residue']['AtInfo']
@@ -1196,7 +1197,24 @@ def UpdateRigidBodies(G2frame,data):
                         vecgrid.ClearSelection()
                     vecGrid.SelectRow(r,True)
 
-            vecSizer = wx.BoxSizer()
+            def OnRefSel(event):
+                Obj = event.GetEventObject()
+                iref,res = Indx[Obj.GetId()]
+                sel = Obj.GetValue()
+                ind = atNames.index(sel)
+                rbData['rbRef'][iref] = ind
+                if not iref:     #origin change
+                    rbXYZ = rbData['rbXYZ']
+                    rbXYZ -= rbXYZ[ind]
+                    res.ClearSelection()
+                    resTable = res.GetTable()
+                    for r in range(res.GetNumberRows()):
+                        row = resTable.GetRowValues(r)
+                        row[2:4] = rbXYZ[r]
+                        resTable.SetRowValues(r,row)
+                    res.ForceRefresh()
+                    G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
+                
             Types = 2*[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
             colLabels = ['Name','Type','Cart x','Cart y','Cart z']
             table = []
@@ -1221,8 +1239,32 @@ def UpdateRigidBodies(G2frame,data):
                     vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
             vecGrid.SetMargins(0,0)
             vecGrid.AutoSizeColumns(False)
+            vecSizer = wx.BoxSizer()
             vecSizer.Add(vecGrid)
-            return vecSizer
+            
+            refAtmSizer = wx.BoxSizer(wx.HORIZONTAL)
+            atNames = rbData['atNames']
+            rbRef = rbData['rbRef']
+            if rbData['rbRef'][3] or rbData['useCount']:
+                refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
+                    'Orientation reference atoms A-B-C: %s, %s, %s'%(atNames[rbRef[0]], \
+                     atNames[rbRef[1]],atNames[rbRef[2]])),0)
+            else:
+                refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
+                    'Orientation reference atoms A-B-C: '),0,wx.ALIGN_CENTER_VERTICAL)
+                for i in range(3):
+                    choices = [atNames[j] for j in refChoice[rbId][i]]
+                    refSel = wx.ComboBox(ResidueRBDisplay,-1,value='',
+                        choices=choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    refSel.SetValue(atNames[rbRef[i]])
+                    refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
+                    Indx[refSel.GetId()] = [i,vecGrid]
+                    refAtmSizer.Add(refSel,0,wx.ALIGN_CENTER_VERTICAL)
+            
+            mainSizer = wx.BoxSizer(wx.VERTICAL)
+            mainSizer.Add(refAtmSizer)
+            mainSizer.Add(vecSizer)
+            return mainSizer
             
         def SeqSizer(angSlide,rbId,iSeq,Seq,atNames):
             
@@ -1258,7 +1300,7 @@ def UpdateRigidBodies(G2frame,data):
             bond = wx.TextCtrl(ResidueRBDisplay,-1,'%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
             seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
             Indx[radBt.GetId()] = [Seq,iSeq,ang.GetId()]
-            Indx[ang.GetId()] = [rbId,Seq,ang]
+            Indx[ang.GetId()] = [rbId,Seq]
             ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
             ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
             seqSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1289,7 +1331,20 @@ def UpdateRigidBodies(G2frame,data):
             angSlide.Bind(wx.EVT_SLIDER, OnSlider)
             Indx[angSlide.GetId()] = rbData
             slideSizer.Add(angSlide,0)            
-            return slideSizer,angSlide            
+            return slideSizer,angSlide
+            
+        def FillRefChoice(rbId,rbData):
+            choiceIds = [i for i in range(len(rbData['atNames']))]
+            for seq in rbData['rbSeq']:
+                for i in seq[3]:
+                    choiceIds.remove(i)
+            rbRef = rbData['rbRef']
+            for i in range(3):
+                choiceIds.remove(rbRef[i])
+            refChoice[rbId] = [choiceIds[:],choiceIds[:],choiceIds[:]]
+            for i in range(3):
+                refChoice[rbId][i].append(rbRef[i])
+                refChoice[rbId][i].sort()     
             
         ResidueRB.DestroyChildren()
         ResidueRBDisplay = wx.Panel(ResidueRB)
@@ -1302,9 +1357,9 @@ def UpdateRigidBodies(G2frame,data):
         for name in rbNames:
             rbId = rbIds[name]
             rbData = data['Residue'][rbId]
+            FillRefChoice(rbId,rbData)
             ResidueRBSizer.Add(rbNameSizer(rbId,rbData),0)
-            XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
-            ResidueRBSizer.Add(rbResidues(rbId,XYZ,rbData),0)
+            ResidueRBSizer.Add(rbResidues(rbId,rbData),0)
             ResidueRBSizer.Add((5,5),0)
             if rbData['rbSeq']:
                 slideSizer,angSlide = SlideSizer()
@@ -1323,7 +1378,7 @@ def UpdateRigidBodies(G2frame,data):
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
         Size = ResidueRBSizer.GetMinSize()
         Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
+        Size[1] = max(Size[1],450) + 20
         ResidueRBDisplay.SetSize(Size)
         ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(600,Size[1])
@@ -1343,8 +1398,6 @@ def UpdateRigidBodies(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)    
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewOrigin, id=G2gd.wxID_RBNEWORIGIN)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewRefAtoms, id=G2gd.wxID_RBREFATMS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)

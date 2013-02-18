@@ -112,8 +112,7 @@ htmlFirstUse = True
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
     wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,
-    wxID_RBNEWORIGIN,wxID_RBREFATMS
-] = [wx.NewId() for item in range(9)]
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -839,18 +838,14 @@ class DataFrame(wx.Frame):
 # Rigid bodies
         self.VectorRBEdit = wx.Menu(title='')
         self.VectorRBEdit.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
-            help='Add rigid body')
+            help='Add vector rigid body')
         self.ResidueRBMenu = wx.Menu(title='')
-        self.ResidueRBMenu.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Import rigid bodies',
-            help='Import residue rigid bodies from macro file')
-        self.ResidueRBMenu.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ from txt file',
-            help='Import rigid body XYZ from txt file')
-        self.ResidueRBMenu.Append(id=wxID_RBNEWORIGIN, kind=wx.ITEM_NORMAL,text='Set origin',
-            help='Select atom to be origin in RB to be edited')
-        self.ResidueRBMenu.Append(id=wxID_RBREFATMS, kind=wx.ITEM_NORMAL,text='Set reference atoms',
-            help='Select any atom in RB to be edited')
+        self.ResidueRBMenu.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ',
+            help='Import rigid body XYZ from file')
         self.ResidueRBMenu.Append(id=wxID_RESIDUETORSSEQ, kind=wx.ITEM_NORMAL,text='Define sequence',
             help='Define torsion sequence')
+        self.ResidueRBMenu.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Import residues',
+            help='Import residue rigid bodies from macro file')
             
         self.RigidBodyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RigidBodyMenu,helpType='Rigid bodies')

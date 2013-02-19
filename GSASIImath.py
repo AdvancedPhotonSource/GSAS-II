@@ -1355,7 +1355,7 @@ def makeQuat(A,B,C):
         V2 /= nl.norm(V2)
         V3 = np.cross(V1,V2)
     else:
-        v3 = np.zero(3)
+        V3 = np.zeros(3)
     Q = np.array([1.0,0.0,0.0,0.0])
     D = 0.
     if nl.norm(V3):

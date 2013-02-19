@@ -2628,6 +2628,7 @@ def PlotStructure(G2frame,data):
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
+    Or = np.array([255,128,0])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -3459,7 +3460,7 @@ def PlotStructure(G2frame,data):
                 RenderSphere(x,y,z,0.2,color/255.)
 #                RenderMapPeak(x,y,z,color,1.0)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
-                RenderLabel(x,y,z,name,0.2,Bl)
+                RenderLabel(x,y,z,name,0.2,Or)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]

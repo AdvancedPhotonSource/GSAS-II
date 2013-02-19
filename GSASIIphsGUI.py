@@ -1185,7 +1185,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         rbNames = {}
         for rbVec in rbData['Vector']:
             if rbVec != 'AtInfo':
-                rbNames[rbData['Vector'][rbVec]['RBname']] =['Vector',rbVec]
+                rbNames[rbData['Vector'][rbVec]['RBname']] = ['Vector',rbVec]
         for rbRes in rbData['Residue']:
             if rbRes != 'AtInfo':
                 rbNames[rbData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
@@ -3177,14 +3177,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 data['testRBObj']['rbType'] = rbType
                 data['testRBObj']['rbData'] = rbData
                 data['testRBObj']['Sizers'] = {}
-                if rbType == 'Vector':
-                    rbRef = [0,1,2]
-                elif rbType == 'Residue':
-                    rbRef = rbData[rbType][rbId]['rbRef']
+                rbRef = rbData[rbType][rbId]['rbRef']
                 data['testRBObj']['rbRef'] = rbRef
                 refType = []
                 refName = []
-                for ref in rbRef:
+                for ref in rbRef[:3]:
                     reftype = data['testRBObj']['rbAtTypes'][ref]
                     refType.append(reftype)
                     refName.append(reftype+' '+str(rbRef[0]))
@@ -3229,8 +3226,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 atName = Obj.GetValue()
+                rbType = data['testRBObj']['rbType']
                 atInd[0] = atNames[item][atName]
-                data['testRBObj']['rbObj']['Orig'][0] = atomData[atNames[item][atName]][cx:cx+3]
+                if 'Vector' in rbType:
+                    rbObj = data['testRBObj']['rbObj']
+                    rbId = rbObj['RBId']
+                    rbRef = data['testRBObj']['rbRef']
+                    rbXYZ = -rbData[rbType][rbId]['rbXYZ']
+                    nref = atNames[item][atName]
+                    Oxyz = np.inner(Bmat,np.array(rbXYZ[rbRef[0]]))
+                    Nxyz = np.array(atomData[nref][cx:cx+3])
+                    data['testRBObj']['rbObj']['Orig'][0] = Nxyz-Oxyz    
+                else:            
+                    data['testRBObj']['rbObj']['Orig'][0] = atomData[atNames[item][atName]][cx:cx+3]
                 Draw()
                 
             def OnAtQPick(event):
@@ -3243,9 +3251,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 rbId = rbObj['RBId']
                 rbRef = data['testRBObj']['rbRef']
                 rbXYZ = rbData[rbType][rbId]['rbXYZ']
-                VAR = rbXYZ[rbRef[1]]-rbXYZ[rbRef[0]]
-                VBR = rbXYZ[rbRef[2]]-rbXYZ[rbRef[0]]
-                Orig = np.array(data['testRBObj']['rbObj']['Orig'][0])                
+                rbOrig = rbXYZ[rbRef[0]]
+                VAR = rbXYZ[rbRef[1]]-rbOrig
+                VBR = rbXYZ[rbRef[2]]-rbOrig
+                if rbType == 'Vector':
+                    Orig = np.array(atomData[atInd[0]][cx:cx+3])
+                else:
+                    Orig = np.array(data['testRBObj']['rbObj']['Orig'][0])                
                 VAC = np.inner(Amat,np.array(atomData[atInd[1]][cx:cx+3])-Orig)
                 VBC = np.inner(Amat,np.array(atomData[atInd[2]][cx:cx+3])-Orig)
                 VCC = np.cross(VAR,VAC)
@@ -3255,6 +3267,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
                 QuatC = G2mth.prodQQ(QuatB,QuatA)
                 data['testRBObj']['rbObj']['Orient'] = [QuatC,' ']
+                if rbType == 'Vector':
+                    Oxyz = np.inner(Bmat,G2mth.prodQVQ(QuatC,rbOrig))
+                    Nxyz = np.array(atomData[atInd[0]][cx:cx+3])
+                    data['testRBObj']['rbObj']['Orig'][0] = Nxyz-Oxyz
                 Draw()
 
             if len(data['testRBObj']):
@@ -3325,8 +3341,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 rbSel.Bind(wx.EVT_COMBOBOX, OnRBSel)
                 topSizer.Add((5,5),0)
                 topSizer.Add(rbSel,0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(topSizer)
-                
+                mainSizer.Add(topSizer)                
                 
             OkBtn = wx.Button(RigidBodies,-1,"Ok")
             OkBtn.Bind(wx.EVT_BUTTON, OnOk)

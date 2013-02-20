@@ -1270,7 +1270,7 @@ def UpdateRigidBodies(G2frame,data):
             
             def ChangeAngle(event):
                 Obj = event.GetEventObject()
-                rbId,Seq = Indx[Obj.GetId()]
+                rbId,Seq = Indx[Obj.GetId()][:2]
                 val = Seq[2]
                 try:
                     val = float(Obj.GetValue())
@@ -1300,7 +1300,7 @@ def UpdateRigidBodies(G2frame,data):
             bond = wx.TextCtrl(ResidueRBDisplay,-1,'%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
             seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
             Indx[radBt.GetId()] = [Seq,iSeq,ang.GetId()]
-            Indx[ang.GetId()] = [rbId,Seq]
+            Indx[ang.GetId()] = [rbId,Seq,ang]
             ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
             ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
             seqSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)
@@ -1337,10 +1337,16 @@ def UpdateRigidBodies(G2frame,data):
             choiceIds = [i for i in range(len(rbData['atNames']))]
             for seq in rbData['rbSeq']:
                 for i in seq[3]:
-                    choiceIds.remove(i)
+                    try:
+                        choiceIds.remove(i)
+                    except ValueError:
+                        pass
             rbRef = rbData['rbRef']
             for i in range(3):
-                choiceIds.remove(rbRef[i])
+                try:
+                    choiceIds.remove(rbRef[i])
+                except ValueError:
+                    pass
             refChoice[rbId] = [choiceIds[:],choiceIds[:],choiceIds[:]]
             for i in range(3):
                 refChoice[rbId][i].append(rbRef[i])

@@ -3520,6 +3520,8 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         Radii = []
         for Atype in rbTypes:
             Radii.append(AtInfo[Atype][0])
+            if Atype == 'H':
+                Radii[-1] = 0.5
         Radii = np.array(Radii)
         Bonds = [[] for i in range(len(Radii))]
         for i,xyz in enumerate(XYZ):

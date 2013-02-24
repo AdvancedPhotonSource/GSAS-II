@@ -3381,7 +3381,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     data['testRBObj']['rbObj']['Orig'][0][item] = val
                 except ValueError:
                     pass
-                Draw()
+                G2plt.PlotStructure(G2frame,data)
                 
             def OnOrien(event):
                 Obj = event.GetEventObject()
@@ -3396,7 +3396,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     data['testRBObj']['rbObj']['Orient'][0] = Q
                 except ValueError:
                     pass
-                Draw()                
+                G2plt.PlotStructure(G2frame,data)
                 
             def OnAtOrigPick(event):
                 Obj = event.GetEventObject()
@@ -3415,7 +3415,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     data['testRBObj']['rbObj']['Orig'][0] = Nxyz-Oxyz    
                 else:            
                     data['testRBObj']['rbObj']['Orig'][0] = atomData[atNames[item][atName]][cx:cx+3]
-                Draw()
+                G2plt.PlotStructure(G2frame,data)
                 
             def OnAtQPick(event):
                 Obj = event.GetEventObject()
@@ -3447,7 +3447,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Oxyz = np.inner(Bmat,G2mth.prodQVQ(QuatC,rbOrig))
                     Nxyz = np.array(atomData[atInd[0]][cx:cx+3])
                     data['testRBObj']['rbObj']['Orig'][0] = Nxyz-Oxyz
-                Draw()
+                G2plt.PlotStructure(G2frame,data)
                 
             def OnTorAngle(event):
                 Obj = event.GetEventObject()
@@ -3587,11 +3587,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             btnSizer.Add(CancelBtn)
             btnSizer.Add((20,20),1)
             mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-            mainSizer.FitInside(RigidBodies)
-            Size = mainSizer.GetMinSize()
             RigidBodies.SetSizer(mainSizer)
+            Size = mainSizer.Fit(RigidBodies)
             Size[0] += 40
-            Size[1] = max(Size[1],290) + 35
+            Size[1] = min(max(Size[1],290) + 35,560)
             RigidBodies.SetSize(Size)
             RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
             G2frame.dataFrame.setSizePosLeft(Size)

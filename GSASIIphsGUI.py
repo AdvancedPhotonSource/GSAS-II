@@ -755,7 +755,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for rbObj in resRBData+vecRBData:
             exclList = ['X' for i in range(len(rbObj['Ids']))]
             rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
-        # for vector one exclList will be 'x' or 'xu' if TLS used in RB
+            if rbObj['ThermalMotion'][0] != 'None':
+                for id in rbObj['Ids']:
+                    rbAtmDict[id] += 'U'            
+        # exclList will be 'x' or 'xu' if TLS used in RB
         Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
             G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
         if atomData:
@@ -911,7 +914,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
                         if not Atoms.IsReadOnly(r,c):
                             if Atoms.GetColLabelValue(c) == 'refine':
-                                atomData[r][c] = parms.replace(rbAtmDict.get(atomData[r][-1],''),'')
+                                rbExcl = rbAtmDict.get(atomData[r][-1],'')
+                                for excl in rbExcl:
+                                    atomData[r][c] = parms.replace(excl,'')
                             else: 
                                 atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
@@ -1092,7 +1097,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Atoms.SetColSize(i,50)            
             for row in range(Atoms.GetNumberRows()):
                 atId = atomData[row][-1]
-                if 'X' in rbAtmDict.get(atId,''):
+                rbExcl = rbAtmDict.get(atId,'')
+                if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
                             Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)                        
@@ -1107,11 +1113,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         ci = colU11+i
                         Atoms.SetCellTextColour(row,ci,BLACK)
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
-                        if CSI[2][i]:
+                        if CSI[2][i] and 'U' not in rbExcl:
                             Atoms.SetCellStyle(row,ci,WHITE,False)
                 else:
                     Atoms.SetCellStyle(row,colUiso,WHITE,False)
                     Atoms.SetCellTextColour(row,colUiso,BLACK)
+                    if 'U' in rbExcl:
+                        Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                     for i in range(6):
                         ci = colU11+i
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)

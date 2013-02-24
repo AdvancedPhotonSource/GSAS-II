@@ -2610,6 +2610,12 @@ def PlotStructure(G2frame,data):
         peakMax = 100.
         if len(mapPeaks):
             peakMax = np.max(mapPeaks.T[0])
+    resRBData = data['RBModels'].get('Residue',[])
+    vecRBData = data['RBModels'].get('Vector',[])
+    rbAtmDict = {}
+    for rbObj in resRBData+vecRBData:
+        exclList = ['X' for i in range(len(rbObj['Ids']))]
+        rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
     testRBObj = data.get('testRBObj',{})
     rbObj = testRBObj.get('rbObj',{})
     drawAtoms = drawingData.get('Atoms',[])
@@ -3359,9 +3365,13 @@ def PlotStructure(G2frame,data):
             except ValueError:
                 atNum = -1
             CL = atom[cs+2]
-            color = np.array(CL)/255.
+            atColor = np.array(CL)/255.
+            if drawingData['showRigidBodies'] and atom[ci] in rbAtmDict:
+                bndColor = Or
+            else:
+                bndColor = atColor
             if iat in Ind and G2frame.dataDisplay.GetPageText(getSelection()) != 'Map peaks':
-                color = np.array(Gr)/255.
+                atColor = np.array(Gr)/255.
 #            color += [.25,]
             radius = 0.5
             if atom[cs] != '':
@@ -3387,11 +3397,11 @@ def PlotStructure(G2frame,data):
                         radius = vdwScale*generalData['vdWRadii'][atNum]
                     else:
                         radius = ballScale*generalData['BondRadii'][atNum]
-                RenderSphere(x,y,z,radius,color)
+                RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
-                    RenderBonds(x,y,z,Bonds,bondR,color)
+                    RenderBonds(x,y,z,Bonds,bondR,bndColor)
             elif 'ellipsoids' in atom[cs]:
-                RenderBonds(x,y,z,Bonds,bondR,color)
+                RenderBonds(x,y,z,Bonds,bondR,bndColor)
                 if atom[cs+3] == 'A':                    
                     Uij = atom[cs+5:cs+11]
                     U = np.multiply(G2spc.Uij2U(Uij),GS)
@@ -3402,28 +3412,28 @@ def PlotStructure(G2frame,data):
                     if atom[ct] == 'H' and not drawingData['showHydrogen']:
                         pass
                     else:
-                        RenderEllipsoid(x,y,z,ellipseProb,E,R4,color)                    
+                        RenderEllipsoid(x,y,z,ellipseProb,E,R4,atColor)                    
                 else:
                     if atom[ct] == 'H' and not drawingData['showHydrogen']:
                         pass
                     else:
                         radius = ellipseProb*math.sqrt(abs(atom[cs+4]))
-                        RenderSphere(x,y,z,radius,color)
+                        RenderSphere(x,y,z,radius,atColor)
             elif 'lines' in atom[cs]:
                 radius = 0.1
-                RenderLines(x,y,z,Bonds,color)
+                RenderLines(x,y,z,Bonds,bndColor)
 #                RenderBonds(x,y,z,Bonds,0.05,color,6)
             elif atom[cs] == 'sticks':
                 radius = 0.1
-                RenderBonds(x,y,z,Bonds,bondR,color)
+                RenderBonds(x,y,z,Bonds,bondR,bndColor)
             elif atom[cs] == 'polyhedra':
-                RenderPolyhedra(x,y,z,Faces,color)
+                RenderPolyhedra(x,y,z,Faces,atColor)
             elif atom[cs] == 'backbone':
                 if atom[ct-1].split()[0] in ['C','N']:
                     if atom[2] not in Backbones:
                         Backbones[atom[2]] = []
                     Backbones[atom[2]].append(list(np.inner(Amat,np.array([x,y,z]))))
-                    BackboneColor.append(list(color))
+                    BackboneColor.append(list(atColor))
                     
             if atom[cs+1] == 'type':
                 RenderLabel(x,y,z,atom[ct],radius,Gr)

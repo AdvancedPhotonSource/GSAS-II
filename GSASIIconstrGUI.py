@@ -966,6 +966,7 @@ def UpdateRigidBodies(G2frame,data):
                 iref = Indx[Obj.GetId()]
                 sel = Obj.GetValue()
                 rbData['rbRef'][iref] = atNames.index(sel)
+                FillRefChoice(rbId,rbData)
             
             refAtmSizer = wx.BoxSizer(wx.HORIZONTAL)
             atNames = [name+str(i) for i,name in enumerate(rbData['rbTypes'])]
@@ -1085,7 +1086,7 @@ def UpdateRigidBodies(G2frame,data):
         def FillRefChoice(rbId,rbData):
             choiceIds = [i for i in range(len(rbData['rbTypes']))]
             
-            rbRef = rbData.get('rbRef',[0,1,2,False])
+            rbRef = rbData.get('rbRef',[-1,-1,-1,False])
             for i in range(3):
                 choiceIds.remove(rbRef[i])
             refChoice[rbId] = [choiceIds[:],choiceIds[:],choiceIds[:]]
@@ -1123,6 +1124,7 @@ def UpdateRigidBodies(G2frame,data):
     def UpdateResidueRB():
         AtInfo = data['Residue']['AtInfo']
         refChoice = {}
+        RefObjs = []
 
         def rbNameSizer(rbId,rbData):
 
@@ -1199,10 +1201,14 @@ def UpdateRigidBodies(G2frame,data):
 
             def OnRefSel(event):
                 Obj = event.GetEventObject()
-                iref,res = Indx[Obj.GetId()]
+                iref,res,jref = Indx[Obj.GetId()]
                 sel = Obj.GetValue()
                 ind = atNames.index(sel)
                 rbData['rbRef'][iref] = ind
+                FillRefChoice(rbId,rbData)
+                for i,ref in enumerate(RefObjs[jref]):
+                    ref.SetItems([atNames[j] for j in refChoice[rbId][i]])
+                    ref.SetValue(atNames[rbData['rbRef'][i]])
                 if not iref:     #origin change
                     rbXYZ = rbData['rbXYZ']
                     rbXYZ -= rbXYZ[ind]
@@ -1252,14 +1258,17 @@ def UpdateRigidBodies(G2frame,data):
             else:
                 refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
                     'Orientation reference atoms A-B-C: '),0,wx.ALIGN_CENTER_VERTICAL)
+                refObj = [0,0,0]
                 for i in range(3):
                     choices = [atNames[j] for j in refChoice[rbId][i]]
                     refSel = wx.ComboBox(ResidueRBDisplay,-1,value='',
                         choices=choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                     refSel.SetValue(atNames[rbRef[i]])
                     refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
-                    Indx[refSel.GetId()] = [i,vecGrid]
+                    Indx[refSel.GetId()] = [i,vecGrid,len(RefObjs)]
+                    refObj[i] = refSel
                     refAtmSizer.Add(refSel,0,wx.ALIGN_CENTER_VERTICAL)
+                RefObjs.append(refObj)
             
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(refAtmSizer)

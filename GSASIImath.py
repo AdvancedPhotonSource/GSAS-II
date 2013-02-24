@@ -197,6 +197,18 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
 
+def GetXYZDist(xyz,XYZ,Amat):
+    ''' gets distance from position xyz to all XYZ, xyz & XYZ are np.array 
+        and are in crystal coordinates; Amat is crystal to Cart matrix
+    '''
+    return np.sqrt(np.sum(np.inner(Amat,XYZ-xyz)**2,axis=0))
+
+def getAtomXYZ(atoms,cx):
+    XYZ = []
+    for atom in atoms:
+        XYZ.append(atom[cx:cx+3])
+    return np.array(XYZ)
+
 def UpdateResRBAtoms(Bmat,RBObj,RBData):
     RBIds = GetResRBIds(RBData)
     RBRes = RBData[RBIds[RBObj['RBname']]]

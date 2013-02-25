@@ -1972,7 +1972,7 @@ class GSASII(wx.Frame):
                                 peaks = self.PatternTree.GetItemPyData(item2)
                                 file.write("%s \n" % (name+' Peak List'))                
                                 for peak in peaks:
-                                    file.write("%10.4f %12.2f %10.3f %10.3f \n" % \
+                                    file.write("%10.5f %12.2f %10.3f %10.3f \n" % \
                                         (peak[0],peak[2],peak[4],peak[6]))
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            

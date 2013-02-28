@@ -624,7 +624,7 @@ def UpdateRigidBodies(G2frame,data):
     Displays the rigid bodies in the data window
     '''
     if not data:
-        data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},'Z-matrix':{'AtInfo':{}}})       #empty dict - fill it
+        data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}}})       #empty dict - fill it
             
     global resList
     Indx = {}
@@ -724,7 +724,7 @@ def UpdateRigidBodies(G2frame,data):
             Info = G2elem.GetAtomInfo('C')
             AtInfo['C'] = [Info['Drad'],Info['Color']]
             data['Vector'][rbId] = {'RBname':'UNKRB','VectMag':vecMag,'rbXYZ':np.zeros((nAtoms,3)),
-                'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'useCount':0}
+                'rbRef':[0,1,2,False],'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'useCount':0}
         dlg.Destroy()
         UpdateVectorRB()
         
@@ -1001,7 +1001,7 @@ def UpdateRigidBodies(G2frame,data):
                     rbData['VectMag'][imag] = val
                 except ValueError:
                     pass
-                Obj.SetValue('%8.3f'%(val))
+                Obj.SetValue('%8.4f'%(val))
                 wx.CallAfter(UpdateVectorRB,VectorRB.GetScrollPos(wx.VERTICAL))
                 G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,data['Vector'][rbId],plotDefaults)
                 
@@ -1013,7 +1013,7 @@ def UpdateRigidBodies(G2frame,data):
             magSizer = wx.wx.BoxSizer(wx.HORIZONTAL)
             magSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Translation magnitude: '),
                 0,wx.ALIGN_CENTER_VERTICAL)
-            magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.3f'%(rbData['VectMag'][imag]))
+            magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.4f'%(rbData['VectMag'][imag]))
             Indx[magValue.GetId()] = [rbId,imag]
             magValue.Bind(wx.EVT_TEXT_ENTER,OnRBVectorMag)
             magValue.Bind(wx.EVT_KILL_FOCUS,OnRBVectorMag)
@@ -1029,6 +1029,7 @@ def UpdateRigidBodies(G2frame,data):
         def rbVectors(rbId,imag,mag,XYZ,rbData):
 
             def TypeSelect(event):
+                Obj = event.GetEventObject()
                 AtInfo = data['Vector']['AtInfo']
                 r,c = event.GetRow(),event.GetCol()
                 if vecGrid.GetColLabelValue(c) == 'Type':
@@ -1045,6 +1046,7 @@ def UpdateRigidBodies(G2frame,data):
                 wx.CallAfter(UpdateVectorRB,VectorRB.GetScrollPos(wx.VERTICAL))
 
             def ChangeCell(event):
+                Obj = event.GetEventObject()
                 r,c =  event.GetRow(),event.GetCol()
                 if r >= 0 and (0 <= c < 3):
                     try:
@@ -1117,7 +1119,7 @@ def UpdateRigidBodies(G2frame,data):
         Size[1] = max(Size[1],450) + 20
         VectorRBDisplay.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        VectorRB.SetScrollPos(wx.VERTICAL,Scroll)
+        VectorRB.Scroll(0,Scroll)
         Size[1] = min(Size[1],450)
         G2frame.dataFrame.setSizePosLeft(Size)
         

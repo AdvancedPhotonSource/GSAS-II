@@ -1184,7 +1184,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             FillAtomsGrid(Atoms)
         event.StopPropagation()
         
-    def OnRBAppend(event):
+    def OnRBAppend(event):          #unfinished!
         rbData = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         general = data['General']
@@ -3048,7 +3048,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ##### Rigid bodies
 ################################################################################
 
-    def FillRigidBodyGrid(refresh=False):
+    def FillRigidBodyGrid(refresh=True):
         if refresh:
             RigidBodies.DestroyChildren()
         AtLookUp = G2mth.FillAtomLookUp(data['Atoms'])
@@ -3059,15 +3059,146 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         Indx = {}
         
-        def ResrbSizer(RBObj):
+        def OnThermSel(event):       #needs to be seen by VecRbSizer!
+            Obj = event.GetEventObject()
+            RBObj = Indx[Obj.GetId()]
+            val = Obj.GetValue()
+            RBObj['ThermalMotion'] = ['None',[],[]]
+            if val == 'Uiso':
+                RBObj['ThermalMotion'] = ['Uiso',[0.01,],[False,]]
+            elif val == 'T':
+                RBObj['ThermalMotion'] = ['T',[0.0 for i in range(6)],[False for i in range(6)]]
+            elif val == 'TL':
+                RBObj['ThermalMotion'] = ['TL',[0.0 for i in range(12)],[False for i in range(12)]]
+            elif val == 'TLS':
+                RBObj['ThermalMotion'] = ['TLS',[0.0 for i in range(20)],[False for i in range(20)]] #SAA = S33-S11 & SBB = S22-S33
+            wx.CallAfter(FillRigidBodyGrid,True)
+            
+        def ThermDataSizer(RBObj):       #needs to be seen by VecRbSizer!
+            
+            def OnThermval(event):
+                Obj = event.GetEventObject()
+                item = Indx[Obj.GetId()]
+                try:
+                    val = float(Obj.GetValue())
+                    RBObj['ThermalMotion'][1][item] = val
+                except ValueError:
+                    pass
+                Obj.SetValue('%8.4f'%(RBObj['ThermalMotion'][1][item]))
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnTLSRef(event):
+                Obj = event.GetEventObject()
+                item = Indx[Obj.GetId()]
+                RBObj['ThermalMotion'][2][item] = Obj.GetValue()
+            
+            thermSizer = wx.FlexGridSizer(1,9,5,5)
+            model = RBObj['ThermalMotion']
+            if model[0] == 'Uiso':
+                names = ['Uiso',]
+            elif 'T' in model[0]:
+                names = ['T11','T22','T33','T12','T13','T23']
+            if 'L' in model[0]:
+                names += ['L11','L22','L33','L12','L13','L23']
+            if 'S' in model[0]:
+                names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
+            for i,name in enumerate(names):
+                thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,wx.ALIGN_CENTER_VERTICAL)
+                thermVal = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(model[1][i]),
+                    style=wx.TE_PROCESS_ENTER)
+                thermVal.Bind(wx.EVT_TEXT_ENTER,OnThermval)
+                thermVal.Bind(wx.EVT_KILL_FOCUS,OnThermval)
+                Indx[thermVal.GetId()] = i
+                thermSizer.Add(thermVal)
+                Tcheck = wx.CheckBox(RigidBodies,-1,'Refine?')
+                Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
+                Tcheck.SetValue(model[2][i])
+                Indx[Tcheck.GetId()] = i
+                thermSizer.Add(Tcheck,0,wx.ALIGN_CENTER_VERTICAL)
+            return thermSizer
+            
+        def LocationSizer(RBObj,rbType):
             
             def OnOrigRef(event):
                 RBObj['Orig'][1] = Ocheck.GetValue()
              
             def OnOrienRef(event):
                 RBObj['Orient'][1] = Qcheck.GetValue()
-                Qcheck.Setvalue(RBObj['Orient'][1])
                 
+            def OnOrigX(event):
+                Obj = event.GetEventObject()
+                item = Indx[Obj.GetId()]
+                try:
+                    val = float(Obj.GetValue())
+                    RBObj['Orig'][0][item] = val
+                    Obj.SetValue('%8.5f'%(val))
+                    newXYZ = G2mth.UpdateRBAtoms(Bmat,RBObj,RBData,rbType)
+                    for i,id in enumerate(RBObj['Ids']):
+                        data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
+                    UpdateDrawAtoms()
+                    G2plt.PlotStructure(G2frame,data)
+                except ValueError:
+                    pass
+                
+            def OnOrien(event):
+                Obj = event.GetEventObject()
+                item = Indx[Obj.GetId()]
+                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
+                V = np.inner(Bmat,V)
+                try:
+                    val = float(Obj.GetValue())
+                    if item:
+                        V[item-1] = val
+                    else:
+                        A = val
+                    Obj.SetValue('%8.5f'%(val))
+                    V = np.inner(Amat,V)
+                    Q = G2mth.AVdeg2Q(A,V)
+                    if not any(Q):
+                        raise ValueError
+                    RBObj['Orient'][0] = Q
+                    newXYZ = G2mth.UpdateRBAtoms(Bmat,RBObj,RBData,rbType)
+                    for i,id in enumerate(RBObj['Ids']):
+                        data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
+                    UpdateDrawAtoms()
+                    G2plt.PlotStructure(G2frame,data)
+                except ValueError:
+                    pass
+                
+            topSizer = wx.FlexGridSizer(2,6,5,5)
+            Orig = RBObj['Orig'][0]
+            Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
+            OrienV = np.inner(Bmat,OrienV)
+            Orien = [Orien,]
+            Orien.extend(OrienV/nl.norm(OrienV))
+            topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,wx.ALIGN_CENTER_VERTICAL)
+            for ix,x in enumerate(Orig):
+                origX = wx.TextCtrl(RigidBodies,-1,value='%8.5f'%(x),style=wx.TE_PROCESS_ENTER)
+                origX.Bind(wx.EVT_TEXT_ENTER,OnOrigX)
+                origX.Bind(wx.EVT_KILL_FOCUS,OnOrigX)
+                Indx[origX.GetId()] = ix
+                topSizer.Add(origX,0,wx.ALIGN_CENTER_VERTICAL)
+            topSizer.Add((5,0),)
+            Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
+            Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
+            Ocheck.SetValue(RBObj['Orig'][1])
+            topSizer.Add(Ocheck,0,wx.ALIGN_CENTER_VERTICAL)
+            topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,wx.ALIGN_CENTER_VERTICAL)
+            for ix,x in enumerate(Orien):
+                orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
+                orien.Bind(wx.EVT_TEXT_ENTER,OnOrien)
+                orien.Bind(wx.EVT_KILL_FOCUS,OnOrien)
+                Indx[orien.GetId()] = ix
+                topSizer.Add(orien,0,wx.ALIGN_CENTER_VERTICAL)
+            Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','Q'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
+            Qcheck.SetValue(RBObj['Orient'][1])
+            topSizer.Add(Qcheck)
+            return topSizer
+                         
+        def ResrbSizer(RBObj):
+            
             def OnTorsionRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
@@ -3101,62 +3232,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
                 
-            def OnThermSel(event):
-                val = thermSel.GetValue()
-                RBObj['ThermalMotion'] = ['None',[],[]]
-                if val == 'Uiso':
-                    RBObj['ThermalMotion'] = ['Uiso',[0.01,],[False,]]
-                elif val == 'T':
-                    RBObj['ThermalMotion'] = ['T',[0.0 for i in range(6)],[False for i in range(6)]]
-                elif val == 'TL':
-                    RBObj['ThermalMotion'] = ['TL',[0.0 for i in range(12)],[False for i in range(12)]]
-                elif val == 'TLS':
-                    RBObj['ThermalMotion'] = ['TLS',[0.0 for i in range(20)],[False for i in range(20)]] #SAA = S33-S11 & SBB = S22-S33
-                wx.CallAfter(FillRigidBodyGrid,True)
-                
-            def ThermDataSizer():
-                
-                def OnThermval(event):
-                    Obj = event.GetEventObject()
-                    item = Indx[Obj.GetId()]
-                    try:
-                        val = float(Obj.GetValue())
-                        RBObj['ThermalMotion'][1][item] = val
-                    except ValueError:
-                        pass
-                    Obj.SetValue('%8.4f'%(RBObj['ThermalMotion'][1][item]))
-                    G2plt.PlotStructure(G2frame,data)
-                    
-                def OnTLSRef(event):
-                    Obj = event.GetEventObject()
-                    item = Indx[Obj.GetId()]
-                    RBObj['ThermalMotion'][2][item] = Obj.GetValue()
-                
-                thermSizer = wx.FlexGridSizer(1,9,5,5)
-                model = RBObj['ThermalMotion']
-                if model[0] == 'Uiso':
-                    names = ['Uiso',]
-                elif 'T' in model[0]:
-                    names = ['T11','T22','T33','T12','T13','T23']
-                if 'L' in model[0]:
-                    names += ['L11','L22','L33','L12','L13','L23']
-                if 'S' in model[0]:
-                    names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
-                for i,name in enumerate(names):
-                    thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,wx.ALIGN_CENTER_VERTICAL)
-                    thermVal = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(model[1][i]),
-                        style=wx.TE_PROCESS_ENTER)
-                    thermVal.Bind(wx.EVT_TEXT_ENTER,OnThermval)
-                    thermVal.Bind(wx.EVT_KILL_FOCUS,OnThermval)
-                    Indx[thermVal.GetId()] = i
-                    thermSizer.Add(thermVal)
-                    Tcheck = wx.CheckBox(RigidBodies,-1,'Refine?')
-                    Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
-                    Tcheck.SetValue(model[2][i])
-                    Indx[Tcheck.GetId()] = i
-                    thermSizer.Add(Tcheck,0,wx.ALIGN_CENTER_VERTICAL)
-                return thermSizer
-             
             resrbSizer = wx.BoxSizer(wx.VERTICAL)
             resrbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
@@ -3168,24 +3243,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
             resrbSizer.Add(topLine)
-            topSizer = wx.FlexGridSizer(2,2,5,5)
-            Orig = RBObj['Orig'][0]
-            Orien = RBObj['Orient'][0]
-            topSizer.Add(wx.StaticText(RigidBodies,-1,
-                '%s %8.5f %8.5f %8.5f'%(       'Origin     :',Orig[0],Orig[1],Orig[2])))
-            Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
-            Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
-            Ocheck.SetValue(RBObj['Orig'][1])
-            topSizer.Add(Ocheck,0,wx.ALIGN_CENTER_VERTICAL)
-            topSizer.Add(wx.StaticText(RigidBodies,-1,
-                '%s %8.5f %8.5f %8.5f %8.5f  Refine?'%('Orientation:',Orien[0], \
-                Orien[1],Orien[2],Orien[3])),0,wx.ALIGN_CENTER_VERTICAL)
-            Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','Q'],
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
-            Qcheck.SetValue(RBObj['Orient'][1])
-            topSizer.Add(Qcheck)
-            resrbSizer.Add(topSizer)
+            resrbSizer.Add(LocationSizer(RBObj,'Residue'))
             resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0,wx.ALIGN_CENTER_VERTICAL)
             torSizer = wx.FlexGridSizer(1,6,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
@@ -3206,22 +3264,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,wx.ALIGN_CENTER_VERTICAL)
             thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[thermSel.GetId()] = RBObj
             thermSel.Bind(wx.EVT_COMBOBOX,OnThermSel)
             thermSizer.Add(thermSel,0,wx.ALIGN_CENTER_VERTICAL)
             resrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
-                resrbSizer.Add(ThermDataSizer())
+                resrbSizer.Add(ThermDataSizer(RBObj))
             return resrbSizer
             
         def VecrbSizer(RBObj):
                   
-            def OnOrigRef(event):
-                RBObj['Orig'][1] = Ocheck.GetValue()
-             
-            def OnOrienRef(event):
-                RBObj['Orient'][1] = Qcheck.GetValue()
-                Qcheck.Setvalue(RBObj['Orient'][1])
-                
             def OnDelVecRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
@@ -3244,24 +3296,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
             vecrbSizer.Add(topLine)
-            topSizer = wx.FlexGridSizer(2,2,5,5)
-            Orig = RBObj['Orig'][0]
-            Orien = RBObj['Orient'][0]
-            topSizer.Add(wx.StaticText(RigidBodies,-1,
-                '%s %8.5f %8.5f %8.5f'%(       'Origin     :',Orig[0],Orig[1],Orig[2])))
-            Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
-            Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
-            Ocheck.SetValue(RBObj['Orig'][1])
-            topSizer.Add(Ocheck,0,wx.ALIGN_CENTER_VERTICAL)
-            topSizer.Add(wx.StaticText(RigidBodies,-1,
-                '%s %8.5f %8.5f %8.5f %8.5f  Refine?'%('Orientation:',Orien[0], \
-                Orien[1],Orien[2],Orien[3])),0,wx.ALIGN_CENTER_VERTICAL)
-            Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','Q'],
+            vecrbSizer.Add(LocationSizer(RBObj,'Vector'))
+            tchoice = ['None','Uiso','T','TL','TLS']
+            thermSizer = wx.BoxSizer(wx.HORIZONTAL)
+            thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,wx.ALIGN_CENTER_VERTICAL)
+            thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
-            Qcheck.SetValue(RBObj['Orient'][1])
-            topSizer.Add(Qcheck)
-            vecrbSizer.Add(topSizer)
+            Indx[thermSel.GetId()] = RBObj
+            thermSel.Bind(wx.EVT_COMBOBOX,OnThermSel)
+            thermSizer.Add(thermSel,0,wx.ALIGN_CENTER_VERTICAL)
+            vecrbSizer.Add(thermSizer)
+            if RBObj['ThermalMotion'][0] != 'None':
+                vecrbSizer.Add(ThermDataSizer(RBObj))
             return vecrbSizer                
         
         G2frame.dataFrame.SetStatusText('')
@@ -3292,6 +3338,37 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],450)
         G2frame.dataFrame.setSizePosLeft(Size)
+        
+    def OnRBCopyParms(event):
+        RBObjs = []
+        for rbType in ['Vector','Residue']:            
+            RBObjs += data['RBModels'].get(rbType,[])
+        if not len(RBObjs):
+            print '**** ERROR - no rigid bodies defined ****'
+            return
+        if len(RBObjs) == 1:
+            print '**** INFO - only one rigid body defined; nothing to copy to ****'
+            return
+        Source = []
+        sourceRB = {}
+        for RBObj in RBObjs:
+            Source.append(RBObj['RBname'])
+        dlg = wx.SingleChoiceDialog(G2frame,'Select source','Copy rigid body parameters',Source)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            name = Source[sel]
+            for item in ['Orig','Orient','ThermalMotion']: 
+                sourceRB.update({item:RBObjs[sel][item],})
+        dlg.Destroy()
+        if not sourceRB:
+            return
+        dlg = wx.MultiChoiceDialog(G2frame,'Select targets','Copy rigid body parameters',Source)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            for x in sel:
+                RBObjs[x].update(sourceRB)
+        G2plt.PlotStructure(G2frame,data)
+        wx.CallAfter(FillRigidBodyGrid(True))
                 
     def OnRBAssign(event):
         
@@ -3332,6 +3409,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     atomData[id][cx:cx+3] = xyz
                 rbObj['Ids'] = Ids
                 rbObj['ThermalMotion'] = ['None',[],[]] #type,values,flags
+                rbObj['RBname'] += ':'+str(RBData[rbType][rbId]['useCount'])
                 RBObjs.append(rbObj)
                 data['RBModels'][rbType] = RBObjs
                 RBData[rbType][rbId]['useCount'] += 1
@@ -3488,7 +3566,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if data['testRBObj']:
                 Xsizers = []
                 Osizers = []
-                OriSizer = wx.FlexGridSizer(1,6,5,5)
                 rbObj = data['testRBObj']['rbObj']
                 rbName = rbObj['RBname']
                 rbId = rbObj['RBId']
@@ -3503,6 +3580,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mainSizer.Add(wx.StaticText(RigidBodies,-1,'Locate rigid body : '+rbName),
                     0,wx.ALIGN_CENTER_VERTICAL)
                 mainSizer.Add((5,5),0)
+                OriSizer = wx.FlexGridSizer(1,5,5,5)
                 OriSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z: '),0,wx.ALIGN_CENTER_VERTICAL)
                 for ix,x in enumerate(Orig):
                     origX = wx.TextCtrl(RigidBodies,-1,value='%10.5f'%(x),style=wx.TE_PROCESS_ENTER)
@@ -3511,19 +3589,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Indx[origX.GetId()] = ix
                     OriSizer.Add(origX,0,wx.ALIGN_CENTER_VERTICAL)
                     Xsizers.append(origX)
+                OriSizer.Add((5,0),)
                 if len(atomData):
                     choice = atNames[0].keys()
                     choice.sort()
-                    OriSizer.Add(wx.StaticText(RigidBodies,-1,'Select match to '+refName[0]+': '),0,wx.ALIGN_CENTER_VERTICAL)                
-                    atPick = wx.ComboBox(RigidBodies,-1,value=atomData[atInd[0]][ct-1],
-                        choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                    atPick.Bind(wx.EVT_COMBOBOX, OnAtOrigPick)
-                    Indx[atPick.GetId()] = 0
-                    OriSizer.Add(atPick,0,wx.ALIGN_CENTER_VERTICAL)
                     data['testRBObj']['Sizers']['Xsizers'] = Xsizers
-                else:
-                    OriSizer.Add((5,0),)
-                    OriSizer.Add((5,0),)                    
                 OriSizer.Add(wx.StaticText(RigidBodies,-1,'Orientation quaternion: '),0,wx.ALIGN_CENTER_VERTICAL)
                 for ix,x in enumerate(Orien):
                     orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
@@ -3533,19 +3603,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     OriSizer.Add(orien,0,wx.ALIGN_CENTER_VERTICAL)
                     Osizers.append(orien)
                 data['testRBObj']['Sizers']['Osizers'] = Osizers
-                OriSizer.Add((5,0),)
+                mainSizer.Add(OriSizer)
+                mainSizer.Add((5,5),0)
+                RefSizer = wx.FlexGridSizer(1,7,5,5)
                 if len(atomData):
-                    OriSizer.Add(wx.StaticText(RigidBodies,-1,'Orientation setting: '),0,wx.ALIGN_CENTER_VERTICAL)
-                    for i in [1,2]:
+                    RefSizer.Add(wx.StaticText(RigidBodies,-1,'Location setting: Select match to'),0,wx.ALIGN_CENTER_VERTICAL)
+                    for i in [0,1,2]:
                         choice = atNames[i].keys()
                         choice.sort()
-                        OriSizer.Add(wx.StaticText(RigidBodies,-1,'Select match to '+refName[i]+': '),0,wx.ALIGN_CENTER_VERTICAL)
+                        RefSizer.Add(wx.StaticText(RigidBodies,-1,' '+refName[i]+': '),0,wx.ALIGN_CENTER_VERTICAL)
                         atPick = wx.ComboBox(RigidBodies,-1,value=atomData[atInd[i]][ct-1],
                             choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                        atPick.Bind(wx.EVT_COMBOBOX, OnAtQPick)
+                        if i:
+                            atPick.Bind(wx.EVT_COMBOBOX, OnAtQPick)
+                        else:
+                            atPick.Bind(wx.EVT_COMBOBOX, OnAtOrigPick)                            
                         Indx[atPick.GetId()] = i
-                        OriSizer.Add(atPick,0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(OriSizer)
+                        RefSizer.Add(atPick,0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(RefSizer)
                 mainSizer.Add((5,5),0)
                 if Torsions:                    
                     AtNames = data['testRBObj']['AtNames']
@@ -4253,6 +4328,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2gd.wxID_AUTOFINDRESRB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBAssign, id=G2gd.wxID_ASSIGNATMS2RB)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2gd.wxID_COPYRBPARMS)            
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2gd.wxID_GLOBALRESREFINE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2gd.wxID_RBREMOVEALL)
             FillRigidBodyGrid()

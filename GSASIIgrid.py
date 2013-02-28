@@ -111,8 +111,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
-    wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,
-] = [wx.NewId() for item in range(7)]
+    wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,wxID_COPYRBPARMS,
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -1259,6 +1259,8 @@ class DataFrame(wx.Frame):
             help='Select & position rigid body in structure of existing atoms')
         self.RigidBodiesEdit.Append(id=wxID_AUTOFINDRESRB, kind=wx.ITEM_NORMAL,text='Auto find residues',
             help='Auto find of residue RBs in macromolecule')
+        self.RigidBodiesEdit.Append(id=wxID_COPYRBPARMS, kind=wx.ITEM_NORMAL,text='Copy rigid body parms',
+            help='Copy rigid body location & TLS parameters')
         self.RigidBodiesEdit.Append(id=wxID_GLOBALRESREFINE, kind=wx.ITEM_NORMAL,text='Global residue refine',
             help='Global setting of residue RB refinement flags')
         self.RigidBodiesEdit.Append(id=wxID_RBREMOVEALL, kind=wx.ITEM_NORMAL,text='Remove all rigid bodies',
@@ -1704,7 +1706,7 @@ def UpdateSeqResults(G2frame,data):
     input:
         data - dictionary
             'histNames' - list of histogram names in order as processed by Sequential Refinement
-            'varyList' - list of variables - identical over all refinements insequence
+            'varyList' - list of variables - identical over all refinements in sequence
             'histName' - dictionaries for all data sets processed:
                 'variables'- result[0] from leastsq call
                 'varyList' - list of variables; same as above
@@ -1744,11 +1746,11 @@ def UpdateSeqResults(G2frame,data):
         for name in histNames:
             sigList = data[name]['sig']
             if colLabels[parm] in atomList:
-                sigData.append(sigList[colLabels.index(atomList[colLabels[parm]])])
+                sigData.append(sigList[colLabels.index(atomList[colLabels[parm]])-1])
             elif colLabels[parm] in cellList:
-                sigData.append(sigList[colLabels.index(cellList[colLabels[parm]])])
+                sigData.append(sigList[colLabels.index(cellList[colLabels[parm]])-1])
             else:
-                sigData.append(sigList[parm])
+                sigData.append(sigList[parm-1])
         return sigData
     
     def Select(event):
@@ -1760,13 +1762,16 @@ def UpdateSeqResults(G2frame,data):
             plotNames = []
             for col in cols:
                 plotData.append(G2frame.SeqTable.GetColValues(col))
-                plotSig.append(GetSigData(col))
+                if col:     #not Rwp
+                    plotSig.append(GetSigData(col))
+                else:
+                    plotSig.append(0.0)
                 plotNames.append(G2frame.SeqTable.GetColLabelValue(col))
             plotData = np.array(plotData)
             G2plt.PlotSeq(G2frame,plotData,plotSig,plotNames,sampleParms)
         elif rows:
-            name = histNames[rows[0]]
-            G2plt.PlotCovariance(G2frame,Data=data[name])
+            name = histNames[rows[0]]       #only does 1st one selected
+            G2plt.PlotCovariance(G2frame,data[name])
             
     def OnSaveSelSeq(event):        
         cols = G2frame.dataDisplay.GetSelectedCols()
@@ -1777,7 +1782,10 @@ def UpdateSeqResults(G2frame,data):
             saveData = []
             for col in cols:
                 dataNames.append(G2frame.SeqTable.GetColLabelValue(col))
-                saveData.append(zip(G2frame.SeqTable.GetColValues(col),GetSigData(col)))
+                if col:     #not Rwp
+                    saveData.append(zip(G2frame.SeqTable.GetColValues(col),GetSigData(col)))
+                else:
+                    saveData.append(zip(G2frame.SeqTable.GetColValues(col),0.0))
             lenName = len(saveNames[0])
             saveData = np.swapaxes(np.array(saveData),0,1)
             dlg = wx.FileDialog(G2frame, 'Choose text output file for your selection', '.', '', 
@@ -1805,16 +1813,16 @@ def UpdateSeqResults(G2frame,data):
                
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    cellList = {}
-    newCellDict = data[histNames[0]]['newCellDict']
-    for item in newCellDict:
-        if item in data['varyList']:
-            cellList[newCellDict[item][0]] = item
     atomList = {}
     newAtomDict = data[histNames[0]]['newAtomDict']
     for item in newAtomDict:
         if item in data['varyList']:
             atomList[newAtomDict[item][0]] = item
+    cellList = {}
+    newCellDict = data[histNames[0]]['newCellDict']
+    for item in newCellDict:
+        if item in data['varyList']:
+            cellList[newCellDict[item][0]] = item
     sampleParms = GetSampleParms()
     Rwps = GetRwps()
     SetDataMenuBar(G2frame,G2frame.dataFrame.SequentialMenu)
@@ -1823,7 +1831,7 @@ def UpdateSeqResults(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
     colLabels = ['Rwp',]+data['varyList']+atomList.keys()+cellList.keys()
     Types = (len(data['varyList']+atomList.keys()+cellList.keys())+1)*[wg.GRID_VALUE_FLOAT,]
-    seqList = [[Rwps[i],]+list(data[name]['variables']) for i,name in enumerate(histNames)]    
+    seqList = [[Rwps[i],]+list(data[name]['variables']) for i,name in enumerate(histNames)]
     for i,item in enumerate(seqList):
         newAtomDict = data[histNames[i]]['newAtomDict']
         newCellDict = data[histNames[i]]['newCellDict']
@@ -2068,7 +2076,7 @@ def MovePatternTreeToGrid(G2frame,item):
                     text += '\nlog10 MaxLambda = %.1f'%(np.log10(Rvals['lamMax']))
             wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
                 value='See plot window for covariance display'+text,style=wx.TE_MULTILINE)
-            G2plt.PlotCovariance(G2frame)
+            G2plt.PlotCovariance(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Constraints':
             data = G2frame.PatternTree.GetItemPyData(item)
             G2cnstG.UpdateConstraints(G2frame,data)

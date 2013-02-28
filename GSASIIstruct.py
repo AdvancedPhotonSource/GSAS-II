@@ -151,6 +151,21 @@ def GetRestraints(GPXfile):
     fl.close()
     return restraintDict
     
+def GetRigidBodies(GPXfile):
+    '''Read the rigid body models from the GPX file
+    '''
+    fl = open(GPXfile,'rb')
+    while True:
+        try:
+            data = cPickle.load(fl)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Rigid bodies':
+            rigidbodyDict = datum[1]
+    fl.close()
+    return rigidbodyDict
+        
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
     input: 
@@ -541,6 +556,8 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
             for item in bres:
                 line += '%10.5g'%(item)
             print >>pFile,line
+            
+    #def PrintRBObjects()
                 
     def PrintAtoms(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
@@ -635,6 +652,7 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
             pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5],pfx+'Vol':G2lat.calc_V(A)})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
+        #rigid body model input here 
         Natoms[pfx] = 0
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
@@ -705,6 +723,7 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
                 PrintBLtable(BLtable)
                 print >>pFile,''
                 for line in SGtext: print >>pFile,line
+                #PrintRBObjects(whatever is needed here)
                 PrintAtoms(General,Atoms)
                 print >>pFile,'\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
                     ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
@@ -960,6 +979,8 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
                 print >>pFile,valstr
                 print >>pFile,sigstr
                 
+    #def PrintRBObjectsAndSig()
+                
     def PrintSHtextureAndSig(textureData,SHtextureSig):
         print >>pFile,'\n Spherical harmonics texture: Order:' + str(textureData['Order'])
         names = ['omega','chi','phi']
@@ -1053,6 +1074,7 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
                 else:
                     refl[7] = 0
         else:
+            #new RBObj parms here, mod atoms, & PrintRBObjectsAndSig
             atomsSig = {}
             if General['Type'] == 'nuclear':        #this needs macromolecular variant!
                 for i,at in enumerate(Atoms):
@@ -2523,14 +2545,15 @@ def Values2Dict(parmdict, varylist, values):
     
 def GetNewCellParms(parmDict,varyList):
     newCellDict = {}
-    Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],['A'+str(i) for i in range(6)]))
+    Anames = ['A'+str(i) for i in range(6)]
+    Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],Anames))
     for item in varyList:
         keys = item.split(':')
         if keys[2] in Ddict:
-            key = keys[0]+'::'+Ddict[keys[2]]
-            parm = keys[0]+'::'+keys[2]
+            key = keys[0]+'::'+Ddict[keys[2]]       #key is e.g. '0::A0'
+            parm = keys[0]+'::'+keys[2]             #parm is e.g. '0::D11'
             newCellDict[parm] = [key,parmDict[key]+parmDict[item]]
-    return newCellDict
+    return newCellDict          # is e.g. {'0::D11':A0+D11}
     
 def ApplyXYZshifts(parmDict,varyList):
     ''' takes atom x,y,z shift and applies it to corresponding atom x,y,z value
@@ -2538,7 +2561,7 @@ def ApplyXYZshifts(parmDict,varyList):
             parmDict - parameter dictionary
             varyList - list of variables
         returns:
-            newAtomDict - dictitemionary of new atomic coordinate names & values; 
+            newAtomDict - dictionary of new atomic coordinate names & values; 
                 key is parameter shift name
     '''
     newAtomDict = {}
@@ -2615,7 +2638,7 @@ def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     return odfCor
     
 def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
-    #sphericaql harmonics preferred orientation derivatives (cylindrical symmetry only)
+    #spherical harmonics preferred orientation derivatives (cylindrical symmetry only)
     FORPI = 12.5663706143592
     odfCor = 1.0
     dFdODF = {}
@@ -3642,6 +3665,7 @@ def Refine(GPXfile,dlg):
     calcControls.update(Controls)            
     constrDict,fixedList = GetConstraints(GPXfile)
     restraintDict = GetRestraints(GPXfile)
+    rigidbodyDict = GetRigidBodies(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no phases! ***'
@@ -3810,6 +3834,10 @@ def SeqRefine(GPXfile,dlg):
         print ' *** Refine aborted ***'
         raise Exception
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,False,printFile)
+    for item in phaseVary:
+        if '::A0' in item:
+            print '**** WARNING - lattice parameters should not be refined in a sequential refinement'
+            print '               instead use the Dij parameters for each powder histogram ****'
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:
@@ -3941,6 +3969,7 @@ def SeqRefine(GPXfile,dlg):
         newAtomDict = ApplyXYZshifts(parmDict,varyList)
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
             'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
+        # add the uncertainties into the esd dictionary (sigDict)
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint,printFile)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint,printFile)
         SeqResult[histogram] = covData

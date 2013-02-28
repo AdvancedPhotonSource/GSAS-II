@@ -1701,10 +1701,7 @@ def PlotTexture(G2frame,data,Start=False):
 ##### PlotCovariance
 ################################################################################
             
-def PlotCovariance(G2frame,Data={}):
-    if not Data:
-        Data = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
+def PlotCovariance(G2frame,Data):
     if not Data:
         print 'No covariance matrix available'
         return
@@ -1717,6 +1714,7 @@ def PlotCovariance(G2frame,Data={}):
     covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
     title = ' for\n'+Data['title']
     newAtomDict = Data['newAtomDict']
+    
 
     def OnPlotKeyPress(event):
         newPlot = False
@@ -1730,7 +1728,7 @@ def PlotCovariance(G2frame,Data={}):
             else:
                 G2frame.VcovColor = 'RdYlGn'
             dlg.Destroy()
-        PlotCovariance(G2frame)
+        PlotCovariance(G2frame,Data)
 
     def OnMotion(event):
         if event.button:
@@ -3514,7 +3512,10 @@ def PlotStructure(G2frame,data):
     Page.camera['position'] = drawingData['cameraPos']
     Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
     Page.camera['backColor'] = np.array(list(drawingData['backColor'])+[0,])/255.
-    Page.canvas.SetCurrent()
+    try:
+        Page.canvas.SetCurrent()
+    except:
+        pass
     Draw('main')
         
 ################################################################################

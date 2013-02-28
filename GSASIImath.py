@@ -197,6 +197,38 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
 
+def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):
+    for atom in atomData:
+        XYZ = np.inner(Amat,atom[cx:cx+3])
+        if atom[cia] == 'A':
+            UIJ = atom[cia+2:cia+8]
+        
+def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):
+    cx,ct,cs,cia = atPtrs
+    TLStype,TLS = rbObj['ThermalMotion'][:2]
+    Tmat = np.zeros((3,3))
+    Lmat = np.zeros((3,3))
+    Smat = np.zeros((3,3))
+    G,g = G2lat.A2Gmat(Amat)
+    gvec = 1./np.sqrt(np.array([g[0][0],g[1][1],g[2][2],g[0][1],g[0][2],g[1][2]]))
+    if 'T' in TLStype:
+        Tmat = G2lat.U6toUij(TLS[:6])
+    if 'L' in TLStype:
+        Lmat = G2lat.U6toUij(TLS[6:12])
+    if 'S' in TLStype:
+        Smat = np.array([[TLS[18],TLS[12],S[13]],[TLS[14],TLS[19],TLS[15]],[TLS[16],TLS[17],0]])
+    for atom in atomData:
+        XYZ = np.inner(Amat,atom[cx:cx+3])
+        Axyz = np.array([0,XYZ[2],-XYZ[1]],[-XYZ[2],0,XYZ[0]],[XYZ[1],-XYZ[0],0])
+        if 'U' in TSLtype:
+            atom[cia+1] = TLS[0]
+            atom[cia] = 'I'
+        else:
+            atom[cia] = 'A'
+            Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
+            beta = np.inner(np.inner(g,Umat),g)
+            atom[cia+2:cia+8] = beta/gvec
+
 def GetXYZDist(xyz,XYZ,Amat):
     ''' gets distance from position xyz to all XYZ, xyz & XYZ are np.array 
         and are in crystal coordinates; Amat is crystal to Cart matrix
@@ -1324,7 +1356,7 @@ def Q2Mat(Q):
     return np.array(M)
     
 def AV2Q(A,V):
-    ''' convert angle (radians -pi to pi) & vector to quaternion
+    ''' convert angle (radians) & vector to quaternion
         q=r+ai+bj+ck
     '''
     Q = np.zeros(4)
@@ -1332,14 +1364,14 @@ def AV2Q(A,V):
     if d:
         V /= d
     else:
-        return [1.,0.,0.,0.]    #identity
+        return [0.,0.,0.,1.]    #identity
     p = A/2.
     Q[0] = np.cos(p)
     Q[1:4] = V*np.sin(p)
     return Q
     
 def AVdeg2Q(A,V):
-    ''' convert angle (degrees -180 to 180) & vector to quaternion
+    ''' convert angle (degrees) & vector to quaternion
         q=r+ai+bj+ck
     '''
     Q = np.zeros(4)
@@ -1352,7 +1384,23 @@ def AVdeg2Q(A,V):
     Q[0] = cosd(p)
     Q[1:4] = V*sind(p)
     return Q
-
+    
+def Q2AVdeg(Q):
+    ''' convert quaternion to angle (degrees 0-360) & normalized vector
+        q=r+ai+bj+ck
+    '''
+    A = 2.*acosd(Q[0])
+    V = Q[1:]/nl.norm(Q[1:])
+    return A,V
+    
+def Q2AV(Q):
+    ''' convert quaternion to angle (radians 0-2pi) & normalized vector
+        q=r+ai+bj+ck
+    '''
+    A = 2.*np.arccos(Q[0])
+    V = Q[1:]/nl.norm(Q[1:])
+    return A,V
+    
 def makeQuat(A,B,C):
     ''' Make quaternion from rotation of A vector to B vector about C axis
         A,B,C are np.array Cartesian 3-vectors

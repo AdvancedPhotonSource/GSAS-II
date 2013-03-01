@@ -1663,13 +1663,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ##### Atom draw routines
 ################################################################################
             
-    def UpdateDrawAtoms():
+    def UpdateDrawAtoms(atomStyle=''):
         G2frame.dataFrame.SetStatusText('')
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
         cx,ct,cs,ci = drawingData['atomPtrs']
         atomData = drawingData['Atoms']
+        if atomStyle:
+            for atom in atomData:
+                atom[cs] = atomStyle
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
             [wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,polyhedra",
             wg.GRID_VALUE_CHOICE+": ,type,name,number",wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]
@@ -3135,7 +3138,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     newXYZ = G2mth.UpdateRBAtoms(Bmat,RBObj,RBData,rbType)
                     for i,id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
-                    UpdateDrawAtoms()
+                    data['Drawing']['Atoms'] = []
+                    UpdateDrawAtoms('balls & sticks')
                     G2plt.PlotStructure(G2frame,data)
                 except ValueError:
                     pass
@@ -3160,7 +3164,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     newXYZ = G2mth.UpdateRBAtoms(Bmat,RBObj,RBData,rbType)
                     for i,id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
-                    UpdateDrawAtoms()
+                    data['Drawing']['Atoms'] = []
+                    UpdateDrawAtoms('balls & sticks')
                     G2plt.PlotStructure(G2frame,data)
                 except ValueError:
                     pass
@@ -3218,7 +3223,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pass
                 Obj.SetValue("%10.3f"%(RBObj['Torsions'][item][0]))                
                 data['Drawing']['Atoms'] = []
-                UpdateDrawAtoms()
+                UpdateDrawAtoms('balls & sticks')
                 drawAtoms.ClearSelection()
                 G2plt.PlotStructure(G2frame,data)
                 
@@ -3374,6 +3379,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
     def OnRBAssign(event):
         
+        G2frame.dataFrame.SetStatusText('')
         RBData = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         rbNames = {}

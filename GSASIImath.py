@@ -243,7 +243,8 @@ def getAtomXYZ(atoms,cx):
 
 def UpdateResRBAtoms(Bmat,RBObj,RBData):
     RBIds = GetResRBIds(RBData)
-    RBRes = RBData[RBIds[RBObj['RBname']]]
+    RBname = RBObj['RBname'].split(':')[0]
+    RBRes = RBData[RBIds[RBname]]
     XYZ = np.array(RBRes['rbXYZ'])
     for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
         QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
@@ -258,7 +259,8 @@ def UpdateResRBAtoms(Bmat,RBObj,RBData):
     
 def UpdateRBAtoms(Bmat,RBObj,RBData,RBType):
     RBIds = GetResRBIds(RBData[RBType])
-    RBRes = RBData[RBType][RBIds[RBObj['RBname']]]
+    RBname = RBObj['RBname'].split(':')[0]
+    RBRes = RBData[RBType][RBIds[RBname]]
     if RBType == 'Vector':
         vecs = RBRes['rbVect']
         mags = RBRes['VectMag']
@@ -1379,7 +1381,7 @@ def AVdeg2Q(A,V):
     if d:
         V /= d
     else:
-        return [1.,0.,0.,0.]    #identity
+        return [0.,0.,0.,1.]    #identity
     p = A/2.
     Q[0] = cosd(p)
     Q[1:4] = V*sind(p)
@@ -1390,7 +1392,9 @@ def Q2AVdeg(Q):
         q=r+ai+bj+ck
     '''
     A = 2.*acosd(Q[0])
-    V = Q[1:]/nl.norm(Q[1:])
+    V = np.array([0.,0.,1.])
+    if nl.norm(Q[1:]):
+        V = Q[1:]/nl.norm(Q[1:])
     return A,V
     
 def Q2AV(Q):
@@ -1398,7 +1402,9 @@ def Q2AV(Q):
         q=r+ai+bj+ck
     '''
     A = 2.*np.arccos(Q[0])
-    V = Q[1:]/nl.norm(Q[1:])
+    V = np.array([0.,0.,1.])
+    if nl.norm(Q[1:]):
+        V = Q[1:]/nl.norm(Q[1:])
     return A,V
     
 def makeQuat(A,B,C):
@@ -1416,7 +1422,7 @@ def makeQuat(A,B,C):
         V3 = np.cross(V1,V2)
     else:
         V3 = np.zeros(3)
-    Q = np.array([1.0,0.0,0.0,0.0])
+    Q = np.array([0.,0.,0.,1.])
     D = 0.
     if nl.norm(V3):
         V3 /= nl.norm(V3)

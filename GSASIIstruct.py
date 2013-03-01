@@ -3836,8 +3836,8 @@ def SeqRefine(GPXfile,dlg):
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,False,printFile)
     for item in phaseVary:
         if '::A0' in item:
-            print '**** WARNING - lattice parameters should not be refined in a sequential refinement'
-            print '               instead use the Dij parameters for each powder histogram ****'
+            print '**** WARNING - lattice parameters should not be refined in a sequential refinement ****'
+            print '****           instead use the Dij parameters for each powder histogram            ****'
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:

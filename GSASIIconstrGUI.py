@@ -629,7 +629,7 @@ def UpdateRigidBodies(G2frame,data):
     global resList
     Indx = {}
     resList = []
-    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[1.,0.,0.,0.],'cameraPos':30.,'viewDir':[0,0,1],}
+    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
 
     def OnPageChanged(event):
         global resList

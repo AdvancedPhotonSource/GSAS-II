@@ -2800,7 +2800,7 @@ def PlotStructure(G2frame,data):
         newxy = event.GetPosition()
                                 
         if event.Dragging():
-            if event.AltDown():
+            if event.AltDown() and rbObj:
                 if event.LeftIsDown():
                     SetRBRotation(newxy)
                     Q = rbObj['Orient'][0]
@@ -2978,7 +2978,6 @@ def PlotStructure(G2frame,data):
         Tx += V[0]*0.01
         Ty += V[1]*0.01
         Tz += V[2]*0.01
-        drawingData['oldxy'] = list(newxy)
         drawingData['viewPoint'][0] =  Tx,Ty,Tz
         SetViewPointText([Tx,Ty,Tz])
         
@@ -2996,7 +2995,6 @@ def PlotStructure(G2frame,data):
         Tx -= V[0]*0.01
         Ty -= V[1]*0.01
         Tz -= V[2]*0.01
-        drawingData['oldxy'] = list(newxy)
         rbObj['Orig'][0] =  Tx,Ty,Tz
         SetRBOrigText()
         
@@ -3573,6 +3571,15 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     elif rbType == 'Z-matrix':
         pass
 
+#    def SetRBOrigin():
+#        page = getSelection()
+#        if page:
+#            if G2frame.dataDisplay.GetPageText(page) == 'Rigid bodies':
+#                G2frame.MapPeaksTable.SetData(mapPeaks)
+#                panel = G2frame.dataDisplay.GetPage(page).GetChildren()
+#                names = [child.GetName() for child in panel]
+#                panel[names.index('grid window')].Refresh()
+            
     def OnMouseDown(event):
         xy = event.GetPosition()
         defaults['oldxy'] = list(xy)
@@ -3585,6 +3592,8 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 SetRotation(newxy)
                 Q = defaults['Quaternion']
                 G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+#            elif event.RightIsDown():
+#                SetRBOrigin(newxy)
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
                 Q = defaults['Quaternion']
@@ -3611,6 +3620,18 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
+#    def SetRBOrigin(newxy):
+##first get translation vector in screen coords.       
+#        oldxy = defaults['oldxy']
+#        if not len(oldxy): oldxy = list(newxy)
+#        dxy = newxy-oldxy
+#        defaults['oldxy'] = list(newxy)
+#        V = np.array([dxy[0],-dxy[1],0.])/100.
+#        Q = defaults['Quaternion']
+#        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
+#        rbData['rbXYZ'] += V
+#        PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults) 
+#               
     def SetRotation(newxy):
 #first get rotation vector in screen coords. & angle increment        
         oldxy = defaults['oldxy']

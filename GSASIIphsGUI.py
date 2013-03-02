@@ -1506,6 +1506,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2str.DistAngle(DisAglCtls,DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
+                
+    def OnReImport(event):
+# sort of the right idea but don't want new tree entry!
+#        G2frame._Add_ImportMenu_Phase(G2frame.dataFrame.AtomEdit)
+        print 'reimport atoms from file to be developed'
                         
 ################################################################################
 #Structure drawing GUI stuff                
@@ -3061,6 +3066,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         RBData = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         Indx = {}
+        atomStyle = 'balls & sticks'
+        if 'macro' in general['Type']:
+            atomStyle = 'sticks'
         
         def OnThermSel(event):       #needs to be seen by VecRbSizer!
             Obj = event.GetEventObject()
@@ -3139,7 +3147,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for i,id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
                     data['Drawing']['Atoms'] = []
-                    UpdateDrawAtoms('balls & sticks')
+                    UpdateDrawAtoms(atomStyle)
                     G2plt.PlotStructure(G2frame,data)
                 except ValueError:
                     pass
@@ -3165,7 +3173,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for i,id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
                     data['Drawing']['Atoms'] = []
-                    UpdateDrawAtoms('balls & sticks')
+                    UpdateDrawAtoms(atomStyle)
                     G2plt.PlotStructure(G2frame,data)
                 except ValueError:
                     pass
@@ -3223,7 +3231,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pass
                 Obj.SetValue("%10.3f"%(RBObj['Torsions'][item][0]))                
                 data['Drawing']['Atoms'] = []
-                UpdateDrawAtoms('balls & sticks')
+                UpdateDrawAtoms(atomStyle)
                 drawAtoms.ClearSelection()
                 G2plt.PlotStructure(G2frame,data)
                 
@@ -4292,6 +4300,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=G2gd.wxID_ATOMSREIMPORT)
             FillAtomsGrid(Atoms)
         elif text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)

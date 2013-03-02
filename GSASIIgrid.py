@@ -59,9 +59,9 @@ htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
-    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_RBAPPEND,
+    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_RBAPPEND,wxID_ATOMSREIMPORT,
     wxID_ASSIGNATMS2RB
-] = [wx.NewId() for item in range(13)]
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -1141,6 +1141,8 @@ class DataFrame(wx.Frame):
             help='Select atoms to transform first')
         self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
             help='Reload atom drawing list')
+        self.AtomEdit.Append(id=wxID_ATOMSREIMPORT, kind=wx.ITEM_NORMAL,text='Reimport atoms',
+            help='Reimport atoms from file; sequence must match')
         self.AtomCompute.Append(id=wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Distances && Angles',
             help='Compute distances & angles for selected atoms')
         self.PostfillDataMenu()

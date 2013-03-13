@@ -915,8 +915,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if not Atoms.IsReadOnly(r,c):
                             if Atoms.GetColLabelValue(c) == 'refine':
                                 rbExcl = rbAtmDict.get(atomData[r][-1],'')
-                                for excl in rbExcl:
-                                    atomData[r][c] = parms.replace(excl,'')
+                                if rbExcl:
+                                    for excl in rbExcl:
+                                        atomData[r][c] = parms.replace(excl,'')
+                                else:
+                                    atomData[r][c] = parms
                             else: 
                                 atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
@@ -1098,11 +1101,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for row in range(Atoms.GetNumberRows()):
                 atId = atomData[row][-1]
                 rbExcl = rbAtmDict.get(atId,'')
-                if 'X' in rbExcl:
-                    for c in range(0,colX+3):
-                        if c != colR:
-                            Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)                        
-                Atoms.SetReadOnly(row,colType,True)
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
                 if Atoms.GetCellValue(row,colIA) == 'A':
@@ -1124,6 +1122,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         ci = colU11+i
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
+                if 'X' in rbExcl:
+                    for c in range(0,colX+3):
+                        if c != colR:
+                            Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)
             Atoms.AutoSizeColumns(False)
 
         SGData = data['General']['SGData']
@@ -4074,7 +4076,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     def OnShowBonds(event):
         generalData = data['General']
-        if generalData['Map']['Show bonds']:
+        if generalData['Map'].get('Show bonds',False):
             generalData['Map']['Show bonds'] = False
             G2frame.dataFrame.MapPeaksEdit.SetLabel(G2gd.wxID_SHOWBONDS,'Show bonds')
         else:

@@ -209,7 +209,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 break
         if len(Lists['origin']) and len(Lists['target']):
             bond = 1.54
-            dlg = G2phG.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[0.01,4.],'%.4f')
+            dlg = G2gd.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[0.01,4.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 bond = dlg.GetValue()
             dlg.Destroy()

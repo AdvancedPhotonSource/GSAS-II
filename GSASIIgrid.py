@@ -1514,14 +1514,23 @@ def ShowHelp(helpType,frame):
 #####  Notebook
 ################################################################################           
        
-def UpdateNotebook(G2frame,data):        
-    if data:
-        G2frame.dataFrame.SetLabel('Notebook')
-        G2frame.dataDisplay = wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
-            style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
-        for line in data:
-            G2frame.dataDisplay.AppendText(line+"\n")
-            G2frame.dataDisplay.AppendText('Notebook entry @ '+time.ctime()+"\n")
+def UpdateNotebook(G2frame,data):
+    
+    def OnNoteBook(event):
+        data = G2frame.dataDisplay.GetValue()
+        G2frame.PatternTree.SetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Notebook'),data)
+                    
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    G2frame.dataFrame.SetLabel('Notebook')
+    G2frame.dataDisplay = wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
+        style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
+    G2frame.dataDisplay.Bind(wx.EVT_TEXT_ENTER,OnNoteBook)
+    G2frame.dataDisplay.Bind(wx.EVT_KILL_FOCUS,OnNoteBook)
+    for line in data:
+        G2frame.dataDisplay.AppendText(line+"\n")
+    G2frame.dataDisplay.AppendText('Notebook entry @ '+time.ctime()+"\n")
+    G2frame.dataFrame.setSizePosLeft([400,250])
             
 ################################################################################
 #####  Controls
@@ -1690,14 +1699,15 @@ def UpdateControls(G2frame,data):
 ################################################################################           
        
 def UpdateComments(G2frame,data):                   
+
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
     G2frame.dataFrame.SetLabel('Comments')
     G2frame.dataDisplay = wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
-        style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
+        style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
     for line in data:
-        if line[-1] == '\n':
-            G2frame.dataDisplay.AppendText(line)
-        else:
-            G2frame.dataDisplay.AppendText(line+'\n')
+        G2frame.dataDisplay.AppendText(line+'\n')
+    G2frame.dataFrame.setSizePosLeft([400,250])
             
 ################################################################################
 #####  Sequential Results
@@ -2016,15 +2026,21 @@ def MovePatternTreeToGrid(G2frame,item):
     if G2frame.dataFrame:
         SetDataMenuBar(G2frame)
         if G2frame.dataFrame.GetLabel() == 'Comments':
-            data = [G2frame.dataDisplay.GetValue()]
-            G2frame.dataDisplay.Clear() 
-            Id = GetPatternTreeItemId(G2frame,G2frame.root, 'Comments')
-            if Id: G2frame.PatternTree.SetItemPyData(Id,data)
+            try:
+                data = [G2frame.dataDisplay.GetValue()]
+                G2frame.dataDisplay.Clear() 
+                Id = GetPatternTreeItemId(G2frame,G2frame.root, 'Comments')
+                if Id: G2frame.PatternTree.SetItemPyData(Id,data)
+            except:     #clumsy but avoids dead window problem when opening another project
+                pass
         elif G2frame.dataFrame.GetLabel() == 'Notebook':
-            data = [G2frame.dataDisplay.GetValue()]
-            G2frame.dataDisplay.Clear() 
-            Id = GetPatternTreeItemId(G2frame,G2frame.root, 'Notebook')
-            if Id: G2frame.PatternTree.SetItemPyData(Id,data)
+            try:
+                data = [G2frame.dataDisplay.GetValue()]
+                G2frame.dataDisplay.Clear() 
+                Id = GetPatternTreeItemId(G2frame,G2frame.root, 'Notebook')
+                if Id: G2frame.PatternTree.SetItemPyData(Id,data)
+            except:     #clumsy but avoids dead window problem when opening another project
+                pass
         elif 'Phase Data for' in G2frame.dataFrame.GetLabel():
             if G2frame.dataDisplay: 
                 oldPage = G2frame.dataDisplay.GetSelection()

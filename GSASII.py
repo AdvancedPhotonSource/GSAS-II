@@ -1887,6 +1887,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
 
     def OnFileSave(self, event):
+        
         if self.GSASprojectfile: 
             self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
             G2IO.ProjFileSave(self)

@@ -3965,8 +3965,8 @@ def SeqRefine(GPXfile,dlg):
     
         GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))
-        newCellDict = GetNewCellParms(parmDict,varyList)
-        newAtomDict = ApplyXYZshifts(parmDict,varyList)
+        newCellDict = copy.deepcopy(GetNewCellParms(parmDict,varyList))
+        newAtomDict = copy.deepcopy(ApplyXYZshifts(parmDict,varyList))
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
             'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
         # add the uncertainties into the esd dictionary (sigDict)

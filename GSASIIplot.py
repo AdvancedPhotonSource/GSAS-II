@@ -1731,6 +1731,7 @@ def PlotCovariance(G2frame,Data):
         PlotCovariance(G2frame,Data)
 
     def OnMotion(event):
+        #there is a problem here - reports wrong values
         if event.button:
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(varyList),ytics,-1)
@@ -2623,7 +2624,7 @@ def PlotStructure(G2frame,data):
     showBonds = False
     if 'Map' in generalData:
         mapData = generalData['Map']
-        showBonds = mapData['Show bonds']
+        showBonds = mapData.get('Show bonds',False)
     if 'Flip' in generalData:
         flipData = generalData['Flip']                        
         flipData['mapRoll'] = [0,0,0]

@@ -590,7 +590,9 @@ Robert B. Von Dreele & Brian H. Toby
 Argonne National Laboratory(C)
 This product includes software developed
 by the UChicago Argonne, LLC, as 
-Operator of Argonne National Laboratory.         '''
+Operator of Argonne National Laboratory.        
+Please cite:
+B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
         info.Description = '''
 General Structure Analysis System - GSAS-II
 '''

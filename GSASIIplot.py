@@ -1503,7 +1503,7 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
                         Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
                         sum = np.sum(np.multiply(Shkl,Strm))
                         sum = np.where(sum > 0.01,sum,0.01)
-                        sum = np.sqrt(sum)*math.pi/1.8      #centidegrees to radians!
+                        sum = np.sqrt(sum)*math.pi/.18      #centidegrees to radians!
                         return sum*xyz
                         
                     Shkl = np.array(coeff[4])

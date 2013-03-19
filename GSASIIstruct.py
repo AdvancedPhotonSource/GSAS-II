@@ -1727,8 +1727,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             instDict[insName] = Inst[item][1]
             if Inst[item][2]:
                 insVary.append(insName)
-        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.001)
-        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.001)
+#        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.001)
+#        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.001)
         instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.0005)
         return dataType,instDict,insVary
         
@@ -2786,8 +2786,8 @@ def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
     #crystallite size derivatives
     if calcControls[phfx+'SizeType'] == 'isotropic':
         Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size;i']*costh)
-        gamDict[phfx+'Size;i'] = -900.*wave*parmDict[phfx+'Size;mx']/(np.pi*costh)
-        sigDict[phfx+'Size;i'] = -1800.*Sgam*wave*(1.-parmDict[phfx+'Size;mx'])**2/(np.pi*costh*ateln2)
+        gamDict[phfx+'Size;i'] = -1.8*wave*parmDict[phfx+'Size;mx']/(np.pi*costh)
+        sigDict[phfx+'Size;i'] = -3.6*Sgam*wave*(1.-parmDict[phfx+'Size;mx'])**2/(np.pi*costh*ateln2)
     elif calcControls[phfx+'SizeType'] == 'uniaxial':
         H = np.array(refl[:3])
         P = np.array(calcControls[phfx+'SizeAxis'])
@@ -2975,7 +2975,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             hId = Histogram['hId']
             hfx = ':%d:'%(hId)
             Limits = calcControls[hfx+'Limits']
-            shl = max(parmDict[hfx+'SH/L'],0.002)
+            shl = max(parmDict[hfx+'SH/L'],0.0005)
             Ka2 = False
             kRatio = 0.0
             if hfx+'Lam1' in parmDict.keys():

@@ -33,9 +33,11 @@ def test1():
     limits = Histogram['Limits'][1]
     data = Histogram['Data']
     xdata = data[0]
+    xB = np.searchsorted(xdata,limits[0])
+    xF = np.searchsorted(xdata,limits[1])
     fplot = plotter.add('function test').gca()
-    yc,yb = G2st.getPowderProfile(parmDict,xdata,varylist,Histogram,Phases,calcControls,pawleyLookup)
-    fplot.plot(xdata,yc+yb,'r')
+    yc,yb = G2st.getPowderProfile(parmDict,xdata[xB:xF],varylist,Histogram,Phases,calcControls,pawleyLookup)
+    fplot.plot(xdata[xB:xF],yc+yb,'r')
 
 def test2(name,delt):
     if NeedTestData: TestData()
@@ -43,21 +45,23 @@ def test2(name,delt):
     limits = Histogram['Limits'][1]
     data = Histogram['Data']
     xdata = data[0]
+    xB = np.searchsorted(xdata,limits[0])
+    xF = np.searchsorted(xdata,limits[1])
     hplot = plotter.add('derivatives test for '+name).gca()
-    ya = G2st.getPowderProfileDerv(parmDict,xdata,varyList,Histogram,Phases,calcControls,pawleyLookup)[0]
-    hplot.plot(xdata,ya)
+    ya = G2st.getPowderProfileDerv(parmDict,xdata[xB:xF],varyList,Histogram,Phases,calcControls,pawleyLookup)[0]
+    hplot.plot(xdata[xB:xF],ya,'b')
     if 'dA' in name:
         name = ''.join(name.split('d'))
         varyList = [name,]
     parmDict[name] -= delt
-    y0,yb = G2st.getPowderProfile(parmDict,xdata,varyList,Histogram,Phases,calcControls,pawleyLookup)
+    y0,yb = G2st.getPowderProfile(parmDict,xdata[xB:xF],varyList,Histogram,Phases,calcControls,pawleyLookup)
     y0 += yb
     parmDict[name] += 2.*delt
-    y1,yb = G2st.getPowderProfile(parmDict,xdata,varyList,Histogram,Phases,calcControls,pawleyLookup)
+    y1,yb = G2st.getPowderProfile(parmDict,xdata[xB:xF],varyList,Histogram,Phases,calcControls,pawleyLookup)
     y1 += yb 
     yn = (y1-y0)/(2.*delt)
-    hplot.plot(xdata,yn,'r+')
-    hplot.plot(xdata,ya-yn)
+    hplot.plot(xdata[xB:xF],yn,'r+')
+    hplot.plot(xdata[xB:xF],ya-yn,'g')
     
 if __name__ == '__main__':
     if NeedTestData: TestData()
@@ -70,10 +74,9 @@ if __name__ == '__main__':
     for name in parmDict:
         print name,parmDict[name]
     names = [
-        ['0:0:Size:mx',0.001],
-        ['0:0:Mustrain:mx',0.001],
-        ['0:0:Size:i',0.001],
-        ['0:0:Mustrain:i',0.1],
+        ['0:0:Size;i',0.01],
+        ['0:0:Mustrain:0',0.001],
+        ['0:0:Mustrain:1',0.001],
         ]
     for [name,delt] in names:
         test2(name,delt)

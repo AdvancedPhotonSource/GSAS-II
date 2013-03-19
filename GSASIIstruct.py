@@ -2264,7 +2264,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                         pDerv[ind][ip] += drv
                     except ValueError:
                         pass
-    print np.sum(pDerv),pDerv.shape
     return pDerv
 
 ################################################################################

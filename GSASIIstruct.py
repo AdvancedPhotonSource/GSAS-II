@@ -3644,8 +3644,10 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             raise Exception         #Abort!!
     pDict,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
     if np.any(pVals):
-        print 'Penalty function: %.3f on %d terms'%(np.sum(pWt*pVals**2),len(pVals))
+        pSum = np.sum(pWt*pVals**2)
+        print 'Penalty function: %.3f on %d terms'%(pSum,len(pVals))
         Nobs += len(pVals)
+        SumwYo += pSum
         M = np.concatenate((M,pWt*pVals))
     return M
                         

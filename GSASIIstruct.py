@@ -1315,7 +1315,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                     PrintSize(hapData['Size'])
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
-                    PrintBabinet(hapData['Babinet'])
+                    if hapData['Babinet']['BabA'][0]:
+                        PrintBabinet(hapData['Babinet'])
                 HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
                 refList = []
                 for h,k,l,d in HKLd:
@@ -1375,7 +1376,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                         for eKey in Ekey:
                             text += ' %4s : %10.3e Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
                         print >>pFile,text
-                    PrintBabinet(hapData['Babinet'])
+                    if hapData['Babinet']['BabA'][0]:
+                        PrintBabinet(hapData['Babinet'])
                 Histogram['Reflection Lists'] = phase       
                 
     return hapVary,hapDict,controlDict
@@ -2170,7 +2172,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                 pVals.append(-parmDict[item])
                 pWt.append(negWt[pId])
     pVals = np.array(pVals)
-    pWt = np.array(pWt)
+    pWt = np.array(pWt)         #should this be np.sqrt?
     return pNames,pVals,pWt
     
 def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
@@ -3647,8 +3649,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
         pSum = np.sum(pWt*pVals**2)
         print 'Penalty function: %.3f on %d terms'%(pSum,len(pVals))
         Nobs += len(pVals)
-        SumwYo += pSum
-        M = np.concatenate((M,pWt*pVals))
+        M = np.concatenate((M,np.sqrt(pWt)*pVals))
     return M
                         
 def Refine(GPXfile,dlg):

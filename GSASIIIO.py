@@ -386,7 +386,7 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
-#        print Tag,IFD[Tag]
+        print Tag,IFD[Tag]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny
@@ -417,7 +417,7 @@ def GetTifData(filename,imageOnly=False):
         if not imageOnly:
             print 'Read Gold tiff file:',filename
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-    elif sizexy == [2048,2048] or sizexy == [1024,1024]:
+    elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 32:
                 tifType = 'PE'

@@ -416,6 +416,9 @@ def ShowBanner(pFile=None):
     print >>pFile,'                Argonne National Laboratory(C), 2010'
     print >>pFile,' This product includes software developed by the UChicago Argonne, LLC,' 
     print >>pFile,'            as Operator of Argonne National Laboratory.'
+    print >>pFile,'                          Please cite:'
+    print >>pFile,'   B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013)'
+
     print >>pFile,80*'*','\n'
 
 def ShowControls(Controls,pFile=None):

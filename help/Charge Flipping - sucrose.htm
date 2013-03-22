@@ -23,17 +23,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>13</o:Revision>
-  <o:TotalTime>1342</o:TotalTime>
+  <o:Revision>14</o:Revision>
+  <o:TotalTime>1423</o:TotalTime>
   <o:Created>2013-03-15T18:32:00Z</o:Created>
-  <o:LastSaved>2013-03-21T16:12:00Z</o:LastSaved>
+  <o:LastSaved>2013-03-22T15:24:00Z</o:LastSaved>
   <o:Pages>17</o:Pages>
-  <o:Words>3395</o:Words>
-  <o:Characters>19358</o:Characters>
+  <o:Words>3367</o:Words>
+  <o:Characters>19197</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>161</o:Lines>
+  <o:Lines>159</o:Lines>
   <o:Paragraphs>45</o:Paragraphs>
-  <o:CharactersWithSpaces>22708</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>22519</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -952,7 +952,7 @@ mso-hansi-theme-font:minor-latin'>sucrose.gpx</span></b></span>) you saved from
 the third part of the <a href="Fit%20Peaks.htm#sucrose_peak_fit">peak
 fitting-indexing exercise</a>. If you didn’t do that exercise, do it now.</p>
 
-<h2><span class=GramE>Step 1.</span> Setup for Pawley refinement</h2>
+<h2>Step 1: Setup for Pawley refinement</h2>
 
 <p class=MsoNormal>There are a number of steps that must be done in preparation
 for a Pawley refinement after having completed the unit cell indexing and new
@@ -968,15 +968,16 @@ in the GSAS-II data tree for the PWDR data set and expand the plot so that the
 region near d=1.0Å is readily seen. This is ~24deg 2<span style='font-family:
 Symbol;mso-ascii-font-family:"Times New Roman";mso-hansi-font-family:"Times New Roman";
 mso-char-type:symbol;mso-symbol-font-family:Symbol'><span style='mso-char-type:
-symbol;mso-symbol-font-family:Symbol'>Q</span></span>. It is an area relatively
-clear of peaks and makes a good place to end the calculations with a reflection
-set of ~1Å resolution as needed for charge flipping. Enter <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>23.55</span></b> for <span
-class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin'>Tmax</span></b></span> as the upper limit and make a note of the
-exact d-spacing (1.0125Å) using the mouse cursor on the plot.</p>
+symbol;mso-symbol-font-family:Symbol'>Q</span></span>. There is an area
+relatively clear of peaks that makes a good place to end the calculations with
+a reflection set of <span class=SpellE>d<sub>min</sub></span> ~1Å resolution needed
+for charge flipping. Enter <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>23.55</span></b> for <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Tmax</span></b></span>
+as the upper limit and make a note of the exact d-spacing (1.0125Å) using the
+mouse cursor on the plot.</p>
 
 <p class=MsoListParagraph style='text-indent:-.25in;mso-list:l6 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
@@ -1020,10 +1021,12 @@ to find the <b style='mso-bidi-font-weight:normal'><span style='font-family:
 minor-latin'>Pawley controls</span></b>. Check the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin'>Do Pawley refinement</span></b>
-box and enter the d-spacing (1.0125) into the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Pawley <span class=SpellE>dmin</span></span></b>
-box.</p>
+box and enter the d-spacing (<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>1.0125</span></b>) into the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Pawley <span
+class=SpellE>dmin</span></span></b> box.</p>
 
 <p class=MsoNormal>When done the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
@@ -1092,7 +1095,7 @@ intended for protein work where a significant region of the structure is
 disordered solvent. There are buttons for plotting size and <span class=SpellE>mustrain</span>
 surfaces</p>
 
-<p class=MsoNormal><span class=GramE>and</span> preferred orientation
+<p class=MsoNormal><span class=GramE>as</span> well as preferred orientation
 correction curves.</p>
 
 <p class=MsoNormal>Next find the <b style='mso-bidi-font-weight:normal'><span
@@ -1118,7 +1121,7 @@ src="Charge%20Flipping%20-%20sucrose_files/image004.png" v:shapes="Picture_x0020
 <p class=MsoNormal>This completes the Pawley refinement setup; be careful that
 you didn’t skip a step as it might not work correctly if you did.</p>
 
-<h2>Step 2 Pawley refinement</h2>
+<h2>Step 2: Pawley refinement</h2>
 
 <p class=MsoNormal>To start the refinement, do <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
@@ -1196,14 +1199,8 @@ angle part of the pattern but still not fit well for the lower part.</p>
 src="Charge%20Flipping%20-%20sucrose_files/image006.png" v:shapes="Picture_x0020_26"><![endif]></span></p>
 
 <p class=MsoNormal>What you see is that the background has a substantial
-diffuse scattering feature at ~5deg as well as some peak shape issues (which
-may be a consequence of the poor background fit). Also notice the negative <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Y</span></b>
-value in <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Instrument
-parameters</span></b>; the problem is that the default <span class=SpellE>mustrain</span>
-value (1000.0) is much too high for this material and we’d like the fit to be
+diffuse scattering feature at ~5deg and there are some peak shape issues (which
+may be a consequence of the poor background fit). We’d like the fit to be
 better before trying charge flipping. First select <span class=GramE><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Background</span></b>,</span>
@@ -1262,17 +1259,20 @@ style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>5</span></b>. Now do <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b> until
-the refinement converges. After a set of refinement cycles go to the Pawley reflections
+the refinement converges. After a set of refinement cycles go to the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Pawley reflections</span></b>
 tab and check the intensities. If there are many negatives amongst the highest
 angle reflections do <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Pawley update</span></b>, this replaces all
-the values with those in the extracted from the profile and listed in the <b
+the values with those in the extracted from the profile as listed in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Reflection
-list</span></b> for the PWDR data set. Next in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>General</span></b> tab set the <b
+list</span></b> for the PWDR data set. This makes all the negative intensities
+positive. Next in the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>General</span></b> tab set the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Pawley neg.
 wt.</span></b> to <b style='mso-bidi-font-weight:normal'><span
@@ -1292,7 +1292,7 @@ src="Charge%20Flipping%20-%20sucrose_files/image009.png" v:shapes="Picture_x0020
 
 <p class=MsoNormal>Let’s see if this is good enough for charge flipping.</p>
 
-<h2>Step 3 Charge flipping</h2>
+<h2>Step 3: Charge flipping</h2>
 
 <p class=MsoNormal>A few steps are needed to set up for a charge flipping run.
 Go to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
@@ -1316,7 +1316,9 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>PWDR
 set to be used those in <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Reflection Lists</span></b> under the PWDR
-data set; these should match the Pawley reflection set.</p>
+data set; these should match the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Pawley reflection</span></b> set.</p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l2 level1 lfo4'><![if !supportLists]><span style='mso-fareast-font-family:
@@ -1350,15 +1352,15 @@ respectively. The latter is used to avoid “Uranium solutions” in the result.
 Set this to <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
 minor-latin'>10-12</span></b> for equal atom problems and larger for heavy atom
-ones. <span class=GramE>For sucrose, set this to <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>12.</span></b></span> When ready
-select <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+ones. For sucrose set it to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>12.</span></b> When ready select <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Compute/Charge
 flipping</span></b>; a progress bar dialog will appear that tracks the residual
 found in each charge flipping cycle. It will quickly drop to some level
-(42-44%) and then perhaps drop again into the 20-25% range after a considerable
-length of time for a successful charge flipping run. You should save the
+(42-44%) and then for a successful charge flipping run perhaps drop again into
+the 20-25% range after a considerable length of time. You should save the
 project if you get an apparently good solution. Many times it will not drop
 below ~40%; just try <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
@@ -1400,7 +1402,7 @@ bHOkkMFqwzAMhu+DvYPRfXGawxijTi+j0GvpHsDYimMaW0Yy2fr2M4PBMnrbUb/Q94l/f/hMi1qR
 JVI2sOt6UJgd+ZiDgffL8ekFlFSbvV0oo4EbChzGx4f9GRdb25HMsYhqlCwG5lrLq9biZkxWOiqY
 22YiTra2kYMu1l1tQD30/bPm3wwYN0x18gb45AdQl1tp5j/sFB2T0FQ7R0nTNEV3j6o9feQzro1i
 OWA14Fm+Q8a1a8+Bvu/d/dMb2JY5uiPbhG/ktn4cqGU/er3pcvwCAAD//wMAUEsDBBQABgAIAAAA
-IQCOfwQ4JQQAANgQAAAOAAAAZHJzL2Uyb0RvYy54bWzsWFuP4jYUfq/U/2DlsRKThIQA0TCrKZdR
+IQDQSJmzIgQAANIQAAAOAAAAZHJzL2Uyb0RvYy54bWzsWFuP4jYUfq/U/2DlsRKThIQA0TCrKZdR
 pW270tIfYBznok3s1DaE2VX/e48vgcAUtdqVqqqCB7Dj43P5zvH5HB7fHZsaHaiQFWcLL3wIPEQZ
 4VnFioX323YzmnlIKswyXHNGF94rld67p++/e+zalI55yeuMCgRKmEy7duGVSrWp70tS0gbLB95S
 Bos5Fw1WMBWFnwncgfam9sdBkPgdF1krOKFSwtOVXfSejP48p0T9mueSKlQvPPBNmW9hvnf62396
@@ -1409,26 +1411,26 @@ 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
-DWfjBx/FCeqQVhb0ByjrxaCITmIBKm9IARonqXl4U1k0EAObt7RBdCdtAUoC+KBkMokSi0Nxcg4q
-4rYglMcpbFz2SJAjc1DACGHd1ba2bFsudQFqYKA4twZ00AFiGriz9MQUeS8NkWvpyBWkkba7nBkB
-Leu6WQkPQbPa2XBarLR32ogeom7huVSg8jyUSvBPcPYCY73hB7rlZovSTseTKTRP44rJIHhwFiH7
-XUV+pJ+HG6bBfBoAfOcT2hpFvWV4Pg7iZO6O55tFZ9DW3qWBmg0NDTy72NNL9b/WwkC6j6MXIDWX
-1NrTMP0NXHlVA0EwoKj/OF6QKRuOG5hK0AU0OMeMbyAcc5BrpusjnAcTWwiS11WmVzUeUhS7ZS3Q
-AUPsm40+N64sL8SAhFhmtJUUZ2s3Vriq7Ris16bmoeG4wtStx7Dfl3kwX8/Ws3gUj5P1KA5Wq9Hz
-ZhmPkk04nayi1XK5Cv/QmIdxWlZZRpn2rmfiMP5nzdjdCSyHnrj4IoqrYDfweRusf+mG4QyIpf+1
-YPcN2VLHjmev0JwNq8GJgqsQ0FvJxWcPdXCtWHjy9z0W1EP1TwyoxRwYuIeYiSlfD4nhym64ghkB
-VQuPKGgBdrJU9vayb0VVlGArNBXL+DOwbF7p/g2kLFPrl5sAv/1bRAc9294iDNHNNMbaHaDCbyM6
-i3AYzHSZ2mJ2vJdoxht0pjvvWaK4896A1G7yxZ337rx3573/M++Zd1R4fTYs7l719fv5cG548vyH
-xNOfAAAA//8DAFBLAwQUAAYACAAAACEAVz1x3t8AAAALAQAADwAAAGRycy9kb3ducmV2LnhtbEyP
-zU7DMBCE70i8g7VI3Kjz1zakcSqE6BlRuHBzYzexiNep7TaBp2c50duM9tPsTL2d7cAu2gfjUEC6
-SIBpbJ0y2An4eN89lMBClKjk4FAL+NYBts3tTS0r5SZ805d97BiFYKikgD7GseI8tL22MizcqJFu
-R+etjGR9x5WXE4XbgWdJsuJWGqQPvRz1c6/br/3ZCkCfrU7TMIXXstgVL+Wn+clPRoj7u/lpAyzq
-Of7D8FefqkNDnQ7ujCqwQUCRp2tCSSxT2kDEMl8/AjuQyIoceFPz6w3NLwAAAP//AwBQSwECLQAU
-AAYACAAAACEAtoM4kv4AAADhAQAAEwAAAAAAAAAAAAAAAAAAAAAAW0NvbnRlbnRfVHlwZXNdLnht
-bFBLAQItABQABgAIAAAAIQA4/SH/1gAAAJQBAAALAAAAAAAAAAAAAAAAAC8BAABfcmVscy8ucmVs
-c1BLAQItABQABgAIAAAAIQCOfwQ4JQQAANgQAAAOAAAAAAAAAAAAAAAAAC4CAABkcnMvZTJvRG9j
-LnhtbFBLAQItABQABgAIAAAAIQBXPXHe3wAAAAsBAAAPAAAAAAAAAAAAAAAAAH8GAABkcnMvZG93
-bnJldi54bWxQSwUGAAAAAAQABADzAAAAiwcAAAAA
+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
+di54bWxQSwUGAAAAAAQABADzAAAAiAcAAAAA
 ">
  <v:shape id="Arc_x0020_37" o:spid="_x0000_s1027" style='position:absolute;
   top:4191;width:9144;height:9144;visibility:visible;mso-wrap-style:square;
@@ -1455,7 +1457,7 @@ LnhtbFBLAQItABQABgAIAAAAIQAD1veLwgAAANsAAAAPAAAAAAAAAAAAAAAAAJgCAABkcnMvZG93
 bnJldi54bWxQSwUGAAAAAAQABAD1AAAAhwMAAAAA
 " path="m457200,nsc709705,,914400,204695,914400,457200r-457200,l457200,xem457200,nfc709705,,914400,204695,914400,457200e"
   filled="f" strokecolor="red" strokeweight="1.5pt">
-  <v:path arrowok="t" o:connecttype="custom" o:connectlocs="0,0;1,0"
+  <v:path arrowok="t" o:connecttype="custom" o:connectlocs="0,0;0,0"
    o:connectangles="0,0"/>
  </v:shape><v:shape id="Arc_x0020_38" o:spid="_x0000_s1028" style='position:absolute;
   left:6191;width:9144;height:9144;rotation:180;visibility:visible;
@@ -1483,7 +1485,7 @@ bWwueG1sUEsBAi0AFAAGAAgAAAAhAD+osNrEAAAA2wAAAA8AAAAAAAAAAAAAAAAAmAIAAGRycy9k
 b3ducmV2LnhtbFBLBQYAAAAABAAEAPUAAACJAwAAAAA=
 " path="m457200,nsc709705,,914400,204695,914400,457200r-457200,l457200,xem457200,nfc709705,,914400,204695,914400,457200e"
   filled="f" strokecolor="red" strokeweight="1.5pt">
-  <v:path arrowok="t" o:connecttype="custom" o:connectlocs="0,0;1,0"
+  <v:path arrowok="t" o:connecttype="custom" o:connectlocs="0,0;0,0"
    o:connectangles="0,0"/>
  </v:shape></v:group><![endif]--><![if !vml]><span style='mso-ignore:vglayout;
 position:absolute;z-index:251662336;margin-left:315px;margin-top:308px;
@@ -1499,9 +1501,9 @@ src="Charge%20Flipping%20-%20sucrose_files/image013.jpg" v:shapes="Picture_x0020
 
 <p class=MsoNormal>The result looks very promising! Charge flipping operates
 without regard to symmetry and GSAS-II attempts to locate the map with respect
-to the symmetry elements from the computed reflection phases. NB: charge
-flipping also will give a solution without regard to handedness. This solution
-may be either the correct one for sucrose or its reverse. Errors in these
+to the symmetry elements from the computed reflection phases. (NB: charge
+flipping also will give a solution without regard to handedness; this solution
+may be either the correct one for sucrose or its inverse.) Errors in these
 phases can disrupt this process so that the map and peak positions are offset
 from their true positions. To discover this and fix it, rotate the drawing
 around to check that atom positions are related via the 2<sub>1</sub> screw
@@ -1537,11 +1539,11 @@ adjustment, my solution looked like</p>
 </v:shape><![endif]--><![if !vml]><img border=0 width=667 height=566
 src="Charge%20Flipping%20-%20sucrose_files/image015.jpg" v:shapes="Picture_x0020_12"><![endif]></span></p>
 
-<h2>Step 4 Obtain solution from charge flip result</h2>
+<h2>Step 4: Obtain solution from charge flip result</h2>
 
 <p class=MsoNormal>The next step is to extract the unique peak positions from
-the map and make atoms out of them. The map peak list is sorted with the
-highest peak first; you can change the sorting to be along any of the column
+the map and make atoms out of them. The map peak list is initially sorted by
+peak magnitude; you can change the sorting to be along any of the column
 headings in the table by a single click on the desired heading. The <span
 class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
@@ -1651,11 +1653,11 @@ by magnitude, my list is now </p>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=556
 src="Charge%20Flipping%20-%20sucrose_files/image022.png" v:shapes="Picture_x0020_17"><![endif]></span></p>
 
-<p class=MsoNormal>Notice that in this case the atom list is neatly sorted out into
-two groups with a clear gap between M79 and M64. The higher ones are likely to
-be the 11 O-atoms and the rest are the 12 C-atoms. There may be a bit of
-ambiguity in the middle, but just assign the top 11 as O and the rest as C and
-see what happens. You can do this by selecting a block of atoms, go to <b
+<p class=MsoNormal>Notice that in this case the atom list is neatly sorted out
+into two groups with a clear gap between M79 and M64. The higher ones are
+likely to be the 11 O-atoms and the rest are the 12 C-atoms. There may be a bit
+of ambiguity in the middle, but just assign the top 11 as O and the rest as C
+and see what happens. You can do this by selecting a block of atoms, go to <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Edit/Modify
 atom parameters</span></b> and select <b style='mso-bidi-font-weight:normal'><span
@@ -1677,8 +1679,8 @@ the atoms are now identified, I’ve changed the drawing to show balls and sticks
 and labeled the atoms with their names, this is done in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Draw atoms</span></b>
-tab. Pick the appropriate column and make the selection from the dialog
-box.<span style='mso-spacerun:yes'>  </span></p>
+tab. Double click the appropriate column heading and make the selection from
+the dialog box.<span style='mso-spacerun:yes'>  </span></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_19" o:spid="_x0000_i1046" type="#_x0000_t75" style='width:450pt;
@@ -1686,9 +1688,6 @@ box.<span style='mso-spacerun:yes'>  </span></p>
  <v:imagedata src="Charge%20Flipping%20-%20sucrose_files/image025.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=600 height=554
 src="Charge%20Flipping%20-%20sucrose_files/image025.png" v:shapes="Picture_x0020_19"><![endif]></span></p>
-
-<p class=MsoNormal>Interestingly the atoms identified exactly matched with the
-magnitudes of the charge flip map peaks with O at the top and C at the bottom.</p>
 
 <p class=MsoNormal>Now one can safely remove the map peaks (do <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
@@ -1747,8 +1746,11 @@ mso-list:l0 level1 lfo8'><![if !supportLists]><span style='mso-fareast-font-fami
 </span></span></span><![endif]>Select these new atoms that are in the molecule;
 they will probably be outside the unit cell box. Do this on the drawing with <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Shift</span></b>
-left &amp; right mouse buttons, they will show in green. </p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Shift left</span></b>
+for the first one &amp; <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Shift right</span></b> for <span
+class=SpellE>the</span> rest, they will show in green. </p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l0 level1 lfo8'><![if !supportLists]><span style='mso-fareast-font-family:
@@ -1818,11 +1820,10 @@ labels.</p>
 </v:shape><![endif]--><![if !vml]><img border=0 width=672 height=576
 src="Charge%20Flipping%20-%20sucrose_files/image027.jpg" v:shapes="Picture_x0020_20"><![endif]></span></p>
 
-<p class=MsoNormal>Save the project file; the next step is to <span
-class=GramE>do<span style='mso-spacerun:yes'>  </span>the</span> Rietveld
-refinement on the completed structure.</p>
+<p class=MsoNormal>Save the project file; the next step is to complete the
+structure by finding H-atoms and then do the final Rietveld refinements.</p>
 
-<h2>Step 5 Complete the structure</h2>
+<h2>Step 5: Complete the structure</h2>
 
 <p class=MsoNormal>To complete the structure you will need to perform a
 preliminary Rietveld refinement. This will make the atom positions more
@@ -1872,7 +1873,7 @@ refinement!</p>
 <p class=MsoNormal>Now do <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b> from the main
-GSAS-II data tree menu; all that was refined is scale and background. I got <span
+GSAS-II data tree menu; only scale and background are refined. I got <span
 class=GramE>a</span> <span class=SpellE>Rwp</span> ~20%. The plot shows clear
 intensity differences; the atom positions obviously need refinement.</p>
 
@@ -1891,9 +1892,9 @@ style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Phases/sucrose</span></b> and select the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Atoms</span></b>
-tab. Note the warning at the bottom of the window; the origin in space group P
-2<sub>1</sub> has an arbitrary location along the y-axis. Then double click the
-<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+tab. Note the warning at the bottom of the window; the origin in space group P2<sub>1</sub>
+has an arbitrary location along the y-axis. Then double click the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>refine</span></b>
 column heading, a dialog box will appear, select the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
@@ -2003,8 +2004,8 @@ style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>PWDR 11bmb_8716.fxye Bank 1</span></b> for
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Reflection
-set from</span></b> item (the only choice). The Fourier calculation will use the
-structure factors shown in the <b style='mso-bidi-font-weight:normal'><span
+set from</span></b> item (the only choice). The Fourier calculation will use
+the structure factors shown in the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Reflection list</span></b> item for this PWDR
 data set.</p>
@@ -2048,7 +2049,7 @@ whose size are proportional to the electron density. There are peaks that might
 be H-atom positions as well as features that suggest C &amp; O-atoms out of
 position. Recall that the refinement was just done without any H-atoms; it will
 make the best fit compensating for the missing H-atoms by displacing the C
-&amp;O atoms in the direction of the missing H-atoms. </p>
+&amp; O atoms in the direction of the missing H-atoms. </p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l4 level1 lfo14'><![if !supportLists]><span style='mso-fareast-font-family:
@@ -2061,7 +2062,7 @@ style='mso-spacerun:yes'>  </span>Draw</span> Atoms</span></b> tab.</p>
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l4 level1 lfo14'><![if !supportLists]><span style='mso-fareast-font-family:
 "Times New Roman"'><span style='mso-list:Ignore'>2.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Select a C or O atoms with possible H-atom
+</span></span></span><![endif]>Select a C or O atom with possible H-atom
 density nearby. It will appear green. Do <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Edit/View point</span></b>; this will
@@ -2101,7 +2102,7 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>UNK</span></b
 will be appended to the end of the atom list. Repeat steps 1-4 for as many
 recognizable H-atom positions you can find; the goal is to find all 22 of them
 (you probably will find less than that, but you could guess many of the rest).
-I found all but 5 of them.</p>
+I easily found all but 5 of them.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_38" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:7in;
@@ -2129,11 +2130,12 @@ map</span></b> in the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>General</span></b> tab, adjust the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Contour level</span></b>
-and <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Map radius</span></b>
-as desired. Look for the remaining H-atoms; you may have to guess positions for
-some of them using known stereochemistry rules. My model looked like</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Contour
+level</span></b> and <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Map radius</span></b> as desired. Look for
+the remaining H-atoms; you may have to guess positions for some of them using
+known stereochemistry rules. My model looked like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_39" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:502.5pt;
@@ -2202,7 +2204,9 @@ src="Charge%20Flipping%20-%20sucrose_files/image042.png" v:shapes="Picture_x0020
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b>; the <span
 class=SpellE>Rwp</span> will start out high but should converge to where it was
-before this change. I got 8.08% and the Data tab looked like</p>
+before this change. I got 8.08% and the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Data tab</span></b> looked like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_42" o:spid="_x0000_i1033" type="#_x0000_t75" style='width:480pt;
@@ -2211,16 +2215,16 @@ before this change. I got 8.08% and the Data tab looked like</p>
 </v:shape><![endif]--><![if !vml]><img border=0 width=640 height=446
 src="Charge%20Flipping%20-%20sucrose_files/image043.png" v:shapes="Picture_x0020_42"><![endif]></span></p>
 
-<p class=MsoNormal>This no change in model yet but next select <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Generalized</span></b>
-for the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+<p class=MsoNormal>Next select <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Mustrain</span></b></span><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> model</span></b>;
-this is the Stephens phenomenological model for <span class=SpellE>microstrain</span>
-which has 9 terms for monoclinic structures. Check all the boxes for it.</p>
+mso-hansi-theme-font:minor-latin'>Generalized</span></b> for the <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Mustrain</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> model</span></b>; this is the Stephens
+phenomenological model for <span class=SpellE>microstrain</span> which has 9
+terms for monoclinic structures. Check all the boxes for it.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_43" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:480pt;
@@ -2233,10 +2237,16 @@ src="Charge%20Flipping%20-%20sucrose_files/image044.png" v:shapes="Picture_x0020
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b>; the <span
 class=SpellE>Rwp</span> will start out high but should converge lower than
-where it was before this change. I got 7.65% and the Data tab looked like. If
-you check the <span class=SpellE>Mustrain</span> button in the Select plot type
-box, you will see the interesting <span class=SpellE>mustrain</span> surface
-plot for ground sucrose.</p>
+where it was before this change. I got 7.65% and the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Data tab</span></b> looked like.
+If you check the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Mustrain</span></b></span> button in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Select plot
+type</span></b> box, you will see the interesting <span class=SpellE>mustrain</span>
+surface plot for ground sucrose.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_45" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:480pt;
@@ -2340,9 +2350,11 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>all O</span><
 The third dialog asks for the angle and has a default of <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin'>109.54</span></b>. This is the
-tetrahedral angle so just press OK. 36 restraints will be listed; they are
-listed in order of the B atom. O-atoms should have one angle apiece; C-atoms
-will have more. </p>
+tetrahedral angle so just press <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>OK</span></b>. 36 restraints will be listed;
+they are listed in order of the B atom. O-atoms should have one angle apiece;
+C-atoms will have more. </p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_52" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:450pt;
@@ -2366,11 +2378,12 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Edit/Set
 atom refinement flags</span></b>. Select <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>X-coordinates</span></b>; this will set those
-for all H-atoms. Now do <span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Calculate/Refine</span>,
-the console will list progress on the “Penalty function” (i.e. the restraints)
-and the <span class=SpellE>Rwp</span> drops in my case to ~7.05%. One can increase
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+for all H-atoms. Now do <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b>, the console will
+list progress on the “Penalty function” (i.e. the restraints) and the <span
+class=SpellE>Rwp</span> drops in my case to ~7.05%. One can increase the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Restraint
 weight factors</span></b> to tighten them up at some expense in <span
 class=SpellE>Rwp</span>. In the end I chose <b style='mso-bidi-font-weight:

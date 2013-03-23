@@ -2970,10 +2970,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                             'Extinction':['Lorentzian','None',
                             {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]},]}                        
+                        wx.BeginBusyCursor()
+                        UpdateHKLFdata(histoName)
+                        wx.EndBusyCursor()
                     data['Histograms'] = UseList
-                    wx.BeginBusyCursor()
-                    UpdateHKLFdata(histoName)
-                    wx.EndBusyCursor()
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()

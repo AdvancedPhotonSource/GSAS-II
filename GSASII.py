@@ -557,6 +557,7 @@ class GSASII(wx.Frame):
         '''Read a GSAS (old) instrument parameter file'''
         if not os.path.exists(instfile): # no such file
             return {}
+        fp = 0
         try:
             fp = open(instfile,'Ur')
             Iparm = {}
@@ -564,13 +565,10 @@ class GSASII(wx.Frame):
                 Iparm[S[:12]] = S[12:-1]
         except IOError:
             print('Error reading file:'+str(instfile))
-        finally:        
+        if fp:        
             fp.close()
 
-        try:
-            ibanks = int(Iparm.get('INS   BANK  ').strip())
-        except:
-            ibanks = 1
+        ibanks = int(Iparm.get('INS   BANK  ','1').strip())
         hType = Iparm['INS   HTYPE '].strip()
         if ibanks == 1: # there is only one bank here, return it
             rd.instbank = 1
@@ -638,11 +636,7 @@ class GSASII(wx.Frame):
                 v1 = Iparm['INS  1PRCF1 '].split()                                                  
                 v = Iparm['INS  1PRCF11'].split()
                 data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
-                azm = Iparm.get('INS  1DETAZM')
-                if azm is None: #not in this Iparm file
-                    azm = 0.0
-                else:
-                    azm = float(azm)
+                azm = float(Iparm.get('INS  1DETAZM','0.0'))
                 v = Iparm['INS  1PRCF12'].split()
                 if v1[0] == 3:
                     data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth

@@ -407,8 +407,7 @@ class GSASII(wx.Frame):
                 import traceback
                 print traceback.format_exc()
                 self.ErrorDialog('Open Error','Error on open of file '+filename)
-            finally:
-                if fp: fp.close()
+            if fp: fp.close()
         return rd_list
 
     def _Add_ImportMenu_Phase(self,parent):

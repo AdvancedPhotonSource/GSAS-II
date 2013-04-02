@@ -129,7 +129,9 @@ def CheckConstraints(GPXfile):
         return 'Error: No Phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,RestraintDict=None,Print=False)
+    rigidbodyDict = GetRigidBodies(GPXfile)
+    rbVary,rbDict,rbIds = GetRigidBodyModels(rigidbodyDict,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = phaseVary+hapVary+histVary
@@ -527,10 +529,72 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',]
         
 ################################################################################
+##### Rigid Body Models
+################################################################################
+        
+def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
+    
+    def PrintResRBModel(RBModel):
+        atNames = RBModel['atNames']
+        rbRef = RBModel['rbRef']
+        rbSeq = RBModel['rbSeq']
+        print >>pFile,'Residue RB name: ',RBModel['RBname'],' no.atoms: ',len(RBModel['rbTypes']), \
+            'No. times used: ',RBModel['useCount']
+        print >>pFile,'    At name       x          y          z'
+        for name,xyz in zip(atNames,RBModel['rbXYZ']):
+            print >>pFile,'  %8s %10.4f %10.4f %10.4f'%(name,xyz[0],xyz[1],xyz[2])
+        print >>pFile,'Orientation defined by:',atNames[rbRef[0]],' -> ',atNames[rbRef[1]], \
+            ' & ',atNames[rbRef[0]],' -> ',atNames[rbRef[2]]
+        if rbSeq:
+            for i,rbseq in enumerate(rbSeq):
+                print >>pFile,'Torsion sequence ',i,' Bond: '+atNames[rbseq[0]],' - ', \
+                    atNames[rbseq[1]],' riding: ',[atNames[i] for i in rbseq[3]]
+        
+    def PrintVecRBModel(RBModel):
+        rbRef = RBModel['rbRef']
+        atTypes = RBModel['rbTypes']
+        print >>pFile,'Vector RB name: ',RBModel['RBname'],' no.atoms: ',len(RBModel['rbTypes']), \
+            'No. times used: ',RBModel['useCount']
+        for i in range(len(RBModel['VectMag'])):
+            print >>pFile,'Vector no.: ',i,' Magnitude: ', \
+                '%8.4f'%(RBModel['VectMag'][i]),' Refine? ',RBModel['VectRef'][i]
+            print >>pFile,'  No. Type     vx         vy         vz'
+            for j,[name,xyz] in enumerate(zip(atTypes,RBModel['rbVect'][i])):
+                print >>pFile,'  %d   %2s %10.4f %10.4f %10.4f'%(j,name,xyz[0],xyz[1],xyz[2])
+        print >>pFile,'  No. Type      x          y          z'
+        for i,[name,xyz] in enumerate(zip(atTypes,RBModel['rbXYZ'])):
+            print >>pFile,'  %d   %2s %10.4f %10.4f %10.4f'%(i,name,xyz[0],xyz[1],xyz[2])
+        print >>pFile,'Orientation defined by: atom ',rbRef[0],' -> atom ',rbRef[1], \
+            ' & atom ',rbRef[0],' -> atom ',rbRef[2]
+    rbVary = []
+    rbDict = {}
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    if len(rigidbodyDict['Vector']):
+        for irb,item in enumerate(rigidbodyDict['RBIds']['Vector']):
+            if rigidbodyDict['Vector'][item]['useCount']:
+                RBmags = rigidbodyDict['Vector'][item]['VectMag']
+                RBrefs = rigidbodyDict['Vector'][item]['VectRef']
+                for i,[mag,ref] in enumerate(zip(RBmags,RBrefs)):
+                    pid = '::RBV;'+str(irb)+':'+str(i)
+                    rbDict[pid] = mag
+                    if ref:
+                        rbVary.append(pid)
+                if Print:
+                    print >>pFile,'\nVector rigid body model:'
+                    PrintVecRBModel(rigidbodyDict['Vector'][item])
+    if len(rigidbodyDict['Residue']):
+        for item in rigidbodyDict['RBIds']['Residue']:
+            if rigidbodyDict['Residue'][item]['useCount']:
+                if Print:
+                    print >>pFile,'\nResidue rigid body model:'
+                    PrintResRBModel(rigidbodyDict['Residue'][item])
+    return rbVary,rbDict,rbIds
+        
+################################################################################
 ##### Phase data
 ################################################################################        
                     
-def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
+def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             
     def PrintFFtable(FFtable):
         print >>pFile,'\n X-ray scattering factors:'
@@ -560,7 +624,59 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
                 line += '%10.5g'%(item)
             print >>pFile,line
             
-    #def PrintRBObjects()
+    def PrintRBObjects(resRBData,vecRBData):
+        
+        def PrintRBThermals():
+            tlstr = ['11','22','33','12','13','23']
+            sstr = ['12','13','21','23','31','32','AA','BB']
+            TLS = RB['ThermalMotion'][1]
+            TLSvar = RB['ThermalMotion'][2]
+            if 'T' in RB['ThermalMotion'][0]:
+                print >>pFile,'TLS data'
+                text = ''
+                for i in range(6):
+                    text += 'T'+tlstr[i]+' %8.4f %s '%(TLS[i],str(TLSvar[i])[0])
+                print >>pFile,text
+                if 'L' in RB['ThermalMotion'][0]: 
+                    text = ''
+                    for i in range(6,12):
+                        text += 'L'+tlstr[i-6]+' %8.2f %s '%(TLS[i],str(TLSvar[i])[0])
+                    print >>pFile,text
+                if 'S' in RB['ThermalMotion'][0]:
+                    text = ''
+                    for i in range(12,20):
+                        text += 'S'+sstr[i-12]+' %8.3f %s '%(TLS[i],str(TLSvar[i])[0])
+                    print >>pFile,text
+            if 'U' in RB['ThermalMotion'][0]:
+                print >>pFile,'Uiso data'
+                text = 'Uiso'+' %10.3f %s'%(TLS[0],str(TLSvar[0])[0])           
+            
+        if len(resRBData):
+            for RB in resRBData:
+                Oxyz = RB['Orig'][0]
+                Qrijk = RB['Orient'][0]
+                Angle = 2.0*acosd(Qrijk[0])
+                print >>pFile,'\nRBObject ',RB['RBname'],' at ',      \
+                    '%10.4f %10.4f %10.4f'%(Oxyz[0],Oxyz[1],Oxyz[2]),' Refine?',RB['Orig'][1]
+                print >>pFile,'Orientation angle,vector:',      \
+                    '%10.3f %10.4f %10.4f %10.4f'%(Angle,Qrijk[1],Qrijk[2],Qrijk[3]),' Refine? ',RB['Orient'][1]
+                Torsions = RB['Torsions']
+                if len(Torsions):
+                    text = 'Torsions: '
+                    for torsion in Torsions:
+                        text += '%10.4f Refine? %s'%(torsion[0],torsion[1])
+                    print >>pFile,text
+                PrintRBThermals()
+        if len(vecRBData):
+            for RB in vecRBData:
+                Oxyz = RB['Orig'][0]
+                Qrijk = RB['Orient'][0]
+                Angle = 2.0*acosd(Qrijk[0])
+                print >>pFile,'\nRBObject ',RB['RBname'],' at ',      \
+                    '%10.4f %10.4f %10.4f'%(Oxyz[0],Oxyz[1],Oxyz[2]),' Refine?',RB['Orig'][1]           
+                print >>pFile,'Orientation angle,vector:',      \
+                    '%10.3f %10.4f %10.4f %10.4f'%(Angle,Qrijk[1],Qrijk[2],Qrijk[3]),' Refine? ',RB['Orient'][1]
+                PrintRBThermals()
                 
     def PrintAtoms(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
@@ -620,7 +736,67 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
         print >>pFile,ptlbls
         print >>pFile,ptstr
         
-    if Print:print  >>pFile,' Phases:'
+    def MakeRBParms():
+        rbid = str(rbids.index(RB['RBId']))
+        pfxRB = pfx+'RBP'
+        pstr = ['x','y','z']
+        ostr = ['a','i','j','k']
+        for i in range(3):
+            name = pfxRB+pstr[i]+':'+str(iRB)+':'+rbid
+            phaseDict[name] = RB['Orig'][0][i]
+            if RB['Orig'][1]:
+                phaseVary += [name,]
+        pfxRB = pfx+'RBO'
+        for i in range(4):
+            name = pfxRB+ostr[i]+':'+str(iRB)+':'+rbid
+            phaseDict[name] = RB['Orient'][0][i]
+            if RB['Orient'][1] == 'V' and i:
+                phaseVary += [name,]
+            elif RB['Orient'][1] == 'A' and not i:
+                phaseVary += [name,]
+            
+    def MakeRBThermals():
+        rbid = str(rbids.index(RB['RBId']))
+        tlstr = ['11','22','33','12','13','23']
+        sstr = ['12','13','21','23','31','32','AA','BB']
+        if 'T' in RB['ThermalMotion'][0]:
+            pfxRB = pfx+'RBT'
+            for i in range(6):
+                name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
+                phaseDict[name] = RB['ThermalMotion'][1][i]
+                if RB['ThermalMotion'][2][i]:
+                    phaseVary += [name,]
+        if 'L' in RB['ThermalMotion'][0]:
+            pfxRB = pfx+'RBL'
+            for i in range(6):
+                name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
+                phaseDict[name] = RB['ThermalMotion'][1][i+6]
+                if RB['ThermalMotion'][2][i+6]:
+                    phaseVary += [name,]
+        if 'S' in RB['ThermalMotion'][0]:
+            pfxRB = pfx+'RBS'
+            for i in range(5):
+                name = pfxRB+sstr[i]+':'+str(iRB)+':'+rbid
+                phaseDict[name] = RB['ThermalMotion'][1][i+12]
+                if RB['ThermalMotion'][2][i+12]:
+                    phaseVary += [name,]
+        if 'U' in RB['ThermalMotion'][0]:
+            name = pfx+'RBU:'+str(iRB)+':'+rbid
+            phaseDict[name] = RB['ThermalMotion'][1][0]
+            if RB['ThermalMotion'][2][0]:
+                phaseVary += [name,]
+                
+    def MakeRBTorsions():
+        rbid = str(rbids.index(RB['RBId']))
+        pfxRB = pfx+'RBTr;'
+        for i,torsion in enumerate(RB['Torsions']):
+            name = pfxRB+str(i)+':'+str(iRB)+':'+rbid
+            phaseDict[name] = torsion[0]
+            if torsion[1]:
+                phaseVary += [name,]
+                    
+    if Print:
+        print  >>pFile,'\n Phases:'
     phaseVary = []
     phaseDict = {}
     phaseConstr = {}
@@ -643,10 +819,7 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
         BLtables.update(BLtable)
         Atoms = PhaseData[name]['Atoms']
         AtLookup = G2mth.FillAtomLookUp(Atoms)
-        try:
-            PawleyRef = PhaseData[name]['Pawley ref']
-        except KeyError:
-            PawleyRef = []
+        PawleyRef = PhaseData[name].get('Pawley ref',[])
         SGData = General['SGData']
         SGtext = G2spc.SGPrint(SGData)
         cell = General['Cell']
@@ -655,7 +828,21 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
             pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5],pfx+'Vol':G2lat.calc_V(A)})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
-        #rigid body model input here 
+        resRBData = PhaseData[name]['RBModels'].get('Residue',[])
+        if resRBData:
+            rbids = rbIds['Residue']
+            for iRB,RB in enumerate(resRBData):
+                MakeRBParms()
+                MakeRBThermals()
+                MakeRBTorsions()
+        
+        vecRBData = PhaseData[name]['RBModels'].get('Vector',[])
+        if vecRBData:
+            rbids = rbIds['Vector']
+            for iRB,RB in enumerate(vecRBData):
+                MakeRBParms()
+                MakeRBThermals()
+                    
         Natoms[pfx] = 0
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
@@ -726,7 +913,7 @@ def GetPhaseData(PhaseData,RestraintDict={},Print=True,pFile=None):
                 PrintBLtable(BLtable)
                 print >>pFile,''
                 for line in SGtext: print >>pFile,line
-                #PrintRBObjects(whatever is needed here)
+                PrintRBObjects(resRBData,vecRBData)
                 PrintAtoms(General,Atoms)
                 print >>pFile,'\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
                     ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
@@ -2083,7 +2270,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
 ################################################################################
 
 def penaltyFxn(HistoPhases,parmDict,varyList):
-    Histograms,Phases,restraintDict = HistoPhases
+    Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pNames = []
     pVals = []
     pWt = []
@@ -2179,7 +2366,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
     return pNames,pVals,pWt
     
 def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
-    Histograms,Phases,restraintDict = HistoPhases
+    Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
     for phase in Phases:
         if phase not in restraintDict:
@@ -3083,6 +3270,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
+#apply RB parms to atom parms in parmDict?
         if not Phase['General'].get('doPawley'):
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
         for refl in refList:
@@ -3367,7 +3555,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
 def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
-    Histograms,Phases,restraintDict = HistoPhases
+    Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     nvar = len(varylist)
     dMdv = np.empty(0)
     histoList = Histograms.keys()
@@ -3443,7 +3631,7 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
 def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
     parmdict.update(zip(varylist,values))
     G2mv.Dict2Map(parmdict,varylist)
-    Histograms,Phases,restraintDict = HistoPhases
+    Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     nvar = len(varylist)
     Hess = np.empty(0)
     histoList = Histograms.keys()
@@ -3541,7 +3729,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     parmdict.update(zip(varylist,values))
     Values2Dict(parmdict, varylist, values)
     G2mv.Dict2Map(parmdict,varylist)
-    Histograms,Phases,restraintDict = HistoPhases
+    Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     M = np.empty(0)
     SumwYo = 0
     Nobs = 0
@@ -3588,6 +3776,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             SGData = Phase['General']['SGData']
             A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+#apply RB models to atom parms in parmDict?
             refList = Histogram['Data']
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
             df = np.zeros(len(refList))
@@ -3670,7 +3859,6 @@ def Refine(GPXfile,dlg):
     calcControls.update(Controls)            
     constrDict,fixedList = GetConstraints(GPXfile)
     restraintDict = GetRestraints(GPXfile)
-    rigidbodyDict = GetRigidBodies(GPXfile)
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
         print ' *** ERROR - you have no phases! ***'
@@ -3680,16 +3868,20 @@ def Refine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception        
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,pFile=printFile)
+    rigidbodyDict = GetRigidBodies(GPXfile)
+    rbVary,rbDict,rbIds = GetRigidBodyModels(rigidbodyDict,pFile=printFile)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile)
     calcControls['atomIndx'] = atomIndx
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
     calcControls['BLtables'] = BLtables
+    calcControls['rbIDs'] = rbIds
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,pFile=printFile)
     calcControls.update(controlDict)
     histVary,histDict,controlDict = GetHistogramData(Histograms,pFile=printFile)
     calcControls.update(controlDict)
-    varyList = phaseVary+hapVary+histVary
+    varyList = rbVary+phaseVary+hapVary+histVary
+    parmDict.update(rbDict)
     parmDict.update(phaseDict)
     parmDict.update(hapDict)
     parmDict.update(histDict)
@@ -3725,16 +3917,16 @@ def Refine(GPXfile,dlg):
         if 'Jacobian' in Controls['deriv type']:            
             result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
-                args=([Histograms,Phases,restraintDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
         elif 'Hessian' in Controls['deriv type']:
             result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                args=([Histograms,Phases,restraintDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
         else:           #'numeric'
             result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                args=([Histograms,Phases,restraintDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/len(varyList))
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
@@ -3838,7 +4030,9 @@ def SeqRefine(GPXfile,dlg):
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
         raise Exception
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,False,printFile)
+    rigidbodyDict = GetRigidBodies(GPXfile)
+    rbVary,rbDict,rbIds = GetRigidBodyModels(rigidbodyDict,pFile=printFile)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,rbIds,False,printFile)
     for item in phaseVary:
         if '::A0' in item:
             print '**** WARNING - lattice parameters should not be refined in a sequential refinement ****'
@@ -3861,6 +4055,7 @@ def SeqRefine(GPXfile,dlg):
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
         calcControls['BLtables'] = BLtables
+        calcControls['rbIDs'] = rbIds
         varyList = []
         parmDict = {}
         Histo = {histogram:Histograms[histogram],}
@@ -3868,7 +4063,7 @@ def SeqRefine(GPXfile,dlg):
         calcControls.update(controlDict)
         histVary,histDict,controlDict = GetHistogramData(Histo,False)
         calcControls.update(controlDict)
-        varyList = phaseVary+hapVary+histVary
+        varyList = rbVary+phaseVary+hapVary+histVary
         if not ihst:
             saveVaryList = varyList[:]
             for i,item in enumerate(saveVaryList):
@@ -3921,15 +4116,15 @@ def SeqRefine(GPXfile,dlg):
             if 'Jacobian' in Controls['deriv type']:            
                 result = so.leastsq(errRefine,values,Dfun=dervRefine,full_output=True,
                     ftol=Ftol,col_deriv=True,factor=Factor,
-                    args=([Histo,Phases,restraintDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/2)
             elif 'Hessian' in Controls['deriv type']:
                 result = G2mth.HessianLSQ(errRefine,values,Hess=HessRefine,ftol=Ftol,maxcyc=maxCyc,
-                    args=([Histo,Phases,restraintDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = result[2]['num cyc']+1                           
             else:           #'numeric'
                 result = so.leastsq(errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                    args=([Histo,Phases,restraintDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                    args=([Histo,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
                 ncyc = int(result[2]['nfev']/len(varyList))
 
             runtime = time.time()-begin

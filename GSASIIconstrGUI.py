@@ -98,8 +98,11 @@ def UpdateConstraints(G2frame,data):
     if not data:
         data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    rigidbodyDict = G2frame.PatternTree.GetItemPyData(   
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+    rbVary,rbDict,rbIds = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
     AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder']:
@@ -187,8 +190,9 @@ def UpdateConstraints(G2frame,data):
         #future -  add 'all:all:name', '0:all:name', etc. to the varList
         if page[1] == 'phs':
             atchoice = [item+' for '+phaseAtNames[item] for item in varList]
-            atchoice += [FrstVarb+' for all']
-            atchoice += [FrstVarb+' for all '+atype for atype in TypeList]
+            if 'RB' not in FrstVarb:
+                atchoice += [FrstVarb+' for all']
+                atchoice += [FrstVarb+' for all '+atype for atype in TypeList]
             dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,
                 'Constrain '+FrstVarb+' and...',atchoice)
         else:
@@ -623,8 +627,10 @@ def UpdateRigidBodies(G2frame,data):
     '''Called when Rigid bodies tree item is selected.
     Displays the rigid bodies in the data window
     '''
-    if not data:
-        data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}}})       #empty dict - fill it
+    if not data.get('RBId') or not data:
+        data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
+            'RBIds':{'Vector':[],'Residue':[]}})       #empty dict - fill it
+                
             
     global resList
     Indx = {}
@@ -725,6 +731,7 @@ def UpdateRigidBodies(G2frame,data):
             AtInfo['C'] = [Info['Drad'],Info['Color']]
             data['Vector'][rbId] = {'RBname':'UNKRB','VectMag':vecMag,'rbXYZ':np.zeros((nAtoms,3)),
                 'rbRef':[0,1,2,False],'VectRef':vecRef,'rbTypes':rbTypes,'rbVect':vecVal,'useCount':0}
+            data['RBIds']['Vector'].append(rbId)
         dlg.Destroy()
         UpdateVectorRB()
         
@@ -769,6 +776,7 @@ def UpdateRigidBodies(G2frame,data):
                 data['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbTypes,
                     'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1,True],'rbSeq':rbSeq,
                     'SelSeq':[0,0],'useCount':0}
+                data['RBIds']['Residue'].append(rbId)
                 print 'Rigid body '+rbName+' added'
             macStr = macro.readline()
         macro.close()
@@ -829,6 +837,7 @@ def UpdateRigidBodies(G2frame,data):
         rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
         data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
             'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
+        data['RBIds']['Residue'].append(rbId)
         print 'Rigid body UNKRB added'
         text.close()
         UpdateResidueRB()
@@ -912,13 +921,12 @@ def UpdateRigidBodies(G2frame,data):
                 Riding.append(atNames.index(atm))
             rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
         dlg.Destroy()
-        UpdateResidueRB()
-        
+        UpdateResidueRB()        
 
     def UpdateVectorRB(Scroll=0):
         AtInfo = data['Vector']['AtInfo']
         refChoice = {}
-        SetStatusLine(' You may use e.g. "sind(60)", "cos(60)", "c60" or "s60" for a vector entry')
+        SetStatusLine(' You may use e.g. "c60" or "s60" for a vector entry')
         def rbNameSizer(rbId,rbData):
 
             def OnRBName(event):
@@ -930,6 +938,7 @@ def UpdateRigidBodies(G2frame,data):
                 Obj = event.GetEventObject()
                 rbId = Indx[Obj.GetId()]
                 del data['Vector'][rbId]
+                data['RBIds']['Vector'].remove(rbId)
                 wx.CallAfter(UpdateVectorRB)
                 
             def OnPlotRB(event):
@@ -1099,7 +1108,7 @@ def UpdateRigidBodies(G2frame,data):
         VectorRB.DestroyChildren()
         VectorRBDisplay = wx.Panel(VectorRB)
         VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
-        for rbId in data['Vector']:
+        for rbId in data['RBIds']['Vector']:
             if rbId != 'AtInfo':
                 rbData = data['Vector'][rbId]
                 FillRefChoice(rbId,rbData)
@@ -1139,6 +1148,7 @@ def UpdateRigidBodies(G2frame,data):
                 Obj = event.GetEventObject()
                 rbId = Indx[Obj.GetId()]
                 del data['Residue'][rbId]
+                data['RBIds']['Residue'].remove(rbId)
                 wx.CallAfter(UpdateResidueRB)
                 
             def OnPlotRB(event):
@@ -1366,13 +1376,7 @@ def UpdateRigidBodies(G2frame,data):
         ResidueRB.DestroyChildren()
         ResidueRBDisplay = wx.Panel(ResidueRB)
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
-        rbKeys = data['Residue'].keys()
-        rbKeys.remove('AtInfo')
-        rbNames = [data['Residue'][k]['RBname'] for k in rbKeys]
-        rbIds = dict(zip(rbNames,rbKeys))
-        rbNames.sort()
-        for name in rbNames:
-            rbId = rbIds[name]
+        for rbId in data['RBIds']['Residue']:
             rbData = data['Residue'][rbId]
             FillRefChoice(rbId,rbData)
             ResidueRBSizer.Add(rbNameSizer(rbId,rbData),0)

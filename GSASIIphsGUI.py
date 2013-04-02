@@ -1664,6 +1664,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dlg.Destroy()
         RBData['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbType,
             'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
+        RBData['RBIds']['Residue'].append(rbId)
         G2frame.dataFrame.SetStatusText('New rigid body UNKRB added to set of Residue rigid bodies')
 
 ################################################################################
@@ -3779,7 +3780,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def OnRBRemoveAll(event):
         data['RBModels']['Residue'] = []
-        data['RBModels']['Vector'] = []   
+        data['RBModels']['Vector'] = []
         RBData = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         for RBType in ['Vector','Residue']:

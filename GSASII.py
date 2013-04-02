@@ -1280,7 +1280,7 @@ class GSASII(wx.Frame):
         if not G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Rigid bodies')
             self.PatternTree.SetItemPyData(sub,{'Vector':{'AtInfo':{}},
-                'Residue':{'AtInfo':{}},'Z-matrix':{'AtInfo':{}}})
+                'Residue':{'AtInfo':{}},'RBIds':{'Vector':[],'Residue':[]}})
                 
     class CopyDialog(wx.Dialog):
         def __init__(self,parent,title,text,data):
@@ -2163,10 +2163,14 @@ class GSASII(wx.Frame):
     def OnViewLSParms(self,event):
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestraintDict=None,Print=False)        
+        rigidbodyDict = self.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'))
+        rbVary,rbDict,rbIds = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
-        varyList = phaseVary+hapVary+histVary
+        varyList = rbVary+phaseVary+hapVary+histVary
+        parmDict.update(rbDict)
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
         parmDict.update(histDict)

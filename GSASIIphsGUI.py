@@ -1510,9 +1510,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
                 
     def OnReImport(event):
-# sort of the right idea but don't want new tree entry!
-#        G2frame._Add_ImportMenu_Phase(G2frame.dataFrame.AtomEdit)
         print 'reimport atoms from file to be developed'
+        reqrdr = G2frame.dataFrame.ReImportMenuId.get(event.GetId())
+        rdlist = G2frame.OnImportGeneric(reqrdr,
+                                         G2frame.ImportPhaseReaderlist,
+                                         'phase')
+        if len(rdlist) == 0: return
+        # for now rdlist is only expected to have one element
+        # for now always use the first phase for when multiple phases are ever implemented
+        # but it would be better to loop until we find a phase that matches the one in data
+        for rd in rdlist:
+            # rd contains all info for a phase
+            PhaseName = rd.Phase['General']['Name']
+            print 'Read phase '+str(PhaseName)+' from file '+str(G2frame.lastimport)
+            print rd.Phase['Atoms']
+            return
                         
 ################################################################################
 #Structure drawing GUI stuff                
@@ -4303,7 +4315,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=G2gd.wxID_ATOMSREIMPORT)
+            for id in G2frame.dataFrame.ReImportMenuId:
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
+            
             FillAtomsGrid(Atoms)
         elif text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)

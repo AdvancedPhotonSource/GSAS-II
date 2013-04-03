@@ -59,9 +59,9 @@ htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
-    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_RBAPPEND,wxID_ATOMSREIMPORT,
+    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_RBAPPEND,
     wxID_ASSIGNATMS2RB
-] = [wx.NewId() for item in range(14)]
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -1143,8 +1143,23 @@ class DataFrame(wx.Frame):
             help='Select atoms to transform first')
         self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
             help='Reload atom drawing list')
-        self.AtomEdit.Append(id=wxID_ATOMSREIMPORT, kind=wx.ITEM_NORMAL,text='Reimport atoms',
+        submenu = wx.Menu()
+        self.AtomEdit.AppendMenu(wx.ID_ANY, 'Reimport atoms', submenu, 
             help='Reimport atoms from file; sequence must match')
+        # setup a cascade menu for the formats that have been defined
+        self.ReImportMenuId = {}  # points to readers for each menu entry
+        for reader in self.G2frame.ImportPhaseReaderlist:
+            item = submenu.Append(
+                wx.ID_ANY,help=reader.longFormatName,
+                kind=wx.ITEM_NORMAL,text='reimport coordinates from '+reader.formatName+' file')
+            self.ReImportMenuId[item.GetId()] = reader
+        item = submenu.Append(
+            wx.ID_ANY,
+            help='Reimport coordinates, try to determine format from file',
+            kind=wx.ITEM_NORMAL,
+            text='guess format from file')
+        self.ReImportMenuId[item.GetId()] = None # try all readers
+
         self.AtomCompute.Append(id=wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Distances && Angles',
             help='Compute distances & angles for selected atoms')
         self.PostfillDataMenu()

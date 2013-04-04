@@ -2165,7 +2165,8 @@ class GSASII(wx.Frame):
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         rigidbodyDict = self.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'))
-        rbVary,rbDict,rbIds = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
+        rbVary,rbDict = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
+        rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
         hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)

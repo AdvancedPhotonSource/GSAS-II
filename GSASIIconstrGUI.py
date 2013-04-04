@@ -627,10 +627,9 @@ def UpdateRigidBodies(G2frame,data):
     '''Called when Rigid bodies tree item is selected.
     Displays the rigid bodies in the data window
     '''
-    if not data.get('RBId') or not data:
+    if not data.get('RBIds') or not data:
         data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
-            'RBIds':{'Vector':[],'Residue':[]}})       #empty dict - fill it
-                
+            'RBIds':{'Vector':[],'Residue':[]}})       #empty/bad dict - fill it
             
     global resList
     Indx = {}

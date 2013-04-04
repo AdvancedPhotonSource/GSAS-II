@@ -86,9 +86,13 @@ def FixValence(El):
     if '+' in El[-1]: #converts An+/- to A+/-n
         num = El[-2]
         El = El.split(num)[0]+'+'+num
+    if '+0' in El:
+        El = El.split('+0')[0]
     if '-' in El[-1]:
         num = El[-2]
         El = El.split(num)[0]+'-'+num
+    if '-0' in El:
+        El = El.split('-0')[0]
     return El
         
 def GetAtomInfo(El):

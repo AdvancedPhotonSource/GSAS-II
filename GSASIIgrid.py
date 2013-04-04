@@ -1855,7 +1855,7 @@ def UpdateSeqResults(G2frame,data):
     sampleParms = GetSampleParms()
     Rwps = GetRwps()
     SetDataMenuBar(G2frame,G2frame.dataFrame.SequentialMenu)
-    G2frame.dataFrame.SetLabel('Sequental refinement results')
+    G2frame.dataFrame.SetLabel('Sequential refinement results')
     G2frame.dataFrame.CreateStatusBar()
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
     colLabels = ['Rwp',]+data['varyList']+atomList.keys()+cellList.keys()
@@ -2095,7 +2095,7 @@ def MovePatternTreeToGrid(G2frame,item):
             for i in G2frame.Refine: i.Enable(True)
             for i in G2frame.SeqRefine: i.Enable(True)
             UpdateControls(G2frame,data)
-        elif G2frame.PatternTree.GetItemText(item) == 'Sequental results':
+        elif G2frame.PatternTree.GetItemText(item) == 'Sequential results':
             data = G2frame.PatternTree.GetItemPyData(item)
             UpdateSeqResults(G2frame,data)            
         elif G2frame.PatternTree.GetItemText(item) == 'Covariance':

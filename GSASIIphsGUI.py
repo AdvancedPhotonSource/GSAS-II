@@ -497,7 +497,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             #patch
             if 'cutOff' not in Map:
                 Map['cutOff'] = 100.0
-            mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Patterson']
+            mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Omit','Patterson']
             refList = data['Histograms'].keys()
             if not generalData['AtomTypes']:
                  mapTypes = ['Patterson',]
@@ -3158,7 +3158,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     val = float(Obj.GetValue())
                     RBObj['Orig'][0][item] = val
                     Obj.SetValue('%8.5f'%(val))
-                    newXYZ = G2mth.UpdateRBAtoms(Bmat,RBObj,RBData,rbType)
+                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
                     for i,id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
                     data['Drawing']['Atoms'] = []
@@ -3184,7 +3184,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     if not any(Q):
                         raise ValueError
                     RBObj['Orient'][0] = Q
-                    newXYZ = G2mth.UpdateRBAtoms(Bmat,RBObj,RBData,rbType)
+                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
                     for i,id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
                     data['Drawing']['Atoms'] = []
@@ -3239,7 +3239,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 try:
                     val = float(Obj.GetValue())
                     RBObj['Torsions'][item][0] = val
-                    newXYZ = G2mth.UpdateResRBAtoms(Bmat,RBObj,RBData['Residue'])
+                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
                     for i,id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
                 except ValueError:
@@ -3396,7 +3396,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
             for x in sel:
-                RBObjs[x].update(sourceRB)
+                RBObjs[x].update(copy.copy(sourceRB))
         G2plt.PlotStructure(G2frame,data)
         wx.CallAfter(FillRigidBodyGrid(True))
                 
@@ -3430,7 +3430,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 RBObjs = data['RBModels'].get(rbType,[])
                 rbObj = data['testRBObj']['rbObj']
                 rbId = rbObj['RBId']
-                newXYZ = G2mth.UpdateRBAtoms(Bmat,rbObj,RBData,rbType)
+                newXYZ = G2mth.UpdateRBXYZ(Bmat,rbObj,RBData,rbType)[0]
                 Ids = []
                 dmax = 0.0
                 oldXYZ = G2mth.getAtomXYZ(atomData,cx)
@@ -3783,7 +3783,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 RBObjs.append(rbObj)
             data['RBModels']['Residue'] = RBObjs
             for RBObj in RBObjs:
-                newXYZ = G2mth.UpdateResRBAtoms(Bmat,RBObj,RBData['Residue'])
+                newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
                 for i,id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
         finally:
@@ -4176,7 +4176,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        mapData.update(G2mth.FourierMap(data,reflData))
+        if mapData['MapType'] == 'Omit':
+            mapData.update(G2mth.OmitMap(data,reflData))
+        else:
+            mapData.update(G2mth.FourierMap(data,reflData))
         mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -4315,7 +4318,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
-            for id in G2frame.dataFrame.ReImportMenuId:
+            for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
                 G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
             
             FillAtomsGrid(Atoms)

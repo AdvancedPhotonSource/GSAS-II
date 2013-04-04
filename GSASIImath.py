@@ -197,7 +197,7 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
 
-def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):
+def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
     for atom in atomData:
         XYZ = np.inner(Amat,atom[cx:cx+3])
         if atom[cia] == 'A':
@@ -227,7 +227,7 @@ def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):
             atom[cia] = 'A'
             Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
             beta = np.inner(np.inner(g,Umat),g)
-            atom[cia+2:cia+8] = beta/gvec
+            atom[cia+2:cia+8] = G2spc.U2Uij(beta/gvec)
 
 def GetXYZDist(xyz,XYZ,Amat):
     ''' gets distance from position xyz to all XYZ, xyz & XYZ are np.array 
@@ -241,52 +241,74 @@ def getAtomXYZ(atoms,cx):
         XYZ.append(atom[cx:cx+3])
     return np.array(XYZ)
 
-def UpdateResRBAtoms(Bmat,RBObj,RBData):
-    RBIds = GetResRBIds(RBData)
-    RBname = RBObj['RBname'].split(':')[0]
-    RBRes = RBData[RBIds[RBname]]
-    XYZ = np.array(RBRes['rbXYZ'])
-    for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
-        QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
-        for ride in seq[3]:
-            XYZ[ride] = prodQVQ(QuatA,XYZ[ride]-XYZ[seq[1]])+XYZ[seq[1]]
-    for i,xyz in enumerate(XYZ):
-        xyz = prodQVQ(RBObj['Orient'][0],xyz)
-        xyz = np.inner(Bmat,xyz)
-        xyz += RBObj['Orig'][0]
-        XYZ[i] = xyz
-    return XYZ
-    
-def UpdateRBAtoms(Bmat,RBObj,RBData,RBType):
-    RBIds = GetResRBIds(RBData[RBType])
-    RBname = RBObj['RBname'].split(':')[0]
-    RBRes = RBData[RBType][RBIds[RBname]]
+def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
+    ''' Returns crystal coordinates for atoms described by RBObj
+    '''
+    RBRes = RBData[RBType][RBObj['RBId']]
     if RBType == 'Vector':
         vecs = RBRes['rbVect']
         mags = RBRes['VectMag']
-        XYZ = np.zeros_like(vecs[0])
+        Cart = np.zeros_like(vecs[0])
         for vec,mag in zip(vecs,mags):
-            XYZ += vec*mag
+            Cart += vec*mag
     elif RBType == 'Residue':
-        XYZ = np.array(RBRes['rbXYZ'])
+        Cart = np.array(RBRes['rbXYZ'])
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
-            QuatA = AVdeg2Q(tor[0],XYZ[seq[0]]-XYZ[seq[1]])
+            QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
             for ride in seq[3]:
-                XYZ[ride] = prodQVQ(QuatA,XYZ[ride]-XYZ[seq[1]])+XYZ[seq[1]]
-    for i,xyz in enumerate(XYZ):
+                XYZ[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+    XYZ = np.zeros_like(Cart)
+    for i,xyz in enumerate(Cart):
         xyz = prodQVQ(RBObj['Orient'][0],xyz)
-        xyz = np.inner(Bmat,xyz)
-        xyz += RBObj['Orig'][0]
-        XYZ[i] = xyz
-    return XYZ    
+        XYZ[i] = np.inner(Bmat,xyz)+RBObj['Orig'][0]
+    return XYZ,Cart
     
-def GetResRBIds(RBData):    
-    rbKeys = RBData.keys()
-    rbKeys.remove('AtInfo')
-    if not len(rbKeys):
-        return {}
-    RBNames = [RBData[k]['RBname'] for k in rbKeys]
-    return dict(zip(RBNames,rbKeys))
+def UpdateRBUIJ(Bmat,Cart,RBObj):
+    ''' Returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
+    '''
+    TLStype,TLS = RBObj['ThermalMotion'][:2]
+#    T = TLS[:6]
+#    L = TLS[6:12]
+#    S = TLS[12:]
+#    Uout = []
+#    for X in Cart:
+#        U = [0,0,0,0,0,0]
+#        U[0] = T[0]+L[1]*X[2]**2+L[2]*X[1]**2-2.0*L[5]*X[1]*X[2]+2.0*(S[2]*X[2]-S[4]*X[1])
+#        U[1] = T[1]+L[0]*X[2]**2+L[2]*X[0]**2-2.0*L[4]*X[0]*X[2]+2.0*(S[5]*X[0]-S[0]*X[2])
+#        U[2] = T[2]+L[1]*X[0]**2+L[0]*X[1]**2-2.0*L[3]*X[1]*X[0]+2.0*(S[1]*X[1]-S[3]*X[0])
+#        U[3] = T[3]+L[4]*X[1]*X[2]+L[5]*X[0]*X[2]-L[3]*X[2]**2-L[2]*X[0]*X[1]+
+#            S[4]*X[0]-S[5]*X[1]-(S[6]+S[7])*X[2]
+#        U[4] = T[4]+L[3]*X[1]*X[2]+L[5]*X[0]*X[1]-L[4]*X[1]**2-L[1]*X[0]*X[2]+
+#            S[3]*X[2]-S[2]*X[0]+S[6]*X[1]
+#        U[5] = T[5]+L[3]*X[0]*X[2]+L[4]*X[0]*X[1]-L[5]*X[0]**2-L[0]*X[2]*X[1]+
+#            S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
+#        UIJ = G2lat.U6toUij(U)
+#        Uout.append(
+    
+    Tmat = np.zeros((3,3))
+    Lmat = np.zeros((3,3))
+    Smat = np.zeros((3,3))
+    if 'T' in TLStype:
+        Tmat = G2lat.U6toUij(TLS[:6])
+    if 'L' in TLStype:
+        Lmat = np.array(G2lat.U6toUij(TLS[6:12]))*(np.pi/180.)**2
+    if 'S' in TLStype:
+        Smat = np.array([[TLS[18],TLS[12],TLS[13]],[TLS[14],TLS[19],TLS[15]],[TLS[16],TLS[17],0]])*(np.pi/180.)
+    g = np.inner(Bmat,Bmat.T)
+    gvec = 1./np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
+        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
+    Uout = []
+    for X in Cart:
+        print 'X: ',X
+        Axyz = np.array([[0,X[2],-X[1]], [-X[2],0,X[0]], [X[1],-X[0],0]])
+        if 'U' in TLStype:
+            Uout.append(['I',TLS[0],0,0,0,0,0,0])
+        else:
+            Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
+            print 'Umat: ',Umat
+            beta = np.inner(np.inner(g,Umat),g)
+            Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
+    return Uout
     
 def GetSHCoeff(pId,parmDict,SHkeys):
     SHCoeff = {}
@@ -851,6 +873,43 @@ def adjHKLmax(SGData,Hmax):
         Hmax[0] = ((Hmax[0]+2)/4)*4
         Hmax[1] = ((Hmax[1]+2)/4)*4
         Hmax[2] = ((Hmax[2]+1)/4)*4
+
+def OmitMap(data,reflData):
+    generalData = data['General']
+    if not generalData['Map']['MapType']:
+        print '**** ERROR - Fourier map not defined'
+        return
+    mapData = generalData['Map']
+    dmin = mapData['Resolution']
+    SGData = generalData['SGData']
+    cell = generalData['Cell'][1:8]        
+    A = G2lat.cell2A(cell[:6])
+    Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
+    adjHKLmax(SGData,Hmax)
+    Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
+    time0 = time.time()
+    for ref in reflData:
+        if ref[4] >= dmin:
+            Fosq,Fcsq,ph = ref[8:11]
+            for i,hkl in enumerate(ref[11]):
+                hkl = np.asarray(hkl,dtype='i')
+                dp = 360.*ref[12][i]
+                a = cosd(ph+dp)
+                b = sind(ph+dp)
+                phasep = complex(a,b)
+                phasem = complex(a,-b)
+                F = np.sqrt(Fosq)
+                h,k,l = hkl+Hmax
+                Fhkl[h,k,l] = F*phasep
+                h,k,l = -hkl+Hmax
+                Fhkl[h,k,l] = F*phasem
+    rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
+    print 'NB: this is just an Fobs map for now - under development'
+    print 'Omit map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    print rho.shape
+    mapData['rho'] = np.real(rho)
+    mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    return mapData
 
 def FourierMap(data,reflData):
     

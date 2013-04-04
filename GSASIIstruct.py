@@ -130,7 +130,8 @@ def CheckConstraints(GPXfile):
     if not Histograms:
         return 'Error: no diffraction data',''
     rigidbodyDict = GetRigidBodies(GPXfile)
-    rbVary,rbDict,rbIds = GetRigidBodyModels(rigidbodyDict,Print=False)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
@@ -395,7 +396,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         except EOFError:
             break
         datum = data[0]
-        if datum[0] == 'Sequental results':
+        if datum[0] == 'Sequential results':
             data[0][1] = SeqResult
         try:
             histogram = Histograms[datum[0]]
@@ -588,7 +589,49 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                 if Print:
                     print >>pFile,'\nResidue rigid body model:'
                     PrintResRBModel(rigidbodyDict['Residue'][item])
-    return rbVary,rbDict,rbIds
+    return rbVary,rbDict
+    
+def ApplyRBModels(parmDict,Phases,rigidbodyDict):
+    ''' Takes RB info from RBModels in Phase and RB data in rigidbodyDict along with
+    current RB values in parmDict & modifies atom contents (xyz & Uij) of parmDict
+    '''
+    RBIds = rigidbodyDict['RBIds']
+    if not RBIds['Vector'] and not RBIds['Residue']:
+        return
+    RBData = copy.deepcopy(rigidbodyDict)     # don't mess with original!
+    if RBIds['Vector']:                       # first update the vector magnitudes
+        VRBIds = RBIds['Vector']
+        VRBData = RBData['Vector']
+        for i,rbId in enumerate(VRBIds):
+            pfxRB = '::RBV;'+str(i)+':'
+            for j in range(len(VRBData[rbId]['VectMag'])):
+                VRBData[rbId]['VectMag'][j] = parmDict[pfxRB+str(j)]
+    for phase in Phases:
+        Phase = Phases[phase]
+        General = Phase['General']
+        cell = General['Cell'][1:7]
+        Amat,Bmat = G2lat.cell2AB(cell)
+        AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
+        pId = Phase['pId']
+        RBModels =  copy.deepcopy(Phase['RBModels']) # again don't mess with original!
+        for irb,RBObj in enumerate(RBModels['Vector']):
+            print irb,RBObj
+            
+            XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
+            for x in XYZ: print x
+            UIJ = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
+            for u in UIJ: print u
+            
+        for irb,RBObj in enumerate(RBModels['Residue']):
+            print irb,RBObj
+            
+            
+        
+            XYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+            UIJ = G2mth.UpdateRBUIJ(Amat,XYZ,RBObj)
+            
+    raise Exception
+
         
 ################################################################################
 ##### Phase data
@@ -736,9 +779,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         print >>pFile,ptlbls
         print >>pFile,ptstr
         
-    def MakeRBParms():
+    def MakeRBParms(rbKey):
         rbid = str(rbids.index(RB['RBId']))
-        pfxRB = pfx+'RBP'
+        pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']
         ostr = ['a','i','j','k']
         for i in range(3):
@@ -746,7 +789,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             phaseDict[name] = RB['Orig'][0][i]
             if RB['Orig'][1]:
                 phaseVary += [name,]
-        pfxRB = pfx+'RBO'
+        pfxRB = pfx+'RB'+rbKey+'O'
         for i in range(4):
             name = pfxRB+ostr[i]+':'+str(iRB)+':'+rbid
             phaseDict[name] = RB['Orient'][0][i]
@@ -755,40 +798,40 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             elif RB['Orient'][1] == 'A' and not i:
                 phaseVary += [name,]
             
-    def MakeRBThermals():
+    def MakeRBThermals(rbKey):
         rbid = str(rbids.index(RB['RBId']))
         tlstr = ['11','22','33','12','13','23']
         sstr = ['12','13','21','23','31','32','AA','BB']
         if 'T' in RB['ThermalMotion'][0]:
-            pfxRB = pfx+'RBT'
+            pfxRB = pfx+'RB'+rbKey+'T'
             for i in range(6):
                 name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
                 phaseDict[name] = RB['ThermalMotion'][1][i]
                 if RB['ThermalMotion'][2][i]:
                     phaseVary += [name,]
         if 'L' in RB['ThermalMotion'][0]:
-            pfxRB = pfx+'RBL'
+            pfxRB = pfx+'RB'+rbKey+'L'
             for i in range(6):
                 name = pfxRB+tlstr[i]+':'+str(iRB)+':'+rbid
                 phaseDict[name] = RB['ThermalMotion'][1][i+6]
                 if RB['ThermalMotion'][2][i+6]:
                     phaseVary += [name,]
         if 'S' in RB['ThermalMotion'][0]:
-            pfxRB = pfx+'RBS'
+            pfxRB = pfx+'RB'+rbKey+'S'
             for i in range(5):
                 name = pfxRB+sstr[i]+':'+str(iRB)+':'+rbid
                 phaseDict[name] = RB['ThermalMotion'][1][i+12]
                 if RB['ThermalMotion'][2][i+12]:
                     phaseVary += [name,]
         if 'U' in RB['ThermalMotion'][0]:
-            name = pfx+'RBU:'+str(iRB)+':'+rbid
+            name = pfx+'RB'+rbKey+'U:'+str(iRB)+':'+rbid
             phaseDict[name] = RB['ThermalMotion'][1][0]
             if RB['ThermalMotion'][2][0]:
                 phaseVary += [name,]
                 
-    def MakeRBTorsions():
+    def MakeRBTorsions(rbKey):
         rbid = str(rbids.index(RB['RBId']))
-        pfxRB = pfx+'RBTr;'
+        pfxRB = pfx+'RB'+rbKey+'Tr;'
         for i,torsion in enumerate(RB['Torsions']):
             name = pfxRB+str(i)+':'+str(iRB)+':'+rbid
             phaseDict[name] = torsion[0]
@@ -830,18 +873,18 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             phaseVary += cellVary(pfx,SGData)
         resRBData = PhaseData[name]['RBModels'].get('Residue',[])
         if resRBData:
-            rbids = rbIds['Residue']
+            rbids = rbIds['Residue']    #NB: used in the MakeRB routines
             for iRB,RB in enumerate(resRBData):
-                MakeRBParms()
-                MakeRBThermals()
-                MakeRBTorsions()
+                MakeRBParms('R')
+                MakeRBThermals('R')
+                MakeRBTorsions('R')
         
         vecRBData = PhaseData[name]['RBModels'].get('Vector',[])
         if vecRBData:
-            rbids = rbIds['Vector']
+            rbids = rbIds['Vector']    #NB: used in the MakeRB routines
             for iRB,RB in enumerate(vecRBData):
-                MakeRBParms()
-                MakeRBThermals()
+                MakeRBParms('V')
+                MakeRBThermals('V')
                     
         Natoms[pfx] = 0
         if Atoms and not General.get('doPawley'):
@@ -3733,6 +3776,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     M = np.empty(0)
     SumwYo = 0
     Nobs = 0
+    ApplyRBModels(parmdict,Phases,rigidbodyDict)
     histoList = Histograms.keys()
     histoList.sort()
     for histogram in histoList:
@@ -3776,7 +3820,6 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             SGData = Phase['General']['SGData']
             A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
-#apply RB models to atom parms in parmDict?
             refList = Histogram['Data']
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
             df = np.zeros(len(refList))
@@ -3869,13 +3912,13 @@ def Refine(GPXfile,dlg):
         print ' *** Refine aborted ***'
         raise Exception        
     rigidbodyDict = GetRigidBodies(GPXfile)
-    rbVary,rbDict,rbIds = GetRigidBodyModels(rigidbodyDict,pFile=printFile)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,pFile=printFile)
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile)
     calcControls['atomIndx'] = atomIndx
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
     calcControls['BLtables'] = BLtables
-    calcControls['rbIDs'] = rbIds
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,pFile=printFile)
     calcControls.update(controlDict)
     histVary,histDict,controlDict = GetHistogramData(Histograms,pFile=printFile)
@@ -4031,7 +4074,8 @@ def SeqRefine(GPXfile,dlg):
         print ' *** Refine aborted ***'
         raise Exception
     rigidbodyDict = GetRigidBodies(GPXfile)
-    rbVary,rbDict,rbIds = GetRigidBodyModels(rigidbodyDict,pFile=printFile)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,pFile=printFile)
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,restraintDict,rbIds,False,printFile)
     for item in phaseVary:
         if '::A0' in item:
@@ -4055,7 +4099,6 @@ def SeqRefine(GPXfile,dlg):
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
         calcControls['BLtables'] = BLtables
-        calcControls['rbIDs'] = rbIds
         varyList = []
         parmDict = {}
         Histo = {histogram:Histograms[histogram],}

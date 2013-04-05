@@ -3296,6 +3296,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx[thermSel.GetId()] = RBObj
             thermSel.Bind(wx.EVT_COMBOBOX,OnThermSel)
             thermSizer.Add(thermSel,0,wx.ALIGN_CENTER_VERTICAL)
+            thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,wx.ALIGN_CENTER_VERTICAL)
             resrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
                 resrbSizer.Add(ThermDataSizer(RBObj))
@@ -3335,6 +3336,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx[thermSel.GetId()] = RBObj
             thermSel.Bind(wx.EVT_COMBOBOX,OnThermSel)
             thermSizer.Add(thermSel,0,wx.ALIGN_CENTER_VERTICAL)
+            thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,wx.ALIGN_CENTER_VERTICAL)
             vecrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
                 vecrbSizer.Add(ThermDataSizer(RBObj))

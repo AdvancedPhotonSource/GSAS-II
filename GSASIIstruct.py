@@ -595,12 +595,15 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict):
     ''' Takes RB info from RBModels in Phase and RB data in rigidbodyDict along with
     current RB values in parmDict & modifies atom contents (xyz & Uij) of parmDict
     '''
+    atxIds = ['Ax:','Ay:','Az:']
+    atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
     RBIds = rigidbodyDict['RBIds']
     if not RBIds['Vector'] and not RBIds['Residue']:
         return
+    VRBIds = RBIds['Vector']
+    RRBIds = RBIds['Residue']
     RBData = copy.deepcopy(rigidbodyDict)     # don't mess with original!
     if RBIds['Vector']:                       # first update the vector magnitudes
-        VRBIds = RBIds['Vector']
         VRBData = RBData['Vector']
         for i,rbId in enumerate(VRBIds):
             pfxRB = '::RBV;'+str(i)+':'
@@ -612,26 +615,34 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict):
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
         AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
-        pId = Phase['pId']
+        pfx = str(Phase['pId'])+'::'
         RBModels =  copy.deepcopy(Phase['RBModels']) # again don't mess with original!
-        for irb,RBObj in enumerate(RBModels['Vector']):
-            print irb,RBObj
-            
+        for irb,rbId in enumerate(VRBIds):
+            RBObj = RBModels['Vector'][irb]
             XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
-            for x in XYZ: print x
             UIJ = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
-            for u in UIJ: print u
-            
-        for irb,RBObj in enumerate(RBModels['Residue']):
-            print irb,RBObj
-            
-            
-        
-            XYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
-            UIJ = G2mth.UpdateRBUIJ(Amat,XYZ,RBObj)
-            
-    raise Exception
-
+            for i,x in enumerate(XYZ):
+                atId = RBObj['Ids'][i]
+                for j in [0,1,2]:
+                    parmDict[pfx+atxIds[j]+str(AtLookup[atId])] = x[j]
+                if UIJ[0] == 'A':
+                    for j in range(6):
+                        parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = Uij[j+2]
+                elif UIJ[0] == 'I':
+                    parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = Uij[j+1]
+        for irb,rbId in enumerate(RRBIds):
+            RBObj = RBModels['Residue'][irb]            
+            XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+            UIJ = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
+            for i,x in enumerate(XYZ):
+                atId = RBObj['Ids'][i]
+                for j in [0,1,2]:
+                    parmDict[pfx+atxIds[j]+str(AtLookup[atId])] = x[j]
+                if UIJ[0] == 'A':
+                    for j in range(6):
+                        parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = Uij[j+2]
+                elif UIJ[0] == 'I':
+                    parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = Uij[j+1]
         
 ################################################################################
 ##### Phase data
@@ -3313,7 +3324,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
-#apply RB parms to atom parms in parmDict?
         if not Phase['General'].get('doPawley'):
             refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
         for refl in refList:

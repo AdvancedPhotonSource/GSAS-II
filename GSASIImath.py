@@ -256,57 +256,55 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
             for ride in seq[3]:
-                XYZ[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+                Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
-        xyz = prodQVQ(RBObj['Orient'][0],xyz)
-        XYZ[i] = np.inner(Bmat,xyz)+RBObj['Orig'][0]
+        X = prodQVQ(RBObj['Orient'][0],xyz)
+        XYZ[i] = np.inner(Bmat,X)+RBObj['Orig'][0]
     return XYZ,Cart
     
 def UpdateRBUIJ(Bmat,Cart,RBObj):
     ''' Returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
     '''
     TLStype,TLS = RBObj['ThermalMotion'][:2]
-#    T = TLS[:6]
-#    L = TLS[6:12]
-#    S = TLS[12:]
-#    Uout = []
-#    for X in Cart:
-#        U = [0,0,0,0,0,0]
-#        U[0] = T[0]+L[1]*X[2]**2+L[2]*X[1]**2-2.0*L[5]*X[1]*X[2]+2.0*(S[2]*X[2]-S[4]*X[1])
-#        U[1] = T[1]+L[0]*X[2]**2+L[2]*X[0]**2-2.0*L[4]*X[0]*X[2]+2.0*(S[5]*X[0]-S[0]*X[2])
-#        U[2] = T[2]+L[1]*X[0]**2+L[0]*X[1]**2-2.0*L[3]*X[1]*X[0]+2.0*(S[1]*X[1]-S[3]*X[0])
-#        U[3] = T[3]+L[4]*X[1]*X[2]+L[5]*X[0]*X[2]-L[3]*X[2]**2-L[2]*X[0]*X[1]+
-#            S[4]*X[0]-S[5]*X[1]-(S[6]+S[7])*X[2]
-#        U[4] = T[4]+L[3]*X[1]*X[2]+L[5]*X[0]*X[1]-L[4]*X[1]**2-L[1]*X[0]*X[2]+
-#            S[3]*X[2]-S[2]*X[0]+S[6]*X[1]
-#        U[5] = T[5]+L[3]*X[0]*X[2]+L[4]*X[0]*X[1]-L[5]*X[0]**2-L[0]*X[2]*X[1]+
-#            S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
-#        UIJ = G2lat.U6toUij(U)
-#        Uout.append(
-    
     Tmat = np.zeros((3,3))
     Lmat = np.zeros((3,3))
     Smat = np.zeros((3,3))
     if 'T' in TLStype:
-        Tmat = G2lat.U6toUij(TLS[:6])
+        T = TLS[:6]
+#        Tmat = G2lat.U6toUij(T)
     if 'L' in TLStype:
-        Lmat = np.array(G2lat.U6toUij(TLS[6:12]))*(np.pi/180.)**2
+        L = np.array(TLS[6:12])*(np.pi/180.)**2
+#        Lmat = np.array(G2lat.U6toUij(L))
     if 'S' in TLStype:
-        Smat = np.array([[TLS[18],TLS[12],TLS[13]],[TLS[14],TLS[19],TLS[15]],[TLS[16],TLS[17],0]])*(np.pi/180.)
+        S = np.array(TLS[12:])*(np.pi/180.)
+#        Smat = np.array([[S[6],S[0],S[1]],[S[2],S[7],S[3]],[S[4],S[5],0]])
     g = np.inner(Bmat,Bmat.T)
     gvec = 1./np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
         g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
     Uout = []
+    Q = RBObj['Orient'][0]
     for X in Cart:
-        print 'X: ',X
-        Axyz = np.array([[0,X[2],-X[1]], [-X[2],0,X[0]], [X[1],-X[0],0]])
+        X = prodQVQ(Q,X)
+#        Axyz = np.array([[0,X[2],-X[1]], [-X[2],0,X[0]], [X[1],-X[0],0]])
         if 'U' in TLStype:
             Uout.append(['I',TLS[0],0,0,0,0,0,0])
-        else:
-            Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
-            print 'Umat: ',Umat
-            beta = np.inner(np.inner(g,Umat),g)
+        elif not 'N' in TLStype:
+            U = [0,0,0,0,0,0]
+            U[0] = T[0]+L[1]*X[2]**2+L[2]*X[1]**2-2.0*L[5]*X[1]*X[2]+2.0*(S[2]*X[2]-S[4]*X[1])
+            U[1] = T[1]+L[0]*X[2]**2+L[2]*X[0]**2-2.0*L[4]*X[0]*X[2]+2.0*(S[5]*X[0]-S[0]*X[2])
+            U[2] = T[2]+L[1]*X[0]**2+L[0]*X[1]**2-2.0*L[3]*X[1]*X[0]+2.0*(S[1]*X[1]-S[3]*X[0])
+            U[3] = T[3]+L[4]*X[1]*X[2]+L[5]*X[0]*X[2]-L[3]*X[2]**2-L[2]*X[0]*X[1]+  \
+                S[4]*X[0]-S[5]*X[1]-(S[6]+S[7])*X[2]
+            U[4] = T[4]+L[3]*X[1]*X[2]+L[5]*X[0]*X[1]-L[4]*X[1]**2-L[1]*X[0]*X[2]+  \
+                S[3]*X[2]-S[2]*X[0]+S[6]*X[1]
+            U[5] = T[5]+L[3]*X[0]*X[2]+L[4]*X[0]*X[1]-L[5]*X[0]**2-L[0]*X[2]*X[1]+  \
+                S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
+            Umat = G2lat.U6toUij(U)
+#            print 'Umat: ',Umat
+#wrong?      Umat1 = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz.T,Lmat),Axyz)
+#            print 'Umat1: ',Umat1
+            beta = np.inner(np.inner(Bmat,Umat),Bmat.T)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
     return Uout
     

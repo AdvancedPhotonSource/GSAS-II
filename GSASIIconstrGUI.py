@@ -100,7 +100,8 @@ def UpdateConstraints(G2frame,data):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     rigidbodyDict = G2frame.PatternTree.GetItemPyData(   
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-    rbVary,rbDict,rbIds = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
     AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []

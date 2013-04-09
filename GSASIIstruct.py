@@ -135,7 +135,7 @@ def CheckConstraints(GPXfile):
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
-    varyList = phaseVary+hapVary+histVary
+    varyList = rbVary+phaseVary+hapVary+histVary
     constrDict,fixedList = GetConstraints(GPXfile)
     return G2mv.CheckConstraints(varyList,constrDict,fixedList)
     
@@ -338,13 +338,14 @@ def GPXBackup(GPXfile,makeBack=True):
     dfu.copy_file(GPXfile,GPXback)
     return GPXback
 
-def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
+def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,makeBack=True):
     ''' Updates gpxfile from all histograms that are found in any phase
-    and any phase that used a histogram
+    and any phase that used a histogram. Also updates rigid body definitions.
     input:
         GPXfile = .gpx full file name
         Histograms = dictionary of histograms as {name:data,...}
         Phases = dictionary of phases that use histograms
+        RigidBodies = dictionary of rigid bodies
         CovData = dictionary of refined variables, varyList, & covariance matrix
         makeBack = True if new backup of .gpx file is to be made; else use the last one made
     '''
@@ -368,6 +369,8 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,CovData,makeBack=True):
                     data[iphase][1].update(Phases[phaseName])
         elif datum[0] == 'Covariance':
             data[0][1] = CovData
+        elif datum[0] == 'Rigid bodies':
+            data[0][1] = RigidBodies
         try:
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]
@@ -570,8 +573,8 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
     rbVary = []
     rbDict = {}
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-    if len(rigidbodyDict['Vector']):
-        for irb,item in enumerate(rigidbodyDict['RBIds']['Vector']):
+    if len(rbIds['Vector']):
+        for irb,item in enumerate(rbIds['Vector']):
             if rigidbodyDict['Vector'][item]['useCount']:
                 RBmags = rigidbodyDict['Vector'][item]['VectMag']
                 RBrefs = rigidbodyDict['Vector'][item]['VectRef']
@@ -583,26 +586,61 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                 if Print:
                     print >>pFile,'\nVector rigid body model:'
                     PrintVecRBModel(rigidbodyDict['Vector'][item])
-    if len(rigidbodyDict['Residue']):
-        for item in rigidbodyDict['RBIds']['Residue']:
+    if len(rbIds['Residue']):
+        for item in rbIds['Residue']:
             if rigidbodyDict['Residue'][item]['useCount']:
                 if Print:
                     print >>pFile,'\nResidue rigid body model:'
                     PrintResRBModel(rigidbodyDict['Residue'][item])
     return rbVary,rbDict
     
-def ApplyRBModels(parmDict,Phases,rigidbodyDict):
+def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
+    
+    def PrintRBVectandSig(VectRB,VectSig):
+        print >>pFile,'\n Rigid body vector magnitudes for '+VectRB['RBname']+':'
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,[val,sig] in enumerate(zip(VectRB['VectMag'],VectSig)):
+            namstr += '%12s'%('Vect '+str(i))
+            valstr += '%12.4f'%(val)
+            if sig:
+                sigstr += '%12.4f'%(sig)
+            else:
+                sigstr += 12*' '
+        print >>pFile,namstr
+        print >>pFile,valstr
+        print >>pFile,sigstr        
+        
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
+    if not RBIds['Vector']:
+        return
+    for irb,item in enumerate(RBIds['Vector']):
+        if rigidbodyDict['Vector'][item]['useCount']:
+            VectSig = []
+            RBmags = rigidbodyDict['Vector'][item]['VectMag']
+            for i,mag in enumerate(RBmags):
+                name = '::RBV;'+str(irb)+':'+str(i)
+                mag = parmDict[name]
+                if name in sigDict:
+                    VectSig.append(sigDict[name])
+            PrintRBVectandSig(rigidbodyDict['Vector'][item],VectSig)    
+        
+def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
     ''' Takes RB info from RBModels in Phase and RB data in rigidbodyDict along with
     current RB values in parmDict & modifies atom contents (xyz & Uij) of parmDict
     '''
     atxIds = ['Ax:','Ay:','Az:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
-    RBIds = rigidbodyDict['RBIds']
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
     if not RBIds['Vector'] and not RBIds['Residue']:
         return
     VRBIds = RBIds['Vector']
     RRBIds = RBIds['Residue']
-    RBData = copy.deepcopy(rigidbodyDict)     # don't mess with original!
+    if Update:
+        RBData = rigidbodyDict
+    else:
+        RBData = copy.deepcopy(rigidbodyDict)     # don't mess with original!
     if RBIds['Vector']:                       # first update the vector magnitudes
         VRBData = RBData['Vector']
         for i,rbId in enumerate(VRBIds):
@@ -616,9 +654,29 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict):
         Amat,Bmat = G2lat.cell2AB(cell)
         AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
         pfx = str(Phase['pId'])+'::'
-        RBModels =  copy.deepcopy(Phase['RBModels']) # again don't mess with original!
-        for irb,rbId in enumerate(VRBIds):
-            RBObj = RBModels['Vector'][irb]
+        if Update:
+            RBModels = Phase['RBModels']
+        else:
+            RBModels =  copy.deepcopy(Phase['RBModels']) # again don't mess with original!
+        for irb,RBObj in enumerate(RBModels.get('Vector',[])):
+            jrb = VRBIds.index(RBObj['RBId'])
+            rbsx = str(irb)+':'+str(jrb)
+            for i,px in enumerate(['RBVPx:','RBVPy:','RBVPz:']):
+                RBObj['Orig'][0][i] = parmDict[pfx+px+rbsx]
+            for i,po in enumerate(['RBVOa:','RBVOi:','RBVOj:','RBVOk:']):
+                RBObj['Orient'][0][i] = parmDict[pfx+po+rbsx]
+            TLS = RBObj['ThermalMotion']
+            if 'T' in TLS[0]:
+                for i,pt in enumerate(['RBVT11:','RBVT22:','RBVT33:','RBVT12:','RBVT13:','RBVT23:']):
+                    RBObj['ThermalMotion'][1][i] = parmDict[pfx+pt+rbsx]
+            if 'L' in TLS[0]:
+                for i,pt in enumerate(['RBVL11:','RBVL22:','RBVL33:','RBVL12:','RBVL13:','RBVL23:']):
+                    RBObj['ThermalMotion'][1][i+6] = parmDict[pfx+pt+rbsx]
+            if 'S' in TLS[0]:
+                for i,pt in enumerate(['RBVS12:','RBVS13:','RBVS21:','RBVS23:','RBVS31:','RBVS32:','RBVSAA:','RBVSBB:']):
+                    RBObj['ThermalMotion'][1][i+12] = parmDict[pfx+pt+rbsx]
+            if 'U' in TLS[0]:
+                RBObj['ThermalMotion'][1][0] = parmDict[pfx+'RBVU:'+rbsx]
             XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
             UIJ = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
             for i,x in enumerate(XYZ):
@@ -630,8 +688,27 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict):
                         parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = Uij[j+2]
                 elif UIJ[0] == 'I':
                     parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = Uij[j+1]
-        for irb,rbId in enumerate(RRBIds):
-            RBObj = RBModels['Residue'][irb]            
+        for irb,RBObj in enumerate(RBModels.get('Residue',[])):
+            jrb = RRBIds.index(RBObj['RBId'])
+            rbsx = str(irb)+':'+str(jrb)
+            for i,px in enumerate(['RBRPx:','RBRPy:','RBRPz:']):
+                RBObj['Orig'][0][i] = parmDict[pfx+px+rbsx]
+            for i,po in enumerate(['RBROa:','RBROi:','RBROj:','RBROk:']):
+                RBObj['Orient'][0][i] = parmDict[pfx+po+rbsx]                
+            TLS = RBObj['ThermalMotion']
+            if 'T' in TLS[0]:
+                for i,pt in enumerate(['RBRT11:','RBRT22:','RBRT33:','RBRT12:','RBRT13:','RBRT23:']):
+                    RBObj['ThermalMotion'][1][i] = parmDict[pfx+pt+rbsx]
+            if 'L' in TLS[0]:
+                for i,pt in enumerate(['RBRL11:','RBRL22:','RBRL33:','RBRL12:','RBRL13:','RBRL23:']):
+                    RBObj['ThermalMotion'][1][i+6] = parmDict[pfx+pt+rbsx]
+            if 'S' in TLS[0]:
+                for i,pt in enumerate(['RBRS12:','RBRS13:','RBRS21:','RBRS23:','RBRS31:','RBRS32:','RBRSAA:','RBRSBB:']):
+                    RBObj['ThermalMotion'][1][i+12] = parmDict[pfx+pt+rbsx]
+            if 'U' in TLS[0]:
+                RBObj['ThermalMotion'][1][0] = parmDict[pfx+'RBRU:'+rbsx]
+            for itors,tors in enumerate(RBObj['Torsions']):
+                tors[0] = parmDict[pfx+'RBRTr;'+str(itors)+':'+rbsx]
             XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
             UIJ = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
             for i,x in enumerate(XYZ):
@@ -790,7 +867,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         print >>pFile,ptlbls
         print >>pFile,ptstr
         
-    def MakeRBParms(rbKey):
+    def MakeRBParms(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         pfxRB = pfx+'RB'+rbKey+'P'
         pstr = ['x','y','z']
@@ -804,12 +881,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         for i in range(4):
             name = pfxRB+ostr[i]+':'+str(iRB)+':'+rbid
             phaseDict[name] = RB['Orient'][0][i]
-            if RB['Orient'][1] == 'V' and i:
+            if RB['Orient'][1] == 'AV' and i:
                 phaseVary += [name,]
             elif RB['Orient'][1] == 'A' and not i:
                 phaseVary += [name,]
             
-    def MakeRBThermals(rbKey):
+    def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         tlstr = ['11','22','33','12','13','23']
         sstr = ['12','13','21','23','31','32','AA','BB']
@@ -829,7 +906,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                     phaseVary += [name,]
         if 'S' in RB['ThermalMotion'][0]:
             pfxRB = pfx+'RB'+rbKey+'S'
-            for i in range(5):
+            for i in range(8):
                 name = pfxRB+sstr[i]+':'+str(iRB)+':'+rbid
                 phaseDict[name] = RB['ThermalMotion'][1][i+12]
                 if RB['ThermalMotion'][2][i+12]:
@@ -840,7 +917,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             if RB['ThermalMotion'][2][0]:
                 phaseVary += [name,]
                 
-    def MakeRBTorsions(rbKey):
+    def MakeRBTorsions(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         pfxRB = pfx+'RB'+rbKey+'Tr;'
         for i,torsion in enumerate(RB['Torsions']):
@@ -886,16 +963,16 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         if resRBData:
             rbids = rbIds['Residue']    #NB: used in the MakeRB routines
             for iRB,RB in enumerate(resRBData):
-                MakeRBParms('R')
-                MakeRBThermals('R')
-                MakeRBTorsions('R')
+                MakeRBParms('R',phaseVary,phaseDict)
+                MakeRBThermals('R',phaseVary,phaseDict)
+                MakeRBTorsions('R',phaseVary,phaseDict)
         
         vecRBData = PhaseData[name]['RBModels'].get('Vector',[])
         if vecRBData:
             rbids = rbIds['Vector']    #NB: used in the MakeRB routines
             for iRB,RB in enumerate(vecRBData):
-                MakeRBParms('V')
-                MakeRBThermals('V')
+                MakeRBParms('V',phaseVary,phaseDict)
+                MakeRBThermals('V',phaseVary,phaseDict)
                     
         Natoms[pfx] = 0
         if Atoms and not General.get('doPawley'):
@@ -1174,7 +1251,7 @@ def getCellEsd(pfx,SGData,A,covData):
     cellSig = [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]  #exchange sig(alp) & sig(gam) to get in right order
     return cellSig            
     
-def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
+def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
     
     def PrintAtomsAndSig(General,Atoms,atomsSig):
         print >>pFile,'\n Atoms:'
@@ -1223,7 +1300,78 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
                 print >>pFile,valstr
                 print >>pFile,sigstr
                 
-    #def PrintRBObjectsAndSig()
+    def PrintRBObjPOAndSig(rbfx,rbsx):
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,px in enumerate(['Px:','Py:','Pz:']):
+            name = pfx+rbfx+px+rbsx
+            namstr += '%12s'%('Pos '+px[1])
+            valstr += '%12.5f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.5f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        for i,po in enumerate(['Oa:','Oi:','Oj:','Ok:']):
+            name = pfx+rbfx+po+rbsx
+            namstr += '%12s'%('Ori '+po[1])
+            valstr += '%12.5f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.5f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        print >>pFile,namstr
+        print >>pFile,valstr
+        print >>pFile,sigstr
+        
+    def PrintRBObjTLSAndSig(rbfx,rbsx):
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,pt in enumerate(['T11:','T22:','T33:','T12:','T13:','T23:']):
+            name = pfx+rbfx+pt+rbsx
+            namstr += '%12s'%(pt[:3])
+            valstr += '%12.5f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.5f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        print >>pFile,namstr
+        print >>pFile,valstr
+        print >>pFile,sigstr
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,pt in enumerate(['L11:','L22:','L33:','L12:','L13:','L23:']):
+            name = pfx+rbfx+pt+rbsx
+            namstr += '%12s'%(pt[:3])
+            valstr += '%12.3f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.3f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        print >>pFile,namstr
+        print >>pFile,valstr
+        print >>pFile,sigstr
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'
+        for i,pt in enumerate(['S12:','S13:','S21:','S23:','S31:','S32:','SAA:','SBB:']):
+            name = pfx+rbfx+pt+rbsx
+            namstr += '%12s'%(pt[:3])
+            valstr += '%12.3f'%(parmDict[name])
+            if name in sigDict:
+                sigstr += '%12.3f'%(sigDict[name])
+            else:
+                sigstr += 12*' '
+        print >>pFile,namstr
+        print >>pFile,valstr
+        print >>pFile,sigstr
+        
+    def PrintRBObjTorAndSig(rbsx):
+        namstr = '  names :'
+        valstr = '  values:'
+        sigstr = '  esds  :'        
                 
     def PrintSHtextureAndSig(textureData,SHtextureSig):
         print >>pFile,'\n Spherical harmonics texture: Order:' + str(textureData['Order'])
@@ -1256,7 +1404,6 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
         print >>pFile,namstr
         print >>pFile,ptstr
         print >>pFile,sigstr
-        
             
     print >>pFile,'\n Phases:'
     for phase in Phases:
@@ -1318,7 +1465,22 @@ def SetPhaseData(parmDict,sigDict,Phases,covData,RestraintDict=None,pFile=None):
                 else:
                     refl[7] = 0
         else:
-            #new RBObj parms here, mod atoms, & PrintRBObjectsAndSig
+            VRBIds = RBIds['Vector']
+            RRBIds = RBIds['Residue']
+            RBModels = Phase['RBModels']
+            for irb,RBObj in enumerate(RBModels.get('Vector',[])):
+                jrb = VRBIds.index(RBObj['RBId'])
+                rbsx = str(irb)+':'+str(jrb)
+                print >>pFile,' Vector rigid body '
+                PrintRBObjPOAndSig('RBV',rbsx)
+                PrintRBObjTLSAndSig('RBV',rbsx)
+            for irb,RBObj in enumerate(RBModels.get('Residue',[])):
+                jrb = VRBIds.index(RBObj['RBId'])
+                rbsx = str(irb)+':'+str(jrb)
+                print >>pFile,' Residue rigid body '
+                PrintRBObjPOAndSig('RBR',rbsx)
+                PrintRBObjTLSAndSig('RBR',rbsx)
+                PrintRBObjTorAndSig(rbsx)
             atomsSig = {}
             if General['Type'] == 'nuclear':        #this needs macromolecular variant!
                 for i,at in enumerate(Atoms):
@@ -2708,6 +2870,7 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
         dFdvDict[pfx+'BabA'] = dFdbab.T[0]
         dFdvDict[pfx+'BabU'] = dFdbab.T[1]
+# or else do RB modification of dFdvDict here? Perhaps not...
     return dFdvDict
     
 def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
@@ -3641,6 +3804,7 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
+# do RB modification of dFdvDict here; varylist will contain RB variables so dFdvDict needs corresponding entries
             dMdvh = np.zeros((len(varylist),len(refList)))
             for iref,ref in enumerate(refList):
                 if ref[6] > 0:
@@ -3731,6 +3895,7 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
+# do RB modification of dFdvDict here; varylist will contain RB variables so dFdvDict needs corresponding entries
             dMdvh = np.zeros((len(varylist),len(refList)))
             wdf = np.zeros(len(refList))
             for iref,ref in enumerate(refList):
@@ -3987,7 +4152,6 @@ def Refine(GPXfile,dlg):
         Rvals['chisq'] = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict,varyList)
-        
         Rvals['Nobs'] = Histograms['Nobs']
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = Rvals['chisq']/(Histograms['Nobs']-len(varyList))
@@ -4036,10 +4200,12 @@ def Refine(GPXfile,dlg):
     # add the uncertainties into the esd dictionary (sigDict)
     sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
-    SetPhaseData(parmDict,sigDict,Phases,covData,restraintDict,printFile)
+    ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
+    SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
+    SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
     SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,pFile=printFile)
     SetHistogramData(parmDict,sigDict,Histograms,pFile=printFile)
-    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,covData)
+    SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData)
     printFile.close()
     print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
     print ' ***** Refinement successful *****'
@@ -4223,10 +4389,12 @@ def SeqRefine(GPXfile,dlg):
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
             'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
         # add the uncertainties into the esd dictionary (sigDict)
+        ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
+#??        SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
         SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint,printFile)
         SetHistogramData(parmDict,sigDict,Histo,ifPrint,printFile)
         SeqResult[histogram] = covData
-        SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,covData,makeBack)
+        SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,covData,makeBack)
         makeBack = False
     SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()

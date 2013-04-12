@@ -254,7 +254,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             selblk = 0
         elif self.repeat and selections is not None:
             # we were called to repeat the read
-            print 'debug: repeat #',self.repeatcount,'selection',selections[self.repeatcount]
+            #print 'debug: repeat #',self.repeatcount,'selection',selections[self.repeatcount]
             selblk = selections[self.repeatcount]
             self.repeatcount += 1
             if self.repeatcount >= len(selections): self.repeat = False

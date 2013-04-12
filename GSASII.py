@@ -347,7 +347,7 @@ class GSASII(wx.Frame):
                     for i in range(3):
                         rdmsg += fp.readline()
                     rdmsg += '\n\nDo you want to read this file?'
-                    if not all([ord(c) < 128 for c in rdmsg]): # show only if ASCII
+                    if not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
                         rdmsg = 'File '+str(
                             filename)+' is a binary file. Do you want to read this file?'
                     result = wx.ID_NO

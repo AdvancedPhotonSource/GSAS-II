@@ -48,6 +48,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
             self.Phase['Pawley ref'] = []       # & any Pawley refl.
             return True
         except Exception as detail:
+            import sys
             print self.formatName+' error:',detail # for testing
             print sys.exc_info()[0] # for testing
             import traceback

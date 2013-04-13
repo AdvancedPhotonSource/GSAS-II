@@ -239,19 +239,17 @@ def U6toUij(U6):
     returns:
         Uij - numpy [3][3] array of uij
     """
-    U = np.zeros(shape=(3,3))
-    U = [
+    U = np.array([
         [U6[0],  U6[3],  U6[4]], 
         [U6[3],  U6[1],  U6[5]], 
-        [U6[4],  U6[5],  U6[2]]]
+        [U6[4],  U6[5],  U6[2]]])
     return U
 
 def UijtoU6(U):
     """Fill vector [U11,U22,U33,U12,U13,U23] from Uij 
     NB: there is a non numpy version in GSASIIspc: Uij2U
     """
-    U6 = np.zeros(6)
-    U6 = [U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]]
+    U6 = np.array([U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]])
     return U6
 
 def Uij2betaij(Uij,G):

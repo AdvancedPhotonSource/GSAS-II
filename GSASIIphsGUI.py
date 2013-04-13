@@ -3089,15 +3089,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Obj = event.GetEventObject()
             RBObj = Indx[Obj.GetId()]
             val = Obj.GetValue()
-            RBObj['ThermalMotion'] = ['None',[],[]]
             if val == 'Uiso':
-                RBObj['ThermalMotion'] = ['Uiso',[0.01,],[False,]]
+                RBObj['ThermalMotion'][0] = 'Uiso'
             elif val == 'T':
-                RBObj['ThermalMotion'] = ['T',[0.0 for i in range(6)],[False for i in range(6)]]
+                RBObj['ThermalMotion'][0] = 'T'
             elif val == 'TL':
-                RBObj['ThermalMotion'] = ['TL',[0.0 for i in range(12)],[False for i in range(12)]]
+                RBObj['ThermalMotion'][0] = 'TL'
             elif val == 'TLS':
-                RBObj['ThermalMotion'] = ['TLS',[0.0 for i in range(20)],[False for i in range(20)]] #SAA = S33-S11 & SBB = S22-S33
+                RBObj['ThermalMotion'][0] = 'TLS'
             wx.CallAfter(FillRigidBodyGrid,True)
             
         def ThermDataSizer(RBObj):
@@ -3449,7 +3448,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     OkBtn.Enable(False)
                     return
                 rbObj['Ids'] = Ids
-                rbObj['ThermalMotion'] = ['None',[],[]] #type,values,flags
+                rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
                 rbObj['RBname'] += ':'+str(RBData[rbType][rbId]['useCount'])
                 RBObjs.append(rbObj)
                 data['RBModels'][rbType] = RBObjs
@@ -3765,7 +3764,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
                 QuatC = G2mth.prodQQ(QuatB,QuatA)
                 rbObj['Orient'] = [QuatC,' ']
-                rbObj['ThermalMotion'] = ['None',[],[]] #type,values,flags
+                rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
                 SXYZ = []
                 TXYZ = []
                 rbObj['Torsions'] = []

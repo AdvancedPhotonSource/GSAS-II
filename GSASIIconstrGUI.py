@@ -96,12 +96,16 @@ def UpdateConstraints(G2frame,data):
     Displays the constraints in the data window
     '''
     if not data:
-        data.update({'Hist':[],'HAP':[],'Phase':[]})       #empty dict - fill it
+        data.update({'Hist':[],'HAP':[],'Phase':[],'Global':[]})       #empty dict - fill it
+    if 'Global' not in data:                                            #patch
+        data['Global'] = []
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     rigidbodyDict = G2frame.PatternTree.GetItemPyData(   
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
+    globalList = rbDict.keys()
+    globalList.sort()
     AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []
@@ -141,6 +145,7 @@ def UpdateConstraints(G2frame,data):
         plegend = '\n In p::name'
         hlegend = '\n In :h:name'
         phlegend = '\n In p:h:name'
+        glegend = '\n In ::name'
         for phase in Phases:
             plegend += '\n p:: = '+str(Phases[phase]['pId'])+':: for '+phase
             count = 0
@@ -159,7 +164,7 @@ def UpdateConstraints(G2frame,data):
                 hlegend += '\n ... etc.'
                 break
             count += 1
-        return plegend,hlegend,phlegend
+        return plegend,hlegend,phlegend,glegend
         
     def FindEquivVarb(name,nameList):
         outList = []
@@ -170,6 +175,16 @@ def UpdateConstraints(G2frame,data):
             namelist = ['dAx','dAy','dAz']
         elif 'AU' in name:
             namelist = ['AUiso','AU11','AU22','AU33','AU12','AU13','AU23']
+        elif 'RB' in name:
+            rbfx = 'RB'+items[2][2]
+            if 'T' in name and 'Tr' not in name:
+                namelist = [rbfx+'T11',rbfx+'T22',rbfx+'T33',rbfx+'T12',rbfx+'T13',rbfx+'T23']
+            if 'L' in name:
+                namelist = [rbfx+'L11',rbfx+'L22',rbfx+'L33',rbfx+'L12',rbfx+'L13',rbfx+'L23']
+            if 'S' in name:
+                namelist = [rbfx+'S12',rbfx+'S13',rbfx+'S21',rbfx+'S23',rbfx+'S31',rbfx+'S32',rbfx+'SAA',rbfx+'SBB']
+            if 'U' in name:
+                namelist = [rbfx+'U',]
         for item in nameList:
             keys = item.split(':')
             if keys[0] not in phlist:
@@ -557,6 +572,23 @@ def UpdateConstraints(G2frame,data):
         PhaseConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(Size[1],250)
         G2frame.dataFrame.setSizePosLeft(Size)
+
+    def UpdateGlobalConstr():
+        '''Responds to press on Global Constraint tab,
+        shows constraints in data window'''
+        GlobalConstr.DestroyChildren()
+        GlobalDisplay = wx.Panel(GlobalConstr)
+        GlobalSizer = wx.BoxSizer(wx.VERTICAL)
+        GlobalSizer.Add((5,5),0)        
+        GlobalSizer.Add(ConstSizer('Global',GlobalDisplay))
+        GlobalDisplay.SetSizer(GlobalSizer,True)
+        Size = GlobalSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],250) + 20
+        GlobalDisplay.SetSize(Size)
+        GlobalConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],250)
+        G2frame.dataFrame.setSizePosLeft(Size)
     
     def OnPageChanged(event):
         if event:       #page change event!
@@ -574,14 +606,19 @@ def UpdateConstraints(G2frame,data):
         elif text == 'Phase constraints':
             G2frame.Page = [page,'phs']
             UpdatePhaseConstr()
+        elif text == 'Global constraints':
+            G2frame.Page = [page,'glb']
+            UpdateGlobalConstr()
+            
 
     def SetStatusLine(text):
         Status.SetStatusText(text)                                      
         
-    plegend,hlegend,phlegend = GetPHlegends(Phases,Histograms)
+    plegend,hlegend,phlegend,glegend = GetPHlegends(Phases,Histograms)
     scope = {'hst':['Histogram contraints:',hlegend,histList,'Hist',UpdateHistConstr],
         'hap':['Histogram * Phase contraints:',phlegend,hapList,'HAP',UpdateHAPConstr],
-        'phs':['Phase contraints:',plegend,phaseList,'Phase',UpdatePhaseConstr]}
+        'phs':['Phase contraints:',plegend,phaseList,'Phase',UpdatePhaseConstr],
+        'glb':['Global constraints:',glegend,globalList,'Global',UpdateGlobalConstr]}
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ConstraintMenu)
@@ -603,6 +640,8 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
     HistConstr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(HistConstr,'Histogram constraints')
+    GlobalConstr = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(GlobalConstr,'Global constraints')    
     UpdatePhaseConstr()
 
     G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)

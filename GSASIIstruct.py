@@ -36,7 +36,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
-DEBUG = False
+DEBUG = False       #only for powders!
 
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
@@ -579,7 +579,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                 RBmags = rigidbodyDict['Vector'][item]['VectMag']
                 RBrefs = rigidbodyDict['Vector'][item]['VectRef']
                 for i,[mag,ref] in enumerate(zip(RBmags,RBrefs)):
-                    pid = '::RBV;'+str(irb)+':'+str(i)
+                    pid = '::RBV;'+str(i)+':'+str(irb)
                     rbDict[pid] = mag
                     if ref:
                         rbVary.append(pid)
@@ -620,7 +620,7 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
             VectSig = []
             RBmags = rigidbodyDict['Vector'][item]['VectMag']
             for i,mag in enumerate(RBmags):
-                name = '::RBV;'+str(irb)+':'+str(i)
+                name = '::RBV;'+str(i)+':'+str(irb)
                 mag = parmDict[name]
                 if name in sigDict:
                     VectSig.append(sigDict[name])
@@ -644,9 +644,9 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
     if RBIds['Vector']:                       # first update the vector magnitudes
         VRBData = RBData['Vector']
         for i,rbId in enumerate(VRBIds):
-            pfxRB = '::RBV;'+str(i)+':'
             for j in range(len(VRBData[rbId]['VectMag'])):
-                VRBData[rbId]['VectMag'][j] = parmDict[pfxRB+str(j)]
+                name = '::RBV;'+str(j)+':'+str(i)
+                VRBData[rbId]['VectMag'][j] = parmDict[name]
     for phase in Phases:
         Phase = Phases[phase]
         General = Phase['General']
@@ -668,26 +668,27 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
             TLS = RBObj['ThermalMotion']
             if 'T' in TLS[0]:
                 for i,pt in enumerate(['RBVT11:','RBVT22:','RBVT33:','RBVT12:','RBVT13:','RBVT23:']):
-                    RBObj['ThermalMotion'][1][i] = parmDict[pfx+pt+rbsx]
+                    TLS[1][i] = parmDict[pfx+pt+rbsx]
             if 'L' in TLS[0]:
                 for i,pt in enumerate(['RBVL11:','RBVL22:','RBVL33:','RBVL12:','RBVL13:','RBVL23:']):
-                    RBObj['ThermalMotion'][1][i+6] = parmDict[pfx+pt+rbsx]
+                    TLS[1][i+6] = parmDict[pfx+pt+rbsx]
             if 'S' in TLS[0]:
                 for i,pt in enumerate(['RBVS12:','RBVS13:','RBVS21:','RBVS23:','RBVS31:','RBVS32:','RBVSAA:','RBVSBB:']):
-                    RBObj['ThermalMotion'][1][i+12] = parmDict[pfx+pt+rbsx]
+                    TLS[1][i+12] = parmDict[pfx+pt+rbsx]
             if 'U' in TLS[0]:
-                RBObj['ThermalMotion'][1][0] = parmDict[pfx+'RBVU:'+rbsx]
+                TLS[1][0] = parmDict[pfx+'RBVU:'+rbsx]
             XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
             UIJ = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
             for i,x in enumerate(XYZ):
                 atId = RBObj['Ids'][i]
                 for j in [0,1,2]:
                     parmDict[pfx+atxIds[j]+str(AtLookup[atId])] = x[j]
-                if UIJ[0] == 'A':
+                if UIJ[i][0] == 'A':
                     for j in range(6):
-                        parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = Uij[j+2]
-                elif UIJ[0] == 'I':
-                    parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = Uij[j+1]
+                        parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = UIJ[i][j+2]
+                elif UIJ[i][0] == 'I':
+                    parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = UIJ[i][1]
+            
         for irb,RBObj in enumerate(RBModels.get('Residue',[])):
             jrb = RRBIds.index(RBObj['RBId'])
             rbsx = str(irb)+':'+str(jrb)
@@ -715,11 +716,149 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 atId = RBObj['Ids'][i]
                 for j in [0,1,2]:
                     parmDict[pfx+atxIds[j]+str(AtLookup[atId])] = x[j]
-                if UIJ[0] == 'A':
+                if UIJ[i][0] == 'A':
                     for j in range(6):
-                        parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = Uij[j+2]
-                elif UIJ[0] == 'I':
-                    parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = Uij[j+1]
+                        parmDict[pfx+atuIds[j]+str(AtLookup[atId])] = UIJ[i][j+2]
+                elif UIJ[i][0] == 'I':
+                    parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = UIJ[i][1]
+                    
+def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
+    atxIds = ['dAx:','dAy:','dAz:']
+    atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
+    TIds = ['T11:','T22:','T33:','T12:','T13:','T23:']
+    LIds = ['L11:','L22:','L33:','L12:','L13:','L23:']
+    SIds = ['S12:','S13:','S21:','S23:','S31:','S32:','SAA:','SBB:']
+    PIds = ['Px:','Py:','Pz:']
+    OIds = ['Oa:','Oi:','Oj:','Ok:']
+    RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
+    if not RBIds['Vector'] and not RBIds['Residue']:
+        return
+    VRBIds = RBIds['Vector']
+    RRBIds = RBIds['Residue']
+    RBData = rigidbodyDict
+    for item in parmDict:
+        if 'RB' in item:
+            dFdvDict[item] = 0.        #NB: this is a vector which is no. refl. long & must be filled!
+    General = Phase['General']
+    cell = General['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(cell)
+    rpd = np.pi/180.
+    rpd2 = rpd**2
+    g = np.inner(Bmat,Bmat.T)
+    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
+        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
+    AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
+    pfx = str(Phase['pId'])+'::'
+    RBModels =  Phase['RBModels']
+    dx = 0.0001
+    for irb,RBObj in enumerate(RBModels.get('Vector',[])):
+        VModel = RBData['Vector'][RBObj['RBId']]
+        Q = RBObj['Orient'][0]
+        Pos = RBObj['Orig'][0]
+        jrb = VRBIds.index(RBObj['RBId'])
+        rbsx = str(irb)+':'+str(jrb)
+        dXdv = []
+        for iv in range(len(VModel['VectMag'])):
+            dXdv.append(np.inner(Bmat,VModel['rbVect'][iv]).T)
+        XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
+        for ia,atId in enumerate(RBObj['Ids']):
+            atNum = AtLookup[atId]
+            for iv in range(len(VModel['VectMag'])):
+                for ix in [0,1,2]:
+                    dFdvDict['::RBV;'+str(iv)+':'+str(jrb)] += dXdv[iv][ia][ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
+            for i,name in enumerate(['RBVPx:','RBVPy:','RBVPz:']):
+                dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
+            for iv in range(4):
+                Q[iv] -= dx
+                XYZ1,Cart1 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
+                Q[iv] += 2.*dx
+                XYZ2,Cart2 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
+                Q[iv] -= dx
+                dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
+                for ix in [0,1,2]:
+                    dFdvDict[pfx+'RBV'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
+            X = G2mth.prodQVQ(Q,Cart[ia])
+            dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T*gvec
+            dFdu = G2lat.U6toUij(dFdu.T)
+            dFdu = np.tensordot(Amat.T,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
+            dFdu = G2lat.UijtoU6(dFdu)
+            atNum = AtLookup[atId]
+            if 'T' in RBObj['ThermalMotion'][0]:
+                for i,name in enumerate(['RBVT11:','RBVT22:','RBVT33:','RBVT12:','RBVT13:','RBVT23:']):
+                    dFdvDict[pfx+name+rbsx] += dFdu[i]
+            if 'L' in RBObj['ThermalMotion'][0]:
+                dFdvDict[pfx+'RBVL11:'+rbsx] += rpd2*(dFdu[1]*X[2]**2+dFdu[2]*X[1]**2-dFdu[5]*X[1]*X[2])
+                dFdvDict[pfx+'RBVL22:'+rbsx] += rpd2*(dFdu[0]*X[2]**2+dFdu[2]*X[0]**2-dFdu[4]*X[0]*X[2])
+                dFdvDict[pfx+'RBVL33:'+rbsx] += rpd2*(dFdu[0]*X[1]**2+dFdu[1]*X[0]**2-dFdu[3]*X[0]*X[1])
+                dFdvDict[pfx+'RBVL12:'+rbsx] += rpd2*(-dFdu[3]*X[2]**2-2.*dFdu[2]*X[0]*X[1]+
+                    dFdu[4]*X[1]*X[2]+dFdu[5]*X[0]*X[2])
+                dFdvDict[pfx+'RBVL13:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[1]*X[0]*X[2]+
+                    dFdu[3]*X[1]*X[2]+dFdu[5]*X[0]*X[1])
+                dFdvDict[pfx+'RBVL23:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[0]*X[1]*X[2]+
+                    dFdu[3]*X[0]*X[2]+dFdu[4]*X[0]*X[1])
+            if 'S' in RBObj['ThermalMotion'][0]:
+                dFdvDict[pfx+'RBVS12:'+rbsx] += rpd*(dFdu[5]*X[1]-2.*dFdu[1]*X[2])
+                dFdvDict[pfx+'RBVS13:'+rbsx] += rpd*(-dFdu[5]*X[2]+2.*dFdu[2]*X[1])
+                dFdvDict[pfx+'RBVS21:'+rbsx] += rpd*(-dFdu[4]*X[0]+2.*dFdu[0]*X[2])
+                dFdvDict[pfx+'RBVS23:'+rbsx] += rpd*(dFdu[4]*X[2]-2.*dFdu[2]*X[0])
+                dFdvDict[pfx+'RBVS31:'+rbsx] += rpd*(dFdu[3]*X[0]-2.*dFdu[0]*X[1])
+                dFdvDict[pfx+'RBVS32:'+rbsx] += rpd*(-dFdu[3]*X[1]+2.*dFdu[1]*X[0])
+                dFdvDict[pfx+'RBVSAA:'+rbsx] += rpd*(dFdu[4]*X[1]-dFdu[3]*X[2])
+                dFdvDict[pfx+'RBVSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
+            if 'U' in RBObj['ThermalMotion'][0]:
+                dFdvDict[pfx+'RBVU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
+
+    for irb,RBObj in enumerate(RBModels.get('Residue',[])):
+        Q = RBObj['Orient'][0]
+        Pos = RBObj['Orig'][0]
+        jrb = RRBIds.index(RBObj['RBId'])
+        rbsx = str(irb)+':'+str(jrb)
+        XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+        for ia,atId in enumerate(RBObj['Ids']):
+            atNum = AtLookup[atId]
+            dx = 0.0001
+            for i,name in enumerate(['RBRPx:','RBRPy:','RBRPz:']):
+                dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
+            for iv in range(4):
+                Q[iv] -= dx
+                XYZ1,Cart1 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+                Q[iv] += 2.*dx
+                XYZ2,Cart2 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+                Q[iv] -= dx
+                dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
+                for ix in [0,1,2]:
+                    dFdvDict[pfx+'RBR'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
+            X = G2mth.prodQVQ(Q,Cart[ia])
+            dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T*gvec
+            dFdu = G2lat.U6toUij(dFdu.T)
+            dFdu = np.tensordot(Amat.T,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
+            dFdu = G2lat.UijtoU6(dFdu)
+            atNum = AtLookup[atId]
+            if 'T' in RBObj['ThermalMotion'][0]:
+                for i,name in enumerate(['RBRT11:','RBRT22:','RBRT33:','RBRT12:','RBRT13:','RBRT23:']):
+                    dFdvDict[pfx+name+rbsx] += dFdu[i]
+            if 'L' in RBObj['ThermalMotion'][0]:
+                dFdvDict[pfx+'RBRL11:'+rbsx] += rpd2*(dFdu[1]*X[2]**2+dFdu[2]*X[1]**2-dFdu[5]*X[1]*X[2])
+                dFdvDict[pfx+'RBRL22:'+rbsx] += rpd2*(dFdu[0]*X[2]**2+dFdu[2]*X[0]**2-dFdu[4]*X[0]*X[2])
+                dFdvDict[pfx+'RBRL33:'+rbsx] += rpd2*(dFdu[0]*X[1]**2+dFdu[1]*X[0]**2-dFdu[3]*X[0]*X[1])
+                dFdvDict[pfx+'RBRL12:'+rbsx] += rpd2*(-dFdu[3]*X[2]**2-2.*dFdu[2]*X[0]*X[1]+
+                    dFdu[4]*X[1]*X[2]+dFdu[5]*X[0]*X[2])
+                dFdvDict[pfx+'RBRL13:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[1]*X[0]*X[2]+
+                    dFdu[3]*X[1]*X[2]+dFdu[5]*X[0]*X[1])
+                dFdvDict[pfx+'RBRL23:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[0]*X[1]*X[2]+
+                    dFdu[3]*X[0]*X[2]+dFdu[4]*X[0]*X[1])
+            if 'S' in RBObj['ThermalMotion'][0]:
+                dFdvDict[pfx+'RBRS12:'+rbsx] += rpd*(dFdu[5]*X[1]-2.*dFdu[1]*X[2])
+                dFdvDict[pfx+'RBRS13:'+rbsx] += rpd*(-dFdu[5]*X[2]+2.*dFdu[2]*X[1])
+                dFdvDict[pfx+'RBRS21:'+rbsx] += rpd*(-dFdu[4]*X[0]+2.*dFdu[0]*X[2])
+                dFdvDict[pfx+'RBRS23:'+rbsx] += rpd*(dFdu[4]*X[2]-2.*dFdu[2]*X[0])
+                dFdvDict[pfx+'RBRS31:'+rbsx] += rpd*(dFdu[3]*X[0]-2.*dFdu[0]*X[1])
+                dFdvDict[pfx+'RBRS32:'+rbsx] += rpd*(-dFdu[3]*X[1]+2.*dFdu[1]*X[0])
+                dFdvDict[pfx+'RBRSAA:'+rbsx] += rpd*(dFdu[4]*X[1]-dFdu[3]*X[2])
+                dFdvDict[pfx+'RBRSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
+            if 'U' in RBObj['ThermalMotion'][0]:
+                dFdvDict[pfx+'RBRU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
+    
         
 ################################################################################
 ##### Phase data
@@ -1324,49 +1463,64 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         print >>pFile,valstr
         print >>pFile,sigstr
         
-    def PrintRBObjTLSAndSig(rbfx,rbsx):
+    def PrintRBObjTLSAndSig(rbfx,rbsx,TLS):
         namstr = '  names :'
         valstr = '  values:'
         sigstr = '  esds  :'
-        for i,pt in enumerate(['T11:','T22:','T33:','T12:','T13:','T23:']):
-            name = pfx+rbfx+pt+rbsx
-            namstr += '%12s'%(pt[:3])
-            valstr += '%12.5f'%(parmDict[name])
+        if 'T' in TLS:
+            for i,pt in enumerate(['T11:','T22:','T33:','T12:','T13:','T23:']):
+                name = pfx+rbfx+pt+rbsx
+                namstr += '%12s'%(pt[:3])
+                valstr += '%12.5f'%(parmDict[name])
+                if name in sigDict:
+                    sigstr += '%12.5f'%(sigDict[name])
+                else:
+                    sigstr += 12*' '
+            print >>pFile,namstr
+            print >>pFile,valstr
+            print >>pFile,sigstr
+        if 'L' in TLS:
+            namstr = '  names :'
+            valstr = '  values:'
+            sigstr = '  esds  :'
+            for i,pt in enumerate(['L11:','L22:','L33:','L12:','L13:','L23:']):
+                name = pfx+rbfx+pt+rbsx
+                namstr += '%12s'%(pt[:3])
+                valstr += '%12.3f'%(parmDict[name])
+                if name in sigDict:
+                    sigstr += '%12.3f'%(sigDict[name])
+                else:
+                    sigstr += 12*' '
+            print >>pFile,namstr
+            print >>pFile,valstr
+            print >>pFile,sigstr
+        if 'S' in TLS:
+            namstr = '  names :'
+            valstr = '  values:'
+            sigstr = '  esds  :'
+            for i,pt in enumerate(['S12:','S13:','S21:','S23:','S31:','S32:','SAA:','SBB:']):
+                name = pfx+rbfx+pt+rbsx
+                namstr += '%12s'%(pt[:3])
+                valstr += '%12.3f'%(parmDict[name])
+                if name in sigDict:
+                    sigstr += '%12.3f'%(sigDict[name])
+                else:
+                    sigstr += 12*' '
+            print >>pFile,namstr
+            print >>pFile,valstr
+            print >>pFile,sigstr
+        if 'U' in TLS:
+            name = pfx+rbfx+'U:'+rbsx
+            namstr = '  names :'+'%12s'%('U')
+            valstr = '  values:'+'%12.3f'%(parmDict[name])
             if name in sigDict:
-                sigstr += '%12.5f'%(sigDict[name])
+                sigstr = '  esds  :'+'%12.3f'%(sigDict[name])
             else:
-                sigstr += 12*' '
-        print >>pFile,namstr
-        print >>pFile,valstr
-        print >>pFile,sigstr
-        namstr = '  names :'
-        valstr = '  values:'
-        sigstr = '  esds  :'
-        for i,pt in enumerate(['L11:','L22:','L33:','L12:','L13:','L23:']):
-            name = pfx+rbfx+pt+rbsx
-            namstr += '%12s'%(pt[:3])
-            valstr += '%12.3f'%(parmDict[name])
-            if name in sigDict:
-                sigstr += '%12.3f'%(sigDict[name])
-            else:
-                sigstr += 12*' '
-        print >>pFile,namstr
-        print >>pFile,valstr
-        print >>pFile,sigstr
-        namstr = '  names :'
-        valstr = '  values:'
-        sigstr = '  esds  :'
-        for i,pt in enumerate(['S12:','S13:','S21:','S23:','S31:','S32:','SAA:','SBB:']):
-            name = pfx+rbfx+pt+rbsx
-            namstr += '%12s'%(pt[:3])
-            valstr += '%12.3f'%(parmDict[name])
-            if name in sigDict:
-                sigstr += '%12.3f'%(sigDict[name])
-            else:
-                sigstr += 12*' '
-        print >>pFile,namstr
-        print >>pFile,valstr
-        print >>pFile,sigstr
+                sigstr = '  esds  :'+12*' '
+            print >>pFile,namstr
+            print >>pFile,valstr
+            print >>pFile,sigstr
+            
         
     def PrintRBObjTorAndSig(rbsx):
         namstr = '  names :'
@@ -1473,13 +1627,13 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 rbsx = str(irb)+':'+str(jrb)
                 print >>pFile,' Vector rigid body '
                 PrintRBObjPOAndSig('RBV',rbsx)
-                PrintRBObjTLSAndSig('RBV',rbsx)
+                PrintRBObjTLSAndSig('RBV',rbsx,RBObj['ThermalMotion'][0])
             for irb,RBObj in enumerate(RBModels.get('Residue',[])):
-                jrb = VRBIds.index(RBObj['RBId'])
+                jrb = RRBIds.index(RBObj['RBId'])
                 rbsx = str(irb)+':'+str(jrb)
                 print >>pFile,' Residue rigid body '
                 PrintRBObjPOAndSig('RBR',rbsx)
-                PrintRBObjTLSAndSig('RBR',rbsx)
+                PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
                 PrintRBObjTorAndSig(rbsx)
             atomsSig = {}
             if General['Type'] == 'nuclear':        #this needs macromolecular variant!
@@ -2870,7 +3024,6 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
         dFdvDict[pfx+'BabA'] = dFdbab.T[0]
         dFdvDict[pfx+'BabU'] = dFdbab.T[1]
-# or else do RB modification of dFdvDict here? Perhaps not...
     return dFdvDict
     
 def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
@@ -3528,7 +3681,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 raise Exception    #no TOF yet
     return yc,yb
     
-def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
+def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup):
     
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
@@ -3607,6 +3760,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         if not Phase['General'].get('doPawley'):
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+            ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
         for iref,refl in enumerate(refList):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
@@ -3746,14 +3900,14 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet
-            #do atom derivatives -  for F,X & U so far              
+            #do atom derivatives -  for RB,F,X & U so far              
             corr = dervDict['int']/refl[9]
             if Ka2:
                 corr2 = dervDict2['int']/refl[9]
             for name in varylist+dependentVars:
                 try:
                     aname = name.split(pfx)[1][:2]
-                    if aname not in ['Af','dA','AU']: continue # skip anything not an atom param
+                    if aname not in ['Af','dA','AU','RB']: continue # skip anything not an atom or rigid body param
                 except IndexError:
                     continue
                 if name in varylist:
@@ -3768,9 +3922,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,calcControls,pawle
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
     return dMdv
 
-def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
-    parmdict.update(zip(varylist,values))
-    G2mv.Dict2Map(parmdict,varylist)
+def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+    parmDict.update(zip(varylist,values))
+    G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     nvar = len(varylist)
     dMdv = np.empty(0)
@@ -3787,8 +3941,8 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             W = wtFactor*w
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
-            dMdvh = np.sqrt(W[xB:xF])*getPowderProfileDerv(parmdict,x[xB:xF],
-                varylist,Histogram,Phases,calcControls,pawleyLookup)
+            dMdvh = np.sqrt(W[xB:xF])*getPowderProfileDerv(parmDict,x[xB:xF],
+                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
             nobs = Histogram['Nobs']
@@ -3800,15 +3954,15 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             pfx = '%d::'%(Phase['pId'])
             phfx = '%d:%d:'%(Phase['pId'],hId)
             SGData = Phase['General']['SGData']
-            A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
+            A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
-            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
-# do RB modification of dFdvDict here; varylist will contain RB variables so dFdvDict needs corresponding entries
+            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+            ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
             dMdvh = np.zeros((len(varylist),len(refList)))
             for iref,ref in enumerate(refList):
                 if ref[6] > 0:
-                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmdict,varylist) #puts correction in refl[13]
+                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
                             w = wtFactor/ref[6]
@@ -3838,17 +3992,18 @@ def dervRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
         else:
             dMdv = dMdvh
             
-    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
+    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
     if np.any(pVals):
-        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmdict,varylist)
+        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmDict,varylist)
         dMdv = np.concatenate((dMdv.T,dpdv.T)).T
         
     return dMdv
 
-def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):
-    parmdict.update(zip(varylist,values))
-    G2mv.Dict2Map(parmdict,varylist)
+def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+    parmDict.update(zip(varylist,values))
+    G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
+    ApplyRBModels(parmDict,Phases,rigidbodyDict)        #,Update=True??
     nvar = len(varylist)
     Hess = np.empty(0)
     histoList = Histograms.keys()
@@ -3865,8 +4020,8 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             dy = y-yc
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
-            dMdvh = getPowderProfileDerv(parmdict,x[xB:xF],
-                varylist,Histogram,Phases,calcControls,pawleyLookup)
+            dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
+                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
             Wt = np.sqrt(W[xB:xF])[np.newaxis,:]
             Dy = dy[xB:xF][np.newaxis,:]
             dMdvh *= Wt
@@ -3891,16 +4046,16 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
             pfx = '%d::'%(Phase['pId'])
             phfx = '%d:%d:'%(Phase['pId'],hId)
             SGData = Phase['General']['SGData']
-            A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
+            A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
-            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmdict)
-# do RB modification of dFdvDict here; varylist will contain RB variables so dFdvDict needs corresponding entries
+            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+            ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
             dMdvh = np.zeros((len(varylist),len(refList)))
             wdf = np.zeros(len(refList))
             for iref,ref in enumerate(refList):
                 if ref[6] > 0:
-                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmdict,varylist) #puts correction in refl[13]
+                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
                             w =  wtFactor/ref[6]
@@ -3936,22 +4091,22 @@ def HessRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dl
                 Hess = np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
-    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
+    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
     if np.any(pVals):
-        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmdict,varylist)
+        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmDict,varylist)
         Vec += np.sum(dpdv*pWt*pVals,axis=1)
         Hess += np.inner(dpdv*pWt,dpdv)
     return Vec,Hess
 
-def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg):        
-    parmdict.update(zip(varylist,values))
-    Values2Dict(parmdict, varylist, values)
-    G2mv.Dict2Map(parmdict,varylist)
+def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):        
+    parmDict.update(zip(varylist,values))
+    Values2Dict(parmDict, varylist, values)
+    G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     M = np.empty(0)
     SumwYo = 0
     Nobs = 0
-    ApplyRBModels(parmdict,Phases,rigidbodyDict)
+    ApplyRBModels(parmDict,Phases,rigidbodyDict)
     histoList = Histograms.keys()
     histoList.sort()
     for histogram in histoList:
@@ -3972,7 +4127,7 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             Nobs += Histogram['Nobs']
             Histogram['sumwYo'] = np.sum(W[xB:xF]*y[xB:xF]**2)
             SumwYo += Histogram['sumwYo']
-            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmdict,x[xB:xF],
+            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
@@ -3993,10 +4148,10 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             pfx = '%d::'%(Phase['pId'])
             phfx = '%d:%d:'%(Phase['pId'],hId)
             SGData = Phase['General']['SGData']
-            A = [parmdict[pfx+'A%d'%(i)] for i in range(6)]
+            A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
-            refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmdict)
+            refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
             df = np.zeros(len(refList))
             sumwYo = 0
             sumFo = 0
@@ -4006,10 +4161,10 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
             nobs = 0
             for i,ref in enumerate(refList):
                 if ref[6] > 0:
-                    SCExtinction(ref,phfx,hfx,pfx,calcControls,parmdict,varylist) #puts correction in refl[13]
-                    ref[7] = parmdict[phfx+'Scale']*ref[9]
+                    SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                    ref[7] = parmDict[phfx+'Scale']*ref[9]
                     ref[7] *= ref[13]
-                    ref[8] = ref[5]/parmdict[phfx+'Scale']
+                    ref[8] = ref[5]/parmDict[phfx+'Scale']
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
                             sumFo2 += ref[5]
@@ -4051,10 +4206,10 @@ def errRefine(values,HistoPhases,parmdict,varylist,calcControls,pawleyLookup,dlg
     if dlg:
         GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))[0]
         if not GoOn:
-            parmdict['saved values'] = values
+            parmDict['saved values'] = values
             dlg.Destroy()
             raise Exception         #Abort!!
-    pDict,pVals,pWt = penaltyFxn(HistoPhases,parmdict,varylist)
+    pDict,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
     if np.any(pVals):
         pSum = np.sum(pWt*pVals**2)
         print 'Penalty function: %.3f on %d terms'%(pSum,len(pVals))
@@ -4221,6 +4376,7 @@ def Refine(GPXfile,dlg):
                 Histogram = Histograms[histogram]
         cPickle.dump(Histogram,fl,1)
         cPickle.dump(Phases,fl,1)
+        cPickle.dump(rigidbodyDict,fl,1)
         cPickle.dump(calcControls,fl,1)
         cPickle.dump(pawleyLookup,fl,1)
         fl.close()

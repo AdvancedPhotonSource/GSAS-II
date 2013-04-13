@@ -3458,7 +3458,7 @@ def PlotStructure(G2frame,data):
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
         if len(testRBObj) and pageName == 'RB Models':
-            XYZ = G2mth.UpdateRBAtoms(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])
+            XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
             rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = testRBObj['rbAtTypes'][ind]

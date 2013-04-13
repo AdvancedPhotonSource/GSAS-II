@@ -267,18 +267,15 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
     ''' Returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
     '''
     TLStype,TLS = RBObj['ThermalMotion'][:2]
-    Tmat = np.zeros((3,3))
-    Lmat = np.zeros((3,3))
-    Smat = np.zeros((3,3))
+    T = np.zeros(6)
+    L = np.zeros(6)
+    S = np.zeros(8)
     if 'T' in TLStype:
         T = TLS[:6]
-#        Tmat = G2lat.U6toUij(T)
     if 'L' in TLStype:
         L = np.array(TLS[6:12])*(np.pi/180.)**2
-#        Lmat = np.array(G2lat.U6toUij(L))
     if 'S' in TLStype:
         S = np.array(TLS[12:])*(np.pi/180.)
-#        Smat = np.array([[S[6],S[0],S[1]],[S[2],S[7],S[3]],[S[4],S[5],0]])
     g = np.inner(Bmat,Bmat.T)
     gvec = 1./np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
         g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
@@ -286,7 +283,6 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
     Q = RBObj['Orient'][0]
     for X in Cart:
         X = prodQVQ(Q,X)
-#        Axyz = np.array([[0,X[2],-X[1]], [-X[2],0,X[0]], [X[1],-X[0],0]])
         if 'U' in TLStype:
             Uout.append(['I',TLS[0],0,0,0,0,0,0])
         elif not 'N' in TLStype:
@@ -301,11 +297,10 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
             U[5] = T[5]+L[3]*X[0]*X[2]+L[4]*X[0]*X[1]-L[5]*X[0]**2-L[0]*X[2]*X[1]+  \
                 S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
             Umat = G2lat.U6toUij(U)
-#            print 'Umat: ',Umat
-#wrong?      Umat1 = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz.T,Lmat),Axyz)
-#            print 'Umat1: ',Umat1
             beta = np.inner(np.inner(Bmat,Umat),Bmat.T)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
+        else:
+            Uout.append(['N',])
     return Uout
     
 def GetSHCoeff(pId,parmDict,SHkeys):
@@ -1449,7 +1444,7 @@ def Q2AVdeg(Q):
         q=r+ai+bj+ck
     '''
     A = 2.*acosd(Q[0])
-    V = np.array([0.,0.,1.])
+    V = np.array(Q[1:])
     if nl.norm(Q[1:]):
         V = Q[1:]/nl.norm(Q[1:])
     return A,V
@@ -1459,7 +1454,7 @@ def Q2AV(Q):
         q=r+ai+bj+ck
     '''
     A = 2.*np.arccos(Q[0])
-    V = np.array([0.,0.,1.])
+    V = np.array(Q[1:])
     if nl.norm(Q[1:]):
         V = Q[1:]/nl.norm(Q[1:])
     return A,V

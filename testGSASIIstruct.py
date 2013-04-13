@@ -19,6 +19,8 @@ def TestData():
     Histogram = cPickle.load(file)
     global Phases
     Phases = cPickle.load(file)
+    global RBData
+    RBData = cPickle.load(file)
     global calcControls
     calcControls = cPickle.load(file)
     global pawleyLookup
@@ -37,7 +39,8 @@ def test1():
     xF = np.searchsorted(xdata,limits[1])
     fplot = plotter.add('function test').gca()
     yc,yb = G2st.getPowderProfile(parmDict,xdata[xB:xF],varylist,Histogram,Phases,calcControls,pawleyLookup)
-    fplot.plot(xdata[xB:xF],yc+yb,'r')
+    fplot.plot(xdata[xB:xF],yc+yb,'r',label='calc+bkg')
+    fplot.legend()
 
 def test2(name,delt):
     if NeedTestData: TestData()
@@ -48,8 +51,8 @@ def test2(name,delt):
     xB = np.searchsorted(xdata,limits[0])
     xF = np.searchsorted(xdata,limits[1])
     hplot = plotter.add('derivatives test for '+name).gca()
-    ya = G2st.getPowderProfileDerv(parmDict,xdata[xB:xF],varyList,Histogram,Phases,calcControls,pawleyLookup)[0]
-    hplot.plot(xdata[xB:xF],ya,'b')
+    ya = G2st.getPowderProfileDerv(parmDict,xdata[xB:xF],varyList,Histogram,Phases,RBData,calcControls,pawleyLookup)[0]
+    hplot.plot(xdata[xB:xF],ya,'b',label='analytic deriv')
     if 'dA' in name:
         name = ''.join(name.split('d'))
         varyList = [name,]
@@ -60,8 +63,9 @@ def test2(name,delt):
     y1,yb = G2st.getPowderProfile(parmDict,xdata[xB:xF],varyList,Histogram,Phases,calcControls,pawleyLookup)
     y1 += yb 
     yn = (y1-y0)/(2.*delt)
-    hplot.plot(xdata[xB:xF],yn,'r+')
-    hplot.plot(xdata[xB:xF],ya-yn,'g')
+    hplot.plot(xdata[xB:xF],yn,'r+',label='numeric deriv')
+    hplot.plot(xdata[xB:xF],ya-yn,'g',label='diff')
+    hplot.legend()
     
 if __name__ == '__main__':
     if NeedTestData: TestData()
@@ -74,9 +78,12 @@ if __name__ == '__main__':
     for name in parmDict:
         print name,parmDict[name]
     names = [
-        ['0:0:Size;i',0.01],
-        ['0:0:Mustrain:0',0.001],
-        ['0:0:Mustrain:1',0.001],
+        ['0::AUiso:0',0.001],
+        ['::RBV;0:0',0.001],
+        ['0::RBVT11:0:0',0.1],
+        ['0::RBVL11:0:0',0.1],
+        ['0::RBVPz:0:0',0.0001],
+        ['0::RBVOa:0:0',0.001],
         ]
     for [name,delt] in names:
         test2(name,delt)

@@ -386,7 +386,7 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
-        print Tag,IFD[Tag]
+#        print Tag,IFD[Tag]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny

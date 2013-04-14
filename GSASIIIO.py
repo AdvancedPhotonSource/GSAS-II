@@ -1179,11 +1179,18 @@ class ImportBaseclass(object):
 
     def BlockSelector(self, ChoiceList, ParentFrame=None,
                       title='Select a block',
-                      size=None, header='Block Selector'):
+                      size=None, header='Block Selector',
+                      useCancel=True):
         ''' Provide a wx dialog to select a block if the file contains more
         than one set of data and one must be selected
         '''
-        dlg = wx.SingleChoiceDialog(ParentFrame,title, header,ChoiceList,)
+        if useCancel:
+            dlg = wx.SingleChoiceDialog(
+                ParentFrame,title, header,ChoiceList)
+        else:
+            dlg = wx.SingleChoiceDialog(
+                ParentFrame,title, header,ChoiceList,
+                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
         if size: dlg.SetSize(size)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
@@ -1438,6 +1445,8 @@ class ImportPowderData(ImportBaseclass):
         self.comments = []
         self.idstring = ''
         self.Sample = G2pdG.SetDefaultSample()
+        self.GSAS = None     # used in TOF
+        self.clockWd = None  # used in TOF
         self.repeat_instparm = True # Should a parm file be
         #                             used for multiple histograms? 
         self.instparm = None # name hint 

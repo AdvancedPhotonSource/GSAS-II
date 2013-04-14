@@ -107,10 +107,27 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
             self.powderentry[0] = filename
             self.powderentry[2] = selblk+1
             self.idstring = data[0][0][5:]
-            # could pull out wavelength from data[4][1] here
-            # and save it as self.instdict['wave'] = wl
-            # likewise for dataset type as self.instdict['type'] = 'SNC' etc
-            # and self.Sample['Temperature'] for T
+            # pull out wavelength 
+            try:
+                if len(data[4][1]) == 2: # current GPX file
+                    if data[4][1][0].get('Lam'):
+                        self.instdict['wave'] = [data[4][1][0].get('Lam')[1]]
+                    elif data[4][1][0].get('Lam1') and data[4][1][0].get('Lam2'):
+                        self.instdict['wave'] = [
+                            data[4][1][0].get('Lam1')[1],
+                            data[4][1][0].get('Lam2')[1]
+                            ]
+                elif len(data[4][1]) == 4: # original GPX file
+                    pos = data[4][1][3].index('Lam')
+                    self.instdict['wave'] = [data[4][1][1][pos],]
+            except:
+                pass
+            # pull out temperature
+            try:
+                if data[5][1].get('Temperature'):
+                    self.Sample['Temperature'] = data[5][1]['Temperature']
+            except:
+                pass
             self.repeat_instparm = False # prevent reuse of iparm when several hists are read
             return True
         except Exception as detail:

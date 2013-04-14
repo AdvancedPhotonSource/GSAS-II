@@ -820,7 +820,8 @@ class GSASII(wx.Frame):
                 choices,
                 ParentFrame=self,
                 title=head,
-                header='Select default inst parms',)
+                header='Select default inst parms',
+                useCancel=False)
             if res is None: continue
             rd.instfile = ''
             rd.instmsg = 'default: '+rd.defaultIparm_lbl[res]

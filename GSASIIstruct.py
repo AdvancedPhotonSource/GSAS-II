@@ -759,7 +759,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         rbsx = str(irb)+':'+str(jrb)
         dXdv = []
         for iv in range(len(VModel['VectMag'])):
-            dXdv.append(np.inner(Bmat,VModel['rbVect'][iv]).T)
+            dXdv.append(np.inner(Bmat.T,VModel['rbVect'][iv]).T)
         XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
@@ -807,6 +807,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBVSBB:'+rbsx] += rpd*(dFdu[5]*X[0]-dFdu[3]*X[2])
             if 'U' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBVU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
+
 
     for irb,RBObj in enumerate(RBModels.get('Residue',[])):
         Q = RBObj['Orient'][0]
@@ -1501,9 +1502,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             for i,pt in enumerate(['S12:','S13:','S21:','S23:','S31:','S32:','SAA:','SBB:']):
                 name = pfx+rbfx+pt+rbsx
                 namstr += '%12s'%(pt[:3])
-                valstr += '%12.3f'%(parmDict[name])
+                valstr += '%12.4f'%(parmDict[name])
                 if name in sigDict:
-                    sigstr += '%12.3f'%(sigDict[name])
+                    sigstr += '%12.4f'%(sigDict[name])
                 else:
                     sigstr += 12*' '
             print >>pFile,namstr
@@ -1512,15 +1513,14 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         if 'U' in TLS:
             name = pfx+rbfx+'U:'+rbsx
             namstr = '  names :'+'%12s'%('U')
-            valstr = '  values:'+'%12.3f'%(parmDict[name])
+            valstr = '  values:'+'%12.5f'%(parmDict[name])
             if name in sigDict:
-                sigstr = '  esds  :'+'%12.3f'%(sigDict[name])
+                sigstr = '  esds  :'+'%12.5f'%(sigDict[name])
             else:
                 sigstr = '  esds  :'+12*' '
             print >>pFile,namstr
             print >>pFile,valstr
             print >>pFile,sigstr
-            
         
     def PrintRBObjTorAndSig(rbsx):
         namstr = '  names :'
@@ -2219,7 +2219,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                     PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
                     PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
-                    PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
+                    if len(BabSig):
+                        PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     
                 elif 'HKLF' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
@@ -3905,11 +3906,14 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             if Ka2:
                 corr2 = dervDict2['int']/refl[9]
             for name in varylist+dependentVars:
-                try:
-                    aname = name.split(pfx)[1][:2]
-                    if aname not in ['Af','dA','AU','RB']: continue # skip anything not an atom or rigid body param
-                except IndexError:
-                    continue
+                if '::RBV;' in name:
+                    pass
+                else:
+                    try:
+                        aname = name.split(pfx)[1][:2]
+                        if aname not in ['Af','dA','AU','RB']: continue # skip anything not an atom or rigid body param
+                    except IndexError:
+                        continue
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
                     if Ka2:

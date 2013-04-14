@@ -111,6 +111,7 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
             # and save it as self.instdict['wave'] = wl
             # likewise for dataset type as self.instdict['type'] = 'SNC' etc
             # and self.Sample['Temperature'] for T
+            self.repeat_instparm = False # prevent reuse of iparm when several hists are read
             return True
         except Exception as detail:
             import sys

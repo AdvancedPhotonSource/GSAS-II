@@ -784,10 +784,8 @@ class GSASII(wx.Frame):
                 +rd.idstring
                 +'" (or Cancel for default)',
                 '.', '',
+                'GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|'
                 'GSAS-II iparm file (*.instprm)|*.instprm|'
-                'GSAS iparm file (*.prm)|*.prm|'
-                'GSAS iparm file (*.inst)|*.inst|'
-                'GSAS iparm file (*.ins)|*.ins|'
                 'All files (*.*)|*.*', 
                 wx.OPEN|wx.CHANGE_DIR)
             if os.path.exists(lastIparmfile):
@@ -833,8 +831,8 @@ class GSASII(wx.Frame):
         reads an instrument parameter file for each dataset
         '''
         reqrdr = self.ImportMenuId.get(event.GetId())  # look up which format was requested
-        rdlist = self.OnImportGeneric(reqrdr,self.ImportPowderReaderlist,
-            'Powder Data',multiple=True)
+        rdlist = self.OnImportGeneric(
+            reqrdr,self.ImportPowderReaderlist,'Powder Data',multiple=True)
         if len(rdlist) == 0: return
         self.CheckNotebook()
         Iparm = None
@@ -843,7 +841,8 @@ class GSASII(wx.Frame):
         for rd in rdlist:
             # get instrument parameters for each dataset
             Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
-            lastIparmfile = rd.instfile
+            if rd.repeat_instparm: 
+                lastIparmfile = rd.instfile
             lastdatafile = rd.powderentry[0]
             print 'Read powder data '+str(rd.idstring)+ \
                 ' from file '+str(self.lastimport) + \

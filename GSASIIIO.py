@@ -1438,6 +1438,8 @@ class ImportPowderData(ImportBaseclass):
         self.comments = []
         self.idstring = ''
         self.Sample = G2pdG.SetDefaultSample()
+        self.repeat_instparm = True # Should a parm file be
+        #                             used for multiple histograms? 
         self.instparm = None # name hint 
         self.instfile = '' # full path name to instrument parameter file
         self.instbank = '' # inst parm bank number

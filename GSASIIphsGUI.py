@@ -3195,7 +3195,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             topSizer = wx.FlexGridSizer(2,6,5,5)
             Orig = RBObj['Orig'][0]
             Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
-            OrienV = np.inner(Bmat,OrienV)
             Orien = [Orien,]
             Orien.extend(OrienV/nl.norm(OrienV))
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,wx.ALIGN_CENTER_VERTICAL)
@@ -3803,7 +3802,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def OnGlobalResRBRef(event):
         RBObjs = data['RBModels']['Residue']
-        names = ['Origin','Orientation',]
+        names = ['Origin','Orient. angle','Full Orient.']
         nTor = 0
         for rbObj in RBObjs:
             nTor = max(nTor,len(rbObj['Torsions']))
@@ -3821,8 +3820,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         rbObj['Orig'][1] = True
                     else:
                         rbObj['Orig'][1] = False
-                    if 'Orientation' in parms:
-                        rbObj['Orient'][1] = 'Q'
+                    if 'Full Orient.' in parms:
+                        rbObj['Orient'][1] = 'AV'
+                    elif 'Orient. angle' in parms:
+                        rbObj['Orient'][1] = 'A'
                     else:
                         rbObj['Orient'][1] = ' '
                     for i in range(len(rbObj['Torsions'])):

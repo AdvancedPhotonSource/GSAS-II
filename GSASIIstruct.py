@@ -813,8 +813,21 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         Q = RBObj['Orient'][0]
         Pos = RBObj['Orig'][0]
         jrb = RRBIds.index(RBObj['RBId'])
+        torData = RBData['Residue'][RBObj['RBId']]['rbSeq']
         rbsx = str(irb)+':'+str(jrb)
         XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+        for itors,tors in enumerate(RBObj['Torsions']):
+            tname = pfx+'RBRTr;'+str(itors)+':'+rbsx           
+            orId,pvId = torData[itors][:2]
+            pivotVec = Cart[pvId]-Cart[orId]
+            QA = G2mth.AVdeg2Q(0.001,pivotVec)
+            QB = G2mth.AVdeg2Q(-0.001,pivotVec)
+            for ir in torData[itors][3]:
+                atNum = AtLookup[RBObj['Ids'][ir]]
+                rVec = Cart[ir]-Cart[pvId]
+                dRdT = np.inner(Bmat,(G2mth.prodQVQ(QA,rVec)-G2mth.prodQVQ(QB,rVec)))/.002
+                for ix in [0,1,2]:
+                    dFdvDict[tname] += dRdT[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
             dx = 0.0001
@@ -1286,7 +1299,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                 elif name in ['Torsion','Rama']:
                     print >>pFile,'  atoms(symOp)  calc  obs  sig  delt/sig  torsions: '
                     coeffDict = itemRest['Coeff']
-                    for indx,ops,cofName,esd in enumerate(itemRest[rest]):
+                    for indx,ops,cofName,esd in itemRest[rest]:
                         AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
                         AtName = ''
                         for i,Aname in enumerate(AtNames):
@@ -1296,11 +1309,11 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         if name == 'Torsion':
                             tor = G2mth.getRestTorsion(XYZ,Amat)
                             restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
-                            print >>pFile,' %8.3f %8.3f %.3f %8.3f %8.3f %s'%(AtName[:-1],calc,obs,esd,(obs-calc)/esd,tor)
+                            print >>pFile,' %8.3f %8.3f %.3f %8.3f %8.3f %s'%(calc,obs,esd,(obs-calc)/esd,tor,AtName[:-1])
                         else:
                             phi,psi = G2mth.getRestRama(XYZ,Amat)
                             restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
-                            print >>pFile,' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s'%(AtName[:-1],calc,obs,esd,(obs-calc)/esd,phi,psi)
+                            print >>pFile,' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s'%(calc,obs,esd,(obs-calc)/esd,phi,psi,AtName[:-1])
                 elif name == 'ChemComp':
                     print >>pFile,'     atoms   mul*frac  factor     prod'
                     for indx,factors,obs,esd in itemRest[rest]:
@@ -1468,6 +1481,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         namstr = '  names :'
         valstr = '  values:'
         sigstr = '  esds  :'
+        if 'N' not in TLS:
+            print >>pFile,' Thermal motion:'
         if 'T' in TLS:
             for i,pt in enumerate(['T11:','T22:','T33:','T12:','T13:','T23:']):
                 name = pfx+rbfx+pt+rbsx
@@ -1512,7 +1527,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             print >>pFile,sigstr
         if 'U' in TLS:
             name = pfx+rbfx+'U:'+rbsx
-            namstr = '  names :'+'%12s'%('U')
+            namstr = '  names :'+'%12s'%('Uiso')
             valstr = '  values:'+'%12.5f'%(parmDict[name])
             if name in sigDict:
                 sigstr = '  esds  :'+'%12.5f'%(sigDict[name])
@@ -1525,7 +1540,19 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     def PrintRBObjTorAndSig(rbsx):
         namstr = '  names :'
         valstr = '  values:'
-        sigstr = '  esds  :'        
+        sigstr = '  esds  :'
+        nTors = len(RBObj['Torsions'])
+        if nTors:
+            print >>pFile,' Torsions:'
+            for it in range(nTors):
+                name = pfx+'RBRTr;'+str(it)+':'+rbsx
+                namstr += '%12s'%('Tor'+str(it))
+                valstr += '%12.4f'%(parmDict[name])
+                if name in sigDict:
+                    sigstr += '%12.4f'%(sigDict[name])
+            print >>pFile,namstr
+            print >>pFile,valstr
+            print >>pFile,sigstr
                 
     def PrintSHtextureAndSig(textureData,SHtextureSig):
         print >>pFile,'\n Spherical harmonics texture: Order:' + str(textureData['Order'])
@@ -1625,13 +1652,13 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             for irb,RBObj in enumerate(RBModels.get('Vector',[])):
                 jrb = VRBIds.index(RBObj['RBId'])
                 rbsx = str(irb)+':'+str(jrb)
-                print >>pFile,' Vector rigid body '
+                print >>pFile,' Vector rigid body parameters:'
                 PrintRBObjPOAndSig('RBV',rbsx)
                 PrintRBObjTLSAndSig('RBV',rbsx,RBObj['ThermalMotion'][0])
             for irb,RBObj in enumerate(RBModels.get('Residue',[])):
                 jrb = RRBIds.index(RBObj['RBId'])
                 rbsx = str(irb)+':'+str(jrb)
-                print >>pFile,' Residue rigid body '
+                print >>pFile,' Residue rigid body parameters:'
                 PrintRBObjPOAndSig('RBR',rbsx)
                 PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
                 PrintRBObjTorAndSig(rbsx)
@@ -2682,7 +2709,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                         pWt.append(wt/esd**2)
                 elif name in ['Torsion','Rama']:
                     coeffDict = itemRest['Coeff']
-                    for i,[indx,ops,cofName,esd] in enumerate(torsionList):
+                    for i,[indx,ops,cofName,esd] in enumerate(itemRest[rest]):
                         pNames.append(str(pId)+':'+name+':'+str(i))
                         XYZ = np.array(G2mth.GetAtomCoordsByID(pId,parmDict,AtLookup,indx))
                         XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
@@ -3980,7 +4007,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                         Fc = np.sqrt(ref[7])
                         sig = ref[6]/(2.0*Fo)
                         if Fo/sig >= calcControls['minF/sig']:
-                            w = wtFactor/sig
+                            w = wtFactor/np.sqrt(sig)
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
                                     dMdvh[j][iref] = w*dFdvDict[var][iref]*np.sqrt(dervCor)
@@ -4063,6 +4090,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
                             w =  wtFactor/ref[6]
+                            print ref[:3],ref[5],ref[6],w
                             wdf[iref] = w*(ref[5]-ref[7])
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
@@ -4076,6 +4104,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                             sig = ref[6]/(2.0*Fo)
                             w = wtFactor/sig
                             wdf[iref] = w*(Fo-Fc)
+                            print ref[:3],ref[5],Fo,ref[6],sig,w
                             if Fo/sig >= calcControls['minF/sig']:
                                 for j,var in enumerate(varylist):
                                     if var in dFdvDict:

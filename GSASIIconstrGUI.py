@@ -266,7 +266,7 @@ def UpdateConstraints(G2frame,data):
         Returns True if constraint should be added
         '''
         allcons = []
-        for key in 'Hist','HAP','Phase':
+        for key in ['Hist','HAP','Phase','Global']:
             allcons += data[key]
         allcons += newcons
         if not len(allcons): return True

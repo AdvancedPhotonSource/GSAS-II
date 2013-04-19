@@ -1447,6 +1447,9 @@ def Q2AVdeg(Q):
     V = np.array(Q[1:])
     if nl.norm(Q[1:]):
         V = Q[1:]/nl.norm(Q[1:])
+    else:
+        A = 0.
+        V = np.array([0.,0.,1.])
     return A,V
     
 def Q2AV(Q):
@@ -1457,6 +1460,9 @@ def Q2AV(Q):
     V = np.array(Q[1:])
     if nl.norm(Q[1:]):
         V = Q[1:]/nl.norm(Q[1:])
+    else:
+        A = 0.
+        V = np.array([0.,0.,1.])
     return A,V
     
 def makeQuat(A,B,C):

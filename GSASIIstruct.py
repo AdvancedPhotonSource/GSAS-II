@@ -4090,7 +4090,6 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                     if calcControls['F**2']:
                         if ref[5]/ref[6] >= calcControls['minF/sig']:
                             w =  wtFactor/ref[6]
-                            print ref[:3],ref[5],ref[6],w
                             wdf[iref] = w*(ref[5]-ref[7])
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
@@ -4104,7 +4103,6 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                             sig = ref[6]/(2.0*Fo)
                             w = wtFactor/sig
                             wdf[iref] = w*(Fo-Fc)
-                            print ref[:3],ref[5],Fo,ref[6],sig,w
                             if Fo/sig >= calcControls['minF/sig']:
                                 for j,var in enumerate(varylist):
                                     if var in dFdvDict:

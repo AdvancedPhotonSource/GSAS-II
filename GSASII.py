@@ -551,7 +551,8 @@ class GSASII(wx.Frame):
                 newVals.append(val)                        
             S = File.readline()                
         File.close()
-        return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
+        # add a second MT dict here. TOF parms? (BHT)
+        return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file'''

@@ -127,7 +127,7 @@ def FitEllipse(ring):
 #    print bb
     return err,makeParmsEllipse(bb)
     
-def FitDetector(rings,p0,wave):
+def FitDetector(rings,varyList,parmDict):
         
     def CalibPrint(ValSig):
         print 'Image Parameters:'
@@ -148,17 +148,25 @@ def FitDetector(rings,p0,wave):
         print ptstr
         print sigstr        
         
-    def ellipseCalcD(B,xyd,wave):
+    def ellipseCalcD(B,xyd,varyList,parmDict):
         x = xyd[0]
         y = xyd[1]
         dsp = xyd[2]
-        dist,x0,y0,phi,tilt = B
+        wave = parmDict['wave']
+        if 'dep' in varyList:
+            dist,x0,y0,tilt,phi,dep = B[:6]
+        else:
+            dist,x0,y0,tilt,phi = B[:5]
+            dep = parmDict['dep']
+        if 'wave' in varyList:
+            wave = B[-1]
         tth = 2.0*npasind(wave/(2.*dsp))
+        dxy = dep*(1.-npcosd(tth))
         ttth = nptand(tth)
-        radius = dist*ttth
+        radius = (dist+dxy)*ttth
         stth = npsind(tth)
         cosb = npcosd(tilt)
-        R1 = dist*stth*npcosd(tth)*cosb/(cosb**2-stth**2)
+        R1 = (dist+dxy)*stth*npcosd(tth)*cosb/(cosb**2-stth**2)
         R0 = np.sqrt(R1*radius*cosb)
         zdis = R1*ttth*nptand(tilt)
         X = x-x0+zdis*npsind(phi)
@@ -167,35 +175,35 @@ def FitDetector(rings,p0,wave):
         YR = X*npsind(phi)+Y*npcosd(phi)
         return (XR/R0)**2+(YR/R1)**2-1
         
-    def ellipseCalcW(C,xyd):
-        dist,x0,y0,phi,tilt,wave = C
-        B = dist,x0,y0,phi,tilt
-        return ellipseCalcD(B,xyd,wave)
-                
-    names = ['distance','det-X0','det-Y0','rotate','tilt','wavelength']
-    fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.5f']   
-    result = leastsq(ellipseCalcD,p0,args=(rings.T,wave),full_output=True)
-    result[0][3] = np.mod(result[0][3],360.0)               #remove random full circles
+    names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
+    fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.3f','%12.5f']
+    p0 = [parmDict[key] for key in varyList]
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True)
+    parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
-    vals.append(wave)
-    chi = np.sqrt(np.sum(ellipseCalcD(result[0],rings.T,wave)**2))
+    chi = np.sqrt(np.sum(ellipseCalcD(result[0],rings.T,varyList,parmDict)**2))
     sig = list(chi*np.sqrt(np.diag(result[1])))
-    sig.append(0.)
+    sigList = np.zeros(7)
+    for i,name in enumerate(names):
+        if name in varyList:
+            sigList[i] = sig[varyList.index(name)]
     ValSig = zip(names,fmt,vals,sig)
     CalibPrint(ValSig)
-    try:
-        print 'Trial refinement of wavelength - not used for calibration'
-        p0 = result[0]
-        p0 = np.append(p0,wave)
-        resultW = leastsq(ellipseCalcW,p0,args=(rings.T,),full_output=True)
-        resultW[0][3] = np.mod(result[0][3],360.0)          #remove random full circles
-        sig = np.sqrt(np.sum(ellipseCalcW(resultW[0],rings.T)**2))
-        ValSig = zip(names,fmt,resultW[0],sig*np.sqrt(np.diag(resultW[1])))
-        CalibPrint(ValSig)
-        return result[0],resultW[0][-1]        
-    except ValueError:
-        print 'Bad refinement - no result'
-        return result[0],wave
+#    try:
+#        print 'Trial refinement of wavelength - not used for calibration'
+#        p0 = result[0]
+#        print p0
+#        print parms
+#        p0 = np.append(p0,parms[0])
+#        resultW = leastsq(ellipseCalcW,p0,args=(rings.T,parms[1:]),full_output=True)
+#        resultW[0][3] = np.mod(result[0][3],360.0)          #remove random full circles
+#        sig = np.sqrt(np.sum(ellipseCalcW(resultW[0],rings.T)**2))
+#        ValSig = zip(names,fmt,resultW[0],sig*np.sqrt(np.diag(resultW[1])))
+#        CalibPrint(ValSig)
+#        return result[0],resultW[0][-1]        
+#    except ValueError:
+#        print 'Bad refinement - no result'
+#        return result[0],wave
                     
 def ImageLocalMax(image,w,Xpix,Ypix):
     w2 = w*2
@@ -278,14 +286,16 @@ def GetEllipse(dsp,data):
     cent = data['center']
     tilt = data['tilt']
     phi = data['rotation']
+    dep = data['DetDepth']
     radii = [0,0]
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
     ttth = tand(tth)
     stth = sind(tth)
     ctth = cosd(tth)
     cosb = cosd(tilt)
-    radius = dist*ttth
-    radii[1] = dist*stth*ctth*cosb/(cosb**2-stth**2)
+    dxy = dep*(1.-npcosd(tth))
+    radius = ttth*(dist+dxy)
+    radii[1] = (dist+dxy)*stth*ctth*cosb/(cosb**2-stth**2)
     if radii[1] > 0:
         radii[0] = math.sqrt(radii[1]*radius*cosb)
         zdis = radii[1]*ttth*tand(tilt)
@@ -312,12 +322,14 @@ def GetDetectorXY(dsp,azm,data):
     phi = data['rotation']
     wave = data['wavelength']
     dist = data['distance']
+    dep = data['DetDepth']
     tth = 2.0*asind(wave/(2.*dsp))
+    dxy = dep*(1.-npcosd(tth))
     ttth = tand(tth)
-    radius = dist*ttth
+    radius = (dist+dxy)*ttth
     stth = sind(tth)
     cosb = cosd(tilt)
-    R1 = dist*stth*cosd(tth)*cosb/(cosb**2-stth**2)
+    R1 = (dist+dxy)*stth*cosd(tth)*cosb/(cosb**2-stth**2)
     R0 = math.sqrt(R1*radius*cosb)
     zdis = R1*ttth*tand(tilt)
     A = zdis*sind(phi)
@@ -337,6 +349,7 @@ def GetTthAzmDsp(x,y,data):
     cent = data['center']
     tilt = data['tilt']
     phi = data['rotation']
+    dep = data['DetDepth']
     LRazim = data['LRazimuth']
     azmthoff = data['azmthOff']
     dx = np.array(x-cent[0],dtype=np.float32)
@@ -345,6 +358,8 @@ def GetTthAzmDsp(x,y,data):
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
+    dxy = dep*(1.-npcosd(tth))
+    tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z+dxy))
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dx,-dy)+azmthoff+720.)%360.
     return tth,azm,dsp
@@ -411,11 +426,9 @@ def ImageRecalibrate(self,data):
         hkl = G2lat.GenHBravais(dmin,bravais,A)[skip:]
         HKL += hkl
     HKL = G2lat.sortHKLd(HKL,True,False)
-    wave = data['wavelength']
-    cent = data['center']    
-    dist = data['distance']
-    tilt = data['tilt']
-    phi = data['rotation']
+    varyList = ['dist','det-X','det-Y','tilt','phi']
+    parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
+        'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     for H in HKL: 
         dsp = H[3]
         ellipse = GetEllipse(dsp,data)
@@ -427,12 +440,14 @@ def ImageRecalibrate(self,data):
         else:
             continue
     rings = np.concatenate((data['rings']),axis=0)
-    p0 = [dist,cent[0],cent[1],phi,tilt]
-    result,newWave = FitDetector(rings,p0,wave)
-    data['distance'] = result[0]
-    data['center'] = result[1:3]
-    data['rotation'] = np.mod(result[3],360.0)
-    data['tilt'] = result[4]
+    if data['DetDepthRef']:
+        varyList.append('dep')
+    FitDetector(rings,varyList,parmDict)
+    data['distance'] = parmDict['dist']
+    data['center'] = [parmDict['det-X'],parmDict['det-Y']]
+    data['rotation'] = np.mod(parmDict['phi'],360.0)
+    data['tilt'] = parmDict['tilt']
+    data['DetDepth'] = parmDict['dep']
     N = len(data['ellipses'])
     data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:
@@ -442,7 +457,6 @@ def ImageRecalibrate(self,data):
     print 'calibration time = ',time.time()-time0
     G2plt.PlotImage(self,newImage=True)        
     return True
-    
             
 def ImageCalibrate(self,data):
     import copy
@@ -588,9 +602,8 @@ def ImageCalibrate(self,data):
     if not Zsum:
         print 'Only one ring fitted. Check your wavelength.'
         return False
-    cent = data['center'] = [xSum/Zsum,ySum/Zsum]
-    wave = data['wavelength']
-    dist = data['distance'] = distSum/Zsum
+    data['center'] = [xSum/Zsum,ySum/Zsum]
+    data['distance'] = distSum/Zsum
     
     #possible error if no. of rings < 3! Might need trap here
     d1 = cent1[-1]-cent1[1]             #compare last ring to 2nd ring
@@ -607,15 +620,20 @@ def ImageCalibrate(self,data):
         if -135. < atan2d(t1[1],t1[0]) < 45.:
             Zsign = -1
     
-    tilt = data['tilt'] = Zsign*tiltSum/Zsum
-    phi = data['rotation'] = phiSum/Zsum
+    data['tilt'] = Zsign*tiltSum/Zsum
+    data['rotation'] = phiSum/Zsum
+    varyList = ['dist','det-X','det-Y','tilt','phi']
+    parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
+        'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     rings = np.concatenate((data['rings']),axis=0)
-    p0 = [dist,cent[0],cent[1],phi,tilt]
-    result,newWave = FitDetector(rings,p0,wave)
-    data['distance'] = result[0]
-    data['center'] = result[1:3]
-    data['rotation'] = np.mod(result[3],360.0)
-    data['tilt'] = result[4]
+    if data['DetDepthRef']:
+        varyList.append('dep')
+        FitDetector(rings,varyList,parmDict)
+    data['distance'] = parmDict['dist']
+    data['center'] = [parmDict['det-X'],parmDict['det-Y']]
+    data['rotation'] = np.mod(parmDict['phi'],360.0)
+    data['tilt'] = parmDict['tilt']
+    data['DetDepth'] = parmDict['dep']
     N = len(data['ellipses'])
     data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:

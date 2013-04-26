@@ -37,6 +37,9 @@ def UpdateImageControls(G2frame,data,masks):
 #patch
     if 'GonioAngles' not in data:
         data['GonioAngles'] = [0.,0.,0.]
+    if 'DetDepth' not in data:
+        data['DetDepth'] = 0.
+        data['DetDepthRef'] = False
 #end patch
 
     
@@ -359,7 +362,17 @@ def UpdateImageControls(G2frame,data,masks):
                 data['wavelength'] = wave
             except ValueError:
                 pass
-            waveSel.SetValue("%6.5f" % (data['wavelength']))          #reset in case of error          
+            waveSel.SetValue("%6.5f" % (data['wavelength']))          #reset in case of error
+            
+        def OnDetDepthRef(event):
+            data['DetDepthRef'] = penSel.GetValue()
+            
+        def OnDetDepth(event):
+            try:
+                data['DetDepth'] = float(penVal.GetValue())
+            except ValueError:
+                pass
+            penVal.SetValue("%6.3f" % (data['DetDepth']))          #reset in case of error                      
             
         calibSizer = wx.FlexGridSizer(5,2,5,5)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,
@@ -393,6 +406,16 @@ def UpdateImageControls(G2frame,data,masks):
         rotSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['rotation']-90.)),style=wx.TE_READONLY) #kluge to get rotation from vertical - see GSASIIimage
         rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
         calibSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
+        penSel = wx.CheckBox(parent=G2frame.dataDisplay,label='Penetration?')
+        calibSizer.Add(penSel,0,wx.ALIGN_CENTER_VERTICAL)
+        penSel.Bind(wx.EVT_CHECKBOX, OnDetDepthRef)
+        penSel.SetValue(data['DetDepthRef'])
+        penVal = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%6.5f" % (data['DetDepth'])),
+            style=wx.TE_PROCESS_ENTER)
+        penVal.Bind(wx.EVT_TEXT_ENTER,OnDetDepth)
+        penVal.Bind(wx.EVT_KILL_FOCUS,OnDetDepth)
+        calibSizer.Add(penVal,0,wx.ALIGN_CENTER_VERTICAL)             
+        
         return calibSizer
     
     def IntegrateSizer():

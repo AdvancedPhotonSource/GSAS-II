@@ -52,6 +52,10 @@ def pointInPolygon(pXY,xy):
                 Inside = not Inside
         p1x,p1y = p2x,p2y
     return Inside
+    
+def peneCorr(tth,dep):
+    return dep*(1.-npcosd(tth))         #best one
+#    return dep*npsind(tth)             #not as good as 1-cos2Q
         
 def makeMat(Angle,Axis):
     #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
@@ -161,7 +165,7 @@ def FitDetector(rings,varyList,parmDict):
         if 'wave' in varyList:
             wave = B[-1]
         tth = 2.0*npasind(wave/(2.*dsp))
-        dxy = dep*(1.-npcosd(tth))
+        dxy = peneCorr(tth,dep)
         ttth = nptand(tth)
         radius = (dist+dxy)*ttth
         stth = npsind(tth)
@@ -293,7 +297,7 @@ def GetEllipse(dsp,data):
     stth = sind(tth)
     ctth = cosd(tth)
     cosb = cosd(tilt)
-    dxy = dep*(1.-npcosd(tth))
+    dxy = peneCorr(tth,dep)
     radius = ttth*(dist+dxy)
     radii[1] = (dist+dxy)*stth*ctth*cosb/(cosb**2-stth**2)
     if radii[1] > 0:
@@ -324,7 +328,7 @@ def GetDetectorXY(dsp,azm,data):
     dist = data['distance']
     dep = data['DetDepth']
     tth = 2.0*asind(wave/(2.*dsp))
-    dxy = dep*(1.-npcosd(tth))
+    dxy = peneCorr(tth,dep)
     ttth = tand(tth)
     radius = (dist+dxy)*ttth
     stth = sind(tth)
@@ -358,7 +362,7 @@ def GetTthAzmDsp(x,y,data):
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = dep*(1.-npcosd(tth))
+    dxy = peneCorr(tth,dep)
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z+dxy))
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dx,-dy)+azmthoff+720.)%360.

@@ -430,8 +430,12 @@ def GetTifData(filename,imageOnly=False):
                 else:
                     image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 4096:
-            tifType = 'MAR'
-            pixy = (158,158)
+            if sizexy[0] == 3072:
+                pixy =  (73,73)
+                tifType = 'MAR225'            
+            else:
+                pixy = (158,158)
+                tifType = 'MAR325'            
             File.seek(4096)
             if not imageOnly:
                 print 'Read MAR CCD tiff file: ',filename

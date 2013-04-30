@@ -22,17 +22,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>12</o:Revision>
-  <o:TotalTime>670</o:TotalTime>
+  <o:Revision>13</o:Revision>
+  <o:TotalTime>694</o:TotalTime>
   <o:Created>2012-05-06T20:38:00Z</o:Created>
-  <o:LastSaved>2012-08-15T15:04:00Z</o:LastSaved>
+  <o:LastSaved>2013-04-30T19:06:00Z</o:LastSaved>
   <o:Pages>8</o:Pages>
-  <o:Words>1783</o:Words>
-  <o:Characters>10169</o:Characters>
+  <o:Words>1782</o:Words>
+  <o:Characters>10161</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
   <o:Lines>84</o:Lines>
   <o:Paragraphs>23</o:Paragraphs>
-  <o:CharactersWithSpaces>11929</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>11920</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -349,7 +349,7 @@ href="Neutron%20CW%20Powder%20Data_files/colorschememapping.xml">
 	mso-font-charset:0;
 	mso-generic-font-family:swiss;
 	mso-font-pitch:variable;
-	mso-font-signature:-520092929 1073786111 9 0 415 0;}
+	mso-font-signature:-536870145 1073786111 1 0 415 0;}
 @font-face
 	{font-family:Tahoma;
 	panose-1:2 11 6 4 3 5 4 4 2 4;
@@ -939,9 +939,7 @@ ul
 	mso-ascii-font-family:Calibri;
 	mso-ascii-theme-font:minor-latin;
 	mso-hansi-font-family:Calibri;
-	mso-hansi-theme-font:minor-latin;
-	mso-bidi-font-family:"Times New Roman";
-	mso-bidi-theme-font:minor-bidi;}
+	mso-hansi-theme-font:minor-latin;}
 table.MsoTableGrid
 	{mso-style-name:"Table Grid";
 	mso-tstyle-rowband-size:0;
@@ -961,12 +959,10 @@ table.MsoTableGrid
 	mso-ascii-font-family:Calibri;
 	mso-ascii-theme-font:minor-latin;
 	mso-hansi-font-family:Calibri;
-	mso-hansi-theme-font:minor-latin;
-	mso-bidi-font-family:"Times New Roman";
-	mso-bidi-theme-font:minor-bidi;}
+	mso-hansi-theme-font:minor-latin;}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="1027"/>
+ <o:shapedefaults v:ext="edit" spidmax="1026"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -981,11 +977,11 @@ table.MsoTableGrid
 class=SpellE><span style='mso-bookmark:_Toc504374004'>Aluminium</span></span><span
 style='mso-bookmark:_Toc504374004'> Garnet</span></h1>
 
-<p class=MsoNormal>In this training exercise you will refine the structure of
-yttrium iron/aluminum garnet using constant wavelength neutron data. The
-structure is cubic with four different atomic sites two of which are occupied
-by both iron and aluminum. The data was taken on the D1a powder diffractometer
-at the ILL, Grenoble, France using 1.909Å wavelength neutrons.</p>
+<p class=MsoNormal>In this tutorial you will refine the structure of yttrium
+iron/aluminum garnet using constant wavelength neutron data. The structure is
+cubic with four different atomic sites two of which are occupied by both iron
+and aluminum. The data was taken on the D1a powder diffractometer at the ILL,
+Grenoble, France using 1.909Å wavelength neutrons.</p>
 
 <p class=MsoNormal>If you have not done so already, <a
 href="Starting%20GSAS.htm">start GSAS-II</a>.</p>
@@ -996,23 +992,25 @@ href="Starting%20GSAS.htm">start GSAS-II</a>.</p>
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Use
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Import/Powder Data/from GSAS file</span></b> menu item to read the
-data file into GSAS-II. This read option is set to read any of the powder data formats
-(except neutron TOF time map files) defined for GSAS (angles in <span
-class=SpellE>centidegrees</span>). Other submenu items will read the <span
-class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>cif</span></b></span> format or
-the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Import/Powder Data/from GSAS file</span></b>
+menu item to read the data file into GSAS-II. This read option is set to read
+any of the powder data formats (except neutron TOF time map files) defined for
+GSAS (angles in <span class=SpellE>centidegrees</span>). Other submenu items
+will read the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>xye</span></b></span>
-format (angles in degrees) used by <span class=SpellE>Topas</span>, etc.<span
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>cif</span></b></span> format or the <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>xye</span></b></span> format (angles
+in degrees) used by <span class=SpellE>Topas</span>, etc.<span
 style='mso-spacerun:yes'>  </span>Change the file directory to <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Exercises/garnet</span></b><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Exercises/garnet</span></b><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'> to find the file; you will need to change the file type to <b
 style='mso-bidi-font-weight:normal'>All files (*.*)</b> to find the desired
 file.</span></p>
@@ -1022,37 +1020,41 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>garnet.raw</span></b></span><span
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>garnet.raw</span></b></span><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'> data</span> file in the first dialog
+and press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Open</span></b>. There will be a
+Dialog box asking <span class=GramE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'> data</span>
-file in the first dialog and press <b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Is</span></b></span><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Open</span></b>.
-There will be a Dialog box asking <span class=GramE><b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Is</span></b></span><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'> this the file you want?</span></b> Press <span class=GramE><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Yes</span></b></span> button to proceed.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Yes</span></b></span> button to
+proceed.</p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l1 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>inst_d1a.prm</span></b> instrument parameter file in the second
-dialog and press <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Open</span></b>.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>inst_d1a.prm</span></b> instrument
+parameter file in the second dialog and press <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Open</span></b>.</p>
 
 <p class=MsoNormal>At this point the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data
-tree</span></b> window will have several entries and the plot window will show
-the powder pattern</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>GSAS-II data tree</span></b> window will have several entries and
+the plot window will show the powder pattern</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype
  id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
@@ -1074,11 +1076,11 @@ the powder pattern</p>
  </v:formulas>
  <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
  <o:lock v:ext="edit" aspectratio="t"/>
-</v:shapetype><v:shape id="Picture_x0020_1" o:spid="_x0000_i1044" type="#_x0000_t75"
- style='width:525pt;height:450pt;visibility:visible;mso-wrap-style:square'>
+</v:shapetype><v:shape id="_x0000_i1045" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image001.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Neutron%20CW%20Powder%20Data_files/image001.png" v:shapes="Picture_x0020_1"><![endif]></span></p>
+src="Neutron%20CW%20Powder%20Data_files/image001.png" v:shapes="_x0000_i1045"><![endif]></span></p>
 
 <h2>Step 2: Create the phase</h2>
 
@@ -1086,11 +1088,12 @@ src="Neutron%20CW%20Powder%20Data_files/image001.png" v:shapes="Picture_x0020_1"
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Use
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Data/Add phase</span></b> menu item to begin creation of the new
-phase for this garnet; enter a phase name in the dialog box, we assume ‘<b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Data/Add phase</span></b> menu item to
+begin creation of the new phase for this garnet; enter a phase name in the
+dialog box, we assume ‘<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>garnet</span></b>’.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
@@ -1098,47 +1101,50 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>At
 the bottom of the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II tree</span></b>
-find <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>GSAS-II tree</span></b> find <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Phases</span></b> &amp; click the ’<b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>+</span></b>’
-box to expand it. Then click on <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>garnet</span></b>
-to select it; the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phase data
-for garnet</span></b> window will appear and the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>General</span></b>
-tab is visible.<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_2"
- o:spid="_x0000_i1043" type="#_x0000_t75" style='width:660pt;height:234pt;
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>+</span></b>’ box to expand it. Then click on <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>garnet</span></b> to select it; the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase data for garnet</span></b>
+window will appear and the <span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="_x0000_i1044" type="#_x0000_t75" style='width:622.5pt;height:323.25pt;
  visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image002.png" o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=880 height=312
-src="Neutron%20CW%20Powder%20Data_files/image002.png" v:shapes="Picture_x0020_2"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=830 height=431
+src="Neutron%20CW%20Powder%20Data_files/image002.png" v:shapes="_x0000_i1044"><![endif]></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>General</span></b> tab is visible.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>The
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Phase type</span></b> is correctly set to “<b style='mso-bidi-font-weight:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase type</span></b> is correctly set
+to “<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>nuclear</span></b>”; other options
+will become valid in the future. Enter the space group ‘<b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>nuclear</span></b>”;
-other options will become valid in the future. Enter the space group ‘<b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>I a 3 d</span></b>’ (spaces between axial fields are required in
-GSAS-II) and press <b style='mso-bidi-font-weight:normal'><span
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>I a 3 d</span></b>’ (spaces between axial
+fields are required in GSAS-II) and press <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Enter</span></b>,
-the space group information window will appear</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Enter</span></b>, the space group information window will appear</p>
 
 <p class=MsoListParagraphCxSpMiddle><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_3" o:spid="_x0000_i1042" type="#_x0000_t75" style='width:333.75pt;
+ id="Picture_x0020_3" o:spid="_x0000_i1043" type="#_x0000_t75" style='width:333.75pt;
  height:355.5pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image003.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=445 height=474
@@ -1146,58 +1152,63 @@ src="Neutron%20CW%20Powder%20Data_files/image003.png" v:shapes="Picture_x0020_3"
 
 <p class=MsoListParagraphCxSpMiddle>Press <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>
-to exit. The <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>General</span></b> tab display
-will change (principally changes in lattice parameter display).</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>OK</span></b> to exit. The <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>General</span></b> tab display will change (principally changes in
+lattice parameter display).</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Enter
 the lattice parameter for garnet (a=<b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>12.19</span></b>)
-in the appropriate field and press <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Enter</span></b>.
-The display will change again to show the cell volume.</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>12.19</span></b>) in the appropriate field and press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Enter</span></b>. The display will
+change again to show the cell volume.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>5.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Click
 on the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Data</span></b> tab in the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phase data
-for garnet </span></b>window and select <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Edit/Add
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Data</span></b> tab in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase data for garnet </span></b>window
+and select <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Edit/Add
 powder histograms</span></b> in the menu for this window. A <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Use data</span></b> window will appear with only one choice <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Use data</span></b> window will appear
+with only one choice <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>PWDR <span class=SpellE>garnet.raw</span>: BANK 1</span></b>.
 Select it and press <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>.
-The <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>OK</span></b>. The <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Data</span></b> tab will change; press the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Show
-PWDR <span class=SpellE>garnet.raw</span>: BANK 1</span></b> check box; the
-window will change again</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Show PWDR <span class=SpellE>garnet.raw</span>:
+BANK 1</span></b> check box; the window will change again</p>
 
 <p class=MsoListParagraphCxSpMiddle><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="_x0000_i1041" type="#_x0000_t75" style='width:350.25pt;height:342pt;
- visibility:visible;mso-wrap-style:square'>
+ id="Picture_x0020_24" o:spid="_x0000_i1042" type="#_x0000_t75" style='width:480pt;
+ height:370.5pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image004.png" o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=467 height=456
-src="Neutron%20CW%20Powder%20Data_files/image004.png" v:shapes="_x0000_i1041"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=640 height=494
+src="Neutron%20CW%20Powder%20Data_files/image004.png" v:shapes="Picture_x0020_24"><![endif]></span></p>
 
 <p class=MsoListParagraphCxSpLast>I’ve pulled down the bottom of the window to
 show the whole thing. This window is the home of parameters that are both phase
@@ -1210,9 +1221,9 @@ normal'>Show</b> check box.</p>
 
 <p class=MsoNormal>Click on the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
-tab; this is where you will insert the atoms for the garnet structure. The 6
-sets of atom coordinates are:</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Atoms</span></b> tab; this is where you will insert the atoms for
+the garnet structure. The 6 sets of atom coordinates are:</p>
 
 <table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
  style='margin-left:30.2pt;border-collapse:collapse;border:none;mso-border-alt:
@@ -1420,15 +1431,15 @@ sets of atom coordinates are:</p>
 
 <p class=MsoNormal>To begin use the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Edit/Append
-atom</span></b> in the menu on the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
-tab 6 times to create the default set of atom places in the table; the table
-will look like</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Edit/Append atom</span></b> in the menu on the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b> tab 6 times to create
+the default set of atom places in the table; the table will look like</p>
 
 <p class=MsoNormal style='text-indent:.5in'><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_6" o:spid="_x0000_i1040" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_6" o:spid="_x0000_i1041" type="#_x0000_t75" style='width:525pt;
  height:195pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image005.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=260
@@ -1436,14 +1447,15 @@ src="Neutron%20CW%20Powder%20Data_files/image005.png" v:shapes="Picture_x0020_6"
 
 <p class=MsoNormal>Then for each atom to be inserted, double click on the “<b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>H</span></b>” in the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Type</span></b>
-column; a Periodic Table will appear</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>H</span></b>” in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Type</span></b> column; a Periodic
+Table will appear</p>
 
 <p class=MsoNormal style='text-indent:.5in'><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_7" o:spid="_x0000_i1039" type="#_x0000_t75" style='width:582pt;
+ id="Picture_x0020_7" o:spid="_x0000_i1040" type="#_x0000_t75" style='width:582pt;
  height:208.5pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image006.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=776 height=278
@@ -1452,89 +1464,90 @@ src="Neutron%20CW%20Powder%20Data_files/image006.png" v:shapes="Picture_x0020_7"
 <p class=MsoNormal>Each element has a small pull down selection for the
 possible valences (usually choose the “zero” one). Select “<b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Y</span></b>”,
-the Table will vanish and the <b style='mso-bidi-font-weight:normal'><span
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Y</span></b>”, the Table will vanish and the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Name</span></b> and <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Type</span></b> for that atom will
+change. Then enter the values for <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Name</span></b>
-and <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Type</span></b> for that atom will change. Then enter the values
-for <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>x</span></b>, <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>y</span></b>
-and <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>y</span></b> and <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>z</span></b>; you can use Tab to move to the next one. You may use
 fractions for the atom coordinates (e.g. 1/4, 3/8). Do this for each atom in
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Atoms</span></b> table. You can leave both <span class=SpellE><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b> table. You can leave
+both <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>frac</span></b></span> and <span class=SpellE><b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Uiso</span></b></span>
-at the default values. Your result should look like</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Uiso</span></b></span> at the default values.
+Your result should look like</p>
 
-<p class=MsoNormal><!--[if gte vml 1]><v:shape id="Picture_x0020_9" o:spid="_x0000_s1026"
- type="#_x0000_t75" style='position:absolute;margin-left:0;margin-top:0;
- width:525.05pt;height:225.05pt;z-index:251658240;visibility:visible;
- mso-wrap-style:square;mso-width-percent:0;mso-height-percent:0;
- mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
- mso-wrap-distance-bottom:0;mso-position-horizontal:left;
- mso-position-horizontal-relative:text;mso-position-vertical:top;
- mso-position-vertical-relative:text;mso-width-percent:0;mso-height-percent:0;
- mso-width-relative:page;mso-height-relative:page'>
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_26" o:spid="_x0000_i1039" type="#_x0000_t75" style='width:525pt;
+ height:225pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image007.png" o:title=""/>
- <w:wrap type="square"/>
-</v:shape><![endif]--><![if !vml]><img width=700 height=300
-src="Neutron%20CW%20Powder%20Data_files/image007.png" align=left hspace=12
-v:shapes="Picture_x0020_9"><![endif]><br clear=all>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=300
+src="Neutron%20CW%20Powder%20Data_files/image007.png" v:shapes="Picture_x0020_26"><![endif]></span><br
+clear=all>
 You can now do your first Rietveld refinement on this problem. To do this, do <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Calculate/Refine</span></b> in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II
-data tree</span></b> menu; a file dialog will ask you for a name for this
-project; you can change the directory if you wish. We assume the name “<b
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b> in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> menu; a
+file dialog will ask you for a name for this project; you can change the
+directory if you wish. We assume the name “<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>YAG</span></b>”; the current project will be saved as <span
 class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>YAG.gpx</span></b></span> and the
-first backup file (<b style='mso-bidi-font-weight:normal'><span
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>YAG.gpx</span></b></span>
+and the first backup file (<b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>YAG.bak0.gpx</span></b>)
-will also be created and then the Rietveld refinement will be performed. By
-default, only the histogram scale factor (found under <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Sample
-Parameters</span></b> for <b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>YAG.bak0.gpx</span></b>) will also be created and then the
+Rietveld refinement will be performed. By default, only the histogram scale
+factor (found under <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>PWDR <span
-class=SpellE>garnet.raw</span>: BANK1</span></b> in the <b style='mso-bidi-font-weight:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Sample Parameters</span></b> for <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II
-data tree</span></b>) and 3 background coefficients are refined. The resulting
-powder pattern</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>PWDR <span class=SpellE>garnet.raw</span>:
+BANK1</span></b> in the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>GSAS-II data tree</span></b>) and 3 background coefficients are
+refined. The resulting powder pattern</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_10" o:spid="_x0000_i1038" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_27" o:spid="_x0000_i1038" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image008.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Neutron%20CW%20Powder%20Data_files/image008.png" v:shapes="Picture_x0020_10"><![endif]></span></p>
+src="Neutron%20CW%20Powder%20Data_files/image008.png" v:shapes="Picture_x0020_27"><![endif]></span></p>
 
 <p class=MsoNormal><span class=GramE>shows</span> a pretty poor fit (<span
 class=SpellE>Rwp</span> ~33%) and details can be found in the <span
 class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>YAG.lst</span></b></span> file.
-What appears to be in error includes some structural features (I’d first
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>YAG.lst</span></b></span>
+file. What appears to be in error includes some structural features (I’d first
 suspect site fractions for the Fe/Al sites) and something about the peak
 positions (lattice parameter &amp; zero point). We can introduce all these
 parameters now.</p>
@@ -1543,47 +1556,49 @@ parameters now.</p>
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Go
 to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>PWDR garnet.raw:BaNK1/Instrument Parameters</span></b> and check
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>PWDR garnet.raw:BaNK1/Instrument
+Parameters</span></b> and check the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Refine?</span></b> <span class=GramE>for</span> <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Zero.</span></b></p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Zero.</span></b></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Go
 to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Phases/garnet</span></b> and check <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Refine
-unit cell</span></b> in the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>General</span></b>
-tab.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phases/garnet</span></b> and check <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Refine unit cell</span></b> in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>General</span></b> tab.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Next
 go to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Constraints</span></b> in the main “<b style='mso-bidi-font-weight:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Constraints</span></b> in the main “<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Loaded Data</span></b>” list in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b>. You will
+see an empty window with 3 tabs; <span class=GramE><b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Loaded
-Data</span></b>” list in the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data
-tree</span></b>. You will see an empty window with 3 tabs; <span class=GramE><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Phase constraints</span></b> is</span> the one you want. Select <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Add equivalence</span></b> from the menu. You will see the
-following new window</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Phase constraints</span></b> is</span> the one
+you want. Select <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Edit/Add
+equivalence</span></b> from the menu. You will see the following new window</p>
 
 <p class=MsoListParagraphCxSpMiddle><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_11" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:259.5pt;
@@ -1594,30 +1609,32 @@ src="Neutron%20CW%20Powder%20Data_files/image009.png" v:shapes="Picture_x0020_11
 
 <p class=MsoListParagraphCxSpMiddle><span class=GramE>select</span> <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>0::AUiso:1 for Fe(2)</span></b> and press <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>;
-a new window will appear</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>0::AUiso:1 for Fe(2)</span></b> and
+press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>; a new window will
+appear</p>
 
 <p class=MsoListParagraphCxSpMiddle><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_12" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:259.5pt;
+ id="Picture_x0020_28" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:259.5pt;
  height:271.5pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image010.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=346 height=362
-src="Neutron%20CW%20Powder%20Data_files/image010.png" v:shapes="Picture_x0020_12"><![endif]></span></p>
+src="Neutron%20CW%20Powder%20Data_files/image010.png" v:shapes="Picture_x0020_28"><![endif]></span></p>
 
 <p class=MsoListParagraphCxSpMiddle><span class=GramE>select</span> <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>0::AUiso:2 for Al(3)</span></b> and press <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>.
-That will form the first equivalence you need between the Fe and Al atoms that
-occupy the atom site at 0<span class=GramE>,0,0</span> in the cell. This shows
-up in the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Constraints</span></b> window.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>0::AUiso:2 for Al(3)</span></b> and
+press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>. That will form the
+first equivalence you need between the Fe and Al atoms that occupy the atom
+site at 0<span class=GramE>,0,0</span> in the cell. This shows up in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Constraints</span></b> window.</p>
 
 <p class=MsoListParagraphCxSpMiddle><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_13" o:spid="_x0000_i1035" type="#_x0000_t75" style='width:244.5pt;
@@ -1628,41 +1645,44 @@ src="Neutron%20CW%20Powder%20Data_files/image011.png" v:shapes="Picture_x0020_13
 
 <p class=MsoListParagraphCxSpMiddle>Now do the same for the atoms <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>0::AUiso:3 for Al(4)</span></b> and <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>0::AUiso:4
-for Fe(5)</span></b> to make that pair of atoms have the same <span
-class=SpellE>Uiso</span>.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>0::AUiso:3 for Al(4)</span></b> and <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>0::AUiso:4 for Fe(5)</span></b> to
+make that pair of atoms have the same <span class=SpellE>Uiso</span>.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Next
 select <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Add constraint</span></b> from the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phase
-Constraints</span></b> tab. A now familiar window will appear; select <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Edit/Add constraint</span></b> from
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase Constraints</span></b> tab. A
+now familiar window will appear; select <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>0:<span class=GramE>:Afrac:1</span> for Fe(2)</span></b> and press
 OK. Again you will see the same second window; select <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>0:<span
-class=GramE>:Afrac:2</span> for Al(3)</span></b> and press <b style='mso-bidi-font-weight:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>0:<span class=GramE>:Afrac:2</span> for Al(3)</span></b>
+and press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>. Do the same thing for <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>0::Afrac:3 for Al(4)</span></b> – you
+may have to scroll down the list to see this – and <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>.
-Do the same thing for <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>0::Afrac:3
-for Al(4)</span></b> – you may have to scroll down the list to see this – and <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>0::Afrac:4 for Fe(5)</span></b>. When done the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Constraints</span></b> window should look like</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>0::Afrac:4 for Fe(5)</span></b>. When done the
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Constraints</span></b> window should
+look like</p>
 
 <p class=MsoListParagraphCxSpMiddle><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_14" o:spid="_x0000_i1034" type="#_x0000_t75" style='width:309.75pt;
@@ -1672,65 +1692,71 @@ minor-latin'>Constraints</span></b> window should look like</p>
 src="Neutron%20CW%20Powder%20Data_files/image012.png" v:shapes="Picture_x0020_14"><![endif]></span></p>
 
 <p class=MsoListParagraphCxSpMiddle>This process set the
-equivalences/constraints for the two Fe/Al sites in the garnet so that
-refinement of <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+equivalences/constraints for the two Fe/Al sites in the garnet so that refinement
+of <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>frac</span></b></span>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>frac</span></b></span> and <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Uiso</span></b></span> will succeed. GSAS-II
+constraints will correct the site fractions and <span class=SpellE>Uiso</span>
+values so that they conform to the constraints as written. You need not be
+concerned about their starting values beforehand. Also note the way each
+parameter was named; the general form is <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>p<span class=GramE>:h:name:num</span></span></b> where <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>p</span></b> is a phase number, <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>h</span></b> is a histogram number, <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>name</span></b> is the parameter name
 and <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Uiso</span></b></span>
-will succeed. GSAS-II constraints will correct the site fractions and <span
-class=SpellE>Uiso</span> values so that they conform to the constraints as
-written. You need not be concerned about their starting values beforehand. Also
-note the way each parameter was named; the general form is <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>p<span
-class=GramE>:h:name:num</span></span></b> where <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>p</span></b>
-is a phase number, <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>h</span></b>
-is a histogram number, <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>name</span></b>
-is the parameter name and <span class=SpellE><b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>num</span></b></span>
-is an optional number (e.g. an atom number).</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>num</span></b></span> is an optional number (e.g. an atom number).</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>5.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Go
 to the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Phases/garnet</span></b> item in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II
-data tree</span></b> and select the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phases/garnet</span></b> item in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> and
+select the <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
 tab. Note the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>frac</span></b></span>
-values are unchanged from what you originally entered. Don’t <span class=GramE>worry,</span>
-they will be corrected in the next refinement. We now have to set the
-refinement of <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>frac</span></b></span>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>frac</span></b></span> values are unchanged from what you
+originally entered. Don’t <span class=GramE>worry,</span> they will be
+corrected in the next refinement. We now have to set the refinement of <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>frac</span></b></span>
 for the Fe/Al sites. There are many ways to do <span class=GramE>this,</span>
 we will show you one method now. Select row <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>1</span></b>
-for <span class=GramE>Fe(</span>2) and then holding the Ctrl key down select
-rows <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>2-4</span></b>; they will appear all gray. Next select <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Set atom refinement flags</span></b> from the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>1</span></b> for <span class=GramE>Fe(</span>2)
+and then holding the Ctrl key down select rows <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>2-4</span></b>; they will appear all gray.
+Next select <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Edit/Set
+atom refinement flags</span></b> from the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Atoms</span></b> menu; a new window will appear</p>
 
 <p class=MsoListParagraphCxSpMiddle><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
@@ -1743,21 +1769,23 @@ style='mso-spacerun:yes'> </span></p>
 
 <p class=MsoListParagraphCxSpMiddle>For now select <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>F
-– site fraction</span></b>. You could select all <span class=GramE>three,</span>
-GSAS-II would refine <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>frac</span></b></span>
-&amp; <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Uiso</span></b></span>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>F – site fraction</span></b>. You could select
+all <span class=GramE>three,</span> GSAS-II would refine <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>frac</span></b></span> &amp; <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Uiso</span></b></span>
 but not the coordinates as they are fixed as special positions in this case.
 The <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Atom</span></b> window will have an <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>F</span></b>
-in the refine column each of these atoms.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atom</span></b> window will have an <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>F</span></b> in the refine column each
+of these atoms.</p>
 
 <p class=MsoListParagraphCxSpLast><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_16" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:525pt;
@@ -1769,27 +1797,28 @@ style='mso-spacerun:yes'> </span></p>
 
 <p class=MsoNormal>You are now ready for your second Rietveld refinement;
 select <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Calculate/Refine</span></b> from the GSAS-II data tree window.
-There is now a much better fit with <span class=SpellE>Rwp</span> ~12% and a
-powder pattern that looks like</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b> from the
+GSAS-II data tree window. There is now a much better fit with <span
+class=SpellE>Rwp</span> ~12% and a powder pattern that looks like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_17" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_29" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image015.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Neutron%20CW%20Powder%20Data_files/image015.png" v:shapes="Picture_x0020_17"><![endif]></span></p>
+src="Neutron%20CW%20Powder%20Data_files/image015.png" v:shapes="Picture_x0020_29"><![endif]></span></p>
 
 <p class=MsoNormal>There appears to be some differences in peak intensities and
 an interesting offset at the low end of the pattern. Let us add the remaining
 atom parameters (<span class=SpellE>Uiso</span> for each and the <span
 class=GramE>O(</span>xyz) parameters. Go to <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phases/garnet</span></b>
-and select the <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b> tab.</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Phases/garnet</span></b> and select the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b> tab.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_18" o:spid="_x0000_i1030" type="#_x0000_t75" style='width:525pt;
@@ -1800,18 +1829,20 @@ src="Neutron%20CW%20Powder%20Data_files/image016.png" v:shapes="Picture_x0020_18
 
 <p class=MsoNormal>Notice that the <span class=SpellE><b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>frac</span></b></span>
-values for the Fe/Al atoms now conform to the constraints. For each atom in
-turn, double click on the refine box. A pull down list will appear, select <b
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>frac</span></b></span> values for the Fe/Al
+atoms now conform to the constraints. For each atom in turn, double click on
+the refine box. A pull down list will appear, select <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>U</span></b> for the Y atom, <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>U</span></b> for the Y atom, <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>FU</span></b>
-for Fe/Al atoms and <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>XU</span></b>
-for the O atom. Your list should look like</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>FU</span></b> for Fe/Al atoms and <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>XU</span></b> for the O atom. Your
+list should look like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_19" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:525pt;
@@ -1823,15 +1854,15 @@ src="Neutron%20CW%20Powder%20Data_files/image017.png" v:shapes="Picture_x0020_19
 <p class=MsoNormal><span class=GramE>when</span> done. Now you can do your
 third Rietveld refinement; select <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b>.
-The resulting fit is</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Calculate/Refine</span></b>. The resulting fit is</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_20" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_30" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Neutron%20CW%20Powder%20Data_files/image018.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Neutron%20CW%20Powder%20Data_files/image018.png" v:shapes="Picture_x0020_20"><![endif]></span></p>
+src="Neutron%20CW%20Powder%20Data_files/image018.png" v:shapes="Picture_x0020_30"><![endif]></span></p>
 
 <p class=MsoNormal><span class=GramE>with</span> <span class=SpellE>Rwp</span>
 ~8%. There is still an apparent peak offset at the ends of the pattern and
@@ -1840,9 +1871,14 @@ perhaps some misfit of the peak widths.</p>
 <p class=MsoNormal>The latter are determined by the U, V &amp; W parameters
 found in the <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>PWDR <span class=SpellE>garnet.raw</span>:
-BANK1/Instrument Parameters</span></b> window. Go there and select their
-Refine? <span class=GramE>flags</span>. Next go to Sample Parameters.</p>
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>PWDR <span
+class=SpellE>garnet.raw</span>: BANK1/Instrument Parameters</span></b> window.
+Go there and select their <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Refine?</span></b> <span class=GramE>flags</span>.
+Next go to <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Sample Parameters</span></b>.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_21" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:225pt;
@@ -1854,15 +1890,17 @@ src="Neutron%20CW%20Powder%20Data_files/image019.png" v:shapes="Picture_x0020_21
 <p class=MsoNormal>Notice that the Histogram scale factor is already being
 refined. Now you will want to refine both <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Sample X
-displacement</span></b> and <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Sample Y
-displacement</span></b>. The values will be in <span style='font-family:Symbol'>m</span>m
-if the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Goniometer radius</span></b> is correct; enter 650 for that value.
-Now you can do another Rietveld refinement; the fit</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Sample X displacement</span></b> and <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Sample Y displacement</span></b>. The values
+will be in <span style='font-family:Symbol'>m</span>m if the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Goniometer radius</span></b> is
+correct; enter 650 for that value. Now you can do another Rietveld refinement;
+the fit</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_22" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:525pt;
@@ -1874,10 +1912,10 @@ src="Neutron%20CW%20Powder%20Data_files/image020.png" v:shapes="Picture_x0020_22
 <p class=MsoNormal><span class=GramE>is</span> nearly perfect! <span
 class=SpellE>Rwp</span> = 4.87%. You can look at the <span class=SpellE><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>YAG.lst</span></b></span> output file for all the parameters and
-their respective <span class=SpellE>esds</span>. I’ve pasted some of my results
-in below for you to compare.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>YAG.lst</span></b></span> output file
+for all the parameters and their respective <span class=SpellE>esds</span>.
+I’ve pasted some of my results in below for you to compare.</p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'>Number of function
 calls: <span class=GramE>9<span style='mso-spacerun:yes'>  </span>Number</span>
@@ -1899,7 +1937,8 @@ style='mso-spacerun:yes'>   </span>3.35<o:p></o:p></span></p>
 <p class=MsoNormal><span style='font-family:"Courier New"'>…<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'>Atoms:<span
-style='mso-spacerun:yes'>                                               </span><o:p></o:p></span></p>
+style='mso-spacerun:yes'>                                         </span><span
+style='mso-spacerun:yes'>      </span><o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'>   </span><span class=GramE>name</span><span
@@ -1918,14 +1957,15 @@ style='mso-spacerun:yes'>                                       </span><o:p></o:
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'> </span><span class=GramE>values</span>:<span
-style='mso-spacerun:yes'>   </span>0.12500 <span
-style='mso-spacerun:yes'>  </span>0.00000<span style='mso-spacerun:yes'>  
-</span>0.25000<span style='mso-spacerun:yes'>   </span>1.000 0.00453<o:p></o:p></span></p>
+style='mso-spacerun:yes'>   </span>0.12500<span style='mso-spacerun:yes'>  
+</span>0.00000<span style='mso-spacerun:yes'>   </span>0.25000<span
+style='mso-spacerun:yes'>   </span>1.000 0.00453<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'> </span><span class=GramE>sig</span><span
 style='mso-spacerun:yes'>   </span>:<span
-style='mso-spacerun:yes'>                                       </span>0.00033<o:p></o:p></span></p>
+style='mso-spacerun:yes'>                     </span><span
+style='mso-spacerun:yes'>                  </span>0.00033<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'>  </span><span class=GramE>Fe(</span>2)<span
@@ -1950,7 +1990,8 @@ style='mso-spacerun:yes'>                                       </span><o:p></o:
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'> </span><span class=GramE>values</span>:<span
-style='mso-spacerun:yes'>   </span>0.00000<span style='mso-spacerun:yes'>  
+style='mso-spacerun:yes'>  </span><span
+style='mso-spacerun:yes'> </span>0.00000<span style='mso-spacerun:yes'>  
 </span>0.00000<span style='mso-spacerun:yes'>   </span>0.00000<span
 style='mso-spacerun:yes'>   </span>0.425 0.00347<o:p></o:p></span></p>
 
@@ -1989,8 +2030,7 @@ style='mso-spacerun:yes'>   </span>0.298-0.00021<o:p></o:p></span></p>
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'> </span><span class=GramE>sig</span><span
 style='mso-spacerun:yes'>   </span>:<span
-style='mso-spacerun:yes'>                            </span><span
-style='mso-spacerun:yes'>     </span>0.007 0.00069<o:p></o:p></span></p>
+style='mso-spacerun:yes'>                                 </span>0.007 0.00069<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'>   </span><span class=GramE>O(</span>6)<span
@@ -2014,8 +2054,8 @@ style='mso-spacerun:yes'>         </span>0.00025<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'>Sample
 Parameters:<span
-style='mso-spacerun:yes'>                                                     
-</span><span style='mso-spacerun:yes'>        </span><o:p></o:p></span></p>
+style='mso-spacerun:yes'>                                                             
+</span><o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'> </span><span class=GramE>names :</span><span
@@ -2041,8 +2081,7 @@ style='mso-spacerun:yes'>   </span>:<span style='mso-spacerun:yes'>       
 style='mso-spacerun:yes'>                 </span><o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
-style='mso-spacerun:yes'> </span><span
-style='mso-spacerun:yes'>                                                                               
+style='mso-spacerun:yes'>                                                                                
 </span><o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
@@ -2061,8 +2100,7 @@ style='mso-spacerun:yes'>           </span>W <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-family:"Courier New"'><span
 style='mso-spacerun:yes'> </span><span class=GramE>value :</span><span
-style='mso-spacerun:yes'>   </span><span
-style='mso-spacerun:yes'> </span>1.909000<span style='mso-spacerun:yes'>  
+style='mso-spacerun:yes'>    </span>1.909000<span style='mso-spacerun:yes'>  
 </span>-0.084918<span style='mso-spacerun:yes'>    </span>0.000000<span
 style='mso-spacerun:yes'>  </span>266.108676 -655.916341<span
 style='mso-spacerun:yes'>  </span>585.853296 <o:p></o:p></span></p>
@@ -2077,8 +2115,9 @@ style='mso-spacerun:yes'>    </span>9.537597<span style='mso-spacerun:yes'>   
 
 <p class=MsoNormal>A useful display to examine is given by selecting <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Covariance</span></b> in the GSAS-II data tree</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Covariance</span></b> in the GSAS-II
+data tree</p>
 
 <p class=MsoNormal><span style='font-family:"Courier New";mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_23" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:525pt;
@@ -2088,7 +2127,7 @@ minor-latin'>Covariance</span></b> in the GSAS-II data tree</p>
 src="Neutron%20CW%20Powder%20Data_files/image021.png" v:shapes="Picture_x0020_23"><![endif]></span><span
 style='font-family:"Courier New"'><o:p></o:p></span></p>
 
-<p class=MsoNormal>This is a graphical rendering of the variance covariance
+<p class=MsoNormal>This is a graphical rendering of the variance-covariance
 matrix from the last refinement. This matrix is symmetric about the diagonal;
 moving your cursor about it will display parameter names, values and <span
 class=SpellE>esds</span> on the diagonal and the covariance between a pair of
@@ -2096,10 +2135,12 @@ parameters off the diagonal. Intense red or green indicates high covariance
 (green for + and red for -) and yellow is for close to zero covariance. High <span
 class=SpellE>covariances</span> naturally occur for profile coefficients and
 for background parameters. You can change the color scheme, the default is <span
-class=SpellE>RdYlGn</span>. If during the course of one of your refinements you
-see white bands in this display: that is the signature of some singularities in
-your refinement. The offending parameter(s) should not be refined
-independently; perhaps a constraint/equivalence is needed.</p>
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>RdYlGn</span></b></span>. If during the course of one of your
+refinements you see white bands in this display: that is the signature of some
+singularities in your refinement. The offending parameter(s) should not be
+refined independently; perhaps a constraint/equivalence is needed.</p>
 
 </div>
 

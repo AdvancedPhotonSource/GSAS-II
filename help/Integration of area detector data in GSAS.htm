@@ -24,17 +24,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>11</o:Revision>
-  <o:TotalTime>109</o:TotalTime>
+  <o:Revision>12</o:Revision>
+  <o:TotalTime>118</o:TotalTime>
   <o:Created>2012-05-04T20:46:00Z</o:Created>
-  <o:LastSaved>2012-07-03T19:15:00Z</o:LastSaved>
+  <o:LastSaved>2013-04-30T17:23:00Z</o:LastSaved>
   <o:Pages>3</o:Pages>
-  <o:Words>800</o:Words>
-  <o:Characters>4563</o:Characters>
+  <o:Words>808</o:Words>
+  <o:Characters>4610</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
   <o:Lines>38</o:Lines>
   <o:Paragraphs>10</o:Paragraphs>
-  <o:CharactersWithSpaces>5353</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>5408</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -47,6 +47,7 @@ href="Integration%20of%20area%20detector%20data%20in%20GSAS_files/themedata.thmx
 href="Integration%20of%20area%20detector%20data%20in%20GSAS_files/colorschememapping.xml">
 <!--[if gte mso 9]><xml>
  <w:WordDocument>
+  <w:Zoom>156</w:Zoom>
   <w:SpellingState>Clean</w:SpellingState>
   <w:GrammarState>Clean</w:GrammarState>
   <w:TrackMoves>false</w:TrackMoves>
@@ -356,7 +357,7 @@ href="Integration%20of%20area%20detector%20data%20in%20GSAS_files/colorschememap
 	mso-font-charset:0;
 	mso-generic-font-family:swiss;
 	mso-font-pitch:variable;
-	mso-font-signature:-520092929 1073786111 9 0 415 0;}
+	mso-font-signature:-536870145 1073786111 1 0 415 0;}
 @font-face
 	{font-family:Tahoma;
 	panose-1:2 11 6 4 3 5 4 4 2 4;
@@ -954,9 +955,7 @@ div.WordSection1
 	mso-ascii-font-family:Calibri;
 	mso-ascii-theme-font:minor-latin;
 	mso-hansi-font-family:Calibri;
-	mso-hansi-theme-font:minor-latin;
-	mso-bidi-font-family:"Times New Roman";
-	mso-bidi-theme-font:minor-bidi;}
+	mso-hansi-theme-font:minor-latin;}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
  <o:shapedefaults v:ext="edit" spidmax="1026"/>
@@ -976,17 +975,18 @@ div.WordSection1
 detector at APS 11-ID-C with a wavelength 0.10798 A, where the detector was
 intentionally tilted at 45 degrees, are used. Note that menu entries are listed
 in <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>bold face</span></b> below as <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Help/About
-GSAS-II</span></b>, which lists first the name of the menu (here <b
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>bold face</span></b> below as <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Help/About GSAS-II</span></b>, which
+lists first the name of the menu (here <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Help</span></b>) and second the name of the entry in the menu
 (here <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>About GSAS-II</span></b>).</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>About GSAS-II</span></b>).</p>
 
 <h2>Prerequisite:<span style='mso-spacerun:yes'>  </span><a
 href="Calibration%20of%20an%20area%20detector%20in%20GSAS.htm">Calibration Demo</a></h2>
@@ -1001,41 +1001,43 @@ href="Calibration%20of%20an%20area%20detector%20in%20GSAS.htm">Calibration Demo<
 will show the located rings and possibly all the picked points. These are no
 longer needed. The <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Image
-Controls/Clear Calibration</span></b> menu entry removes these from the plot,
-but<u> does not clear the calibration results</u>. Use of this menu item is not
-required, but does speed future display of results. </p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Image Controls/Clear Calibration</span></b> menu entry removes
+these from the plot, but<u> does not clear the calibration results</u>. Use of
+this menu item is not required, but does speed future display of results. </p>
 
 <h2>Step 2: Integration Settings</h2>
 
 <p class=MsoNormal>In the simplest case, all that is needed is to click on the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Do full integration?</span></b> <span class=GramE>check</span> box
-and adjust the inner and outer 2-theta values with the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Inner
-2-theta</span></b> and<b style='mso-bidi-font-weight:normal'> </b><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Outer 2-theta</span></b> controls. Change the limits to <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>1</span></b> and <b style='mso-bidi-font-weight:normal'><span
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Do full integration?</span></b> <span
+class=GramE>check</span> box and adjust the inner and outer 2-theta values with
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Inner 2-theta</span></b> and<b
+style='mso-bidi-font-weight:normal'> </b><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>7</span></b>
-for this data. Note that changes are displayed when numbers are placed in the
-boxes only after pressing return or tab key or by clicking on some other item
-in the window.</p>
-
-<p class=MsoNormal>It is helpful to see the two-theta limits on the plot
-visually, while adjusting the two-theta range. This is done by clicking on the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Outer 2-theta</span></b> controls. It is helpful to see the
+two-theta limits on the plot visually, while adjusting the two-theta range.
+This is done by clicking on the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Show integration limits?</span></b> <span class=GramE>check</span>
 box. Note that inner limit is shown as a green ellipse at 2deg and the outer is
 shown as a red ellipse at 5deg by default. These limits may also be dragged to
-the desired values; a small popup window shows the value. </p>
+the desired values; a small popup window shows the value. <o:p></o:p></p>
+
+<p class=MsoNormal>Change the limits to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>1</span></b> and <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>7</span></b> for this data. Note that changes are displayed when
+numbers are placed in the boxes only after pressing return or tab key or by
+clicking on some other item in the window.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype
  id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
@@ -1058,10 +1060,10 @@ the desired values; a small popup window shows the value. </p>
  <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
  <o:lock v:ext="edit" aspectratio="t"/>
 </v:shapetype><v:shape id="Picture_x0020_6" o:spid="_x0000_i1029" type="#_x0000_t75"
- style='width:472.5pt;height:310.5pt;visibility:visible;mso-wrap-style:square'>
+ style='width:472.5pt;height:342pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image001.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=414
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=456
 src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image001.png"
 v:shapes="Picture_x0020_6"><![endif]></span></p>
 
@@ -1069,150 +1071,160 @@ v:shapes="Picture_x0020_6"><![endif]></span></p>
 
 <p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Azimuth
-offset</span></b>: The image vertical axis (from the beam center, going down)
-is labeled with the azimuth value placed in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Azimuth
-offset</span></b> box. This is usually zero unless the image plate has been
-rotated about its normal axis.</p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Start/End
-azimuth</span></b>: The integration is started at the Start azimuth angle in
-the left box, and when the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Do full
-integration?</span></b> <span class=GramE>checkbox</span> is not checked, the
-integration will be run only to the maximum value specified. When the range is
-less than 360 degrees, the integration range will be shown (if selected) with
-the high and low limits plotted and only segments of the max and min ellipses
-drawn. These limits may also be dragged on the plot to desired locations.</p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Number of
-2-theta bins</span></b>: The resulting 1-D powder pattern after integration
-will consist of this many points. This number should be on the order of the
-number of pixels in one direction (since resolution cannot be much better than
-this) or less, if instrumental resolution and sample broadening does not
-require that many points. Some trial and error may be needed, but there should
-more than 6 points across each peak full-width-at-half-maximum (FWHM) in the
-final pattern to be useful for further analysis.</p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Number of
-azimuth bins</span></b>: In cases where the diffraction experiment shows
-changes as a function of azimuthal angle, the integration can be performed as a
-function of angle. This number specifies the number of bins to use by azimuthal
-angle. The process of breaking up the integration in this way is sometimes
-called &quot;caking&quot; since the integration region grows with distance from
-the beam-center, with a shape like a slice of cake or pie. When more than one
-azimuthal bin is used, the regions are shown in the plot with dashed lines,
-when the Show integration limits?&quot; check box is checked. </p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Appl. det.
-absorption</span></b> and <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>value</span></b>:
-The scattered ray beams are partially absorbed by the detector depending on the
-scattering angle. This reduces the intensity of higher angle data more than low
-angle data. The value is dependent on the wavelength and the materials used for
-the front surface of the detector, so some experimentation with a standard is
-needed to establish an appropriate value.</p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Background
-Image</span> </b>and<b style='mso-bidi-font-weight:normal'> </b><b
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Azimuth offset</span></b>: The image vertical axis (from the beam
+center, going down) is labeled with the azimuth value placed in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Multiplier</span></b>: You can designate a previously read in
-image as background which will then be used to modify each data image as they
-are integrated. Note that the <b style='mso-bidi-font-weight:normal'><span
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Azimuth offset</span></b> box. This is
+usually zero unless the image plate has been rotated about its normal axis.</p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Multiplier</span></b>
-must be negative for it to be subtracted. Note that all images used in this way
-must be exactly the same format (number of pixels &amp; pixel size).</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Start/End azimuth</span></b>: The integration is started at the
+Start azimuth angle in the left box, and when the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Do full integration?</span></b> <span
+class=GramE>checkbox</span> is not checked, the integration will be run only to
+the maximum value specified. When the range is less than 360 degrees, the
+integration range will be shown (if selected) with the high and low limits
+plotted and only segments of the max and min ellipses drawn. These limits may
+also be dragged on the plot to desired locations.</p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Number of 2-theta bins</span></b>: The resulting 1-D powder
+pattern after integration will consist of this many points. This number should
+be on the order of the number of pixels in one direction (since resolution
+cannot be much better than this) or less, if instrumental resolution and sample
+broadening does not require that many points. Some trial and error may be
+needed, but there should more than 6 points across each peak
+full-width-at-half-maximum (FWHM) in the final pattern to be useful for further
+analysis. In this case <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>5000</span></b> is a better choice than the
+default.</p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Number of azimuth bins</span></b>: In cases where the diffraction
+experiment shows changes as a function of azimuthal angle, the integration can
+be performed as a function of angle. This number specifies the number of bins
+to use by azimuthal angle. The process of breaking up the integration in this
+way is sometimes called &quot;caking&quot; since the integration region grows
+with distance from the beam-center, with a shape like a slice of cake or pie.
+When more than one azimuthal bin is used, the regions are shown in the plot
+with dashed lines, when the Show integration limits?&quot; check box is
+checked. </p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Appl. det. absorption</span></b> and <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>value</span></b>: The scattered ray beams are
+partially absorbed by the detector depending on the scattering angle. This
+reduces the intensity of higher angle data more than low angle data. The value
+is dependent on the wavelength and the materials used for the front surface of
+the detector, so some experimentation with a standard is needed to establish an
+appropriate value.</p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Background Image</span> </b>and<b style='mso-bidi-font-weight:
+normal'> </b><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Multiplier</span></b>:
+You can designate a previously read in image as background which will then be
+used to modify each data image as they are integrated. Note that the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Multiplier</span></b> must be negative
+for it to be subtracted. Note that all images used in this way must be exactly
+the same format (number of pixels &amp; pixel size).</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_1" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:468pt;
- height:401.25pt;visibility:visible;mso-wrap-style:square'>
+ id="Picture_x0020_7" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image002.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=624 height=535
-src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image003.png"
-v:shapes="Picture_x0020_1"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image002.png"
+v:shapes="Picture_x0020_7"><![endif]></span></p>
 
 <h2>Step 3: Perform integration </h2>
 
 <p class=MsoNormal><span style='mso-spacerun:yes'> </span>Use the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Image Operations/Integrate</span></b> image data menu item to
-start the integration. This will take at least a few seconds. If multiple
-images have been read in, the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Integrate All</span></b>
-menu item can be used. This is most useful when the <b style='mso-bidi-font-weight:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Image Operations/Integrate</span></b>
+image data menu item to start the integration. This will take at least a few
+seconds. If multiple images have been read in, the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Use
-as Default</span></b> option is in use for one image.</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Integrate All</span></b> menu item can be
+used. This is most useful when the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Use as Default</span></b> option is in use for one image.</p>
 
 <p class=MsoNormal><span style='mso-spacerun:yes'> </span>At this point the
 data tree window will have new entries as each azimuthal &quot;slice&quot;
 added to the data tree as a powder pattern</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_3" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:225pt;
- height:203.25pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image004.png"
+ id="Picture_x0020_8" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:300pt;
+ height:187.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image003.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=300 height=271
-src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image004.png"
-v:shapes="Picture_x0020_3"><![endif]></span><span
+</v:shape><![endif]--><![if !vml]><img border=0 width=400 height=250
+src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image003.png"
+v:shapes="Picture_x0020_8"><![endif]></span><span
 style='mso-spacerun:yes'> </span></p>
 
 <p class=MsoNormal>Two plots are added to the plot window: One (with tab <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>2D Integration</span></b>) shows the diffraction intensity as a function
-of both 2-theta and (when there is more than one azimuthal integration region)
-azimuthal angle.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>2D Integration</span></b>) shows the
+diffraction intensity as a function of both 2-theta and (when there is more
+than one azimuthal integration region) azimuthal angle.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_4" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_9" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image005.png"
+ <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image004.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image005.png"
-v:shapes="Picture_x0020_4"><![endif]></span><span
+src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image004.png"
+v:shapes="Picture_x0020_9"><![endif]></span><span
 style='mso-spacerun:yes'> </span></p>
 
 <p class=MsoNormal><span class=GramE>and</span> a conventional 1-D powder
 pattern(s) for each &quot;slice&quot;</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_5" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_10" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image006.png"
+ <v:imagedata src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image005.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image006.png"
-v:shapes="Picture_x0020_5"><![endif]></span></p>
+src="Integration%20of%20area%20detector%20data%20in%20GSAS_files/image005.png"
+v:shapes="Picture_x0020_10"><![endif]></span></p>
 
 <p class=MsoNormal>Again you could save the project with <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>File/Save
-project</span></b> on the main <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data
-tree</span></b> menu although it is not needed for any further tutorials.</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>File/Save project</span></b> on the main <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> menu
+although it is not needed for any further tutorials.</p>
 
 <h2>Next demo: <a href="Fit%20Peaks.htm"><span style='color:windowtext;
 text-decoration:none;text-underline:none'>Fit Peaks and <span class=SpellE>Autoindexing</span></span></a></h2>

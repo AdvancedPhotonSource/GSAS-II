@@ -22,17 +22,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>18</o:Revision>
-  <o:TotalTime>1510</o:TotalTime>
+  <o:Revision>19</o:Revision>
+  <o:TotalTime>1591</o:TotalTime>
   <o:Created>2012-05-08T16:04:00Z</o:Created>
-  <o:LastSaved>2012-08-16T19:34:00Z</o:LastSaved>
+  <o:LastSaved>2013-04-30T20:30:00Z</o:LastSaved>
   <o:Pages>9</o:Pages>
-  <o:Words>3133</o:Words>
-  <o:Characters>17863</o:Characters>
+  <o:Words>3099</o:Words>
+  <o:Characters>17666</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>148</o:Lines>
+  <o:Lines>147</o:Lines>
   <o:Paragraphs>41</o:Paragraphs>
-  <o:CharactersWithSpaces>20955</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>20724</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -348,7 +348,7 @@ w\:* {behavior:url(#default#VML);}
 	mso-font-charset:0;
 	mso-generic-font-family:swiss;
 	mso-font-pitch:variable;
-	mso-font-signature:-520092929 1073786111 9 0 415 0;}
+	mso-font-signature:-536870145 1073786111 1 0 415 0;}
 @font-face
 	{font-family:Tahoma;
 	panose-1:2 11 6 4 3 5 4 4 2 4;
@@ -936,9 +936,7 @@ ul
 	mso-ascii-font-family:Calibri;
 	mso-ascii-theme-font:minor-latin;
 	mso-hansi-font-family:Calibri;
-	mso-hansi-theme-font:minor-latin;
-	mso-bidi-font-family:"Times New Roman";
-	mso-bidi-theme-font:minor-bidi;}
+	mso-hansi-theme-font:minor-latin;}
 table.MsoTableGrid
 	{mso-style-name:"Table Grid";
 	mso-tstyle-rowband-size:0;
@@ -958,9 +956,7 @@ table.MsoTableGrid
 	mso-ascii-font-family:Calibri;
 	mso-ascii-theme-font:minor-latin;
 	mso-hansi-font-family:Calibri;
-	mso-hansi-theme-font:minor-latin;
-	mso-bidi-font-family:"Times New Roman";
-	mso-bidi-theme-font:minor-bidi;}
+	mso-hansi-theme-font:minor-latin;}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
  <o:shapedefaults v:ext="edit" spidmax="1027"/>
@@ -979,13 +975,12 @@ Data - Fluroapatite</span><o:p></o:p></strong></h1>
 
 <p class=MsoNormal>In this tutorial you will refine the structure of <span
 class=SpellE>fluoroapatite</span>, <span class=GramE>Ca<sub>5</sub>F(</span>PO<sub>4</sub>)<sub>3</sub>,
-using constant wavelength laboratory X-ray powder diffraction data. At the
-completion of the refinement you will then prepare a drawing of the <span
-class=SpellE>fluoroapatite</span> structure. The structure is hexagonal with
-four different kinds of atoms spread over seven different sites. The data was
-taken on a conventional Bragg-Brentano powder diffractometer using <span
-class=SpellE>CuK</span><sub><span style='font-family:Symbol'>a</span></sub>
-radiation.</p>
+using constant wavelength laboratory X-ray powder diffraction data. At the completion
+of the refinement you will then prepare a drawing of the <span class=SpellE>fluoroapatite</span>
+structure. The structure is hexagonal with four different kinds of atoms spread
+over seven different sites. The data was taken on a conventional Bragg-Brentano
+powder diffractometer using <span class=SpellE>CuK</span><sub><span
+style='font-family:Symbol'>a</span></sub> radiation.</p>
 
 <p class=MsoNormal>If you have not done so already, <a
 href="Starting%20GSAS.htm">start GSAS-II</a>.</p>
@@ -1001,63 +996,69 @@ will not cover here.</p>
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Use
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Import/Import Powder Data/from GSAS file</span></b> menu item to
-read the data file into GSAS-II. This read option is set to read any of the
-powder data formats (except neutron TOF time map files) defined for GSAS
-(angles in <span class=SpellE>centidegrees</span>). The <span class=SpellE><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Import/Import Powder Data/from GSAS
+file</span></b> menu item to read the data file into GSAS-II. This read option
+is set to read any of the powder data formats (except neutron TOF time map
+files) defined for GSAS (angles in <span class=SpellE>centidegrees</span>). The
+<span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>xye</span></b></span> format (angles in degrees) used by <span
 class=SpellE>Topas</span>, etc. can also be read via the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Import/Import
-Powder Data</span></b> menus.<span style='mso-spacerun:yes'>  </span>Change the
-file directory to <b style='mso-bidi-font-weight:normal'><span
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Import/Import Powder Data</span></b>
+menus.<span style='mso-spacerun:yes'>  </span>Change the file directory to <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Exercises/<span class=SpellE>fluroapatite</span></span></b><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Exercises/<span
-class=SpellE>fluroapatite</span></span></b><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'> to find the file; you will need to change the file type to <b
-style='mso-bidi-font-weight:normal'>All files (*.*)</b> to find the desired
+style='mso-bidi-font-weight:normal'>any file (*.*)</b> to find the desired
 file.</span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>FAP.XRA</span></b><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>FAP.XRA</span></b><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'> data</span> file in the first dialog and press <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Open</span></b>. There will be a Dialog box asking <span
-class=GramE><b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Is</span></b></span><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Open</span></b>. There will be a
+Dialog box asking <span class=GramE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Is</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'> this the file you want?</span></b> Press <span class=GramE><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Yes</span></b></span> button to proceed.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Yes</span></b></span> button to
+proceed.</p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l2 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>INST_XRY.PRM</span></b> instrument parameter file in the second
-dialog and press <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Open</span></b>.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>INST_XRY.PRM</span></b> instrument
+parameter file in the second dialog and press <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Open</span></b>.</p>
 
 <p class=MsoNormal>At this point the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data
-tree</span></b> window will have several entries and the plot window will show
-the powder pattern</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>GSAS-II data tree</span></b> window will have several entries and
+the plot window will show the powder pattern</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype
  id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
@@ -1079,11 +1080,11 @@ the powder pattern</p>
  </v:formulas>
  <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
  <o:lock v:ext="edit" aspectratio="t"/>
-</v:shapetype><v:shape id="Picture_x0020_2" o:spid="_x0000_i1044" type="#_x0000_t75"
+</v:shapetype><v:shape id="Picture_x0020_6" o:spid="_x0000_i1044" type="#_x0000_t75"
  style='width:525pt;height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image001.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Laboratory%20X_files/image001.png" v:shapes="Picture_x0020_2"><![endif]></span></p>
+src="Laboratory%20X_files/image001.png" v:shapes="Picture_x0020_6"><![endif]></span></p>
 
 <h2>Step 2: Create the phase</h2>
 
@@ -1334,76 +1335,82 @@ P 63/m, unit cell a = 9.372, c = 6.886</p>
 <p class=MsoNormal>To import the <span class=SpellE>fluroapatite</span> phase
 information from the file FAP.EXP use the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Import/Import
-Phase menu</span></b> <span class=SpellE>menu</span> to see a <span
-class=SpellE>pulldown</span> menu. Select <b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Import/Import Phase menu</span></b> <span class=SpellE>menu</span>
+to see a <span class=SpellE>pulldown</span> menu. Select <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>from GSAS .EXP file. </span></b>The file
+selection dialog will still be set to the directory the data was found; click
+on <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>FAP.EXP</span></b> and <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Open</span></b> to open it. A small
+dialog box with a phase name of ‘<span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>fap</span></b></span>’ will appear. We didn’t
+change it so press <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>from GSAS .EXP
-file. </span></b>The file selection dialog will still be set to the directory
-the data was found; click on <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>FAP.EXP</span></b>
-and <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Open</span></b> to open it. A small dialog box with a phase name
-of ‘<span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>fap</span></b></span>’
-will appear. We didn’t change it so press <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>
-to accept it. </p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>OK</span></b> to accept it. </p>
 
 <h2>Step 3 Add the powder data to the phase</h2>
 
 <p class=MsoNormal>The <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data
-tree</span></b> should now have a <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phase</span></b>
-entry of <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>fap</span></b></span>.
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>GSAS-II data tree</span></b> should now have a <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase</span></b> entry of <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>fap</span></b></span>.
 Select it.to view the <span class=SpellE>fap</span> phase information</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_4" o:spid="_x0000_i1043" type="#_x0000_t75" style='width:425.25pt;
- height:365.25pt;visibility:visible;mso-wrap-style:square'>
+ id="_x0000_i1043" type="#_x0000_t75" style='width:545.25pt;height:454.5pt;
+ visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image002.png" o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=567 height=487
-src="Laboratory%20X_files/image002.png" v:shapes="Picture_x0020_4"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=727 height=606
+src="Laboratory%20X_files/image002.png" v:shapes="_x0000_i1043"><![endif]></span></p>
 
-<p class=MsoNormal>You can see that the number of each kind of atom gives 2 formula
-units per cell. To add the powder data to this phase click on the Data tab and
-then select <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Edit/Add powder histograms</span></b>
-from the menu. A <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Use data</span></b> window will
-appear with only one choice <b style='mso-bidi-font-weight:normal'><span
+<p class=MsoNormal>You can see that the number of each kind of atom gives 2
+formula units per cell. To add the powder data to this phase click on the Data
+tab and then select <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>PWDR FAP.XRA:
-BANK 1</span></b>. Select it and press <b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Edit/Add powder histograms</span></b> from the menu. A <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Use data</span></b> window will appear
+with only one choice <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>.
-The <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Data</span></b> tab will change; press the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Show
-PWDR FAP.XRA: BANK 1</span></b> check box; the window will change again</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>PWDR FAP.XRA: BANK 1</span></b>. Select it and press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>. The <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Data</span></b> tab will change; press
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Show PWDR FAP.XRA: BANK 1</span></b>
+check box; the window will change again</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_13" o:spid="_x0000_i1042" type="#_x0000_t75" style='width:342.75pt;
- height:274.5pt;visibility:visible;mso-wrap-style:square'>
+ id="_x0000_i1042" type="#_x0000_t75" style='width:480pt;height:315pt;
+ visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image003.png" o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=457 height=366
-src="Laboratory%20X_files/image003.png" v:shapes="Picture_x0020_13"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=640 height=420
+src="Laboratory%20X_files/image003.png" v:shapes="_x0000_i1042"><![endif]></span></p>
 
-<p class=MsoNormal>We will return to this window later when we consider the
-effect of crystallite size and mustrain broadening.</p>
+<p class=MsoNormal>We will return to this window later when we consider the effect
+of crystallite size and mustrain broadening.</p>
 
 <h2>Step 4: Adjust background parameterization</h2>
 
@@ -1412,16 +1419,18 @@ pattern rises significantly at low angles; there is also a less apparent rise
 at the high angle end as well. The default background function doesn’t handle
 this very well so find the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Background</span></b>
-item under <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>PWDR FAP.XRA: BANK1</span></b> in
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>GSAS-II data tree</span></b> and press it. The <b
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Background</span></b> item under <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>PWDR FAP.XRA: BANK1</span></b> in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Background</span></b> window will appear</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> and press
+it. The <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Background</span></b> window will
+appear</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_3" o:spid="_x0000_i1041" type="#_x0000_t75" style='width:294pt;
@@ -1432,50 +1441,54 @@ src="Laboratory%20X_files/image004.png" v:shapes="Picture_x0020_3"><![endif]></s
 
 <p class=MsoNormal>Change the background function to <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>log
-interpolate</span></b> and the number of coefficients. <span class=GramE>to</span>
-<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>9. </span></b>This will background points at the two limits and at
-equal spaces in the <span class=GramE>log(</span>2<span style='font-family:
-Symbol'>Q</span>) in between so there are more where the background is changing
-most rapidly. A linear interpolation is then used to compute the background for
-all points in the pattern during the Rietveld refinement.</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>log interpolate</span></b> and the number of
+coefficients to <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>9. </span></b>This
+will put background points at the two limits and at equal spaces in <span
+class=GramE>log(</span>2<span style='font-family:Symbol'>Q</span>) in between
+so there are more where the background is changing most rapidly. A linear
+interpolation is then used to compute the background for all points in the
+pattern during the Rietveld refinement.</p>
 
 <h2>Step 5 1<sup>st</sup> Rietveld refinement</h2>
 
 <p class=MsoNormal>You are now ready for the 1<sup>st</sup> Rietveld
 refinement; the histogram scale (found in <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Sample
-Parameters</span></b>) and background will be refined. Press <b
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Sample Parameters</span></b>) and background will be refined.
+Press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b> in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Calculate/Refine</span></b> in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II
-data tree</span></b> menu. You will be asked for a project file <span
-class=GramE>name,</span> we used ‘<span class=SpellE>f<b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>ap</span></b></span>’
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> menu. You
+will be asked for a project file <span class=GramE>name,</span> we used ‘<span
+class=SpellE>f<b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>ap</span></b></span>’
 and made the file <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>fap.gpx</span></b></span>.
-The <span class=GramE>refinement proceeds and when complete</span> (<span
-class=SpellE>Rwp</span> ~42.8%) a small dialog box will appear asking <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>fap.gpx</span></b></span>. The <span class=GramE>refinement
+proceeds and when complete</span> (<span class=SpellE>Rwp</span> ~42.8%) a
+small dialog box will appear asking <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Load new result?</span></b> Press <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>;
-the windows will be updated and a new plot is displayed.</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>OK</span></b>; the windows will be updated and
+a new plot is displayed.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_14" o:spid="_x0000_i1040" type="#_x0000_t75" style='width:525pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
+ id="_x0000_i1040" type="#_x0000_t75" style='width:525pt;height:450pt;
+ visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image005.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Laboratory%20X_files/image005.png" v:shapes="Picture_x0020_14"><![endif]></span></p>
+src="Laboratory%20X_files/image005.png" v:shapes="_x0000_i1040"><![endif]></span></p>
 
 <p class=MsoNormal><span class=GramE>Expanding the plot shows that much of the
 difference is that the calculated peaks are out of place.</span> This is due to
@@ -1484,36 +1497,36 @@ position is offset from the focusing circle. <b style='mso-bidi-font-weight:
 normal'>Important</b>: this is the most likely reason for peaks displacement
 errors in laboratory data, not the zero point. The lattice parameter flag is on
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>General</span></b> tab for the <b style='mso-bidi-font-weight:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>General</span></b> tab for the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase</span></b> <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>fap</span></b></span> and the sample
+displacement is found on the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Sample Parameters</span></b> item under <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phase</span></b>
-<span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>fap</span></b></span>
-and the sample displacement is found on the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Sample
-Parameters</span></b> item under <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>PWDR FAP.XRA:
-BANK1 </span></b>in the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data
-tree</span></b>. Go to both places and set those flags.</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>PWDR FAP.XRA: BANK1 </span></b>in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b>. Go to
+both places and set those flags.</p>
 
 <h2>Step 6 2<sup>nd</sup> Rietveld refinement</h2>
 
 <p class=MsoNormal>Now do the Rietveld refinement by <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b>
-menu on <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>GSAS-II data tree</span></b> window. The plot will <span
-class=GramE>be</span><w:Sdt ShowingPlcHdr="t" Temporary="t" ID="568603642">[Type
- a quote from the document or the summary of an interesting point. You can
- position the text box anywhere in the document. Use the Drawing Tools tab to
- change the formatting of the pull quote text box.]</w:Sdt></p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b> menu on <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> window.
+The plot will be</p>
 
 <p class=MsoNormal><!--[if gte vml 1]><v:shapetype id="_x0000_t202"
  coordsize="21600,21600" o:spt="202" path="m,l,21600r21600,l21600,xe">
@@ -1591,12 +1604,15 @@ width:252px;height:218px'>
  </tr>
 </table>
 
-</span><![endif]><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_18" o:spid="_x0000_i1039" type="#_x0000_t75" style='width:525pt;
+</span><![endif]><span style='font-size:10.0pt;font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-fareast-font-family:Calibri;mso-fareast-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:"Times New Roman";
+mso-bidi-theme-font:minor-bidi;mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_25" o:spid="_x0000_i1039" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image008.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Laboratory%20X_files/image008.png" v:shapes="Picture_x0020_18"><![endif]></span></p>
+src="Laboratory%20X_files/image008.png" v:shapes="Picture_x0020_25"><![endif]></span></p>
 
 <p class=MsoNormal><span class=GramE>noticeably</span> improved (<span
 class=SpellE>Rwp</span> ~17%). Close inspection (see inset) shows that most of
@@ -1607,15 +1623,16 @@ size and <span class=SpellE>mustrain</span> parameters next.</p>
 
 <p class=MsoNormal>Select the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phases/<span
-class=SpellE>fap</span></span></b> item in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II
-data tree</span></b> and then select the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Data</span></b>
-tab, change the size value to 1.0 and set the refine flags for both size and <span
-class=SpellE>mustrain</span>. The window should look like</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Phases/<span class=SpellE>fap</span></span></b> item in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> and then
+select the <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Data</span></b>
+tab and set the refine flags for both size and <span class=SpellE>mustrain</span>.
+The window should look like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_20" o:spid="_x0000_i1038" type="#_x0000_t75" style='width:342.75pt;
@@ -1626,35 +1643,36 @@ src="Laboratory%20X_files/image009.png" v:shapes="Picture_x0020_20"><![endif]></
 
 <p class=MsoNormal>Now do the refinement; press the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b>
-menu item on the <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b>
-window. Do not be alarmed about how the <span class=SpellE>Rwp</span> jumps
-around on the progress bar; that is a consequence of how the <span
-class=SpellE>Levenberg</span>-Marquardt algorithm does a least squares
-minimization. The result in the end is noticeably better than before (<span
-class=SpellE>Rwp</span>=11.4%)</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b> menu item on the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> window.
+Do not be alarmed about how the <span class=SpellE>Rwp</span> jumps around on
+the progress bar; that is a consequence of how the <span class=SpellE>Levenberg</span>-Marquardt
+algorithm does a least squares minimization. The result in the end is
+noticeably better than before (<span class=SpellE>Rwp</span>=11.4%)</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_21" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_26" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image010.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Laboratory%20X_files/image010.png" v:shapes="Picture_x0020_21"><![endif]></span></p>
+src="Laboratory%20X_files/image010.png" v:shapes="Picture_x0020_26"><![endif]></span></p>
 
 <h2><span class=GramE>Step 8.</span> 4<sup>th</sup> Rietveld refinement</h2>
 
 <p class=MsoNormal>Now we can refine atom parameters. Select <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Phases/<span class=SpellE>fap</span> </span></b>and the <b
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phases/<span class=SpellE>fap</span> </span></b>and
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b> tab; the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Atoms</span></b> tab; the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phase data
-for <span class=SpellE>fap</span></span></b> window will display</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase data for <span class=SpellE>fap</span></span></b>
+window will display</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_22" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:525pt;
@@ -1665,11 +1683,11 @@ src="Laboratory%20X_files/image011.png" v:shapes="Picture_x0020_22"><![endif]></
 
 <p class=MsoNormal>Double click the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>refine</span></b>
-column header; a new window will show <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Refinement
-controls</span></b></p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>refine</span></b> column header; a new window will show <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Refinement controls</span></b></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_23" o:spid="_x0000_i1035" type="#_x0000_t75" style='width:259.5pt;
@@ -1680,19 +1698,20 @@ src="Laboratory%20X_files/image012.png" v:shapes="Picture_x0020_23"><![endif]></
 
 <p class=MsoNormal>Select <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>X -
-coordinates</span></b> and <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>U - thermal
-parameters</span></b> and press <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>.
-The <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Atoms</span></b> tab will show new <b style='mso-bidi-font-weight:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>X - coordinates</span></b> and <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>refine</span></b>
-flags</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>U - thermal parameters</span></b> and press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>. The <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b> tab will show new <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>refine</span></b> flags</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_24" o:spid="_x0000_i1034" type="#_x0000_t75" style='width:525pt;
@@ -1703,28 +1722,29 @@ src="Laboratory%20X_files/image013.png" v:shapes="Picture_x0020_24"><![endif]></
 
 <p class=MsoNormal>Now run the refinement; press the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b>
-menu item on the <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b>
-window. The result is a bit better (<span class=SpellE>Rwp</span>=10.20%) and
-the plot is pretty much the same as before</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Calculate/Refine</span></b> menu item on the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>GSAS-II data tree</span></b> window.
+The result is a bit better (<span class=SpellE>Rwp</span>=10.20%) and the plot
+is pretty much the same as before</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_25" o:spid="_x0000_i1033" type="#_x0000_t75" style='width:525pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
+ id="_x0000_i1033" type="#_x0000_t75" style='width:525pt;height:450pt;
+ visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image014.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Laboratory%20X_files/image014.png" v:shapes="Picture_x0020_25"><![endif]></span></p>
+src="Laboratory%20X_files/image014.png" v:shapes="_x0000_i1033"><![endif]></span></p>
 
 <p class=MsoNormal><span class=GramE>and</span> the atom parameters are</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_26" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_28" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:525pt;
  height:225pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image015.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=300
-src="Laboratory%20X_files/image015.png" v:shapes="Picture_x0020_26"><![endif]></span></p>
+src="Laboratory%20X_files/image015.png" v:shapes="Picture_x0020_28"><![endif]></span></p>
 
 <p class=MsoNormal>The refinement is now essentially complete. The file <span
 class=SpellE>fap.lst</span> has the result of the last cycle of refinement with
@@ -1911,19 +1931,21 @@ style='mso-spacerun:yes'>    </span>0.9045<span style='mso-spacerun:yes'>    
 ions as tetrahedra and the <span class=SpellE>Ca</span> and F atoms as balls.
 Begin by finding <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Phases/<span class=SpellE>fap</span></span></b>
-in <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Phases/<span
+class=SpellE>fap</span></span></b> in <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>GSAS-II data tree</span></b> and selecting the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Drawing Options</span></b> tab. The <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Phase
-data for <span class=SpellE>fap</span></span></b> window shows <b
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Drawing Options</span></b> tab. The <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Drawing controls</span></b></p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phase data for <span class=SpellE>fap</span></span></b>
+window shows <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Drawing
+controls</span></b></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_27" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:274.5pt;
@@ -1934,8 +1956,9 @@ src="Laboratory%20X_files/image016.png" v:shapes="Picture_x0020_27"><![endif]></
 
 <p class=MsoNormal>The plot will show a new tab marked <span class=SpellE><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>fap</span></b></span> showing some balls in various colors.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>fap</span></b></span> showing some
+balls in various colors.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_1" o:spid="_x0000_i1030" type="#_x0000_t75" style='width:413.25pt;
@@ -1946,54 +1969,58 @@ src="Laboratory%20X_files/image018.png" v:shapes="Picture_x0020_1"><![endif]></s
 
 <p class=MsoNormal>Notice the slider controls in <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Drawing
-controls; </span></b>you can change them to change the how the structure is
-displayed. Set the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Show unit
-cell?</span></b> <span class=GramE>check</span> box (the drawing will show the
-unit cell edges) and then press the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw atoms</span></b>
-tab; this will show the list of atoms that are drawn in the picture.</p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Drawing controls; </span></b>you can change
+them to change the how the structure is displayed. Set the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Show unit cell?</span></b> <span class=GramE>check</span>
+box if needed (the drawing will show the unit cell edges) and then press the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw atoms</span></b> tab; this will
+show the list of atoms that are drawn in the picture.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_30" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:450pt;
+ id="Picture_x0020_29" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:450pt;
  height:225pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Laboratory%20X_files/image019.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=600 height=300
-src="Laboratory%20X_files/image019.png" v:shapes="Picture_x0020_30"><![endif]></span></p>
+src="Laboratory%20X_files/image019.png" v:shapes="Picture_x0020_29"><![endif]></span></p>
 
 <p class=MsoNormal>This is a copy of what is in the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
-table; there are columns that allow you to change how the atoms are displayed,
-their labels and their color all controlled on an atom-by-atom basis. Now if
-the contents of the <b style='mso-bidi-font-weight:normal'><span
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Atoms</span></b> table; there are columns that
+allow you to change how the atoms are displayed, their labels and their color
+all controlled on an atom-by-atom basis. Now if the contents of the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b> table change (e.g. by
+refinement) then you must manually update the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> table by erasing all the
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b>. They are then
+automatically refreshed from the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
-table change (e.g. by refinement) then you must manually update the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Draw Atoms</span></b> table by erasing all the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Draw Atoms</span></b>. They are then automatically refreshed from
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Atoms</span></b> table with the new values. Do this by selecting
 all the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Draw Atoms</span></b>; double click the blank in the upper left
-corner of the table. All atoms will be highlighted in dark gray. Then press <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b>; double click
+the blank in the upper left corner of the table. All atoms will be highlighted
+in dark gray. Then press <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Edit/Delete atoms</span></b> in the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw
-Atoms</span></b> menu. All the atoms will vanish and then reappear with updated
-values. Now we can draw the structure assured that we are using the final
-result from the refinement. </p>
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> menu. All the atoms will
+vanish and then reappear with updated values. Now we can draw the structure
+assured that we are using the final result from the refinement. </p>
 
 <p class=MsoNormal>To build the structure model we want to show with PO<sub>4</sub>
 tetrahedra and balls for the F and <span class=SpellE>Ca</span> atoms in a unit
@@ -2004,109 +2031,116 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 all the atoms in the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b>
-tab by double clicking in upper left corner box of the table. All atoms in the
-table are then displayed in dark gray and they all are green on the drawing
-indicating their selection.</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Draw Atoms</span></b> tab by double clicking in upper left corner
+box of the table. All atoms in the table are then displayed in dark gray and
+they all are green on the drawing indicating their selection.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Fill unit cell</span></b> from the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw
-Atoms</span></b> menu. The drawing will show the unit cell filled with atoms in
-positions equivalent to the original set and the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw
-Atoms</span></b> table will have all of them listed. The <span class=SpellE><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Sym</span></b></span><b style='mso-bidi-font-weight:normal'><span
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Edit/Fill unit cell</span></b> from
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> menu. The
+drawing will show the unit cell filled with atoms in positions equivalent to
+the original set and the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'> Op</span></b>
-column in the table shows the symmetry operator number and unit cell
-translation used to generate that position.</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Draw Atoms</span></b> table will have all of them listed. The <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Sym</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'> Op</span></b> column in the table
+shows the symmetry operator number and unit cell translation used to generate
+that position.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Double
 click on the column label <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Type</span></b>.
-A small dialog window will appear with a list of element types in this
-structure. Select <b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Type</span></b>. A small dialog window will appear with a list of
+element types in this structure. Select <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>P</span></b>
-by checking the box and then press <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>.
-All the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>P</span></b> atoms will be bright green and they will be
-highlighted in dark gray in the table</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>P</span></b> by checking the box and then press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>. All the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>P</span></b> atoms will be bright
+green and they will be highlighted in dark gray in the table</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Fill CN-sphere</span></b> in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw
-Atoms</span></b> menu. Each <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>P</span></b>
-atom will now have its full complement of 4 O atoms.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Edit/Fill CN-sphere</span></b> in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> menu. Each <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>P</span></b> atom will now have its
+full complement of 4 O atoms.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>5.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Repeat
 step 3 to select all the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>P</span></b>
-atoms again.</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>P</span></b> atoms again.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>6.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Atom style</span></b> from the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw
-Atoms</span></b> menu. A small dialog bow will appear with a list of possible
-atom drawing styles. Notice the first one is blank; that will cause the atom to
-not be drawn. Select <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>polyhedral</span></b>
-and press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>OK</span></b>. Each <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>P</span></b>
-atom will be drawn as a brass colored polyhedron (with too many faces to be a
-tetrahedron because a nearby <span class=SpellE>Ca</span> atom was included –
-this will be fixed in a moment).</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Edit/Atom style</span></b> from the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> menu. A small
+dialog bow will appear with a list of possible atom drawing styles. Notice the
+first one is blank; that will cause the atom to not be drawn. Select <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>polyhedral</span></b> and press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>. Each <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>P</span></b> atom will be drawn as a
+brass colored polyhedron (with too many faces to be a tetrahedron because a
+nearby <span class=SpellE>Ca</span> atom was included – this will be fixed in a
+moment).</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>7.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Now
 <span class=GramE>do step</span> 3 yet again but this time select the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>O</span></b> atoms.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>O</span></b> atoms.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>8.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Atom style</span></b> and pick the blank entry and press <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Edit/Atom style</span></b> and pick
+the blank entry and press <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>OK</span></b>; the O atoms will vanish leaving some odd <span
 class=SpellE>polyhedra</span> and the <span class=SpellE>Ca</span> and F atoms.</p>
 
@@ -2114,15 +2148,17 @@ class=SpellE>polyhedra</span> and the <span class=SpellE>Ca</span> and F atoms.<
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>9.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Drawing Options</span></b> tab and change the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Bond
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Drawing Options</span></b> tab and
+change the <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Bond
 search factor</span></b> to <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>0.80</span></b>
-and press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>0.80</span></b> and press <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Enter</span></b>; the odd <span class=SpellE>polyhedra</span> will
 immediately change to tetrahedra.</p>
 
@@ -2131,8 +2167,8 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp; </span></span></span><![endif]>You
 can adjust the <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>van der Waals scale</span></b> to
-make all the balls any size you desire.</p>
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>van
+der Waals scale</span></b> to make all the balls any size you desire.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>11.<span
@@ -2140,25 +2176,27 @@ style='font:7.0pt "Times New Roman"'>&nbsp; </span></span></span><![endif]>If
 you don’t like the fact that both <span class=SpellE>Ca</span> and F are in a
 very similar green, you can change this. Select the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw
-Atoms</span></b> tab, then do step 3 selecting the <span class=SpellE><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> tab, then do step 3
+selecting the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Ca</span></b></span> atoms.</p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>12.<span
 style='font:7.0pt "Times New Roman"'>&nbsp; </span></span></span><![endif]>Select
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Edit/Atom color</span></b> in the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Draw
-Atoms</span></b> menu. A color selection dialog box will appear (NB: this
-dialog is operating system dependent – we will assume you are using a Windows7
-machine). The dialog box looks like (I pressed <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Define
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Edit/Atom color</span></b> in the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> menu. A color
+selection dialog box will appear (NB: this dialog is operating system dependent
+– we will assume you are using a Windows7 machine). The dialog box looks like
+(I pressed <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Define
 Custom Colors</span></b>)</p>
 
 <p class=MsoNormal style='margin-left:.25in'><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
@@ -2171,26 +2209,29 @@ src="Laboratory%20X_files/image020.png" v:shapes="Picture_x0020_31"><![endif]></
 <p class=MsoNormal style='margin-left:.25in'>The steps for changing a color is
 to either a) choose your color by finding it in <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Basic
-colors</span></b> and then press <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>
-or b) press <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Define Custom Colors</span></b>, move
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>Basic colors</span></b> and then press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b> or b) press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Define Custom Colors</span></b>, move
 the cross around on the spectrum display, set the vertical slider for the
 luminosity (<span class=SpellE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>ColorSolid</span></b></span>
-will show the result), and then press <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>OK</span></b>.
-The drawing will now show that color for the atoms and the color will appear in
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Draw Atoms</span></b> table. If you don’t like your colors select <b
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>ColorSolid</span></b></span> will show the result), and then press
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>OK</span></b>. The drawing will now
+show that color for the atoms and the color will appear in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Draw Atoms</span></b> table. If you
+don’t like your colors select <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Edit/Reset atom colors</span></b> to put them back to their
 default colors. In my drawing I’ve made the <span class=SpellE>Ca</span> atoms
 a medium gray</p>
@@ -2213,10 +2254,10 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>To
 start select the <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b> tab in <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Phases/<span class=SpellE>fap</span></span></b>.</p>
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
+tab in <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Phases/<span class=SpellE>fap</span></span></b>.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
@@ -2224,19 +2265,21 @@ style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></spa
 the first <span class=SpellE>Ca</span> atoms by clicking on its row label (<span
 class=GramE>an</span> “<b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>0</span></b>”).
-Add to the selection the other <span class=SpellE>Ca</span> atom and the P atom
-in the same way with the Ctrl key down; all will be highlighted in dark gray.</p>
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>0</span></b>”). Add to the selection the other <span class=SpellE>Ca</span>
+atom and the P atom in the same way with the Ctrl key down; all will be
+highlighted in dark gray.</p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Compute/Distances Angles</span></b> from the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Atoms</span></b>
-menu. A small dialog box will appear</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Compute/Distances Angles</span></b>
+from the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Atoms</span></b> menu. A small dialog
+box will appear</p>
 
 <p class=MsoNormal style='margin-left:.25in'><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_289" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:182.25pt;
@@ -2250,15 +2293,16 @@ on various atom radii to consider for both distance and angle calculations as
 well as global search factors. Considering our experience with drawing the PO<sub>4</sub>
 tetrahedra the <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>Bond</span></b> and <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
-minor-latin'>Angle search factors</span></b> may be too large for this case.
-Change both to <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-theme-font:minor-latin'>0.8</span></b> and press <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Bond</span></b>
+and <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'>Angle search factors</span></b> may be
+too large for this case. Change both to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>0.8</span></b> and press <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>OK</span></b>. GSAS-II will then display on the console formatted
 tables of individual atom distances and angles with <span class=SpellE>esds</span>
 as appropriate for the two <span class=SpellE>Ca</span> atoms and the P atom.</p>
@@ -2443,9 +2487,10 @@ style='mso-spacerun:yes'>  </span>108.59(29)<span style='mso-spacerun:yes'>  
 can repeat the calculation with somewhat smaller <span class=SpellE>Ca</span>
 radii to fix this. Setting the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:minor-latin'>Bond</span></b>
-and <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-theme-font:
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Bond</span></b> and <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
 minor-latin'>Angle</span></b> <span class=SpellE>Ca</span> radii to 2.1 and
 1.9, respectively, gave</p>
 

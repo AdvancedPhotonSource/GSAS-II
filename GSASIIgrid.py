@@ -1271,7 +1271,7 @@ class DataFrame(wx.Frame):
 
 # Phase / Rigid bodies tab
         self.RigidBodiesMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.MapPeaksMenu,helpType='Rigid bodies')
+        self.PrefillDataMenu(self.RigidBodiesMenu,helpType='Rigid bodies')
         self.RigidBodiesEdit = wx.Menu(title='')
         self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit')
         self.RigidBodiesEdit.Append(id=wxID_ASSIGNATMS2RB, kind=wx.ITEM_NORMAL,text='Assign atoms to rigid body',

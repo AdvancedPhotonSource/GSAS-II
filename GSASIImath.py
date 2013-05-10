@@ -202,6 +202,25 @@ def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
         XYZ = np.inner(Amat,atom[cx:cx+3])
         if atom[cia] == 'A':
             UIJ = atom[cia+2:cia+8]
+                
+def TLS2Uij(xyz,g,Amat,rbObj):
+    TLStype,TLS = rbObj['ThermalMotion'][:2]
+    Tmat = np.zeros((3,3))
+    Lmat = np.zeros((3,3))
+    Smat = np.zeros((3,3))
+    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
+        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
+    if 'T' in TLStype:
+        Tmat = G2lat.U6toUij(TLS[:6])
+    if 'L' in TLStype:
+        Lmat = G2lat.U6toUij(TLS[6:12])
+    if 'S' in TLStype:
+        Smat = np.array([[TLS[18],TLS[12],TLS[13]],[TLS[14],TLS[19],TLS[15]],[TLS[16],TLS[17],0] ])
+    XYZ = np.inner(Amat,xyz)
+    Axyz = np.array([[ 0,XYZ[2],-XYZ[1]], [-XYZ[2],0,XYZ[0]], [XYZ[1],-XYZ[0],0]] )
+    Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
+    beta = np.inner(np.inner(g,Umat),g)
+    return G2lat.UijtoU6(beta)*gvec    
         
 def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):
     cx,ct,cs,cia = atPtrs
@@ -216,10 +235,10 @@ def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):
     if 'L' in TLStype:
         Lmat = G2lat.U6toUij(TLS[6:12])
     if 'S' in TLStype:
-        Smat = np.array([[TLS[18],TLS[12],S[13]],[TLS[14],TLS[19],TLS[15]],[TLS[16],TLS[17],0]])
+        Smat = np.array([ [TLS[18],TLS[12],TLS[13]], [TLS[14],TLS[19],TLS[15]], [TLS[16],TLS[17],0] ])
     for atom in atomData:
         XYZ = np.inner(Amat,atom[cx:cx+3])
-        Axyz = np.array([0,XYZ[2],-XYZ[1]],[-XYZ[2],0,XYZ[0]],[XYZ[1],-XYZ[0],0])
+        Axyz = np.array([ 0,XYZ[2],-XYZ[1], -XYZ[2],0,XYZ[0], XYZ[1],-XYZ[0],0],ndmin=2 )
         if 'U' in TSLtype:
             atom[cia+1] = TLS[0]
             atom[cia] = 'I'
@@ -351,11 +370,11 @@ def getRestDeriv(Func,XYZ,Amat,ops,SGData):
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
         for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
-            XYZ[j] += x
+            XYZ[j] -= x
             d1 = Func(getSyXYZ(XYZ,ops,SGData),Amat)
-            XYZ[j] -= 2*x
+            XYZ[j] += 2*x
             d2 = Func(getSyXYZ(XYZ,ops,SGData),Amat)
-            XYZ[j] += x
+            XYZ[j] -= x
             deriv[j][i] = (d1-d2)/(2*dx)
     return deriv.flatten()
 
@@ -431,14 +450,14 @@ def getTorsionDeriv(XYZ,Amat,Coeff):
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
         for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
-            XYZ[j] += x
+            XYZ[j] -= x
             tor = getRestTorsion(XYZ,Amat)
             p,d1 = calcTorsionEnergy(tor,Coeff)
-            XYZ[j] -= 2*x
+            XYZ[j] += 2*x
             tor = getRestTorsion(XYZ,Amat)
             p,d2 = calcTorsionEnergy(tor,Coeff)            
-            XYZ[j] += x
-            deriv[j][i] = (d1-d2)/(2*dx)
+            XYZ[j] -= x
+            deriv[j][i] = (d2-d1)/(2*dx)
     return deriv.flatten()
 
 def getRestRama(XYZ,Amat):
@@ -468,14 +487,14 @@ def getRamaDeriv(XYZ,Amat,Coeff):
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
         for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
-            XYZ[j] += x
+            XYZ[j] -= x
             phi,psi = getRestRama(XYZ,Amat)
             p,d1 = calcRamaEnergy(phi,psi,Coeff)
-            XYZ[j] -= 2*x
+            XYZ[j] += 2*x
             phi,psi = getRestRama(XYZ,Amat)
             p,d2 = calcRamaEnergy(phi,psi,Coeff)
-            XYZ[j] += x
-            deriv[j][i] = (d1-d2)/(2*dx)
+            XYZ[j] -= x
+            deriv[j][i] = (d2-d1)/(2*dx)
     return deriv.flatten()
 
 def getRestPolefig(ODFln,SamSym,Grid):
@@ -504,16 +523,16 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     dx = .00001
     deriv = np.zeros(6)
     for i in [0,1,2]:
-        Oxyz[i] += dx
+        Oxyz[i] -= dx
         d0 = calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)
-        Oxyz[i] -= 2*dx
+        Oxyz[i] += 2*dx
         deriv[i] = (calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)-d0)/(2.*dx)
-        Oxyz[i] += dx
-        Txyz[i] += dx
+        Oxyz[i] -= dx
+        Txyz[i] -= dx
         d0 = calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)
-        Txyz[i] -= 2*dx
+        Txyz[i] += 2*dx
         deriv[i+3] = (calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)-d0)/(2.*dx)
-        Txyz[i] += dx
+        Txyz[i] -= dx
     return deriv
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
@@ -555,23 +574,23 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         dadx = np.zeros(9)
         Ang = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
         for i in [0,1,2]:
-            OxA[i] += dx
+            OxA[i] -= dx
             a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
-            OxA[i] -= 2*dx
-            dadx[i] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/dx
-            OxA[i] += dx
+            OxA[i] += 2*dx
+            dadx[i] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/(2*dx)
+            OxA[i] -= dx
             
-            TxA[i] += dx
+            TxA[i] -= dx
             a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
-            TxA[i] -= 2*dx
-            dadx[i+3] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/dx
-            TxA[i] += dx
+            TxA[i] += 2*dx
+            dadx[i+3] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/(2*dx)
+            TxA[i] -= dx
             
-            TxB[i] += dx
+            TxB[i] -= dx
             a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
-            TxB[i] -= 2*dx
-            dadx[i+6] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/dx
-            TxB[i] += dx
+            TxB[i] += 2*dx
+            dadx[i+6] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/(2*dx)
+            TxB[i] -= dx
             
         sigAng = np.sqrt(np.inner(dadx,np.inner(AngVcov,dadx)))
         if sigAng < 0.01:
@@ -720,10 +739,11 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
         for i in range(12):
             ia = i/3
             ix = i%3
-            Oatoms[ia][ix+1] += dx
+            Oatoms[ia][ix+1] -= dx
             a0 = calcTorsion(Oatoms,SyOps,Amat)
-            Oatoms[ia][ix+1] -= 2*dx
+            Oatoms[ia][ix+1] += 2*dx
             dadx[i] = (calcTorsion(Oatoms,SyOps,Amat)-a0)/(2.*dx)
+            Oatoms[ia][ix+1] -= dx            
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
         TorVcov = getVCov(names,varyList,covMatrix)

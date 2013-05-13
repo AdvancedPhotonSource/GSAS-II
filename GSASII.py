@@ -8,6 +8,12 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSAS-II Main Module*
+=====================
+
+Main routines for the GSAS-II program
+'''
 
 import os
 import sys
@@ -100,7 +106,8 @@ def create(parent):
     return GSASII(parent)
 
 class GSASII(wx.Frame):
-    
+    '''Define the main GSAS-II frame and its associated menu items
+    '''
     def _Add_FileMenuItems(self, parent):
         item = parent.Append(
             help='Open a gsasii project file (*.gpx)', id=wx.ID_ANY,
@@ -1100,10 +1107,13 @@ class GSASII(wx.Frame):
             self.GSASprojectfile = arg[1]
             self.dirname = os.path.dirname(arg[1])
             if self.dirname: os.chdir(self.dirname)
-            G2IO.ProjFileOpen(self)
-            self.PatternTree.Expand(self.root)
-            for item in self.Refine: item.Enable(True)
-            for item in self.SeqRefine: item.Enable(True)
+            try:
+                G2IO.ProjFileOpen(self)
+                self.PatternTree.Expand(self.root)
+                for item in self.Refine: item.Enable(True)
+                for item in self.SeqRefine: item.Enable(True)
+            except:
+                print 'Error opening file',arg[1]
 
     def OnSize(self,event):
         w,h = self.GetClientSizeTuple()
@@ -2326,13 +2336,20 @@ class GSASII(wx.Frame):
         return result
 
 class GSASIImain(wx.App):
+    '''Defines a wxApp for GSAS-II
+
+    Creates a wx frame (self.main) which contains the display of the
+    data tree.
+    '''
     def OnInit(self):
+        '''Called automatically when the app is created.'''
         self.main = GSASII(None)
         self.main.Show()
         self.SetTopWindow(self.main)
         return True
 
 def main():
+    '''Start up the GSAS-II application'''
     application = GSASIImain(0)
     if wxInspector: wxeye.InspectionTool().Show()
 
@@ -2340,4 +2357,4 @@ def main():
     application.MainLoop()
     
 if __name__ == '__main__':
-    main()
+    main() # start the GUI

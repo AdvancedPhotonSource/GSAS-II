@@ -10,6 +10,7 @@
 import wx
 import wx.grid as wg
 import wx.wizard as wz
+import wx.aui
 import time
 import cPickle
 import sys
@@ -765,6 +766,16 @@ class G2HtmlWindow(wx.html.HtmlWindow):
 class DataFrame(wx.Frame):
     '''Create the dataframe window and its menus
     '''
+    def Bind(self,*args,**kwargs):
+        '''Override the Bind() function on the Mac the binding is to
+        the main window, so that menus operate with any window on top.
+        For other platforms, call the default class Bind()
+        '''
+        if sys.platform == "darwin": # mac
+            self.G2frame.Bind(*args,**kwargs)
+        else:
+            wx.Frame.Bind(self,*args,**kwargs)      
+        
     def PrefillDataMenu(self,menu,helpType,helpLbl=None,empty=False):
         '''Create the "standard" part of data frame menus. Note that on Linux and
         Windows, this is the standard help Menu. On Mac, this menu duplicates the
@@ -1336,6 +1347,21 @@ class GSNoteBook(wx.Notebook):
         for page in range(numPage):
             if self.GetPageText(page) == name:
                 return page
+class GSauiNoteBook(wx.aui.AuiNotebook):
+    '''Notebook implemented with wx.aui extension'''
+    def __init__(self, parent, name='',size = None):
+        wx.aui.AuiNotebook.__init__(self, parent, -1)
+        #if size: self.SetSize(size)
+                                                      
+    def Clear(self):        
+        GSNoteBook.DeleteAllPages(self)
+        
+    def FindPage(self,name):
+        numPage = self.GetPageCount()
+        for page in range(numPage):
+            if self.GetPageText(page) == name:
+                return page
+
         
 ################################################################################
 #####  GSGrid

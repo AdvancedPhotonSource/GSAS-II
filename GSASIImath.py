@@ -222,7 +222,7 @@ def TLS2Uij(xyz,g,Amat,rbObj):
     beta = np.inner(np.inner(g,Umat),g)
     return G2lat.UijtoU6(beta)*gvec    
         
-def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):
+def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be?
     cx,ct,cs,cia = atPtrs
     TLStype,TLS = rbObj['ThermalMotion'][:2]
     Tmat = np.zeros((3,3))

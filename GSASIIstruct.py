@@ -36,7 +36,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
-DEBUG = False       #only for powders!
+DEBUG = True
 
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
@@ -750,19 +750,20 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
     pfx = str(Phase['pId'])+'::'
     RBModels =  Phase['RBModels']
-    dx = 0.0001
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         VModel = RBData['Vector'][RBObj['RBId']]
         Q = RBObj['Orient'][0]
+        QM = G2mth.Q2Mat(Q)
         Pos = RBObj['Orig'][0]
         jrb = VRBIds.index(RBObj['RBId'])
         rbsx = str(irb)+':'+str(jrb)
         dXdv = []
         for iv in range(len(VModel['VectMag'])):
-            dXdv.append(np.inner(Bmat.T,VModel['rbVect'][iv]).T)
+            dXdv.append(np.inner(Bmat,VModel['rbVect'][iv]).T)
         XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
+            dx = 0.0001
             for iv in range(len(VModel['VectMag'])):
                 for ix in [0,1,2]:
                     dFdvDict['::RBV;'+str(iv)+':'+str(jrb)] += dXdv[iv][ia][ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
@@ -780,7 +781,8 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             X = G2mth.prodQVQ(Q,Cart[ia])
             dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T*gvec
             dFdu = G2lat.U6toUij(dFdu.T)
-            dFdu = np.tensordot(Amat.T,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
+            dFdu = np.tensordot(Amat,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
+#            dFdu = np.tensordot(QM,np.tensordot(QM,dFdu,([1,0])),([0,1]))
             dFdu = G2lat.UijtoU6(dFdu)
             atNum = AtLookup[atId]
             if 'T' in RBObj['ThermalMotion'][0]:
@@ -792,9 +794,9 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBVL33:'+rbsx] += rpd2*(dFdu[0]*X[1]**2+dFdu[1]*X[0]**2-dFdu[3]*X[0]*X[1])
                 dFdvDict[pfx+'RBVL12:'+rbsx] += rpd2*(-dFdu[3]*X[2]**2-2.*dFdu[2]*X[0]*X[1]+
                     dFdu[4]*X[1]*X[2]+dFdu[5]*X[0]*X[2])
-                dFdvDict[pfx+'RBVL13:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[1]*X[0]*X[2]+
+                dFdvDict[pfx+'RBVL13:'+rbsx] += rpd2*(-dFdu[4]*X[1]**2-2.*dFdu[1]*X[0]*X[2]+
                     dFdu[3]*X[1]*X[2]+dFdu[5]*X[0]*X[1])
-                dFdvDict[pfx+'RBVL23:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[0]*X[1]*X[2]+
+                dFdvDict[pfx+'RBVL23:'+rbsx] += rpd2*(-dFdu[5]*X[0]**2-2.*dFdu[0]*X[1]*X[2]+
                     dFdu[3]*X[0]*X[2]+dFdu[4]*X[0]*X[1])
             if 'S' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBVS12:'+rbsx] += rpd*(dFdu[5]*X[1]-2.*dFdu[1]*X[2])
@@ -816,30 +818,32 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         torData = RBData['Residue'][RBObj['RBId']]['rbSeq']
         rbsx = str(irb)+':'+str(jrb)
         XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
-        for itors,tors in enumerate(RBObj['Torsions']):
+        for itors,tors in enumerate(RBObj['Torsions']):     #derivative error?
             tname = pfx+'RBRTr;'+str(itors)+':'+rbsx           
             orId,pvId = torData[itors][:2]
-            pivotVec = Cart[pvId]-Cart[orId]
-            QA = G2mth.AVdeg2Q(0.001,pivotVec)
-            QB = G2mth.AVdeg2Q(-0.001,pivotVec)
+            pivotVec = Cart[orId]-Cart[pvId]
+            QA = G2mth.AVdeg2Q(-0.001,pivotVec)
+            QB = G2mth.AVdeg2Q(0.001,pivotVec)
             for ir in torData[itors][3]:
                 atNum = AtLookup[RBObj['Ids'][ir]]
                 rVec = Cart[ir]-Cart[pvId]
-                dRdT = np.inner(Bmat,(G2mth.prodQVQ(QA,rVec)-G2mth.prodQVQ(QB,rVec)))/.002
+                dR = G2mth.prodQVQ(QB,rVec)-G2mth.prodQVQ(QA,rVec)
+                dRdT = np.inner(Bmat,G2mth.prodQVQ(Q,dR))/.002
                 for ix in [0,1,2]:
                     dFdvDict[tname] += dRdT[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
-            dx = 0.0001
+            dx = 0.00001
             for i,name in enumerate(['RBRPx:','RBRPy:','RBRPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
                 Q[iv] -= dx
-                XYZ1,Cart1 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+                Cart1 = G2mth.prodQVQ(Q,Cart[ia])
                 Q[iv] += 2.*dx
-                XYZ2,Cart2 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+                Cart2 = G2mth.prodQVQ(Q,Cart[ia])
                 Q[iv] -= dx
-                dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
+                dC = Cart2-Cart1
+                dXdO = np.inner(Bmat,G2mth.prodQVQ(Q,dC))/(2.*dx)
                 for ix in [0,1,2]:
                     dFdvDict[pfx+'RBR'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             X = G2mth.prodQVQ(Q,Cart[ia])
@@ -2767,8 +2771,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
     for phase in Phases:
-        if phase not in restraintDict:
-            continue
+#        if phase not in restraintDict:
+#            continue
         pId = Phases[phase]['pId']
         General = Phases[phase]['General']
         SGData = General['SGData']
@@ -2782,7 +2786,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
         sam = SamSym[textureData['Model']]
-        phaseRest = restraintDict[phase]
+        phaseRest = restraintDict.get(phase,{})
         names = {'Bond':'Bonds','Angle':'Angles','Plane':'Planes',
             'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas',
             'ChemComp':'Sites','Texture':'HKLs'}
@@ -2791,7 +2795,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
             pnames = pName.split(':')
             if pId == int(pnames[0]):
                 name = pnames[1]
-                if not name:        #empty for Pawley restraints; pName has '::' in it
+                if 'PWL' in pName:
                     pDerv[varyList.index(pName)][ip] += 1.
                     continue
                 id = int(pnames[2]) 
@@ -2957,7 +2961,6 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         fbsq = fbs**2        #imaginary
         refl[9] = np.sum(fasq)+np.sum(fbsq)
         refl[10] = atan2d(fbs[0],fas[0])
-    return refList
     
 def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     twopi = 2.0*np.pi
@@ -3110,7 +3113,7 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
             extCor = np.sqrt(PF4)
             PF3 = 0.5*(CL+2.*AL*PF/(1.+BL*PF)-AL*PF**2*BL/(1.+BL*PF)**2)/(PF4*extCor)
 
-        dervCor = (1.+PF)*PF3
+        dervCor *= (1.+PF)*PF3
         if 'Primary' in calcControls[phfx+'EType'] and phfx+'Ep' in varyList:
             dervDict[phfx+'Ep'] = -ref[7]*PLZ*PF3
         if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
@@ -3669,7 +3672,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
         if not Phase['General'].get('doPawley'):
-            refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+            time0 = time.time()
+            StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+#            print 'sf calc time: %.3fs'%(time.time()-time0)
+        time0 = time.time()
         for refl in refList:
             if 'C' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
@@ -3707,6 +3713,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet
+#        print 'profile calc time: %.3fs'%(time.time()-time0)
     return yc,yb
     
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup):
@@ -3732,6 +3739,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]],[pfx+'A3',dpdA[3]+dpdA[4]+dpdA[5]]]                       
         elif SGData['SGLaue'] in ['m3m','m3']:
             return [[pfx+'A0',dpdA[0]]]
+            
     # create a list of dependent variables and set up a dictionary to hold their derivatives
     dependentVars = G2mv.GetDependentVars()
     depDerivDict = {}
@@ -3787,8 +3795,11 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         if not Phase['General'].get('doPawley'):
+            time0 = time.time()
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+#            print 'sf-derv time %.3fs'%(time.time()-time0)
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
+        time0 = time.time()
         for iref,refl in enumerate(refList):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
@@ -3846,9 +3857,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         if Ka2:
                             dMdv[varylist.index(name)][iBeg2:iFin2] += item[0]*dervDict2[item[1]]
                     elif name in dependentVars:
+                        depDerivDict[name][iBeg:iFin] += item[0]*dervDict[item[1]]
                         if Ka2:
                             depDerivDict[name][iBeg2:iFin2] += item[0]*dervDict2[item[1]]
-                        depDerivDict[name][iBeg:iFin] += item[0]*dervDict[item[1]]
                 for iPO in dIdPO:
                     if iPO in varylist:
                         dMdv[varylist.index(iPO)][iBeg:iFin] += dIdPO[iPO]*dervDict['int']
@@ -3949,6 +3960,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
                     if Ka2:
                         depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+#        print 'profile derv time: %.3fs'%(time.time()-time0)
     # now process derivatives in constraints
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
     return dMdv
@@ -3991,42 +4003,53 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
             dMdvh = np.zeros((len(varylist),len(refList)))
-            for iref,ref in enumerate(refList):
-                if ref[6] > 0:
-                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
-                    if calcControls['F**2']:
-                        if ref[5]/ref[6] >= calcControls['minF/sig']:
-                            w = wtFactor/ref[6]
+            if calcControls['F**2']:
+                for iref,ref in enumerate(refList):
+                    if ref[6] > 0:
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        w = 1.0/ref[6]
+                        if w*ref[5] >= calcControls['minF/sig']:
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*dervCor
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*ref[13]*parmDict[phfx+'Scale']
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
-                    else:
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[13]
+                            for item in ['Ep','Es','Eg']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                            for item in ['BabA','BabU']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']
+            else:
+                for iref,ref in enumerate(refList):
+                    if ref[5] > 0.:
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
-                        sig = ref[6]/(2.0*Fo)
-                        if Fo/sig >= calcControls['minF/sig']:
-                            w = wtFactor/np.sqrt(sig)
+                        w = 1.0/ref[6]
+                        if 2.0*Fo*w*Fo >= calcControls['minF/sig']:
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*np.sqrt(dervCor)
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*dervCor*parmDict[phfx+'Scale']
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*np.sqrt(dervCor)                            
-                    for item in ['Ep','Es','Eg']:
-                        if phfx+item in varylist:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor                           
+                            for item in ['Ep','Es','Eg']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                            for item in ['BabA','BabU']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervCor*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']
         else:
             continue        #skip non-histogram entries
         if len(dMdv):
-            dMdv = np.concatenate((dMdv.T,dMdvh.T)).T
+            dMdv = np.concatenate((dMdv.T,np.sqrt(wtFactor)*dMdvh.T)).T
         else:
-            dMdv = dMdvh
+            dMdv = np.sqrt(wtFactor)*dMdvh
             
     pNames,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
     if np.any(pVals):
         dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmDict,varylist)
-        dMdv = np.concatenate((dMdv.T,dpdv.T)).T
+        dMdv = np.concatenate((dMdv.T,(np.sqrt(pWt)*dpdv).T)).T
         
     return dMdv
 
@@ -4080,46 +4103,58 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
-            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+            time0 = time.time()
+            dFdvDict = StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict)  #accurate for powders!
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
             dMdvh = np.zeros((len(varylist),len(refList)))
             wdf = np.zeros(len(refList))
-            for iref,ref in enumerate(refList):
-                if ref[6] > 0:
-                    dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
-                    if calcControls['F**2']:
-                        if ref[5]/ref[6] >= calcControls['minF/sig']:
-                            w =  wtFactor/ref[6]
+            if calcControls['F**2']:
+                for iref,ref in enumerate(refList):
+                    if ref[6] > 0:
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        w =  1.0/ref[6]
+                        if w*ref[5] >= calcControls['minF/sig']:
                             wdf[iref] = w*(ref[5]-ref[7])
                             for j,var in enumerate(varylist):
                                 if var in dFdvDict:
-                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*dervCor
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*dervCor*parmDict[phfx+'Scale']
                             if phfx+'Scale' in varylist:
                                 dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
-                    else:
-                        if ref[5] > 0.:
-                            Fo = np.sqrt(ref[5])
-                            Fc = np.sqrt(ref[7])
-                            sig = ref[6]/(2.0*Fo)
-                            w = wtFactor/sig
-                            wdf[iref] = w*(Fo-Fc)
-                            if Fo/sig >= calcControls['minF/sig']:
-                                for j,var in enumerate(varylist):
-                                    if var in dFdvDict:
-                                        dMdvh[j][iref] = w*dFdvDict[var][iref]*np.sqrt(dervCor)
-                                if phfx+'Scale' in varylist:
-                                    dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*np.sqrt(dervCor)                           
-                    for item in ['Ep','Es','Eg']:
-                        if phfx+item in varylist:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]
+                            for item in ['Ep','Es','Eg']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                            for item in ['BabA','BabU']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']
+            else:
+                for iref,ref in enumerate(refList):
+                    if ref[5] > 0.:
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        Fo = np.sqrt(ref[5])
+                        Fc = np.sqrt(ref[7])
+                        w = 1.0/ref[6]
+                        if 2.0*Fo*w*Fo >= calcControls['minF/sig']:
+                            wdf[iref] = 2.0*Fo*w*(Fo-Fc)
+                            for j,var in enumerate(varylist):
+                                if var in dFdvDict:
+                                    dMdvh[j][iref] = w*dFdvDict[var][iref]*dervCor*parmDict[phfx+'Scale']
+                            if phfx+'Scale' in varylist:
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor                           
+                            for item in ['Ep','Es','Eg']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                            for item in ['BabA','BabU']:
+                                if phfx+item in varylist:
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']
+                        
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             if len(Hess):
-                Vec += np.sum(dMdvh*wdf,axis=1)
-                Hess += np.inner(dMdvh,dMdvh)
+                Vec += wtFactor*np.sum(dMdvh*wdf,axis=1)
+                Hess += wtFactor*np.inner(dMdvh,dMdvh)
             else:
-                Vec = np.sum(dMdvh*wdf,axis=1)
-                Hess = np.inner(dMdvh,dMdvh)
+                Vec = wtFactor*np.sum(dMdvh*wdf,axis=1)
+                Hess = wtFactor*np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
     pNames,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
@@ -4182,7 +4217,9 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refList = Histogram['Data']
-            refList = StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+            time0 = time.time()
+            StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict)
+#            print 'sf-calc time: %.3f'%(time.time()-time0)
             df = np.zeros(len(refList))
             sumwYo = 0
             sumFo = 0
@@ -4190,14 +4227,15 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             sumdF = 0
             sumdF2 = 0
             nobs = 0
-            for i,ref in enumerate(refList):
-                if ref[6] > 0:
-                    SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
-                    ref[7] = parmDict[phfx+'Scale']*ref[9]
-                    ref[7] *= ref[13]
-                    ref[8] = ref[5]/parmDict[phfx+'Scale']
-                    if calcControls['F**2']:
-                        if ref[5]/ref[6] >= calcControls['minF/sig']:
+            if calcControls['F**2']:
+                for i,ref in enumerate(refList):
+                    if ref[6] > 0:
+                        SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        w = 1.0/ref[6]
+                        ref[7] = parmDict[phfx+'Scale']*ref[9]
+                        ref[7] *= ref[13]                       #correct Fc^2 for extinction
+                        ref[8] = ref[5]/parmDict[phfx+'Scale']
+                        if w*ref[5] >= calcControls['minF/sig']:
                             sumFo2 += ref[5]
                             Fo = np.sqrt(ref[5])
                             sumFo += Fo
@@ -4205,20 +4243,25 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             sumdF += abs(Fo-np.sqrt(ref[7]))
                             sumdF2 += abs(ref[5]-ref[7])
                             nobs += 1
-                            df[i] = -np.sqrt(wtFactor)*(ref[5]-ref[7])/ref[6]
-                            sumwYo += wtFactor*(ref[5]/ref[6])**2
-                    else:
+                            df[i] = -w*(ref[5]-ref[7])
+                            sumwYo += (w*ref[5])**2
+            else:
+                for i,ref in enumerate(refList):
+                    if ref[5] > 0.:
+                        SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        ref[7] = parmDict[phfx+'Scale']*ref[9]
+                        ref[7] *= ref[13]                       #correct Fc^2 for extinction
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
-                        sig = ref[6]/(2.0*Fo)
-                        if Fo/sig >= calcControls['minF/sig']:
+                        w = 2.0*Fo/ref[6]
+                        if w*Fo >= calcControls['minF/sig']:
                             sumFo += Fo
                             sumFo2 += ref[5]
                             sumdF += abs(Fo-Fc)
                             sumdF2 += abs(ref[5]-ref[7])
                             nobs += 1
-                            df[i] = -np.sqrt(wtFactor)*(Fo-Fc)/sig
-                            sumwYo += wtFactor*(Fo/sig)**2
+                            df[i] = -w*(Fo-Fc)
+                            sumwYo += (w*Fo)**2
             Histogram['Nobs'] = nobs
             Histogram['sumwYo'] = sumwYo
             SumwYo += sumwYo
@@ -4229,7 +4272,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Nobs += nobs
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
-            M = np.concatenate((M,df))
+            M = np.concatenate((M,wtFactor*df))
 # end of HKLF processing
     Histograms['sumwYo'] = SumwYo
     Histograms['Nobs'] = Nobs
@@ -4398,16 +4441,13 @@ def Refine(GPXfile,dlg):
     
 #for testing purposes!!!
     if DEBUG:
+#needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
         import cPickle
         fl = open('structTestdata.dat','wb')
+        cPickle.dump(result[0],fl,1)
+        cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
         cPickle.dump(parmDict,fl,1)
         cPickle.dump(varyList,fl,1)
-        for histogram in Histograms:
-            if 'PWDR' in histogram[:4]:
-                Histogram = Histograms[histogram]
-        cPickle.dump(Histogram,fl,1)
-        cPickle.dump(Phases,fl,1)
-        cPickle.dump(rigidbodyDict,fl,1)
         cPickle.dump(calcControls,fl,1)
         cPickle.dump(pawleyLookup,fl,1)
         fl.close()

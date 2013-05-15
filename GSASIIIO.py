@@ -342,6 +342,7 @@ def GetMAR345Data(filename,imageOnly=False):
 def GetTifData(filename,imageOnly=False):
     import struct as st
     import array as ar
+    import ReadMarCCDFrame as rmf
     File = open(filename,'rb')
     dataType = 5
     try:
@@ -386,11 +387,19 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
-#        print Tag,IFD[Tag]
+        #print Tag,IFD[Tag]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny
-    if 272 in IFD:
+    if 34710 in IFD:
+        if not imageOnly:
+            print 'Read MAR CCD tiff file: ',filename
+	marFrame = rmf.marFrame(File,byteOrd,IFD)
+	image = np.array(np.asarray(marFrame.image),dtype=np.int32)
+	tifType = marFrame.filetitle
+	pixy = (marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0)
+	head = marFrame.outputHead()
+    elif 272 in IFD:
         ifd = IFD[272]
         File.seek(ifd[2][0])
         S = File.read(ifd[1])
@@ -484,6 +493,151 @@ def GetTifData(filename,imageOnly=False):
     else:
         return head,data,Npix,image
     
+#def GetTifData(filename,imageOnly=False):
+#    import struct as st
+#    import array as ar
+#    File = open(filename,'rb')
+#    dataType = 5
+#    try:
+#        Meta = open(filename+'.metadata','Ur')
+#        head = Meta.readlines()
+#        for line in head:
+#            line = line.strip()
+#            if 'dataType=' in line:
+#                dataType = int(line.split('=')[1])
+#        Meta.close()
+#    except IOError:
+#        print 'no metadata file found - will try to read file anyway'
+#        head = ['no metadata file found',]
+#        
+#    tag = File.read(2)
+#    byteOrd = '<'
+#    if tag == 'II' and int(st.unpack('<h',File.read(2))[0]) == 42:     #little endian
+#        IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])
+#    elif tag == 'MM' and int(st.unpack('>h',File.read(2))[0]) == 42:   #big endian
+#        byteOrd = '>'
+#        IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])        
+#    else:
+#        lines = ['not a detector tiff file',]
+#        return lines,0,0,0
+#    File.seek(IFD)                                                  #get number of directory entries
+#    NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
+#    IFD = {}
+#    for ied in range(NED):
+#        Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))
+#        nVal = st.unpack(byteOrd+'i',File.read(4))[0]
+#        if Type == 1:
+#            Value = st.unpack(byteOrd+nVal*'b',File.read(nVal))
+#        elif Type == 2:
+#            Value = st.unpack(byteOrd+'i',File.read(4))
+#        elif Type == 3:
+#            Value = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
+#            x = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
+#        elif Type == 4:
+#            Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
+#        elif Type == 5:
+#            Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
+#        elif Type == 11:
+#            Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
+#        IFD[Tag] = [Type,nVal,Value]
+##        print Tag,IFD[Tag]
+#    sizexy = [IFD[256][2][0],IFD[257][2][0]]
+#    [nx,ny] = sizexy
+#    Npix = nx*ny
+#    if 272 in IFD:
+#        ifd = IFD[272]
+#        File.seek(ifd[2][0])
+#        S = File.read(ifd[1])
+#        if 'PILATUS' in S:
+#            tifType = 'Pilatus'
+#            dataType = 0
+#            pixy = (172,172)
+#            File.seek(4096)
+#            if not imageOnly:
+#                print 'Read Pilatus tiff file: ',filename
+#            image = ar.array('L',File.read(4*Npix))
+#            image = np.array(np.asarray(image),dtype=np.int32)
+#    elif 262 in IFD and IFD[262][2][0] > 4:
+#        tifType = 'DND'
+#        pixy = (158,158)
+#        File.seek(512)
+#        if not imageOnly:
+#            print 'Read DND SAX/WAX-detector tiff file: ',filename
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+#    elif sizexy == [1536,1536]:
+#        tifType = 'APS Gold'
+#        pixy = (150,150)
+#        File.seek(64)
+#        if not imageOnly:
+#            print 'Read Gold tiff file:',filename
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+#    elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
+#        if IFD[273][2][0] == 8:
+#            if IFD[258][2][0] == 32:
+#                tifType = 'PE'
+#                pixy = (200,200)
+#                File.seek(8)
+#                if not imageOnly:
+#                    print 'Read APS PE-detector tiff file: ',filename
+#                if dataType == 5:
+#                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.float32)
+#                else:
+#                    image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
+#        elif IFD[273][2][0] == 4096:
+#            if sizexy[0] == 3072:
+#                pixy =  (73,73)
+#                tifType = 'MAR225'            
+#            else:
+#                pixy = (158,158)
+#                tifType = 'MAR325'            
+#            File.seek(4096)
+#            if not imageOnly:
+#                print 'Read MAR CCD tiff file: ',filename
+#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+#        elif IFD[273][2][0] == 512:
+#            tiftype = '11-ID-C'
+#            pixy = [200,200]
+#            File.seek(512)
+#            if not imageOnly:
+#                print 'Read 11-ID-C tiff file: ',filename
+#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)            
+#    elif sizexy == [4096,4096]:
+#        if IFD[273][2][0] == 8:
+#            if IFD[258][2][0] == 16:
+#                tifType = 'scanCCD'
+#                pixy = (9,9)
+#                File.seek(8)
+#                if not imageOnly:
+#                    print 'Read APS scanCCD tiff file: ',filename
+#                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+#        elif IFD[273][2][0] == 4096:
+#            tifType = 'Rayonix'
+#            pixy = (73.242,73.242)
+#            File.seek(4096)
+#            if not imageOnly:
+#                print 'Read Rayonix MX300HE tiff file: ',filename
+#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+##    elif sizexy == [960,960]:
+##        tiftype = 'PE-BE'
+##        pixy = (200,200)
+##        File.seek(8)
+##        if not imageOnly:
+##            print 'Read Gold tiff file:',filename
+##        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+#           
+#    else:
+#        lines = ['not a known detector tiff file',]
+#        return lines,0,0,0
+#        
+#    image = np.reshape(image,(sizexy[1],sizexy[0]))
+#    center = [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000]
+#    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':center,'size':sizexy}
+#    File.close()    
+#    if imageOnly:
+#        return image
+#    else:
+#        return head,data,Npix,image
+#    
 def ProjFileOpen(G2frame):
     file = open(G2frame.GSASprojectfile,'rb')
     print 'load from file: ',G2frame.GSASprojectfile

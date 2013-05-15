@@ -1,0 +1,546 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSASIImapvars: Parameter constraints &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="prev" title="GSAS-II Main Module" href="GSASII.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASII.html" title="GSAS-II Main Module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-GSASIImapvars"></span><div class="section" id="gsasiimapvars-parameter-constraints">
+<h1><em>GSASIImapvars: Parameter constraints</em><a class="headerlink" href="#gsasiimapvars-parameter-constraints" title="Permalink to this headline">¶</a></h1>
+<p>Module to implements algebraic contraints, parameter redefinition
+and parameter simplification contraints.</p>
+<p>Parameter redefinition (new vars) is done by creating one or more relationships
+between a set of parameters</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Mx1</span> <span class="o">*</span> <span class="n">Px</span> <span class="o">+</span> <span class="n">My1</span> <span class="o">*</span> <span class="n">Py</span> <span class="o">+...</span>
+<span class="n">Mx2</span> <span class="o">*</span> <span class="n">Px</span> <span class="o">+</span> <span class="n">Mz2</span> <span class="o">*</span> <span class="n">Pz</span> <span class="o">+</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>where Pj is a parameter name and Mjk is a constant.</p>
+<p>Constant constraint Relations can also be supplied in the form of an equation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">nx1</span> <span class="o">*</span> <span class="n">Px</span> <span class="o">+</span> <span class="n">ny1</span> <span class="o">*</span> <span class="n">Py</span> <span class="o">+...</span> <span class="o">=</span> <span class="n">C1</span>
+</pre></div>
+</div>
+<p>where Cn is a constant. These equations define an algebraic
+constrant.</p>
+<p>Parameters can also be &#8220;fixed&#8221; (held), which prevents them from being refined.</p>
+<p>All of the above three cases are input using routines
+GroupConstraints and GenerateConstraints. The input consists of a list of
+relationship dictionaries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">constrDict</span> <span class="o">=</span> <span class="p">[</span>
+     <span class="p">{</span><span class="s">&#39;0:12:Scale&#39;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s">&#39;0:14:Scale&#39;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span> <span class="s">&#39;0:13:Scale&#39;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s">&#39;0:0:Scale&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">},</span>
+     <span class="p">{</span><span class="s">&#39;2::C(10,6,1)&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s">&#39;1::C(10,6,1)&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+     <span class="p">{</span><span class="s">&#39;0::A0&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}]</span>
+<span class="n">fixedList</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;5.0&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;0&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Where the dictionary defines the first part of an expression and the corresponding fixedList
+item is either None (for parameter redefinition) or the constant value, for a constant
+constraint equation. A dictionary that contains a single term defines a variable that
+will be fixed (held). The multiplier and the fixedList value in this case are ignored.</p>
+<p>Parameters can also be equivalenced or &#8220;slaved&#8221; to another parameter, such that one
+(independent) parameter is equated to several (now dependent) parameters. In
+algebraic form this is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">P0</span> <span class="o">=</span> <span class="n">M1</span> <span class="o">*</span> <span class="n">P1</span> <span class="o">=</span> <span class="n">M2</span> <span class="o">*</span> <span class="n">P2</span> <span class="o">=</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>Thus parameters P0, P1 and P2,... are linearly equivalent. Routine StoreEquivalence is
+used to specify these equivalences.</p>
+<p>Parameter redefinition (new vars) describes a new, independent, parameter, which
+is defined in terms of dependent parameters that are defined in the
+Model, while fixed constrained relations effectively reduce the complexity
+of the Model by removing a degree of freedom. It is possible for a parameter to appear
+in both a parameter redefinition expression and a fixed constraint equation, but a
+parameter cannot be used a parameter equivalance cannot be used elsewhere (not fixed,
+constrained or redefined). Likewise a fixed parameter cannot be used elsewhere (not
+equivalanced, constrained or redefined).</p>
+<p>Relationships are grouped so that a set of dependent parameters appear
+in only one group (done in routine GroupConstraints.) Note that if a
+group contains relationships/equations that involve N dependent
+parameters, there must exist N-C new parameters, where C is the number
+of contraint equations in the group. Routine GenerateConstraints takes
+the output from GroupConstraints and generates the
+&#8220;missing&#8221; relationships and saves that information in the module&#8217;s
+global variables. Each generated parameter is named sequentially using paramPrefix.</p>
+<p>A list of parameters that will be varied is specified as input to GenerateConstraints
+(varyList). A fixed parameter will simply be removed from this list preventing that
+parameter from being varied. Note that all parameters in a relationship must specified as
+varied (appear in varyList) or none can be varied. This is checked in GenerateConstraints
+(as well as for generated relationships in SetVaryFlags).</p>
+<ul class="simple">
+<li>If all parameters in a parameter redefinition (new var) relationship are varied, the
+parameter assigned to this expression (::constr:n, see paramPrefix) newly generated
+parameter is varied. Note that any generated &#8220;missing&#8221; relations are not varied. Only
+the input relations are varied.</li>
+<li>If all parameters in a fixed constraint equation are varied, the generated &#8220;missing&#8221;
+relations in the group are all varied. This provides the N-C degrees of freedom.</li>
+</ul>
+<div class="section" id="external-routines">
+<h2><em>External Routines</em><a class="headerlink" href="#external-routines" title="Permalink to this headline">¶</a></h2>
+<p>To define a set of constrained and unconstrained relations, one
+defines a list of dictionary defining constraint parameters and their
+values, a list of fixed values for each constraint and a list of
+parameters to be varied. In addition, one uses
+<a class="reference internal" href="#GSASIImapvars.StoreEquivalence" title="GSASIImapvars.StoreEquivalence"><tt class="xref py py-func docutils literal"><span class="pre">StoreEquivalence()</span></tt></a> to define parameters that are equivalent. One
+can then use <a class="reference internal" href="#GSASIImapvars.CheckConstraints" title="GSASIImapvars.CheckConstraints"><tt class="xref py py-func docutils literal"><span class="pre">CheckConstraints()</span></tt></a> to check that the input is
+internally consistent and finally <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> and
+<a class="reference internal" href="#GSASIImapvars.GenerateConstraints" title="GSASIImapvars.GenerateConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GenerateConstraints()</span></tt></a> to generate the internally used
+tables. Routines <a class="reference internal" href="#GSASIImapvars.Map2Dict" title="GSASIImapvars.Map2Dict"><tt class="xref py py-func docutils literal"><span class="pre">Map2Dict()</span></tt></a> is used to initialize the parameter
+dictionary and <a class="reference internal" href="#GSASIImapvars.Dict2Map" title="GSASIImapvars.Dict2Map"><tt class="xref py py-func docutils literal"><span class="pre">Dict2Map()</span></tt></a>, <a class="reference internal" href="#GSASIImapvars.Dict2Deriv" title="GSASIImapvars.Dict2Deriv"><tt class="xref py py-func docutils literal"><span class="pre">Dict2Deriv()</span></tt></a>, and
+<a class="reference internal" href="#GSASIImapvars.ComputeDepESD" title="GSASIImapvars.ComputeDepESD"><tt class="xref py py-func docutils literal"><span class="pre">ComputeDepESD()</span></tt></a> are used to apply constraints. Routine
+<a class="reference internal" href="#GSASIImapvars.VarRemapShow" title="GSASIImapvars.VarRemapShow"><tt class="xref py py-func docutils literal"><span class="pre">VarRemapShow()</span></tt></a> is used to print out the constraint information,
+as stored by <a class="reference internal" href="#GSASIImapvars.GenerateConstraints" title="GSASIImapvars.GenerateConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GenerateConstraints()</span></tt></a>.</p>
+<dl class="docutils">
+<dt><a class="reference internal" href="#GSASIImapvars.InitVars" title="GSASIImapvars.InitVars"><tt class="xref py py-func docutils literal"><span class="pre">InitVars()</span></tt></a></dt>
+<dd>This is optionally used to clear out all defined previously defined constraint information</dd>
+<dt><a class="reference internal" href="#GSASIImapvars.StoreEquivalence" title="GSASIImapvars.StoreEquivalence"><tt class="xref py py-func docutils literal"><span class="pre">StoreEquivalence()</span></tt></a></dt>
+<dd><p class="first">To implement parameter redefinition, one calls StoreEquivalence. This should be called for every set of
+equivalence relationships. There is no harm in using StoreEquivalence with the same independent variable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">StoreEquivalence</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,(</span><span class="s">&#39;y&#39;</span><span class="p">,))</span>
+<span class="n">StoreEquivalence</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,(</span><span class="s">&#39;z&#39;</span><span class="p">,))</span>
+</pre></div>
+</div>
+<p>or equivalently</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">StoreEquivalence</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,(</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The latter will run more efficiently. Note that mixing independent and dependent variables is
+problematic. This is not allowed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">StoreEquivalence</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,(</span><span class="s">&#39;y&#39;</span><span class="p">,))</span>
+<span class="n">StoreEquivalence</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,(</span><span class="s">&#39;z&#39;</span><span class="p">,))</span>
+</pre></div>
+</div>
+<p class="last">Use StoreEquivalence before calling GenerateConstraints or CheckConstraints</p>
+</dd>
+<dt><a class="reference internal" href="#GSASIImapvars.CheckConstraints" title="GSASIImapvars.CheckConstraints"><tt class="xref py py-func docutils literal"><span class="pre">CheckConstraints()</span></tt></a></dt>
+<dd>To check that input in internally consistent, use CheckConstraints</dd>
+<dt><a class="reference internal" href="#GSASIImapvars.Map2Dict" title="GSASIImapvars.Map2Dict"><tt class="xref py py-func docutils literal"><span class="pre">Map2Dict()</span></tt></a></dt>
+<dd>To determine values for the parameters created in this module, one
+calls Map2Dict. This will not apply contraints.</dd>
+<dt><a class="reference internal" href="#GSASIImapvars.Dict2Map" title="GSASIImapvars.Dict2Map"><tt class="xref py py-func docutils literal"><span class="pre">Dict2Map()</span></tt></a></dt>
+<dd>To take values from the new independent parameters and constraints,
+one calls Dict2Map. This will apply contraints.</dd>
+<dt><a class="reference internal" href="#GSASIImapvars.Dict2Deriv" title="GSASIImapvars.Dict2Deriv"><tt class="xref py py-func docutils literal"><span class="pre">Dict2Deriv()</span></tt></a></dt>
+<dd>Use Dict2Deriv to determine derivatives on independent parameters
+from those on dependent ones</dd>
+<dt><a class="reference internal" href="#GSASIImapvars.ComputeDepESD" title="GSASIImapvars.ComputeDepESD"><tt class="xref py py-func docutils literal"><span class="pre">ComputeDepESD()</span></tt></a>      </dt>
+<dd>Use ComputeDepESD to compute uncertainties on dependent variables</dd>
+<dt><a class="reference internal" href="#GSASIImapvars.VarRemapShow" title="GSASIImapvars.VarRemapShow"><tt class="xref py py-func docutils literal"><span class="pre">VarRemapShow()</span></tt></a></dt>
+<dd>To show a summary of the parameter remapping, one calls VarRemapShow</dd>
+</dl>
+</div>
+<div class="section" id="global-variables">
+<h2><em>Global Variables</em><a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>dependentParmList:</dt>
+<dd>contains a list by group of lists of
+parameters used in the group. Note that parameters listed in
+dependentParmList should not be refined as they will not affect
+the model</dd>
+<dt>indParmList:</dt>
+<dd>a list of groups of Independent parameters defined in
+each group. This contains both parameters used in parameter
+redefinitions as well as names of generated new parameters.</dd>
+<dt>fixedVarList:</dt>
+<dd>a list of variables that have been &#8216;fixed&#8217;
+by defining them as equal to a constant (::var: = 0). Note that
+the constant value is ignored at present. These variables are
+later removed from varyList which prevents them from being refined. 
+Unlikely to be used externally.</dd>
+<dt>arrayList:</dt>
+<dd>a list by group of relationship matrices to relate
+parameters in dependentParmList to those in indParmList. Unlikely
+to be used externally.</dd>
+<dt>invarrayList:</dt>
+<dd>a list by group of relationship matrices to relate
+parameters in indParmList to those in dependentParmList. Unlikely
+to be used externally.</dd>
+<dt>fixedDict:</dt>
+<dd>a dictionary containing the fixed values corresponding
+to parameter equations.  The dict key is an ascii string, but the
+dict value is a float.  Unlikely to be used externally.</dd>
+</dl>
+</div>
+<div class="section" id="routines">
+<h2><em>Routines</em><a class="headerlink" href="#routines" title="Permalink to this headline">¶</a></h2>
+<p>Note that parameter names in GSAS-II are strings of form <tt class="docutils literal"><span class="pre">&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;</span></tt></p>
+<dl class="function">
+<dt id="GSASIImapvars.CheckConstraints">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">CheckConstraints</tt><big>(</big><em>varyList</em>, <em>constrDict</em>, <em>fixedList</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#CheckConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.CheckConstraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a list of relationship entries comprising a group of
+constraints and checks for inconsistencies such as conflicts in
+parameter/variable definitions and or inconsistently varied parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names that will be varied</li>
+<li><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints (as defined in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</li>
+<li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each dict in constrDict. Values are
+either strings that can be converted to floats or None if the constraint defines a new parameter rather
+than a constant.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>two strings:</p>
+<ul class="simple">
+<li>the first lists conflicts internal to the specified constraints</li>
+<li>the second lists conflicts where the varyList specifies some
+parameters in a constraint, but not all</li>
+</ul>
+<p>If there are no errors, both strings will be empty</p>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.ComputeDepESD">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">ComputeDepESD</tt><big>(</big><em>covMatrix</em>, <em>varyList</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#ComputeDepESD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.ComputeDepESD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute uncertainties for dependent parameters from independent ones
+returns a dictionary containing the esd values for dependent parameters</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.Dict2Deriv">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">Dict2Deriv</tt><big>(</big><em>varyList</em>, <em>derivDict</em>, <em>dMdv</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#Dict2Deriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.Dict2Deriv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute derivatives for Independent Parameters from the
+derivatives for the original parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names that will be varied</li>
+<li><strong>derivDict</strong> (<em>dict</em>) &#8211; a dict containing derivatives for parameter values keyed by the
+parameter names.</li>
+<li><strong>dMdv</strong> (<em>dict</em>) &#8211; a dict containing derivatives for dependent parameter computed from
+derivDict</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.Dict2Map">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">Dict2Map</tt><big>(</big><em>parmDict</em>, <em>varyList</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#Dict2Map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.Dict2Map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the constraints defined using <a class="reference internal" href="#GSASIImapvars.StoreEquivalence" title="GSASIImapvars.StoreEquivalence"><tt class="xref py py-func docutils literal"><span class="pre">StoreEquivalence()</span></tt></a>,
+<a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> and <a class="reference internal" href="#GSASIImapvars.GenerateConstraints" title="GSASIImapvars.GenerateConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GenerateConstraints()</span></tt></a> by changing
+values in a dict containing the parameters. This should be
+done before the parameters are used for any computations</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parmDict</strong> (<em>dict</em>) &#8211; a dict containing parameter values keyed by the
+parameter names.
+This will contain updated values for both dependent and independent
+parameters after Dict2Map is called. It will also contain some
+unexpected entries of every constant value {&#8216;0&#8217;:0.0} &amp; {&#8216;1.0&#8217;:1.0},
+which do not cause any problems.</li>
+<li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names that will be varied</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.GenerateConstraints">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">GenerateConstraints</tt><big>(</big><em>groups</em>, <em>parmlist</em>, <em>varyList</em>, <em>constrDict</em>, <em>fixedList</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#GenerateConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.GenerateConstraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a list of relationship entries comprising a group of
+constraints and builds the relationship lists and their inverse
+and stores them in global variables Also checks for internal
+conflicts or inconsistencies in parameter/variable definitions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>groups</strong> (<em>list</em>) &#8211; a list of grouped contraints where each constraint grouped containts a list of
+indices for constraint constrDict entries, created in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> (returned as 1st value)</li>
+<li><strong>parmlist</strong> (<em>list</em>) &#8211; a list containing lists of parameter names contained in each group,
+created in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> (returned as 1st value)</li>
+<li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names (strings of form <tt class="docutils literal"><span class="pre">&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;</span></tt>) that will be varied</li>
+<li><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints (as defined in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</li>
+<li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each dict in constrDict. Values are
+either strings that can be converted to floats, float values or None if the constraint defines a new
+parameter</li>
+<li><strong>constrDict</strong> &#8211; a list of dicts defining relationships/constraints</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.GetDependentVars">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">GetDependentVars</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#GetDependentVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.GetDependentVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of dependent variables: e.g. variables that are
+constrained in terms of other variables</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a list of variable names</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.GetIndependentVars">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">GetIndependentVars</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#GetIndependentVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.GetIndependentVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of independent variables: e.g. variables that are
+created by constraints of other variables</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a list of variable names</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.GramSchmidtOrtho">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">GramSchmidtOrtho</tt><big>(</big><em>a</em>, <em>nkeep=0</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#GramSchmidtOrtho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.GramSchmidtOrtho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the Gram-Schmidt process (<a class="reference external" href="http://en.wikipedia.org/wiki/Gram-Schmidt">http://en.wikipedia.org/wiki/Gram-Schmidt</a>) to
+find orthonormal unit vectors relative to first row.</p>
+<p>If nkeep is non-zero, the first nkeep rows in the array are not changed</p>
+<dl class="docutils">
+<dt>input: </dt>
+<dd>arrayin: a 2-D non-singular square array</dd>
+<dt>returns:</dt>
+<dd>a orthonormal set of unit vectors as a square array</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.GroupConstraints">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">GroupConstraints</tt><big>(</big><em>constrDict</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#GroupConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.GroupConstraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>divide the constraints into groups that share no parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><pre>constrDict = [{&lt;constr1&gt;}, {&lt;constr2&gt;}, ...]</pre>
+</div>
+<p>where {&lt;constr1&gt;} is {&#8216;param1&#8217;: mult1, &#8216;param2&#8217;: mult2,...}</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">two lists of lists:<ul class="simple">
+<li>a list of grouped contraints where each constraint grouped containts a list of indices for constraint constrDict entries</li>
+<li>a list containing lists of parameter names contained in each group</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.InitVars">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">InitVars</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#InitVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.InitVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes all constraint information</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.Map2Dict">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">Map2Dict</tt><big>(</big><em>parmDict</em>, <em>varyList</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#Map2Dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.Map2Dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create (or update) the Independent Parameters from the original
+set of Parameters</p>
+<p>Removes dependent variables from the varyList</p>
+<p>This should be done once, after the constraints have been
+defined using <a class="reference internal" href="#GSASIImapvars.StoreEquivalence" title="GSASIImapvars.StoreEquivalence"><tt class="xref py py-func docutils literal"><span class="pre">StoreEquivalence()</span></tt></a>,
+<a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> and <a class="reference internal" href="#GSASIImapvars.GenerateConstraints" title="GSASIImapvars.GenerateConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GenerateConstraints()</span></tt></a> and
+before any variable refinement is done
+to complete the parameter dictionary by defining independent
+parameters and satisfying the constraint equations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parmDict</strong> (<em>dict</em>) &#8211; a dict containing parameter values keyed by the
+parameter names.
+This will contain updated values for both dependent and independent
+parameters after Dict2Map is called. It will also contain some
+unexpected entries of every constant value {&#8216;0&#8217;:0.0} &amp; {&#8216;1.0&#8217;:1.0},
+which do not cause any problems.</li>
+<li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names that will be varied</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.PrintIndependentVars">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">PrintIndependentVars</tt><big>(</big><em>parmDict</em>, <em>varyList</em>, <em>sigDict</em>, <em>PrintAll=False</em>, <em>pFile=None</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#PrintIndependentVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.PrintIndependentVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the values and uncertainties on the independent variables</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.StoreEquivalence">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">StoreEquivalence</tt><big>(</big><em>independentVar</em>, <em>dependentList</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#StoreEquivalence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.StoreEquivalence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a list of dependent parameter(s) and stores their
+relationship to a single independent parameter (independentVar)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>independentVar</strong> (<em>str</em>) &#8211; name of master parameter that will be used to determine the value
+to set the dependent variables</li>
+<li><strong>dependentList</strong> (<em>list</em>) &#8211; a list of parameters that will set from
+independentVar. Each item in the list can be a string with the parameter
+name or a tuple containing a name and multiplier:
+<tt class="docutils literal"><span class="pre">['parm1',('parm2',.5),]</span></tt></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.VarRemapShow">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">VarRemapShow</tt><big>(</big><em>varyList</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#VarRemapShow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.VarRemapShow" title="Permalink to this definition">¶</a></dt>
+<dd><p>List out the saved relationships. This should be done after the constraints have been
+defined using <a class="reference internal" href="#GSASIImapvars.StoreEquivalence" title="GSASIImapvars.StoreEquivalence"><tt class="xref py py-func docutils literal"><span class="pre">StoreEquivalence()</span></tt></a>, <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> and <a class="reference internal" href="#GSASIImapvars.GenerateConstraints" title="GSASIImapvars.GenerateConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GenerateConstraints()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a string containing the details of the contraint relationships</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><em>GSASIImapvars: Parameter constraints</em></a><ul>
+<li><a class="reference internal" href="#external-routines"><em>External Routines</em></a></li>
+<li><a class="reference internal" href="#global-variables"><em>Global Variables</em></a></li>
+<li><a class="reference internal" href="#routines"><em>Routines</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASII.html"
+                        title="previous chapter"><em>GSAS-II Main Module</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIImapvars.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASII.html" title="GSAS-II Main Module"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

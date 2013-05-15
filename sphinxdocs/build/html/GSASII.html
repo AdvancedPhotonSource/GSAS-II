@@ -1,0 +1,549 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSAS-II Main Module &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="GSASIImapvars: Parameter constraints" href="GSASIImapvars.html" />
+    <link rel="prev" title="GSAS-II Developer’s Documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIImapvars.html" title="GSASIImapvars: Parameter constraints"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="GSAS-II Developer’s Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-GSASII"></span><div class="section" id="gsas-ii-main-module">
+<h1><em>GSAS-II Main Module</em><a class="headerlink" href="#gsas-ii-main-module" title="Permalink to this headline">¶</a></h1>
+<p>Main routines for the GSAS-II program</p>
+<dl class="class">
+<dt id="GSASII.GSASII">
+<em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">GSASII</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define the main GSAS-II frame and its associated menu items</p>
+<dl class="method">
+<dt id="GSASII.GSASII.CheckNotebook">
+<tt class="descname">CheckNotebook</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.CheckNotebook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.CheckNotebook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure the data tree has the minimally expected controls.
+(BHT) correct?</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASII.GSASII.ConstraintDialog">
+<em class="property">class </em><tt class="descname">ConstraintDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>data</em>, <em>separator='*'</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ConstraintDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ConstraintDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Window to edit Constraint values</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASII.GSASII.CopyDialog">
+<em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">CopyDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.CopyDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.CopyDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a dialog for copying control settings between
+data tree items</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.ErrorDialog">
+<tt class="descclassname">GSASII.</tt><tt class="descname">ErrorDialog</tt><big>(</big><em>title</em>, <em>message</em>, <em>parent=None</em>, <em>wtype=4</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ErrorDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ErrorDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display an error message</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.ExitMain">
+<tt class="descclassname">GSASII.</tt><tt class="descname">ExitMain</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ExitMain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ExitMain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called if the main window is closed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.FillMainMenu">
+<tt class="descclassname">GSASII.</tt><tt class="descname">FillMainMenu</tt><big>(</big><em>menubar</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.FillMainMenu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.FillMainMenu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define contents of the main GSAS-II menu for the (main) data tree window
+in the mac, used also for the data item windows as well.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.GetFileList">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetFileList</tt><big>(</big><em>fileType</em>, <em>skip=None</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetFileList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetFileList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appears unused. Note routine of same name in GSASIIpwdGUI</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.GetHKLFdatafromTree">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetHKLFdatafromTree</tt><big>(</big><em>HKLFname</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetHKLFdatafromTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetHKLFdatafromTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns single crystal data from GSASII tree</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>HKLFname</strong> (<em>str</em>) &#8211; a single crystal histogram name as obtained
+from
+<tt class="xref py py-mod docutils literal"><span class="pre">GSASIIstruct.GetHistogramNames</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">HKLFdata = single crystal data list of reflections</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.GetPWDRdatafromTree">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetPWDRdatafromTree</tt><big>(</big><em>PWDRname</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPWDRdatafromTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPWDRdatafromTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns powder data from GSASII tree</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>PWDRname</strong> (<em>str</em>) &#8211; a powder histogram name as obtained from
+<tt class="xref py py-mod docutils literal"><span class="pre">GSASIIstruct.GetHistogramNames</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">PWDRdata = powder data dictionary with
+Powder data arrays, Limits, Instrument Parameters,
+Sample Parameters</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.GetPhaseData">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetPhaseData</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPhaseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPhaseData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of defined phases. Used only in GSASIIgrid
+Note routine <tt class="xref py py-mod docutils literal"><span class="pre">GSASIIstruct.GetPhaseData</span></tt> also exists.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.GetPowderIparm">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetPowderIparm</tt><big>(</big><em>rd</em>, <em>prevIparm</em>, <em>lastIparmfile</em>, <em>lastdatafile</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPowderIparm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPowderIparm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open and read an instrument parameter file for a data file
+Returns the list of parameters used in the data tree</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rd</strong> (<em>obj</em>) &#8211; the raw data (histogram) data object.</li>
+<li><strong>prevIparm</strong> (<em>str</em>) &#8211; not used</li>
+<li><strong>lastIparmfile</strong> (<em>str</em>) &#8211; Name of last instrument parameter
+file that was read, or a empty string.</li>
+<li><strong>lastdatafile</strong> (<em>str</em>) &#8211; Name of last data file that was read.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetUsedHistogramsAndPhasesfromTree</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetUsedHistogramsAndPhasesfromTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all histograms that are found in any phase
+and any phase that uses a histogram
+:returns: two dicts:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Histograms = dictionary of histograms as {name:data,...}</li>
+<li>Phases = dictionary of phases that use histograms</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnAddPhase">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnAddPhase</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnAddPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnAddPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new, empty phase to the tree. Called by Data/Add Phase menu</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnDataDelete">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnDataDelete</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnDataDelete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnDataDelete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete one or more histograms from data tree. Called by the
+Data/DeleteData menu</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnDeletePhase">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnDeletePhase</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnDeletePhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnDeletePhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a phase from the tree. Called by Data/Delete Phase menu</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnFileClose">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnFileClose</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnFileClose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnFileClose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the data tree in response to the
+File/Close Project menu button. User is given option to save
+the project.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnFileExit">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnFileExit</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnFileExit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnFileExit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in response to the File/Quit menu button</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnFileOpen">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnFileOpen</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnFileOpen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnFileOpen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in a GSAS-II .gpx project file in response to the
+File/Open Project menu button</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnFileSave">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnFileSave</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnFileSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnFileSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current project in response to the
+File/Save Project menu button</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnFileSaveas">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnFileSaveas</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnFileSaveas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnFileSaveas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current project in response to the
+File/Save as menu button</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnImageRead">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImageRead</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImageRead"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImageRead" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called to read in an image in any known format</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnImageSum">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImageSum</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImageSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImageSum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum together image data(?)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnImportGeneric">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImportGeneric</tt><big>(</big><em>reader</em>, <em>readerlist</em>, <em>label</em>, <em>multiple=False</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportGeneric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportGeneric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to import Phases, powder dataset or single
+crystal datasets (structure factor tables) using reader objects
+subclassed from GSASIIIO.ImportPhase, GSASIIIO.ImportStructFactor
+or GSASIIIO.ImportPowderData. If a reader is specified, only
+that will be attempted, but if no reader is specified, every one
+that is potentially compatible (by file extension) will
+be tried on the selected file(s).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>reader</strong> (<em>readerobject</em>) &#8211; This will be a reference to
+a particular object to be used to read a file or None,
+if every appropriate reader should be used.</li>
+<li><strong>readerlist</strong> (<em>list</em>) &#8211; a list of reader objects appropriate for
+the current read attempt. At present, this will be either
+self.ImportPhaseReaderlist, self.ImportSfactReaderlist or
+self.ImportPowderReaderlist (defined in _init_Imports from
+the files found in the path), but in theory this list could
+be tailored. Used only when reader is None.</li>
+<li><strong>label</strong> (<em>str</em>) &#8211; string to place on the open file dialog:
+Open <cite>label</cite> input file</li>
+<li><strong>multiple</strong> (<em>bool</em>) &#8211; True if multiple files can be selected
+in the file dialog. False is default. At present True is used
+only for reading of powder data.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a list of reader objects (rd_list) that were able
+to read the specified file(s). This list may be empty.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnImportPhase">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImportPhase</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in response to an Import/Phase/... menu item
+to read phase information.
+dict self.ImportMenuId is used to look up the specific
+reader item associated with the menu item, which will be
+None for the last menu item, which is the &#8220;guess&#8221; option
+where all appropriate formats will be tried.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnImportPowder">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImportPowder</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportPowder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportPowder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in response to an Import/Powder Data/... menu item
+to read a powder diffraction data set. 
+dict self.ImportMenuId is used to look up the specific
+reader item associated with the menu item, which will be
+None for the last menu item, which is the &#8220;guess&#8221; option
+where all appropriate formats will be tried.</p>
+<p>Also reads an instrument parameter file for each dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnImportSfact">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImportSfact</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportSfact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportSfact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in response to an Import/Structure Factor/... menu item
+to read single crystal datasets. 
+dict self.ImportMenuId is used to look up the specific
+reader item associated with the menu item, which will be
+None for the last menu item, which is the &#8220;guess&#8221; option
+where all appropriate formats will be tried.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnMakePDFs">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnMakePDFs</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnMakePDFs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnMakePDFs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates PDFs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnPatternTreeItemActivated">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnPatternTreeItemActivated</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnPatternTreeItemActivated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnPatternTreeItemActivated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a tree item is activated</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnPatternTreeItemCollapsed">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnPatternTreeItemCollapsed</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnPatternTreeItemCollapsed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnPatternTreeItemCollapsed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a tree item is collapsed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnPatternTreeItemDelete">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnPatternTreeItemDelete</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnPatternTreeItemDelete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnPatternTreeItemDelete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a tree item is deleted &#8211; not sure what this does</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnPatternTreeItemExpanded">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnPatternTreeItemExpanded</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnPatternTreeItemExpanded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnPatternTreeItemExpanded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a tree item is expanded</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnPatternTreeKeyDown">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnPatternTreeKeyDown</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnPatternTreeKeyDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnPatternTreeKeyDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Not sure what this does</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnPatternTreeSelChanged">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnPatternTreeSelChanged</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnPatternTreeSelChanged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnPatternTreeSelChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a data tree item is selected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnPwdrSum">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnPwdrSum</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnPwdrSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnPwdrSum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum together powder data(?)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnReadPowderPeaks">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnReadPowderPeaks</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnReadPowderPeaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnReadPowderPeaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bound to menu Data/Read Powder Peaks &#8211; still needed?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnRefine">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnRefine</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnRefine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnRefine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a refinement.
+Called from the Calculate/Refine menu.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnRenameData">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnRenameData</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnRenameData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnRenameData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renames an existing phase. Called by Data/Rename Phase menu</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnSeqRefine">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnSeqRefine</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnSeqRefine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnSeqRefine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a sequential refinement.
+Called from the Calculate/Sequential refine menu.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnSize">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnSize</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnSize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnSize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the main window is resized. Not sure why</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnViewLSParms">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnViewLSParms</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnViewLSParms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnViewLSParms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays a window showing all parameters in the refinement.
+Called from the Calculate/View LS Parms menu.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.ReadPowderInstprm">
+<tt class="descclassname">GSASII.</tt><tt class="descname">ReadPowderInstprm</tt><big>(</big><em>instfile</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ReadPowderInstprm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ReadPowderInstprm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a GSAS-II (new) instrument parameter file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>instfile</strong> (<em>str</em>) &#8211; name of instrument parameter file</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.ReadPowderIparm">
+<tt class="descclassname">GSASII.</tt><tt class="descname">ReadPowderIparm</tt><big>(</big><em>instfile</em>, <em>bank</em>, <em>databanks</em>, <em>rd</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ReadPowderIparm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ReadPowderIparm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a GSAS (old) instrument parameter file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>instfile</strong> (<em>str</em>) &#8211; name of instrument parameter file</li>
+<li><strong>bank</strong> (<em>int</em>) &#8211; the bank number read in the raw data file</li>
+<li><strong>databanks</strong> (<em>int</em>) &#8211; the number of banks in the raw data file.
+If the number of banks in the data and instrument parameter files
+agree, then the sets of banks are assumed to match up and bank
+is used to select the instrument parameter file. If not, the user
+is asked to make a selection.</li>
+<li><strong>rd</strong> (<em>obj</em>) &#8211; the raw data (histogram) data object. This
+sets rd.instbank.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASII.GSASII.SumDialog">
+<em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">SumDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>dataType</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.SumDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.SumDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows user to supply scale factor(s) when summing data</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASII.GSASII.ViewParmDialog">
+<em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">ViewParmDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ViewParmDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ViewParmDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Window to show all parameters in the refinement.
+Called from <tt class="xref py py-mod docutils literal"><span class="pre">OnViewLSParms</span></tt></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASII.GSASIImain">
+<em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">GSASIImain</tt><big>(</big><em>redirect=True</em>, <em>filename=None</em>, <em>useBestVisual=False</em>, <em>clearSigInt=True</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASIImain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASIImain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a wxApp for GSAS-II</p>
+<p>Creates a wx frame (self.main) which contains the display of the
+data tree.</p>
+<dl class="method">
+<dt id="GSASII.GSASIImain.OnInit">
+<tt class="descname">OnInit</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASIImain.OnInit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASIImain.OnInit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called automatically when the app is created.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASII.main">
+<tt class="descclassname">GSASII.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start up the GSAS-II application</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">GSAS-II Developer&#8217;s Documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="GSASIImapvars.html"
+                        title="next chapter"><em>GSASIImapvars: Parameter constraints</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASII.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIImapvars.html" title="GSASIImapvars: Parameter constraints"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="GSAS-II Developer’s Documentation"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

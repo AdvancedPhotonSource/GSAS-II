@@ -1,0 +1,2 @@
+.. automodule:: GSASIIphsGUI
+    :members: 

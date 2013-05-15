@@ -1823,4 +1823,4 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     
     UpdateBondRestr(restrData['Bond'])
 
-    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)

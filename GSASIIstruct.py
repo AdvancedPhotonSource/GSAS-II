@@ -4339,12 +4339,9 @@ def Refine(GPXfile,dlg):
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
     except:
         print ' *** ERROR - your constraints are internally inconsistent ***'
-        # traceback for debug
-        #print 'varyList',varyList
-        #print 'constrDict',constrDict
-        #print 'fixedList',fixedList
-        #import traceback
-        #print traceback.format_exc()
+        errmsg, warnmsg = CheckConstraints(varylist,constrDict,fixedList)
+        print 'Errors',errmsg
+        if warnmsg: print 'Warnings',warnmsg
         raise Exception(' *** Refine aborted ***')
     # # check to see which generated parameters are fully varied
     # msg = G2mv.SetVaryFlags(varyList)

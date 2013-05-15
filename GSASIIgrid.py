@@ -1334,9 +1334,12 @@ class DataFrame(wx.Frame):
 #####  GSNotebook
 ################################################################################           
        
-class GSNoteBook(wx.Notebook):
+class GSNoteBook(wx.aui.AuiNotebook):
+    '''Notebook implemented with wx.aui extension'''
     def __init__(self, parent, name='',size = None):
-        wx.Notebook.__init__(self, parent, -1, name=name, style= wx.BK_TOP)
+        wx.aui.AuiNotebook.__init__(self, parent, -1,
+                                    style=wx.aui.AUI_NB_TOP |
+                                    wx.aui.AUI_NB_SCROLL_BUTTONS)
         if size: self.SetSize(size)
                                                       
     def Clear(self):        
@@ -1347,22 +1350,23 @@ class GSNoteBook(wx.Notebook):
         for page in range(numPage):
             if self.GetPageText(page) == name:
                 return page
-class GSauiNoteBook(wx.aui.AuiNotebook):
-    '''Notebook implemented with wx.aui extension'''
-    def __init__(self, parent, name='',size = None):
-        wx.aui.AuiNotebook.__init__(self, parent, -1)
-        #if size: self.SetSize(size)
-                                                      
-    def Clear(self):        
-        GSNoteBook.DeleteAllPages(self)
-        
-    def FindPage(self,name):
-        numPage = self.GetPageCount()
-        for page in range(numPage):
-            if self.GetPageText(page) == name:
-                return page
 
-        
+    # def __getattribute__(self,name):
+    #     '''This method provides a way to print out a message every time
+    #     that a method in a class is called -- to see what all the calls
+    #     might be, or where they might be coming from.
+    #     Cute trick for debugging!
+    #     '''
+    #     attr = object.__getattribute__(self, name)
+    #     if hasattr(attr, '__call__'):
+    #         def newfunc(*args, **kwargs):
+    #             print('GSauiNoteBook calling %s' %attr.__name__)
+    #             result = attr(*args, **kwargs)
+    #             return result
+    #         return newfunc
+    #     else:
+    #         return attr
+            
 ################################################################################
 #####  GSGrid
 ################################################################################           
@@ -1370,7 +1374,9 @@ class GSauiNoteBook(wx.aui.AuiNotebook):
 class GSGrid(wg.Grid):
     def __init__(self, parent, name=''):
         wg.Grid.__init__(self,parent,-1,name=name)                    
-        self.SetSize(parent.GetClientSize())
+        #self.SetSize(parent.GetClientSize())
+        # above removed to speed drawing of initial grid
+        # does not appear to be needed
             
     def Clear(self):
         wg.Grid.ClearGrid(self)
@@ -2065,7 +2071,7 @@ def MovePatternTreeToGrid(G2frame,item):
     
 #    print G2frame.PatternTree.GetItemText(item)
     
-    oldPage = 0
+    oldPage = 0 # will be set later if already on a Phase item
     if G2frame.dataFrame:
         SetDataMenuBar(G2frame)
         if G2frame.dataFrame.GetLabel() == 'Comments':
@@ -2316,20 +2322,28 @@ def MovePatternTreeToGrid(G2frame,item):
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
 
 def SetDataMenuBar(G2frame,menu=None):
-        '''Set the menu for the data frame. On the Mac put this
-        menu for the data tree window instead.
+    '''Set the menu for the data frame. On the Mac put this
+    menu for the data tree window instead.
 
-        Note that data frame items do not have menus, for these (menu=None)
-        display a blank menu or on the Mac display the standard menu for
-        the data tree window.
-        '''
-        if sys.platform == "darwin":
-            if menu is None:
-                G2frame.SetMenuBar(G2frame.GSASIIMenu)
-            else:
-                G2frame.SetMenuBar(menu)
+    Note that data frame items do not have menus, for these (menu=None)
+    display a blank menu or on the Mac display the standard menu for
+    the data tree window.
+    '''
+    if sys.platform == "darwin":
+        if menu is None:
+            G2frame.SetMenuBar(G2frame.GSASIIMenu)
         else:
-            if menu is None:
-                G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
-            else:
-                G2frame.dataFrame.SetMenuBar(menu)
+            G2frame.SetMenuBar(menu)
+    else:
+        if menu is None:
+            G2frame.dataFrame.SetMenuBar(G2frame.dataFrame.BlankMenu)
+        else:
+            G2frame.dataFrame.SetMenuBar(menu)
+
+def HorizontalLine(sizer,parent):
+    '''Draws a horizontal line as wide as the window.
+    This shows up on the Mac as a very thin line, no matter what I do
+    '''
+    line = wx.StaticLine(parent,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
+    sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+

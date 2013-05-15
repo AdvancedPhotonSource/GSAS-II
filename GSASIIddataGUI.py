@@ -966,7 +966,7 @@ def UpdateDData(G2frame,DData,data):
             mainSizer.Add(BabSizer())
             mainSizer.Add((0,5),0)
             pass
-        mainSizer.Add(wx.StaticText(DData,-1,150*'-'),0,)
+        #G2gd.HorizontalLine(mainSizer,DData)
     mainSizer.Add((5,5),0)
 
     DData.SetSizer(mainSizer,True)

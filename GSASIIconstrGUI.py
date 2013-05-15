@@ -644,7 +644,7 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataDisplay.AddPage(GlobalConstr,'Global constraints')    
     UpdatePhaseConstr()
 
-    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
     allcons = []
     for key in 'Hist','HAP','Phase':
@@ -1460,7 +1460,7 @@ def UpdateRigidBodies(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
-    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(VectorRB,'Vector rigid bodies')

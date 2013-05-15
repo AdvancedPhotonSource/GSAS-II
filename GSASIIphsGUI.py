@@ -7,6 +7,14 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIphsGUI: Phase GUI*
+=========================
+Module to create the GUI for display of phase information
+in the data display window when a phase is selected.
+(Items displayed by some tabs is found in other modules.)
+
+'''
 import wx
 import wx.grid as wg
 import wx.lib.gridmovers as wgmove
@@ -48,7 +56,24 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 
 def UpdatePhaseData(G2frame,Item,data,oldPage):
-    
+    '''Create the data display window contents when a phase is clicked on
+    in the man (data tree) window.
+    Called only from :mod:`GSASIIgrid.MovePatternTreeToGrid`,
+    which in turn is called from :mod:`GSASII.GSASII.OnPatternTreeSelChanged`
+    when a tree item is selected.
+
+    :param wx.frame G2frame: the main GSAS-II frame object
+
+    :param wx.TreeItemId Item: the tree item that was selected
+
+    :param dict data: all the information on the phase in a dictionary
+
+    :param int oldPage: This sets a tab to select when moving
+      from one phase to another, in which case the same tab is selected
+      to display first. The default is 0, which brings up the General tab.
+
+    '''
+       
 #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}
@@ -719,16 +744,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(denSizer[0])
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
-            
+        G2gd.HorizontalLine(mainSizer,dataDisplay)
+
         mainSizer.Add(PawleySizer())
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
+        G2gd.HorizontalLine(mainSizer,dataDisplay)
         
         mainSizer.Add(MapSizer())
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
+        G2gd.HorizontalLine(mainSizer,dataDisplay)
 
         mainSizer.Add(FlipSizer())
-        mainSizer.Add(wx.StaticText(dataDisplay,-1,150*'-'),0,)
+        G2gd.HorizontalLine(mainSizer,dataDisplay)
 
         mainSizer.Add(MCSASizer())
 
@@ -744,7 +769,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
 
     def FillAtomsGrid(Atoms):
-
         G2frame.dataFrame.setSizePosLeft([700,300])
         generalData = data['General']
         atomData = data['Atoms']
@@ -4405,15 +4429,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     General = wx.Window(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(General,'General')
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
-    SetupGeneral()
-    GeneralData = data['General']
-    UpdateGeneral()
-
     DData = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(DData,'Data')
     Atoms = G2gd.GSGrid(G2frame.dataDisplay)
@@ -4430,7 +4445,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.AddPage(Texture,'Texture')
     G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
-            
-    G2frame.dataDisplay.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnPageChanged)
-    G2frame.dataDisplay.SetSelection(oldPage)
+    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
+    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
+    SetupGeneral()
+    GeneralData = data['General']
+    if oldPage:
+        G2frame.dataDisplay.SetSelection(oldPage)
+    else:
+        UpdateGeneral()
+    
 

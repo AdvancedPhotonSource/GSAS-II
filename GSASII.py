@@ -254,8 +254,34 @@ class GSASII(wx.Frame):
             if fp: fp.close()
 
     def OnImportGeneric(self,reader,readerlist,label,multiple=False):
-        '''Call the requested import reader or all of the appropriate
-        import readers in response to a menu item
+        '''Used to import Phases, powder dataset or single
+        crystal datasets (structure factor tables) using reader objects
+        subclassed from GSASIIIO.ImportPhase, GSASIIIO.ImportStructFactor
+        or GSASIIIO.ImportPowderData. If a reader is specified, only
+        that will be attempted, but if no reader is specified, every one
+        that is potentially compatible (by file extension) will
+        be tried on the selected file(s). 
+
+        :param readerobject reader: This will be a reference to
+          a particular object to be used to read a file or None,
+          if every appropriate reader should be used.
+
+        :param list readerlist: a list of reader objects appropriate for
+          the current read attempt. At present, this will be either
+          self.ImportPhaseReaderlist, self.ImportSfactReaderlist or
+          self.ImportPowderReaderlist (defined in _init_Imports from
+          the files found in the path), but in theory this list could
+          be tailored. Used only when reader is None.
+
+        :param str label: string to place on the open file dialog:
+          Open `label` input file
+
+        :param bool multiple: True if multiple files can be selected
+          in the file dialog. False is default. At present True is used
+          only for reading of powder data. 
+          
+        :returns: a list of reader objects (rd_list) that were able
+          to read the specified file(s). This list may be empty. 
         '''
         self.lastimport = ''
         self.zipfile = None
@@ -435,6 +461,13 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
 
     def OnImportPhase(self,event):
+        '''Called in response to an Import/Phase/... menu item
+        to read phase information.
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+        '''
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
         rdlist = self.OnImportGeneric(reqrdr,
@@ -484,6 +517,13 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
 
     def OnImportSfact(self,event):
+        '''Called in response to an Import/Structure Factor/... menu item
+        to read single crystal datasets. 
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+        '''
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
         rdlist = self.OnImportGeneric(reqrdr,self.ImportSfactReaderlist,
@@ -534,7 +574,11 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
             
     def ReadPowderInstprm(self,instfile):       #fix the write routine for [inst1,inst2] style
-        '''Read a GSAS-II (new) instrument parameter file'''
+        '''Read a GSAS-II (new) instrument parameter file
+
+        :param str instfile: name of instrument parameter file
+
+        '''
         if os.path.splitext(instfile)[1].lower() != '.instprm': # invalid file
             return None            
         if not os.path.exists(instfile): # no such file
@@ -562,7 +606,22 @@ class GSASII(wx.Frame):
         return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
-        '''Read a GSAS (old) instrument parameter file'''
+        '''Read a GSAS (old) instrument parameter file
+
+        :param str instfile: name of instrument parameter file
+
+        :param int bank: the bank number read in the raw data file
+
+        :param int databanks: the number of banks in the raw data file.
+          If the number of banks in the data and instrument parameter files
+          agree, then the sets of banks are assumed to match up and bank
+          is used to select the instrument parameter file. If not, the user
+          is asked to make a selection.
+
+        :param obj rd: the raw data (histogram) data object. This
+          sets rd.instbank.
+
+        '''
         if not os.path.exists(instfile): # no such file
             return {}
         fp = 0
@@ -609,6 +668,16 @@ class GSASII(wx.Frame):
     def GetPowderIparm(self,rd, prevIparm, lastIparmfile, lastdatafile):
         '''Open and read an instrument parameter file for a data file
         Returns the list of parameters used in the data tree
+
+        :param obj rd: the raw data (histogram) data object.
+
+        :param str prevIparm: not used
+
+        :param str lastIparmfile: Name of last instrument parameter
+          file that was read, or a empty string. 
+
+        :param str lastdatafile: Name of last data file that was read.
+
         '''
         def SetPowderInstParms(Iparm, rd):
             '''extracts values from instrument parameters in rd.instdict
@@ -836,8 +905,14 @@ class GSASII(wx.Frame):
             return SetPowderInstParms(rd.defaultIparms[res],rd)
 
     def OnImportPowder(self,event):
-        '''reads powder data using a variety of formats
-        reads an instrument parameter file for each dataset
+        '''Called in response to an Import/Powder Data/... menu item
+        to read a powder diffraction data set. 
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+
+        Also reads an instrument parameter file for each dataset.
         '''
         reqrdr = self.ImportMenuId.get(event.GetId())  # look up which format was requested
         rdlist = self.OnImportGeneric(
@@ -1116,11 +1191,13 @@ class GSASII(wx.Frame):
                 print 'Error opening file',arg[1]
 
     def OnSize(self,event):
+        'Called when the main window is resized. Not sure why'
         w,h = self.GetClientSizeTuple()
         self.mainPanel.SetSize(wx.Size(w,h))
         self.PatternTree.SetSize(wx.Size(w,h))
                         
     def OnPatternTreeSelChanged(self, event):
+        '''Called when a data tree item is selected'''
         if self.TreeItemDelete:
             self.TreeItemDelete = False
         else:
@@ -1134,18 +1211,23 @@ class GSASII(wx.Frame):
                 self.oldFocus.SetFocus()
         
     def OnPatternTreeItemCollapsed(self, event):
+        'Called when a tree item is collapsed'
         event.Skip()
 
     def OnPatternTreeItemExpanded(self, event):
+        'Called when a tree item is expanded'
         event.Skip()
         
     def OnPatternTreeItemDelete(self, event):
+        'Called when a tree item is deleted -- not sure what this does'
         self.TreeItemDelete = True
 
     def OnPatternTreeItemActivated(self, event):
+        'Called when a tree item is activated'
         event.Skip()
         
     def OnPatternTreeKeyDown(self,event):
+        'Not sure what this does'
         key = event.GetKeyCode()
         item = self.PickId
         if type(item) is int: return # is this the toplevel in tree?
@@ -1157,6 +1239,7 @@ class GSASII(wx.Frame):
             self.PatternTree.GetNextSibling(item)
                 
     def OnReadPowderPeaks(self,event):
+        'Bound to menu Data/Read Powder Peaks -- still needed?'
         Cuka = 1.54052
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose file with peak list', '.', '', 
@@ -1182,6 +1265,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
             
     def OnImageRead(self,event):
+        'Called to read in an image in any known format'
         self.CheckNotebook()
         dlg = wx.FileDialog(
             self, 'Choose image files', '.', '',
@@ -1268,7 +1352,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
 
     def CheckNotebook(self):
-        '''Make sure the data tree has the minimally expected controls
+        '''Make sure the data tree has the minimally expected controls.
         (BHT) correct?
         '''
         if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
@@ -1294,6 +1378,8 @@ class GSASII(wx.Frame):
                 'Residue':{'AtInfo':{}},'RBIds':{'Vector':[],'Residue':[]}})
                 
     class CopyDialog(wx.Dialog):
+        '''Creates a dialog for copying control settings between
+        data tree items'''
         def __init__(self,parent,title,text,data):
             wx.Dialog.__init__(self,parent,-1,title, 
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -1345,6 +1431,7 @@ class GSASII(wx.Frame):
             return self.data
         
     class SumDialog(wx.Dialog):
+        'Allows user to supply scale factor(s) when summing data'
         def __init__(self,parent,title,text,dataType,data):
             wx.Dialog.__init__(self,parent,-1,title, 
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -1485,6 +1572,7 @@ class GSASII(wx.Frame):
             return self.data
             
     def OnPwdrSum(self,event):
+        'Sum together powder data(?)'
         TextList = []
         DataList = []
         SumList = []
@@ -1581,6 +1669,7 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
 
     def OnImageSum(self,event):
+        'Sum together image data(?)'
         TextList = []
         DataList = []
         SumList = []
@@ -1683,6 +1772,7 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
                       
     def OnAddPhase(self,event):
+        'Add a new, empty phase to the tree. Called by Data/Add Phase menu'
         if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
         else:
@@ -1698,6 +1788,7 @@ class GSASII(wx.Frame):
         self.PatternTree.SetItemPyData(sub,G2IO.SetNewPhase(Name=PhaseName,SGData=SGData))
         
     def OnDeletePhase(self,event):
+        'Delete a phase from the tree. Called by Data/Delete Phase menu'
         #Hmm, also need to delete this phase from Reflection Lists for each PWDR histogram
         if self.dataFrame:
             self.dataFrame.Clear() 
@@ -1742,6 +1833,7 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
                 
     def OnRenameData(self,event):
+        'Renames an existing phase. Called by Data/Rename Phase menu'
         name = self.PatternTree.GetItemText(self.PickId)      
         if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
             dataType = name[:name.index(' ')+1]                 #includes the ' '
@@ -1754,6 +1846,7 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
         
     def GetFileList(self,fileType,skip=None):        #potentially useful?
+        'Appears unused. Note routine of same name in GSASIIpwdGUI'
         fileList = []
         Source = ''
         id, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -1771,6 +1864,9 @@ class GSASII(wx.Frame):
             return fileList
             
     def OnDataDelete(self, event):
+        '''Delete one or more histograms from data tree. Called by the
+        Data/DeleteData menu
+        '''
         TextList = ['All Data']
         DelList = []
         DelItemList = []
@@ -1820,6 +1916,9 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
 
     def OnFileOpen(self, event):
+        '''Reads in a GSAS-II .gpx project file in response to the
+        File/Open Project menu button
+        '''
         result = ''
         Id = 0
         if self.PatternTree.GetChildrenCount(self.root,False):
@@ -1872,6 +1971,10 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
 
     def OnFileClose(self, event):
+        '''Clears the data tree in response to the
+        File/Close Project menu button. User is given option to save
+        the project.
+        '''
         if self.dataFrame:
             self.dataFrame.Clear()
             self.dataFrame.SetLabel('GSAS-II data display') 
@@ -1891,6 +1994,9 @@ class GSASII(wx.Frame):
             dlg.Destroy()
 
     def OnFileSave(self, event):
+        '''Save the current project in response to the
+        File/Save Project menu button
+        '''
         
         if self.GSASprojectfile: 
             self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
@@ -1899,6 +2005,9 @@ class GSASII(wx.Frame):
             self.OnFileSaveas(event)
 
     def OnFileSaveas(self, event):
+        '''Save the current project in response to the
+        File/Save as menu button
+        '''
         dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', '.', '', 
             'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
         try:
@@ -1914,11 +2023,13 @@ class GSASII(wx.Frame):
             dlg.Destroy()
 
     def ExitMain(self, event):
+        '''Called if the main window is closed'''
         if self.undofile:
             os.remove(self.undofile)
         sys.exit()
         
     def OnFileExit(self, event):
+        '''Called in response to the File/Quit menu button'''
         if self.dataFrame:
             self.dataFrame.Clear() 
             self.dataFrame.Destroy()
@@ -2018,6 +2129,8 @@ class GSASII(wx.Frame):
         event.Skip()
 
     def OnMakePDFs(self,event):
+        '''Calculates PDFs
+        '''
         tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
         TextList = ['All PWDR']
         PDFlist = []
@@ -2062,11 +2175,13 @@ class GSASII(wx.Frame):
                 
     def GetPWDRdatafromTree(self,PWDRname):
         ''' Returns powder data from GSASII tree
-        input: 
-            PWDRname = powder histogram name as obtained from GetHistogramNames
-        return: 
-            PWDRdata = powder data dictionary with:
-                Data - powder data arrays, Limits, Instrument Parameters, Sample Parameters            
+
+        :param str PWDRname: a powder histogram name as obtained from
+          :mod:`GSASIIstruct.GetHistogramNames`
+
+        :returns: PWDRdata = powder data dictionary with
+          Powder data arrays, Limits, Instrument Parameters,
+          Sample Parameters            
         '''
         PWDRdata = {}
         try:
@@ -2086,11 +2201,13 @@ class GSASII(wx.Frame):
 
     def GetHKLFdatafromTree(self,HKLFname):
         ''' Returns single crystal data from GSASII tree
-        input: 
-            HKLFname = single crystal histogram name as obtained from GetHistogramNames
-        return: 
-            HKLFdata = single crystal data list of reflections: for each reflection:
-                HKLF = 
+
+        :param str HKLFname: a single crystal histogram name as obtained
+          from
+          :mod:`GSASIIstruct.GetHistogramNames`
+
+        :returns: HKLFdata = single crystal data list of reflections
+
         '''
         HKLFdata = {}
         try:
@@ -2102,6 +2219,9 @@ class GSASII(wx.Frame):
         return HKLFdata
         
     def GetPhaseData(self):
+        '''Returns a list of defined phases. Used only in GSASIIgrid
+        Note routine :mod:`GSASIIstruct.GetPhaseData` also exists.
+        '''
         phaseData = {}
         if G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
             sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
@@ -2121,9 +2241,10 @@ class GSASII(wx.Frame):
     def GetUsedHistogramsAndPhasesfromTree(self):
         ''' Returns all histograms that are found in any phase
         and any phase that uses a histogram
-        return:
-            Histograms = dictionary of histograms as {name:data,...}
-            Phases = dictionary of phases that use histograms
+        :returns: two dicts:
+
+            * Histograms = dictionary of histograms as {name:data,...}
+            * Phases = dictionary of phases that use histograms
         '''
         phaseData = self.GetPhaseData()
         if not phaseData:
@@ -2152,6 +2273,9 @@ class GSASII(wx.Frame):
         return Histograms,Phases
         
     class ViewParmDialog(wx.Dialog):
+        '''Window to show all parameters in the refinement.
+        Called from :mod:`OnViewLSParms`
+        '''
         def __init__(self,parent,title,parmDict):
             wx.Dialog.__init__(self,parent,-1,title,size=(300,430),
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -2172,6 +2296,9 @@ class GSASII(wx.Frame):
             panel.SetSizer(mainSizer)
                             
     def OnViewLSParms(self,event):
+        '''Displays a window showing all parameters in the refinement.
+        Called from the Calculate/View LS Parms menu.
+        '''
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         rigidbodyDict = self.PatternTree.GetItemPyData(   
@@ -2205,6 +2332,9 @@ class GSASII(wx.Frame):
             dlg.Destroy()
        
     def OnRefine(self,event):
+        '''Perform a refinement.
+        Called from the Calculate/Refine menu.
+        '''        
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2str.CheckConstraints(self.GSASprojectfile)
@@ -2270,6 +2400,9 @@ class GSASII(wx.Frame):
             dlg.Destroy()
 
     def OnSeqRefine(self,event):
+        '''Perform a sequential refinement.
+        Called from the Calculate/Sequential refine menu.
+        '''        
         Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequental results')
         if not Id:
             Id = self.PatternTree.AppendItem(self.root,text='Sequental results')
@@ -2323,6 +2456,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         
     def ErrorDialog(self,title,message,parent=None, wtype=wx.OK):
+        'Display an error message'
         result = None
         if parent is None:
             dlg = wx.MessageDialog(self, message, title,  wtype)

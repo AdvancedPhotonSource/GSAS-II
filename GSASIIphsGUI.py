@@ -12,7 +12,8 @@
 =========================
 Module to create the GUI for display of phase information
 in the data display window when a phase is selected.
-(Items displayed by some tabs is found in other modules.)
+(pages displayed in response to some phase tabs are done in other modules,
+such as GSASIIddata.)
 
 '''
 import wx
@@ -55,6 +56,7 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 
+
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
     in the man (data tree) window.
@@ -70,7 +72,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     :param int oldPage: This sets a tab to select when moving
       from one phase to another, in which case the same tab is selected
-      to display first. The default is 0, which brings up the General tab.
+      to display first. This is set only when the previous data tree
+      selection is a phase, if not the value is None. The default action
+      is to bring up the General tab.
 
     '''
        
@@ -161,8 +165,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
 
     def UpdateGeneral():
+        '''Draw the controls for the General phase data subpage
+        '''
         
-        ''' default dictionary structure for phase data: (taken from GSASII.py)
+        """ This is the default dictionary structure for phase data
+        (taken from GSASII.py)
         'General':{
             'Name':PhaseName
             'Type':'nuclear'
@@ -174,8 +181,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'Pawley neg wt':0.0}
         'Atoms':[]
         'Drawing':{}
-        '''
-        
+        """        
+        # UpdateGeneral execution starts here
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular']
         SetupGeneral()
         generalData = data['General']
@@ -183,9 +190,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Flip = generalData['Flip']
         MCSA = generalData['MCSA controls']  
         PWDR = any(['PWDR' in item for item in data['Histograms'].keys()])
+        # UpdateGeneral execution continues below
         
-        def NameSizer():
-                   
+        def NameSizer():                   
             def OnPhaseName(event):
                 oldName = generalData['Name']
                 generalData['Name'] = NameTxt.GetValue()
@@ -727,7 +734,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 line3Sizer.Add(anneal,0,wx.ALIGN_CENTER_VERTICAL)
             mcsaSizer.Add(line3Sizer)            
             return mcsaSizer
-                
+
+        # UpdateGeneral execution continues here
         General.DestroyChildren()
         dataDisplay = wx.Panel(General)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -758,66 +766,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(MCSASizer())
 
         dataDisplay.SetSizer(mainSizer)
-        Size = mainSizer.Fit(G2frame.dataFrame)
-        Size[1] += 35                           #compensate for status bar
-        dataDisplay.SetSize(Size)
+        if G2frame.dataFrame.PhaseUserSize is None:
+            Size = mainSizer.ComputeFittingWindowSize(G2frame.dataFrame)  # get size needed by window
+            Size[1] += 35                           #compensate for status bar
+            G2frame.dataFrame.setSizePosLeft(Size)
+        else:
+            G2frame.dataFrame.Update()
+        dataDisplay.SetSize(G2frame.dataFrame.GetClientSize())
         G2frame.dataFrame.SetStatusText('')
-        G2frame.dataFrame.setSizePosLeft(Size)
 
 ################################################################################
 #####  Atom routines
 ################################################################################
 
     def FillAtomsGrid(Atoms):
-        G2frame.dataFrame.setSizePosLeft([700,300])
-        generalData = data['General']
-        atomData = data['Atoms']
-        DData = data['Drawing']
-        resRBData = data['RBModels'].get('Residue',[])
-        vecRBData = data['RBModels'].get('Vector',[])
-        rbAtmDict = {}
-        for rbObj in resRBData+vecRBData:
-            exclList = ['X' for i in range(len(rbObj['Ids']))]
-            rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
-            if rbObj['ThermalMotion'][0] != 'None':
-                for id in rbObj['Ids']:
-                    rbAtmDict[id] += 'U'            
-        # exclList will be 'x' or 'xu' if TLS used in RB
-        Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
-            G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
-        if atomData:
-            for item in Items:    
-                G2frame.dataFrame.AtomsMenu.Enable(item,True)
-        else:
-            for item in Items:
-                G2frame.dataFrame.AtomsMenu.Enable(item,False)
-        Items = [G2gd.wxID_ATOMVIEWINSERT, G2gd.wxID_ATOMSVIEWADD,G2gd.wxID_ATOMMOVE]
-        if 'showABC' in data['Drawing']:
-            for item in Items:
-                G2frame.dataFrame.AtomsMenu.Enable(item,True)
-        else:
-            for item in Items:
-                G2frame.dataFrame.AtomsMenu.Enable(item,False)
-
-        AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
-            3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
-            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",]
-        Types += 7*[wg.GRID_VALUE_FLOAT+':10,5',]
-        colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
-        if generalData['Type'] == 'magnetic':
-            colLabels += ['Mx','My','Mz']
-            Types[2] = wg.GRID_VALUE_CHOICE+": ,X,XU,U,M,MX,MXU,MU,F,FX,FXU,FU,FM,FMX,FMU,"
-            Types += 3*[wg.GRID_VALUE_FLOAT+':10,4',]
-        elif generalData['Type'] == 'macromolecular':
-            colLabels = ['res no','residue','chain'] + colLabels
-            Types = [wg.GRID_VALUE_STRING,
-                wg.GRID_VALUE_CHOICE+AAchoice,
-                wg.GRID_VALUE_STRING] + Types
-        elif generalData['Type'] == 'modulated':
-            Types += []
-            colLabels += []
-
+        '''Display the contents of the Atoms tab
+        '''
         def RefreshAtomGrid(event):
 
             r,c =  event.GetRow(),event.GetCol()
@@ -1152,6 +1116,54 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)
             Atoms.AutoSizeColumns(False)
 
+        # FillAtomsGrid executable code starts here
+        generalData = data['General']
+        atomData = data['Atoms']
+        DData = data['Drawing']
+        resRBData = data['RBModels'].get('Residue',[])
+        vecRBData = data['RBModels'].get('Vector',[])
+        rbAtmDict = {}
+        for rbObj in resRBData+vecRBData:
+            exclList = ['X' for i in range(len(rbObj['Ids']))]
+            rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
+            if rbObj['ThermalMotion'][0] != 'None':
+                for id in rbObj['Ids']:
+                    rbAtmDict[id] += 'U'            
+        # exclList will be 'x' or 'xu' if TLS used in RB
+        Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
+            G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
+        if atomData:
+            for item in Items:    
+                G2frame.dataFrame.AtomsMenu.Enable(item,True)
+        else:
+            for item in Items:
+                G2frame.dataFrame.AtomsMenu.Enable(item,False)
+        Items = [G2gd.wxID_ATOMVIEWINSERT, G2gd.wxID_ATOMSVIEWADD,G2gd.wxID_ATOMMOVE]
+        if 'showABC' in data['Drawing']:
+            for item in Items:
+                G2frame.dataFrame.AtomsMenu.Enable(item,True)
+        else:
+            for item in Items:
+                G2frame.dataFrame.AtomsMenu.Enable(item,False)
+
+        AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
+            3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
+            wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",]
+        Types += 7*[wg.GRID_VALUE_FLOAT+':10,5',]
+        colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
+        if generalData['Type'] == 'magnetic':
+            colLabels += ['Mx','My','Mz']
+            Types[2] = wg.GRID_VALUE_CHOICE+": ,X,XU,U,M,MX,MXU,MU,F,FX,FXU,FU,FM,FMX,FMU,"
+            Types += 3*[wg.GRID_VALUE_FLOAT+':10,4',]
+        elif generalData['Type'] == 'macromolecular':
+            colLabels = ['res no','residue','chain'] + colLabels
+            Types = [wg.GRID_VALUE_STRING,
+                wg.GRID_VALUE_CHOICE+AAchoice,
+                wg.GRID_VALUE_STRING] + Types
+        elif generalData['Type'] == 'modulated':
+            Types += []
+            colLabels += []
         SGData = data['General']['SGData']
         G2frame.dataFrame.SetStatusText('')
         if SGData['SGPolax']:
@@ -1162,6 +1174,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
         Atoms.SetMargins(0,0)
+        if G2frame.dataFrame.PhaseUserSize is None:
+            G2frame.dataFrame.setSizePosLeft([700,300])
+        else:
+            G2frame.dataFrame.Update()
         Paint()
 
     def OnAtomAdd(event):
@@ -1708,34 +1724,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
             
     def UpdateDrawAtoms(atomStyle=''):
-        G2frame.dataFrame.SetStatusText('')
-        generalData = data['General']
-        SetupDrawingData()
-        drawingData = data['Drawing']
-        cx,ct,cs,ci = drawingData['atomPtrs']
-        atomData = drawingData['Atoms']
-        if atomStyle:
-            for atom in atomData:
-                atom[cs] = atomStyle
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
-            [wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,polyhedra",
-            wg.GRID_VALUE_CHOICE+": ,type,name,number",wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]
-        styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
-        labelChoice = [' ','type','name','number']
-        colLabels = ['Name','Type','x','y','z','Sym Op','Style','Label','Color','I/A']
-        if generalData['Type'] == 'macromolecular':
-            colLabels = ['Residue','1-letter','Chain'] + colLabels
-            Types = 3*[wg.GRID_VALUE_STRING,]+Types
-            Types[8] = wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,backbone,ribbons,schematic"
-            styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','backbone','ribbons','schematic']
-            labelChoice = [' ','type','name','number','residue','1-letter','chain']
-            Types[9] = wg.GRID_VALUE_CHOICE+": ,type,name,number,residue,1-letter,chain"
-#        elif generalData['Type'] == 'modulated':
-#            Types += []
-#            colLabels += []
-
         def RefreshAtomGrid(event):
-
             def SetChoice(name,c,n=0):
                 choice = []
                 for r in range(len(atomData)):
@@ -1868,7 +1857,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawingData['selectedAtoms'] = []
             drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
             G2plt.PlotStructure(G2frame,data)                    
-                
+
+        # UpdateDrawAtoms executable code starts here
+        G2frame.dataFrame.SetStatusText('')
+        generalData = data['General']
+        SetupDrawingData()
+        drawingData = data['Drawing']
+        cx,ct,cs,ci = drawingData['atomPtrs']
+        atomData = drawingData['Atoms']
+        if atomStyle:
+            for atom in atomData:
+                atom[cs] = atomStyle
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
+            [wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,polyhedra",
+            wg.GRID_VALUE_CHOICE+": ,type,name,number",wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]
+        styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
+        labelChoice = [' ','type','name','number']
+        colLabels = ['Name','Type','x','y','z','Sym Op','Style','Label','Color','I/A']
+        if generalData['Type'] == 'macromolecular':
+            colLabels = ['Residue','1-letter','Chain'] + colLabels
+            Types = 3*[wg.GRID_VALUE_STRING,]+Types
+            Types[8] = wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,backbone,ribbons,schematic"
+            styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','backbone','ribbons','schematic']
+            labelChoice = [' ','type','name','number','residue','1-letter','chain']
+            Types[9] = wg.GRID_VALUE_CHOICE+": ,type,name,number,residue,1-letter,chain"
+#        elif generalData['Type'] == 'modulated':
+#            Types += []
+#            colLabels += []
         table = []
         rowLabels = []
         for i,atom in enumerate(drawingData['Atoms']):
@@ -1902,7 +1917,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
            attr.SetBackgroundColour(VERY_LIGHT_GREY)
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
-        G2frame.dataFrame.setSizePosLeft([600,300])
+        if G2frame.dataFrame.PhaseUserSize is None:
+            G2frame.dataFrame.setSizePosLeft([600,300])
+        else:
+            G2frame.dataFrame.Update()
         
         FindBondsDraw()
         drawAtoms.ClearSelection()
@@ -2431,17 +2449,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def UpdateDrawOptions():
         import copy
         import wx.lib.colourselect as wcs
-        generalData = data['General']
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        SetupDrawingData()
-        drawingData = data['Drawing']
-        if generalData['Type'] == 'nuclear':
-            pickChoice = ['Atoms','Bonds','Torsions','Planes']
-        elif generalData['Type'] == 'macromolecular':
-            pickChoice = ['Atoms','Residues','Chains','Bonds','Torsions','Planes','phi/psi']
-
-        def SlopSizer():
-            
+        def SlopSizer():            
             def OnCameraPos(event):
                 drawingData['cameraPos'] = cameraPos.GetValue()
                 cameraPosTxt.SetLabel(' Camera Distance: '+'%.2f'%(drawingData['cameraPos']))
@@ -2732,6 +2740,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             radSizer.Add(radFactor,0,wx.ALIGN_CENTER_VERTICAL)
             return radSizer
 
+        # UpdateDrawOptions exectable code starts here
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+        SetupDrawingData()
+        drawingData = data['Drawing']
+        if generalData['Type'] == 'nuclear':
+            pickChoice = ['Atoms','Bonds','Torsions','Planes']
+        elif generalData['Type'] == 'macromolecular':
+            pickChoice = ['Atoms','Residues','Chains','Bonds','Torsions','Planes','phi/psi']
+
         G2frame.dataFrame.SetStatusText('')
         drawOptions.DestroyChildren()
         dataDisplay = wx.Panel(drawOptions)
@@ -2746,38 +2764,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(RadSizer(),0,)
 
         dataDisplay.SetSizer(mainSizer)
-        Size = mainSizer.Fit(G2frame.dataFrame)
-        Size[1] += 35                           #compensate for status bar
-        dataDisplay.SetSize(Size)
-        G2frame.dataFrame.setSizePosLeft(Size)
+        if G2frame.dataFrame.PhaseUserSize is None:
+            Size = mainSizer.Fit(G2frame.dataFrame)
+            Size[1] += 35                           #compensate for status bar
+            G2frame.dataFrame.setSizePosLeft(Size)
+        else:
+            G2frame.dataFrame.Update()
+        dataDisplay.SetSize(G2frame.dataFrame.GetClientSize())
 
 ################################################################################
 ####  Texture routines
 ################################################################################
         
-    def UpdateTexture():
-        G2frame.dataFrame.SetStatusText('')
-        generalData = data['General']        
-        SGData = generalData['SGData']
-        try:
-            textureData = generalData['SH Texture']
-        except KeyError:            #fix old files!
-            textureData = generalData['SH Texture'] = {'Order':0,'Model':'cylindrical',
-                'Sample omega':[False,0.0],'Sample chi':[False,0.0],'Sample phi':[False,0.0],
-                'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1],
-                'PFxyz':[0,0,1.],'PlotType':'Pole figure'}
-        if 'SHShow' not in textureData:     #another fix
-            textureData.update({'SHShow':False,'PFhkl':[0,0,1],'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
-        try:                        #another fix!
-            x = textureData['PlotType']
-        except KeyError:
-            textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
-        shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-        if generalData['doPawley'] and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequental results'):
-            G2frame.dataFrame.RefineTexture.Enable(True)
-        shAngles = ['omega','chi','phi']
-        
+    def UpdateTexture():        
         def SetSHCoef():
             cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
             newSHCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
@@ -2872,6 +2871,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 textureData['PFxyz'] = xyz
             G2plt.PlotTexture(G2frame,data)
 
+        # UpdateTexture executable starts here
+        G2frame.dataFrame.SetStatusText('')
+        generalData = data['General']        
+        SGData = generalData['SGData']
+        try:
+            textureData = generalData['SH Texture']
+        except KeyError:            #fix old files!
+            textureData = generalData['SH Texture'] = {'Order':0,'Model':'cylindrical',
+                'Sample omega':[False,0.0],'Sample chi':[False,0.0],'Sample phi':[False,0.0],
+                'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1],
+                'PFxyz':[0,0,1.],'PlotType':'Pole figure'}
+        if 'SHShow' not in textureData:     #another fix
+            textureData.update({'SHShow':False,'PFhkl':[0,0,1],'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
+        try:                        #another fix!
+            x = textureData['PlotType']
+        except KeyError:
+            textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
+        shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
+        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+        if generalData['doPawley'] and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequental results'):
+            G2frame.dataFrame.RefineTexture.Enable(True)
+        shAngles = ['omega','chi','phi']
         if Texture.GetSizer():
             Texture.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2973,15 +2994,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             angSizer.Add((5,0),0)
         mainSizer.Add(angSizer,0,wx.ALIGN_CENTER_VERTICAL)
         Texture.SetSizer(mainSizer,True)
-        mainSizer.Fit(G2frame.dataFrame)
-        Size = mainSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],250) + 35
-        Texture.SetSize(Size)
-        Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],450)
-        G2frame.dataFrame.setSizePosLeft(Size)
-
+        if G2frame.dataFrame.PhaseUserSize is None:
+            mainSizer.Fit(G2frame.dataFrame)
+            Size = mainSizer.GetMinSize()
+            Size[0] += 40
+            Size[1] = max(Size[1],250) + 35
+            Texture.SetSize(Size)
+            Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            Size[1] = min(Size[1],450)
+            G2frame.dataFrame.setSizePosLeft(Size)
+        else:
+            Size = G2frame.dataFrame.PhaseUserSize
+            Texture.SetSize(G2frame.dataFrame.GetClientSize())
+            Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            G2frame.dataFrame.Update()
 ################################################################################
 ##### DData routines - GUI stuff in GSASIIddataGUI.py
 ################################################################################
@@ -3096,19 +3122,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
 
     def FillRigidBodyGrid(refresh=True):
-        if refresh:
-            RigidBodies.DestroyChildren()
-        AtLookUp = G2mth.FillAtomLookUp(data['Atoms'])
-        general = data['General']
-        cx = general['AtomPtrs'][0]
-        Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
-        RBData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-        Indx = {}
-        atomStyle = 'balls & sticks'
-        if 'macro' in general['Type']:
-            atomStyle = 'sticks'
-        
+        '''Fill the Rigid Body Phase information tab page.
+        Note that the page is a ScrolledWindow, not a Grid
+        '''
         def OnThermSel(event):       #needs to be seen by VecRbSizer!
             Obj = event.GetEventObject()
             RBObj = Indx[Obj.GetId()]
@@ -3364,6 +3380,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 vecrbSizer.Add(ThermDataSizer(RBObj))
             return vecrbSizer                
         
+        # FillRigidBodyGrid executable code starts here
+        if refresh:
+            RigidBodies.DestroyChildren()
+        AtLookUp = G2mth.FillAtomLookUp(data['Atoms'])
+        general = data['General']
+        cx = general['AtomPtrs'][0]
+        Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
+        RBData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        Indx = {}
+        atomStyle = 'balls & sticks'
+        if 'macro' in general['Type']:
+            atomStyle = 'sticks'
         G2frame.dataFrame.SetStatusText('')
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['RBModels']:
@@ -3384,15 +3413,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mainSizer.Add(VecrbSizer(RBObj))
 
         RigidBodies.SetSizer(mainSizer)
-        mainSizer.FitInside(G2frame.dataFrame)
-        Size = mainSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],290) + 35
-        RigidBodies.SetSize(Size)
-        RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],450)
-        G2frame.dataFrame.setSizePosLeft(Size)
-        
+        if G2frame.dataFrame.PhaseUserSize is None:
+            mainSizer.FitInside(G2frame.dataFrame)
+            Size = mainSizer.GetMinSize()
+            Size[0] += 40
+            Size[1] = max(Size[1],290) + 35
+            RigidBodies.SetSize(Size)
+            RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            Size[1] = min(Size[1],450)
+            G2frame.dataFrame.setSizePosLeft(Size)
+        else:
+            Size = G2frame.dataFrame.PhaseUserSize
+            RigidBodies.SetSize(Size)
+            RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            G2frame.dataFrame.Update()
+
     def OnRBCopyParms(event):
         RBObjs = []
         for rbType in ['Vector','Residue']:            
@@ -3865,8 +3900,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
 
     def FillPawleyReflectionsGrid():
-        G2frame.dataFrame.SetStatusText('')
-                        
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()
             PawleyPeaks = data['Pawley ref']
@@ -3887,6 +3920,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             for row in range(PawleyTable.GetNumberRows()): PawleyPeaks[row][col]=False
                         FillPawleyReflectionsGrid()
             
+        # FillPawleyReflectionsGrid executable starts here
+        G2frame.dataFrame.SetStatusText('')                        
         if 'Pawley ref' in data:
             PawleyPeaks = data['Pawley ref']                        
             rowLabels = []
@@ -3905,7 +3940,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
-            G2frame.dataFrame.setSizePosLeft([500,300])
+            if G2frame.dataFrame.PhaseUserSize is None:
+                G2frame.dataFrame.setSizePosLeft([500,300])
+            else:
+                G2frame.dataFrame.Update()
                     
     def OnPawleyLoad(event):
         generalData = data['General']
@@ -4052,7 +4090,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(FillMapPeaksGrid)
             G2plt.PlotStructure(G2frame,data)                    
             
-        G2frame.dataFrame.setSizePosLeft([450,300])
+        if G2frame.dataFrame.PhaseUserSize is None:
+            G2frame.dataFrame.setSizePosLeft([450,300])
+        else:
+            G2frame.dataFrame.Update()
         G2frame.dataFrame.SetStatusText('')
         if 'Map Peaks' in data:
             G2frame.dataFrame.SetStatusText('Select mag or dzero columns to sort')
@@ -4327,7 +4368,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print 'clear texture?'
         event.Skip()
 
+    def OnDataResize(event):
+        'Called when the data item window is resized by the user.'
+        G2frame.dataFrame.PhaseUserSize = G2frame.dataFrame.GetSize()
+        event.Skip()
+
     def OnPageChanged(event):
+        '''This is called every time that a Notebook tab button is pressed
+        on a Phase data item window
+        '''
+        wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Atoms':
@@ -4425,9 +4475,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         else:
             G2gd.SetDataMenuBar(G2frame)
+        wx.Frame.Bind(G2frame.dataFrame,wx.EVT_SIZE,OnDataResize) # capture user resize events again
         event.Skip()
         
+    wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
     General = wx.Window(G2frame.dataDisplay)
+    # General = wx.ScrolledWindow(G2frame.dataDisplay) # would like to change to this
     G2frame.dataDisplay.AddPage(General,'General')
     DData = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(DData,'Data')
@@ -4453,11 +4506,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
-    SetupGeneral()
+    SetupGeneral() # this is done all over the place (including in
+    # UpdateGeneral). Why here too?
+    
     GeneralData = data['General']
-    if oldPage:
+    
+    if oldPage is None:
+        # when entering a Phase data item from any other item,
+        # reset a saved size, if any.
+        G2frame.dataFrame.PhaseUserSize = None 
+        UpdateGeneral()
+    elif oldPage:
         G2frame.dataDisplay.SetSelection(oldPage)
     else:
         UpdateGeneral()
-    
-
+    wx.Frame.Bind(G2frame.dataFrame,wx.EVT_SIZE,OnDataResize) # capture user resizing

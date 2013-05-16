@@ -7,6 +7,14 @@
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIddataGUI.py $
 # $Id: GSASIIddataGUI.py 844 2013-02-01 21:23:56Z vondreele $
 ########### SVN repository information ###################
+'''
+*GSASIIddataGUI: Phase Diffraction Data GUI*
+============================================
+Module to create the GUI for display of diffraction data * phase
+information that is shown in the data display window
+(when a phase is selected.)
+
+'''
 import wx
 import wx.grid as wg
 import wx.lib.gridmovers as wgmove
@@ -47,9 +55,18 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 
 ################################################################################
 ##### DData routines
-################################################################################
-        
+################################################################################        
 def UpdateDData(G2frame,DData,data):
+    '''Display the Diffraction Data associated with a phase
+    (items where there is a value for each histogram and phase)
+
+    :param wx.frame G2frame: the main GSAS-II frame object
+
+    :param wx.ScrolledWindow DData: notebook page to be used for the display
+
+    :param dict data: all the information on the phase in a dictionary
+
+    '''
     G2frame.dataFrame.SetStatusText('')
     UseList = data['Histograms']
     if UseList:
@@ -970,12 +987,16 @@ def UpdateDData(G2frame,DData,data):
     mainSizer.Add((5,5),0)
 
     DData.SetSizer(mainSizer,True)
-    mainSizer.FitInside(G2frame.dataFrame)
-    Size = mainSizer.GetMinSize()
-    Size[0] += 40
-    Size[1] = max(Size[1],290) + 35
-    DData.SetSize(Size)
-    DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-    Size[1] = min(Size[1],450)
-    G2frame.dataFrame.setSizePosLeft(Size)
-        
+    if G2frame.dataFrame.PhaseUserSize is None:
+        Size = mainSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],290) + 35
+        DData.SetSize(Size)
+        DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(Size[1],450)
+        G2frame.dataFrame.setSizePosLeft(Size)
+    else:
+        Size = G2frame.dataFrame.PhaseUserSize
+        DData.SetSize(G2frame.dataFrame.GetClientSize())
+        DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2frame.dataFrame.Update()

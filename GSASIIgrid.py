@@ -7,6 +7,11 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIgrid: Basic GUI routines*
+================================
+
+'''
 import wx
 import wx.grid as wg
 import wx.wizard as wz
@@ -132,6 +137,8 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 ################################################################################
         
 class SymOpDialog(wx.Dialog):
+    '''Class to select a symmetry operator
+    '''
     def __init__(self,parent,SGData,New=True,ForceUnit=False):
         wx.Dialog.__init__(self,parent,-1,'Select symmetry operator',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -234,7 +241,8 @@ class SymOpDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 class DisAglDialog(wx.Dialog):
-    
+    '''Distance Angle Controls dialog
+    '''
     def __default__(self,data,default):
         if data:
             self.data = data
@@ -328,7 +336,8 @@ class DisAglDialog(wx.Dialog):
         self.Draw(self.data)
         
 class PickTwoDialog(wx.Dialog):
-    
+    '''This does not seem to be in use
+    '''
     def __init__(self,parent,title,prompt,names,choices):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -393,7 +402,7 @@ class PickTwoDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
         
 class SingleFloatDialog(wx.Dialog):
-    
+    'Dialog to obtain a single float value from user'
     def __init__(self,parent,title,prompt,value,limits=[0.,1.],format='%.5g'):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -452,6 +461,9 @@ class SingleFloatDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
         
 class GridFractionEditor(wg.PyGridCellEditor):
+    '''A grid cell editor class that allows entry of values as fractions as well
+    as sine and cosine values [as s() and c()]
+    '''
     def __init__(self,grid):
         wg.PyGridCellEditor.__init__(self)
 
@@ -534,14 +546,22 @@ class GridFractionEditor(wg.PyGridCellEditor):
             evt.Skip()
 
 class MyHelp(wx.Menu):
-    '''This class creates the contents of a help menu.
+    '''
+    A class that creates the contents of a help menu.
     The menu will start with two entries:
-      'Help on <helpType>': where helpType is a reference to an HTML page to
+
+    * 'Help on <helpType>': where helpType is a reference to an HTML page to
       be opened
-      About: opens an About dialog using OnHelpAbout. N.B. on the Mac this
+    * About: opens an About dialog using OnHelpAbout. N.B. on the Mac this
       gets moved to the App menu to be consistent with Apple style.
-    NOTE: the title when appending this menu should be '&Help' so the wx handles
-    it correctly. BHT
+
+    NOTE: for this to work properly with respect to system menus, the title
+    for the menu must be &Help, or it will not be processed properly:
+
+    ::
+
+       menu.Append(menu=MyHelp(self,...),title="&Help")
+
     '''
     def __init__(self,frame,helpType=None,helpLbl=None,morehelpitems=[],title=''):
         wx.Menu.__init__(self,title)
@@ -685,10 +705,11 @@ General Structure Analysis System - GSAS-II
 
 class AddHelp(wx.Menu):
     '''This class a single entry for the help menu (used on the Mac only):
-      'Help on <helpType>': where helpType is a reference to an HTML page to
-      be opened
+    'Help on <helpType>': where helpType is a reference to an HTML page to
+    be opened
+
     NOTE: the title when appending this menu should be '&Help' so the wx handles
-    it correctly. BHT
+    it correctly.
     '''
     def __init__(self,frame,helpType,helpLbl=None,title=''):
         wx.Menu.__init__(self,title)
@@ -719,8 +740,8 @@ class MyHtmlPanel(wx.Panel):
         sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
         self.SetSizer(sizer)
         sizer.Fit(frame)        
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-    def OnSize(self,event):         #does the job but weirdly!!
+        self.Bind(wx.EVT_SIZE,self.OnHelpSize)
+    def OnHelpSize(self,event):         #does the job but weirdly!!
         anchor = self.htmlwin.GetOpenedAnchor()
         if anchor:            
             self.htmlwin.ScrollToAnchor(anchor)
@@ -764,12 +785,14 @@ class G2HtmlWindow(wx.html.HtmlWindow):
             self.GetOpenedPageTitle())
 
 class DataFrame(wx.Frame):
-    '''Create the dataframe window and its menus
+    '''Create the dataframe window and all the entries in menus. 
+    The binding is for the menus is not done here, but rather is done
+    where the functions can be accessed (in various GSASII*GUI modules). 
     '''
     def Bind(self,*args,**kwargs):
-        '''Override the Bind() function on the Mac the binding is to
+        '''Override the Bind() function: on the Mac the binding is to
         the main window, so that menus operate with any window on top.
-        For other platforms, call the default class Bind()
+        For other platforms, call the default wx.Frame Bind()
         '''
         if sys.platform == "darwin": # mac
             self.G2frame.Bind(*args,**kwargs)
@@ -778,7 +801,7 @@ class DataFrame(wx.Frame):
         
     def PrefillDataMenu(self,menu,helpType,helpLbl=None,empty=False):
         '''Create the "standard" part of data frame menus. Note that on Linux and
-        Windows, this is the standard help Menu. On Mac, this menu duplicates the
+        Windows nothing happens here. On Mac, this menu duplicates the
         tree menu, but adds an extra help command for the data item and a separator. 
         '''
         self.datamenu = menu
@@ -788,11 +811,6 @@ class DataFrame(wx.Frame):
             self.G2frame.FillMainMenu(menu) # add the data tree menu items
             if not empty:
                 menu.Append(wx.Menu(title=''),title='|') # add a separator
-        #    menu.Append(AddHelp(self.G2frame,helpType=helpType, helpLbl=helpLbl),
-        #                title='&Help')
-        #else: # other
-        #    menu.Append(menu=MyHelp(self,helpType=helpType, helpLbl=helpLbl),
-        #                title='&Help')
         
     def PostfillDataMenu(self,empty=False):
         '''Create the "standard" part of data frame menus. Note that on Linux and
@@ -812,28 +830,27 @@ class DataFrame(wx.Frame):
                         title='&Help')
 
     def _init_menus(self):
-        
-# define all GSAS-II data frame menus        
+        'define all GSAS-II data frame menus'
 
-# for use where no menu or data frame help is provided
+        # for use where no menu or data frame help is provided
         self.BlankMenu = wx.MenuBar()
         
-# Controls
+        # Controls
         self.ControlsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ControlsMenu,helpType='Controls',empty=True)
         self.PostfillDataMenu(empty=True)
         
-# Notebook
+        # Notebook
         self.DataNotebookMenu = wx.MenuBar() 
         self.PrefillDataMenu(self.DataNotebookMenu,helpType='Notebook',empty=True)
         self.PostfillDataMenu(empty=True)
         
-# Comments
+        # Comments
         self.DataCommentsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.DataCommentsMenu,helpType='Comments',empty=True)
         self.PostfillDataMenu(empty=True)
         
-# Constraints
+        # Constraints
         self.ConstraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ConstraintMenu,helpType='Constraints')
         self.ConstraintEdit = wx.Menu(title='')
@@ -848,7 +865,7 @@ class DataFrame(wx.Frame):
             help='Add variable composed of existing parameter')
         self.PostfillDataMenu()
         
-# Rigid bodies
+        # Rigid bodies
         self.VectorRBEdit = wx.Menu(title='')
         self.VectorRBEdit.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
             help='Add vector rigid body')
@@ -865,7 +882,7 @@ class DataFrame(wx.Frame):
         self.RigidBodyMenu.Append(menu=self.VectorRBEdit, title='Edit')        
         self.PostfillDataMenu()
             
-# Restraints
+        # Restraints
         self.RestraintEdit = wx.Menu(title='')
         self.RestraintEdit.Append(id=wxID_RESTSELPHASE, kind=wx.ITEM_NORMAL,text='Select phase',
             help='Select phase')
@@ -890,7 +907,7 @@ class DataFrame(wx.Frame):
         self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
         self.PostfillDataMenu()
             
-# Sequential results
+        # Sequential results
         self.SequentialMenu = wx.MenuBar()
         self.PrefillDataMenu(self.SequentialMenu,helpType='Sequential',helpLbl='Sequential Refinement')
         self.SequentialFile = wx.Menu(title='')
@@ -899,7 +916,7 @@ class DataFrame(wx.Frame):
             help='Save selected sequential refinement results')
         self.PostfillDataMenu()
             
-# PDR
+        # PDR
         self.ErrorMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ErrorMenu,helpType='PWD Analysis',helpLbl='Powder Fit Error Analysis')
         self.ErrorAnal = wx.Menu(title='')
@@ -908,7 +925,7 @@ class DataFrame(wx.Frame):
             help='Error analysis on powder pattern')
         self.PostfillDataMenu()
             
-# PDR / Limits
+        # PDR / Limits
         self.LimitMenu = wx.MenuBar()
         self.PrefillDataMenu(self.LimitMenu,helpType='Limits')
         self.LimitEdit = wx.Menu(title='')
@@ -917,7 +934,7 @@ class DataFrame(wx.Frame):
             help='Copy limits to other histograms')
         self.PostfillDataMenu()
             
-# PDR / Background
+        # PDR / Background
         self.BackMenu = wx.MenuBar()
         self.PrefillDataMenu(self.BackMenu,helpType='Background')
         self.BackEdit = wx.Menu(title='')
@@ -928,7 +945,7 @@ class DataFrame(wx.Frame):
             help='Copy background refinement flags to other histograms')
         self.PostfillDataMenu()
             
-# PDR / Instrument Parameters
+        # PDR / Instrument Parameters
         self.InstMenu = wx.MenuBar()
         self.PrefillDataMenu(self.InstMenu,helpType='Instrument Parameters')
         self.InstEdit = wx.Menu(title='')
@@ -947,7 +964,7 @@ class DataFrame(wx.Frame):
 #            id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
         self.PostfillDataMenu()
         
-# PDR / Sample Parameters
+        # PDR / Sample Parameters
         self.SampleMenu = wx.MenuBar()
         self.PrefillDataMenu(self.SampleMenu,helpType='Sample Parameters')
         self.SampleEdit = wx.Menu(title='')
@@ -962,7 +979,7 @@ class DataFrame(wx.Frame):
             help='Copy sample parameter refinement flags to other histograms')
         self.PostfillDataMenu()
 
-# PDR / Peak List
+        # PDR / Peak List
         self.PeakMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PeakMenu,helpType='Peak List')
         self.PeakEdit = wx.Menu(title='')
@@ -984,7 +1001,7 @@ class DataFrame(wx.Frame):
         self.PeakFit.Enable(False)
         self.PFOneCycle.Enable(False)
         
-# PDR / Index Peak List
+        # PDR / Index Peak List
         self.IndPeaksMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndPeaksMenu,helpType='Index Peak List')
         self.IndPeaksEdit = wx.Menu(title='')
@@ -993,7 +1010,7 @@ class DataFrame(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Load/Reload')
         self.PostfillDataMenu()
         
-# PDR / Unit Cells List
+        # PDR / Unit Cells List
         self.IndexMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndexMenu,helpType='Unit Cells List')
         self.IndexEdit = wx.Menu(title='')
@@ -1012,7 +1029,7 @@ class DataFrame(wx.Frame):
         self.RefineCell.Enable(False)
         self.MakeNewPhase.Enable(False)
         
-# PDR / Reflection Lists
+        # PDR / Reflection Lists
         self.ReflMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ReflMenu,helpType='Reflection List')
         self.ReflEdit = wx.Menu(title='')
@@ -1021,7 +1038,7 @@ class DataFrame(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Select phase')
         self.PostfillDataMenu()
         
-# IMG / Image Controls
+        # IMG / Image Controls
         self.ImageMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ImageMenu,helpType='Image Controls')
         self.ImageEdit = wx.Menu(title='')
@@ -1044,7 +1061,7 @@ class DataFrame(wx.Frame):
             id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
         self.PostfillDataMenu()
             
-# IMG / Masks
+        # IMG / Masks
         self.MaskMenu = wx.MenuBar()
         self.PrefillDataMenu(self.MaskMenu,helpType='Image Masks')
         self.MaskEdit = wx.Menu(title='')
@@ -1057,8 +1074,7 @@ class DataFrame(wx.Frame):
             id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
         self.PostfillDataMenu()
             
-# IMG / Stress/Strain
-
+        # IMG / Stress/Strain
         self.StrStaMenu = wx.MenuBar()
         self.PrefillDataMenu(self.StrStaMenu,helpType='Stress/Strain')
         self.StrStaEdit = wx.Menu(title='')
@@ -1075,7 +1091,7 @@ class DataFrame(wx.Frame):
             id=wxID_STRSTALOAD, kind=wx.ITEM_NORMAL,text='Load stress/strain')
         self.PostfillDataMenu()
             
-# PDF / PDF Controls
+        # PDF / PDF Controls
         self.PDFMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PDFMenu,helpType='PDF Controls')
         self.PDFEdit = wx.Menu(title='')
@@ -1086,18 +1102,17 @@ class DataFrame(wx.Frame):
             text='Delete element')
         self.PDFEdit.Append(help='Copy PDF controls', id=wxID_PDFCOPYCONTROLS, kind=wx.ITEM_NORMAL,
             text='Copy controls')
-#        self.PDFEdit.Append(help='Load PDF controls from file',id=wxID_PDFLOADCONTROLS, kind=wx.ITEM_NORMAL,
-#            text='Load Controls')
-#        self.PDFEdit.Append(help='Save PDF controls to file', id=wxID_PDFSAVECONTROLS, kind=wx.ITEM_NORMAL,
-#            text='Save controls')
+        #        self.PDFEdit.Append(help='Load PDF controls from file',id=wxID_PDFLOADCONTROLS, kind=wx.ITEM_NORMAL,
+        #            text='Load Controls')
+        #        self.PDFEdit.Append(help='Save PDF controls to file', id=wxID_PDFSAVECONTROLS, kind=wx.ITEM_NORMAL,
+        #            text='Save controls')
         self.PDFEdit.Append(help='Compute PDF', id=wxID_PDFCOMPUTE, kind=wx.ITEM_NORMAL,
             text='Compute PDF')
         self.PDFEdit.Append(help='Compute all PDFs', id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
             text='Compute all PDFs')
         self.PostfillDataMenu()
             
-# Phase / General tab
-
+        # Phase / General tab
         self.DataGeneral = wx.MenuBar()
         self.PrefillDataMenu(self.DataGeneral,helpType='General', helpLbl='Phase/General')
         self.GeneralCalc = wx.Menu(title='')
@@ -1112,7 +1127,7 @@ class DataFrame(wx.Frame):
             text='Clear map')
         self.PostfillDataMenu()
         
-# Phase / Data tab
+        # Phase / Data tab
         self.DataMenu = wx.MenuBar()
         self.PrefillDataMenu(self.DataMenu,helpType='Data', helpLbl='Phase/Data')
         self.DataEdit = wx.Menu(title='')
@@ -1125,7 +1140,7 @@ class DataFrame(wx.Frame):
             help='Delete histograms from use for this phase')
         self.PostfillDataMenu()
             
-# Phase / Atoms tab
+        # Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.AtomsMenu,helpType='Atoms')
         self.AtomEdit = wx.Menu(title='')
@@ -1175,12 +1190,12 @@ class DataFrame(wx.Frame):
             help='Compute distances & angles for selected atoms')
         self.PostfillDataMenu()
                  
-# Phase / Draw Options tab
+        # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
         self.PrefillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options',empty=True)
         self.PostfillDataMenu(empty=True)
         
-# Phase / Draw Atoms tab 
+        # Phase / Draw Atoms tab 
         self.DrawAtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.DrawAtomsMenu,helpType='Draw Atoms')
         self.DrawAtomEdit = wx.Menu(title='')
@@ -1229,7 +1244,7 @@ class DataFrame(wx.Frame):
             help='Define rigid body with selected atoms')
         self.PostfillDataMenu()
             
-# Phase / Texture tab
+        # Phase / Texture tab
         self.TextureMenu = wx.MenuBar()
         self.PrefillDataMenu(self.TextureMenu,helpType='Texture')
         self.TextureEdit = wx.Menu(title='')
@@ -1240,7 +1255,7 @@ class DataFrame(wx.Frame):
             help='Clear the texture coefficients' )
         self.PostfillDataMenu()
             
-# Phase / Pawley tab
+        # Phase / Pawley tab
         self.PawleyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PawleyMenu,helpType='Pawley')
         self.PawleyEdit = wx.Menu(title='')
@@ -1255,7 +1270,7 @@ class DataFrame(wx.Frame):
 #            help='Delete selected Pawley reflection')
         self.PostfillDataMenu()
             
-# Phase / Map peaks tab
+        # Phase / Map peaks tab
         self.MapPeaksMenu = wx.MenuBar()
         self.PrefillDataMenu(self.MapPeaksMenu,helpType='Map peaks')
         self.MapPeaksEdit = wx.Menu(title='')
@@ -1280,7 +1295,7 @@ class DataFrame(wx.Frame):
             help='Clear the map peak list')
         self.PostfillDataMenu()
 
-# Phase / Rigid bodies tab
+        # Phase / Rigid bodies tab
         self.RigidBodiesMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RigidBodiesMenu,helpType='Rigid bodies')
         self.RigidBodiesEdit = wx.Menu(title='')
@@ -1296,8 +1311,7 @@ class DataFrame(wx.Frame):
         self.RigidBodiesEdit.Append(id=wxID_RBREMOVEALL, kind=wx.ITEM_NORMAL,text='Remove all rigid bodies',
             help='Remove all rigid body assignment for atoms')
         self.PostfillDataMenu()
-            
-# end of GSAS-II menu definitions
+    # end of GSAS-II menu definitions
         
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
         wx.Frame.__init__(self,parent=parent,
@@ -1335,7 +1349,8 @@ class DataFrame(wx.Frame):
 ################################################################################           
        
 class GSNoteBook(wx.aui.AuiNotebook):
-    '''Notebook implemented with wx.aui extension'''
+    '''Notebook used in various locations; implemented with wx.aui extension
+    '''
     def __init__(self, parent, name='',size = None):
         wx.aui.AuiNotebook.__init__(self, parent, -1,
                                     style=wx.aui.AUI_NB_TOP |
@@ -1372,6 +1387,8 @@ class GSNoteBook(wx.aui.AuiNotebook):
 ################################################################################           
        
 class GSGrid(wg.Grid):
+    '''Basic wx.Grid implementation
+    '''
     def __init__(self, parent, name=''):
         wg.Grid.__init__(self,parent,-1,name=name)                    
         #self.SetSize(parent.GetClientSize())
@@ -1394,6 +1411,8 @@ class GSGrid(wg.Grid):
 ################################################################################           
        
 class Table(wg.PyGridTableBase):
+    '''Basic data table for use with GSgrid
+    '''
     def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):
         wg.PyGridTableBase.__init__(self)
         self.colLabels = colLabels
@@ -1564,7 +1583,9 @@ def ShowHelp(helpType,frame):
 ################################################################################           
        
 def UpdateNotebook(G2frame,data):
-    
+    '''Called when the data tree notebook entry is selected. Allows for
+    editing of the text in that tree entry
+    '''
     def OnNoteBook(event):
         data = G2frame.dataDisplay.GetValue()
         G2frame.PatternTree.SetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Notebook'),data)
@@ -1586,6 +1607,8 @@ def UpdateNotebook(G2frame,data):
 ################################################################################           
        
 def UpdateControls(G2frame,data):
+    '''Edit overall GSAS-II controls in main Controls data tree entry
+    '''
     #patch
     if 'deriv type' not in data:
         data = {}
@@ -1763,19 +1786,25 @@ def UpdateComments(G2frame,data):
 ################################################################################           
        
 def UpdateSeqResults(G2frame,data):
-    """ 
-    input:
-        data - dictionary
-            'histNames' - list of histogram names in order as processed by Sequential Refinement
-            'varyList' - list of variables - identical over all refinements in sequence
-            'histName' - dictionaries for all data sets processed:
-                'variables'- result[0] from leastsq call
-                'varyList' - list of variables; same as above
-                'sig' - esds for variables
-                'covMatrix' - covariance matrix from individual refinement
-                'title' - histogram name; same as dict item name
-                'newAtomDict' - new atom parameters after shifts applied
-                'newCellDict' - new cell parameters after shifts to A0-A5 applied'
+    """
+    Called when the Sequential Results data tree entry is selected
+    to show results from a sequential refinement.
+    
+    :param wx.Frame G2frame: main GSAS-II data tree windows
+
+    :param dict data: a dictionary containing the following items:  
+
+            * 'histNames' - list of histogram names in order as processed by Sequential Refinement
+            * 'varyList' - list of variables - identical over all refinements in sequence
+            * 'histName' - dictionaries for all data sets processed, which contains:
+
+              * 'variables'- result[0] from leastsq call
+              * 'varyList' - list of variables; same as above
+              * 'sig' - esds for variables
+              * 'covMatrix' - covariance matrix from individual refinement
+              * 'title' - histogram name; same as dict item name
+              * 'newAtomDict' - new atom parameters after shifts applied
+              * 'newCellDict' - new cell parameters after shifts to A0-A5 applied'
     """
     if not data:
         print 'No sequential refinement results'
@@ -1913,6 +1942,8 @@ def UpdateSeqResults(G2frame,data):
 ################################################################################           
        
 def UpdatePWHKPlot(G2frame,kind,item):
+    '''Not sure what this does
+    '''
 
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)
@@ -1957,6 +1988,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
 ################################################################################           
        
 def UpdateHKLControls(G2frame,data):
+    '''Not sure what this does
+    '''
     
     def OnScaleSlider(event):
         scale = int(scaleSel.GetValue())/1000.
@@ -2050,6 +2083,8 @@ def UpdateHKLControls(G2frame,data):
 ################################################################################           
        
 def GetPatternTreeDataNames(G2frame,dataTypes):
+    '''Not sure what this does
+    '''
     names = []
     item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        
     while item:
@@ -2060,6 +2095,8 @@ def GetPatternTreeDataNames(G2frame,dataTypes):
     return names
                           
 def GetPatternTreeItemId(G2frame, parentId, itemText):
+    '''Not sure what this does
+    '''
     item, cookie = G2frame.PatternTree.GetFirstChild(parentId)
     while item:
         if G2frame.PatternTree.GetItemText(item) == itemText:
@@ -2068,10 +2105,12 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
     return 0                
 
 def MovePatternTreeToGrid(G2frame,item):
+    '''Not sure what this does
+    '''
     
 #    print G2frame.PatternTree.GetItemText(item)
     
-    oldPage = 0 # will be set later if already on a Phase item
+    oldPage = None # will be set later if already on a Phase item
     if G2frame.dataFrame:
         SetDataMenuBar(G2frame)
         if G2frame.dataFrame.GetLabel() == 'Comments':
@@ -2098,7 +2137,8 @@ def MovePatternTreeToGrid(G2frame,item):
     else:
         #create the frame for the data item window
         G2frame.dataFrame = DataFrame(parent=G2frame.mainPanel,frame=G2frame)
-
+        G2frame.dataFrame.PhaseUserSize = None
+        
     G2frame.dataFrame.Raise()            
     G2frame.PickId = 0
     parentID = G2frame.root

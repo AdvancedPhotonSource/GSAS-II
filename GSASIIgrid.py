@@ -1370,7 +1370,7 @@ class GSNoteBook(wx.aui.AuiNotebook):
         # in the wx.Notebook ChangeSelection is like SetSelection, but it
         # does not invoke the event related to pressing the tab button
         # I don't see a way to do that in aui.
-        oldPage = self.GetPageIndex()
+        oldPage = self.GetSelection()
         self.SetSelection(page)
         return oldPage
 

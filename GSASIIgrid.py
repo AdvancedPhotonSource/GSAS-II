@@ -1366,6 +1366,14 @@ class GSNoteBook(wx.aui.AuiNotebook):
             if self.GetPageText(page) == name:
                 return page
 
+    def ChangeSelection(self,page):
+        # in the wx.Notebook ChangeSelection is like SetSelection, but it
+        # does not invoke the event related to pressing the tab button
+        # I don't see a way to do that in aui.
+        oldPage = self.GetPageIndex()
+        self.SetSelection(page)
+        return oldPage
+
     # def __getattribute__(self,name):
     #     '''This method provides a way to print out a message every time
     #     that a method in a class is called -- to see what all the calls

@@ -295,8 +295,8 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
         L = np.array(TLS[6:12])*(np.pi/180.)**2
     if 'S' in TLStype:
         S = np.array(TLS[12:])*(np.pi/180.)
-    g = np.inner(Bmat,Bmat)
-    gvec = 1./np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
+    g = nl.inv(np.inner(Bmat,Bmat))
+    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
         g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
     Uout = []
     Q = RBObj['Orient'][0]
@@ -1414,16 +1414,17 @@ def Q2Mat(Q):
     ''' make rotation matrix from quaternion
         q=r+ai+bj+ck
     '''
-    aa = Q[0]**2
-    ab = Q[0]*Q[1]
-    ac = Q[0]*Q[2]
-    ad = Q[0]*Q[3]
-    bb = Q[1]**2
-    bc = Q[1]*Q[2]
-    bd = Q[1]*Q[3]
-    cc = Q[2]**2
-    cd = Q[2]*Q[3]
-    dd = Q[3]**2
+    QN = normQ(Q)
+    aa = QN[0]**2
+    ab = QN[0]*QN[1]
+    ac = QN[0]*QN[2]
+    ad = QN[0]*QN[3]
+    bb = QN[1]**2
+    bc = QN[1]*QN[2]
+    bd = QN[1]*QN[3]
+    cc = QN[2]**2
+    cd = QN[2]*QN[3]
+    dd = QN[3]**2
     M = [[aa+bb-cc-dd, 2.*(bc-ad),  2.*(ac+bd)],
         [2*(ad+bc),   aa-bb+cc-dd,  2.*(cd-ab)],
         [2*(bd-ac),    2.*(ab+cd), aa-bb-cc+dd]]

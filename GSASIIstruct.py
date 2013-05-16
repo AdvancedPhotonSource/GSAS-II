@@ -744,7 +744,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     Amat,Bmat = G2lat.cell2AB(cell)
     rpd = np.pi/180.
     rpd2 = rpd**2
-    g = np.inner(Bmat,Bmat)
+    g = nl.inv(np.inner(Bmat,Bmat))
     gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
         g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
     AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
@@ -782,7 +782,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 for ix in [0,1,2]:
                     dFdvDict[pfx+'RBV'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             X = G2mth.prodQVQ(Q,Cart[ia])
-            dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T*gvec
+            dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T/gvec
             dFdu = G2lat.U6toUij(dFdu.T)
             dFdu = np.tensordot(Amat,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
             
@@ -850,7 +850,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 for ix in [0,1,2]:
                     dFdvDict[pfx+'RBR'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             X = G2mth.prodQVQ(Q,Cart[ia])
-            dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T*gvec
+            dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T/gvec
             dFdu = G2lat.U6toUij(dFdu.T)
             dFdu = np.tensordot(Amat.T,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
             dFdu = G2lat.UijtoU6(dFdu)

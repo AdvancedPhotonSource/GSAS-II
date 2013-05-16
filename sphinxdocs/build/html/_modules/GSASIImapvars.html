@@ -51,17 +51,17 @@
   <h1>Source code for GSASIImapvars</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2012-09-23 16:57:51 -0500 (Sun, 23 Sep 2012) $</span>
+<span class="c"># $Date: 2013-05-13 15:18:21 -0500 (Mon, 13 May 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 762 $</span>
+<span class="c"># $Revision: 903 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImapvars.py $</span>
-<span class="c"># $Id: GSASIImapvars.py 762 2012-09-23 21:57:51Z toby $</span>
+<span class="c"># $Id: GSASIImapvars.py 903 2013-05-13 20:18:21Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">*Module GSASIImapvars: Specify and apply parameter constraints*</span>
-<span class="sd">===============================================================</span>
+<span class="sd">*GSASIImapvars: Parameter constraints*</span>
+<span class="sd">======================================</span>
 
-<span class="sd">Implements algebraic contraints, parameter redefinition</span>
+<span class="sd">Module to implements algebraic contraints, parameter redefinition</span>
 <span class="sd">and parameter simplification contraints.</span>
 
 <span class="sd">Parameter redefinition (new vars) is done by creating one or more relationships</span>
@@ -149,66 +149,109 @@
 <span class="sd">-------------------</span>
 
 <span class="sd">To define a set of constrained and unconstrained relations, one</span>
-<span class="sd">calls InitVars, GroupConstraints and GenerateConstraints. It</span>
-<span class="sd">is best to supply all relations/equations in one call to these</span>
-<span class="sd">routines so that grouping is done correctly.</span>
+<span class="sd">defines a list of dictionary defining constraint parameters and their</span>
+<span class="sd">values, a list of fixed values for each constraint and a list of</span>
+<span class="sd">parameters to be varied. In addition, one uses</span>
+<span class="sd">:func:`StoreEquivalence` to define parameters that are equivalent. One</span>
+<span class="sd">can then use :func:`CheckConstraints` to check that the input is</span>
+<span class="sd">internally consistent and finally :func:`GroupConstraints` and</span>
+<span class="sd">:func:`GenerateConstraints` to generate the internally used</span>
+<span class="sd">tables. Routines :func:`Map2Dict` is used to initialize the parameter</span>
+<span class="sd">dictionary and :func:`Dict2Map`, :func:`Dict2Deriv`, and</span>
+<span class="sd">:func:`ComputeDepESD` are used to apply constraints. Routine</span>
+<span class="sd">:func:`VarRemapShow` is used to print out the constraint information,</span>
+<span class="sd">as stored by :func:`GenerateConstraints`.</span>
 
-<span class="sd">   To implement parameter redefinition, one calls</span>
-<span class="sd">     StoreEquivalence. This should be called for every set of</span>
-<span class="sd">     equivalence relationships. There is no harm in using</span>
-<span class="sd">     StoreEquivalence with the same independent variable:</span>
+<span class="sd">:func:`InitVars`</span>
+<span class="sd">  This is optionally used to clear out all defined previously defined constraint information</span>
+<span class="sd">  </span>
+<span class="sd">:func:`StoreEquivalence`</span>
+<span class="sd">  To implement parameter redefinition, one calls StoreEquivalence. This should be called for every set of</span>
+<span class="sd">  equivalence relationships. There is no harm in using StoreEquivalence with the same independent variable:</span>
+
+<span class="sd">  .. code-block:: python</span>
+
 <span class="sd">       StoreEquivalence(&#39;x&#39;,(&#39;y&#39;,))</span>
 <span class="sd">       StoreEquivalence(&#39;x&#39;,(&#39;z&#39;,))</span>
-<span class="sd">     (though StoreEquivalence(&#39;x&#39;,(&#39;y&#39;,&#39;z&#39;)) will run more</span>
-<span class="sd">     efficiently) but mixing independent and dependent variables is</span>
-<span class="sd">     problematic. This is not allowed:</span>
+
+<span class="sd">  or equivalently </span>
+
+<span class="sd">  .. code-block:: python</span>
+
+<span class="sd">       StoreEquivalence(&#39;x&#39;,(&#39;y&#39;,&#39;z&#39;))</span>
+
+<span class="sd">  The latter will run more efficiently. Note that mixing independent and dependent variables is</span>
+<span class="sd">  problematic. This is not allowed:</span>
+
+<span class="sd">  .. code-block:: python</span>
+
 <span class="sd">        StoreEquivalence(&#39;x&#39;,(&#39;y&#39;,))</span>
 <span class="sd">        StoreEquivalence(&#39;y&#39;,(&#39;z&#39;,))</span>
-<span class="sd">   Use StoreEquivalence before calling GenerateConstraints or</span>
-<span class="sd">      CheckConstraints</span>
+<span class="sd">        </span>
+<span class="sd">  Use StoreEquivalence before calling GenerateConstraints or CheckConstraints</span>
 
+<span class="sd">:func:`CheckConstraints`</span>
 <span class="sd">   To check that input in internally consistent, use CheckConstraints</span>
 
-<span class="sd">   To show a summary of the parameter remapping, one calls</span>
-<span class="sd">      VarRemapShow</span>
-
+<span class="sd">:func:`Map2Dict`</span>
 <span class="sd">   To determine values for the parameters created in this module, one</span>
-<span class="sd">      calls Map2Dict. This will not apply contraints.</span>
+<span class="sd">   calls Map2Dict. This will not apply contraints.</span>
 
+<span class="sd">:func:`Dict2Map`</span>
 <span class="sd">   To take values from the new independent parameters and constraints,</span>
-<span class="sd">      one calls Dict2Map. This will apply contraints.</span>
+<span class="sd">   one calls Dict2Map. This will apply contraints.</span>
 
+<span class="sd">:func:`Dict2Deriv`</span>
 <span class="sd">   Use Dict2Deriv to determine derivatives on independent parameters</span>
-<span class="sd">      from those on dependent ones</span>
-<span class="sd">      </span>
+<span class="sd">   from those on dependent ones</span>
+
+<span class="sd">:func:`ComputeDepESD`      </span>
 <span class="sd">   Use ComputeDepESD to compute uncertainties on dependent variables</span>
+
+<span class="sd">:func:`VarRemapShow`</span>
+<span class="sd">   To show a summary of the parameter remapping, one calls VarRemapShow</span>
 
 <span class="sd">*Global Variables*</span>
 <span class="sd">------------------</span>
 
-<span class="sd">   dependentParmList: contains a list by group of lists of</span>
-<span class="sd">     parameters used in the group. Note that parameters listed in</span>
-<span class="sd">     dependentParmList should not be refined as they will not affect</span>
-<span class="sd">     the model</span>
+<span class="sd">dependentParmList:</span>
+<span class="sd">   contains a list by group of lists of</span>
+<span class="sd">   parameters used in the group. Note that parameters listed in</span>
+<span class="sd">   dependentParmList should not be refined as they will not affect</span>
+<span class="sd">   the model</span>
 
-<span class="sd">   indParmList: a list of groups of Independent parameters defined in</span>
+<span class="sd">indParmList:</span>
+<span class="sd">     a list of groups of Independent parameters defined in</span>
 <span class="sd">     each group. This contains both parameters used in parameter</span>
 <span class="sd">     redefinitions as well as names of generated new parameters.</span>
 
-<span class="sd">   fixedVarList: a list of variables that have been &#39;fixed&#39;</span>
+<span class="sd">fixedVarList:</span>
+<span class="sd">     a list of variables that have been &#39;fixed&#39;</span>
 <span class="sd">     by defining them as equal to a constant (::var: = 0). Note that</span>
 <span class="sd">     the constant value is ignored at present. These variables are</span>
 <span class="sd">     later removed from varyList which prevents them from being refined. </span>
 <span class="sd">     Unlikely to be used externally.</span>
-<span class="sd">   arrayList: a list by group of relationship matrices to relate</span>
+
+<span class="sd">arrayList:</span>
+<span class="sd">     a list by group of relationship matrices to relate</span>
 <span class="sd">     parameters in dependentParmList to those in indParmList. Unlikely</span>
 <span class="sd">     to be used externally.</span>
-<span class="sd">   invarrayList: a list by group of relationship matrices to relate</span>
+
+<span class="sd">invarrayList:</span>
+<span class="sd">     a list by group of relationship matrices to relate</span>
 <span class="sd">     parameters in indParmList to those in dependentParmList. Unlikely</span>
 <span class="sd">     to be used externally.</span>
-<span class="sd">   fixedDict: a dictionary containing the fixed values corresponding</span>
+
+<span class="sd">fixedDict:</span>
+<span class="sd">     a dictionary containing the fixed values corresponding</span>
 <span class="sd">     to parameter equations.  The dict key is an ascii string, but the</span>
 <span class="sd">     dict value is a float.  Unlikely to be used externally.</span>
+
+<span class="sd">*Routines*</span>
+<span class="sd">----------</span>
+
+<span class="sd">Note that parameter names in GSAS-II are strings of form ``&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;``</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
@@ -242,14 +285,20 @@
 </div>
 <div class="viewcode-block" id="GroupConstraints"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.GroupConstraints">[docs]</a><span class="k">def</span> <span class="nf">GroupConstraints</span><span class="p">(</span><span class="n">constrDict</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;divide the constraints into groups that share no parameters.</span>
-<span class="sd">    Input</span>
-<span class="sd">       constrDict: a list of dicts defining relationships/constraints</span>
+
+<span class="sd">    :param dict constrDict: a list of dicts defining relationships/constraints</span>
+
+<span class="sd">    ::</span>
+<span class="sd">    </span>
 <span class="sd">       constrDict = [{&lt;constr1&gt;}, {&lt;constr2&gt;}, ...]</span>
-<span class="sd">       where {&lt;constr1&gt;} is {&#39;param1&#39;: mult1, &#39;param2&#39;: mult2,...}</span>
-<span class="sd">    Returns two lists of lists:</span>
-<span class="sd">      a list of relationship list indices for each group pointing to</span>
-<span class="sd">        elements in constrDict and</span>
-<span class="sd">      a list containing the parameters used in each group</span>
+
+<span class="sd">    where {&lt;constr1&gt;} is {&#39;param1&#39;: mult1, &#39;param2&#39;: mult2,...}</span>
+
+<span class="sd">    :returns: two lists of lists:</span>
+<span class="sd">    </span>
+<span class="sd">      * a list of grouped contraints where each constraint grouped containts a list of indices for constraint constrDict entries</span>
+<span class="sd">      * a list containing lists of parameter names contained in each group</span>
+<span class="sd">      </span>
 <span class="sd">      &quot;&quot;&quot;</span>
     <span class="n">assignedlist</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># relationships that have been used</span>
     <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># contains a list of grouplists</span>
@@ -280,11 +329,21 @@
     <span class="sd">&#39;&#39;&#39;Takes a list of relationship entries comprising a group of</span>
 <span class="sd">    constraints and checks for inconsistencies such as conflicts in</span>
 <span class="sd">    parameter/variable definitions and or inconsistently varied parameters.</span>
-<span class="sd">    Input: see GenerateConstraints</span>
-<span class="sd">    Output: returns two strings</span>
-<span class="sd">      the first lists conflicts internal to the specified constraints</span>
-<span class="sd">      the second lists conflicts where the varyList specifies some</span>
+
+<span class="sd">    :param list varyList: a list of parameters names that will be varied</span>
+
+<span class="sd">    :param dict constrDict: a list of dicts defining relationships/constraints (as defined in :func:`GroupConstraints`)</span>
+
+<span class="sd">    :param list fixedList: a list of values specifying a fixed value for each dict in constrDict. Values are</span>
+<span class="sd">      either strings that can be converted to floats or None if the constraint defines a new parameter rather</span>
+<span class="sd">      than a constant.</span>
+
+<span class="sd">    :returns: two strings: </span>
+
+<span class="sd">      * the first lists conflicts internal to the specified constraints</span>
+<span class="sd">      * the second lists conflicts where the varyList specifies some</span>
 <span class="sd">        parameters in a constraint, but not all</span>
+<span class="sd">        </span>
 <span class="sd">      If there are no errors, both strings will be empty</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">global</span> <span class="n">dependentParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">,</span><span class="n">indParmList</span><span class="p">,</span><span class="n">consNum</span>
@@ -386,10 +445,10 @@
                     <span class="n">notvaried</span> <span class="o">+=</span> <span class="n">var</span>
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">fixVlist</span><span class="p">:</span>
                     <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Parameter &#39;</span><span class="o">+</span><span class="n">var</span><span class="o">+</span><span class="s">&quot; is Fixed and used in a constraint:</span><span class="se">\n\t</span><span class="s">&quot;</span>
-                    <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                    <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
             <span class="k">if</span> <span class="n">varied</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">varied</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">]):</span>
                 <span class="n">warnmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Not all variables refined in constraint:</span><span class="se">\n\t</span><span class="s">&quot;</span>
-                <span class="n">warnmsg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                <span class="n">warnmsg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
                 <span class="n">warnmsg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Not refined: &#39;</span> <span class="o">+</span> <span class="n">notvaried</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
     <span class="k">if</span> <span class="n">errmsg</span> <span class="ow">or</span> <span class="n">warnmsg</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">errmsg</span><span class="p">,</span><span class="n">warnmsg</span>
@@ -403,26 +462,26 @@
             <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;There are more constraints &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">))</span>
             <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n\t</span><span class="s">than variables &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">varlist</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
             <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
                 <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
                 <span class="k">continue</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">multarr</span> <span class="o">=</span> <span class="n">FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
-            <span class="n">RowEchelon</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">),</span><span class="n">multarr</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
+            <span class="n">multarr</span> <span class="o">=</span> <span class="n">_FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
+            <span class="n">_RowEchelon</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">),</span><span class="n">multarr</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Singular input. &quot;</span>
             <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;There are internal inconsistencies in these constraints</span><span class="se">\n</span><span class="s">&quot;</span>
             <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
                 <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
             <span class="k">continue</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">multarr</span> <span class="o">=</span> <span class="n">FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">,</span><span class="n">FillDiagonals</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">multarr</span> <span class="o">=</span> <span class="n">_FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">,</span><span class="n">FillDiagonals</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
             <span class="n">GramSchmidtOrtho</span><span class="p">(</span><span class="n">multarr</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">))</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Unexpected singularity with constraints (in Gram-Schmidt)</span><span class="se">\n</span><span class="s">&quot;</span>
             <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
                 <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
             <span class="k">continue</span>
         <span class="n">mapvar</span> <span class="o">=</span> <span class="p">[]</span>
@@ -458,7 +517,7 @@
                 <span class="n">warnmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Not all variables refined in generated constraint&quot;</span>
                 <span class="n">warnmsg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Please report this unexpected error</span><span class="se">\n</span><span class="s">&#39;</span>
                 <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                    <span class="n">warnmsg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                    <span class="n">warnmsg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
                     <span class="n">warnmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
                 <span class="n">warnmsg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n\t</span><span class="s">Not refined: &#39;</span> <span class="o">+</span> <span class="n">notvaried</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
         <span class="k">try</span><span class="p">:</span>
@@ -470,7 +529,7 @@
             <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;allow for generation of a non-singular set</span><span class="se">\n</span><span class="s">&quot;</span>
             <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&#39;Please report this unexpected error</span><span class="se">\n</span><span class="s">&#39;</span>
             <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                <span class="n">errmsg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
                 <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
     <span class="k">return</span> <span class="n">errmsg</span><span class="p">,</span><span class="n">warnmsg</span>
 </div>
@@ -479,15 +538,23 @@
 <span class="sd">    constraints and builds the relationship lists and their inverse</span>
 <span class="sd">    and stores them in global variables Also checks for internal</span>
 <span class="sd">    conflicts or inconsistencies in parameter/variable definitions.</span>
-<span class="sd">    Input:</span>
-<span class="sd">       groups,parmlist: see GroupConstraints</span>
-<span class="sd">       varyList: a list of parameters that will be varied</span>
-<span class="sd">       constrDict: a list of dicts defining relationships/constraints</span>
-<span class="sd">         constrDict = [{&lt;constr1&gt;}, {&lt;constr2&gt;}, ...]</span>
-<span class="sd">         where {&lt;constr1&gt;} is {&#39;param1&#39;: mult1, &#39;param2&#39;: mult2,...}</span>
-<span class="sd">       fixedList: a list of values for each constraint/variable in</span>
-<span class="sd">          constrDict, value is either a float (contraint) or None (for</span>
-<span class="sd">          a new variable).</span>
+
+<span class="sd">    :param list groups: a list of grouped contraints where each constraint grouped containts a list of</span>
+<span class="sd">      indices for constraint constrDict entries, created in :func:`GroupConstraints` (returned as 1st value)</span>
+
+<span class="sd">    :param list parmlist: a list containing lists of parameter names contained in each group,</span>
+<span class="sd">      created in :func:`GroupConstraints` (returned as 1st value)</span>
+
+<span class="sd">    :param list varyList: a list of parameters names (strings of form ``&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;``) that will be varied</span>
+<span class="sd">    </span>
+<span class="sd">    :param dict constrDict: a list of dicts defining relationships/constraints (as defined in :func:`GroupConstraints`)</span>
+
+<span class="sd">    :param list fixedList: a list of values specifying a fixed value for each dict in constrDict. Values are</span>
+<span class="sd">      either strings that can be converted to floats, float values or None if the constraint defines a new</span>
+<span class="sd">      parameter</span>
+<span class="sd">      </span>
+<span class="sd">    :param dict constrDict: a list of dicts defining relationships/constraints</span>
+
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">global</span> <span class="n">dependentParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">,</span><span class="n">indParmList</span><span class="p">,</span><span class="n">consNum</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
@@ -596,13 +663,13 @@
                     <span class="n">notvaried</span> <span class="o">+=</span> <span class="n">var</span>
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">fixedVarList</span><span class="p">:</span>
                     <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Error: parameter &#39;</span><span class="o">+</span><span class="n">var</span><span class="o">+</span><span class="s">&quot; is Fixed and used in a constraint:</span><span class="se">\n\t</span><span class="s">&quot;</span>
-                    <span class="n">msg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                    <span class="n">msg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
 <span class="c">#                if var in equivVarList:</span>
 <span class="c">#                    msg += &#39;\nError: parameter &#39;+var+&quot; is Equivalenced and used in a constraint:\n\t&quot;</span>
-<span class="c">#                    msg += FormatConstraint(constrDict[rel],fixedList[rel])+&quot;\n&quot;</span>
+<span class="c">#                    msg += _FormatConstraint(constrDict[rel],fixedList[rel])+&quot;\n&quot;</span>
             <span class="k">if</span> <span class="n">varied</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">varied</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">]):</span>
                 <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Not all variables refined in constraint:</span><span class="se">\n\t</span><span class="s">&quot;</span>
-                <span class="n">msg</span> <span class="o">+=</span> <span class="n">FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
                 <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Not refined: &#39;</span> <span class="o">+</span> <span class="n">notvaried</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
             <span class="k">if</span> <span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">varied</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">VaryFree</span> <span class="o">=</span> <span class="bp">True</span>
@@ -619,9 +686,9 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">varlist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">):</span> <span class="c"># too many relationships -- no can do</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;too many relationships&#39;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">arr</span> <span class="o">=</span> <span class="n">FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
-            <span class="n">RowEchelon</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">),</span><span class="n">arr</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
-            <span class="n">constrArr</span> <span class="o">=</span> <span class="n">FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">,</span><span class="n">FillDiagonals</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">_FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
+            <span class="n">_RowEchelon</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">),</span><span class="n">arr</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
+            <span class="n">constrArr</span> <span class="o">=</span> <span class="n">_FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">,</span><span class="n">FillDiagonals</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
             <span class="n">GramSchmidtOrtho</span><span class="p">(</span><span class="n">constrArr</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">))</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;Singular relationships&#39;</span>
@@ -692,13 +759,15 @@
 <div class="viewcode-block" id="StoreEquivalence"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.StoreEquivalence">[docs]</a><span class="k">def</span> <span class="nf">StoreEquivalence</span><span class="p">(</span><span class="n">independentVar</span><span class="p">,</span><span class="n">dependentList</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Takes a list of dependent parameter(s) and stores their</span>
 <span class="sd">    relationship to a single independent parameter (independentVar)</span>
-<span class="sd">    input:</span>
-<span class="sd">       independentVar -- name of parameter that will set others (may</span>
-<span class="sd">         be varied)</span>
-<span class="sd">       dependentList -- list of parameter that will set from</span>
-<span class="sd">         independentVar (may not be varied). Each item can be a parameter</span>
+
+<span class="sd">    :param str independentVar: name of master parameter that will be used to determine the value</span>
+<span class="sd">      to set the dependent variables</span>
+
+<span class="sd">    :param list dependentList: a list of parameters that will set from</span>
+<span class="sd">         independentVar. Each item in the list can be a string with the parameter</span>
 <span class="sd">         name or a tuple containing a name and multiplier:</span>
-<span class="sd">         (&#39;parm1&#39;,(&#39;parm2&#39;,.5),)</span>
+<span class="sd">         ``[&#39;parm1&#39;,(&#39;parm2&#39;,.5),]``</span>
+
 <span class="sd">    &#39;&#39;&#39;</span>
     
     <span class="k">global</span> <span class="n">dependentParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">,</span><span class="n">indParmList</span>
@@ -722,7 +791,11 @@
 </div>
 <div class="viewcode-block" id="GetDependentVars"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.GetDependentVars">[docs]</a><span class="k">def</span> <span class="nf">GetDependentVars</span><span class="p">():</span>
     <span class="sd">&#39;&#39;&#39;Return a list of dependent variables: e.g. variables that are</span>
-<span class="sd">    constrained in terms of other variables&#39;&#39;&#39;</span>
+<span class="sd">    constrained in terms of other variables</span>
+
+<span class="sd">    :returns: a list of variable names</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">dependentVars</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">global</span> <span class="n">dependentParmList</span>
     <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">dependentParmList</span><span class="p">:</span>
@@ -731,7 +804,11 @@
 </div>
 <div class="viewcode-block" id="GetIndependentVars"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.GetIndependentVars">[docs]</a><span class="k">def</span> <span class="nf">GetIndependentVars</span><span class="p">():</span>
     <span class="sd">&#39;&#39;&#39;Return a list of independent variables: e.g. variables that are</span>
-<span class="sd">    created by constraints of other variables&#39;&#39;&#39;</span>
+<span class="sd">    created by constraints of other variables</span>
+
+<span class="sd">    :returns: a list of variable names</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">independentVars</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">global</span> <span class="n">indParmList</span><span class="p">,</span><span class="n">fixedDict</span>
     <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">indParmList</span><span class="p">:</span>
@@ -796,7 +873,7 @@
             <span class="n">sigmaDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">vcov</span><span class="p">,</span><span class="n">vec</span><span class="p">)))</span>
     <span class="k">return</span> <span class="n">sigmaDict</span>
 </div>
-<div class="viewcode-block" id="FormatConstraint"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.FormatConstraint">[docs]</a><span class="k">def</span> <span class="nf">FormatConstraint</span><span class="p">(</span><span class="n">RelDict</span><span class="p">,</span><span class="n">RelVal</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_FormatConstraint</span><span class="p">(</span><span class="n">RelDict</span><span class="p">,</span><span class="n">RelVal</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Formats a Constraint or Function for use in a convenient way&#39;&#39;&#39;</span>
     <span class="n">linelen</span> <span class="o">=</span> <span class="mi">45</span>
     <span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;&quot;</span><span class="p">]</span>
@@ -819,10 +896,12 @@
         <span class="k">if</span> <span class="n">s1</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span> <span class="n">s1</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n\t</span><span class="s">&#39;</span>
         <span class="n">s1</span> <span class="o">+=</span> <span class="n">s2</span>
     <span class="k">return</span> <span class="n">s1</span>
-</div>
+
 <div class="viewcode-block" id="VarRemapShow"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.VarRemapShow">[docs]</a><span class="k">def</span> <span class="nf">VarRemapShow</span><span class="p">(</span><span class="n">varyList</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;List out the saved relationships.</span>
-<span class="sd">    Returns a string containing the details.</span>
+    <span class="sd">&#39;&#39;&#39;List out the saved relationships. This should be done after the constraints have been</span>
+<span class="sd">    defined using :func:`StoreEquivalence`, :func:`GroupConstraints` and :func:`GenerateConstraints`.</span>
+
+<span class="sd">    :returns: a string containing the details of the contraint relationships</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fixedVarList</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -871,6 +950,15 @@
 <div class="viewcode-block" id="Dict2Deriv"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.Dict2Deriv">[docs]</a><span class="k">def</span> <span class="nf">Dict2Deriv</span><span class="p">(</span><span class="n">varyList</span><span class="p">,</span><span class="n">derivDict</span><span class="p">,</span><span class="n">dMdv</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Compute derivatives for Independent Parameters from the</span>
 <span class="sd">    derivatives for the original parameters</span>
+
+<span class="sd">    :param list varyList: a list of parameters names that will be varied</span>
+
+<span class="sd">    :param dict derivDict: a dict containing derivatives for parameter values keyed by the</span>
+<span class="sd">      parameter names.</span>
+
+<span class="sd">    :param dict dMdv: a dict containing derivatives for dependent parameter computed from</span>
+<span class="sd">      derivDict</span>
+
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">global</span> <span class="n">dependentParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">,</span><span class="n">indParmList</span><span class="p">,</span><span class="n">invarrayList</span>
     <span class="k">for</span> <span class="n">varlist</span><span class="p">,</span><span class="n">mapvars</span><span class="p">,</span><span class="n">multarr</span><span class="p">,</span><span class="n">invmultarr</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dependentParmList</span><span class="p">,</span><span class="n">indParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">):</span>
@@ -895,8 +983,23 @@
 
 <span class="sd">    Removes dependent variables from the varyList</span>
 
-<span class="sd">    This should be done once, before any variable refinement is done</span>
-<span class="sd">    to complete the parameter dictionary with the Independent Parameters</span>
+<span class="sd">    This should be done once, after the constraints have been</span>
+<span class="sd">    defined using :func:`StoreEquivalence`,</span>
+<span class="sd">    :func:`GroupConstraints` and :func:`GenerateConstraints` and</span>
+<span class="sd">    before any variable refinement is done</span>
+<span class="sd">    to complete the parameter dictionary by defining independent</span>
+<span class="sd">    parameters and satisfying the constraint equations. </span>
+
+<span class="sd">    :param dict parmDict: a dict containing parameter values keyed by the</span>
+<span class="sd">      parameter names.</span>
+<span class="sd">      This will contain updated values for both dependent and independent</span>
+<span class="sd">      parameters after Dict2Map is called. It will also contain some</span>
+<span class="sd">      unexpected entries of every constant value {&#39;0&#39;:0.0} &amp; {&#39;1.0&#39;:1.0},</span>
+<span class="sd">      which do not cause any problems. </span>
+
+<span class="sd">    :param list varyList: a list of parameters names that will be varied</span>
+<span class="sd">    </span>
+
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="c"># process the Independent vars: remove dependent ones from varylist</span>
     <span class="c"># and then compute values for the Independent ones from their dependents</span>
@@ -923,14 +1026,21 @@
     <span class="n">parmDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fixedDict</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Dict2Map"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.Dict2Map">[docs]</a><span class="k">def</span> <span class="nf">Dict2Map</span><span class="p">(</span><span class="n">parmDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Convert the remapped values back to the original parameters</span>
+    <span class="sd">&#39;&#39;&#39;Applies the constraints defined using :func:`StoreEquivalence`,</span>
+<span class="sd">    :func:`GroupConstraints` and :func:`GenerateConstraints` by changing</span>
+<span class="sd">    values in a dict containing the parameters. This should be</span>
+<span class="sd">    done before the parameters are used for any computations</span>
+
+<span class="sd">    :param dict parmDict: a dict containing parameter values keyed by the</span>
+<span class="sd">      parameter names.</span>
+<span class="sd">      This will contain updated values for both dependent and independent</span>
+<span class="sd">      parameters after Dict2Map is called. It will also contain some</span>
+<span class="sd">      unexpected entries of every constant value {&#39;0&#39;:0.0} &amp; {&#39;1.0&#39;:1.0},</span>
+<span class="sd">      which do not cause any problems. </span>
+
+<span class="sd">    :param list varyList: a list of parameters names that will be varied</span>
 <span class="sd">    </span>
-<span class="sd">    This should be done to apply constraints to parameter values (use</span>
-<span class="sd">    Map2Dict once first). It should be done as part of the Model function</span>
-<span class="sd">    evaluation, before any computation is done</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="c">#I think this needs fixing to update parmDict with new values </span>
-    <span class="c">#   from the constraints based on what is in varyList - RVD. Don&#39;t think so -- BHT</span>
     <span class="k">global</span> <span class="n">dependentParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">,</span><span class="n">indParmList</span><span class="p">,</span><span class="n">fixedDict</span>
     <span class="c"># reset fixed values (should not be needed, but very quick) </span>
     <span class="c"># - this seems to update parmDict with {&#39;0&#39;:0.0} &amp; {&#39;1.0&#39;:1.0} - probably not what was intended</span>
@@ -969,7 +1079,7 @@
         <span class="n">a</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">a</span>
 </div>
-<div class="viewcode-block" id="FillArray"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.FillArray">[docs]</a><span class="k">def</span> <span class="nf">FillArray</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span><span class="nb">dict</span><span class="p">,</span><span class="n">collist</span><span class="p">,</span><span class="n">FillDiagonals</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_FillArray</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span><span class="nb">dict</span><span class="p">,</span><span class="n">collist</span><span class="p">,</span><span class="n">FillDiagonals</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Construct a n by n matrix (n = len(collist)</span>
 <span class="sd">    filling in the rows using the relationships defined</span>
 <span class="sd">    in the dictionaries selected by sel</span>
@@ -987,8 +1097,8 @@
         <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">collist</span><span class="p">):</span>
             <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="n">cnum</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">arr</span>
-</div>
-<div class="viewcode-block" id="SwapColumns"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.SwapColumns">[docs]</a><span class="k">def</span> <span class="nf">SwapColumns</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">v</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">_SwapColumns</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">v</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Swap columns in matrix m as well as the labels in v </span>
 <span class="sd">    so that element (i,i) is replaced by the first non-zero element in row i after that element</span>
 
@@ -1001,8 +1111,8 @@
             <span class="k">return</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&#39;Singular input&#39;</span>
-</div>
-<div class="viewcode-block" id="RowEchelon"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.RowEchelon">[docs]</a><span class="k">def</span> <span class="nf">RowEchelon</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">arr</span><span class="p">,</span><span class="n">collist</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">_RowEchelon</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">arr</span><span class="p">,</span><span class="n">collist</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Convert the first m rows in Matrix arr to row-echelon form</span>
 <span class="sd">    exchanging columns in the matrix and collist as needed.</span>
 
@@ -1012,12 +1122,12 @@
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">collist</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">],</span><span class="mi">0</span><span class="p">):</span>
-            <span class="n">SwapColumns</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">arr</span><span class="p">,</span><span class="n">collist</span><span class="p">)</span>
+            <span class="n">_SwapColumns</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">arr</span><span class="p">,</span><span class="n">collist</span><span class="p">)</span>
         <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">/=</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="c"># normalize row</span>
         <span class="c"># subtract current row from subsequent rows to set values to left of diagonal to 0</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">m</span><span class="p">):</span>
             <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">,:]</span> <span class="o">-=</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]</span>
-</div>
+
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">parmdict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">constrDict</span> <span class="o">=</span> <span class="p">[</span>

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Python Module Index &mdash; GSAS-II 0.2.0 documentation</title>
+    <title>GSASIIddataGUI: Phase Diffraction Data GUI &mdash; GSAS-II 0.2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -26,13 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
- 
-
-    <script type="text/javascript">
-      DOCUMENTATION_OPTIONS.COLLAPSE_INDEX = true;
-    </script>
-
-
+    <link rel="prev" title="GSASIIphsGUI: Phase GUI" href="GSASIIphsGUI.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,8 +36,11 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="#" title="Python Module Index"
+          <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIphsGUI.html" title="GSASIIphsGUI: Phase GUI"
+             accesskey="P">previous</a> |</li>
         <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -53,43 +50,32 @@
         <div class="bodywrapper">
           <div class="body">
             
+  <span class="target" id="module-GSASIIddataGUI"></span><div class="section" id="gsasiiddatagui-phase-diffraction-data-gui">
+<h1><em>GSASIIddataGUI: Phase Diffraction Data GUI</em><a class="headerlink" href="#gsasiiddatagui-phase-diffraction-data-gui" title="Permalink to this headline">¶</a></h1>
+<p>Module to create the GUI for display of diffraction data * phase
+information that is shown in the data display window
+(when a phase is selected.)</p>
+<dl class="function">
+<dt id="GSASIIddataGUI.UpdateDData">
+<tt class="descclassname">GSASIIddataGUI.</tt><tt class="descname">UpdateDData</tt><big>(</big><em>G2frame</em>, <em>DData</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIddataGUI.html#UpdateDData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIddataGUI.UpdateDData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the Diffraction Data associated with a phase
+(items where there is a value for each histogram and phase)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>G2frame</strong> (<em>wx.frame</em>) &#8211; the main GSAS-II frame object</li>
+<li><strong>DData</strong> (<em>wx.ScrolledWindow</em>) &#8211; notebook page to be used for the display</li>
+<li><strong>data</strong> (<em>dict</em>) &#8211; all the information on the phase in a dictionary</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
-   <h1>Python Module Index</h1>
-
-   <div class="modindex-jumpbox">
-   <a href="#cap-g"><strong>g</strong></a>
-   </div>
-
-   <table class="indextable modindextable" cellspacing="0" cellpadding="2">
-     <tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
-     <tr class="cap" id="cap-g"><td></td><td>
-       <strong>g</strong></td><td></td></tr>
-     <tr>
-       <td></td>
-       <td>
-       <a href="GSASII.html#module-GSASII"><tt class="xref">GSASII</tt></a></td><td>
-       <em></em></td></tr>
-     <tr>
-       <td></td>
-       <td>
-       <a href="GSASIIddataGUI.html#module-GSASIIddataGUI"><tt class="xref">GSASIIddataGUI</tt></a></td><td>
-       <em></em></td></tr>
-     <tr>
-       <td></td>
-       <td>
-       <a href="GSASIIgrid.html#module-GSASIIgrid"><tt class="xref">GSASIIgrid</tt></a></td><td>
-       <em></em></td></tr>
-     <tr>
-       <td></td>
-       <td>
-       <a href="GSASIImapvars.html#module-GSASIImapvars"><tt class="xref">GSASIImapvars</tt></a></td><td>
-       <em></em></td></tr>
-     <tr>
-       <td></td>
-       <td>
-       <a href="GSASIIphsGUI.html#module-GSASIIphsGUI"><tt class="xref">GSASIIphsGUI</tt></a></td><td>
-       <em></em></td></tr>
-   </table>
+</div>
 
 
           </div>
@@ -97,6 +83,14 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASIIphsGUI.html"
+                        title="previous chapter"><em>GSASIIphsGUI: Phase GUI</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIIddataGUI.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -121,8 +115,11 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="#" title="Python Module Index"
+          <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIphsGUI.html" title="GSASIIphsGUI: Phase GUI"
+             >previous</a> |</li>
         <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>

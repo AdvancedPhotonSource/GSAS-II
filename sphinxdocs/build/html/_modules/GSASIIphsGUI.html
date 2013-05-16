@@ -52,18 +52,19 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII - phase data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-04-19 15:38:07 -0500 (Fri, 19 Apr 2013) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 889 $</span>
+<span class="c"># $Date: 2013-05-15 18:18:22 -0500 (Wed, 15 May 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 906 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIphsGUI.py $</span>
-<span class="c"># $Id: GSASIIphsGUI.py 889 2013-04-19 20:38:07Z vondreele $</span>
+<span class="c"># $Id: GSASIIphsGUI.py 906 2013-05-15 23:18:22Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIphsGUI: Phase GUI*</span>
 <span class="sd">=========================</span>
 <span class="sd">Module to create the GUI for display of phase information</span>
 <span class="sd">in the data display window when a phase is selected.</span>
-<span class="sd">(Items displayed by some tabs is found in other modules.)</span>
+<span class="sd">(pages displayed in response to some phase tabs are done in other modules,</span>
+<span class="sd">such as GSASIIddata.)</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">wx</span>
@@ -78,7 +79,7 @@
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 889 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 906 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2elem</span>
@@ -106,12 +107,13 @@
 <span class="n">asind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">180.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
 <span class="n">acosd</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">180.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
 
+
 <div class="viewcode-block" id="UpdatePhaseData"><a class="viewcode-back" href="../GSASIIphsGUI.html#GSASIIphsGUI.UpdatePhaseData">[docs]</a><span class="k">def</span> <span class="nf">UpdatePhaseData</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">Item</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">oldPage</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Create the data display window contents when a phase is clicked on</span>
 <span class="sd">    in the man (data tree) window.</span>
-<span class="sd">    Called only from GSASIIgrid.MovePatternTreeToGrid, which in turn is</span>
-<span class="sd">    called from GSASII.GSASII.OnPatternTreeSelChanged when a tree item is</span>
-<span class="sd">    selected</span>
+<span class="sd">    Called only from :mod:`GSASIIgrid.MovePatternTreeToGrid`,</span>
+<span class="sd">    which in turn is called from :mod:`GSASII.GSASII.OnPatternTreeSelChanged`</span>
+<span class="sd">    when a tree item is selected.</span>
 
 <span class="sd">    :param wx.frame G2frame: the main GSAS-II frame object</span>
 
@@ -120,7 +122,10 @@
 <span class="sd">    :param dict data: all the information on the phase in a dictionary</span>
 
 <span class="sd">    :param int oldPage: This sets a tab to select when moving</span>
-<span class="sd">      from one phase to another. </span>
+<span class="sd">      from one phase to another, in which case the same tab is selected</span>
+<span class="sd">      to display first. This is set only when the previous data tree</span>
+<span class="sd">      selection is a phase, if not the value is None. The default action</span>
+<span class="sd">      is to bring up the General tab.</span>
 
 <span class="sd">    &#39;&#39;&#39;</span>
        
@@ -211,8 +216,11 @@
 <span class="c">################################################################################</span>
 
     <span class="k">def</span> <span class="nf">UpdateGeneral</span><span class="p">():</span>
+        <span class="sd">&#39;&#39;&#39;Draw the controls for the General phase data subpage</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         
-        <span class="sd">&#39;&#39;&#39; default dictionary structure for phase data: (taken from GSASII.py)</span>
+        <span class="sd">&quot;&quot;&quot; This is the default dictionary structure for phase data</span>
+<span class="sd">        (taken from GSASII.py)</span>
 <span class="sd">        &#39;General&#39;:{</span>
 <span class="sd">            &#39;Name&#39;:PhaseName</span>
 <span class="sd">            &#39;Type&#39;:&#39;nuclear&#39;</span>
@@ -224,8 +232,7 @@
 <span class="sd">            &#39;Pawley neg wt&#39;:0.0}</span>
 <span class="sd">        &#39;Atoms&#39;:[]</span>
 <span class="sd">        &#39;Drawing&#39;:{}</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        
+<span class="sd">        &quot;&quot;&quot;</span>        
         <span class="n">phaseTypes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;nuclear&#39;</span><span class="p">,</span><span class="s">&#39;modulated&#39;</span><span class="p">,</span><span class="s">&#39;magnetic&#39;</span><span class="p">,</span><span class="s">&#39;macromolecular&#39;</span><span class="p">]</span>
         <span class="n">SetupGeneral</span><span class="p">()</span>
         <span class="n">generalData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
@@ -777,7 +784,8 @@
                 <span class="n">line3Sizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">anneal</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
             <span class="n">mcsaSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">line3Sizer</span><span class="p">)</span>            
             <span class="k">return</span> <span class="n">mcsaSizer</span>
-                
+
+        <span class="c"># UpdateGeneral execution starts here</span>
         <span class="n">General</span><span class="o">.</span><span class="n">DestroyChildren</span><span class="p">()</span>
         <span class="n">dataDisplay</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Panel</span><span class="p">(</span><span class="n">General</span><span class="p">)</span>
         <span class="n">mainSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
@@ -808,66 +816,22 @@
         <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">MCSASizer</span><span class="p">())</span>
 
         <span class="n">dataDisplay</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="n">mainSizer</span><span class="p">)</span>
-        <span class="n">Size</span> <span class="o">=</span> <span class="n">mainSizer</span><span class="o">.</span><span class="n">Fit</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">)</span>
-        <span class="n">Size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">35</span>                           <span class="c">#compensate for status bar</span>
-        <span class="n">dataDisplay</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">Size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">PhaseUserSize</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">Size</span> <span class="o">=</span> <span class="n">mainSizer</span><span class="o">.</span><span class="n">ComputeFittingWindowSize</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">)</span>  <span class="c"># get size needed by window</span>
+            <span class="n">Size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">35</span>                           <span class="c">#compensate for status bar</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">setSizePosLeft</span><span class="p">(</span><span class="n">Size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+        <span class="n">dataDisplay</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">GetClientSize</span><span class="p">())</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">SetStatusText</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
-        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">setSizePosLeft</span><span class="p">(</span><span class="n">Size</span><span class="p">)</span>
 
 <span class="c">################################################################################</span>
 <span class="c">#####  Atom routines</span>
 <span class="c">################################################################################</span>
 
     <span class="k">def</span> <span class="nf">FillAtomsGrid</span><span class="p">(</span><span class="n">Atoms</span><span class="p">):</span>
-        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">setSizePosLeft</span><span class="p">([</span><span class="mi">700</span><span class="p">,</span><span class="mi">300</span><span class="p">])</span>
-        <span class="n">generalData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
-        <span class="n">atomData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span>
-        <span class="n">DData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Drawing&#39;</span><span class="p">]</span>
-        <span class="n">resRBData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;RBModels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Residue&#39;</span><span class="p">,[])</span>
-        <span class="n">vecRBData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;RBModels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Vector&#39;</span><span class="p">,[])</span>
-        <span class="n">rbAtmDict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">rbObj</span> <span class="ow">in</span> <span class="n">resRBData</span><span class="o">+</span><span class="n">vecRBData</span><span class="p">:</span>
-            <span class="n">exclList</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;X&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;Ids&#39;</span><span class="p">]))]</span>
-            <span class="n">rbAtmDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;Ids&#39;</span><span class="p">],</span><span class="n">exclList</span><span class="p">)))</span>
-            <span class="k">if</span> <span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;ThermalMotion&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;None&#39;</span><span class="p">:</span>
-                <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;Ids&#39;</span><span class="p">]:</span>
-                    <span class="n">rbAtmDict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;U&#39;</span>            
-        <span class="c"># exclList will be &#39;x&#39; or &#39;xu&#39; if TLS used in RB</span>
-        <span class="n">Items</span> <span class="o">=</span> <span class="p">[</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSEDITINSERT</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSEDITDELETE</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSREFINE</span><span class="p">,</span> 
-            <span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSMODIFY</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSTRANSFORM</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMVIEWINSERT</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMMOVE</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">atomData</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>    
-                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>
-                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
-        <span class="n">Items</span> <span class="o">=</span> <span class="p">[</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMVIEWINSERT</span><span class="p">,</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSVIEWADD</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMMOVE</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s">&#39;showABC&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Drawing&#39;</span><span class="p">]:</span>
-            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>
-                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>
-                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
-
-        <span class="n">AAchoice</span> <span class="o">=</span> <span class="s">&quot;: ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK&quot;</span>
-        <span class="n">Types</span> <span class="o">=</span> <span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="s">&quot;: ,X,XU,U,F,FX,FXU,FU&quot;</span><span class="p">,]</span><span class="o">+</span> \
-            <span class="mi">3</span><span class="o">*</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,5&#39;</span><span class="p">,]</span><span class="o">+</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,4&#39;</span><span class="p">,</span> <span class="c">#x,y,z,frac</span>
-            <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="s">&quot;:I,A&quot;</span><span class="p">,]</span>
-        <span class="n">Types</span> <span class="o">+=</span> <span class="mi">7</span><span class="o">*</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,5&#39;</span><span class="p">,]</span>
-        <span class="n">colLabels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">,</span><span class="s">&#39;Type&#39;</span><span class="p">,</span><span class="s">&#39;refine&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">,</span><span class="s">&#39;frac&#39;</span><span class="p">,</span><span class="s">&#39;site sym&#39;</span><span class="p">,</span><span class="s">&#39;mult&#39;</span><span class="p">,</span><span class="s">&#39;I/A&#39;</span><span class="p">,</span><span class="s">&#39;Uiso&#39;</span><span class="p">,</span><span class="s">&#39;U11&#39;</span><span class="p">,</span><span class="s">&#39;U22&#39;</span><span class="p">,</span><span class="s">&#39;U33&#39;</span><span class="p">,</span><span class="s">&#39;U12&#39;</span><span class="p">,</span><span class="s">&#39;U13&#39;</span><span class="p">,</span><span class="s">&#39;U23&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;magnetic&#39;</span><span class="p">:</span>
-            <span class="n">colLabels</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;Mx&#39;</span><span class="p">,</span><span class="s">&#39;My&#39;</span><span class="p">,</span><span class="s">&#39;Mz&#39;</span><span class="p">]</span>
-            <span class="n">Types</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="s">&quot;: ,X,XU,U,M,MX,MXU,MU,F,FX,FXU,FU,FM,FMX,FMU,&quot;</span>
-            <span class="n">Types</span> <span class="o">+=</span> <span class="mi">3</span><span class="o">*</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,4&#39;</span><span class="p">,]</span>
-        <span class="k">elif</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;macromolecular&#39;</span><span class="p">:</span>
-            <span class="n">colLabels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;res no&#39;</span><span class="p">,</span><span class="s">&#39;residue&#39;</span><span class="p">,</span><span class="s">&#39;chain&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">colLabels</span>
-            <span class="n">Types</span> <span class="o">=</span> <span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span>
-                <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="n">AAchoice</span><span class="p">,</span>
-                <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">]</span> <span class="o">+</span> <span class="n">Types</span>
-        <span class="k">elif</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;modulated&#39;</span><span class="p">:</span>
-            <span class="n">Types</span> <span class="o">+=</span> <span class="p">[]</span>
-            <span class="n">colLabels</span> <span class="o">+=</span> <span class="p">[]</span>
-
+        <span class="sd">&#39;&#39;&#39;Display the contents of the Atoms tab</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">def</span> <span class="nf">RefreshAtomGrid</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
 
             <span class="n">r</span><span class="p">,</span><span class="n">c</span> <span class="o">=</span>  <span class="n">event</span><span class="o">.</span><span class="n">GetRow</span><span class="p">(),</span><span class="n">event</span><span class="o">.</span><span class="n">GetCol</span><span class="p">()</span>
@@ -1202,6 +1166,54 @@
                             <span class="n">Atoms</span><span class="o">.</span><span class="n">SetCellStyle</span><span class="p">(</span><span class="n">row</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">VERY_LIGHT_GREY</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
             <span class="n">Atoms</span><span class="o">.</span><span class="n">AutoSizeColumns</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
 
+        <span class="c"># FillAtomsGrid executable code starts here</span>
+        <span class="n">generalData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
+        <span class="n">atomData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span>
+        <span class="n">DData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Drawing&#39;</span><span class="p">]</span>
+        <span class="n">resRBData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;RBModels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Residue&#39;</span><span class="p">,[])</span>
+        <span class="n">vecRBData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;RBModels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Vector&#39;</span><span class="p">,[])</span>
+        <span class="n">rbAtmDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">rbObj</span> <span class="ow">in</span> <span class="n">resRBData</span><span class="o">+</span><span class="n">vecRBData</span><span class="p">:</span>
+            <span class="n">exclList</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;X&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;Ids&#39;</span><span class="p">]))]</span>
+            <span class="n">rbAtmDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;Ids&#39;</span><span class="p">],</span><span class="n">exclList</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;ThermalMotion&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;None&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">rbObj</span><span class="p">[</span><span class="s">&#39;Ids&#39;</span><span class="p">]:</span>
+                    <span class="n">rbAtmDict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;U&#39;</span>            
+        <span class="c"># exclList will be &#39;x&#39; or &#39;xu&#39; if TLS used in RB</span>
+        <span class="n">Items</span> <span class="o">=</span> <span class="p">[</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSEDITINSERT</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSEDITDELETE</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSREFINE</span><span class="p">,</span> 
+            <span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSMODIFY</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSTRANSFORM</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMVIEWINSERT</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMMOVE</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">atomData</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>    
+                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>
+                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">Items</span> <span class="o">=</span> <span class="p">[</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMVIEWINSERT</span><span class="p">,</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMSVIEWADD</span><span class="p">,</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_ATOMMOVE</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&#39;showABC&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Drawing&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>
+                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>
+                <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">AtomsMenu</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+
+        <span class="n">AAchoice</span> <span class="o">=</span> <span class="s">&quot;: ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK&quot;</span>
+        <span class="n">Types</span> <span class="o">=</span> <span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="s">&quot;: ,X,XU,U,F,FX,FXU,FU&quot;</span><span class="p">,]</span><span class="o">+</span> \
+            <span class="mi">3</span><span class="o">*</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,5&#39;</span><span class="p">,]</span><span class="o">+</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,4&#39;</span><span class="p">,</span> <span class="c">#x,y,z,frac</span>
+            <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="s">&quot;:I,A&quot;</span><span class="p">,]</span>
+        <span class="n">Types</span> <span class="o">+=</span> <span class="mi">7</span><span class="o">*</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,5&#39;</span><span class="p">,]</span>
+        <span class="n">colLabels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">,</span><span class="s">&#39;Type&#39;</span><span class="p">,</span><span class="s">&#39;refine&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">,</span><span class="s">&#39;frac&#39;</span><span class="p">,</span><span class="s">&#39;site sym&#39;</span><span class="p">,</span><span class="s">&#39;mult&#39;</span><span class="p">,</span><span class="s">&#39;I/A&#39;</span><span class="p">,</span><span class="s">&#39;Uiso&#39;</span><span class="p">,</span><span class="s">&#39;U11&#39;</span><span class="p">,</span><span class="s">&#39;U22&#39;</span><span class="p">,</span><span class="s">&#39;U33&#39;</span><span class="p">,</span><span class="s">&#39;U12&#39;</span><span class="p">,</span><span class="s">&#39;U13&#39;</span><span class="p">,</span><span class="s">&#39;U23&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;magnetic&#39;</span><span class="p">:</span>
+            <span class="n">colLabels</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;Mx&#39;</span><span class="p">,</span><span class="s">&#39;My&#39;</span><span class="p">,</span><span class="s">&#39;Mz&#39;</span><span class="p">]</span>
+            <span class="n">Types</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="s">&quot;: ,X,XU,U,M,MX,MXU,MU,F,FX,FXU,FU,FM,FMX,FMU,&quot;</span>
+            <span class="n">Types</span> <span class="o">+=</span> <span class="mi">3</span><span class="o">*</span><span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_FLOAT</span><span class="o">+</span><span class="s">&#39;:10,4&#39;</span><span class="p">,]</span>
+        <span class="k">elif</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;macromolecular&#39;</span><span class="p">:</span>
+            <span class="n">colLabels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;res no&#39;</span><span class="p">,</span><span class="s">&#39;residue&#39;</span><span class="p">,</span><span class="s">&#39;chain&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">colLabels</span>
+            <span class="n">Types</span> <span class="o">=</span> <span class="p">[</span><span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">,</span>
+                <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_CHOICE</span><span class="o">+</span><span class="n">AAchoice</span><span class="p">,</span>
+                <span class="n">wg</span><span class="o">.</span><span class="n">GRID_VALUE_STRING</span><span class="p">]</span> <span class="o">+</span> <span class="n">Types</span>
+        <span class="k">elif</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;modulated&#39;</span><span class="p">:</span>
+            <span class="n">Types</span> <span class="o">+=</span> <span class="p">[]</span>
+            <span class="n">colLabels</span> <span class="o">+=</span> <span class="p">[]</span>
         <span class="n">SGData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;SGData&#39;</span><span class="p">]</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">SetStatusText</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">SGData</span><span class="p">[</span><span class="s">&#39;SGPolax&#39;</span><span class="p">]:</span>
@@ -1212,6 +1224,10 @@
         <span class="n">Atoms</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wg</span><span class="o">.</span><span class="n">EVT_GRID_LABEL_LEFT_CLICK</span><span class="p">,</span> <span class="n">RowSelect</span><span class="p">)</span>
         <span class="n">Atoms</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wg</span><span class="o">.</span><span class="n">EVT_GRID_LABEL_RIGHT_CLICK</span><span class="p">,</span> <span class="n">ChangeSelection</span><span class="p">)</span>
         <span class="n">Atoms</span><span class="o">.</span><span class="n">SetMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">PhaseUserSize</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">setSizePosLeft</span><span class="p">([</span><span class="mi">700</span><span class="p">,</span><span class="mi">300</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
         <span class="n">Paint</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">OnAtomAdd</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
@@ -4377,7 +4393,17 @@
         <span class="k">print</span> <span class="s">&#39;clear texture?&#39;</span>
         <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
 
+    <span class="k">def</span> <span class="nf">OnDataResize</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="s">&#39;Called when the data item window is resized by the user.&#39;</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">PhaseUserSize</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">GetSize</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&#39;Resize to&#39;</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">PhaseUserSize</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
+
     <span class="k">def</span> <span class="nf">OnPageChanged</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;This is called every time that a Notebook tab button is pressed</span>
+<span class="sd">        on a Phase data item window</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Frame</span><span class="o">.</span><span class="n">Unbind</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_SIZE</span><span class="p">)</span> <span class="c"># ignore size events during this routine</span>
         <span class="n">page</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
         <span class="n">text</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">GetPageText</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">text</span> <span class="o">==</span> <span class="s">&#39;Atoms&#39;</span><span class="p">:</span>
@@ -4475,9 +4501,12 @@
             
         <span class="k">else</span><span class="p">:</span>
             <span class="n">G2gd</span><span class="o">.</span><span class="n">SetDataMenuBar</span><span class="p">(</span><span class="n">G2frame</span><span class="p">)</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Frame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_SIZE</span><span class="p">,</span><span class="n">OnDataResize</span><span class="p">)</span> <span class="c"># capture user resize events</span>
         <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
         
+    <span class="n">wx</span><span class="o">.</span><span class="n">Frame</span><span class="o">.</span><span class="n">Unbind</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_SIZE</span><span class="p">)</span> <span class="c"># ignore size events during this routine</span>
     <span class="n">General</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Window</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
+    <span class="c"># General = wx.ScrolledWindow(G2frame.dataDisplay) # would like to change to this</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">General</span><span class="p">,</span><span class="s">&#39;General&#39;</span><span class="p">)</span>
     <span class="n">DData</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">DData</span><span class="p">,</span><span class="s">&#39;Data&#39;</span><span class="p">)</span>
@@ -4503,14 +4532,22 @@
     <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">aui</span><span class="o">.</span><span class="n">EVT_AUINOTEBOOK_PAGE_CHANGED</span><span class="p">,</span> <span class="n">OnPageChanged</span><span class="p">)</span>
 
     <span class="n">G2gd</span><span class="o">.</span><span class="n">SetDataMenuBar</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">DataGeneral</span><span class="p">)</span>
-    <span class="n">SetupGeneral</span><span class="p">()</span>
+    <span class="n">SetupGeneral</span><span class="p">()</span> <span class="c"># this is done all over the place (including in</span>
+    <span class="c"># UpdateGeneral). Why here too?</span>
+    
     <span class="n">GeneralData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">oldPage</span><span class="p">:</span>
+    
+    <span class="k">if</span> <span class="n">oldPage</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c"># when entering a Phase data item from any other item,</span>
+        <span class="c"># reset a saved size, if any.</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">PhaseUserSize</span> <span class="o">=</span> <span class="bp">None</span> 
+        <span class="n">UpdateGeneral</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">oldPage</span><span class="p">:</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">SetSelection</span><span class="p">(</span><span class="n">oldPage</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">UpdateGeneral</span><span class="p">()</span>
-    
-</pre></div></div>
+    <span class="n">wx</span><span class="o">.</span><span class="n">Frame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_SIZE</span><span class="p">,</span><span class="n">OnDataResize</span><span class="p">)</span> <span class="c"># capture user resizing</span></div>
+</pre></div>
 
           </div>
         </div>

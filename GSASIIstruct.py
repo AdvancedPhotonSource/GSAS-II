@@ -744,7 +744,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     Amat,Bmat = G2lat.cell2AB(cell)
     rpd = np.pi/180.
     rpd2 = rpd**2
-    g = np.inner(Bmat,Bmat.T)
+    g = np.inner(Bmat,Bmat)
     gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
         g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
     AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
@@ -759,7 +759,10 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         rbsx = str(irb)+':'+str(jrb)
         dXdv = []
         for iv in range(len(VModel['VectMag'])):
-            dXdv.append(np.inner(Bmat,VModel['rbVect'][iv]).T)
+            dCdv = []
+            for vec in VModel['rbVect'][iv]:
+                dCdv.append(G2mth.prodQVQ(Q,vec))
+            dXdv.append(np.inner(Bmat,np.array(dCdv)).T)
         XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
@@ -782,7 +785,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T*gvec
             dFdu = G2lat.U6toUij(dFdu.T)
             dFdu = np.tensordot(Amat,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
-#            dFdu = np.tensordot(QM,np.tensordot(QM,dFdu,([1,0])),([0,1]))
+            
             dFdu = G2lat.UijtoU6(dFdu)
             atNum = AtLookup[atId]
             if 'T' in RBObj['ThermalMotion'][0]:

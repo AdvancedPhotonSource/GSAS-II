@@ -203,7 +203,7 @@ def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
         if atom[cia] == 'A':
             UIJ = atom[cia+2:cia+8]
                 
-def TLS2Uij(xyz,g,Amat,rbObj):
+def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
     TLStype,TLS = rbObj['ThermalMotion'][:2]
     Tmat = np.zeros((3,3))
     Lmat = np.zeros((3,3))
@@ -295,7 +295,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
         L = np.array(TLS[6:12])*(np.pi/180.)**2
     if 'S' in TLStype:
         S = np.array(TLS[12:])*(np.pi/180.)
-    g = np.inner(Bmat,Bmat.T)
+    g = np.inner(Bmat,Bmat)
     gvec = 1./np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
         g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
     Uout = []
@@ -316,7 +316,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
             U[5] = T[5]+L[3]*X[0]*X[2]+L[4]*X[0]*X[1]-L[5]*X[0]**2-L[0]*X[2]*X[1]+  \
                 S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
             Umat = G2lat.U6toUij(U)
-            beta = np.inner(np.inner(Bmat,Umat),Bmat.T)
+            beta = np.inner(np.inner(Bmat.T,Umat),Bmat)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
         else:
             Uout.append(['N',])

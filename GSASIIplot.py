@@ -2628,7 +2628,6 @@ def PlotStructure(G2frame,data):
     if 'Flip' in generalData:
         flipData = generalData['Flip']                        
         flipData['mapRoll'] = [0,0,0]
-    cx,ct,cs,ci = drawingData['atomPtrs']
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
@@ -2693,6 +2692,7 @@ def PlotStructure(G2frame,data):
         except AttributeError:       #if from OnKeyBox above
             key = str(event.key).upper()
         indx = drawingData['selectedAtoms']
+        cx,ct = drawingData['atomPtrs'][:2]
         if key in ['C']:
             drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
             drawingData['viewDir'] = [0,0,1]
@@ -2771,6 +2771,7 @@ def PlotStructure(G2frame,data):
                     except:
                         SetSelectedAtoms(i,Add)
         else:
+            cx = drawingData['atomPtrs'][0]
             for i,atom in enumerate(drawAtoms):
                 x,y,z = atom[cx:cx+3]
                 X,Y,Z = gluProject(x,y,z,Model,Proj,View)

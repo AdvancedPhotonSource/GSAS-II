@@ -36,7 +36,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
-DEBUG = True
+DEBUG = False
 
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
@@ -753,7 +753,6 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         VModel = RBData['Vector'][RBObj['RBId']]
         Q = RBObj['Orient'][0]
-        QM = G2mth.Q2Mat(Q)
         Pos = RBObj['Orig'][0]
         jrb = VRBIds.index(RBObj['RBId'])
         rbsx = str(irb)+':'+str(jrb)
@@ -784,8 +783,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             X = G2mth.prodQVQ(Q,Cart[ia])
             dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T/gvec
             dFdu = G2lat.U6toUij(dFdu.T)
-            dFdu = np.tensordot(Amat,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
-            
+            dFdu = np.tensordot(Amat,np.tensordot(Amat,dFdu,([1,0])),([0,1]))            
             dFdu = G2lat.UijtoU6(dFdu)
             atNum = AtLookup[atId]
             if 'T' in RBObj['ThermalMotion'][0]:
@@ -836,17 +834,16 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                     dFdvDict[tname] += dRdT[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
-            dx = 0.00001
+            dx = 0.0001
             for i,name in enumerate(['RBRPx:','RBRPy:','RBRPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
                 Q[iv] -= dx
-                Cart1 = G2mth.prodQVQ(Q,Cart[ia])
+                XYZ1,Cart1 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
                 Q[iv] += 2.*dx
-                Cart2 = G2mth.prodQVQ(Q,Cart[ia])
+                XYZ2,Cart2 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
                 Q[iv] -= dx
-                dC = Cart2-Cart1
-                dXdO = np.inner(Bmat,G2mth.prodQVQ(Q,dC))/(2.*dx)
+                dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
                 for ix in [0,1,2]:
                     dFdvDict[pfx+'RBR'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             X = G2mth.prodQVQ(Q,Cart[ia])
@@ -864,9 +861,9 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBRL33:'+rbsx] += rpd2*(dFdu[0]*X[1]**2+dFdu[1]*X[0]**2-dFdu[3]*X[0]*X[1])
                 dFdvDict[pfx+'RBRL12:'+rbsx] += rpd2*(-dFdu[3]*X[2]**2-2.*dFdu[2]*X[0]*X[1]+
                     dFdu[4]*X[1]*X[2]+dFdu[5]*X[0]*X[2])
-                dFdvDict[pfx+'RBRL13:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[1]*X[0]*X[2]+
+                dFdvDict[pfx+'RBRL13:'+rbsx] += rpd2*(dFdu[4]*X[1]**2-2.*dFdu[1]*X[0]*X[2]+
                     dFdu[3]*X[1]*X[2]+dFdu[5]*X[0]*X[1])
-                dFdvDict[pfx+'RBRL23:'+rbsx] += rpd2*(dFdu[0]*X[1]**2-2.*dFdu[0]*X[1]*X[2]+
+                dFdvDict[pfx+'RBRL23:'+rbsx] += rpd2*(dFdu[5]*X[0]**2-2.*dFdu[0]*X[1]*X[2]+
                     dFdu[3]*X[0]*X[2]+dFdu[4]*X[0]*X[1])
             if 'S' in RBObj['ThermalMotion'][0]:
                 dFdvDict[pfx+'RBRS12:'+rbsx] += rpd*(dFdu[5]*X[1]-2.*dFdu[1]*X[2])

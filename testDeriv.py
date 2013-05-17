@@ -79,7 +79,7 @@ class testDeriv(wx.Frame):
                 self.calcControls = cPickle.load(file)
                 self.pawleyLookup = cPickle.load(file)
                 self.use = [False for i in range(len(self.varylist))]
-                self.delt = [max(abs(self.parmDict[name])*0.0001,1e-8) for name in self.varylist]
+                self.delt = [max(abs(self.parmDict[name])*0.001,1e-6) for name in self.varylist]
                 file.close()
                 self.UpdateControls(event)
         finally:

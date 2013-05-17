@@ -2835,16 +2835,14 @@ def PlotStructure(G2frame,data):
     def OnMouseWheel(event):
         if event.ShiftDown():
             return
-        drawingData['cameraPos'] += event.GetWheelRotation()/24
+        drawingData['cameraPos'] += event.GetWheelRotation()/24.
         drawingData['cameraPos'] = max(10,min(500,drawingData['cameraPos']))
         G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(drawingData['cameraPos']),1)
         page = getSelection()
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Draw Options':
-                panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
-                names = [child.GetName() for child in panel]
-                panel[names.index('cameraPos')].SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
-                panel[names.index('cameraSlider')].SetValue(drawingData['cameraPos'])
+                G2frame.dataDisplay.cameraPosTxt.SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
+                G2frame.dataDisplay.cameraSlider.SetValue(drawingData['cameraPos'])
             Draw('wheel')
         
     def getSelection():
@@ -2858,9 +2856,7 @@ def PlotStructure(G2frame,data):
         page = getSelection()
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Draw Options':
-                panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
-                names = [child.GetName() for child in panel]
-                panel[names.index('viewPoint')].SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
+                G2frame.dataDisplay.viewPoint.SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
                 
     def SetRBOrigText():
         page = getSelection()

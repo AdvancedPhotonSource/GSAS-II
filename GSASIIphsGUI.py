@@ -2533,10 +2533,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
             cameraPosTxt = wx.StaticText(drawOptions,-1,
                 ' Camera Distance: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
+            G2frame.dataDisplay.cameraPosTxt = cameraPosTxt
             slideSizer.Add(cameraPosTxt,0,wx.ALIGN_CENTER_VERTICAL)
             cameraPos = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
             cameraPos.SetRange(10,500)
             cameraPos.Bind(wx.EVT_SLIDER, OnCameraPos)
+            G2frame.dataDisplay.cameraSlider = cameraPos
             slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
             
             ZclipTxt = wx.StaticText(drawOptions,-1,' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
@@ -2691,6 +2693,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             VP = drawingData['viewPoint'][0]
             viewPoint = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewPoint')
+            G2frame.dataDisplay.viewPoint = viewPoint
             viewPoint.Bind(wx.EVT_TEXT_ENTER,OnViewPoint)
             viewPoint.Bind(wx.EVT_KILL_FOCUS,OnViewPoint)
             lineSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)

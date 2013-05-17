@@ -2880,9 +2880,7 @@ def PlotStructure(G2frame,data):
         page = getSelection()
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Draw Options':
-                panel = G2frame.dataDisplay.GetPage(page).GetChildren()[0].GetChildren()
-                names = [child.GetName() for child in panel]
-                panel[names.index('viewDir')].SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
+                G2frame.dataDisplay.viewDir.SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
                 
     def SetMapPeaksText(mapPeaks):
         page = getSelection()

@@ -9,7 +9,8 @@
 ########### SVN repository information ###################
 '''
 *GSASIIphsGUI: Phase GUI*
-=========================
+-------------------------
+
 Module to create the GUI for display of phase information
 in the data display window when a phase is selected.
 (pages displayed in response to some phase tabs are done in other modules,
@@ -2676,6 +2677,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewDir')
             viewDir.Bind(wx.EVT_TEXT_ENTER,OnViewDir)
             viewDir.Bind(wx.EVT_KILL_FOCUS,OnViewDir)
+            G2frame.dataDisplay.viewDir = viewDir
             lineSizer.Add(viewDir,0,wx.ALIGN_CENTER_VERTICAL)
             showSizer.Add(lineSizer)
             showSizer.Add((0,5),0)
@@ -4432,7 +4434,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
             UpdateDrawOptions()
-            G2plt.PlotStructure(G2frame,data)
+            #G2plt.PlotStructure(G2frame,data)
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'Draw Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
@@ -4482,7 +4485,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
             FillMapPeaksGrid()
-            G2plt.PlotStructure(G2frame,data)
+            #G2plt.PlotStructure(G2frame,data)
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)

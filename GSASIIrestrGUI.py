@@ -1236,7 +1236,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                             name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' '
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         calc = G2mth.getRestChiral(XYZ,Amat)
-                        table.append([name,calc,obs,esd,(obs-calc)/esd]])
+                        table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
                         print '**** WARNING - missing atom - restraint deleted ****'
@@ -1251,7 +1251,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
                         calc = G2mth.getRestChiral(XYZ,Amat)
-                        table.append([name,calc,obs,esd,(obs-calc)/esd]])
+                        table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
                         print '**** WARNING - missing atom - restraint deleted ****'

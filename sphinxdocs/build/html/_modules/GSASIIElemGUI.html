@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSASIIElemGUI &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for GSASIIElemGUI</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="c"># $Date: 2013-05-13 15:18:21 -0500 (Mon, 13 May 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 903 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIElemGUI.py $</span>
+<span class="c"># $Id: GSASIIElemGUI.py 903 2013-05-13 20:18:21Z toby $</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">*GSASIIElemGUI: GUI to select and delete element lists*</span>
+<span class="sd">-------------------------------------------------------</span>
+
+<span class="sd">Module to select elements from a periodic table and</span>
+<span class="sd">to delete an element from a list of selected elements.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;ElementGUI: class defn. for element GUIs</span>
+<span class="sd">   Copyright: 2008, Robert B. Von Dreele &amp; Brian H. Toby (Argonne National Laboratory)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">wx</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">wx.lib.colourselect</span> <span class="kn">as</span> <span class="nn">wscs</span>
+<div class="viewcode-block" id="PickElement"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIElemGUI.PickElement">[docs]</a><span class="k">class</span> <span class="nc">PickElement</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
+    <span class="s">&quot;Makes periodic table widget for picking element - caller maintains element list&quot;</span>
+    <span class="n">Elem</span><span class="o">=</span><span class="bp">None</span>
+    <span class="k">def</span> <span class="nf">_init_ctrls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prnt</span><span class="p">):</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;PickElement&#39;</span><span class="p">,</span>
+              <span class="n">parent</span><span class="o">=</span><span class="n">prnt</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DefaultPosition</span><span class="p">,</span> 
+              <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Pick Element&#39;</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">ElementTable</span> <span class="kn">as</span> <span class="nn">ET</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">butWid</span> <span class="o">=</span> <span class="mi">60</span>
+        <span class="k">if</span> <span class="s">&#39;nt&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">butWid</span> <span class="o">=</span> <span class="mi">40</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetClientSize</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="mi">50</span><span class="o">+</span><span class="mi">18</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">butWid</span><span class="p">,</span> <span class="mi">250</span><span class="p">))</span>
+        
+        <span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">E</span> <span class="ow">in</span> <span class="n">ET</span><span class="o">.</span><span class="n">ElTable</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneOnly</span><span class="p">:</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">E</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">E</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+            <span class="n">PickElement</span><span class="o">.</span><span class="n">ElButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="n">E</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+               <span class="n">pos</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">butWid</span><span class="o">+</span><span class="mi">25</span><span class="p">,</span><span class="n">E</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="mi">24</span><span class="o">+</span><span class="mi">24</span><span class="p">),</span><span class="n">tip</span><span class="o">=</span><span class="n">E</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+            <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span><span class="n">oneOnly</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">ifNone</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="s">&#39;Needs a doc string&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oneOnly</span> <span class="o">=</span> <span class="n">oneOnly</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifNone</span> <span class="o">=</span> <span class="n">ifNone</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_ctrls</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="PickElement.ElButton"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIElemGUI.PickElement.ElButton">[docs]</a>    <span class="k">def</span> <span class="nf">ElButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">tip</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+        <span class="s">&#39;Needs a doc string&#39;</span>
+        <span class="n">Black</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Colour</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifNone</span> <span class="ow">and</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;None&#39;</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneOnly</span><span class="p">:</span>
+            <span class="n">El</span> <span class="o">=</span> <span class="n">wscs</span><span class="o">.</span><span class="n">ColourSelect</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span><span class="n">colour</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">butWid</span><span class="p">,</span><span class="mi">23</span><span class="p">),</span> <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">RAISED_BORDER</span><span class="p">)</span>
+            <span class="n">El</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_BUTTON</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnElButton</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">butWid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">butWid</span>
+            <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;None&#39;</span><span class="p">:</span>
+                <span class="n">butWid</span> <span class="o">*=</span> <span class="mi">2</span>
+            <span class="n">El</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ComboBox</span><span class="p">(</span><span class="n">choices</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="n">butWid</span><span class="p">,</span><span class="mi">23</span><span class="p">),</span>
+                <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">CB_READONLY</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">El</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_COMBOBOX</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">OnElButton</span><span class="p">)</span>
+        
+        <span class="n">El</span><span class="o">.</span><span class="n">SetBackgroundColour</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="n">El</span><span class="o">.</span><span class="n">SetToolTipString</span><span class="p">(</span><span class="n">tip</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">OnElButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneOnly</span><span class="p">:</span>
+            <span class="n">El</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span><span class="o">.</span><span class="n">GetLabel</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">El</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span><span class="o">.</span><span class="n">GetValue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Elem</span> <span class="o">=</span> <span class="n">El</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EndModal</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">)</span>        
+        </div>
+<div class="viewcode-block" id="DeleteElement"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIElemGUI.DeleteElement">[docs]</a><span class="k">class</span> <span class="nc">DeleteElement</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
+    <span class="s">&quot;Delete element from selected set widget&quot;</span>
+    <span class="k">def</span> <span class="nf">_init_ctrls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span><span class="n">choice</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;Delete&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> 
+              <span class="n">pos</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DefaultPosition</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span><span class="mi">64</span><span class="o">+</span><span class="n">l</span><span class="o">*</span><span class="mi">24</span><span class="p">),</span> <span class="mi">87</span><span class="p">),</span>
+              <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Delete Element&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Show</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetAutoLayout</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetHelpText</span><span class="p">(</span><span class="s">&#39;Select element to delete&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetWindowVariant</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">WINDOW_VARIANT_SMALL</span><span class="p">)</span>
+
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Elem</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">Elem</span> <span class="ow">in</span> <span class="n">choice</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ElButton</span><span class="p">(</span><span class="nb">id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="n">Elem</span><span class="p">,</span><span class="n">pos</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mi">16</span><span class="o">+</span><span class="n">i</span><span class="o">*</span><span class="mi">24</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+            <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+              
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span><span class="n">choice</span><span class="p">):</span>
+        <span class="n">DeleteElement</span><span class="o">.</span><span class="n">El</span> <span class="o">=</span> <span class="s">&#39; &#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_ctrls</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">choice</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DeleteElement.ElButton"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIElemGUI.DeleteElement.ElButton">[docs]</a>    <span class="k">def</span> <span class="nf">ElButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="s">&#39;Needs a doc string&#39;</span>
+        <span class="n">White</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Colour</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="n">El</span> <span class="o">=</span> <span class="n">wscs</span><span class="o">.</span><span class="n">ColourSelect</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">colour</span> <span class="o">=</span> <span class="n">White</span><span class="p">,</span>
+            <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="mi">23</span><span class="p">),</span> <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">RAISED_BORDER</span><span class="p">)</span>
+        <span class="n">El</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_BUTTON</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnDeleteButton</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">OnDeleteButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">DeleteElement</span><span class="o">.</span><span class="n">El</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span><span class="o">.</span><span class="n">GetLabel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EndModal</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">GetDeleteElement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DeleteElement</span><span class="o">.</span><span class="n">El</span>
+        
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

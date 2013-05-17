@@ -9,9 +9,8 @@ GSAS-II Developer's Documentation
 
   GSASII.rst
   GSASIImapvars.rst
-  GSASIIgrid.rst
-  GSASIIphsGUI.rst
-  GSASIIddataGUI.rst
+  GSASIIGUIr.rst
+  GSASIIGUI.rst
 
 
 Note that this program requires the Python wxPython, NumPy, SciPy,

@@ -1,0 +1,732 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSAS-II GUI Routines &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="GSAS-II GUI Submodules" href="GSASIIGUI.html" />
+    <link rel="prev" title="GSASIImapvars: Parameter constraints" href="GSASIImapvars.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIGUI.html" title="GSAS-II GUI Submodules"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="GSASIImapvars.html" title="GSASIImapvars: Parameter constraints"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-GSASIIgrid">
+<span id="gsas-ii-gui-routines"></span><h1><em>GSAS-II GUI Routines</em><a class="headerlink" href="#module-GSASIIgrid" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="gsasiigrid-basic-gui-routines">
+<h2><em>GSASIIgrid: Basic GUI routines</em><a class="headerlink" href="#gsasiigrid-basic-gui-routines" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="GSASIIgrid.AddHelp">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">AddHelp</tt><big>(</big><em>frame</em>, <em>helpType</em>, <em>helpLbl=None</em>, <em>title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#AddHelp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.AddHelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class a single entry for the help menu (used on the Mac only):
+&#8216;Help on &lt;helpType&gt;&#8217;: where helpType is a reference to an HTML page to
+be opened</p>
+<p>NOTE: the title when appending this menu should be &#8216;&amp;Help&#8217; so the wx handles
+it correctly.</p>
+<dl class="method">
+<dt id="GSASIIgrid.AddHelp.OnHelpById">
+<tt class="descname">OnHelpById</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#AddHelp.OnHelpById"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.AddHelp.OnHelpById" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when Help on... is pressed in a menu. Brings up
+a web page for documentation.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.DataFrame">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">DataFrame</tt><big>(</big><em>parent</em>, <em>frame</em>, <em>data=None</em>, <em>name=None</em>, <em>size=None</em>, <em>pos=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DataFrame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DataFrame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the dataframe window and all the entries in menus. 
+The binding is for the menus is not done here, but rather is done
+where the functions can be accessed (in various GSASII*GUI modules).</p>
+<dl class="method">
+<dt id="GSASIIgrid.DataFrame.Bind">
+<tt class="descname">Bind</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DataFrame.Bind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DataFrame.Bind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the Bind() function: on the Mac the binding is to
+the main window, so that menus operate with any window on top.
+For other platforms, call the default wx.Frame Bind()</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.DataFrame.PostfillDataMenu">
+<tt class="descname">PostfillDataMenu</tt><big>(</big><em>empty=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DataFrame.PostfillDataMenu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DataFrame.PostfillDataMenu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the &#8220;standard&#8221; part of data frame menus. Note that on Linux and
+Windows, this is the standard help Menu. On Mac, this menu duplicates the
+tree menu, but adds an extra help command for the data item and a separator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.DataFrame.PrefillDataMenu">
+<tt class="descname">PrefillDataMenu</tt><big>(</big><em>menu</em>, <em>helpType</em>, <em>helpLbl=None</em>, <em>empty=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DataFrame.PrefillDataMenu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DataFrame.PrefillDataMenu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the &#8220;standard&#8221; part of data frame menus. Note that on Linux and
+Windows nothing happens here. On Mac, this menu duplicates the
+tree menu, but adds an extra help command for the data item and a separator.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.DisAglDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">DisAglDialog</tt><big>(</big><em>parent</em>, <em>data</em>, <em>default</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DisAglDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DisAglDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distance Angle Controls dialog</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.G2HtmlWindow">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2HtmlWindow</tt><big>(</big><em>parent</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2HtmlWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2HtmlWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays help information in a primitive HTML browser type window</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.GSGrid">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GSGrid</tt><big>(</big><em>parent</em>, <em>name=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic wx.Grid implementation</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.GSNoteBook">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GSNoteBook</tt><big>(</big><em>parent</em>, <em>name=''</em>, <em>size=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSNoteBook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSNoteBook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notebook used in various locations; implemented with wx.aui extension</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.GetPatternTreeDataNames">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GetPatternTreeDataNames</tt><big>(</big><em>G2frame</em>, <em>dataTypes</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GetPatternTreeDataNames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GetPatternTreeDataNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.GetPatternTreeItemId">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GetPatternTreeItemId</tt><big>(</big><em>G2frame</em>, <em>parentId</em>, <em>itemText</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GetPatternTreeItemId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GetPatternTreeItemId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.GridFractionEditor">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GridFractionEditor</tt><big>(</big><em>grid</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GridFractionEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GridFractionEditor" title="Permalink to this definition">¶</a></dt>
+<dd><p>A grid cell editor class that allows entry of values as fractions as well
+as sine and cosine values [as s() and c()]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.HorizontalLine">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">HorizontalLine</tt><big>(</big><em>sizer</em>, <em>parent</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#HorizontalLine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.HorizontalLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws a horizontal line as wide as the window.
+This shows up on the Mac as a very thin line, no matter what I do</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.MovePatternTreeToGrid">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">MovePatternTreeToGrid</tt><big>(</big><em>G2frame</em>, <em>item</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MovePatternTreeToGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MovePatternTreeToGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.MyHelp">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">MyHelp</tt><big>(</big><em>frame</em>, <em>helpType=None</em>, <em>helpLbl=None</em>, <em>morehelpitems=</em><span class="optional">[</span><span class="optional">]</span>, <em>title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHelp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that creates the contents of a help menu.
+The menu will start with two entries:</p>
+<ul class="simple">
+<li>&#8216;Help on &lt;helpType&gt;&#8217;: where helpType is a reference to an HTML page to
+be opened</li>
+<li>About: opens an About dialog using OnHelpAbout. N.B. on the Mac this
+gets moved to the App menu to be consistent with Apple style.</li>
+</ul>
+<p>NOTE: for this to work properly with respect to system menus, the title
+for the menu must be &amp;Help, or it will not be processed properly:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">menu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="n">menu</span><span class="o">=</span><span class="n">MyHelp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">...</span><span class="p">),</span><span class="n">title</span><span class="o">=</span><span class="s">&quot;&amp;Help&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="GSASIIgrid.MyHelp.OnCheckUpdates">
+<tt class="descname">OnCheckUpdates</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHelp.OnCheckUpdates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHelp.OnCheckUpdates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the GSAS-II repository has an update for the current source files
+and perform that update if requested.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.MyHelp.OnHelpAbout">
+<tt class="descname">OnHelpAbout</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHelp.OnHelpAbout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHelp.OnHelpAbout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display an &#8216;About GSAS-II&#8217; box</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.MyHelp.OnHelpById">
+<tt class="descname">OnHelpById</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHelp.OnHelpById"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHelp.OnHelpById" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when Help on... is pressed in a menu. Brings up
+a web page for documentation.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.MyHtmlPanel">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">MyHtmlPanel</tt><big>(</big><em>frame</em>, <em>id</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHtmlPanel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHtmlPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a panel to display Help information</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.PickTwoDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">PickTwoDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>prompt</em>, <em>names</em>, <em>choices</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#PickTwoDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.PickTwoDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>This does not seem to be in use</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.SetDataMenuBar">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">SetDataMenuBar</tt><big>(</big><em>G2frame</em>, <em>menu=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#SetDataMenuBar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.SetDataMenuBar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the menu for the data frame. On the Mac put this
+menu for the data tree window instead.</p>
+<p>Note that data frame items do not have menus, for these (menu=None)
+display a blank menu or on the Mac display the standard menu for
+the data tree window.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.ShowHelp">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ShowHelp</tt><big>(</big><em>helpType</em>, <em>frame</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ShowHelp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ShowHelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called to bring up a web page for documentation.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.SingleFloatDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">SingleFloatDialog</tt><big>(</big><em>parent, title, prompt, value, limits=[0.0, 1.0], format='%.5g'</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#SingleFloatDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.SingleFloatDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dialog to obtain a single float value from user</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.SymOpDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">SymOpDialog</tt><big>(</big><em>parent</em>, <em>SGData</em>, <em>New=True</em>, <em>ForceUnit=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#SymOpDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.SymOpDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to select a symmetry operator</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.Table">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">Table</tt><big>(</big><em>data=</em><span class="optional">[</span><span class="optional">]</span>, <em>rowLabels=None</em>, <em>colLabels=None</em>, <em>types=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#Table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.Table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic data table for use with GSgrid</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.UpdateControls">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateControls</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateControls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Edit overall GSAS-II controls in main Controls data tree entry</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.UpdateHKLControls">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateHKLControls</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateHKLControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateHKLControls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.UpdateNotebook">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateNotebook</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateNotebook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateNotebook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the data tree notebook entry is selected. Allows for
+editing of the text in that tree entry</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.UpdatePWHKPlot">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdatePWHKPlot</tt><big>(</big><em>G2frame</em>, <em>kind</em>, <em>item</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdatePWHKPlot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdatePWHKPlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.UpdateSeqResults">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateSeqResults</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateSeqResults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateSeqResults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the Sequential Results data tree entry is selected
+to show results from a sequential refinement.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II data tree windows</li>
+<li><strong>data</strong> (<em>dict</em>) &#8211; <p>a dictionary containing the following items:</p>
+<ul>
+<li>&#8216;histNames&#8217; - list of histogram names in order as processed by Sequential Refinement</li>
+<li>&#8216;varyList&#8217; - list of variables - identical over all refinements in sequence</li>
+<li>&#8216;histName&#8217; - dictionaries for all data sets processed, which contains:<ul>
+<li>&#8216;variables&#8217;- result[0] from leastsq call</li>
+<li>&#8216;varyList&#8217; - list of variables; same as above</li>
+<li>&#8216;sig&#8217; - esds for variables</li>
+<li>&#8216;covMatrix&#8217; - covariance matrix from individual refinement</li>
+<li>&#8216;title&#8217; - histogram name; same as dict item name</li>
+<li>&#8216;newAtomDict&#8217; - new atom parameters after shifts applied</li>
+<li>&#8216;newCellDict&#8217; - new cell parameters after shifts to A0-A5 applied&#8217;</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIIO"></span><div class="section" id="gsasiiio-misc-i-o-routines">
+<h2><em>GSASIIIO: Misc I/O routines</em><a class="headerlink" href="#gsasiiio-misc-i-o-routines" title="Permalink to this headline">¶</a></h2>
+<p>Module with miscellaneous routines for input and output. Many
+are GUI routines to interact with user.</p>
+<p>Includes support for image reading.</p>
+<p>Also includes base classes for data import routines.</p>
+<dl class="function">
+<dt id="GSASIIIO.CheckImageFile">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">CheckImageFile</tt><big>(</big><em>G2frame</em>, <em>imagefile</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#CheckImageFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.CheckImageFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an new image file name if the specified one does not
+exist</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II Frame and data object</li>
+<li><strong>imagefile</strong> (<em>str</em>) &#8211; name of image file</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">imagefile, if it exists, or the name of a file
+that does exist or False if the user presses Cancel</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.ExtractFileFromZip">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ExtractFileFromZip</tt><big>(</big><em>filename</em>, <em>selection=None</em>, <em>confirmread=True</em>, <em>confirmoverwrite=True</em>, <em>parent=None</em>, <em>multipleselect=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExtractFileFromZip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExtractFileFromZip" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the filename is a zip file, extract a file from that
+archive.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Selection</strong> (<em>list</em>) &#8211; used to predefine the name of the file
+to be extracted. Filename case and zip directory name are
+ignored in selection; the first matching file is used.</li>
+<li><strong>confirmread</strong> (<em>bool</em>) &#8211; if True asks the user to confirm before expanding
+the only file in a zip</li>
+<li><strong>confirmoverwrite</strong> (<em>bool</em>) &#8211; if True asks the user to confirm
+before overwriting if the extracted file already exists</li>
+<li><strong>multipleselect</strong> (<em>bool</em>) &#8211; if True allows more than one zip
+file to be extracted, a list of file(s) is returned.
+If only one file is present, do not ask which one, otherwise
+offer a list of choices (unless selection is used).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the name of the file that has been created or a
+list of files (see multipleselect)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>If the file is not a zipfile, return the name of the input file.
+If the zipfile is empty or no file has been selected, return None</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.FileDlgFixExt">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">FileDlgFixExt</tt><big>(</big><em>dlg</em>, <em>file</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#FileDlgFixExt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.FileDlgFixExt" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is needed to fix a problem in linux wx.FileDialog</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetEdfData">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetEdfData</tt><big>(</big><em>filename</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetEdfData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetEdfData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read European detector data edf file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetG2Image">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetG2Image</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetG2Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetG2Image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an image as a python pickle</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetGEsumData">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetGEsumData</tt><big>(</big><em>filename</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetGEsumData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetGEsumData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read SUM file as produced at 1-ID from G.E. images</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetImageData">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetImageData</tt><big>(</big><em>G2frame</em>, <em>imagefile</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetImageData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetImageData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an image with the file reader keyed by the
+file extension</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II Frame and data object</li>
+<li><strong>imagefile</strong> (<em>str</em>) &#8211; name of image file</li>
+<li><strong>imageOnly</strong> (<em>bool</em>) &#8211; If True return only the image,
+otherwise  (default) return more (see below)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">an image as a numpy array or a list of four items:
+Comments, Data, Npix and the Image, as selected by imageOnly</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetImgData">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetImgData</tt><big>(</big><em>filename</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetImgData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetImgData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an ADSC image file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetMAR345Data">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetMAR345Data</tt><big>(</big><em>filename</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetMAR345Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetMAR345Data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a MAR-345 image plate image</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetPowderPeaks">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetPowderPeaks</tt><big>(</big><em>fileName</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetPowderPeaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetPowderPeaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read powder peaks from a file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetTifData">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetTifData</tt><big>(</big><em>filename</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetTifData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetTifData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an image in a pseudo-tif format,
+as produced by a wide variety of software, almost always
+incorrectly in some way.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIIO.ImportBaseclass">
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportBaseclass</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a base class for the importing of data files (diffraction
+data, coordinates,...</p>
+<dl class="method">
+<dt id="GSASIIIO.ImportBaseclass.BlockSelector">
+<tt class="descname">BlockSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select a block'</em>, <em>size=None</em>, <em>header='Block Selector'</em>, <em>useCancel=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.BlockSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.BlockSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide a wx dialog to select a block if the file contains more
+than one set of data and one must be selected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportBaseclass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>This routine will attempt to determine if the file can be read
+with the current format.
+This will typically be overridden with a method that 
+takes a quick scan of [some of]
+the file contents to do a &#8220;sanity&#8221; check if the file
+appears to match the selected format. 
+Expected to be called via self.Validator()</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportBaseclass.ExtensionValidator">
+<tt class="descname">ExtensionValidator</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.ExtensionValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.ExtensionValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>This methods checks if the file has the correct extension
+Return False if this filename will not be supported by this reader
+Return True if the extension matches the list supplied by the reader
+Return None if the reader allows un-registered extensions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportBaseclass.MultipleBlockSelector">
+<tt class="descname">MultipleBlockSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select a block'</em>, <em>size=None</em>, <em>header='Block Selector'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.MultipleBlockSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.MultipleBlockSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide a wx dialog to select a block of data if the
+file contains more than one set of data and one must be
+selected.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a list of the selected blocks</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportBaseclass.MultipleChoicesDialog">
+<tt class="descname">MultipleChoicesDialog</tt><big>(</big><em>choicelist</em>, <em>headinglist</em>, <em>ParentFrame=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.MultipleChoicesDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.MultipleChoicesDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>A modal dialog that offers a series of choices, each with a title and a wx.Choice
+widget. Typical input:</p>
+<blockquote>
+<div><ul class="simple">
+<li>choicelist=[ (&#8216;a&#8217;,&#8217;b&#8217;,&#8217;c&#8217;), (&#8216;test1&#8217;,&#8217;test2&#8217;),(&#8216;no choice&#8217;,)]</li>
+<li>headinglist = [ &#8216;select a, b or c&#8217;, &#8216;select 1 of 2&#8217;, &#8216;No option here&#8217;]</li>
+</ul>
+</div></blockquote>
+<p>optional keyword parameters are: head (window title) and title
+returns a list of selected indicies for each choice (or None)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIIO.ImportPhase">
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPhase</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a base class for the reading of files with coordinates</p>
+<dl class="method">
+<dt id="GSASIIIO.ImportPhase.PhaseSelector">
+<tt class="descname">PhaseSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select a phase'</em>, <em>size=None</em>, <em>header='Phase Selector'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPhase.PhaseSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPhase.PhaseSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide a wx dialog to select a phase if the file contains more
+than one phase</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIIO.ImportPowderData">
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPowderData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPowderData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPowderData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a base class for the reading of files with powder data</p>
+<dl class="attribute">
+<dt id="GSASIIIO.ImportPowderData.powderdata">
+<tt class="descname">powderdata</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportPowderData.powderdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>A powder data set is a list with items [x,y,w,yc,yb,yd]:
+np.array(x), # x-axis values
+np.array(y), # powder pattern intensities
+np.array(w), # 1/sig(intensity)^2 values (weights)
+np.array(yc), # calc. intensities (zero)
+np.array(yb), # calc. background (zero)
+np.array(yd), # obs-calc profiles</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIIO.ImportStructFactor">
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportStructFactor</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a base class for the reading of files with tables
+of structure factors</p>
+<dl class="method">
+<dt id="GSASIIIO.ImportStructFactor.UpdateControls">
+<tt class="descname">UpdateControls</tt><big>(</big><em>Type='Fosq'</em>, <em>FcalcPresent=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.UpdateControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan through the reflections to update the Controls dictionary</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.IndexPeakListSave">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">IndexPeakListSave</tt><big>(</big><em>G2frame</em>, <em>peaks</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#IndexPeakListSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.IndexPeakListSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save powder peaks from the indexing list</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIIO.MultipleChoicesDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">MultipleChoicesDialog</tt><big>(</big><em>choicelist</em>, <em>headinglist</em>, <em>head='Select options'</em>, <em>title='Please select from options below'</em>, <em>parent=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#MultipleChoicesDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.MultipleChoicesDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dialog that offers a series of choices, each with a
+title and a wx.Choice widget. Intended to be used Modally. 
+typical input:</p>
+<blockquote>
+<div><ul class="simple">
+<li>choicelist=[ (&#8216;a&#8217;,&#8217;b&#8217;,&#8217;c&#8217;), (&#8216;test1&#8217;,&#8217;test2&#8217;),(&#8216;no choice&#8217;,)]</li>
+<li>headinglist = [ &#8216;select a, b or c&#8217;, &#8216;select 1 of 2&#8217;, &#8216;No option here&#8217;]</li>
+</ul>
+</div></blockquote>
+<p>selections are placed in self.chosen when OK is pressed</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.PDFSave">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">PDFSave</tt><big>(</big><em>G2frame</em>, <em>exports</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#PDFSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.PDFSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a PDF G(r) and S(Q) in column formats</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.PeakListSave">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">PeakListSave</tt><big>(</big><em>G2frame</em>, <em>file</em>, <em>peaks</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#PeakListSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.PeakListSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save powder peaks to a data file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.ProjFileOpen">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ProjFileOpen</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ProjFileOpen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ProjFileOpen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a GSAS-II project file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.ProjFileSave">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ProjFileSave</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ProjFileSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ProjFileSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a GSAS-II project file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.PutG2Image">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">PutG2Image</tt><big>(</big><em>filename</em>, <em>Comments</em>, <em>Data</em>, <em>Npix</em>, <em>image</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#PutG2Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.PutG2Image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an image as a python pickle</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.ReadEXPPhase">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ReadEXPPhase</tt><big>(</big><em>G2frame</em>, <em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ReadEXPPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ReadEXPPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a phase from a GSAS .EXP file.
+Called in the GSAS phase import routine (see imports/G2phase.py)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.ReadPDBPhase">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ReadPDBPhase</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ReadPDBPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ReadPDBPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a phase from a PDB file.
+Called in the PDB phase import routine (see imports/G2phase.py)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.SaveIntegration">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">SaveIntegration</tt><big>(</big><em>G2frame</em>, <em>PickId</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#SaveIntegration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.SaveIntegration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save image integration results as powder pattern(s)</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<tt class="descname">SetNewPhase(Name='New Phase', SGData={'SGCen': array([[0, 0, 0]]), 'SGPolax': 'xyz', 'SGLatt': 'P', 'SpGrp': 'P 1', 'SGLaue': '-1', 'SGSys': 'triclinic', 'SGInv': False, 'SGUniq': '', 'SGOps': [[array([[ 1.,  0.,  0.],</tt></dt>
+<dt>
+<tt class="descname">[ 0.,  1.,  0.],</tt></dt>
+<dt>
+<tt class="descname">[ 0.,  0.,  1.]], dtype=float32), array([ 0.,  0.,  0.], dtype=float32)]]}, cell=[1.0, 1.0, 1.0, 90.0, 90, 90.0, 1.0])</tt></dt>
+<dd><p>Create a new phase</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.powderFxyeSave">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">powderFxyeSave</tt><big>(</big><em>G2frame</em>, <em>exports</em>, <em>powderfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#powderFxyeSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.powderFxyeSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a powder histogram as a GSAS FXYE file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.powderXyeSave">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">powderXyeSave</tt><big>(</big><em>G2frame</em>, <em>exports</em>, <em>powderfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#powderXyeSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.powderXyeSave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a powder histogram as a Topas XYE file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.sfloat">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">sfloat</tt><big>(</big><em>S</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#sfloat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.sfloat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a string to float. An empty field is treated as zero</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.sint">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">sint</tt><big>(</big><em>S</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#sint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.sint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a string to int. An empty field is treated as zero</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><em>GSAS-II GUI Routines</em></a><ul>
+<li><a class="reference internal" href="#gsasiigrid-basic-gui-routines"><em>GSASIIgrid: Basic GUI routines</em></a></li>
+<li><a class="reference internal" href="#gsasiiio-misc-i-o-routines"><em>GSASIIIO: Misc I/O routines</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASIImapvars.html"
+                        title="previous chapter"><em>GSASIImapvars: Parameter constraints</em></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="GSASIIGUI.html"
+                        title="next chapter"><em>GSAS-II GUI Submodules</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIIGUIr.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIGUI.html" title="GSAS-II GUI Submodules"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="GSASIImapvars.html" title="GSASIImapvars: Parameter constraints"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

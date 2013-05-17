@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSAS-II GUI Submodules &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="prev" title="GSAS-II GUI Routines" href="GSASIIGUIr.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIGUIr.html" title="GSAS-II GUI Routines"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-GSASIIphsGUI">
+<span id="gsas-ii-gui-submodules"></span><h1><em>GSAS-II GUI Submodules</em><a class="headerlink" href="#module-GSASIIphsGUI" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="gsasiiphsgui-phase-gui">
+<h2><em>GSASIIphsGUI: Phase GUI</em><a class="headerlink" href="#gsasiiphsgui-phase-gui" title="Permalink to this headline">¶</a></h2>
+<p>Module to create the GUI for display of phase information
+in the data display window when a phase is selected.
+(pages displayed in response to some phase tabs are done in other modules,
+such as GSASIIddata.)</p>
+<dl class="function">
+<dt id="GSASIIphsGUI.UpdatePhaseData">
+<tt class="descclassname">GSASIIphsGUI.</tt><tt class="descname">UpdatePhaseData</tt><big>(</big><em>G2frame</em>, <em>Item</em>, <em>data</em>, <em>oldPage</em><big>)</big><a class="reference internal" href="_modules/GSASIIphsGUI.html#UpdatePhaseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIphsGUI.UpdatePhaseData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the data display window contents when a phase is clicked on
+in the man (data tree) window.
+Called only from <a class="reference internal" href="GSASIIGUIr.html#GSASIIgrid.MovePatternTreeToGrid" title="GSASIIgrid.MovePatternTreeToGrid"><tt class="xref py py-mod docutils literal"><span class="pre">GSASIIgrid.MovePatternTreeToGrid</span></tt></a>,
+which in turn is called from <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnPatternTreeSelChanged" title="GSASII.GSASII.OnPatternTreeSelChanged"><tt class="xref py py-mod docutils literal"><span class="pre">GSASII.GSASII.OnPatternTreeSelChanged</span></tt></a>
+when a tree item is selected.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>G2frame</strong> (<em>wx.frame</em>) &#8211; the main GSAS-II frame object</li>
+<li><strong>Item</strong> (<em>wx.TreeItemId</em>) &#8211; the tree item that was selected</li>
+<li><strong>data</strong> (<em>dict</em>) &#8211; all the information on the phase in a dictionary</li>
+<li><strong>oldPage</strong> (<em>int</em>) &#8211; This sets a tab to select when moving
+from one phase to another, in which case the same tab is selected
+to display first. This is set only when the previous data tree
+selection is a phase, if not the value is None. The default action
+is to bring up the General tab.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIddataGUI"></span><div class="section" id="gsasiiddatagui-phase-diffraction-data-gui">
+<h2><em>GSASIIddataGUI: Phase Diffraction Data GUI</em><a class="headerlink" href="#gsasiiddatagui-phase-diffraction-data-gui" title="Permalink to this headline">¶</a></h2>
+<p>Module to create the GUI for display of diffraction data * phase
+information that is shown in the data display window
+(when a phase is selected.)</p>
+<dl class="function">
+<dt id="GSASIIddataGUI.UpdateDData">
+<tt class="descclassname">GSASIIddataGUI.</tt><tt class="descname">UpdateDData</tt><big>(</big><em>G2frame</em>, <em>DData</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIddataGUI.html#UpdateDData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIddataGUI.UpdateDData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the Diffraction Data associated with a phase
+(items where there is a value for each histogram and phase)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>G2frame</strong> (<em>wx.frame</em>) &#8211; the main GSAS-II frame object</li>
+<li><strong>DData</strong> (<em>wx.ScrolledWindow</em>) &#8211; notebook page to be used for the display</li>
+<li><strong>data</strong> (<em>dict</em>) &#8211; all the information on the phase in a dictionary</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIElemGUI"></span><div class="section" id="gsasiielemgui-gui-to-select-and-delete-element-lists">
+<h2><em>GSASIIElemGUI: GUI to select and delete element lists</em><a class="headerlink" href="#gsasiielemgui-gui-to-select-and-delete-element-lists" title="Permalink to this headline">¶</a></h2>
+<p>Module to select elements from a periodic table and
+to delete an element from a list of selected elements.</p>
+<dl class="class">
+<dt id="GSASIIElemGUI.DeleteElement">
+<em class="property">class </em><tt class="descclassname">GSASIIElemGUI.</tt><tt class="descname">DeleteElement</tt><big>(</big><em>parent</em>, <em>choice</em><big>)</big><a class="reference internal" href="_modules/GSASIIElemGUI.html#DeleteElement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElemGUI.DeleteElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete element from selected set widget</p>
+<dl class="method">
+<dt id="GSASIIElemGUI.DeleteElement.ElButton">
+<tt class="descname">ElButton</tt><big>(</big><em>id</em>, <em>name</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/GSASIIElemGUI.html#DeleteElement.ElButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElemGUI.DeleteElement.ElButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIElemGUI.PickElement">
+<em class="property">class </em><tt class="descclassname">GSASIIElemGUI.</tt><tt class="descname">PickElement</tt><big>(</big><em>parent</em>, <em>oneOnly=False</em>, <em>ifNone=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIElemGUI.html#PickElement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElemGUI.PickElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes periodic table widget for picking element - caller maintains element list</p>
+<dl class="method">
+<dt id="GSASIIElemGUI.PickElement.ElButton">
+<tt class="descname">ElButton</tt><big>(</big><em>name</em>, <em>pos</em>, <em>tip</em>, <em>color</em><big>)</big><a class="reference internal" href="_modules/GSASIIElemGUI.html#PickElement.ElButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElemGUI.PickElement.ElButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIconstrGUI"></span><div class="section" id="gsasiiconstrgui-constraint-gui-routines">
+<h2><em>GSASIIconstrGUI: Constraint GUI routines</em><a class="headerlink" href="#gsasiiconstrgui-constraint-gui-routines" title="Permalink to this headline">¶</a></h2>
+<p>Used to define constraints and rigid bodies.</p>
+<dl class="class">
+<dt id="GSASIIconstrGUI.MultiIntegerDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIconstrGUI.</tt><tt class="descname">MultiIntegerDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>prompts</em>, <em>values</em><big>)</big><a class="reference internal" href="_modules/GSASIIconstrGUI.html#MultiIntegerDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIconstrGUI.MultiIntegerDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Input a series of integers based on prompts</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIconstrGUI.UpdateConstraints">
+<tt class="descclassname">GSASIIconstrGUI.</tt><tt class="descname">UpdateConstraints</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIconstrGUI.html#UpdateConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIconstrGUI.UpdateConstraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when Constraints tree item is selected.
+Displays the constraints in the data window</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIconstrGUI.UpdateRigidBodies">
+<tt class="descclassname">GSASIIconstrGUI.</tt><tt class="descname">UpdateRigidBodies</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIconstrGUI.html#UpdateRigidBodies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIconstrGUI.UpdateRigidBodies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when Rigid bodies tree item is selected.
+Displays the rigid bodies in the data window</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIimgGUI"></span><div class="section" id="gsasiiimggui-image-gui">
+<h2><em>GSASIIimgGUI: Image GUI</em><a class="headerlink" href="#gsasiiimggui-image-gui" title="Permalink to this headline">¶</a></h2>
+<p>Control image display and processing</p>
+<dl class="function">
+<dt id="GSASIIimgGUI.UpdateImageControls">
+<tt class="descclassname">GSASIIimgGUI.</tt><tt class="descname">UpdateImageControls</tt><big>(</big><em>G2frame</em>, <em>data</em>, <em>masks</em><big>)</big><a class="reference internal" href="_modules/GSASIIimgGUI.html#UpdateImageControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimgGUI.UpdateImageControls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows and handles the controls on the &#8220;Image Controls&#8221;
+data tree entry</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimgGUI.UpdateMasks">
+<tt class="descclassname">GSASIIimgGUI.</tt><tt class="descname">UpdateMasks</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimgGUI.html#UpdateMasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimgGUI.UpdateMasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows and handles the controls on the &#8220;Masks&#8221;
+data tree entry</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimgGUI.UpdateStressStrain">
+<tt class="descclassname">GSASIIimgGUI.</tt><tt class="descname">UpdateStressStrain</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimgGUI.html#UpdateStressStrain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimgGUI.UpdateStressStrain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows and handles the controls on the &#8220;Stress/Strain&#8221;
+data tree entry</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIpwdGUI"></span><div class="section" id="gsasiipwdgui-powder-pattern-gui-routines">
+<h2><em>GSASIIpwdGUI: Powder Pattern GUI routines</em><a class="headerlink" href="#gsasiipwdgui-powder-pattern-gui-routines" title="Permalink to this headline">¶</a></h2>
+<p>Used to define GUI controls for the routines that interact
+with the powder histogram (PWDR) data tree items.</p>
+<dl class="function">
+<dt id="GSASIIpwdGUI.IsHistogramInAnyPhase">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">IsHistogramInAnyPhase</tt><big>(</big><em>G2frame</em>, <em>histoName</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#IsHistogramInAnyPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.IsHistogramInAnyPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.SetDefaultSample">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetDefaultSample</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetDefaultSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetDefaultSample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateBackground">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateBackground</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateBackground"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateBackground" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR background data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateIndexPeaksGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateIndexPeaksGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateIndexPeaksGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateIndexPeaksGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR Index Peak List data
+tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateInstrumentGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateInstrumentGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateInstrumentGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateInstrumentGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR Instrument Parameters
+data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateLimitsGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateLimitsGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateLimitsGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateLimitsGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR Limits data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdatePDFGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdatePDFGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdatePDFGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdatePDFGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR PDF data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdatePeakGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdatePeakGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdatePeakGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdatePeakGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR powder peaks data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateReflectionGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateReflectionGrid</tt><big>(</big><em>G2frame</em>, <em>data</em>, <em>HKLF=False</em>, <em>Name=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateReflectionGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateReflectionGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR Reflections data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateSampleGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateSampleGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateSampleGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateSampleGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR Sample Parameters
+data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateUnitCellsGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateUnitCellsGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateUnitCellsGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateUnitCellsGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of PWDR Unit Cells data tree item.</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIrestrGUI"></span><div class="section" id="gsasiirestrgui-restraint-gui-routines">
+<h2><em>GSASIIrestrGUI: Restraint GUI routines</em><a class="headerlink" href="#gsasiirestrgui-restraint-gui-routines" title="Permalink to this headline">¶</a></h2>
+<p>Used to define restraints.</p>
+<dl class="function">
+<dt id="GSASIIrestrGUI.UpdateRestraints">
+<tt class="descclassname">GSASIIrestrGUI.</tt><tt class="descname">UpdateRestraints</tt><big>(</big><em>G2frame</em>, <em>data</em>, <em>Phases</em>, <em>phaseName</em><big>)</big><a class="reference internal" href="_modules/GSASIIrestrGUI.html#UpdateRestraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIrestrGUI.UpdateRestraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Respond to selection of the Restraints item on the
+data tree</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><em>GSAS-II GUI Submodules</em></a><ul>
+<li><a class="reference internal" href="#gsasiiphsgui-phase-gui"><em>GSASIIphsGUI: Phase GUI</em></a></li>
+<li><a class="reference internal" href="#gsasiiddatagui-phase-diffraction-data-gui"><em>GSASIIddataGUI: Phase Diffraction Data GUI</em></a></li>
+<li><a class="reference internal" href="#gsasiielemgui-gui-to-select-and-delete-element-lists"><em>GSASIIElemGUI: GUI to select and delete element lists</em></a></li>
+<li><a class="reference internal" href="#gsasiiconstrgui-constraint-gui-routines"><em>GSASIIconstrGUI: Constraint GUI routines</em></a></li>
+<li><a class="reference internal" href="#gsasiiimggui-image-gui"><em>GSASIIimgGUI: Image GUI</em></a></li>
+<li><a class="reference internal" href="#gsasiipwdgui-powder-pattern-gui-routines"><em>GSASIIpwdGUI: Powder Pattern GUI routines</em></a></li>
+<li><a class="reference internal" href="#gsasiirestrgui-restraint-gui-routines"><em>GSASIIrestrGUI: Restraint GUI routines</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASIIGUIr.html"
+                        title="previous chapter"><em>GSAS-II GUI Routines</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIIGUI.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIGUIr.html" title="GSAS-II GUI Routines"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

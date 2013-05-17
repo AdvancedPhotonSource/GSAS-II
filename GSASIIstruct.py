@@ -36,7 +36,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
-DEBUG = False
+DEBUG = True
 
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
@@ -4440,7 +4440,7 @@ def Refine(GPXfile,dlg):
     if DEBUG:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
         import cPickle
-        fl = open('structTestdata.dat','wb')
+        fl = open('testDeriv.dat','wb')
         cPickle.dump(result[0],fl,1)
         cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
         cPickle.dump(parmDict,fl,1)

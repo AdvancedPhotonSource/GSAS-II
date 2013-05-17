@@ -33,11 +33,11 @@ class testDeriv(wx.Frame):
             size=wx.Size(460, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Derivatives')
         self.testDerivMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
-        self.File.Append(help='Open structTestdata.dat', id=wxID_FILEOPEN,
-             kind=wx.ITEM_NORMAL,text='Open structTestdata file')
+        self.File.Append(help='Open testDeriv.dat', id=wxID_FILEOPEN,
+             kind=wx.ITEM_NORMAL,text='Open testDeriv.dat file')
         self.File.Append(help='Make derivative plots',id=wxID_MAKEPLOTS,
             kind=wx.ITEM_NORMAL,text='Make plots')
-        self.File.Append(help='Exit from scanCCD', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
+        self.File.Append(help='Exit from testDeriv', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
             text='Exit')
         self.Bind(wx.EVT_MENU, self.OnTestRead, id=wxID_FILEOPEN)
         self.Bind(wx.EVT_MENU,self.OnMakePlots,id=wxID_MAKEPLOTS)
@@ -64,7 +64,7 @@ class testDeriv(wx.Frame):
         self.Close()
 
     def OnTestRead(self,event):
-        dlg = wx.FileDialog(self, 'Open structTestdata.dat file', '.', 'structTestdata.dat')
+        dlg = wx.FileDialog(self, 'Open testDeriv.dat file', '.', 'testDeriv.dat')
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:

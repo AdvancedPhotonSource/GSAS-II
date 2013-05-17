@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""ElementGUI: class defn. for element GUIs
-   Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
-"""
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -9,6 +6,17 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIElemGUI: GUI to select and delete element lists*
+-------------------------------------------------------
+
+Module to select elements from a periodic table and
+to delete an element from a list of selected elements.
+'''
+"""ElementGUI: class defn. for element GUIs
+   Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
+"""
+
 import wx
 import os
 import wx.lib.colourselect as wscs
@@ -36,11 +44,13 @@ class PickElement(wx.Dialog):
             i+=1
 
     def __init__(self, parent,oneOnly=False,ifNone=False):
+        'Needs a doc string'
         self.oneOnly = oneOnly
         self.ifNone = ifNone
         self._init_ctrls(parent)
         
     def ElButton(self, name, pos, tip, color):
+        'Needs a doc string'
         Black = wx.Colour(0,0,0)
         if not self.ifNone and name[0] == 'None':
             return
@@ -90,6 +100,7 @@ class DeleteElement(wx.Dialog):
         self._init_ctrls(parent,choice)
 
     def ElButton(self, id, name, pos):
+        'Needs a doc string'
         White = wx.Colour(255, 255, 255)
         El = wscs.ColourSelect(label=name, parent=self, colour = White,
             pos=pos, size=wx.Size(24, 23), style=wx.RAISED_BORDER)

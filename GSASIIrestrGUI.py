@@ -7,6 +7,13 @@
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIrestrGUI.py $
 # $Id: GSASIIrestrGUI.py 810 2012-12-05 21:38:26Z vondreele $
 ########### SVN repository information ###################
+'''
+*GSASIIrestrGUI: Restraint GUI routines*
+----------------------------------------
+
+Used to define restraints.
+
+'''
 import wx
 import wx.grid as wg
 import time
@@ -29,6 +36,12 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 ################################################################################           
        
 def UpdateRestraints(G2frame,data,Phases,phaseName):
+    '''Respond to selection of the Restraints item on the
+    data tree
+    '''
+    if not Phases:
+        print 'There are no phases to form restraints'
+        return
     if not len(Phases):
         print 'There are no phases to form restraints'
         return

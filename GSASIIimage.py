@@ -7,6 +7,15 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIimage: Image calc module*
+================================
+
+Ellipse fitting & image integration
+
+needs some minor refactoring to remove wx code
+'''
+
 import math
 import wx
 import time

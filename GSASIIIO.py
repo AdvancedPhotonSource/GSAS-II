@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""GSASIIIO: functions for IO of data
-   Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
-"""
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -9,6 +6,21 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIIO: Misc I/O routines*
+=============================
+
+Module with miscellaneous routines for input and output. Many
+are GUI routines to interact with user.
+
+Includes support for image reading.
+
+Also includes base classes for data import routines.
+
+'''
+"""GSASIIIO: functions for IO of data
+   Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
+"""
 import wx
 import math
 import numpy as np
@@ -26,12 +38,14 @@ import os
 import os.path as ospath
 
 def sfloat(S):
+    'Convert a string to float. An empty field is treated as zero'
     if S.strip():
         return float(S)
     else:
         return 0.0
 
 def sint(S):
+    'Convert a string to int. An empty field is treated as zero'
     if S.strip():
         return int(S)
     else:
@@ -45,13 +59,14 @@ def makeInstDict(names,data,codes):
 
 
 def FileDlgFixExt(dlg,file):
-    #this is needed to fix a problem in linux wx.FileDialog
+    'this is needed to fix a problem in linux wx.FileDialog'
     ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')
     if ext not in file:
         file += ext
     return file
         
 def GetPowderPeaks(fileName):
+    'Read powder peaks from a file'
     sind = lambda x: math.sin(x*math.pi/180.)
     asind = lambda x: 180.*math.asin(x)/math.pi
     Cuka = 1.54052
@@ -91,6 +106,17 @@ def GetPowderPeaks(fileName):
     return Comments,Peaks
 
 def CheckImageFile(G2frame,imagefile):
+    '''Get an new image file name if the specified one does not
+    exist
+
+    :param wx.Frame G2frame: main GSAS-II Frame and data object
+
+    :param str imagefile: name of image file
+
+    :returns: imagefile, if it exists, or the name of a file
+      that does exist or False if the user presses Cancel
+
+    '''
     if not ospath.exists(imagefile):
         dlg = wx.FileDialog(G2frame, 'Bad image file name; choose name', '.', '',\
         'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
@@ -111,7 +137,21 @@ def CheckImageFile(G2frame,imagefile):
             dlg.Destroy()
     return imagefile
         
-def GetImageData(G2frame,imagefile,imageOnly=False):        
+def GetImageData(G2frame,imagefile,imageOnly=False):
+    '''Read an image with the file reader keyed by the
+    file extension
+
+    :param wx.Frame G2frame: main GSAS-II Frame and data object
+
+    :param str imagefile: name of image file
+
+    :param bool imageOnly: If True return only the image,
+      otherwise  (default) return more (see below)
+
+    :returns: an image as a numpy array or a list of four items:
+      Comments, Data, Npix and the Image, as selected by imageOnly
+
+    '''
     ext = ospath.splitext(imagefile)[1]
     Comments = []
     if ext == '.tif' or ext == '.tiff':
@@ -133,18 +173,21 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
         return Comments,Data,Npix,Image
         
 def PutG2Image(filename,Comments,Data,Npix,image):
+    'Write an image as a python pickle'
     File = open(filename,'wb')
     cPickle.dump([Comments,Data,Npix,image],File,1)
     File.close()
     return
     
 def GetG2Image(filename):
+    'Read an image as a python pickle'
     File = open(filename,'rb')
     Comments,Data,Npix,image = cPickle.load(File)
     File.close()
     return Comments,Data,Npix,image
     
 def GetEdfData(filename,imageOnly=False):    
+    'Read European detector data edf file'
     import struct as st
     import array as ar
     if not imageOnly:
@@ -196,6 +239,7 @@ def GetEdfData(filename,imageOnly=False):
         return head,data,Npix,image
         
 def GetGEsumData(filename,imageOnly=False):
+    'Read SUM file as produced at 1-ID from G.E. images'
     import struct as st
     import array as ar
     if not imageOnly:
@@ -233,6 +277,7 @@ def GetGEsumData(filename,imageOnly=False):
         return head,data,Npix,image
         
 def GetImgData(filename,imageOnly=False):
+    'Read an ADSC image file'
     import struct as st
     import array as ar
     if not imageOnly:
@@ -283,6 +328,7 @@ def GetImgData(filename,imageOnly=False):
         return lines[1:-2],data,Npix,image
        
 def GetMAR345Data(filename,imageOnly=False):
+    'Read a MAR-345 image plate image'
     import array as ar
     import struct as st
     try:
@@ -340,6 +386,10 @@ def GetMAR345Data(filename,imageOnly=False):
         return head,data,Npix,image.T
 
 def GetTifData(filename,imageOnly=False):
+    '''Read an image in a pseudo-tif format,
+    as produced by a wide variety of software, almost always
+    incorrectly in some way. 
+    '''
     import struct as st
     import array as ar
     import ReadMarCCDFrame as rmf
@@ -639,6 +689,7 @@ def GetTifData(filename,imageOnly=False):
 #        return head,data,Npix,image
 #    
 def ProjFileOpen(G2frame):
+    'Read a GSAS-II project file'
     file = open(G2frame.GSASprojectfile,'rb')
     print 'load from file: ',G2frame.GSASprojectfile
     G2frame.SetTitle("GSAS-II data tree: "+
@@ -685,6 +736,7 @@ def ProjFileOpen(G2frame):
         wx.EndBusyCursor()
     
 def ProjFileSave(G2frame):
+    'Save a GSAS-II project file'
     if not G2frame.PatternTree.IsEmpty():
         file = open(G2frame.GSASprojectfile,'wb')
         print 'save to file: ',G2frame.GSASprojectfile
@@ -708,6 +760,7 @@ def ProjFileSave(G2frame):
         print 'project save successful'
 
 def SaveIntegration(G2frame,PickId,data):
+    'Save image integration results as powder pattern(s)'
     azms = G2frame.Integrate[1]
     X = G2frame.Integrate[2][:-1]
     Xminmax = [X[0],X[-1]]
@@ -775,6 +828,7 @@ def SaveIntegration(G2frame,PickId,data):
     G2frame.PatternId = Id
             
 def powderFxyeSave(G2frame,exports,powderfile):
+    'Save a powder histogram as a GSAS FXYE file'
     head,tail = ospath.split(powderfile)
     name,ext = tail.split('.')
     for i,export in enumerate(exports):
@@ -814,6 +868,7 @@ def powderFxyeSave(G2frame,exports,powderfile):
         print 'powder pattern file '+filename+' written'
         
 def powderXyeSave(G2frame,exports,powderfile):
+    'Save a powder histogram as a Topas XYE file'
     head,tail = ospath.split(powderfile)
     name,ext = tail.split('.')
     for i,export in enumerate(exports):
@@ -830,7 +885,8 @@ def powderXyeSave(G2frame,exports,powderfile):
         file.close()
         print 'powder pattern file '+filename+' written'
         
-def PDFSave(G2frame,exports):    
+def PDFSave(G2frame,exports):
+    'Save a PDF G(r) and S(Q) in column formats'
     for export in exports:
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         SQname = 'S(Q)'+export[4:]
@@ -855,6 +911,7 @@ def PDFSave(G2frame,exports):
         grfile.close()
     
 def PeakListSave(G2frame,file,peaks):
+    'Save powder peaks to a data file'
     print 'save peak list to file: ',G2frame.peaklistfile
     if not peaks:
         dlg = wx.MessageDialog(G2frame, 'No peaks!', 'Nothing to save!', wx.OK)
@@ -869,6 +926,7 @@ def PeakListSave(G2frame,file,peaks):
     print 'peak list saved'
               
 def IndexPeakListSave(G2frame,peaks):
+    'Save powder peaks from the indexing list'
     file = open(G2frame.peaklistfile,'wa')
     print 'save index peak list to file: ',G2frame.peaklistfile
     wx.BeginBusyCursor()
@@ -888,6 +946,7 @@ def IndexPeakListSave(G2frame,peaks):
     print 'index peak list saved'
     
 def SetNewPhase(Name='New Phase',SGData=G2spc.SpcGroup('P 1')[1],cell=[1.0,1.0,1.0,90.,90,90.,1.]):
+    'Create a new phase'
     phaseData = {
         'ranId':ran.randint(0,sys.maxint),
         'General':{
@@ -917,6 +976,9 @@ def SetNewPhase(Name='New Phase',SGData=G2spc.SpcGroup('P 1')[1],cell=[1.0,1.0,1
     return phaseData
     
 def ReadEXPPhase(G2frame,filename):
+    '''Read a phase from a GSAS .EXP file.
+    Called in the GSAS phase import routine (see imports/G2phase.py)
+    '''
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     textureData = {'Order':0,'Model':'cylindrical','Sample omega':[False,0.0],
         'Sample chi':[False,0.0],'Sample phi':[False,0.0],'SH Coeff':[False,{}],
@@ -1041,6 +1103,9 @@ def ReadEXPPhase(G2frame,filename):
     return Phase
        
 def ReadPDBPhase(filename):
+    '''Read a phase from a PDB file.
+    Called in the PDB phase import routine (see imports/G2phase.py)
+    '''
     EightPiSq = 8.*math.pi**2
     file = open(filename, 'Ur')
     Phase = {}
@@ -1127,11 +1192,13 @@ def ReadPDBPhase(filename):
     return Phase
 
 class MultipleChoicesDialog(wx.Dialog):
-    '''A dialog that offers a series of choices, each with a title and a wx.Choice
-    widget. Intended to be used Modally. 
+    '''A dialog that offers a series of choices, each with a
+    title and a wx.Choice widget. Intended to be used Modally. 
     typical input:
-          choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
-          headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+
+        *  choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+        *  headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+        
     selections are placed in self.chosen when OK is pressed
     '''
     def __init__(self,choicelist,headinglist,
@@ -1189,21 +1256,29 @@ class MultipleChoicesDialog(wx.Dialog):
 def ExtractFileFromZip(filename, selection=None, confirmread=True,
                        confirmoverwrite=True, parent=None,
                        multipleselect=False):
-    '''If the filename is a zip file, extract a file from that archive.
-      selection is used to predefine the name of the file to be extracted
-         filename case and zip directory name are ignored in selection;
-         the first matching file is used
-      confirmread if True asks the user to confirm before expanding
-         the only file in a zip
-      confirmoverwrite if True asks the user to confirm before
-        overwriting if the extracted file already exists
-      multipleselect if True allows more than one zip file to be extracted,
-        a list of file(s) is returned
-    If only one file is present, do not ask which one, otherwise offer a
-       list of choices (unless selection is used)
-    Return the name of the file that has been created or a list of files (see multipleselect)
-      If the file is not a zipfile, return the name of the input file.
-      If the zipfile is empty or no file has been selected, return None
+    '''If the filename is a zip file, extract a file from that
+    archive.
+
+    :param list Selection: used to predefine the name of the file
+      to be extracted. Filename case and zip directory name are
+      ignored in selection; the first matching file is used.
+
+    :param bool confirmread: if True asks the user to confirm before expanding
+      the only file in a zip
+
+    :param bool confirmoverwrite: if True asks the user to confirm
+      before overwriting if the extracted file already exists
+
+    :param bool multipleselect: if True allows more than one zip
+      file to be extracted, a list of file(s) is returned.
+      If only one file is present, do not ask which one, otherwise
+      offer a list of choices (unless selection is used).
+    
+    :returns: the name of the file that has been created or a
+      list of files (see multipleselect)
+
+    If the file is not a zipfile, return the name of the input file.
+    If the zipfile is empty or no file has been selected, return None
     '''
     import zipfile # do this now, since we can save startup time by doing this only on need
     import shutil
@@ -1359,9 +1434,11 @@ class ImportBaseclass(object):
 
     def MultipleBlockSelector(self, ChoiceList, ParentFrame=None,
         title='Select a block',size=None, header='Block Selector'):
-        ''' Provide a wx dialog to select a block of data if the file contains more
-        than one set of data and one must be selected.
-        Returns a list of the selected blocks
+        '''Provide a wx dialog to select a block of data if the
+        file contains more than one set of data and one must be
+        selected.
+
+        :returns: a list of the selected blocks
         '''
         dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
             wx.CHOICEDLG_STYLE)
@@ -1380,10 +1457,12 @@ class ImportBaseclass(object):
 
     def MultipleChoicesDialog(self, choicelist, headinglist, ParentFrame=None, **kwargs):
         '''A modal dialog that offers a series of choices, each with a title and a wx.Choice
-        widget. 
-        typical input:
-           choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
-           headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+        widget. Typical input:
+        
+           * choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+           
+           * headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+           
         optional keyword parameters are: head (window title) and title
         returns a list of selected indicies for each choice (or None)
         '''

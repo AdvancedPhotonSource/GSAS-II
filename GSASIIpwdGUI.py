@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#GSASII - data display routines
+#GSASIIpwdGUI - powder data display routines
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -7,6 +7,14 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIpwdGUI: Powder Pattern GUI routines*
+-------------------------------------------
+
+Used to define GUI controls for the routines that interact
+with the powder histogram (PWDR) data tree items.
+
+'''
 import sys
 import os.path
 import wx
@@ -38,6 +46,7 @@ cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
     
 def IsHistogramInAnyPhase(G2frame,histoName):
+    'Needs a doc string'
     phases = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
     if phases:
         item, cookie = G2frame.PatternTree.GetFirstChild(phases)
@@ -52,6 +61,7 @@ def IsHistogramInAnyPhase(G2frame,histoName):
         return False
 
 def SetDefaultSample():
+    'Needs a doc string'
     return {'ranId':ran.randint(0,sys.maxint),
         'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
         'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
@@ -64,6 +74,8 @@ def SetDefaultSample():
 ################################################################################           
        
 def UpdatePeakGrid(G2frame, data):
+    '''respond to selection of PWDR powder peaks data tree item.
+    '''
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
         
@@ -317,6 +329,8 @@ def UpdatePeakGrid(G2frame, data):
 ################################################################################           
        
 def UpdateBackground(G2frame,data):
+    '''respond to selection of PWDR background data tree item.
+    '''
     if len(data) < 2:       #add Debye diffuse & peaks scattering here
         data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
     if 'nPeaks' not in data[1]:
@@ -587,6 +601,8 @@ def UpdateBackground(G2frame,data):
 ################################################################################           
        
 def UpdateLimitsGrid(G2frame, data):
+    '''respond to selection of PWDR Limits data tree item.
+    '''
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
         
@@ -642,7 +658,9 @@ def UpdateLimitsGrid(G2frame, data):
 ################################################################################           
        
 def UpdateInstrumentGrid(G2frame,data):
-    
+    '''respond to selection of PWDR Instrument Parameters
+    data tree item.
+    '''
     def keycheck(keys):
         good = []
         for key in keys:
@@ -1035,7 +1053,9 @@ def UpdateInstrumentGrid(G2frame,data):
 ################################################################################           
        
 def UpdateSampleGrid(G2frame,data):
-    
+    '''respond to selection of PWDR Sample Parameters
+    data tree item.
+    '''
     def SetCopyNames(histName,addNames=[]):
         copyNames = ['Scale',]
         dataType = data['Type']
@@ -1317,6 +1337,9 @@ def UpdateSampleGrid(G2frame,data):
 ################################################################################           
        
 def UpdateIndexPeaksGrid(G2frame, data):
+    '''respond to selection of PWDR Index Peak List data
+    tree item.
+    '''
     IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     wave = G2mth.getWave(Inst)
@@ -1414,6 +1437,8 @@ def UpdateIndexPeaksGrid(G2frame, data):
 ################################################################################           
        
 def UpdateUnitCellsGrid(G2frame, data):
+    '''respond to selection of PWDR Unit Cells data tree item.
+    '''
     UnitCellsId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
@@ -1904,6 +1929,8 @@ def UpdateUnitCellsGrid(G2frame, data):
 ################################################################################           
        
 def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
+    '''respond to selection of PWDR Reflections data tree item.
+    '''
     if not data:
         print 'No phases, no reflections'
         return
@@ -1970,6 +1997,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
 ################################################################################           
        
 def UpdatePDFGrid(G2frame,data):
+    '''respond to selection of PWDR PDF data tree item.
+    '''
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
     dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)

@@ -7,6 +7,13 @@
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIconstrGUI.py $
 # $Id: GSASIIconstrGUI.py 810 2012-12-05 21:38:26Z vondreele $
 ########### SVN repository information ###################
+'''
+*GSASIIconstrGUI: Constraint GUI routines*
+------------------------------------------
+
+Used to define constraints and rigid bodies.
+
+'''
 import sys
 import wx
 import wx.grid as wg
@@ -26,7 +33,8 @@ import GSASIIplot as G2plt
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class MultiIntegerDialog(wx.Dialog):
-    
+    '''Input a series of integers based on prompts
+    '''
     def __init__(self,parent,title,prompts,values):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)

@@ -9,7 +9,8 @@
 ########### SVN repository information ###################
 '''
 *GSASIIgrid: Basic GUI routines*
-================================
+--------------------------------
+
 
 '''
 import wx
@@ -1950,7 +1951,7 @@ def UpdateSeqResults(G2frame,data):
 ################################################################################           
        
 def UpdatePWHKPlot(G2frame,kind,item):
-    '''Not sure what this does
+    '''Needs a doc string
     '''
 
     def OnErrorAnalysis(event):
@@ -1996,7 +1997,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 ################################################################################           
        
 def UpdateHKLControls(G2frame,data):
-    '''Not sure what this does
+    '''Needs a doc string
     '''
     
     def OnScaleSlider(event):
@@ -2091,7 +2092,7 @@ def UpdateHKLControls(G2frame,data):
 ################################################################################           
        
 def GetPatternTreeDataNames(G2frame,dataTypes):
-    '''Not sure what this does
+    '''Needs a doc string
     '''
     names = []
     item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        
@@ -2103,7 +2104,7 @@ def GetPatternTreeDataNames(G2frame,dataTypes):
     return names
                           
 def GetPatternTreeItemId(G2frame, parentId, itemText):
-    '''Not sure what this does
+    '''Needs a doc string
     '''
     item, cookie = G2frame.PatternTree.GetFirstChild(parentId)
     while item:
@@ -2113,7 +2114,7 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
     return 0                
 
 def MovePatternTreeToGrid(G2frame,item):
-    '''Not sure what this does
+    '''Needs a doc string
     '''
     
 #    print G2frame.PatternTree.GetItemText(item)

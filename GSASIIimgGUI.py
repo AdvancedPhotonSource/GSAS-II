@@ -7,6 +7,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIimgGUI: Image GUI*
+-------------------------
+
+Control image display and processing
+
+'''
 import wx
 import matplotlib as mpl
 import math
@@ -33,6 +40,9 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ##### Image Controls
 ################################################################################                    
 def UpdateImageControls(G2frame,data,masks):
+    '''Shows and handles the controls on the "Image Controls"
+    data tree entry
+    '''
     import ImageCalibrants as calFile
 #patch
     if 'GonioAngles' not in data:
@@ -818,6 +828,9 @@ def UpdateImageControls(G2frame,data,masks):
 ################################################################################
     
 def UpdateMasks(G2frame,data):
+    '''Shows and handles the controls on the "Masks"
+    data tree entry
+    '''
     
     def OnTextMsg(event):
         Obj = event.GetEventObject()
@@ -1135,6 +1148,9 @@ def UpdateMasks(G2frame,data):
 ################################################################################
 
 def UpdateStressStrain(G2frame,data):
+    '''Shows and handles the controls on the "Stress/Strain"
+    data tree entry
+    '''
     
     def OnAppendDzero(event):
         data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,'ImxyObs':[[],[]],'ImxyCalc':[[],[]]})

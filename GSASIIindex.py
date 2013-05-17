@@ -8,6 +8,17 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIindex: Cell Indexing Module*
+===================================
+
+Cell indexing program: variation on that of A. Coehlo
+includes cell refinement from peak positions (not zero as yet)
+
+This needs a bit of refactoring to remove the little bit of GUI
+code referencing wx
+'''
+
 import math
 import wx
 import time

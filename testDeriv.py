@@ -125,6 +125,7 @@ class testDeriv(wx.Frame):
         Size[0] += 40
         Size[1] = max(Size[1],290) + 35
         self.testDerivPanel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        print Size
         self.testDerivPanel.SetSize(Size)
 
     def OnMakePlots(self,event):

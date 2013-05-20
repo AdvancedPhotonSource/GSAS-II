@@ -69,7 +69,8 @@ import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
 import GSASIIpwdGUI as G2pdG
 import GSASIIspc as G2spc
-import GSASIIstruct as G2str
+import GSASIIstrMain as G2stMn
+import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
 import GSASIIsolve as G2sol
 
@@ -2303,11 +2304,11 @@ class GSASII(wx.Frame):
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         rigidbodyDict = self.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'))
-        rbVary,rbDict = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
+        rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
-        hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
-        histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
+        hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
+        histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
         varyList = rbVary+phaseVary+hapVary+histVary
         parmDict.update(rbDict)
         parmDict.update(phaseDict)
@@ -2337,7 +2338,7 @@ class GSASII(wx.Frame):
         '''        
         self.OnFileSave(event)
         # check that constraints are OK here
-        errmsg, warnmsg = G2str.CheckConstraints(self.GSASprojectfile)
+        errmsg, warnmsg = G2stIO.CheckConstraints(self.GSASprojectfile)
         if errmsg:
             print('Error in constraints:\n'+errmsg+
                   '\nRefinement not possible')
@@ -2363,7 +2364,7 @@ class GSASII(wx.Frame):
         dlg.SetSize(Size)
         Rw = 100.00
         try:
-            Rw = G2str.Refine(self.GSASprojectfile,dlg)
+            Rw = G2stMn.Refine(self.GSASprojectfile,dlg)
         finally:
             dlg.Destroy()
         oldId =  self.PatternTree.GetSelection()
@@ -2409,7 +2410,7 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(Id,{})            
         self.OnFileSave(event)
         # check that constraints are OK here
-        errmsg, warnmsg = G2str.CheckConstraints(self.GSASprojectfile)
+        errmsg, warnmsg = G2stIO.CheckConstraints(self.GSASprojectfile)
         if errmsg:
             print('Error in constraints:\n'+errmsg+
                   '\nRefinement not possible')
@@ -2432,7 +2433,7 @@ class GSASII(wx.Frame):
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         dlg.SetSize(Size)
         try:
-            G2str.SeqRefine(self.GSASprojectfile,dlg)
+            G2stMn.SeqRefine(self.GSASprojectfile,dlg)
         finally:
             dlg.Destroy()        
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)

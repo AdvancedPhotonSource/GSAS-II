@@ -9,7 +9,7 @@ import wx
 import numpy as np
 import matplotlib as mpl
 import GSASIIpath
-import GSASIIstruct as G2st
+import GSASIIstrMath as G2stMth
 import GSASIItestplot as plot
 import pytexture as ptx
 ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
@@ -132,7 +132,7 @@ class testDeriv(wx.Frame):
         
         def test1():
             fplot = self.plotNB.add('function test').gca()
-            M = G2st.errRefine(self.values,self.HistoPhases,
+            M = G2stMth.errRefine(self.values,self.HistoPhases,
                 self.parmDict,self.varylist,self.calcControls,
                 self.pawleyLookup,None)
             fplot.plot(M,'r',label='M')
@@ -140,15 +140,15 @@ class testDeriv(wx.Frame):
             
         def test2(name,delt):
             hplot = self.plotNB.add('derivatives test for '+name).gca()
-            dMdV = G2st.dervRefine(self.values,self.HistoPhases,self.parmDict,
+            dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
                 self.varylist,self.calcControls,self.pawleyLookup,None)
             hplot.plot(dMdV[self.varylist.index(name)],'b',label='analytic deriv')
             if name in self.varylist:
                 self.values[self.varylist.index(name)] -= delt
-                M0 = G2st.errRefine(self.values,self.HistoPhases,self.parmDict,
+                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
                     self.varylist,self.calcControls,self.pawleyLookup,None)
                 self.values[self.varylist.index(name)] += 2.*delt
-                M1 = G2st.errRefine(self.values,self.HistoPhases,self.parmDict,
+                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
                     self.varylist,self.calcControls,self.pawleyLookup,None)
                 self.values[self.varylist.index(name)] -= delt    
                 Mn = (M1-M0)/(2.*delt)

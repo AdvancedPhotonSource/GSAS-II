@@ -38,7 +38,7 @@ import GSASIIddataGUI as G2ddG
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
-import GSASIIstruct as G2str
+import GSASIIstrMain as G2stMn
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import numpy as np
@@ -1556,7 +1556,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 DisAglData['pId'] = data['pId']
                 DisAglData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
             try:
-                G2str.DistAngle(DisAglCtls,DisAglData)
+                G2stMn.DistAngle(DisAglCtls,DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
                 
@@ -2396,7 +2396,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         PlaneData['Name'] = generalData['Name']
         PlaneData['Atoms'] = xyz
         PlaneData['Cell'] = generalData['Cell'][1:] #+ volume
-        G2str.BestPlane(PlaneData)
+        G2stMn.BestPlane(PlaneData)
         
     def OnDrawDistVP(event):
         # distance to view point
@@ -2451,7 +2451,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'pId' in data:
             DATData['pId'] = data['pId']
             DATData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
-        G2str.DisAglTor(DATData)
+        G2stMn.DisAglTor(DATData)
                 
 ################################################################################
 #### Draw Options page

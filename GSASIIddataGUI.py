@@ -35,7 +35,6 @@ import GSASIIElemGUI as G2elemGUI
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
-import GSASIIstruct as G2str
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import numpy as np

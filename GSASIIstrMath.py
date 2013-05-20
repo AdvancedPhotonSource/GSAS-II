@@ -7,14 +7,9 @@
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIstrMath.py $
 # $Id: GSASIIstrMath.py 920 2013-05-17 17:13:15Z vondreele $
 ########### SVN repository information ###################
-import sys
-import os
-import os.path as ospath
 import time
 import math
 import copy
-import random
-import cPickle
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl

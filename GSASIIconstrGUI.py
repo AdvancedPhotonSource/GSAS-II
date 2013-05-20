@@ -26,7 +26,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 810 $")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
-import GSASIIstruct as G2str
+import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
@@ -111,11 +111,11 @@ def UpdateConstraints(G2frame,data):
     rigidbodyDict = G2frame.PatternTree.GetItemPyData(   
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-    rbVary,rbDict = G2str.GetRigidBodyModels(rigidbodyDict,Print=False)
+    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
     globalList = rbDict.keys()
     globalList.sort()
     AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2str.GetPhaseData(Phases,rbIds=rbIds,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder']:
@@ -136,10 +136,10 @@ def UpdateConstraints(G2frame,data):
             phaseAtNames[item] = ''
             phaseAtTypes[item] = ''
             
-    hapVary,hapDict,controlDict = G2str.GetHistogramPhaseData(Phases,Histograms,Print=False)
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
     hapList = hapDict.keys()
     hapList.sort()
-    histVary,histDict,controlDict = G2str.GetHistogramData(Histograms,Print=False)
+    histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
     histList = []
     for item in histDict:
         if item.split(':')[2] not in ['Omega','Type','Chi','Phi','Azimuth','Gonio. radius','Lam1','Lam2','Back']:
@@ -279,7 +279,7 @@ def UpdateConstraints(G2frame,data):
         allcons += newcons
         if not len(allcons): return True
         G2mv.InitVars()    
-        constDictList,fixedList,ignored = G2str.ProcessConstraints(allcons)
+        constDictList,fixedList,ignored = G2stIO.ProcessConstraints(allcons)
         errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
         if errmsg:
             res = G2frame.ErrorDialog('Constraint Error',
@@ -304,7 +304,7 @@ def UpdateConstraints(G2frame,data):
             allcons += data[key]
         if not len(allcons): return True
         G2mv.InitVars()    
-        constDictList,fixedList,ignored = G2str.ProcessConstraints(allcons)
+        constDictList,fixedList,ignored = G2stIO.ProcessConstraints(allcons)
         errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
         if errmsg:
             res = G2frame.ErrorDialog('Constraint Error',

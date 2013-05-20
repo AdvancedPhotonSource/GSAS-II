@@ -18,7 +18,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
-import GSASIIstruct as G2str
+import GSASIIstrIO as G2stIO
 
 def ShowBanner():
     print 80*'*'
@@ -34,7 +34,7 @@ def ShowControls(Controls):
     
 def Solve(GPXfile):
     ShowBanner()
-    Controls = G2str.GetControls(GPXfile)
+    Controls = G2stIO.GetControls(GPXfile)
     ShowControls(Controls)
         
 def main():

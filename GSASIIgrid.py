@@ -34,7 +34,6 @@ import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIphsGUI as G2phG
-import GSASIIstruct as G2str
 import GSASIIspc as G2spc
 import GSASIImapvars as G2mv
 import GSASIIconstrGUI as G2cnstG

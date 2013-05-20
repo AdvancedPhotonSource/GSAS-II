@@ -659,7 +659,7 @@ def UpdateConstraints(G2frame,data):
         allcons += data[key]
     if not len(allcons): return
     G2mv.InitVars()    
-    constDictList,fixedList,ignored = G2str.ProcessConstraints(allcons)
+    constDictList,fixedList,ignored = G2stIO.ProcessConstraints(allcons)
     errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
     if errmsg:
         G2frame.ErrorDialog('Constraint Error','Error in constraints:\n'+errmsg,

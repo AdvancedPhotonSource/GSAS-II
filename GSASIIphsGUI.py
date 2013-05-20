@@ -2779,7 +2779,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(RadSizer(),0,)
 
         drawOptions.SetSizer(mainSizer)
-        if G2frame.dataFrame.PhaseUserSize is None:
+        #if G2frame.dataFrame.PhaseUserSize is None:
+        if True: # Bob wants this tab to always resize -- let's try that. 
             Size = mainSizer.Fit(G2frame.dataFrame)
             Size[0] = max(Size[0]+35,500)           # leave some extra room and don't get too small
             Size[1] = max(Size[1]+35,350)                           #compensate for status bar

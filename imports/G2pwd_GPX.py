@@ -10,7 +10,6 @@
 import cPickle
 import numpy as np
 import GSASIIIO as G2IO
-import GSASIIstruct as G2str
 
 class GSAS2_ReaderClass(G2IO.ImportPowderData):
     """Routines to import powder data from a GSAS-II file

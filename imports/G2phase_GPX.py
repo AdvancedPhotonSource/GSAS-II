@@ -9,7 +9,7 @@
 # Routines to import Phase information from GSAS-II .gpx files
 import cPickle
 import GSASIIIO as G2IO
-import GSASIIstruct as G2str
+import GSASIIstrIO as G2stIO
 
 class PhaseReaderClass(G2IO.ImportPhase):
     def __init__(self):
@@ -28,7 +28,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
         return True
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         try:
-            phasenames = G2str.GetPhaseNames(filename)
+            phasenames = G2stIO.GetPhaseNames(filename)
         except:
             return False
         if not phasenames:
@@ -43,7 +43,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
                 )
             if selblk is None: return False # User pressed cancel
         try:
-            self.Phase = G2str.GetAllPhaseData(filename,phasenames[selblk])
+            self.Phase = G2stIO.GetAllPhaseData(filename,phasenames[selblk])
             self.Phase['Histograms'] = {}       #remove any histograms
             self.Phase['Pawley ref'] = []       # & any Pawley refl.
             return True

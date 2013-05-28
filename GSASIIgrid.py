@@ -58,8 +58,8 @@ htmlFirstUse = True
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
-    wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,
-] = [wx.NewId() for item in range(13)]
+    wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,wxID_RUNMCSA,
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_PWDRADD, wxID_HKLFADD,wxID_PWDANALYSIS,wxID_DATADELETE,
 ] = [wx.NewId() for item in range(4)]
@@ -78,6 +78,9 @@ htmlFirstUse = True
 
 [ wxID_DRAWRESTRBOND, wxID_DRAWRESTRANGLE, wxID_DRAWRESTRPLANE, wxID_DRAWRESTRCHIRAL,
 ] = [wx.NewId() for item in range(4)]
+
+[ wxID_ADDMCSAATOM,wxID_ADDMCSARB,wxID_CLEARMCSARB,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
@@ -1649,6 +1652,8 @@ class DataFrame(wx.Frame):
             text='Charge flipping')
         self.GeneralCalc.Append(help='Clear map',id=wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
             text='Clear map')
+        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing',id=wxID_RUNMCSA, kind=wx.ITEM_NORMAL,
+            text='Run MC/SA')
         self.PostfillDataMenu()
         
         # Phase / Data tab
@@ -1766,6 +1771,19 @@ class DataFrame(wx.Frame):
             help='Add chiral restraint for selected atoms (4: center atom 1st)')
         self.DrawAtomRigidBody.Append(id=wxID_DRAWDEFINERB, kind=wx.ITEM_NORMAL,text='Define rigid body',
             help='Define rigid body with selected atoms')
+        self.PostfillDataMenu()
+
+        # Phase / MCSA tab
+        self.MCSAMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.MCSAMenu,helpType='MC/SA')
+        self.MCSAEdit = wx.Menu(title='')
+        self.MCSAMenu.Append(menu=self.MCSAEdit, title='MC/SA')
+        self.MCSAEdit.Append(id=wxID_ADDMCSAATOM, kind=wx.ITEM_NORMAL,text='Add atom', 
+            help='Add single atom to MC/SA model')
+        self.MCSAEdit.Append(id=wxID_ADDMCSARB, kind=wx.ITEM_NORMAL,text='Add rigid body', 
+            help='Add rigid body to MC/SA model' )
+        self.MCSAEdit.Append(id=wxID_CLEARMCSARB, kind=wx.ITEM_NORMAL,text='Clear rigid bodies', 
+            help='Clear all rigid bodies from MC/SA model' )
         self.PostfillDataMenu()
             
         # Phase / Texture tab

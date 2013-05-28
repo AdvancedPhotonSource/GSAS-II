@@ -82,6 +82,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}
+    if 'MCSA' not in data:
+        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
 #end patch    
 
     global rbAtmDict   
@@ -119,7 +121,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Pawley neg wt'] = 0.0
         if 'MCSA controls' not in generalData:
             generalData['MCSA controls'] = {'Data source':'','Annealing':[50.0,0.001,0.90,1000],
-            'dmin':2.0,'Algolrithm':'Normal','Jump coeff':[0.95,0.5]} #'Normal','Random jump','Tremayne jump'
+            'dmin':2.0,'Algolrithm':'Random jump','Jump coeff':[0.95,0.5],'nRuns':1} #'Random jump','Tremayne jump'
 # end of patches
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
@@ -648,6 +650,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 dmin.SetValue("%.3f"%(MCSA['dmin']))          #reset in case of error
+                
+            def OnNoRuns(event):
+                MCSA['nRuns'] = int(noRuns.GetValue())
             
             def OnAlist(event):
                 MCSA['Algolrithm'] = Alist.GetValue()
@@ -689,7 +694,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if len(data['Pawley ref']):
                 refList = ['Pawley reflections']
             for item in data['Histograms'].keys():
-                if 'HKLF' in item:
+                if 'HKLF' in item or 'PWDR' in item:
                     refList.append(item)
             mcsaSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -706,7 +711,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            Achoice = ['Normal','Random jump','Tremayne jump']
+            Rchoice = ['1','2','3','5','10','15','20']
+            line2Sizer.Add(wx.StaticText(General,label=' No. MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
+            noRuns = wx.ComboBox(General,-1,value=str(MCSA.get('nRuns',1)),choices=Rchoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            noRuns.Bind(wx.EVT_COMBOBOX,OnNoRuns)
+            line2Sizer.Add(noRuns,0,wx.ALIGN_CENTER_VERTICAL)
+            Achoice = ['Random jump','Tremayne jump']
             line2Sizer.Add(wx.StaticText(General,label=' MC/SA algorithm: '),0,wx.ALIGN_CENTER_VERTICAL)
             Alist = wx.ComboBox(General,-1,value=MCSA['Algolrithm'],choices=Achoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -1253,6 +1264,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if not rbNames:
             print '**** ERROR - no rigid bodies defined ****'
             return
+        dlg = wx.SingleChoiceDialog(G2frame.dataFrame,'Select','Rigid body',rbNames.keys())
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            rbname = rbNames.keys()[sel]
+            rbType,rbId = rbNames[rbname]
+            RB = rbData[rbType][rbId]
         
     def OnAtomMove(event):
         drawData = data['Drawing']
@@ -2782,7 +2799,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         #if G2frame.dataFrame.PhaseUserSize is None:
         if True: # Bob wants this tab to always resize -- let's try that. 
             Size = mainSizer.Fit(G2frame.dataFrame)
-            Size[0] = max(Size[0]+35,500)           # leave some extra room and don't get too small
+  #          Size[0] = max(Size[0]+35,400)           # leave some extra room and don't get too small
+            Size[0] += 35                           #compensate for scroll bar
             Size[1] = max(Size[1]+35,350)                           #compensate for status bar
             drawOptions.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
             G2frame.dataFrame.setSizePosLeft(Size)
@@ -3916,8 +3934,408 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             finally:
                 wx.EndBusyCursor()
             FillRigidBodyGrid()
-                       
+            
+################################################################################
+##### MC/SA routines
+################################################################################
 
+    def UpdateMCSA(refresh=True):
+        Indx = {}
+        
+        def OnPosRef(event):
+            Obj = event.GetEventObject()
+            model,item,ix = Indx[Obj.GetId()]
+            model[item][1][ix] = Obj.GetValue()
+            
+        def OnPosVal(event):
+            Obj = event.GetEventObject()
+            model,item,ix = Indx[Obj.GetId()]
+            try:
+                model[item][0][ix] = float(Obj.GetValue())
+            except ValueError:
+                pass
+            Obj.SetValue("%.4f"%(model[item][0][ix]))
+            G2plt.PlotStructure(G2frame,data)
+            
+        def OnPosRange(event):
+            Obj = event.GetEventObject()
+            model,item,ix = Indx[Obj.GetId()]
+            Range = Obj.GetValue().split()
+            try:
+                rmin,rmax = [float(Range[i]) for i in range(2)]
+                if rmin >= rmax:
+                    raise ValueError
+            except (ValueError,IndexError):
+                rmin,rmax = model[item][2][ix]
+            model[item][2][ix] = [rmin,rmax]
+            Obj.SetValue('%.3f %.3f'%(rmin,rmax))                 
+                
+        def atomSizer(model):
+            
+            atomsizer = wx.FlexGridSizer(1,7,5,5)
+            atomsizer.Add(wx.StaticText(MCSA,-1,' Atom: '+model['name']+': '),0,wx.ALIGN_CENTER_VERTICAL)
+            for ix,item in enumerate(['x','y','z']):
+                posRef = wx.CheckBox(MCSA,-1,label=item+': ')
+                posRef.SetValue(model['Pos'][1][ix])
+                posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
+                Indx[posRef.GetId()] = [model,'Pos',ix]
+                atomsizer.Add(posRef,0,wx.ALIGN_CENTER_VERTICAL)
+                posVal = wx.TextCtrl(MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
+                posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
+                posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
+                Indx[posVal.GetId()] = [model,'Pos',ix]
+                atomsizer.Add(posVal,0,wx.ALIGN_CENTER_VERTICAL)
+            atomsizer.Add((5,5),0)
+            for ix,item in enumerate(['x','y','z']):
+                atomsizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+                rmin,rmax = model['Pos'][2][ix]
+                posRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                Indx[posRange.GetId()] = [model,'Pos',ix]
+                posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
+                posRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
+                atomsizer.Add(posRange,0,wx.ALIGN_CENTER_VERTICAL)
+            return atomsizer
+            
+        def rbSizer(model):
+            
+            def OnOrVar(event):
+                Obj = event.GetEventObject()
+                model = Indx[Obj.GetId()]
+                model['Ovar'] = Obj.GetValue()
+            
+            def OnOriVal(event):
+                Obj = event.GetEventObject()
+                model,ix = Indx[Obj.GetId()]
+                A,V = G2mth.Q2AVdeg(model['Ori'][0])
+#                V = np.inner(Bmat,V)
+                if ix:
+                    Anew = A
+                    Vec = Obj.GetValue().split()
+                    try:
+                        Vnew = [float(Vec[i]) for i in range(3)]
+                    except ValueError:
+                        Vnew = V
+                else:
+                    Vnew = V
+                    try:
+                        Anew = float(Obj.GetValue())
+                    except ValueError:
+                        Anew = A
+#                V = np.inner(Amat,V)
+                Q = G2mth.AVdeg2Q(Anew,Vnew)
+                model['Ori'][0] = Q
+                G2plt.PlotStructure(G2frame,data)
+                UpdateMCSA()
+
+            def OnMolCent(event):
+                Obj = event.GetEventObject()
+                model = Indx[Obj.GetId()]
+                model['MolCent'] = Obj.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+            
+            rbsizer = wx.BoxSizer(wx.VERTICAL)
+            rbsizer1 = wx.FlexGridSizer(1,7,5,5)
+            rbsizer1.Add(wx.StaticText(MCSA,-1,model['Type']+': '+model['name']+': '),0,wx.ALIGN_CENTER_VERTICAL)
+            for ix,item in enumerate(['x','y','z']):
+                posRef = wx.CheckBox(MCSA,-1,label=item+': ')
+                posRef.SetValue(model['Pos'][1][ix])
+                posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
+                Indx[posRef.GetId()] = [model,'Pos',ix]
+                rbsizer1.Add(posRef,0,wx.ALIGN_CENTER_VERTICAL)
+                posVal = wx.TextCtrl(MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
+                posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
+                posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
+                Indx[posVal.GetId()] = [model,'Pos',ix]
+                rbsizer1.Add(posVal,0,wx.ALIGN_CENTER_VERTICAL)
+            molcent = wx.CheckBox(MCSA,-1,label=' Use mol. center? ')
+            molcent.SetValue(model['MolCent'])
+            molcent.Bind(wx.EVT_CHECKBOX,OnMolCent)
+            Indx[molcent.GetId()] = model
+            rbsizer1.Add(molcent,0,wx.ALIGN_CENTER_VERTICAL)
+            for ix,item in enumerate(['x','y','z']):
+                rbsizer1.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+                rmin,rmax = model['Pos'][2][ix]
+                posRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                Indx[posRange.GetId()] = [model,'Pos',ix]
+                posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
+                posRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
+                rbsizer1.Add(posRange,0,wx.ALIGN_CENTER_VERTICAL)
+                
+            rbsizer2 = wx.FlexGridSizer(1,6,5,5)
+            Orien,OrienV = G2mth.Q2AVdeg(model['Ori'][0])
+            Ori = [Orien,]+list(OrienV)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oa: '),0,wx.ALIGN_CENTER_VERTICAL)
+            angVal = wx.TextCtrl(MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
+            angVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
+            angVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
+            Indx[angVal.GetId()] = [model,0]
+            rbsizer2.Add(angVal,0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,wx.ALIGN_CENTER_VERTICAL)
+            vecVal = wx.TextCtrl(MCSA,-1,'%.3f %.3f %.3f'%(Ori[1],Ori[2],Ori[3]),style=wx.TE_PROCESS_ENTER)
+            vecVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
+            vecVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
+            Indx[vecVal.GetId()] = [model,1]
+            rbsizer2.Add(vecVal,0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,' Vary? '),0,wx.ALIGN_CENTER_VERTICAL)
+            choice = [' ','A','AV']
+            orvar = wx.ComboBox(MCSA,-1,value=model['Ovar'],choices=choice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            orvar.Bind(wx.EVT_COMBOBOX, OnOrVar)
+            Indx[orvar.GetId()] = model
+            rbsizer2.Add(orvar,0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,' Range: Oa: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Rge = model['Ori'][2]
+            angRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(Rge[0][0],Rge[0][1]),style=wx.TE_PROCESS_ENTER)
+            Indx[angRange.GetId()] = [model,'Ori',0]
+            angRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
+            angRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
+            rbsizer2.Add(angRange,0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,wx.ALIGN_CENTER_VERTICAL)
+            for io,item in enumerate(['Oi','Oj','Ok']):
+                rmin,rmax = Rge[io+1]
+                vecRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f '%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                Indx[vecRange.GetId()] = [model,'Ori',io+1]
+                vecRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
+                vecRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
+                rbsizer2.Add(vecRange,0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer.Add(rbsizer1)    
+            rbsizer.Add(rbsizer2)    
+            if model['Type'] == 'Residue':
+                rbsizer3 = wx.FlexGridSizer(1,8,5,5)
+                for it,tor in enumerate(model['Tor'][0]):
+                    name = 'Tor('+str(it)+')'
+                    torRef = wx.CheckBox(MCSA,-1,label=' %s: '%(name))
+                    torRef.SetValue(model['Tor'][1][it])
+                    torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
+                    Indx[torRef.GetId()] = [model,'Tor',it]
+                    rbsizer3.Add(torRef,0,wx.ALIGN_CENTER_VERTICAL)
+                    torVal = wx.TextCtrl(MCSA,-1,'%.4f'%(tor),style=wx.TE_PROCESS_ENTER)
+                    torVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
+                    torVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
+                    Indx[torVal.GetId()] = [model,'Tor',it]
+                    rbsizer3.Add(torVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    rbsizer3.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    rmin,rmax = model['Tor'][2][it]
+                    torRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                    Indx[torRange.GetId()] = [model,'Tor',it]
+                    torRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
+                    torRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
+                    rbsizer3.Add(torRange,0,wx.ALIGN_CENTER_VERTICAL)
+                rbsizer.Add(rbsizer3)
+                
+            return rbsizer
+            
+        def MDSizer(POData):
+            
+            def OnPORef(event):
+                POData['Coef'][1] = poRef.GetValue()
+                
+            def OnPOVal(event):
+                try:
+                    mdVal = float(poVal.GetValue())
+                    if mdVal > 0:
+                        POData['Coef'][0] = mdVal
+                except ValueError:
+                    pass
+                poVal.SetValue("%.3f"%(POData['Coef'][0]))
+                
+            def OnPORange(event):
+                Range = poRange.GetValue().split()
+                try:
+                    rmin,rmax = [float(Range[i]) for i in range(2)]
+                    if rmin >= rmax:
+                        raise ValueError
+                except (ValueError,IndexError):
+                    rmin,rmax = POData['Coef'][2]
+                POData['Coef'][2] = [rmin,rmax]
+                poRange.SetValue('%.3f %.3f'%(rmin,rmax))                 
+                
+            def OnPOAxis(event):
+                Saxis = poAxis.GetValue().split()
+                try:
+                    hkl = [int(Saxis[i]) for i in range(3)]
+                except (ValueError,IndexError):
+                    hkl = POData['axis']
+                if not np.any(np.array(hkl)):
+                    hkl = POData['axis']
+                POData['axis'] = hkl
+                h,k,l = hkl
+                poAxis.SetValue('%3d %3d %3d'%(h,k,l))                 
+                
+            poSizer = wx.BoxSizer(wx.HORIZONTAL)
+            poRef = wx.CheckBox(MCSA,-1,label=' March-Dollase ratio: ')
+            poRef.SetValue(POData['Coef'][1])
+            poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
+            poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
+            poVal = wx.TextCtrl(MCSA,-1,'%.3f'%(POData['Coef'][0]),style=wx.TE_PROCESS_ENTER)
+            poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
+            poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
+            poSizer.Add(poVal,0,wx.ALIGN_CENTER_VERTICAL)
+            poSizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+            rmin,rmax = POData['Coef'][2]
+            poRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+            poRange.Bind(wx.EVT_TEXT_ENTER,OnPORange)
+            poRange.Bind(wx.EVT_KILL_FOCUS,OnPORange)
+            poSizer.Add(poRange,0,wx.ALIGN_CENTER_VERTICAL)                       
+            poSizer.Add(wx.StaticText(MCSA,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+            h,k,l = POData['axis']
+            poAxis = wx.TextCtrl(MCSA,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+            poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
+            poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
+            poSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
+            return poSizer
+        
+        # UpdateMCSA executable code starts here
+        if refresh:
+            MCSA.DestroyChildren()
+        general = data['General']
+        Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
+        RBData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        Indx = {}
+        atomStyle = 'balls & sticks'
+        if 'macro' in general['Type']:
+            atomStyle = 'sticks'
+        G2frame.dataFrame.SetStatusText('')
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if not data['MCSA']['Models']:
+            mainSizer.Add((5,5),0)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA models:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+        else:
+            mainSizer.Add((5,5),0)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA models:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+            for model in data['MCSA']['Models']:
+                if model['Type'] == 'MD':
+                    mainSizer.Add(MDSizer(model))
+                elif model['Type'] == 'Atom':
+                    mainSizer.Add(atomSizer(model))
+                else:
+                    mainSizer.Add(rbSizer(model))
+                G2gd.HorizontalLine(mainSizer,MCSA)
+                
+        if not data['MCSA']['Results']:
+            mainSizer.Add((5,5),0)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA results:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+        else:
+            for result in data['MCSA']['Results']:
+                print result
+
+        MCSA.SetSizer(mainSizer)
+        if G2frame.dataFrame.PhaseUserSize is None:
+            mainSizer.FitInside(G2frame.dataFrame)
+            Size = mainSizer.GetMinSize()
+            Size[0] += 40
+            Size[1] = max(Size[1],290) + 35
+            MCSA.SetSize(Size)
+            MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            Size[1] = min(Size[1],450)
+            G2frame.dataFrame.setSizePosLeft(Size)
+        else:
+            Size = G2frame.dataFrame.PhaseUserSize
+            MCSA.SetSize(Size)
+            MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+            G2frame.dataFrame.Update()
+
+    def OnRunMCSA(event):
+        generalData = data['General']
+        mcsaControls = generalData['MCSA controls']
+        reflName = mcsaControls['Data source']
+        phaseName = generalData['Name']
+        MCSAdata = data['MCSA']
+        covData = {}
+        if 'PWDR' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            reflData = reflSets[phaseName]
+            reflType = 'PWDR'
+        elif 'HKLF' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+            reflType = 'HKLF'
+        elif reflName == 'Pawley reflections':
+            reflData = data['Pawley ref']
+            covData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
+            reflType = 'Pawley'
+        else:
+            print '**** ERROR - No data defined for MC/SA run'
+            return
+        MCSAmodels = MCSAdata['Models']
+        if not len(MCSAmodels):
+            print '**** ERROR - no models defined for MC/SA run****'
+            return
+        pgbar = wx.ProgressDialog('MC/SA','Residual Rcf =',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
+        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        pgbar.SetSize(Size)
+        try:
+            MCSAdata['Results'] = G2mth.mcsaSearch(data,reflType,reflData,covData,pgbar)
+        finally:
+            pgbar.Destroy()
+        if not data['Drawing']:                 #if new drawing - no drawing data!
+            SetupDrawingData()
+        print ' MC/SA run finished: best model residual: %f.3'%(0.01)
+        UpdateMCSA()
+
+    def OnMCSAaddAtom(event):
+        dlg = G2elemGUI.PickElement(G2frame)
+        if dlg.ShowModal() == wx.ID_OK:
+            El = dlg.Elem.strip()
+            Info = G2elem.GetAtomInfo(El)
+        dlg.Destroy()
+        
+        atom = {'Type':'Atom','atType':El,'Pos':[[0.,0.,0.],
+            [False,False,False],[[0.,1.],[0.,1.],[0.,1.]]],
+            'name':El+'('+str(len(data['MCSA']['Models']))+')'}      
+        data['MCSA']['Models'].append(atom)
+        data['MCSA']['AtInfo'][El] = [Info['Drad'],Info['Color']]
+        G2plt.PlotStructure(G2frame,data)
+        UpdateMCSA()
+        
+    def OnMCSAaddRB(event):
+        rbData = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        rbNames = {}
+        for rbVec in rbData['Vector']:
+            if rbVec != 'AtInfo':
+                rbNames[rbData['Vector'][rbVec]['RBname']] = ['Vector',rbVec]
+        for rbRes in rbData['Residue']:
+            if rbRes != 'AtInfo':
+                rbNames[rbData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
+        if not rbNames:
+            print '**** ERROR - no rigid bodies defined ****'
+            return
+        dlg = wx.SingleChoiceDialog(G2frame.dataFrame,'Select','Rigid body',rbNames.keys())
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            rbname = rbNames.keys()[sel]
+            rbType,rbId = rbNames[rbname]
+            RB = rbData[rbType][rbId]
+        body = {'name':RB['RBname']+'('+str(len(data['MCSA']['Models']))+')','RBId':rbId,'Type':rbType,
+            'Pos':[[0.,0.,0.],[False,False,False],[[0.,1.],[0.,1.],[0.,1.]]],'Ovar':'','MolCent':False,
+            'Ori':[[1.,0.,0.,0.],[False,False,False,False],[[-180.,180.],[-1.,1.],[-1.,1.],[-1.,1.]]]}
+        if rbType == 'Residue':
+            body['Tor'] = [[],[],[]]
+            for i,tor in enumerate(RB['rbSeq']):
+                body['Tor'][0].append(0.0)
+                body['Tor'][1].append(False)
+                body['Tor'][2].append([0.,360.])
+        data['MCSA']['Models'].append(body)
+        data['MCSA']['rbData'] = rbData
+        data['MCSA']['AtInfo'].update(rbData[rbType]['AtInfo'])
+        G2plt.PlotStructure(G2frame,data)
+        UpdateMCSA()
+        
+    def OnMCSAclear(event):
+        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
+        G2plt.PlotStructure(G2frame,data)
+        UpdateMCSA()            
+                       
 ################################################################################
 ##### Pawley routines
 ################################################################################
@@ -4382,7 +4800,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             OnSearchMaps(event)             #does a plot structure at end
         else:
             print 'Bad charge flip map - no peak search done'
-                
+                            
     def OnTextureRefine(event):
         print 'refine texture?'
         event.Skip()        
@@ -4491,13 +4909,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             FillMapPeaksGrid()
             #G2plt.PlotStructure(G2frame,data)
             wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+        elif text == 'MC/SA':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MCSAMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2gd.wxID_ADDMCSAATOM)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2gd.wxID_ADDMCSARB)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2gd.wxID_CLEARMCSARB)
+            UpdateMCSA()                        
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
             UpdateTexture()                        
-            G2plt.PlotTexture(G2frame,data,Start=True)
-            
+            G2plt.PlotTexture(G2frame,data,Start=True)            
         else:
             G2gd.SetDataMenuBar(G2frame)
         wx.Frame.Bind(G2frame.dataFrame,wx.EVT_SIZE,OnDataResize) # capture user resize events again
@@ -4518,6 +4942,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
     MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
+    MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
+    G2frame.dataDisplay.AddPage(MCSA,'MC/SA')
     Texture = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(Texture,'Texture')
     G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
@@ -4527,11 +4953,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMCSA, id=G2gd.wxID_RUNMCSA)    
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
-    SetupGeneral() # this is done all over the place (including in
-    # UpdateGeneral). Why here too?
+    SetupGeneral()
     
     GeneralData = data['General']
     

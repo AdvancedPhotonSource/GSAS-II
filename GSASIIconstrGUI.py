@@ -968,7 +968,7 @@ def UpdateRigidBodies(G2frame,data):
                 Riding.append(atNames.index(atm))
             rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
         dlg.Destroy()
-        UpdateResidueRB()        
+        UpdateResidueRB()
 
     def UpdateVectorRB(Scroll=0):
         AtInfo = data['Vector']['AtInfo']
@@ -1353,8 +1353,14 @@ def UpdateRigidBodies(G2frame,data):
                 Seq,iSeq,angId = Indx[Obj.GetId()]
                 data['Residue'][rbId]['SelSeq'] = [iSeq,angId]
                 angSlide.SetValue(int(100*Seq[2]))
+                
+            def OnDelBtn(event):
+                Obj = event.GetEventObject()
+                rbId,Seq = Indx[Obj.GetId()]
+                data['Residue'][rbId]['rbSeq'].remove(Seq)        
+                wx.CallAfter(UpdateResidueRB)
             
-            seqSizer = wx.FlexGridSizer(0,4,2,2)
+            seqSizer = wx.FlexGridSizer(0,5,2,2)
             seqSizer.AddGrowableCol(3,0)
             iBeg,iFin,angle,iMove = Seq
             ang = wx.TextCtrl(ResidueRBDisplay,-1,'%8.2f'%(angle),size=(50,20))
@@ -1365,9 +1371,13 @@ def UpdateRigidBodies(G2frame,data):
                 radBt = wx.RadioButton(ResidueRBDisplay,-1,'')
             radBt.Bind(wx.EVT_RADIOBUTTON,OnRadBtn)                   
             seqSizer.Add(radBt)
+            delBt = wx.RadioButton(ResidueRBDisplay,-1,'')
+            delBt.Bind(wx.EVT_RADIOBUTTON,OnDelBtn)
+            seqSizer.Add(delBt)
             bond = wx.TextCtrl(ResidueRBDisplay,-1,'%s %s'%(atNames[iBeg],atNames[iFin]),size=(50,20))
             seqSizer.Add(bond,0,wx.ALIGN_CENTER_VERTICAL)
             Indx[radBt.GetId()] = [Seq,iSeq,ang.GetId()]
+            Indx[delBt.GetId()] = [rbId,Seq]
             Indx[ang.GetId()] = [rbId,Seq,ang]
             ang.Bind(wx.EVT_TEXT_ENTER,ChangeAngle)
             ang.Bind(wx.EVT_KILL_FOCUS,ChangeAngle)
@@ -1433,7 +1443,7 @@ def UpdateRigidBodies(G2frame,data):
                 slideSizer,angSlide = SlideSizer()
             if len(rbData['rbSeq']):
                 ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
-                    'Sel  Bond             Angle      Riding atoms'),
+                    'Sel  Del  Bond             Angle      Riding atoms'),
                     0,wx.ALIGN_CENTER_VERTICAL)                       
             for iSeq,Seq in enumerate(rbData['rbSeq']):
                 ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))

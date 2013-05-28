@@ -281,6 +281,46 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         X = prodQVQ(RBObj['Orient'][0],xyz)
         XYZ[i] = np.inner(Bmat,X)+RBObj['Orig'][0]
     return XYZ,Cart
+
+def UpdateMCSAxyz(Bmat,mcsaModels,RBData):
+    xyz = []
+    atTypes = []
+    iatm = 0
+    for model in mcsaModels[1:]:        #skip the MD model
+        if model['Type'] == 'Atom':
+            xyz.append(model['Pos'][0])
+            atTypes.append(model['atType'])
+            iatm += 1
+        else:
+            rideList = []
+            RBRes = RBData[model['Type']][model['RBId']]
+            Pos = np.array(model['Pos'][0])
+            Qori = np.array(model['Ori'][0])
+            if model['Type'] == 'Vector':
+                vecs = RBRes['rbVect']
+                mags = RBRes['VectMag']
+                Cart = np.zeros_like(vecs[0])
+                for vec,mag in zip(vecs,mags):
+                    Cart += vec*mag
+            elif model['Type'] == 'Residue':
+                Cart = np.array(RBRes['rbXYZ'])
+                for itor,seq in enumerate(RBRes['rbSeq']):
+                    QuatA = AVdeg2Q(model['Tor'][0][itor],Cart[seq[0]]-Cart[seq[1]])
+                    for ride in seq[3]:
+                        Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+                    rideList += seq[3]
+            centList = set(range(len(Cart)))-set(rideList)
+            if model['MolCent']:
+                cent = np.zeros(3)
+                for i in centList:
+                    cent += Cart[i]
+                Cart -= cent/len(centList)
+            for i,x in enumerate(Cart):
+                xyz.append(np.inner(Bmat,prodQVQ(Qori,x))+Pos)
+                atType = RBRes['rbTypes'][i]
+                atTypes.append(atType)
+                iatm += 1
+    return np.array(xyz),atTypes
     
 def UpdateRBUIJ(Bmat,Cart,RBObj):
     ''' Returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
@@ -1359,6 +1399,19 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         gam = ins['X']*dsp+ins['Y']*dsp**2
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
     return XY
+
+def mcsaSearch(data,reflType,reflData,covData,pgbar):
+    generalData = data['General']
+    mcsaControls = generalData['MCSA controls']
+    reflName = mcsaData['Data source']
+    phaseName = generalData['Name']
+    MCSAObjs = data['MCSAModels']
+            
+#             = {'':'','Annealing':[50.0,0.001,0.90,1000],
+#            'dmin':2.0,'Algolrithm':'Normal','Jump coeff':[0.95,0.5]} #'Normal','Random jump','Tremayne jump'
+
+    return {}
+
         
 def getWave(Parms):
     try:
@@ -1439,7 +1492,7 @@ def AV2Q(A,V):
     if d:
         V /= d
     else:
-        return [0.,0.,0.,1.]    #identity
+        V = np.array([0.,0.,1.])
     p = A/2.
     Q[0] = np.cos(p)
     Q[1:4] = V*np.sin(p)
@@ -1454,7 +1507,7 @@ def AVdeg2Q(A,V):
     if d:
         V /= d
     else:
-        return [0.,0.,0.,1.]    #identity
+        V = np.array([0.,0.,1.])
     p = A/2.
     Q[0] = cosd(p)
     Q[1:4] = V*sind(p)
@@ -1466,11 +1519,12 @@ def Q2AVdeg(Q):
     '''
     A = 2.*acosd(Q[0])
     V = np.array(Q[1:])
-    if nl.norm(Q[1:]):
-        V = Q[1:]/nl.norm(Q[1:])
+    d = np.sqrt(np.sum(V**2))
+    if d:
+        V /= d
     else:
         A = 0.
-        V = np.array([0.,0.,1.])
+        V = np.array([0.,0.,0.])
     return A,V
     
 def Q2AV(Q):
@@ -1479,11 +1533,12 @@ def Q2AV(Q):
     '''
     A = 2.*np.arccos(Q[0])
     V = np.array(Q[1:])
-    if nl.norm(Q[1:]):
-        V = Q[1:]/nl.norm(Q[1:])
+    d = np.sqrt(np.sum(V**2))
+    if d:
+        V /= d
     else:
         A = 0.
-        V = np.array([0.,0.,1.])
+        V = np.array([0.,0.,0.])
     return A,V
     
 def makeQuat(A,B,C):

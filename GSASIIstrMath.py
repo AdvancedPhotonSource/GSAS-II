@@ -1541,27 +1541,28 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet
-            #do atom derivatives -  for RB,F,X & U so far              
-            corr = dervDict['int']/refl[9]
-            if Ka2:
-                corr2 = dervDict2['int']/refl[9]
-            for name in varylist+dependentVars:
-                if '::RBV;' in name:
-                    pass
-                else:
-                    try:
-                        aname = name.split(pfx)[1][:2]
-                        if aname not in ['Af','dA','AU','RB']: continue # skip anything not an atom or rigid body param
-                    except IndexError:
-                        continue
-                if name in varylist:
-                    dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
-                    if Ka2:
-                        dMdv[varylist.index(name)][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
-                elif name in dependentVars:
-                    depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
-                    if Ka2:
-                        depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+            if not Phase['General'].get('doPawley'):
+                #do atom derivatives -  for RB,F,X & U so far              
+                corr = dervDict['int']/refl[9]
+                if Ka2:
+                    corr2 = dervDict2['int']/refl[9]
+                for name in varylist+dependentVars:
+                    if '::RBV;' in name:
+                        pass
+                    else:
+                        try:
+                            aname = name.split(pfx)[1][:2]
+                            if aname not in ['Af','dA','AU','RB']: continue # skip anything not an atom or rigid body param
+                        except IndexError:
+                            continue
+                    if name in varylist:
+                        dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
+                        if Ka2:
+                            dMdv[varylist.index(name)][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+                    elif name in dependentVars:
+                        depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
+                        if Ka2:
+                            depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
 #        print 'profile derv time: %.3fs'%(time.time()-time0)
     # now process derivatives in constraints
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)

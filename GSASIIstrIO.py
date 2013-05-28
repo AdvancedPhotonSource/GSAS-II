@@ -549,7 +549,7 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',]
         
 ################################################################################
-##### Rigid Body Models
+##### Rigid Body Models  and not General.get('doPawley')
 ################################################################################
         
 def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):

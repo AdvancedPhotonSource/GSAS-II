@@ -2617,6 +2617,10 @@ def PlotStructure(G2frame,data):
         rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
     testRBObj = data.get('testRBObj',{})
     rbObj = testRBObj.get('rbObj',{})
+    MCSA = data.get('MCSA',{})
+    mcsaModels = []
+    if len(MCSA):
+        mcsaModels = MCSA['Models']
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
     flipData = {}
@@ -3463,6 +3467,16 @@ def PlotStructure(G2frame,data):
 #                RenderMapPeak(x,y,z,color,1.0)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,Or)
+        if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
+            XYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,mcsaModels,MCSA.get('rbData',{}))
+            rbBonds = FindPeaksBonds(XYZ)
+            for ind,[x,y,z] in enumerate(XYZ):
+                aType = atTypes[ind]
+                name = aType+str(ind)
+                color = np.array(MCSA['AtInfo'][aType][1])
+                RenderSphere(x,y,z,0.2,color/255.)
+                RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
+                RenderLabel(x,y,z,name,0.2,Or)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]
@@ -3553,7 +3567,8 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             XYZ += mag*rbData['rbVect'][imag]
         Bonds = FindBonds(XYZ)
     elif rbType == 'Residue':
-        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['atNames'])]
+#        atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['atNames'])]
+        atNames = rbData['atNames']
         XYZ = np.copy(rbData['rbXYZ'])      #don't mess with original!
         Seq = rbData['rbSeq']
         for ia,ib,ang,mv in Seq:
@@ -3609,7 +3624,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         
     def SetLights():
         glEnable(GL_DEPTH_TEST)
-        glShadeModel(GL_SMOOTH)
+        glShadeModel(GL_FLAT)
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
@@ -3751,13 +3766,13 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         glMultMatrixf(matRot.T)
         RenderUnitVectors(0.,0.,0.)
-        radius = 0.4
+        radius = 0.2
         for iat,atom in enumerate(XYZ):
             x,y,z = atom
             CL = AtInfo[rbData['rbTypes'][iat]][1]
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
-            RenderBonds(x,y,z,Bonds[iat],0.1,color)
+            RenderBonds(x,y,z,Bonds[iat],0.05,color)
             RenderLabel(x,y,z,atNames[iat],radius)
         Page.canvas.SwapBuffers()
 

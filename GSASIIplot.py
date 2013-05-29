@@ -3192,6 +3192,7 @@ def PlotStructure(G2frame,data):
         glPopMatrix()
                 
     def RenderLines(x,y,z,Bonds,color):
+        glShadeModel(GL_FLAT)
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(1)
@@ -3205,6 +3206,7 @@ def PlotStructure(G2frame,data):
         glColor4ubv([0,0,0,0])
         glPopMatrix()
         glDisable(GL_COLOR_MATERIAL)
+        glShadeModel(GL_SMOOTH)
         
     def RenderPolyhedra(x,y,z,Faces,color):
         glPushMatrix()
@@ -3223,6 +3225,7 @@ def PlotStructure(G2frame,data):
         glPopMatrix()
 
     def RenderMapPeak(x,y,z,color,den):
+        glShadeModel(GL_FLAT)
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(3)
@@ -3236,6 +3239,7 @@ def PlotStructure(G2frame,data):
         glColor4ubv([0,0,0,0])
         glPopMatrix()
         glDisable(GL_COLOR_MATERIAL)
+        glShadeModel(GL_SMOOTH)
         
     def RenderBackbone(Backbone,BackboneColor,radius):
         glPushMatrix()
@@ -3253,13 +3257,14 @@ def PlotStructure(G2frame,data):
         glMultMatrixf(B4mat.T)
         glDisable(GL_LIGHTING)
         glColor3fv(color)
-        glRasterPos3f(r,r,r)
+        glRasterPos3f(0,0,0)
         for c in list(label):
             glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
         glEnable(GL_LIGHTING)
         glPopMatrix()
         
     def RenderMap(rho,rhoXYZ,indx,Rok):
+        glShadeModel(GL_FLAT)
         cLevel = drawingData['contourLevel']
         XYZ = []
         RC = []
@@ -3277,6 +3282,7 @@ def PlotStructure(G2frame,data):
                     XYZ.append(xyz)
                     RC.append([0.1*alpha,Gr])
         RenderDots(XYZ,RC)
+        glShadeModel(GL_SMOOTH)
                             
     def Draw(caller=''):
 #useful debug?        
@@ -3432,17 +3438,17 @@ def PlotStructure(G2frame,data):
                     BackboneColor.append(list(atColor))
                     
             if atom[cs+1] == 'type':
-                RenderLabel(x,y,z,atom[ct],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct],radius,Gr)
             elif atom[cs+1] == 'name':
-                RenderLabel(x,y,z,atom[ct-1],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-1],radius,Gr)
             elif atom[cs+1] == 'number':
-                RenderLabel(x,y,z,str(iat),radius,Gr)
+                RenderLabel(x,y,z,'  '+str(iat),radius,Gr)
             elif atom[cs+1] == 'residue' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,atom[ct-4],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-4],radius,Gr)
             elif atom[cs+1] == '1-letter' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,atom[ct-3],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-3],radius,Gr)
             elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,atom[ct-2],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-2],radius,Gr)
 #        glDisable(GL_BLEND)
         if len(rhoXYZ):
             RenderMap(rho,rhoXYZ,indx,Rok)
@@ -3461,7 +3467,7 @@ def PlotStructure(G2frame,data):
             rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = testRBObj['rbAtTypes'][ind]
-                name = aType+str(ind)
+                name = '  '+aType+str(ind)
                 color = np.array(testRBObj['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
 #                RenderMapPeak(x,y,z,color,1.0)
@@ -3472,7 +3478,7 @@ def PlotStructure(G2frame,data):
             rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = atTypes[ind]
-                name = aType+str(ind)
+                name = '  '+aType+str(ind)
                 color = np.array(MCSA['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
@@ -3728,12 +3734,12 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             glPopMatrix()            
         glPopMatrix()
                 
-    def RenderLabel(x,y,z,label,r):       
+    def RenderLabel(x,y,z,label):       
         glPushMatrix()
         glTranslate(x,y,z)
         glDisable(GL_LIGHTING)
         glColor3f(1.0,1.0,1.0)
-        glRasterPos3f(r,r,r)
+        glRasterPos3f(0,0,0)
         for c in list(label):
             glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
         glEnable(GL_LIGHTING)
@@ -3773,7 +3779,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
-            RenderLabel(x,y,z,atNames[iat],radius)
+            RenderLabel(x,y,z,'  '+atNames[iat])
         Page.canvas.SwapBuffers()
 
     def OnSize(event):

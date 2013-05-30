@@ -22,7 +22,12 @@ def FormulaEval(string):
     Expressions such as 2/3, 3*pi, sin(45)/2, 2*sqrt(2), 2**10 can all
     be evaluated.
 
-    :param str string: Character string c
+    :param str string: Character string containing a Python expression
+      to be evaluated.
+
+    :returns: the value for the expression as a float or None if the expression does not
+      evaluate to a valid number. 
+    
     '''
     try:
         val = float(eval(string))
@@ -32,8 +37,15 @@ def FormulaEval(string):
     return val
 
 def FormatValue(val,maxdigits=10):
-    '''Format a float to fit in maxdigits spaces, showing as much
-    precision as possible, more or less
+    '''Format a float to fit in ``maxdigits`` spaces, showing as much
+    precision as possible, more or less.
+
+    :param float val: number to be formatted.
+
+    :param int maxdigits: the number of digits to be used for display of the
+      number (defaults to 10).
+
+    :returns: a string with <= maxdigits characters (I hope).  
     '''
     # does the standard str() conversion fit?
     string = str(val)

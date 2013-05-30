@@ -66,9 +66,9 @@ htmlFirstUse = True
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
-    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_RBAPPEND,
+    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,
     wxID_ASSIGNATMS2RB
-] = [wx.NewId() for item in range(13)]
+] = [wx.NewId() for item in range(12)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -79,8 +79,8 @@ htmlFirstUse = True
 [ wxID_DRAWRESTRBOND, wxID_DRAWRESTRANGLE, wxID_DRAWRESTRPLANE, wxID_DRAWRESTRCHIRAL,
 ] = [wx.NewId() for item in range(4)]
 
-[ wxID_ADDMCSAATOM,wxID_ADDMCSARB,wxID_CLEARMCSARB,
-] = [wx.NewId() for item in range(3)]
+[ wxID_ADDMCSAATOM,wxID_ADDMCSARB,wxID_CLEARMCSARB,wxID_MOVEMCSA,
+] = [wx.NewId() for item in range(4)]
 
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
@@ -1680,8 +1680,6 @@ class DataFrame(wx.Frame):
             help='Appended as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMSVIEWADD, kind=wx.ITEM_NORMAL,text='Append view point',
             help='Appended as an H atom')
-        self.AtomEdit.Append(id=wxID_RBAPPEND, kind=wx.ITEM_NORMAL,text='Append rigid body',
-            help='Append atoms for rigid body')
         self.AtomEdit.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
             help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
@@ -1783,7 +1781,9 @@ class DataFrame(wx.Frame):
         self.MCSAEdit.Append(id=wxID_ADDMCSARB, kind=wx.ITEM_NORMAL,text='Add rigid body', 
             help='Add rigid body to MC/SA model' )
         self.MCSAEdit.Append(id=wxID_CLEARMCSARB, kind=wx.ITEM_NORMAL,text='Clear rigid bodies', 
-            help='Clear all rigid bodies from MC/SA model' )
+            help='Clear all atoms & rigid bodies from MC/SA model' )
+        self.MCSAEdit.Append(id=wxID_MOVEMCSA, kind=wx.ITEM_NORMAL,text='Move MC/SA solution', 
+            help='Move MC/SA solution to atom list' )
         self.PostfillDataMenu()
             
         # Phase / Texture tab

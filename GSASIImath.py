@@ -282,18 +282,17 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         XYZ[i] = np.inner(Bmat,X)+RBObj['Orig'][0]
     return XYZ,Cart
 
-def UpdateMCSAxyz(Bmat,mcsaModels,RBData):
+def UpdateMCSAxyz(Bmat,MCSA):
     xyz = []
     atTypes = []
     iatm = 0
-    for model in mcsaModels[1:]:        #skip the MD model
+    for model in MCSA['Models'][1:]:        #skip the MD model
         if model['Type'] == 'Atom':
             xyz.append(model['Pos'][0])
             atTypes.append(model['atType'])
             iatm += 1
         else:
-            rideList = []
-            RBRes = RBData[model['Type']][model['RBId']]
+            RBRes = MCSA['rbData'][model['Type']][model['RBId']]
             Pos = np.array(model['Pos'][0])
             Qori = np.array(model['Ori'][0])
             if model['Type'] == 'Vector':
@@ -308,19 +307,33 @@ def UpdateMCSAxyz(Bmat,mcsaModels,RBData):
                     QuatA = AVdeg2Q(model['Tor'][0][itor],Cart[seq[0]]-Cart[seq[1]])
                     for ride in seq[3]:
                         Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
-                    rideList += seq[3]
-            centList = set(range(len(Cart)))-set(rideList)
-            if model['MolCent']:
-                cent = np.zeros(3)
-                for i in centList:
-                    cent += Cart[i]
-                Cart -= cent/len(centList)
+            if model['MolCent'][1]:
+                Cart -= model['MolCent'][0]
             for i,x in enumerate(Cart):
                 xyz.append(np.inner(Bmat,prodQVQ(Qori,x))+Pos)
                 atType = RBRes['rbTypes'][i]
                 atTypes.append(atType)
                 iatm += 1
     return np.array(xyz),atTypes
+    
+def SetMolCent(model,RBData):
+    rideList = []
+    RBRes = RBData[model['Type']][model['RBId']]
+    if model['Type'] == 'Vector':
+        vecs = RBRes['rbVect']
+        mags = RBRes['VectMag']
+        Cart = np.zeros_like(vecs[0])
+        for vec,mag in zip(vecs,mags):
+            Cart += vec*mag
+    elif model['Type'] == 'Residue':
+        Cart = np.array(RBRes['rbXYZ'])
+        for seq in RBRes['rbSeq']:
+            rideList += seq[3]
+    centList = set(range(len(Cart)))-set(rideList)
+    cent = np.zeros(3)
+    for i in centList:
+        cent += Cart[i]
+    model['MolCent'][0] = cent/len(centList)    
     
 def UpdateRBUIJ(Bmat,Cart,RBObj):
     ''' Returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj

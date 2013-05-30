@@ -1206,6 +1206,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         AtomAdd(0,0,0)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
+        G2plt.PlotStructure(G2frame,data)
         
     def OnAtomViewAdd(event):
         try:
@@ -1216,6 +1217,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             AtomAdd(0,0,0)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
+        G2plt.PlotStructure(G2frame,data)
                 
     def AtomAdd(x,y,z,El='H',Name='UNK'):
         atomData = data['Atoms']
@@ -1233,12 +1235,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
-            G2plt.PlotStructure(G2frame,data)
 
     def OnAtomInsert(event):
         AtomInsert(0,0,0)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
+        G2plt.PlotStructure(G2frame,data)
         
     def OnAtomViewInsert(event):
         if 'Drawing' in data:
@@ -1247,29 +1249,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             AtomAdd(x,y,z)
             FillAtomsGrid(Atoms)
         event.StopPropagation()
-        
-    def OnRBAppend(event):          #unfinished!
-        rbData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-        general = data['General']
-        atomData = data['Atoms']
-        Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
-        rbNames = {}
-        for rbVec in rbData['Vector']:
-            if rbVec != 'AtInfo':
-                rbNames[rbData['Vector'][rbVec]['RBname']] = ['Vector',rbVec]
-        for rbRes in rbData['Residue']:
-            if rbRes != 'AtInfo':
-                rbNames[rbData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
-        if not rbNames:
-            print '**** ERROR - no rigid bodies defined ****'
-            return
-        dlg = wx.SingleChoiceDialog(G2frame.dataFrame,'Select','Rigid body',rbNames.keys())
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            rbname = rbNames.keys()[sel]
-            rbType,rbId = rbNames[rbname]
-            RB = rbData[rbType][rbId]
         
     def OnAtomMove(event):
         drawData = data['Drawing']
@@ -4030,7 +4009,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnMolCent(event):
                 Obj = event.GetEventObject()
                 model = Indx[Obj.GetId()]
-                model['MolCent'] = Obj.GetValue()
+                model['MolCent'][1] = Obj.GetValue()
+                if model['MolCent'][1]:
+                    G2mth.SetMolCent(model,RBData)                
                 G2plt.PlotStructure(G2frame,data)
             
             rbsizer = wx.BoxSizer(wx.VERTICAL)
@@ -4048,7 +4029,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Indx[posVal.GetId()] = [model,'Pos',ix]
                 rbsizer1.Add(posVal,0,wx.ALIGN_CENTER_VERTICAL)
             molcent = wx.CheckBox(MCSA,-1,label=' Use mol. center? ')
-            molcent.SetValue(model['MolCent'])
+            molcent.SetValue(model['MolCent'][1])
             molcent.Bind(wx.EVT_CHECKBOX,OnMolCent)
             Indx[molcent.GetId()] = model
             rbsizer1.Add(molcent,0,wx.ALIGN_CENTER_VERTICAL)
@@ -4317,7 +4298,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             rbType,rbId = rbNames[rbname]
             RB = rbData[rbType][rbId]
         body = {'name':RB['RBname']+'('+str(len(data['MCSA']['Models']))+')','RBId':rbId,'Type':rbType,
-            'Pos':[[0.,0.,0.],[False,False,False],[[0.,1.],[0.,1.],[0.,1.]]],'Ovar':'','MolCent':False,
+            'Pos':[[0.,0.,0.],[False,False,False],[[0.,1.],[0.,1.],[0.,1.]]],'Ovar':'','MolCent':[[0.,0.,0.],False],
             'Ori':[[1.,0.,0.,0.],[False,False,False,False],[[-180.,180.],[-1.,1.],[-1.,1.],[-1.,1.]]]}
         if rbType == 'Residue':
             body['Tor'] = [[],[],[]]
@@ -4334,8 +4315,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnMCSAclear(event):
         data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
         G2plt.PlotStructure(G2frame,data)
-        UpdateMCSA()            
-                       
+        UpdateMCSA()
+        
+    def OnMCSAmove(event):
+        general = data['General']
+        Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
+        xyz,aTypes = G2mth.UpdateMCSAxyz(Bmat,data['MCSA'])
+        for iat,atype in enumerate(aTypes):
+            x,y,z = xyz[iat]
+            AtomAdd(x,y,z,atype,Name=atype+'(%d)'%(iat+1))            
+        G2plt.PlotStructure(G2frame,data)
+                    
 ################################################################################
 ##### Pawley routines
 ################################################################################
@@ -4560,6 +4550,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for ind in Ind:
                 mag,x,y,z,d = mapPeaks[ind]
                 AtomAdd(x,y,z,'H',Name='M '+'%d'%(int(100*mag/peakMax)))
+            G2plt.PlotStructure(G2frame,data)
     
     def OnPeaksClear(event):
         data['Map Peaks'] = []
@@ -4825,7 +4816,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBAppend, id=G2gd.wxID_RBAPPEND)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
@@ -4914,6 +4904,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2gd.wxID_ADDMCSAATOM)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2gd.wxID_ADDMCSARB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2gd.wxID_CLEARMCSARB)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAmove, id=G2gd.wxID_MOVEMCSA)
             UpdateMCSA()                        
             wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'Texture':

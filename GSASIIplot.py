@@ -2618,9 +2618,7 @@ def PlotStructure(G2frame,data):
     testRBObj = data.get('testRBObj',{})
     rbObj = testRBObj.get('rbObj',{})
     MCSA = data.get('MCSA',{})
-    mcsaModels = []
-    if len(MCSA):
-        mcsaModels = MCSA['Models']
+    mcsaModels = MCSA.get('Models',[])
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
     flipData = {}
@@ -3474,7 +3472,7 @@ def PlotStructure(G2frame,data):
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,Or)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
-            XYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,mcsaModels,MCSA.get('rbData',{}))
+            XYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,MCSA)
             rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
                 aType = atTypes[ind]

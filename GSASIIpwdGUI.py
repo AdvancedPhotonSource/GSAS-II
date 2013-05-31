@@ -1082,9 +1082,11 @@ def UpdateSampleGrid(G2frame,data):
                 # make sure extension is .samprm
                 filename = os.path.splitext(filename)[0]+'.samprm'
                 File = open(filename,'w')
-                File.write("#GSAS-II sample parameter file; do not add/delete or change order of items!\n")
+                File.write("#GSAS-II sample parameter file\n")
                 File.write("'Type':'"+str(data['Type'])+"'\n")
                 File.write("'Gonio. radius':"+str(data['Gonio. radius'])+"\n")
+                if data.get('InstrName'):
+                    File.write("'InstrName':'"+str(data['InstrName'])+"'\n")
                 File.close()
         finally:
             dlg.Destroy()
@@ -1120,7 +1122,9 @@ def UpdateSampleGrid(G2frame,data):
     
     def OnSampleCopy(event):
         histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-        histType,copyNames = SetCopyNames(histName,addNames=['Omega','Chi','Phi'])
+        histType,copyNames = SetCopyNames(
+            histName,
+            addNames=['Omega','Chi','Phi','Gonio. radius','InstrName'])
         copyDict = {}
         for parm in copyNames:
             copyDict[parm] = data[parm]
@@ -1283,11 +1287,34 @@ def UpdateSampleGrid(G2frame,data):
             Obj.SetValue(parm[2]%(data[parm[0]][0]))          #reset in case of error
         else:
             Obj.SetValue(parm[2]%(data[parm[0]]))          #reset in case of error
+
+    def SetNameVal():
+        inst = instNameVal.GetValue()
+        data['InstrName'] = inst.strip()
+        print data['InstrName']
+    def OnNameVal(event):
+        event.Skip()
+        wx.CallAfter(SetNameVal)       
                 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample parameters: '),0,wx.ALIGN_CENTER_VERTICAL)
+    topSizer = wx.BoxSizer(wx.HORIZONTAL)
+    topSizer.Add((-1,-1),1,wx.EXPAND,1)
+    topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample and Experimental Parameters'))
+    topSizer.Add((-1,-1),1,wx.EXPAND,1)
+    mainSizer.Add(topSizer,0,wx.EXPAND,1)
+    nameSizer = wx.BoxSizer(wx.HORIZONTAL)
+    nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,'Instrument Name'),
+                0,wx.ALIGN_CENTER_VERTICAL)
+    nameSizer.Add((-1,-1),1,wx.EXPAND,1)
+    instNameVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,data.get('InstrName',''),
+                              size=(200,-1),style=wx.TE_PROCESS_ENTER)        
+    nameSizer.Add(instNameVal)
+    instNameVal.Bind(wx.EVT_CHAR,OnNameVal)
+    mainSizer.Add(nameSizer,0,wx.EXPAND,1)
+    mainSizer.Add((0,5),0)
+
     mainSizer.Add((5,5),0)
-    parmSizer = wx.FlexGridSizer(9,2,5,0)
+    parmSizer = wx.FlexGridSizer(10,2,5,0)
     scaleRef = wx.CheckBox(G2frame.dataDisplay,label=' Histogram scale factor: ')
     scaleRef.SetValue(data['Scale'][1])
     scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)

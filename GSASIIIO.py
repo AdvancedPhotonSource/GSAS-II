@@ -945,8 +945,20 @@ def IndexPeakListSave(G2frame,peaks):
         wx.EndBusyCursor()
     print 'index peak list saved'
     
-def SetNewPhase(Name='New Phase',SGData=G2spc.SpcGroup('P 1')[1],cell=[1.0,1.0,1.0,90.,90,90.,1.]):
-    'Create a new phase'
+def SetNewPhase(Name='New Phase',SGData=None,cell=None):
+    '''Create a new phase with default values for various parameters
+
+    :param str Name: Name for new Phase
+
+    :param dict SGData: space group data from :func:`GSASIIspc:SpcGroup`;
+      defaults to data for P 1
+
+    :param list cell: unit cell parameter list; defaults to
+      [1.0,1.0,1.0,90.,90,90.,1.]
+
+    '''
+    if SGData is None: SGData = G2spc.SpcGroup('P 1')[1]
+    if cell is None: cell=[1.0,1.0,1.0,90.,90,90.,1.]
     phaseData = {
         'ranId':ran.randint(0,sys.maxint),
         'General':{
@@ -1530,6 +1542,91 @@ class ImportPhase(ImportBaseclass):
         '''
         return self.BlockSelector(ChoiceList,ParentFrame,title,
             size,header)
+
+######################################################################
+class ExportBaseclass(object):
+    '''Defines a base class for the exporting of GSAS-II results
+    '''
+    def __init__(self,
+                 G2frame,
+                 formatName,
+                 longFormatName=None,
+                 ):
+        self.G2frame = G2frame
+        self.formatName = formatName # short string naming file type
+        if longFormatName: # longer string naming file type
+            self.longFormatName = longFormatName
+        else:
+            self.longFormatName = formatName
+        self.OverallParms = {}
+        self.GroupedParms = {}
+    def loadTree(self):
+        '''Load the contents of the data tree into a pair of dicts.
+        
+        The childrenless data tree items are overall parameters/controls for the
+        entire project and are placed in self.OverallParms
+
+        The data tree items with children are either Phase items or are
+        data of some sort. Date entries begin with a key, such as
+        PWDR, IMG, HKLF,... that identifies the data type.
+        * Phase items are placed in self.GroupedParms["Phases"][item]
+        * Data items are placed in self.GroupedParms["Phases"][key][item]
+
+          Note that there is no overall phase information, only information
+          stored for each phase, but there is overall information for each
+          data item. The overall data information is stored in
+          self.GroupedParms["Phases"][key][None]
+        
+        '''
+        self.OverallParms = {}
+        self.GroupedParms = {}
+        G2frame = self.G2frame
+        if G2frame.PatternTree.IsEmpty(): return # nothing to do
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            item2, cookie2 = G2frame.PatternTree.GetFirstChild(item)
+            if item2: 
+                key = name.split()[0]
+                if name == "Phases":
+                    self.GroupedParms[name] = {}
+                    d = self.GroupedParms[name]
+                else:
+                    if self.GroupedParms.get(key) is None:
+                        self.GroupedParms[key] = {}
+                    self.GroupedParms[key][name] = {}
+                    self.GroupedParms[key][name][None] = G2frame.PatternTree.GetItemPyData(item)
+                    d = self.GroupedParms[key][name]
+                while item2:
+                    name = G2frame.PatternTree.GetItemText(item2)
+                    d[name] = G2frame.PatternTree.GetItemPyData(item2)
+                    item2, cookie2 = G2frame.PatternTree.GetNextChild(item, cookie2)                            
+            else:
+                self.OverallParms[name] = G2frame.PatternTree.GetItemPyData(item)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+
+    def dumpTree(self,mode='type'):
+        '''Print out information on the data tree dicts loaded in loadTree
+        '''
+        print '\nOverall'
+        if mode == 'type':
+            def Show(arg): return type(arg)
+        else:
+            def Show(arg): return arg
+        for key in self.OverallParms:
+            print '  ',key,Show(self.OverallParms[key])
+        print '\nGrouped'
+        for key in self.GroupedParms:
+            if key == "Phases":
+                print '  Phases'
+                for key1 in self.GroupedParms[key]:
+                    print '    ',key1,Show(self.GroupedParms[key][key1])
+            else:
+                print '  ',key,Show(self.GroupedParms[key])
+                for key1 in self.GroupedParms[key]:
+                    print '    ',key1,Show(self.GroupedParms[key][key1][None])
+                    for key2 in self.GroupedParms[key][key1]:
+                        print '      ',key2,Show(self.GroupedParms[key][key1][key2])
 
 ######################################################################
 class ImportStructFactor(ImportBaseclass):

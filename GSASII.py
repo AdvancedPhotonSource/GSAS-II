@@ -679,6 +679,9 @@ class GSASII(wx.Frame):
 
         :param str lastdatafile: Name of last data file that was read.
 
+        :returns: a list of two dicts, the first containing instrument parameters
+          and the second used for future TOF datasets (timemaps?)
+
         '''
         def SetPowderInstParms(Iparm, rd):
             '''extracts values from instrument parameters in rd.instdict
@@ -690,6 +693,9 @@ class GSASII(wx.Frame):
             if rd.instdict.get('type'):
                 DataType = rd.instdict.get('type')
             data = [DataType,]
+            instname = Iparm.get('INS  1INAME ')
+            if instname:
+                rd.Sample['InstrName'] = instname.strip()
             if 'C' in DataType:
                 wave1 = None
                 wave2 = 0.0
@@ -991,24 +997,43 @@ class GSASII(wx.Frame):
         self.PatternTree.SelectItem(Id)
         return # success
 
-    def _init_Exports(self,parent):
+    def _init_Exports(self,menu):
         '''This is a place holder for when exports are handled in a manner similar to imports
         '''
 #        submenu = wx.Menu()
-#        item = parent.AppendMenu(
+#        item = menu.AppendMenu(
 #            wx.ID_ANY, 'entire project',
 #            submenu, help='Export entire project')
-#        item = submenu.Append(
-#            wx.ID_ANY,
-#            help='this is a module for testing',
-#            kind=wx.ITEM_NORMAL,
-#            text='to test file')
-#        self.Bind(wx.EVT_MENU, self.OnExportTest, id=item.GetId())
-#        import G2export
-#    def OnExportTest(self,event):
-#        import G2export
-#        reload(G2export)
-#        G2export.ProjExport(self)
+
+        # for now hard-code CIF testing here
+        item = menu.Append(
+            wx.ID_ANY,
+            help='CIF development',
+            kind=wx.ITEM_NORMAL,
+            text='full CIF test')
+        self.Bind(wx.EVT_MENU, self.OnTestCIF, id=item.GetId())
+        item = menu.Append(
+            wx.ID_ANY,
+            help='CIF development',
+            kind=wx.ITEM_NORMAL,
+            text='quick CIF test')
+        self.Bind(wx.EVT_MENU, self.OnTestCIF, id=item.GetId())
+
+    def OnTestCIF(self,event):
+        # hard-code CIF testing here
+        if event.EventObject.GetLabelText(event.Id).split()[0].lower() == "quick":
+            mode = 'simple'
+        else:
+            mode = 'full'
+        path2GSAS2 = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), # location of this file
+            'exports')
+        if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
+        #reload(G2IO)
+        import G2cif
+        reload(G2cif)
+        exp = G2cif.ExportCIF(self)
+        exp.export(mode)
 
     def _Add_ExportMenuItems(self,parent):
         item = parent.Append(
@@ -1080,8 +1105,8 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_Sfact(Import)
         Export = wx.Menu(title='')        
         menubar.Append(menu=Export, title='Export')
+        self._init_Exports(Export)
         self._Add_ExportMenuItems(Export)
-        #self._init_Exports(Export)
         HelpMenu=G2gd.MyHelp(self,helpType='Data tree',
             morehelpitems=[('&Tutorials','Tutorials')])
         menubar.Append(menu=HelpMenu,title='&Help')

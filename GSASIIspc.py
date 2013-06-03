@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"GSASII - Space group interpretion routines"
+'''
+*GSASIIspc: Space group module*
+-------------------------------
+
+Space group interpretion routines
+'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -19,24 +24,28 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import pyspg
 
 def SpcGroup(SGSymbol):
-    '''
+    """
     Determines cell and symmetry information from a short H-M space group name
-    input:
-        SGSymbol - space group symbol (string) with spaces between axial fields
-    returns:
-        SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
-        SGData - dictionary with entries:
-             'SpGrp': space group symbol slightly cleaned up
-             'Laue':  one of '-1','2/m','mmm','4/m','4/mmm','3R','3mR','3',
-                      '3m1','31m','6/m','6/mmm','m3','m3m'
-             'SGInv': boolean; True if centrosymmetric, False if not
-             'SGLatt': one of 'P','A','B','C','I','F','R'
-             'SGUniq': one of 'a','b','c' if monoclinic, '' otherwise
-             'SGCen': cell centering vectors [0,0,0] at least
-             'SGOps': symmetry operations as [M,T] so that M*x+T = x'
-             'SGSys': one of 'triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic'
-             'SGPolax': one of '','x','y','x y','z','x z','y z','xyz','111' for arbitrary axes
-       '''
+
+    :param SGSymbol: space group symbol (string) with spaces between axial fields
+    :returns: (SGError,SGData)
+       * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
+       * SGData - dictionary with entries:
+       
+             * 'SpGrp': space group symbol slightly cleaned up
+             * 'Laue':  one of '-1', '2/m', 'mmm', '4/m', '4/mmm', '3R',
+               '3mR', '3', '3m1', '31m', '6/m', '6/mmm', 'm3', 'm3m'
+             * 'SGInv': boolean; True if centrosymmetric, False if not
+             * 'SGLatt': one of 'P', 'A', 'B', 'C', 'I', 'F', 'R'
+             * 'SGUniq': one of 'a', 'b', 'c' if monoclinic, '' otherwise
+             * 'SGCen': cell centering vectors [0,0,0] at least
+             * 'SGOps': symmetry operations as [M,T] so that M*x+T = x'
+             * 'SGSys': one of 'triclinic', 'monoclinic', 'orthorhombic',
+               'tetragonal', 'rhombohedral', 'trigonal', 'hexagonal', 'cubic'
+             * 'SGPolax': one of '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
+               'xyz', '111' for arbitrary axes
+
+    """
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
     LattSym = ('P','A','B','C','I','F','R')
     UniqSym = ('','','a','b','c','',)
@@ -89,9 +98,9 @@ def SpcGroup(SGSymbol):
 def SGErrors(IErr):
     '''
     Interprets the error message code from SpcGroup. Used in SpaceGroup.
-    input:
-        SGError - from SpcGroup
-    returns:
+    
+    :param IErr: see SGError in :func:`SpcGroup`
+    :returns:
         ErrString - a string with the error message or "Unknown error"
     '''
 
@@ -126,6 +135,7 @@ def SGErrors(IErr):
         return ErrString[IErr]
     except:
         return "Unknown error"
+
 def SGpolar(SGData):
     '''
     Determine identity of polar axes if any
@@ -144,9 +154,9 @@ def SGpolar(SGData):
 def SGPrint(SGData):
     '''
     Print the output of SpcGroup in a nicely formatted way. Used in SpaceGroup
-    input:
-        SGData - from SpcGroup
-    returns:
+
+    :param SGData: from :func:`SpcGroup`
+    :returns:
         SGText - list of strings with the space group details
     '''
     Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
@@ -188,7 +198,7 @@ def SGPrint(SGData):
     return SGText
     
 def MT2text(M,T):
-    #From space group matrix/translation operator returns text version
+    "From space group matrix/translation operator returns text version"
     XYZ = ('-Z ','-Y ','-X ','X-Y','ERR','Y-X',' X ',' Y ',' Z ','+X ','+Y ','+Z ')
     TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
     Fld = ''
@@ -201,7 +211,7 @@ def MT2text(M,T):
     return Fld
     
 def Latt2text(Latt):
-    #From lattice type ('P',A', etc.) returns ';' delimited cell centering vectors
+    "From lattice type ('P',A', etc.) returns ';' delimited cell centering vectors"
     lattTxt = {'A':'0,0,0; 0,1/2,1/2','B':'0,0,0; 1/2,0,1/2',
         'C':'0,0,0; 1/2,1/2,0','I':'0,0,0; 1/2,1/2,1/2',
         'F':'0,0,0; 0,1/2,1/2; 1/2,0,1/2; 1/2,1/2,0',
@@ -211,10 +221,9 @@ def Latt2text(Latt):
 def SpaceGroup(SGSymbol):
     '''
     Print the output of SpcGroup in a nicely formatted way. 
-    input: 
-        SGSymbol - space group symbol (string) with spaces between axial fields
-    returns:
-        nothing
+
+    :param SGSymbol: space group symbol (string) with spaces between axial fields
+    :returns: nothing
     '''
     E,A = SpcGroup(SGSymbol)
     if E > 0:
@@ -226,10 +235,9 @@ def SpaceGroup(SGSymbol):
 def MoveToUnitCell(xyz):
     '''
     Translates a set of coordinates so that all values are >=0 and < 1 
-    input:
-        xyz - a list or numpy array of fractional coordinates
-    returns: 
-        XYZ - numpy array of new coordinates inside 0-1
+
+    :param xyz: a list or numpy array of fractional coordinates
+    :returns: XYZ - numpy array of new coordinates now 0 or greater and less than 1
     '''
     XYZ = np.zeros(3)
     for i,x in enumerate(xyz):
@@ -240,10 +248,10 @@ def Opposite(XYZ,toler=0.0002):
     '''
     Gives opposite corner, edge or face of unit cell for position within tolerance. 
         Result may be just outside the cell within tolerance 
-    input:
-        XYZ: 0 >= np.array[x,y,z] > 1 as by MoveToUnitCell
-        toler: unit cell fraction tolerance making opposite
-    returns:
+
+    :param XYZ: 0 >= np.array[x,y,z] > 1 as by MoveToUnitCell
+    :param toler: unit cell fraction tolerance making opposite
+    :returns:
         XYZ: array of opposite positions; always contains XYZ
     '''
     perm3 = [[1,1,1],[0,1,1],[1,0,1],[1,1,0],[1,0,0],[0,1,0],[0,0,1],[0,0,0]]
@@ -259,20 +267,22 @@ def Opposite(XYZ,toler=0.0002):
 def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     '''
     Generates the equivalent positions for a specified coordinate and space group
-    input:  
-        XYZ an array, tuple or list containing 3 elements: x, y & z
-        SGData, from SpcGroup
-        All  = True return all equivalent positions including duplicates
-             = False return only unique positions
-        Uij  = [U11,U22,U33,U12,U13,U23] or [] if no Uij
-        Move = True move generated atom positions to be inside cell
-             = False do not move atoms       
-    return: [[XYZEquiv],Idup,[UijEquiv]]
-        [XYZEquiv] is list of equivalent positions (XYZ is first entry)
-        Idup = [-][C]SS where SS is the symmetry operator number (1-24), C (if not 0,0,0)
-        is centering operator number (1-4) and - is for inversion
+
+    :param XYZ: an array, tuple or list containing 3 elements: x, y & z
+    :param SGData: from :func:`SpcGroup`
+    :param All: True return all equivalent positions including duplicates;
+      False return only unique positions
+    :param Uij: [U11,U22,U33,U12,U13,U23] or [] if no Uij
+    :param Move: True move generated atom positions to be inside cell
+      False do not move atoms       
+    :return: [[XYZEquiv],Idup,[UijEquiv]]
+
+      *  [XYZEquiv] is list of equivalent positions (XYZ is first entry)
+      *  Idup = [-][C]SS where SS is the symmetry operator number (1-24), C (if not 0,0,0)
+      * is centering operator number (1-4) and - is for inversion
         Cell = unit cell translations needed to put new positions inside cell
         [UijEquiv] - equivalent Uij; absent if no Uij given
+        
     '''
     XYZEquiv = []
     UijEquiv = []
@@ -316,13 +326,15 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
 def GenHKLf(HKL,SGData):
     '''
     Uses old GSAS Fortran routine genhkl.for
-    input:
-        HKL - [h,k,l]
-        SGData - space group data obtained from SpcGroup
-    returns:
-        iabsnt = True is reflection is forbidden by symmetry
-        mulp = reflection multiplicity including Friedel pairs
-        Uniq = numpy array of equivalent hkl in descending order of h,k,l
+
+    :param HKL:  [h,k,l]
+    :param SGData: space group data obtained from SpcGroup
+    :returns: iabsnt,mulp,Uniq,phi
+
+     *   iabsnt = True is reflection is forbidden by symmetry
+     *   mulp = reflection multiplicity including Friedel pairs
+     *   Uniq = numpy array of equivalent hkl in descending order of h,k,l
+
     '''
     hklf = HKL+[0,]
     Ops = SGData['SGOps']
@@ -338,7 +350,8 @@ def GenHKLf(HKL,SGData):
     
     return iabsnt,mulp,Uniq,phi
                                   
-def GetOprPtrName(key):            
+def GetOprPtrName(key):
+    'Needs a doc string'
     OprPtrName = {
         '-6643':[   2,' 1bar ', 1],'6479' :[  10,'  2z  ', 2],'-6479':[   9,'  mz  ', 3],
         '6481' :[   7,'  my  ', 4],'-6481':[   6,'  2y  ', 5],'6641' :[   4,'  mx  ', 6],
@@ -367,6 +380,7 @@ def GetOprPtrName(key):
     return OprPtrName[key]
 
 def GetKNsym(key):
+    'Needs a doc string'
     KNsym = {
         '0'         :'    1   ','1'         :'   -1   ','64'        :'  2(100)','32'        :'  m(100)',
         '97'        :'2/m(100)','16'        :'  2(010)','8'         :'  m(010)','25'        :'2/m(010)',
@@ -410,6 +424,7 @@ def GetKNsym(key):
     return KNsym[key]        
 
 def GetNXUPQsym(siteSym):        
+    'Needs a doc string'
     NXUPQsym = {
         '    1   ':(28,29,28,28),'   -1   ':( 1,29,28, 0),'  2(100)':(12,18,12,25),'  m(100)':(25,18,12,25),
         '2/m(100)':( 1,18, 0,-1),'  2(010)':(13,17,13,24),'  m(010)':(24,17,13,24),'2/m(010)':( 1,17, 0,-1),
@@ -453,6 +468,7 @@ def GetNXUPQsym(siteSym):
     return NXUPQsym[siteSym]
 
 def GetCSxinel(siteSym):  
+    'Needs a doc string'
     CSxinel = [[],                         # 0th empty - indices are Fortran style
         [[0,0,0],[ 0.0, 0.0, 0.0]],      #  0  0  0
         [[1,1,1],[ 1.0, 1.0, 1.0]],      #  X  X  X
@@ -487,7 +503,7 @@ def GetCSxinel(siteSym):
     return CSxinel[indx[0]]
     
 def GetCSuinel(siteSym):
-    # returns Uij terms, multipliers, GUI flags & Uiso2Uij multipliers
+    "returns Uij terms, multipliers, GUI flags & Uiso2Uij multipliers"
     CSuinel = [[],                                             # 0th empty - indices are Fortran style
         [[1,1,1,0,0,0],[ 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],[1,0,0,0,0,0],[1.0,1.0,1.0,0.0,0.0,0.0]],    #  A  A  A  0  0  0
         [[1,1,2,0,0,0],[ 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],[1,0,1,0,0,0],[1.0,1.0,1.0,0.0,0.0,0.0]],    #  A  A  C  0  0  0
@@ -523,6 +539,7 @@ def GetCSuinel(siteSym):
     return CSuinel[indx[1]]
     
 def MustrainNames(SGData):
+    'Needs a doc string'
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
     if laue in ['m3','m3m']:
@@ -553,6 +570,7 @@ def MustrainNames(SGData):
         return SHKL
 
 def HStrainNames(SGData):
+    'Needs a doc string'
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
     if laue in ['m3','m3m']:
@@ -579,6 +597,7 @@ def HStrainNames(SGData):
         return Dij
     
 def MustrainCoeff(HKL,SGData):
+    'Needs a doc string'
     #NB: order of terms is the same as returned by MustrainNames
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
@@ -651,7 +670,7 @@ def MustrainCoeff(HKL,SGData):
     return Strm
     
 def Muiso2Shkl(muiso,SGData,cell):
-    #this is to convert isotropic mustrain to generalized Shkls - doesn't work just now
+    "this is to convert isotropic mustrain to generalized Shkls - doesn't work just now"
     import GSASIIlattice as G2lat
     from scipy.optimize import fmin
     A = G2lat.cell2AB(cell)[0]
@@ -704,12 +723,14 @@ def Muiso2Shkl(muiso,SGData,cell):
 def SytSym(XYZ,SGData):
     '''
     Generates the number of equivalent positions and a site symmetry code for a specified coordinate and space group
-    input:  
-       XYZ: an array, tuple or list containing 3 elements: x, y & z
-       SGData: from SpcGroup
-    Returns a two element tuple:
-       The 1st element is a code for the site symmetry (see GetKNsym)
-       The 2nd element is the site multiplicity
+
+    :param XYZ: an array, tuple or list containing 3 elements: x, y & z
+    :param SGData: from SpcGroup
+    :Returns: a two element tuple:
+
+     * The 1st element is a code for the site symmetry (see GetKNsym)
+     * The 2nd element is the site multiplicity
+
     '''
     def PackRot(SGOps):
         IRT = []
@@ -748,7 +769,7 @@ def SytSym(XYZ,SGData):
     return GetKNsym(str(Isym)),Mult
     
 def ElemPosition(SGData):
-    ''' Under development
+    ''' Under development. 
     Object here is to return a list of symmetry element types and locations suitable
     for say drawing them.
     So far I have the element type... getting all possible locations without lookup may be impossible!
@@ -802,6 +823,7 @@ def ElemPosition(SGData):
     return #SymElements
     
 def ApplyStringOps(A,SGData,X,Uij=[]):
+    'Needs a doc string'
     SGOps = SGData['SGOps']
     SGCen = SGData['SGCen']
     Ax = A.split('+')
@@ -829,14 +851,16 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
         return newX
         
 def StringOpsProd(A,B,SGData):
-    ''' Find A*B where A & B are in strings '-' + '100*c+n' + '+ijk'
+    """
+    Find A*B where A & B are in strings '-' + '100*c+n' + '+ijk'
     where '-' indicates inversion, c(>0) is the cell centering operator, 
     n is operator number from SgOps and ijk are unit cell translations (each may be <0).
-    Should return resultant string - C.
-        SGData - dictionary using entries:
-             'SGCen': cell centering vectors [0,0,0] at least
-             'SGOps': symmetry operations as [M,T] so that M*x+T = x'
-    '''
+    Should return resultant string - C. SGData - dictionary using entries:
+
+       *  'SGCen': cell centering vectors [0,0,0] at least
+       *  'SGOps': symmetry operations as [M,T] so that M*x+T = x'
+
+    """
     SGOps = SGData['SGOps']
     SGCen = SGData['SGCen']
     #1st split out the cell translation part & work on the operator parts
@@ -991,33 +1015,51 @@ spglist = {
     'Fm3m':('F 2 3','F m -3','F d -3','F 4 3 2','F 41 3 2','F -4 3 m',
         'F -4 3 c','F m -3 m','F m 3 m','F m -3 c','F d -3 m','F d -3 c',),
 }
-'A few non-standard space groups for test use'
+
+#'A few non-standard space groups for test use'
 nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h', 
                       'R -3 r', 'R 3 2 r','R 3 m h', 'R 3 m r',
                       'R 3 c r','R -3 c r','R -3 m r',),
-'''A list of orthorhombic space groups that were renamed in the 2002 Volume A,
-along with the pre-2002 name. The e designates a double glide-plane'''
+
+#A list of orthorhombic space groups that were renamed in the 2002 Volume A,
+# along with the pre-2002 name. The e designates a double glide-plane'''
 sgequiv_2002_orthorhombic= (('A e m 2', 'A b m 2',),
                             ('A e a 2', 'A b a 2',),
                             ('C m c e', 'C m c a',),
                             ('C m m e', 'C m m a',),
                             ('C c c e', 'C c c a'),)
-'''Use the space groups types in this order to list the symbols in the 
-order they are listed in the International Tables, vol. A'''
+#Use the space groups types in this order to list the symbols in the 
+#order they are listed in the International Tables, vol. A'''
 symtypelist = ('triclinic', 'monoclinic', 'orthorhombic', 'tetragonal', 
                'trigonal', 'hexagonal', 'cubic')
 
 # self-test materials follow. Requires files in directory testinp
+selftestlist = []
+'''Defines a list of self-tests'''
+selftestquiet = True
+def _ReportTest():
+    'Report name and doc string of current routine when ``selftestquiet`` is False'
+    if not selftestquiet:
+        import inspect
+        caller = inspect.stack()[1][3]
+        doc = eval(caller).__doc__
+        if doc is not None:
+            print('testing '+__file__+' with '+caller+' ('+doc+')')
+        else:
+            print('testing '+__file__()+" with "+caller)
 def test0():
-    '''test #0: exercise MoveToUnitCell'''
+    '''self-test #0: exercise MoveToUnitCell'''
+    _ReportTest()
     msg = "MoveToUnitCell failed"
     assert (MoveToUnitCell([1,2,3]) == [0,0,0]).all, msg
     assert (MoveToUnitCell([2,-1,-2]) == [0,0,0]).all, msg
     assert abs(MoveToUnitCell(np.array([-.1]))[0]-0.9) < 1e-6, msg
     assert abs(MoveToUnitCell(np.array([.1]))[0]-0.1) < 1e-6, msg
+selftestlist.append(test0)
 
 def test1():
-    ''' test #1: SpcGroup and SGPrint against previous results'''
+    '''self-test #1: SpcGroup and SGPrint against previous results'''
+    _ReportTest()
     testdir = ospath.join(ospath.split(ospath.abspath( __file__ ))[0],'testinp')
     if ospath.exists(testdir):
         if testdir not in sys.path: sys.path.insert(0,testdir)
@@ -1050,9 +1092,11 @@ def test1():
         assert reflist == SGPrint(result[1]), 'SGPrint ' +msg
     for spc in spctestinp.SGdat:
         CompareSpcGroup(spc, 0, spctestinp.SGdat[spc], spctestinp.SGlist[spc] )
+selftestlist.append(test1)
 
 def test2():
-    ''' test #2: SpcGroup against cctbx (sgtbx) computations'''
+    '''self-test #2: SpcGroup against cctbx (sgtbx) computations'''
+    _ReportTest()
     testdir = ospath.join(ospath.split(ospath.abspath( __file__ ))[0],'testinp')
     if ospath.exists(testdir):
         if testdir not in sys.path: sys.path.insert(0,testdir)
@@ -1091,10 +1135,12 @@ def test2():
                         assert False, "failed on %s:\n\t %s + %s" % (spcname,mult,noff)
     for key in sgtbxtestinp.sgtbx:
         CompareWcctbx(key, sgtbxtestinp.sgtbx[key])
+selftestlist.append(test2)
 
 def test3(): 
-    ''' test #3: exercise SytSym (includes GetOprPtrName, GenAtom, GetKNsym)
+    '''self-test #3: exercise SytSym (includes GetOprPtrName, GenAtom, GetKNsym)
      for selected space groups against info in IT Volume A '''
+    _ReportTest()
     def ExerciseSiteSym (spc, crdlist):
         'compare site symmetries and multiplicities for a specified space group'
         msg = "failed on site sym test for %s" % spc
@@ -1162,10 +1208,11 @@ def test3():
             ((0.11,0.11,0.11),16,'3(111)'),
             ((0,0,0),8,'-3(111)'),
             ])
+selftestlist.append(test3)
 
 if __name__ == '__main__':
-    test0()
-    test1()
-    test2()
-    test3()
+    # run self-tests
+    selftestquiet = False
+    for test in selftestlist:
+        test()
     print "OK"

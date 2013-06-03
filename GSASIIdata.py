@@ -7,6 +7,14 @@
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIdata.py $
 # $Id: GSASIIdata.py 809 2012-12-05 19:12:19Z vondreele $
 ########### SVN repository information ###################
+'''
+*GSASIIdata: Data for computations*
+-----------------------------------
+
+At present this module defines one dict, ``ramachandranDist``,
+which contains arrays for All and specific amino acids
+
+'''
 
 import numpy as np
 

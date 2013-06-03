@@ -1,3 +1,11 @@
+'''
+*ImageCalibrants: Calibration Standards*
+----------------------------------------
+
+GSASII powder calibrants as a dictionary of substances commonly used for powder
+calibrations for image data.
+
+'''
 #GSASII powder calibrants file; dictionary of substances commonly used for powder
 #calibrations. Each entry consists of:
 # 'name':(Bravais no,(a,b,c,alpha,beta,gamma),no. lines skipped,(dmin,pixLimit,cutOff)

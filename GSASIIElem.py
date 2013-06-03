@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Element: functions for element types
-   Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 """
+*GSASIIElem: functions for element types*
+-----------------------------------------
+
+"""
+# Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -19,7 +22,7 @@ import numpy as np
 def GetFormFactorCoeff(El):
     """Read X-ray form factor coefficients from `atomdata.asc` file
 
-    :param El: element 1-2 character symbol case irrevelant
+    :param str El: element 1-2 character symbol, case irrevelant
     :return: `FormFactors`: list of form factor dictionaries
     
     Each X-ray form factor dictionary is:
@@ -57,8 +60,9 @@ def GetFormFactorCoeff(El):
     
 def GetFFC5(ElSym):
     '''Get 5 term form factor and Compton scattering data
-    @param ElSym: str(1-2 character element symbol with proper case);
-    @return El: dictionary with 5 term form factor & compton coefficients
+
+    :param ElSym: str(1-2 character element symbol with proper case);
+    :return El: dictionary with 5 term form factor & compton coefficients
     '''
     import FormFactors as FF
     El = {}
@@ -73,6 +77,12 @@ def GetFFC5(ElSym):
     return El
     
 def CheckElement(El):
+    '''Check if element El is in the periodic table
+
+    :param str El: One or two letter element symbol, capitaliztion ignored
+    :returns: True if the element is found
+
+    '''
     import ElementTable as ET
     Elements = []
     for elem in ET.ElTable:
@@ -82,7 +92,8 @@ def CheckElement(El):
     else:
         return False 
 
-def FixValence(El): 
+def FixValence(El):
+    'Returns the element symbol, even when a valence is present'
     if '+' in El[-1]: #converts An+/- to A+/-n
         num = El[-2]
         El = El.split(num)[0]+'+'+num
@@ -96,7 +107,7 @@ def FixValence(El):
     return El
         
 def GetAtomInfo(El):
-    
+    'reads element information from file atmdata.dat'
     import ElementTable as ET
     Elements = []
     for elem in ET.ElTable:
@@ -148,19 +159,23 @@ def GetAtomInfo(El):
       
 def GetXsectionCoeff(El):
     """Read atom orbital scattering cross sections for fprime calculations via Cromer-Lieberman algorithm
-    @param El: 2 character element symbol
-    @return: Orbs: list of orbitals each a dictionary with detailed orbital information used by FPcalc
+
+    :param El: 2 character element symbol
+    :return: Orbs: list of orbitals each a dictionary with detailed orbital information used by FPcalc
+
     each dictionary is:
-    'OrbName': Orbital name read from file
-    'IfBe' 0/2 depending on orbital
-    'BindEn': binding energy
-    'BB': BindEn/0.02721
-    'XSectIP': 5 cross section inflection points
-    'ElEterm': energy correction term
-    'SEdge': absorption edge for orbital
-    'Nval': 10/11 depending on IfBe
-    'LEner': 10/11 values of log(energy)
-    'LXSect': 10/11 values of log(cross section)
+
+    * 'OrbName': Orbital name read from file
+    * 'IfBe' 0/2 depending on orbital
+    * 'BindEn': binding energy
+    * 'BB': BindEn/0.02721
+    * 'XSectIP': 5 cross section inflection points
+    * 'ElEterm': energy correction term
+    * 'SEdge': absorption edge for orbital
+    * 'Nval': 10/11 depending on IfBe
+    * 'LEner': 10/11 values of log(energy)
+    * 'LXSect': 10/11 values of log(cross section)
+
     """
     AU = 2.80022e+7
     C1 = 0.02721
@@ -226,17 +241,21 @@ def GetXsectionCoeff(El):
     
 def GetMagFormFacCoeff(El):
     """Read magnetic form factor data from atomdata.asc file
-    @param El: 2 character element symbol
-    @return: MagFormFactors: list of all magnetic form factors dictionaries for element El.
+
+    :param El: 2 character element symbol
+    :return: MagFormFactors: list of all magnetic form factors dictionaries for element El.
+
     each dictionary contains:
-    'Symbol':Symbol
-    'Z':Z
-    'mfa': 4 MA coefficients
-    'nfa': 4 NA coefficients
-    'mfb': 4 MB coefficients
-    'nfb': 4 NB coefficients
-    'mfc': MC coefficient
-    'nfc': NC coefficient
+
+    * 'Symbol':Symbol
+    * 'Z':Z
+    * 'mfa': 4 MA coefficients
+    * 'nfa': 4 NA coefficients
+    * 'mfb': 4 MB coefficients
+    * 'nfb': 4 NB coefficients
+    * 'mfc': MC coefficient
+    * 'nfc': NC coefficient
+    
     """
     ElS = El.upper()
     ElS = ElS.rjust(2)
@@ -269,9 +288,10 @@ def GetMagFormFacCoeff(El):
 
 def ScatFac(El, SQ):
     """compute value of form factor
-    @param El: element dictionary defined in GetFormFactorCoeff 
-    @param SQ: (sin-theta/lambda)**2
-    @return: real part of form factor
+
+    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param SQ: (sin-theta/lambda)**2
+    :return: real part of form factor
     """
     fa = np.array(El['fa'])
     fb = np.array(El['fb'])
@@ -339,9 +359,10 @@ def BlenRes(Elist,BLtables,wave):
     
 def ComptonFac(El,SQ):
     """compute Compton scattering factor
-    @param El: element dictionary 
-    @param SQ: (sin-theta/lambda)**2
-    @return: compton scattering factor
+
+    :param El: element dictionary 
+    :param SQ: (sin-theta/lambda)**2
+    :return: compton scattering factor
     """    
     ca = np.array(El['cmpa'])
     cb = np.array(El['cmpb'])
@@ -350,9 +371,10 @@ def ComptonFac(El,SQ):
             
 def FPcalc(Orbs, KEv):
     """Compute real & imaginary resonant X-ray scattering factors
-    @param Orbs: list of orbital dictionaries as defined in GetXsectionCoeff
-    @param KEv: x-ray energy in keV
-    @return: C: (f',f",mu): real, imaginary parts of resonant scattering & atomic absorption coeff.
+
+    :param Orbs: list of orbital dictionaries as defined in GetXsectionCoeff
+    :param KEv: x-ray energy in keV
+    :return: C: (f',f",mu): real, imaginary parts of resonant scattering & atomic absorption coeff.
     """
     def Aitken(Orb, LKev):
         Nval = Orb['Nval']

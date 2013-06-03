@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-#GSASIIstrMain - structure computation main routine
+'''
+*GSASIIstrMain: main structure routine*
+---------------------------------------
+
+'''
 ########### SVN repository information ###################
 # $Date: 2013-05-17 12:13:15 -0500 (Fri, 17 May 2013) $
 # $Author: vondreele $
@@ -40,6 +44,7 @@ DEBUG = False
 
 
 def Refine(GPXfile,dlg):
+    'Needs a doc string'
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
@@ -201,6 +206,7 @@ def Refine(GPXfile,dlg):
         return Rvals['Rwp']
 
 def SeqRefine(GPXfile,dlg):
+    'Needs a doc string'
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
@@ -374,6 +380,7 @@ def SeqRefine(GPXfile,dlg):
     print ' ***** Sequential refinement successful *****'
 
 def DistAngle(DisAglCtls,DisAglData):
+    'Needs a doc string'
     import numpy.ma as ma
     
     def ShowBanner(name):
@@ -491,6 +498,7 @@ def DistAngle(DisAglCtls,DisAglData):
             print '  %8s%10s+(%4d) %12s'%(dist[1].ljust(8),dist[2].ljust(10),dist[3],val.center(12)),line
 
 def DisAglTor(DATData):
+    'Needs a doc string'
     SGData = DATData['SGData']
     Cell = DATData['Cell']
     
@@ -533,6 +541,7 @@ def DisAglTor(DATData):
         print ' Distance in '+DATData['Name']+' for atom sequence: ',atmSeq,'=',G2mth.ValEsd(Dist,sig)
                 
 def BestPlane(PlaneData):
+    'Needs a doc string'
 
     def ShowBanner(name):
         print 80*'*'
@@ -571,6 +580,7 @@ def BestPlane(PlaneData):
 
             
 def main():
+    'Needs a doc string'
     arg = sys.argv
     if len(arg) > 1:
         GPXfile = arg[1]

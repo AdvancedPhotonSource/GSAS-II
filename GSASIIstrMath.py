@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-#GSASIIstrMath - structure computation math routines
+'''
+*GSASIIstrMath - structure math routines*
+-----------------------------------------
+'''
 ########### SVN repository information ###################
 # $Date: 2013-05-17 12:13:15 -0500 (Fri, 17 May 2013) $
 # $Author: vondreele $
@@ -133,6 +136,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                     parmDict[pfx+'AUiso:'+str(AtLookup[atId])] = UIJ[i][1]
                     
 def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
+    'Needs a doc string'
     atxIds = ['dAx:','dAy:','dAz:']
     atuIds = ['AU11:','AU22:','AU33:','AU12:','AU13:','AU23:']
     TIds = ['T11:','T22:','T33:','T12:','T13:','T23:']
@@ -292,6 +296,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
 ################################################################################
 
 def penaltyFxn(HistoPhases,parmDict,varyList):
+    'Needs a doc string'
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pNames = []
     pVals = []
@@ -388,6 +393,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
     return pNames,pVals,pWt
     
 def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
+    'Needs a doc string'
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
     for phase in Phases:
@@ -485,6 +491,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
 ################################################################################        
                     
 def GetAtomFXU(pfx,calcControls,parmDict):
+    'Needs a doc string'
     Natoms = calcControls['Natoms'][pfx]
     Tdata = Natoms*[' ',]
     Mdata = np.zeros(Natoms)
@@ -509,12 +516,14 @@ def GetAtomFXU(pfx,calcControls,parmDict):
     return Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
     
 def getFFvalues(FFtables,SQ):
+    'Needs a doc string'
     FFvals = {}
     for El in FFtables:
         FFvals[El] = G2el.ScatFac(FFtables[El],SQ)[0]
     return FFvals
     
 def getBLvalues(BLtables):
+    'Needs a doc string'
     BLvals = {}
     for El in BLtables:
         BLvals[El] = BLtables[El][1][1]
@@ -522,14 +531,16 @@ def getBLvalues(BLtables):
         
 def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     ''' Compute structure factors for all h,k,l for phase
+    puts the result, F^2, in each ref[8] in refList
     input:
-        refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
-        G:      reciprocal metric tensor
-        pfx:    phase id string
-        SGData: space group info. dictionary output from SpcGroup
-        calcControls:
-        ParmDict:
-    puts result F^2 in each ref[8] in refList
+    
+    :param list refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
+    :param np.array G:      reciprocal metric tensor
+    :param str pfx:    phase id string
+    :param dict SGData: space group info. dictionary output from SpcGroup
+    :param dict calcControls:
+    :param dict ParmDict:
+
     '''        
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
@@ -583,6 +594,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         refl[10] = atan2d(fbs[0],fas[0])
     
 def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
+    'Needs a doc string'
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
     phfx = pfx.split(':')[0]+hfx
@@ -756,6 +768,7 @@ def Values2Dict(parmdict, varylist, values):
     parmdict.update(zip(varylist,values))
     
 def GetNewCellParms(parmDict,varyList):
+    'Needs a doc string'
     newCellDict = {}
     Anames = ['A'+str(i) for i in range(6)]
     Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],Anames))
@@ -768,13 +781,13 @@ def GetNewCellParms(parmDict,varyList):
     return newCellDict          # is e.g. {'0::D11':A0+D11}
     
 def ApplyXYZshifts(parmDict,varyList):
-    ''' takes atom x,y,z shift and applies it to corresponding atom x,y,z value
-        input:
-            parmDict - parameter dictionary
-            varyList - list of variables
-        returns:
-            newAtomDict - dictionary of new atomic coordinate names & values; 
-                key is parameter shift name
+    '''
+    takes atom x,y,z shift and applies it to corresponding atom x,y,z value
+    
+    :param dict parmDict: parameter dictionary
+    :param list varyList: list of variables
+    :returns: newAtomDict - dictionary of new atomic coordinate names & values; key is parameter shift name
+
     '''
     newAtomDict = {}
     for item in parmDict:
@@ -785,7 +798,7 @@ def ApplyXYZshifts(parmDict,varyList):
     return newAtomDict
     
 def SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict):
-    #Spherical harmonics texture
+    'Spherical harmonics texture'
     IFCoup = 'Bragg' in calcControls[hfx+'instType']
     odfCor = 1.0
     H = refl[:3]
@@ -804,7 +817,7 @@ def SHTXcal(refl,g,pfx,hfx,SGData,calcControls,parmDict):
     return odfCor
     
 def SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict):
-    #Spherical harmonics texture derivatives
+    'Spherical harmonics texture derivatives'
     FORPI = 4.0*np.pi
     IFCoup = 'Bragg' in calcControls[hfx+'instType']
     odfCor = 1.0
@@ -829,7 +842,7 @@ def SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict):
     return odfCor,dFdODF,dFdSA
     
 def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
-    #sphericaql harmonics preferred orientation (cylindrical symmetry only)
+    'spherical harmonics preferred orientation (cylindrical symmetry only)'
     odfCor = 1.0
     H = refl[:3]
     cell = G2lat.Gmat2cell(g)
@@ -850,7 +863,7 @@ def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     return odfCor
     
 def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
-    #spherical harmonics preferred orientation derivatives (cylindrical symmetry only)
+    'spherical harmonics preferred orientation derivatives (cylindrical symmetry only)'
     FORPI = 12.5663706143592
     odfCor = 1.0
     dFdODF = {}
@@ -874,6 +887,7 @@ def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     return odfCor,dFdODF
     
 def GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
+    'Needs a doc string'
     POcorr = 1.0
     if calcControls[phfx+'poType'] == 'MD':
         MD = parmDict[phfx+'MD']
@@ -891,6 +905,7 @@ def GetPrefOri(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
     return POcorr
     
 def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
+    'Needs a doc string'
     POcorr = 1.0
     POderv = {}
     if calcControls[phfx+'poType'] == 'MD':
@@ -911,18 +926,21 @@ def GetPrefOriDerv(refl,G,g,phfx,hfx,SGData,calcControls,parmDict):
     return POcorr,POderv
     
 def GetAbsorb(refl,hfx,calcControls,parmDict):
+    'Needs a doc string'
     if 'Debye' in calcControls[hfx+'instType']:
         return G2pwd.Absorb('Cylinder',parmDict[hfx+'Absorption'],refl[5],0,0)
     else:
         return 1.0
     
 def GetAbsorbDerv(refl,hfx,calcControls,parmDict):
+    'Needs a doc string'
     if 'Debye' in calcControls[hfx+'instType']:
         return G2pwd.AbsorbDerv('Cylinder',parmDict[hfx+'Absorption'],refl[5],0,0)
     else:
         return 0.0
     
 def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
+    'Needs a doc string'
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3]               #scale*multiplicity
     if 'X' in parmDict[hfx+'Type']:
         Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5],parmDict[hfx+'Azimuth'])[0]
@@ -933,6 +951,7 @@ def GetIntensityCorr(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     refl[13] = Icorr        
     
 def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
+    'Needs a doc string'
     dIdsh = 1./parmDict[hfx+'Scale']
     dIdsp = 1./parmDict[phfx+'Scale']
     if 'X' in parmDict[hfx+'Type']:
@@ -955,6 +974,7 @@ def GetIntensityDerv(refl,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA,dFdAb
         
 def GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict):
+    'Needs a doc string'
     costh = cosd(refl[5]/2.)
     #crystallite size
     if calcControls[phfx+'SizeType'] == 'isotropic':
@@ -992,6 +1012,7 @@ def GetSampleSigGam(refl,wave,G,GB,phfx,calcControls,parmDict):
     return sig,gam
         
 def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
+    'Needs a doc string'
     gamDict = {}
     sigDict = {}
     costh = cosd(refl[5]/2.)
@@ -1067,6 +1088,7 @@ def GetSampleSigGamDerv(refl,wave,G,GB,phfx,calcControls,parmDict):
     return sigDict,gamDict
         
 def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
+    'Needs a doc string'
     h,k,l = refl[:3]
     dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
     d = np.sqrt(dsq)
@@ -1082,6 +1104,7 @@ def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
     return pos
 
 def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
+    'Needs a doc string'
     dpr = 180./np.pi
     h,k,l = refl[:3]
     dstsq = G2lat.calc_rDsq(np.array([h,k,l]),A)
@@ -1103,6 +1126,7 @@ def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
         return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd
             
 def GetHStrainShift(refl,SGData,phfx,parmDict):
+    'Needs a doc string'
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
     h,k,l = refl[:3]
@@ -1131,6 +1155,7 @@ def GetHStrainShift(refl,SGData,phfx,parmDict):
     return -Dij*refl[4]**2*tand(refl[5]/2.0)
             
 def GetHStrainShiftDerv(refl,SGData,phfx):
+    'Needs a doc string'
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
     h,k,l = refl[:3]
@@ -1162,6 +1187,7 @@ def GetHStrainShiftDerv(refl,SGData,phfx):
     return dDijDict
     
 def GetFobsSq(Histograms,Phases,parmDict,calcControls):
+    'Needs a doc string'
     histoList = Histograms.keys()
     histoList.sort()
     for histogram in histoList:
@@ -1227,6 +1253,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 Histogram[phfx+'Nref'] = len(refList)
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
+    'Needs a doc string'
     
     def GetReflSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
         U = parmDict[hfx+'U']
@@ -1319,6 +1346,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     return yc,yb
     
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup):
+    'Needs a doc string'
     
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
@@ -1569,6 +1597,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     return dMdv
 
 def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+    'Needs a doc string'
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
@@ -1657,6 +1686,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     return dMdv
 
 def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+    'Needs a doc string'
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
@@ -1768,6 +1798,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     return Vec,Hess
 
 def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):        
+    'Needs a doc string'
     parmDict.update(zip(varylist,values))
     Values2Dict(parmDict, varylist, values)
     G2mv.Dict2Map(parmDict,varylist)

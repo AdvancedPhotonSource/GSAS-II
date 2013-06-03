@@ -7,6 +7,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIImath: computation module*
+================================
+
+Routines for least-squares minimization and other stuff
+
+'''
 import sys
 import os
 import os.path as ospath
@@ -44,47 +51,40 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
         x = arg min(sum(func(y)**2,axis=0))
                     y=0
 
-    Parameters
-    ----------
-    func : callable
+    :param function func: callable method or function
         should take at least one (possibly length N vector) argument and
         returns M floating point numbers.
-    x0 : ndarray
-        The starting estimate for the minimization of length N
-    Hess : callable
+    :param np.ndarray x0: The starting estimate for the minimization of length N
+    :param function Hess: callable method or function
         A required function or method to compute the weighted vector and Hessian for func.
         It must be a symmetric NxN array
-    args : tuple
-        Any extra arguments to func are placed in this tuple.
-    ftol : float 
-        Relative error desired in the sum of squares.
-    xtol : float
-        Relative error desired in the approximate solution.
-    maxcyc : int
-        The maximum number of cycles of refinement to execute, if -1 refine 
+    :param tuple args: Any extra arguments to func are placed in this tuple.
+    :param float ftol: Relative error desired in the sum of squares.
+    :param float xtol: Relative error desired in the approximate solution.
+    :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
         until other limits are met (ftol, xtol)
 
-    Returns
-    -------
-    x : ndarray
+    :Returns: (x,cov_x,infodict) where
+
+      * x : ndarray
         The solution (or the result of the last iteration for an unsuccessful
         call).
-    cov_x : ndarray
+      * cov_x : ndarray
         Uses the fjac and ipvt optional outputs to construct an
         estimate of the jacobian around the solution.  ``None`` if a
         singular matrix encountered (indicates very flat curvature in
         some direction).  This matrix must be multiplied by the
         residual standard deviation to get the covariance of the
         parameter estimates -- see curve_fit.
-    infodict : dict
-        a dictionary of optional outputs with the key s::
+      * infodict : dict
+        a dictionary of optional outputs with the keys:
 
-            - 'fvec' : the function evaluated at the output
-
-
-    Notes
-    -----
-
+         * 'fvec' : the function evaluated at the output
+         * 'num cyc':
+         * 'nfev':
+         * 'lamMax':
+         * 'psing':
+            
     """
                 
     x0 = np.array(x0, ndmin=1)      #might be redundant?
@@ -146,6 +146,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
         return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
    
 def getVCov(varyNames,varyList,covMatrix):
+    'Needs a doc string'
     vcov = np.zeros((len(varyNames),len(varyNames)))
     for i1,name1 in enumerate(varyNames):
         for i2,name2 in enumerate(varyNames):
@@ -156,6 +157,7 @@ def getVCov(varyNames,varyList,covMatrix):
     return vcov
 
 def FindAtomIndexByIDs(atomData,IDs,Draw=True):
+    'Needs a doc string'
     indx = []
     for i,atom in enumerate(atomData):
         if Draw and atom[-3] in IDs:
@@ -165,18 +167,21 @@ def FindAtomIndexByIDs(atomData,IDs,Draw=True):
     return indx
 
 def FillAtomLookUp(atomData):
+    'Needs a doc string'
     atomLookUp = {}
     for iatm,atom in enumerate(atomData):
         atomLookUp[atom[-1]] = iatm
     return atomLookUp
 
 def GetAtomsById(atomData,atomLookUp,IdList):
+    'Needs a doc string'
     atoms = []
     for id in IdList:
         atoms.append(atomData[atomLookUp[id]])
     return atoms
     
 def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
+    'Needs a doc string'
     Items = []
     if not isinstance(IdList,list):
         IdList = [IdList,]
@@ -188,6 +193,7 @@ def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
     return Items
     
 def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
+    'Needs a doc string'
     pfx = [str(pId)+'::A'+i+':' for i in ['x','y','z']]
     dpfx = [str(pId)+'::dA'+i+':' for i in ['x','y','z']]
     XYZ = []
@@ -198,12 +204,14 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
     return XYZ
 
 def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
+    'Needs a doc string; unfinished & not used'
     for atom in atomData:
         XYZ = np.inner(Amat,atom[cx:cx+3])
         if atom[cia] == 'A':
             UIJ = atom[cia+2:cia+8]
                 
 def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
+    'Needs a doc string; not used anywhere'
     TLStype,TLS = rbObj['ThermalMotion'][:2]
     Tmat = np.zeros((3,3))
     Lmat = np.zeros((3,3))
@@ -223,6 +231,7 @@ def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
     return G2lat.UijtoU6(beta)*gvec    
         
 def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be?
+    'Needs a doc string; not used anywhere'
     cx,ct,cs,cia = atPtrs
     TLStype,TLS = rbObj['ThermalMotion'][:2]
     Tmat = np.zeros((3,3))
@@ -255,6 +264,7 @@ def GetXYZDist(xyz,XYZ,Amat):
     return np.sqrt(np.sum(np.inner(Amat,XYZ-xyz)**2,axis=0))
 
 def getAtomXYZ(atoms,cx):
+    'Needs a doc string; not used anywhere'
     XYZ = []
     for atom in atoms:
         XYZ.append(atom[cx:cx+3])
@@ -283,6 +293,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
     return XYZ,Cart
 
 def UpdateMCSAxyz(Bmat,MCSA):
+    'Needs a doc string'
     xyz = []
     atTypes = []
     iatm = 0
@@ -317,6 +328,7 @@ def UpdateMCSAxyz(Bmat,MCSA):
     return np.array(xyz),atTypes
     
 def SetMolCent(model,RBData):
+    'Needs a doc string'
     rideList = []
     RBRes = RBData[model['Type']][model['RBId']]
     if model['Type'] == 'Vector':
@@ -376,6 +388,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
     return Uout
     
 def GetSHCoeff(pId,parmDict,SHkeys):
+    'Needs a doc string'
     SHCoeff = {}
     for shkey in SHkeys:
         shname = str(pId)+'::'+shkey
@@ -383,19 +396,21 @@ def GetSHCoeff(pId,parmDict,SHkeys):
     return SHCoeff
         
 def getMass(generalData):
+    'Computes mass of unit cell contents'
     mass = 0.
     for i,elem in enumerate(generalData['AtomTypes']):
         mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
     return mass    
 
 def getDensity(generalData):
-    
+    'Computes density of unit cell contents'    
     mass = getMass(generalData)
     Volume = generalData['Cell'][7]
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
     
 def getSyXYZ(XYZ,ops,SGData):
+    'Needs a doc string'
     XYZout = np.zeros_like(XYZ)
     for i,[xyz,op] in enumerate(zip(XYZ,ops)):
         if op == '1':
@@ -416,9 +431,11 @@ def getSyXYZ(XYZ,ops,SGData):
     return XYZout
     
 def getRestDist(XYZ,Amat):
+    'Needs a doc string'
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
     
 def getRestDeriv(Func,XYZ,Amat,ops,SGData):
+    'Needs a doc string'
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
@@ -432,6 +449,7 @@ def getRestDeriv(Func,XYZ,Amat,ops,SGData):
     return deriv.flatten()
 
 def getRestAngle(XYZ,Amat):
+    'Needs a doc string'
     
     def calcVec(Ox,Tx,Amat):
         return np.inner(Amat,(Tx-Ox))
@@ -447,6 +465,7 @@ def getRestAngle(XYZ,Amat):
     return acosd(angle)
     
 def getRestPlane(XYZ,Amat):
+    'Needs a doc string'
     sumXYZ = np.zeros(3)
     for xyz in XYZ:
         sumXYZ += xyz
@@ -462,6 +481,7 @@ def getRestPlane(XYZ,Amat):
     return Evec[Order[0]]
     
 def getRestChiral(XYZ,Amat):    
+    'Needs a doc string'
     VecA = np.empty((3,3))    
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
     VecA[1] = np.inner(XYZ[2]-XYZ[0],Amat)
@@ -469,6 +489,7 @@ def getRestChiral(XYZ,Amat):
     return nl.det(VecA)
     
 def getRestTorsion(XYZ,Amat):
+    'Needs a doc string'
     VecA = np.empty((3,3))
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
     VecA[1] = np.inner(XYZ[2]-XYZ[1],Amat)
@@ -485,6 +506,7 @@ def getRestTorsion(XYZ,Amat):
     return TOR
     
 def calcTorsionEnergy(TOR,Coeff=[]):
+    'Needs a doc string'
     sum = 0.
     if len(Coeff):
         cof = np.reshape(Coeff,(3,3)).T
@@ -499,6 +521,7 @@ def calcTorsionEnergy(TOR,Coeff=[]):
     return sum,Eval
 
 def getTorsionDeriv(XYZ,Amat,Coeff):
+    'Needs a doc string'
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
@@ -514,11 +537,13 @@ def getTorsionDeriv(XYZ,Amat,Coeff):
     return deriv.flatten()
 
 def getRestRama(XYZ,Amat):
+    'Needs a doc string'
     phi = getRestTorsion(XYZ[:5],Amat)
     psi = getRestTorsion(XYZ[1:],Amat)
     return phi,psi
     
 def calcRamaEnergy(phi,psi,Coeff=[]):
+    'Needs a doc string'
     sum = 0.
     if len(Coeff):
         cof = Coeff.T
@@ -536,6 +561,7 @@ def calcRamaEnergy(phi,psi,Coeff=[]):
     return sum,Eval
 
 def getRamaDeriv(XYZ,Amat,Coeff):
+    'Needs a doc string'
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
@@ -551,6 +577,7 @@ def getRamaDeriv(XYZ,Amat,Coeff):
     return deriv.flatten()
 
 def getRestPolefig(ODFln,SamSym,Grid):
+    'Needs a doc string'
     X,Y = np.meshgrid(np.linspace(1.,-1.,Grid),np.linspace(-1.,1.,Grid))
     R,P = np.sqrt(X**2+Y**2).flatten(),atan2d(Y,X).flatten()
     R = np.where(R <= 1.,2.*atand(R),0.0)
@@ -560,10 +587,11 @@ def getRestPolefig(ODFln,SamSym,Grid):
     return np.reshape(R,(Grid,Grid)),np.reshape(P,(Grid,Grid)),Z
 
 def getRestPolefigDerv(HKL,Grid,SHCoeff):
+    'Needs a doc string'
     pass
         
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
-    
+    'Needs a doc string'
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
         return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
@@ -589,7 +617,7 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     return deriv
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
-    
+    'Needs a doc string'    
     def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C
         TxT = G2spc.MoveToUnitCell(TxT)+U
@@ -653,7 +681,7 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
 
 def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
-
+    'Needs a doc string'
     def calcDist(Atoms,SyOps,Amat):
         XYZ = []
         for i,atom in enumerate(Atoms):
@@ -698,7 +726,7 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Dist,sig
 
 def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
-        
+    'Needs a doc string'        
     def calcAngle(Atoms,SyOps,Amat):
         XYZ = []
         for i,atom in enumerate(Atoms):
@@ -748,7 +776,7 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Angle,sig
 
 def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    
+    'Needs a doc string'
     def calcTorsion(Atoms,SyOps,Amat):
         
         XYZ = []
@@ -807,7 +835,7 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Tors,sig
         
 def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    
+    'Needs a doc string'    
     def calcDist(Atoms,SyOps,Amat):
         XYZ = []
         for i,atom in enumerate(Atoms):
@@ -907,30 +935,67 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
     
     return Val,sig
         
-    
-def ValEsd(value,esd=0,nTZ=False):                  #NOT complete - don't use
-    # returns value(esd) string; nTZ=True for no trailing zeros
-    # use esd < 0 for level of precision shown e.g. esd=-0.01 gives 2 places beyond decimal
-    #get the 2 significant digits in the esd 
-    edig = lambda esd: int(round(10**(math.log10(esd) % 1+1)))
-    #get the number of digits to represent them 
-    epl = lambda esd: 2+int(1.545-math.log10(10*edig(esd)))
-    
-    mdec = lambda esd: -int(round(math.log10(abs(esd))))+1
-    ndec = lambda esd: int(1.545-math.log10(abs(esd)))
-    if esd > 0:
-        fmt = '"%.'+str(ndec(esd))+'f(%d)"'
-        return str(fmt%(value,int(round(esd*10**(mdec(esd)))))).strip('"')
-    elif esd < 0:
-         return str(round(value,mdec(esd)-1))
+def ValEsd(value,esd=0,nTZ=False):
+    '''Format a floating point number with a given level of precision or
+    with in crystallographic format with a "esd", as value(esd). If esd is
+    negative the number is formatted with the level of significant figures
+    appropriate if abs(esd) were the esd, but the esd is not included.
+    if the esd is zero, approximately 6 significant figures are printed.
+    nTZ=True causes "extra" zeros to be removed after the decimal place.
+    for example:
+
+      * "1.235(3)" for value=1.2346 & esd=0.003
+      * "1.235(3)e4" for value=12346. & esd=30
+      * "1.235(3)e6" for value=0.12346e7 & esd=3000
+      * "1.235" for value=1.2346 & esd=-0.003
+      * "1.240" for value=1.2395 & esd=-0.003
+      * "1.24" for value=1.2395 & esd=-0.003 with nTZ=True
+      * "1.23460" for value=1.2346 & esd=0.0
+
+    :param float value: number to be formatted
+    :param float esd: uncertainty or if esd < 0, specifies level of
+      precision to be shown e.g. esd=-0.01 gives 2 places beyond decimal
+    :param bool nTZ: True to remove trailing zeros (default is False)
+    :returns: value(esd) or value as a string
+
+    '''
+    # Note: this routine is Python 3 compatible -- I think
+    if esd != 0:
+        # transform the esd to a one or two digit integer
+        l = math.log10(abs(esd)) % 1
+        # cut off of 19 1.9==>(19) but 1.95==>(2) N.B. log10(1.95) = 0.2900...
+        if l < 0.290034611362518: l+= 1.        
+        intesd = int(round(10**l)) # esd as integer
+        # determine the number of digits offset for the esd
+        esdoff = int(round(math.log10(intesd*1./abs(esd))))
     else:
-        text = str("%f"%(value))
-        if nTZ:
-            return text.rstrip('0')
+        esdoff = 5
+    valoff = 0
+    if esdoff < 0 or abs(value) > 1.0e6 or abs(value) < 1.0e-4: # use scientific notation
+        # where the digit offset is to the left of the decimal place or where too many
+        # digits are needed
+        if abs(value) > 1:
+            valoff = int(math.log10(abs(value)))
         else:
-            return text
-            
+            valoff = int(math.log10(abs(value))-0.9999999)
+    if esd != 0:
+        out = ("{:."+str(valoff+esdoff)+"f}").format(value/10**valoff) # format the value
+    elif valoff != 0: # esd = 0; exponential notation ==> esdoff decimal places
+        out = ("{:."+str(esdoff)+"f}").format(value/10**valoff) # format the value
+    else: # esd = 0; non-exponential notation ==> esdoff+1 significant digits
+        extra = -math.log10(abs(value))
+        if extra > 0: extra += 1
+        out = ("{:."+str(max(0,esdoff+int(extra)))+"f}").format(value) # format the value
+    if esd > 0:
+        out += ("({:d})").format(intesd)  # add the esd
+    elif nTZ and '.' in out:
+        out = out.rstrip('0')  # strip digits to right of decimal
+    if valoff != 0:
+        out += ("e{:d}").format(valoff) # add an exponent, when needed
+    return out
+
 def adjHKLmax(SGData,Hmax):
+    'Needs a doc string'        
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
         Hmax[0] = ((Hmax[0]+3)/6)*6
         Hmax[1] = ((Hmax[1]+3)/6)*6
@@ -941,6 +1006,7 @@ def adjHKLmax(SGData,Hmax):
         Hmax[2] = ((Hmax[2]+1)/4)*4
 
 def OmitMap(data,reflData):
+    'Needs a doc string'        
     generalData = data['General']
     if not generalData['Map']['MapType']:
         print '**** ERROR - Fourier map not defined'
@@ -978,7 +1044,7 @@ def OmitMap(data,reflData):
     return mapData
 
 def FourierMap(data,reflData):
-    
+    'Needs a doc string'            
     generalData = data['General']
     if not generalData['Map']['MapType']:
         print '**** ERROR - Fourier map not defined'
@@ -1040,6 +1106,7 @@ def FourierMap(data,reflData):
     
 # map printing for testing purposes
 def printRho(SGLaue,rho,rhoMax):                          
+    'Needs a doc string'        
     dim = len(rho.shape)
     if dim == 2:
         ix,jy = rho.shape
@@ -1066,6 +1133,7 @@ def printRho(SGLaue,rho,rhoMax):
 ## keep this
                 
 def findOffset(SGData,A,Fhkl):    
+    'Needs a doc string'        
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
     hklShape = Fhkl.shape
@@ -1122,6 +1190,7 @@ def findOffset(SGData,A,Fhkl):
     return DX
     
 def ChargeFlip(data,reflData,pgbar):
+    'Needs a doc string'        
     generalData = data['General']
     mapData = generalData['Map']
     flipData = generalData['Flip']
@@ -1203,6 +1272,7 @@ def ChargeFlip(data,reflData,pgbar):
     return mapData
     
 def SearchMap(data):
+    'Needs a doc string'        
     rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
@@ -1304,8 +1374,9 @@ def SearchMap(data):
     return np.array(peaks),np.array([mags,]).T,np.array([dzeros,]).T
     
 def sortArray(data,pos,reverse=False):
-    #data is a list of items
-    #sort by pos in list; reverse if True
+    '''data is a list of items
+    sort by pos in list; reverse if True
+    '''
     T = []
     for i,M in enumerate(data):
         T.append((M[pos],i))
@@ -1319,7 +1390,7 @@ def sortArray(data,pos,reverse=False):
     return X
 
 def PeaksEquiv(data,Ind):
-
+    'Needs a doc string'        
     def Duplicate(xyz,peaks,Amat):
         if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
             return True
@@ -1346,6 +1417,7 @@ def PeaksEquiv(data,Ind):
     return Ind
                 
 def PeaksUnique(data,Ind):
+    'Needs a doc string'        
 #    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
     def noDuplicate(xyz,peaks,Amat):
@@ -1379,6 +1451,7 @@ def PeaksUnique(data,Ind):
     return Ind
     
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
+    'Needs a doc string'        
     ind = 0
     if useFit:
         ind = 1
@@ -1414,6 +1487,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     return XY
 
 def mcsaSearch(data,reflType,reflData,covData,pgbar):
+    'Needs a doc string'        
     generalData = data['General']
     mcsaControls = generalData['MCSA controls']
     reflName = mcsaData['Data source']
@@ -1427,6 +1501,7 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
 
         
 def getWave(Parms):
+    'Needs a doc string'        
     try:
         return Parms['Lam'][1]
     except KeyError:
@@ -1458,9 +1533,10 @@ def invQ(Q):
     return Q*np.array([1,-1,-1,-1])
     
 def prodQVQ(Q,V):
-    ''' compute the quaternion vector rotation qvq-1 = v'
-        q=r+ai+bj+ck
-    '''
+    """
+    compute the quaternion vector rotation qvq-1 = v'
+    q=r+ai+bj+ck
+    """
     VP = np.zeros(3)
     T2 = Q[0]*Q[1]
     T3 = Q[0]*Q[2]
@@ -1556,9 +1632,9 @@ def Q2AV(Q):
     
 def makeQuat(A,B,C):
     ''' Make quaternion from rotation of A vector to B vector about C axis
-        A,B,C are np.array Cartesian 3-vectors
-    Returns quaternion & rotation angle in radians
-        q=r+ai+bj+ck
+
+        :param np.array A,B,C: Cartesian 3-vectors
+        :Returns: quaternion & rotation angle in radians q=r+ai+bj+ck
     '''
 
     V1 = np.cross(A,C)
@@ -1586,4 +1662,3 @@ def makeQuat(A,B,C):
         if DM > DP:
             D *= -1.
     return Q,D
-    

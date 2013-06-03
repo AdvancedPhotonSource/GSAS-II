@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-#GSASIIstrIO - structure computation IO routines
+'''
+*GSASIIstrIO: structure I/O routines*
+-------------------------------------
+
+'''
 ########### SVN repository information ###################
 # $Date: 2013-05-17 12:13:15 -0500 (Fri, 17 May 2013) $
 # $Author: vondreele $
@@ -38,10 +42,9 @@ ateln2 = 8.0*math.log(2.0)
 
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
-    input:
-        GPXfile = .gpx full file name
-    return:
-        Controls = dictionary of control items
+
+    :param str GPXfile: full .gpx file name
+    :return: dictionary of control items
     '''
     Controls = {'deriv type':'analytic Hessian','max cyc':3,'max Hprocess':1,
         'max Rprocess':1,'min dM/M':0.0001,'shift factor':1.}
@@ -168,6 +171,7 @@ def GetRigidBodies(GPXfile):
     return rigidbodyDict
         
 def GetFprime(controlDict,Histograms):
+    'Needs a doc string'
     FFtables = controlDict['FFtables']
     if not FFtables:
         return
@@ -187,10 +191,9 @@ def GetFprime(controlDict,Histograms):
             
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
-    input: 
-        GPXfile = gpx full file name
-    return: 
-        PhaseNames = list of phase names
+
+    :param str GPXfile: full .gpx file name
+    :return: list of phase names
     '''
     fl = open(GPXfile,'rb')
     PhaseNames = []
@@ -208,11 +211,10 @@ def GetPhaseNames(GPXfile):
 
 def GetAllPhaseData(GPXfile,PhaseName):
     ''' Returns the entire dictionary for PhaseName from GSASII gpx file
-    input:
-        GPXfile = gpx full file name
-        PhaseName = phase name
-    return:
-        phase dictionary
+
+    :param str GPXfile: full .gpx file name
+    :param str PhaseName: phase name
+    :return: phase dictionary
     '''        
     fl = open(GPXfile,'rb')
     General = {}
@@ -232,11 +234,11 @@ def GetAllPhaseData(GPXfile,PhaseName):
     
 def GetHistograms(GPXfile,hNames):
     """ Returns a dictionary of histograms found in GSASII gpx file
-    input: 
-        GPXfile = .gpx full file name
-        hNames = list of histogram names 
-    return: 
-        Histograms = dictionary of histograms (types = PWDR & HKLF)
+
+    :param str GPXfile: full .gpx file name
+    :param str hNames: list of histogram names
+    :return: dictionary of histograms (types = PWDR & HKLF)
+
     """
     fl = open(GPXfile,'rb')
     Histograms = {}
@@ -280,11 +282,11 @@ def GetHistograms(GPXfile,hNames):
     
 def GetHistogramNames(GPXfile,hType):
     """ Returns a list of histogram names found in GSASII gpx file
-    input: 
-        GPXfile = .gpx full file name
-        hType = list ['PWDR','HKLF'] 
-    return: 
-        HistogramNames = list of histogram names (types = PWDR & HKLF)
+
+    :param str GPXfile: full .gpx file name
+    :param str hNames: list of histogram names
+    :return: list of histogram names (types = PWDR & HKLF)
+
     """
     fl = open(GPXfile,'rb')
     HistogramNames = []
@@ -302,11 +304,13 @@ def GetHistogramNames(GPXfile,hType):
 def GetUsedHistogramsAndPhases(GPXfile):
     ''' Returns all histograms that are found in any phase
     and any phase that uses a histogram
-    input:
-        GPXfile = .gpx full file name
-    return:
-        Histograms = dictionary of histograms as {name:data,...}
-        Phases = dictionary of phases that use histograms
+
+    :param str GPXfile: full .gpx file name
+    :return: (Histograms,Phases)
+
+     * Histograms = dictionary of histograms as {name:data,...}
+     * Phases = dictionary of phases that use histograms
+
     '''
     phaseNames = GetPhaseNames(GPXfile)
     histoList = GetHistogramNames(GPXfile,['PWDR','HKLF'])
@@ -333,6 +337,15 @@ def GetUsedHistogramsAndPhases(GPXfile):
     return Histograms,Phases
     
 def getBackupName(GPXfile,makeBack):
+    '''
+    Get the name for the backup .gpx file name
+    
+    :param str GPXfile: full .gpx file name
+    :param bool makeBack: if True the name of a new file is returned, if
+      False the name of the last file that exists is returned
+    :returns: the name of a backup file
+    
+    '''
     GPXpath,GPXname = ospath.split(GPXfile)
     if GPXpath == '': GPXpath = '.'
     Name = ospath.splitext(GPXname)[0]
@@ -349,6 +362,14 @@ def getBackupName(GPXfile,makeBack):
     return GPXback    
         
 def GPXBackup(GPXfile,makeBack=True):
+    '''
+    makes a backup of the current .gpx file (?)
+    
+    :param str GPXfile: full .gpx file name
+    :param bool makeBack: if True (default), the backup is written to
+      a new file; if False, the last backup is overwritten
+    :returns: the name of the backup file that was written
+    '''
     import distutils.file_util as dfu
     GPXback = getBackupName(GPXfile,makeBack)
     dfu.copy_file(GPXfile,GPXback)
@@ -357,13 +378,15 @@ def GPXBackup(GPXfile,makeBack=True):
 def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,makeBack=True):
     ''' Updates gpxfile from all histograms that are found in any phase
     and any phase that used a histogram. Also updates rigid body definitions.
-    input:
-        GPXfile = .gpx full file name
-        Histograms = dictionary of histograms as {name:data,...}
-        Phases = dictionary of phases that use histograms
-        RigidBodies = dictionary of rigid bodies
-        CovData = dictionary of refined variables, varyList, & covariance matrix
-        makeBack = True if new backup of .gpx file is to be made; else use the last one made
+
+
+    :param str GPXfile: full .gpx file name
+    :param dict Histograms: dictionary of histograms as {name:data,...}
+    :param dict Phases: dictionary of phases that use histograms
+    :param dict RigidBodies: dictionary of rigid bodies
+    :param dict CovData: dictionary of refined variables, varyList, & covariance matrix
+    :param bool makeBack: True if new backup of .gpx file is to be made; else use the last one made
+
     '''
                         
     GPXback = GPXBackup(GPXfile,makeBack)
@@ -404,6 +427,11 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
     print 'GPX file save successful'
     
 def SetSeqResult(GPXfile,Histograms,SeqResult):
+    '''
+    Needs doc string
+    
+    :param str GPXfile: full .gpx file name
+    '''
     GPXback = GPXBackup(GPXfile)
     print 'Read from file:',GPXback
     print 'Save to file  :',GPXfile
@@ -432,6 +460,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     print 'GPX file save successful'
                         
 def ShowBanner(pFile=None):
+    'Print authorship, copyright and citation notice'
     print >>pFile,80*'*'
     print >>pFile,'   General Structure Analysis System-II Crystal Structure Refinement'
     print >>pFile,'              by Robert B. Von Dreele & Brian H. Toby'
@@ -444,6 +473,7 @@ def ShowBanner(pFile=None):
     print >>pFile,80*'*','\n'
 
 def ShowControls(Controls,pFile=None):
+    'Print controls information'
     print >>pFile,' Least squares controls:'
     print >>pFile,' Refinement type: ',Controls['deriv type']
     if 'Hessian' in Controls['deriv type']:
@@ -454,10 +484,10 @@ def ShowControls(Controls,pFile=None):
     
 def GetFFtable(General):
     ''' returns a dictionary of form factor data for atom types found in General
-    input:
-        General = dictionary of phase info.; includes AtomTypes
-    return:
-        FFtable = dictionary of form factor data; key is atom type
+
+    :param dict General: dictionary of phase info.; includes AtomTypes
+    :return: FFtable, dictionary of form factor data; key is atom type
+
     '''
     atomTypes = General['AtomTypes']
     FFtable = {}
@@ -470,10 +500,9 @@ def GetFFtable(General):
     
 def GetBLtable(General):
     ''' returns a dictionary of neutron scattering length data for atom types & isotopes found in General
-    input:
-        General = dictionary of phase info.; includes AtomTypes & Isotopes
-    return:
-        BLtable = dictionary of scattering length data; key is atom type
+
+    :param dict General: dictionary of phase info.; includes AtomTypes & Isotopes
+    :return: BLtable, dictionary of scattering length data; key is atom type
     '''
     atomTypes = General['AtomTypes']
     BLtable = {}
@@ -484,6 +513,7 @@ def GetBLtable(General):
     return BLtable
         
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
+    'needs a doc string'
 #    if SGLaue in ['-1','2/m','mmm']:
 #        return                      #no Pawley symmetry required constraints
     eqvDict = {}
@@ -528,6 +558,7 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
             G2mv.StoreEquivalence(item,eqvDict[item])
                     
 def cellVary(pfx,SGData): 
+    'needs a doc string'
     if SGData['SGLaue'] in ['-1',]:
         return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
     elif SGData['SGLaue'] in ['2/m',]:
@@ -553,6 +584,7 @@ def cellVary(pfx,SGData):
 ################################################################################
         
 def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
+    'needs a doc string'
     
     def PrintResRBModel(RBModel):
         atNames = RBModel['atNames']
@@ -611,6 +643,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
     return rbVary,rbDict
     
 def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
+    'needs a doc string'
     
     def PrintRBVectandSig(VectRB,VectSig):
         print >>pFile,'\n Rigid body vector magnitudes for '+VectRB['RBname']+':'
@@ -647,6 +680,7 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
 ################################################################################        
                     
 def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
+    'needs a doc string'
             
     def PrintFFtable(FFtable):
         print >>pFile,'\n X-ray scattering factors:'
@@ -988,6 +1022,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
     return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables
     
 def cellFill(pfx,SGData,parmDict,sigDict): 
+    'needs a doc string'
     if SGData['SGLaue'] in ['-1',]:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
             parmDict[pfx+'A3'],parmDict[pfx+'A4'],parmDict[pfx+'A5']]
@@ -1029,6 +1064,7 @@ def cellFill(pfx,SGData,parmDict,sigDict):
     return A,sigA
         
 def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):
+    'needs a doc string'
     if phaseRest:
         Amat = G2lat.cell2AB(cell)[0]
         cx,ct,cs = AtPtrs[:3]
@@ -1115,6 +1151,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         print '   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2)
         
 def getCellEsd(pfx,SGData,A,covData):
+    'needs a doc string'
     dpr = 180./np.pi
     rVsq = G2lat.calc_rVsq(A)
     G,g = G2lat.A2Gmat(A)       #get recip. & real metric tensors
@@ -1173,6 +1210,7 @@ def getCellEsd(pfx,SGData,A,covData):
     return cellSig            
     
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
+    'needs a doc string'
     
     def PrintAtomsAndSig(General,Atoms,atomsSig):
         print >>pFile,'\n Atoms:'
@@ -1480,6 +1518,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
 ################################################################################        
                     
 def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
+    'needs a doc string'
     
     def PrintSize(hapData):
         if hapData[0] in ['isotropic','uniaxial']:
@@ -1738,6 +1777,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
     return hapVary,hapDict,controlDict
     
 def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=None):
+    'needs a doc string'
     
     def PrintSizeAndSig(hapData,sizeSig):
         line = '\n Size model:     %9s'%(hapData[0])
@@ -2033,6 +2073,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
 ################################################################################        
                     
 def GetHistogramData(Histograms,Print=True,pFile=None):
+    'needs a doc string'
     
     def GetBackgroundParms(hId,Background):
         Back = Background[0]
@@ -2244,6 +2285,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
     return histVary,histDict,controlDict
     
 def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
+    'needs a doc string'
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
         Back = Background[0]

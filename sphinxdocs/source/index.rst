@@ -8,10 +8,17 @@ GSAS-II Developer's Documentation
 .. toctree::
 
   GSASII.rst
-  GSASIImapvars.rst
+  GSASIIutil.rst
   GSASIIGUIr.rst
   GSASIIGUI.rst
-
+  GSASIIstruc.rst
+  GSASIImapvars.rst
+  GSASIIimage.rst
+  GSASIImath.rst
+  GSASIIindex.rst
+  GSASIIplot.rst
+  GSASIIpwd.rst
+  GSASIIsolve.rst
 
 Note that this program requires the Python wxPython, NumPy, SciPy,
 matplotlib packages, plus the PyOpenGL package (which is installed by

@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
-#Element table for building periodic table with valences & JMOL colors
-#Need these in case go back to this periodic table coloring scheme
+'''
+*ElementTable: Periodic Table Data*
+-----------------------------------
+
+Element table data for building periodic table with valences & JMOL colors.
+Need these in case we go back to this periodic table coloring scheme.
+
+Defines list ``ElTable`` which contains all defined oxidation states for each
+element, the location in the table, an element name, a color, a size and a
+second color.
+'''
 REcolor = (128, 128, 255)
 Metcolor = (192, 192, 192)
 Noblecolor = (255, 128, 255)

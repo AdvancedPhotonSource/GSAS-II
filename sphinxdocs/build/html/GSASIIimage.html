@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSASIIimage: Image calc module &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="GSASIImath: computation module" href="GSASIImath.html" />
+    <link rel="prev" title="GSASIImapvars: Parameter constraints" href="GSASIImapvars.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIImath.html" title="GSASIImath: computation module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="GSASIImapvars.html" title="GSASIImapvars: Parameter constraints"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-GSASIIimage"></span><div class="section" id="gsasiiimage-image-calc-module">
+<h1><em>GSASIIimage: Image calc module</em><a class="headerlink" href="#gsasiiimage-image-calc-module" title="Permalink to this headline">¶</a></h1>
+<p>Ellipse fitting &amp; image integration</p>
+<p>needs some minor refactoring to remove wx code</p>
+<dl class="function">
+<dt id="GSASIIimage.EdgeFinder">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">EdgeFinder</tt><big>(</big><em>image</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#EdgeFinder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.EdgeFinder" title="Permalink to this definition">¶</a></dt>
+<dd><p>this makes list of all x,y where I&gt;edgeMin suitable for an ellipse search?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.Fill2ThetaAzimuthMap">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">Fill2ThetaAzimuthMap</tt><big>(</big><em>masks</em>, <em>TA</em>, <em>tam</em>, <em>image</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#Fill2ThetaAzimuthMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.Fill2ThetaAzimuthMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.FitCircle">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitCircle</tt><big>(</big><em>ring</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitCircle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitCircle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.FitDetector">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitDetector</tt><big>(</big><em>rings</em>, <em>varyList</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitDetector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitDetector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.FitEllipse">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitEllipse</tt><big>(</big><em>ring</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitEllipse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitEllipse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.FitRing">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitRing</tt><big>(</big><em>ring</em>, <em>delta</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitRing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitRing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.FitStrSta">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitStrSta</tt><big>(</big><em>Image</em>, <em>StrSta</em>, <em>Controls</em>, <em>Masks</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitStrSta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitStrSta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.FitStrain">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitStrain</tt><big>(</big><em>rings</em>, <em>p0</em>, <em>wave</em>, <em>phi</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitStrain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitStrain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetAzm">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetAzm</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetAzm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetAzm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetDetXYfromThAzm">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetDetXYfromThAzm</tt><big>(</big><em>Th</em>, <em>Azm</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetDetXYfromThAzm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetDetXYfromThAzm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetDetectorXY">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetDetectorXY</tt><big>(</big><em>dsp</em>, <em>azm</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetDetectorXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetDetectorXY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetDsp">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetDsp</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetDsp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetDsp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetEllipse">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetEllipse</tt><big>(</big><em>dsp</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetEllipse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetEllipse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetTth">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetTth</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetTth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetTth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetTthAzm">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetTthAzm</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetTthAzm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetTthAzm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetTthAzmDsp">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetTthAzmDsp</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetTthAzmDsp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetTthAzmDsp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.ImageCalibrate">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageCalibrate</tt><big>(</big><em>self</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageCalibrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageCalibrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.ImageCompress">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageCompress</tt><big>(</big><em>image</em>, <em>scale</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageCompress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageCompress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.ImageIntegrate">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageIntegrate</tt><big>(</big><em>image</em>, <em>data</em>, <em>masks</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageIntegrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageIntegrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.ImageLocalMax">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageLocalMax</tt><big>(</big><em>image</em>, <em>w</em>, <em>Xpix</em>, <em>Ypix</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageLocalMax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageLocalMax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.ImageRecalibrate">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageRecalibrate</tt><big>(</big><em>self</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageRecalibrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageRecalibrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.Make2ThetaAzimuthMap">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">Make2ThetaAzimuthMap</tt><big>(</big><em>data</em>, <em>masks</em>, <em>iLim</em>, <em>jLim</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#Make2ThetaAzimuthMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.Make2ThetaAzimuthMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.calcDist">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">calcDist</tt><big>(</big><em>radii</em>, <em>tth</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#calcDist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.calcDist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.calcFij">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">calcFij</tt><big>(</big><em>omg</em>, <em>phi</em>, <em>azm</em>, <em>th</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#calcFij"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.calcFij" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does something...</p>
+<p>Uses parameters as defined by Bob He &amp; Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>omg</strong> &#8211; his omega = sample omega rotation; 0 when incident beam || sample surface, 90 when perp. to sample surface</li>
+<li><strong>phi</strong> &#8211; his phi = sample phi rotation; usually = 0, axis rotates with omg.</li>
+<li><strong>azm</strong> &#8211; his chi = azimuth around incident beam</li>
+<li><strong>th</strong> &#8211; his theta = theta</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.calcZdisCosB">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">calcZdisCosB</tt><big>(</big><em>radius</em>, <em>tth</em>, <em>radii</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#calcZdisCosB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.calcZdisCosB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.checkEllipse">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">checkEllipse</tt><big>(</big><em>Zsum</em>, <em>distSum</em>, <em>xSum</em>, <em>ySum</em>, <em>dist</em>, <em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#checkEllipse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.checkEllipse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.makeIdealRing">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">makeIdealRing</tt><big>(</big><em>ellipse</em>, <em>azm=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#makeIdealRing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.makeIdealRing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.makeMat">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">makeMat</tt><big>(</big><em>Angle</em>, <em>Axis</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#makeMat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.makeMat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make rotation matrix from Angle and Axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Angle</strong> (<em>float</em>) &#8211; in degrees</li>
+<li><strong>Axis</strong> (<em>int</em>) &#8211; 0 for rotation about x, 1 for about y, etc.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.makeRing">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">makeRing</tt><big>(</big><em>dsp</em>, <em>ellipse</em>, <em>pix</em>, <em>reject</em>, <em>scalex</em>, <em>scaley</em>, <em>image</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#makeRing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.makeRing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.peneCorr">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">peneCorr</tt><big>(</big><em>tth</em>, <em>dep</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#peneCorr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.peneCorr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.pointInPolygon">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">pointInPolygon</tt><big>(</big><em>pXY</em>, <em>xy</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#pointInPolygon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.pointInPolygon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASIImapvars.html"
+                        title="previous chapter"><em>GSASIImapvars: Parameter constraints</em></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="GSASIImath.html"
+                        title="next chapter"><em>GSASIImath: computation module</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIIimage.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIImath.html" title="GSASIImath: computation module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="GSASIImapvars.html" title="GSASIImapvars: Parameter constraints"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -196,9 +196,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       called when the focus for the control is lost.
       The called function is supplied with (at present) three keyword arguments:
 
-        :invalid: (*bool*) True if the value for the TextCtrl is invalid
-        :value:   (*int/float/str*)  the value contained in the TextCtrl
-        :tc:      (*wx.TextCtrl*)  the TextCtrl name
+         * invalid: (*bool*) True if the value for the TextCtrl is invalid
+         * value:   (*int/float/str*)  the value contained in the TextCtrl
+         * tc:      (*wx.TextCtrl*)  the TextCtrl name
 
       The number of keyword arguments may be increased in the future, if needs arise,
       so it is best to code these functions with a \*\*kwargs argument so they will

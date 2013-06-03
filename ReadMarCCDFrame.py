@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-# ReadMarCCDFrame.py
+'''
+*ReadMarCCDFrame: Read Mar Files*
+---------------------------------
+
+'''
 """ 
   from /opt/marccd/documentation/header.txt
 
@@ -258,8 +262,12 @@ import string, re
 MAXIMAGES=9
 
 class marFrame():
-    '''A class to extract correct mar header and image info from a MarCCD file'''
+    '''A class to extract correct mar header and image info from a MarCCD file
 
+    :param str File: file object [from open()]
+    :param byteOrd: '<' (default) or '>'  
+    :param dict IFD: ?
+    '''
     def __init__(self,File,byteOrd='<',IFD={}):
         # simple TIFF header info
         self.TIFFsizeX = IFD[256][2][0]

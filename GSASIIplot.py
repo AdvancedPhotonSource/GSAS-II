@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-#GSASII plotting routines
+'''
+*GSASIIplot: plotting routines*
+===============================
+
+'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -59,6 +63,7 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
     
 class G2PlotMpl(wx.Panel):    
+    'needs a doc string'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 10
@@ -74,6 +79,7 @@ class G2PlotMpl(wx.Panel):
         self.SetSizer(sizer)
         
 class G2PlotOgl(wx.Panel):
+    'needs a doc string'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         self.figure = wx.Panel.__init__(self,parent,id=id,**kwargs)
         if 'win' in sys.platform:           #Windows already double buffered
@@ -87,6 +93,7 @@ class G2PlotOgl(wx.Panel):
         self.SetSizer(sizer)
         
 class G2Plot3D(wx.Panel):
+    'needs a doc string'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(6,6))
@@ -101,6 +108,7 @@ class G2Plot3D(wx.Panel):
         self.SetSizer(sizer)
                               
 class G2PlotNoteBook(wx.Panel):
+    'create a tabbed window for plotting'
     def __init__(self,parent,id=-1):
         wx.Panel.__init__(self,parent,id=id)
         #so one can't delete a plot page!!
@@ -117,6 +125,7 @@ class G2PlotNoteBook(wx.Panel):
         self.plotList = []
             
     def addMpl(self,name=""):
+        'Add a tabbed page with a matplotlib plot'
         page = G2PlotMpl(self.nb)
         self.nb.AddPage(page,name)
         
@@ -125,6 +134,7 @@ class G2PlotNoteBook(wx.Panel):
         return page.figure
         
     def add3D(self,name=""):
+        'Add a tabbed page with a 3D plot'
         page = G2Plot3D(self.nb)
         self.nb.AddPage(page,name)
         
@@ -133,6 +143,7 @@ class G2PlotNoteBook(wx.Panel):
         return page.figure
         
     def addOgl(self,name=""):
+        'Add a tabbed page with an openGL plot'
         page = G2PlotOgl(self.nb)
         self.nb.AddPage(page,name)
         
@@ -141,6 +152,7 @@ class G2PlotNoteBook(wx.Panel):
         return page.figure
         
     def Delete(self,name):
+        'delete a tabbed page'
         try:
             item = self.plotList.index(name)
             del self.plotList[item]
@@ -149,12 +161,14 @@ class G2PlotNoteBook(wx.Panel):
             return      
                 
     def clear(self):
+        'clear all pages from plot window'
         while self.nb.GetPageCount():
             self.nb.DeletePage(0)
         self.plotList = []
         self.status.DestroyChildren()
         
     def Rename(self,oldName,newName):
+        'rename a tab'
         try:
             item = self.plotList.index(oldName)
             self.plotList[item] = newName
@@ -162,12 +176,14 @@ class G2PlotNoteBook(wx.Panel):
         except ValueError:          #no plot of this name - do nothing
             return      
         
-    def OnPageChanged(self,event):        
+    def OnPageChanged(self,event):
+        'respond to someone pressing a tab on the plot window'
         if self.plotList:
             self.status.SetStatusText('Better to select this from GSAS-II data tree',1)
         self.status.DestroyChildren()                           #get rid of special stuff on status bar
         
 class GSASIItoolbar(Toolbar):
+    'needs a doc string'
     ON_MPL_HELP = wx.NewId()
     ON_MPL_KEY = wx.NewId()
     def __init__(self,plotCanvas):
@@ -182,12 +198,14 @@ class GSASIItoolbar(Toolbar):
         self.AddSimpleTool(self.ON_MPL_HELP,_load_bitmap(help),'Help on','Show help on')
         wx.EVT_TOOL(self,self.ON_MPL_HELP,self.OnHelp)
     def OnHelp(self,event):
+        'needs a doc string'
         Page = self.GetParent().GetParent()
         pageNo = Page.GetSelection()
         bookmark = Page.GetPageText(pageNo)
         bookmark = bookmark.strip(')').replace('(','_')
         G2gd.ShowHelp(bookmark,self.TopLevelParent)
     def OnKey(self,event):
+        'needs a doc string'
         parent = self.GetParent()
         if parent.Choice:
             dlg = wx.SingleChoiceDialog(parent,'Select','Key press',list(parent.Choice))
@@ -856,6 +874,7 @@ def PlotPatterns(G2frame,newPlot=False):
 ################################################################################
             
 def PlotDeltSig(G2frame,kind):
+    'needs a doc string'
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Error analysis')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -1702,6 +1721,7 @@ def PlotTexture(G2frame,data,Start=False):
 ################################################################################
             
 def PlotCovariance(G2frame,Data):
+    'needs a doc string'
     if not Data:
         print 'No covariance matrix available'
         return
@@ -1787,6 +1807,7 @@ def PlotCovariance(G2frame,Data):
 ################################################################################
 
 def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
+    'needs a doc string'
     
     global names
     names = Names
@@ -1844,6 +1865,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
 ################################################################################
 
 def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
+    'needs a doc string'
 
     global names
     names = Names
@@ -1939,6 +1961,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
 ################################################################################
             
 def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
+    'needs a doc string'
     
     def OnKeyPress(event):
         if event.key == 's' and sampleParm:

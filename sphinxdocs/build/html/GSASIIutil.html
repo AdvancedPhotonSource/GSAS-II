@@ -1,0 +1,1538 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSAS-II Utility Modules &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="GSAS-II GUI Routines" href="GSASIIGUIr.html" />
+    <link rel="prev" title="GSAS-II Main Module" href="GSASII.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIGUIr.html" title="GSAS-II GUI Routines"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="GSASII.html" title="GSAS-II Main Module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-GSASIIdata">
+<span id="gsas-ii-utility-modules"></span><h1><em>GSAS-II Utility Modules</em><a class="headerlink" href="#module-GSASIIdata" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="gsasiidata-data-for-computations">
+<h2><em>GSASIIdata: Data for computations</em><a class="headerlink" href="#gsasiidata-data-for-computations" title="Permalink to this headline">¶</a></h2>
+<p>At present this module defines one dict, <tt class="docutils literal"><span class="pre">ramachandranDist</span></tt>,
+which contains arrays for All and specific amino acids</p>
+</div>
+<span class="target" id="module-ElementTable"></span><div class="section" id="elementtable-periodic-table-data">
+<h2><em>ElementTable: Periodic Table Data</em><a class="headerlink" href="#elementtable-periodic-table-data" title="Permalink to this headline">¶</a></h2>
+<p>Element table data for building periodic table with valences &amp; JMOL colors.
+Need these in case we go back to this periodic table coloring scheme.</p>
+<p>Defines list <tt class="docutils literal"><span class="pre">ElTable</span></tt> which contains all defined oxidation states for each
+element, the location in the table, an element name, a color, a size and a
+second color.</p>
+</div>
+<span class="target" id="module-FormFactors"></span><div class="section" id="formfactors-scattering-data">
+<h2><em>FormFactors: Scattering Data</em><a class="headerlink" href="#formfactors-scattering-data" title="Permalink to this headline">¶</a></h2>
+<p>Contains atomic scattering factors from 
+&#8220;New Analytical Scattering Factor Functions for Free Atoms
+and Ions for Free Atoms and Ions&#8221;, 
+D. Waasmaier &amp; A. Kirfel,
+<em>Acta Cryst.</em> <strong>(1995).</strong> A51, 416-413.</p>
+<p>Also, tabulated coefficients for calculation of Compton Cross Section as a function of sin(theta)/lambda from
+&#8220;Analytic Approximations to Incoherently Scattered X-Ray Intensities&#8221;, 
+H. H. M. Balyuzi, <em>Acta Cryst.</em> <strong>(1975).</strong> A31, 600.</p>
+</div>
+<span class="target" id="module-ImageCalibrants"></span><div class="section" id="imagecalibrants-calibration-standards">
+<h2><em>ImageCalibrants: Calibration Standards</em><a class="headerlink" href="#imagecalibrants-calibration-standards" title="Permalink to this headline">¶</a></h2>
+<p>GSASII powder calibrants as a dictionary of substances commonly used for powder
+calibrations for image data.</p>
+</div>
+<span class="target" id="module-GSASIIpath"></span><div class="section" id="gsasiipath-locations-updates">
+<h2><em>GSASIIpath: locations &amp; updates</em><a class="headerlink" href="#gsasiipath-locations-updates" title="Permalink to this headline">¶</a></h2>
+<p>Routines for dealing with file locations, etc.</p>
+<p>Determines the location of the compiled (.pyd or .so) libraries.</p>
+<p>Interfaces with subversion (svn): 
+Determine the subversion release number by determining the highest version number
+where <a class="reference internal" href="#GSASIIpath.SetVersionNumber" title="GSASIIpath.SetVersionNumber"><tt class="xref py py-func docutils literal"><span class="pre">SetVersionNumber()</span></tt></a> is called (best done in every GSASII file).
+Other routines will update GSASII from the subversion server if svn can be
+found.</p>
+<dl class="function">
+<dt id="GSASIIpath.GetVersionNumber">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">GetVersionNumber</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#GetVersionNumber"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.GetVersionNumber" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the maximum version number seen in <a class="reference internal" href="#GSASIIpath.SetVersionNumber" title="GSASIIpath.SetVersionNumber"><tt class="xref py py-func docutils literal"><span class="pre">SetVersionNumber()</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpath.SetVersionNumber">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">SetVersionNumber</tt><big>(</big><em>RevString</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#SetVersionNumber"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.SetVersionNumber" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the subversion version number</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 772 $&#8221;
+that is set by subversion when the file is retrieved from subversion.</td>
+</tr>
+</tbody>
+</table>
+<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">$&quot;)</span></tt> in every python
+file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpath.svnFindLocalChanges">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnFindLocalChanges</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnFindLocalChanges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnFindLocalChanges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of files that were changed locally. If no files are changed,
+the list has length 0</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fpath</strong> &#8211; path to repository dictionary, defaults to directory where
+the current file is located</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None if there is a subversion error (likely because the path is
+not a repository or svn is not found)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpath.svnGetRev">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetRev</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>local=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnGetRev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnGetRev" title="Permalink to this definition">¶</a></dt>
+<dd><p>This obtains the version number for the either the latest local last update
+or contacts the subversion server to get the latest update version (# of Head).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fpath</strong> &#8211; path to repository dictionary, defaults to directory where
+the current file is located</li>
+<li><strong>local</strong> &#8211; determines the type of version number, where
+True (default): returns the latest installed update 
+False: returns the version number of Head on the server</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last">the version number as an str or 
+None if there is a subversion error (likely because the path is
+not a repository or svn is not found)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpath.svnUpdateDir">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnUpdateDir</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnUpdateDir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnUpdateDir" title="Permalink to this definition">¶</a></dt>
+<dd><p>This performs an update of the files in a local directory from a server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fpath</strong> &#8211; path to repository dictionary, defaults to directory where
+the current file is located</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with the files that have been changed/added and
+a code describing how they have been updated (see changetype) ro 
+None if there is a subversion error (likely because the path is
+not a repository or svn is not found)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpath.whichsvn">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">whichsvn</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#whichsvn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.whichsvn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a path to the subversion exe file, if any is found.
+Searches the current path as well as subdirectory &#8220;svn&#8221; and
+&#8220;svn/bin&#8221; in the location of the GSASII source files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if svn is not found.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIElem"></span><div class="section" id="gsasiielem-functions-for-element-types">
+<h2><em>GSASIIElem: functions for element types</em><a class="headerlink" href="#gsasiielem-functions-for-element-types" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="GSASIIElem.CheckElement">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">CheckElement</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#CheckElement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.CheckElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if element El is in the periodic table</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>El</strong> (<em>str</em>) &#8211; One or two letter element symbol, capitaliztion ignored</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the element is found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.ComptonFac">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">ComptonFac</tt><big>(</big><em>El</em>, <em>SQ</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#ComptonFac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.ComptonFac" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute Compton scattering factor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>El</strong> &#8211; element dictionary</li>
+<li><strong>SQ</strong> &#8211; (sin-theta/lambda)**2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">compton scattering factor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.FPcalc">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">FPcalc</tt><big>(</big><em>Orbs</em>, <em>KEv</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#FPcalc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.FPcalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute real &amp; imaginary resonant X-ray scattering factors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Orbs</strong> &#8211; list of orbital dictionaries as defined in GetXsectionCoeff</li>
+<li><strong>KEv</strong> &#8211; x-ray energy in keV</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">C: (f&#8217;,f&#8221;,mu): real, imaginary parts of resonant scattering &amp; atomic absorption coeff.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.FixValence">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">FixValence</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#FixValence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.FixValence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the element symbol, even when a valence is present</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.GetAtomInfo">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetAtomInfo</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetAtomInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetAtomInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads element information from file atmdata.dat</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.GetFFC5">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetFFC5</tt><big>(</big><em>ElSym</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetFFC5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetFFC5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get 5 term form factor and Compton scattering data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ElSym</strong> &#8211; str(1-2 character element symbol with proper case);</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return El:</th><td class="field-body">dictionary with 5 term form factor &amp; compton coefficients</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.GetFormFactorCoeff">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetFormFactorCoeff</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetFormFactorCoeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetFormFactorCoeff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read X-ray form factor coefficients from <cite>atomdata.asc</cite> file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>El</strong> (<em>str</em>) &#8211; element 1-2 character symbol, case irrevelant</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><cite>FormFactors</cite>: list of form factor dictionaries</td>
+</tr>
+</tbody>
+</table>
+<p>Each X-ray form factor dictionary is:</p>
+<ul class="simple">
+<li><cite>Symbol</cite>: 4 character element symbol with valence (e.g. &#8216;NI+2&#8217;)</li>
+<li><cite>Z</cite>: atomic number</li>
+<li><cite>fa</cite>: 4 A coefficients</li>
+<li><cite>fb</cite>: 4 B coefficients</li>
+<li><cite>fc</cite>: C coefficient</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.GetMagFormFacCoeff">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetMagFormFacCoeff</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetMagFormFacCoeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetMagFormFacCoeff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read magnetic form factor data from atomdata.asc file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>El</strong> &#8211; 2 character element symbol</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">MagFormFactors: list of all magnetic form factors dictionaries for element El.</td>
+</tr>
+</tbody>
+</table>
+<p>each dictionary contains:</p>
+<ul class="simple">
+<li>&#8216;Symbol&#8217;:Symbol</li>
+<li>&#8216;Z&#8217;:Z</li>
+<li>&#8216;mfa&#8217;: 4 MA coefficients</li>
+<li>&#8216;nfa&#8217;: 4 NA coefficients</li>
+<li>&#8216;mfb&#8217;: 4 MB coefficients</li>
+<li>&#8216;nfb&#8217;: 4 NB coefficients</li>
+<li>&#8216;mfc&#8217;: MC coefficient</li>
+<li>&#8216;nfc&#8217;: NC coefficient</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.GetXsectionCoeff">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetXsectionCoeff</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetXsectionCoeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetXsectionCoeff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read atom orbital scattering cross sections for fprime calculations via Cromer-Lieberman algorithm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>El</strong> &#8211; 2 character element symbol</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Orbs: list of orbitals each a dictionary with detailed orbital information used by FPcalc</td>
+</tr>
+</tbody>
+</table>
+<p>each dictionary is:</p>
+<ul class="simple">
+<li>&#8216;OrbName&#8217;: Orbital name read from file</li>
+<li>&#8216;IfBe&#8217; 0/2 depending on orbital</li>
+<li>&#8216;BindEn&#8217;: binding energy</li>
+<li>&#8216;BB&#8217;: BindEn/0.02721</li>
+<li>&#8216;XSectIP&#8217;: 5 cross section inflection points</li>
+<li>&#8216;ElEterm&#8217;: energy correction term</li>
+<li>&#8216;SEdge&#8217;: absorption edge for orbital</li>
+<li>&#8216;Nval&#8217;: 10/11 depending on IfBe</li>
+<li>&#8216;LEner&#8217;: 10/11 values of log(energy)</li>
+<li>&#8216;LXSect&#8217;: 10/11 values of log(cross section)</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.ScatFac">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">ScatFac</tt><big>(</big><em>El</em>, <em>SQ</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#ScatFac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.ScatFac" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute value of form factor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>El</strong> &#8211; element dictionary defined in GetFormFactorCoeff</li>
+<li><strong>SQ</strong> &#8211; (sin-theta/lambda)**2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">real part of form factor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIlattice"></span><div class="section" id="gsasiilattice-unit-cells">
+<h2><em>GSASIIlattice: Unit cells</em><a class="headerlink" href="#gsasiilattice-unit-cells" title="Permalink to this headline">¶</a></h2>
+<p>Perform lattice-related computations</p>
+<dl class="function">
+<dt id="GSASIIlattice.A2Gmat">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">A2Gmat</tt><big>(</big><em>A</em>, <em>inverse=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#A2Gmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.A2Gmat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill real &amp; reciprocal metric tensor (G) from A</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>A</strong> &#8211; reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]</li>
+<li><strong>inverse</strong> (<em>bool</em>) &#8211; if True return bot G and g; else just G</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">reciprocal (G) &amp; real (g) metric tensors (list of two numpy 3x3 arrays)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.A2cell">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">A2cell</tt><big>(</big><em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#A2cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.A2cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute unit cell constants from A</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>A</strong> &#8211; [G11,G22,G33,2*G12,2*G13,2*G23] G - reciprocal metric tensor</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a,b,c,alpha, beta, gamma (degrees) - lattice parameters</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.A2invcell">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">A2invcell</tt><big>(</big><em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#A2invcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.A2invcell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute reciprocal unit cell constants from A
+returns tuple with a*,b*,c*,alpha*, beta*, gamma* (degrees)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.CellAbsorption">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CellAbsorption</tt><big>(</big><em>ElList</em>, <em>Volume</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CellAbsorption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CellAbsorption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute unit cell absorption</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ElList</strong> (<em>dict</em>) &#8211; dictionary of element contents including mu and
+number of atoms be cell</li>
+<li><strong>Volume</strong> (<em>float</em>) &#8211; unit cell volume</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">mu-total/Volume</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.CellBlock">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CellBlock</tt><big>(</big><em>nCells</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CellBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CellBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate block of unit cells n*n*n on a side; [0,0,0] centered, n = 2*nCells+1
+currently only works for nCells = 0 or 1 (not &gt;1)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.CentCheck">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CentCheck</tt><big>(</big><em>Cent</em>, <em>H</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CentCheck"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CentCheck" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.CosSinAngle">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CosSinAngle</tt><big>(</big><em>U</em>, <em>V</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CosSinAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CosSinAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculate sin &amp; cos of angle betwee U &amp; V in generalized coordinates 
+defined by metric tensor G</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>U</strong> &#8211; 3-vectors assume numpy arrays</li>
+<li><strong>V</strong> &#8211; 3-vectors assume numpy arrays</li>
+<li><strong>G</strong> &#8211; metric tensor for U &amp; V defined space assume numpy array</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">cos(phi) &amp; sin(phi)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.CrsAng">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CrsAng</tt><big>(</big><em>H</em>, <em>cell</em>, <em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CrsAng"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CrsAng" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Flnh">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Flnh</tt><big>(</big><em>Start</em>, <em>SHCoef</em>, <em>phi</em>, <em>beta</em>, <em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Flnh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Flnh" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.GenHBravais">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GenHBravais</tt><big>(</big><em>dmin</em>, <em>Bravais</em>, <em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GenHBravais"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GenHBravais" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the positionally unique powder diffraction reflections</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dmin</strong> &#8211; minimum d-spacing in A</li>
+<li><strong>Bravais</strong> &#8211; lattice type (see GetBraviasNum). Bravais is one of::
+0 F cubic
+1 I cubic
+2 P cubic
+3 R hexagonal (trigonal not rhombohedral)
+4 P hexagonal
+5 I tetragonal
+6 P tetragonal
+7 F orthorhombic
+8 I orthorhombic
+9 C orthorhombic
+10 P orthorhombic
+11 C monoclinic
+12 P monoclinic
+13 P triclinic</li>
+<li><strong>A</strong> &#8211; reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">HKL unique d list of [h,k,l,d,-1] sorted with largest d first</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.GenHLaue">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GenHLaue</tt><big>(</big><em>dmin</em>, <em>SGData</em>, <em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GenHLaue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GenHLaue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the crystallographically unique powder diffraction reflections
+for a lattice and Bravais type</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dmin</strong> &#8211; minimum d-spacing</li>
+<li><strong>SGData</strong> &#8211; <p>space group dictionary with at least</p>
+<ul>
+<li>&#8216;SGLaue&#8217;: Laue group symbol: one of &#8216;-1&#8217;,&#8216;2/m&#8217;,&#8217;mmm&#8217;,&#8216;4/m&#8217;,&#8216;6/m&#8217;,&#8216;4/mmm&#8217;,&#8216;6/mmm&#8217;, &#8216;3m1&#8217;, &#8216;31m&#8217;, &#8216;3&#8217;, &#8216;3R&#8217;, &#8216;3mR&#8217;, &#8216;m3&#8217;, &#8216;m3m&#8217;</li>
+<li>&#8216;SGLatt&#8217;: lattice centering: one of &#8216;P&#8217;,&#8217;A&#8217;,&#8217;B&#8217;,&#8217;C&#8217;,&#8217;I&#8217;,&#8217;F&#8217;</li>
+<li>&#8216;SGUniq&#8217;: code for unique monoclinic axis one of &#8216;a&#8217;,&#8217;b&#8217;,&#8217;c&#8217; (only if &#8216;SGLaue&#8217; is &#8216;2/m&#8217;) otherwise an empty string</li>
+</ul>
+</li>
+<li><strong>A</strong> &#8211; reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">HKL = list of [h,k,l,d] sorted with largest d first and is unique 
+part of reciprocal space ignoring anomalous dispersion</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.GenSHCoeff">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GenSHCoeff</tt><big>(</big><em>SGLaue</em>, <em>SamSym</em>, <em>L</em>, <em>IfLMN=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GenSHCoeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GenSHCoeff" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.GetBraviasNum">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GetBraviasNum</tt><big>(</big><em>center</em>, <em>system</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GetBraviasNum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GetBraviasNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the Bravais lattice number, as used in GenHBravais</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>center</strong> &#8211; one of: &#8216;P&#8217;, &#8216;C&#8217;, &#8216;I&#8217;, &#8216;F&#8217;, &#8216;R&#8217; (see SGLatt from GSASIIspc.SpcGroup)</li>
+<li><strong>system</strong> &#8211; one of &#8216;cubic&#8217;, &#8216;hexagonal&#8217;, &#8216;tetragonal&#8217;, &#8216;orthorhombic&#8217;, &#8216;trigonal&#8217; (for R)
+&#8216;monoclinic&#8217;, &#8216;triclinic&#8217; (see SGSys from GSASIIspc.SpcGroup)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a number between 0 and 13 
+or throws a ValueError exception if the combination of center, system is not found (i.e. non-standard)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.GetKcl">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GetKcl</tt><big>(</big><em>L</em>, <em>N</em>, <em>SGLaue</em>, <em>phi</em>, <em>beta</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GetKcl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GetKcl" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.GetKclKsl">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GetKclKsl</tt><big>(</big><em>L</em>, <em>N</em>, <em>SGLaue</em>, <em>psi</em>, <em>phi</em>, <em>beta</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GetKclKsl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GetKclKsl" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is used for spherical harmonics description of preferred orientation;
+cylindrical symmetry only (M=0) and no sample angle derivatives returned</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.GetKsl">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GetKsl</tt><big>(</big><em>L</em>, <em>M</em>, <em>SamSym</em>, <em>psi</em>, <em>gam</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GetKsl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GetKsl" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Glnh">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Glnh</tt><big>(</big><em>Start</em>, <em>SHCoef</em>, <em>psi</em>, <em>gam</em>, <em>SamSym</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Glnh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Glnh" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Gmat2A">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Gmat2A</tt><big>(</big><em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Gmat2A"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Gmat2A" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract A from reciprocal metric tensor (G)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>G</strong> &#8211; reciprocal maetric tensor (3x3 numpy array</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A = [G11,G22,G33,2*G12,2*G13,2*G23]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Gmat2AB">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Gmat2AB</tt><big>(</big><em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Gmat2AB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Gmat2AB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes orthogonalization matrix from reciprocal metric tensor G</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">tuple of two 3x3 numpy arrays (A,B)<ul class="simple">
+<li>A for crystal to Cartesian transformations A*x = np.inner(A,x) = X</li>
+<li>B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Gmat2cell">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Gmat2cell</tt><big>(</big><em>g</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Gmat2cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Gmat2cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute real/reciprocal lattice parameters from real/reciprocal metric tensor (g/G)
+The math works the same either way.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>(or G)</strong> (<em>g</em>) &#8211; real (or reciprocal) metric tensor 3x3 array</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a,b,c,alpha, beta, gamma (degrees) (or a*,b*,c*,alpha*,beta*,gamma* degrees)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Hx2Rh">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Hx2Rh</tt><big>(</big><em>Hx</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Hx2Rh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Hx2Rh" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.MaxIndex">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">MaxIndex</tt><big>(</big><em>dmin</em>, <em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#MaxIndex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.MaxIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.OdfChk">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">OdfChk</tt><big>(</big><em>SGLaue</em>, <em>L</em>, <em>M</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#OdfChk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.OdfChk" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Rh2Hx">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Rh2Hx</tt><big>(</big><em>Rh</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Rh2Hx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Rh2Hx" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.SamAng">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">SamAng</tt><big>(</big><em>Tth</em>, <em>Gangls</em>, <em>Sangl</em>, <em>IFCoup</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#SamAng"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.SamAng" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute sample orientation angles vs laboratory coord. system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Tth</strong> &#8211; Signed theta</li>
+<li><strong>Gangls</strong> &#8211; Sample goniometer angles phi,chi,omega,azmuth</li>
+<li><strong>Sangl</strong> &#8211; Sample angle zeros om-0, chi-0, phi-0</li>
+<li><strong>IFCoup</strong> &#8211; True if omega &amp; 2-theta coupled in CW scan</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">psi,gam:    Sample odf angles                              
+dPSdA,dGMdA:    Angle zero derivatives</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.SwapIndx">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">SwapIndx</tt><big>(</big><em>Axis</em>, <em>H</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#SwapIndx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.SwapIndx" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.U6toUij">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">U6toUij</tt><big>(</big><em>U6</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#U6toUij"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.U6toUij" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill matrix (Uij) from U6 = [U11,U22,U33,U12,U13,U23]
+NB: there is a non numpy version in GSASIIspc: U2Uij</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>U6</strong> (<em>list</em>) &#8211; 6 terms of u11,u22,...</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Uij - numpy [3][3] array of uij</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Uij2betaij">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Uij2betaij</tt><big>(</big><em>Uij</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Uij2betaij"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Uij2betaij" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert Uij to beta-ij tensors &#8211; stub for eventual completion</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Uij</strong> &#8211; numpy array [Uij]</li>
+<li><strong>G</strong> &#8211; reciprocal metric tensor</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">beta-ij - numpy array [beta-ij]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.UijtoU6">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">UijtoU6</tt><big>(</big><em>U</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#UijtoU6"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.UijtoU6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill vector [U11,U22,U33,U12,U13,U23] from Uij 
+NB: there is a non numpy version in GSASIIspc: Uij2U</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.calc_V">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_V</tt><big>(</big><em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_V"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_V" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the real lattice volume (V) from A</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.calc_rDsq">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_rDsq</tt><big>(</big><em>H</em>, <em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_rDsq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_rDsq" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.calc_rDsq2">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_rDsq2</tt><big>(</big><em>H</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_rDsq2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_rDsq2" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.calc_rDsqZ">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_rDsqZ</tt><big>(</big><em>H</em>, <em>A</em>, <em>Z</em>, <em>tth</em>, <em>lam</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_rDsqZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_rDsqZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.calc_rV">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_rV</tt><big>(</big><em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_rV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_rV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the reciprocal lattice volume (V*) from A</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.calc_rVsq">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_rVsq</tt><big>(</big><em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_rVsq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_rVsq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the square of the reciprocal lattice volume (1/V**2) from A&#8217;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.cell2A">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">cell2A</tt><big>(</big><em>cell</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#cell2A"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.cell2A" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain A = [G11,G22,G33,2*G12,2*G13,2*G23] from lattice parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cell</strong> &#8211; [a,b,c,alpha,beta,gamma] (degrees)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">G reciprocal metric tensor as 3x3 numpy array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.cell2AB">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">cell2AB</tt><big>(</big><em>cell</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#cell2AB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.cell2AB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes orthogonalization matrix from unit cell constants</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cell</strong> (<em>tuple</em>) &#8211; a,b,c, alpha, beta, gamma (degrees)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tuple of two 3x3 numpy arrays (A,B)
+A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
+B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.cell2Gmat">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">cell2Gmat</tt><big>(</big><em>cell</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#cell2Gmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.cell2Gmat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute real and reciprocal lattice metric tensor from unit cell constants</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cell</strong> &#8211; tuple with a,b,c,alpha, beta, gamma (degrees)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">reciprocal (G) &amp; real (g) metric tensors (list of two numpy 3x3 arrays)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.combinations">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">combinations</tt><big>(</big><em>items</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#combinations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.combinations" title="Permalink to this definition">¶</a></dt>
+<dd><p>take n distinct items, order matters</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.criticalEllipse">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">criticalEllipse</tt><big>(</big><em>prob</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#criticalEllipse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.criticalEllipse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate critical values for probability ellipsoids from probability</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.fillgmat">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">fillgmat</tt><big>(</big><em>cell</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#fillgmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.fillgmat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute lattice metric tensor from unit cell constants</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cell</strong> &#8211; tuple with a,b,c,alpha, beta, gamma (degrees)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">3x3 numpy array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.getHKLmax">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">getHKLmax</tt><big>(</big><em>dmin</em>, <em>SGData</em>, <em>A</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#getHKLmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.getHKLmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>finds maximum allowed hkl for given A within dmin</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.invcell2Gmat">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">invcell2Gmat</tt><big>(</big><em>invcell</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#invcell2Gmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.invcell2Gmat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute real and reciprocal lattice metric tensor from reciprocal 
+unit cell constants</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>invcell</strong> &#8211; [a*,b*,c*,alpha*, beta*, gamma*] (degrees)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">reciprocal (G) &amp; real (g) metric tensors (list of two 3x3 arrays)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.invpolfcal">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">invpolfcal</tt><big>(</big><em>ODFln</em>, <em>SGData</em>, <em>phi</em>, <em>beta</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#invpolfcal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.invpolfcal" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.permutations">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">permutations</tt><big>(</big><em>items</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#permutations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.permutations" title="Permalink to this definition">¶</a></dt>
+<dd><p>take all items, order matters</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.polfcal">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">polfcal</tt><big>(</big><em>ODFln</em>, <em>SamSym</em>, <em>psi</em>, <em>gam</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#polfcal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.polfcal" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.rotdMat">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">rotdMat</tt><big>(</big><em>angle</em>, <em>axis=0</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#rotdMat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.rotdMat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare rotation matrix for angle in degrees about axis(=0,1,2)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>angle</strong> &#8211; angle in degrees</li>
+<li><strong>axis</strong> &#8211; axis (0,1,2 = x,y,z) about which for the rotation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">rotation matrix - 3x3 numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.rotdMat4">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">rotdMat4</tt><big>(</big><em>angle</em>, <em>axis=0</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#rotdMat4"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.rotdMat4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare rotation matrix for angle in degrees about axis(=0,1,2) with scaling for OpenGL</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>angle</strong> &#8211; angle in degrees</li>
+<li><strong>axis</strong> &#8211; axis (0,1,2 = x,y,z) about which for the rotation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">rotation matrix - 4x4 numpy array (last row/column for openGL scaling)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.sec2HMS">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">sec2HMS</tt><big>(</big><em>sec</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#sec2HMS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.sec2HMS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert time in sec to H:M:S string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sec</strong> &#8211; time in seconds</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">H:M:S string (to nearest 100th second)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.selections">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selections</tt><big>(</big><em>items</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#selections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.selections" title="Permalink to this definition">¶</a></dt>
+<dd><p>take n (not necessarily distinct) items, order matters</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIlattice.selftestlist">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17cc0930&gt;, &lt;function test1 at 0x17cc0970&gt;, &lt;function test2 at 0x17cc09b0&gt;, &lt;function test3 at 0x17cc09f0&gt;, &lt;function test4 at 0x17cc0a30&gt;, &lt;function test5 at 0x17cc0a70&gt;, &lt;function test6 at 0x17cc0ab0&gt;, &lt;function test7 at 0x17cc0af0&gt;, &lt;function test8 at 0x17cc0b30&gt;, &lt;function test9 at 0x17cc0b70&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a list of self-tests</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.sortHKLd">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">sortHKLd</tt><big>(</big><em>HKLd</em>, <em>ifreverse</em>, <em>ifdup</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#sortHKLd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.sortHKLd" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>HKLd</strong> &#8211; a list of [h,k,l,d,...];</li>
+<li><strong>ifreverse</strong> &#8211; True for largest d first</li>
+<li><strong>ifdup</strong> &#8211; True if duplicate d-spacings allowed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test1">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test1</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test1" title="Permalink to this definition">¶</a></dt>
+<dd><p>test cell2A and A2Gmat</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test2">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test2</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test2" title="Permalink to this definition">¶</a></dt>
+<dd><p>test Gmat2A, A2cell, A2Gmat, Gmat2cell</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test3">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test3</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test3" title="Permalink to this definition">¶</a></dt>
+<dd><p>test invcell2Gmat</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test4">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test4</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test4"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test4" title="Permalink to this definition">¶</a></dt>
+<dd><p>test calc_rVsq, calc_rV, calc_V</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test5">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test5</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test5" title="Permalink to this definition">¶</a></dt>
+<dd><p>test A2invcell</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test6">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test6</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test6"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test6" title="Permalink to this definition">¶</a></dt>
+<dd><p>test cell2AB</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test7">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test7</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test7"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test7" title="Permalink to this definition">¶</a></dt>
+<dd><p>test GetBraviasNum(...) and GenHBravais(...)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test8">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test8</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test8"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test8" title="Permalink to this definition">¶</a></dt>
+<dd><p>test GenHLaue</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.test9">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">test9</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#test9"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.test9" title="Permalink to this definition">¶</a></dt>
+<dd><p>test GenHLaue</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.textureIndex">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">textureIndex</tt><big>(</big><em>SHCoef</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#textureIndex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.textureIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.uniqueCombinations">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">uniqueCombinations</tt><big>(</big><em>items</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#uniqueCombinations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.uniqueCombinations" title="Permalink to this definition">¶</a></dt>
+<dd><p>take n distinct items, order is irrelevant</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIspc"></span><div class="section" id="gsasiispc-space-group-module">
+<h2><em>GSASIIspc: Space group module</em><a class="headerlink" href="#gsasiispc-space-group-module" title="Permalink to this headline">¶</a></h2>
+<p>Space group interpretion routines</p>
+<dl class="function">
+<dt id="GSASIIspc.ApplyStringOps">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">ApplyStringOps</tt><big>(</big><em>A</em>, <em>SGData</em>, <em>X</em>, <em>Uij=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#ApplyStringOps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.ApplyStringOps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.ElemPosition">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">ElemPosition</tt><big>(</big><em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#ElemPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.ElemPosition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Under development. 
+Object here is to return a list of symmetry element types and locations suitable
+for say drawing them.
+So far I have the element type... getting all possible locations without lookup may be impossible!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.GenAtom">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GenAtom</tt><big>(</big><em>XYZ</em>, <em>SGData</em>, <em>All=False</em>, <em>Uij=</em><span class="optional">[</span><span class="optional">]</span>, <em>Move=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GenAtom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GenAtom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the equivalent positions for a specified coordinate and space group</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>XYZ</strong> &#8211; an array, tuple or list containing 3 elements: x, y &amp; z</li>
+<li><strong>SGData</strong> &#8211; from <a class="reference internal" href="#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">SpcGroup()</span></tt></a></li>
+<li><strong>All</strong> &#8211; True return all equivalent positions including duplicates;
+False return only unique positions</li>
+<li><strong>Uij</strong> &#8211; [U11,U22,U33,U12,U13,U23] or [] if no Uij</li>
+<li><strong>Move</strong> &#8211; True move generated atom positions to be inside cell
+False do not move atoms</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>[[XYZEquiv],Idup,[UijEquiv]]</p>
+<ul class="simple">
+<li>[XYZEquiv] is list of equivalent positions (XYZ is first entry)</li>
+<li>Idup = [-][C]SS where SS is the symmetry operator number (1-24), C (if not 0,0,0)</li>
+<li>is centering operator number (1-4) and - is for inversion
+Cell = unit cell translations needed to put new positions inside cell
+[UijEquiv] - equivalent Uij; absent if no Uij given</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.GenHKLf">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GenHKLf</tt><big>(</big><em>HKL</em>, <em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GenHKLf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GenHKLf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses old GSAS Fortran routine genhkl.for</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>HKL</strong> &#8211; [h,k,l]</li>
+<li><strong>SGData</strong> &#8211; space group data obtained from SpcGroup</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>iabsnt,mulp,Uniq,phi</p>
+<ul class="simple">
+<li>iabsnt = True is reflection is forbidden by symmetry</li>
+<li>mulp = reflection multiplicity including Friedel pairs</li>
+<li>Uniq = numpy array of equivalent hkl in descending order of h,k,l</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.GetCSuinel">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GetCSuinel</tt><big>(</big><em>siteSym</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GetCSuinel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GetCSuinel" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns Uij terms, multipliers, GUI flags &amp; Uiso2Uij multipliers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.GetCSxinel">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GetCSxinel</tt><big>(</big><em>siteSym</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GetCSxinel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GetCSxinel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.GetKNsym">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GetKNsym</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GetKNsym"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GetKNsym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.GetNXUPQsym">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GetNXUPQsym</tt><big>(</big><em>siteSym</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GetNXUPQsym"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GetNXUPQsym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.GetOprPtrName">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GetOprPtrName</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GetOprPtrName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GetOprPtrName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.HStrainNames">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">HStrainNames</tt><big>(</big><em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#HStrainNames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.HStrainNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.Latt2text">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">Latt2text</tt><big>(</big><em>Latt</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#Latt2text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.Latt2text" title="Permalink to this definition">¶</a></dt>
+<dd><p>From lattice type (&#8216;P&#8217;,A&#8217;, etc.) returns &#8216;;&#8217; delimited cell centering vectors</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.MT2text">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">MT2text</tt><big>(</big><em>M</em>, <em>T</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#MT2text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.MT2text" title="Permalink to this definition">¶</a></dt>
+<dd><p>From space group matrix/translation operator returns text version</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.MoveToUnitCell">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">MoveToUnitCell</tt><big>(</big><em>xyz</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#MoveToUnitCell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.MoveToUnitCell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translates a set of coordinates so that all values are &gt;=0 and &lt; 1</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>xyz</strong> &#8211; a list or numpy array of fractional coordinates</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">XYZ - numpy array of new coordinates now 0 or greater and less than 1</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.Muiso2Shkl">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">Muiso2Shkl</tt><big>(</big><em>muiso</em>, <em>SGData</em>, <em>cell</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#Muiso2Shkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.Muiso2Shkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is to convert isotropic mustrain to generalized Shkls - doesn&#8217;t work just now</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.MustrainCoeff">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">MustrainCoeff</tt><big>(</big><em>HKL</em>, <em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#MustrainCoeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.MustrainCoeff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.MustrainNames">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">MustrainNames</tt><big>(</big><em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#MustrainNames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.MustrainNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.Opposite">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">Opposite</tt><big>(</big><em>XYZ</em>, <em>toler=0.0002</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#Opposite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.Opposite" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Gives opposite corner, edge or face of unit cell for position within tolerance. </dt>
+<dd>Result may be just outside the cell within tolerance</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>XYZ</strong> &#8211; 0 &gt;= np.array[x,y,z] &gt; 1 as by MoveToUnitCell</li>
+<li><strong>toler</strong> &#8211; unit cell fraction tolerance making opposite</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">XYZ: array of opposite positions; always contains XYZ</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.SGErrors">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">SGErrors</tt><big>(</big><em>IErr</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#SGErrors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.SGErrors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interprets the error message code from SpcGroup. Used in SpaceGroup.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>IErr</strong> &#8211; see SGError in <a class="reference internal" href="#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">SpcGroup()</span></tt></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">ErrString - a string with the error message or &#8220;Unknown error&#8221;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.SGPrint">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">SGPrint</tt><big>(</big><em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#SGPrint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.SGPrint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the output of SpcGroup in a nicely formatted way. Used in SpaceGroup</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>SGData</strong> &#8211; from <a class="reference internal" href="#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">SpcGroup()</span></tt></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">SGText - list of strings with the space group details</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.SGpolar">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">SGpolar</tt><big>(</big><em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#SGpolar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.SGpolar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine identity of polar axes if any</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.SpaceGroup">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">SpaceGroup</tt><big>(</big><em>SGSymbol</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#SpaceGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.SpaceGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the output of SpcGroup in a nicely formatted way.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>SGSymbol</strong> &#8211; space group symbol (string) with spaces between axial fields</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">nothing</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.SpcGroup">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">SpcGroup</tt><big>(</big><em>SGSymbol</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#SpcGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.SpcGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines cell and symmetry information from a short H-M space group name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>SGSymbol</strong> &#8211; space group symbol (string) with spaces between axial fields</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(SGError,SGData)
+* SGError = 0 for no errors; &gt;0 for errors (see SGErrors below for details)
+* SGData - dictionary with entries:<blockquote>
+<div><ul class="simple">
+<li>&#8216;SpGrp&#8217;: space group symbol slightly cleaned up</li>
+<li>&#8216;Laue&#8217;:  one of &#8216;-1&#8217;, &#8216;2/m&#8217;, &#8216;mmm&#8217;, &#8216;4/m&#8217;, &#8216;4/mmm&#8217;, &#8216;3R&#8217;,
+&#8216;3mR&#8217;, &#8216;3&#8217;, &#8216;3m1&#8217;, &#8216;31m&#8217;, &#8216;6/m&#8217;, &#8216;6/mmm&#8217;, &#8216;m3&#8217;, &#8216;m3m&#8217;</li>
+<li>&#8216;SGInv&#8217;: boolean; True if centrosymmetric, False if not</li>
+<li>&#8216;SGLatt&#8217;: one of &#8216;P&#8217;, &#8216;A&#8217;, &#8216;B&#8217;, &#8216;C&#8217;, &#8216;I&#8217;, &#8216;F&#8217;, &#8216;R&#8217;</li>
+<li>&#8216;SGUniq&#8217;: one of &#8216;a&#8217;, &#8216;b&#8217;, &#8216;c&#8217; if monoclinic, &#8216;&#8217; otherwise</li>
+<li>&#8216;SGCen&#8217;: cell centering vectors [0,0,0] at least</li>
+<li>&#8216;SGOps&#8217;: symmetry operations as [M,T] so that M*x+T = x&#8217;</li>
+<li>&#8216;SGSys&#8217;: one of &#8216;triclinic&#8217;, &#8216;monoclinic&#8217;, &#8216;orthorhombic&#8217;,
+&#8216;tetragonal&#8217;, &#8216;rhombohedral&#8217;, &#8216;trigonal&#8217;, &#8216;hexagonal&#8217;, &#8216;cubic&#8217;</li>
+<li>&#8216;SGPolax&#8217;: one of &#8216;&#8217;, &#8216;x&#8217;, &#8216;y&#8217;, &#8216;x y&#8217;, &#8216;z&#8217;, &#8216;x z&#8217;, &#8216;y z&#8217;,
+&#8216;xyz&#8217;, &#8216;111&#8217; for arbitrary axes</li>
+</ul>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.StandardizeSpcName">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">StandardizeSpcName</tt><big>(</big><em>spcgroup</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#StandardizeSpcName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.StandardizeSpcName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accept a spacegroup name where spaces may have not been used
+in the names according to the GSAS convention (spaces between symmetry
+for each axis) and return the space group name as used in GSAS</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.StringOpsProd">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">StringOpsProd</tt><big>(</big><em>A</em>, <em>B</em>, <em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#StringOpsProd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.StringOpsProd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find A*B where A &amp; B are in strings &#8216;-&#8216; + &#8216;100*c+n&#8217; + &#8216;+ijk&#8217;
+where &#8216;-&#8216; indicates inversion, c(&gt;0) is the cell centering operator, 
+n is operator number from SgOps and ijk are unit cell translations (each may be &lt;0).
+Should return resultant string - C. SGData - dictionary using entries:</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;SGCen&#8217;: cell centering vectors [0,0,0] at least</li>
+<li>&#8216;SGOps&#8217;: symmetry operations as [M,T] so that M*x+T = x&#8217;</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.SytSym">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">SytSym</tt><big>(</big><em>XYZ</em>, <em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#SytSym"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.SytSym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the number of equivalent positions and a site symmetry code for a specified coordinate and space group</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>XYZ</strong> &#8211; an array, tuple or list containing 3 elements: x, y &amp; z</li>
+<li><strong>SGData</strong> &#8211; from SpcGroup</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first">a two element tuple:</p>
+<ul class="last simple">
+<li>The 1st element is a code for the site symmetry (see GetKNsym)</li>
+<li>The 2nd element is the site multiplicity</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIspc.selftestlist">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x2376470&gt;, &lt;function test1 at 0x23764b0&gt;, &lt;function test2 at 0x23764f0&gt;, &lt;function test3 at 0x2376530&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a list of self-tests</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.test0">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">test0</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#test0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.test0" title="Permalink to this definition">¶</a></dt>
+<dd><p>self-test #0: exercise MoveToUnitCell</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.test1">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">test1</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#test1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.test1" title="Permalink to this definition">¶</a></dt>
+<dd><p>self-test #1: SpcGroup and SGPrint against previous results</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.test2">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">test2</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#test2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.test2" title="Permalink to this definition">¶</a></dt>
+<dd><p>self-test #2: SpcGroup against cctbx (sgtbx) computations</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIspc.test3">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">test3</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#test3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.test3" title="Permalink to this definition">¶</a></dt>
+<dd><p>self-test #3: exercise SytSym (includes GetOprPtrName, GenAtom, GetKNsym)
+for selected space groups against info in IT Volume A</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-unit_tests"></span><div class="section" id="unit-tests-self-test-module">
+<h2><em>unit_tests: Self-test Module</em><a class="headerlink" href="#unit-tests-self-test-module" title="Permalink to this headline">¶</a></h2>
+<p>A script that can be run to test a series of self-tests in GSAS-II. At present,
+only modules <tt class="docutils literal"><span class="pre">GSASIIspc</span></tt> and <tt class="docutils literal"><span class="pre">GSASIIlattice</span></tt> have self-tests.</p>
+<dl class="function">
+<dt id="unit_tests.test_GSASIIlattice">
+<tt class="descclassname">unit_tests.</tt><tt class="descname">test_GSASIIlattice</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/unit_tests.html#test_GSASIIlattice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#unit_tests.test_GSASIIlattice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test registered self-tests in <tt class="docutils literal"><span class="pre">GSASIIlattice</span></tt>.
+Takes no input and returns nothing. Throws an Exception if a test fails.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="unit_tests.test_GSASIIspc">
+<tt class="descclassname">unit_tests.</tt><tt class="descname">test_GSASIIspc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/unit_tests.html#test_GSASIIspc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#unit_tests.test_GSASIIspc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test registered self-tests in <tt class="docutils literal"><span class="pre">GSASIIspc</span></tt>.
+Takes no input and returns nothing. Throws an Exception if a test fails.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><em>GSAS-II Utility Modules</em></a><ul>
+<li><a class="reference internal" href="#gsasiidata-data-for-computations"><em>GSASIIdata: Data for computations</em></a></li>
+<li><a class="reference internal" href="#elementtable-periodic-table-data"><em>ElementTable: Periodic Table Data</em></a></li>
+<li><a class="reference internal" href="#formfactors-scattering-data"><em>FormFactors: Scattering Data</em></a></li>
+<li><a class="reference internal" href="#imagecalibrants-calibration-standards"><em>ImageCalibrants: Calibration Standards</em></a></li>
+<li><a class="reference internal" href="#gsasiipath-locations-updates"><em>GSASIIpath: locations &amp; updates</em></a></li>
+<li><a class="reference internal" href="#gsasiielem-functions-for-element-types"><em>GSASIIElem: functions for element types</em></a></li>
+<li><a class="reference internal" href="#gsasiilattice-unit-cells"><em>GSASIIlattice: Unit cells</em></a></li>
+<li><a class="reference internal" href="#gsasiispc-space-group-module"><em>GSASIIspc: Space group module</em></a></li>
+<li><a class="reference internal" href="#unit-tests-self-test-module"><em>unit_tests: Self-test Module</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASII.html"
+                        title="previous chapter"><em>GSAS-II Main Module</em></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="GSASIIGUIr.html"
+                        title="next chapter"><em>GSAS-II GUI Routines</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIIutil.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIGUIr.html" title="GSAS-II GUI Routines"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="GSASII.html" title="GSAS-II Main Module"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

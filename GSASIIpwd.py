@@ -1,6 +1,10 @@
 #/usr/bin/env python
 # -*- coding: utf-8 -*-
-#GSASII powder calculation module
+'''
+*GSASII powder calculation module*
+==================================
+
+'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -53,10 +57,13 @@ npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
 #GSASII pdf calculation routines
         
 def Transmission(Geometry,Abs,Diam):
-#Calculate sample transmission
-#   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate'
-#   Abs: absorption coeff in cm-1
-#   Diam: sample thickness/diameter in mm
+    '''
+    Calculate sample transmission
+
+    :param str Geometry: one of 'Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate'
+    :param float Abs: absorption coeff in cm-1
+    :param float Diam: sample thickness/diameter in mm
+    '''
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
         MuR = Abs*Diam/20.0
         if MuR <= 3.0:
@@ -83,12 +90,13 @@ def Transmission(Geometry,Abs,Diam):
         return 0.0
 
 def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
-#Calculate sample absorption
-#   Geometry: one of 'Cylinder','Bragg-Brentano','Tilting Flat Plate in transmission','Fixed flat plate'
-#   MuR: absorption coeff * sample thickness/2 or radius
-#   Tth: 2-theta scattering angle - can be numpy array
-#   Phi: flat plate tilt angle - future
-#   Psi: flat plate tilt axis - future
+    '''Calculate sample absorption
+    :param str Geometry: one of 'Cylinder','Bragg-Brentano','Tilting Flat Plate in transmission','Fixed flat plate'
+    :param float MuR: absorption coeff * sample thickness/2 or radius
+    :param Tth: 2-theta scattering angle - can be numpy array
+    :param float Phi: flat plate tilt angle - future
+    :param float Psi: flat plate tilt axis - future
+    '''
     Sth2 = npsind(Tth/2.0)**2
     Cth2 = 1.-Sth2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
@@ -126,6 +134,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
         return np.exp(-MuT/cth)/cth
         
 def AbsorbDerv(Geometry,MuR,Tth,Phi=0,Psi=0):
+    'needs a doc string'
     dA = 0.001
     AbsP = Absorb(Geometry,MuR+dA,Tth,Phi,Psi)
     if MuR:
@@ -136,15 +145,16 @@ def AbsorbDerv(Geometry,MuR,Tth,Phi=0,Psi=0):
         
 def Polarization(Pola,Tth,Azm=0.0):
     """   Calculate angle dependent x-ray polarization correction (not scaled correctly!)
-    input:
-        Pola: polarization coefficient e.g 1.0 fully polarized, 0.5 unpolarized
-        Azm: azimuthal angle e.g. 0.0 in plane of polarization
-        Tth: 2-theta scattering angle - can be numpy array
-            which (if either) of these is "right"?
-    return:
-        pola = ((1-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+ \
-            (1-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
-        dpdPola: derivative needed for least squares
+
+    :param Pola: polarization coefficient e.g 1.0 fully polarized, 0.5 unpolarized
+    :param Azm: azimuthal angle e.g. 0.0 in plane of polarization
+    :param Tth: 2-theta scattering angle - can be numpy array
+      which (if either) of these is "right"?
+    :return: (pola, dpdPola)
+      * pola = ((1-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+ \
+        (1-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
+      * dpdPola: derivative needed for least squares
+
     """
     pola = ((1.0-Pola)*npcosd(Azm)**2+Pola*npsind(Azm)**2)*npcosd(Tth)**2+   \
         (1.0-Pola)*npsind(Azm)**2+Pola*npcosd(Azm)**2
@@ -152,12 +162,14 @@ def Polarization(Pola,Tth,Azm=0.0):
     return pola,dpdPola
     
 def Oblique(ObCoeff,Tth):
+    'needs a doc string'
     if ObCoeff:
         return (1.-ObCoeff)/(1.0-np.exp(np.log(ObCoeff)/npcosd(Tth)))
     else:
         return 1.0
                 
 def Ruland(RulCoff,wave,Q,Compton):
+    'needs a doc string'
     C = 2.9978e8
     D = 1.5e-3
     hmc = 0.024262734687
@@ -167,13 +179,16 @@ def Ruland(RulCoff,wave,Q,Compton):
     return 1.0/((1.0+dlam/RulCoff)*(1.0+(np.pi*dlam_c/(dlam+RulCoff))**2))
     
 def LorchWeight(Q):
+    'needs a doc string'
     return np.sin(np.pi*(Q[-1]-Q)/(2.0*Q[-1]))
             
 def GetAsfMean(ElList,Sthl2):
-#   Calculate various scattering factor terms for PDF calcs
-#   ElList: element dictionary contains scattering factor coefficients, etc.
-#   Sthl2: numpy array of sin theta/lambda squared values
-#   returns: mean(f^2), mean(f)^2, mean(compton)
+    '''Calculate various scattering factor terms for PDF calcs
+
+    :param dict ElList: element dictionary contains scattering factor coefficients, etc.
+    :param np.array Sthl2: numpy array of sin theta/lambda squared values
+    :returns: mean(f^2), mean(f)^2, mean(compton)
+    '''
     sumNoAtoms = 0.0
     FF = np.zeros_like(Sthl2)
     FF2 = np.zeros_like(Sthl2)
@@ -190,12 +205,14 @@ def GetAsfMean(ElList,Sthl2):
     return FF2,FF**2,CF
     
 def GetNumDensity(ElList,Vol):
+    'needs a doc string'
     sumNoAtoms = 0.0
     for El in ElList:
         sumNoAtoms += ElList[El]['FormulaNo']
     return sumNoAtoms/Vol
            
 def CalcPDF(data,inst,xydata):
+    'needs a doc string'
     auxPlot = []
     import copy
     import scipy.fftpack as ft
@@ -302,12 +319,11 @@ def factorize(num):
             
 def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
     ''' Provide list of optimal data sizes for FFT calculations
-    Input:
-        nmin: minimum data size >= 1
-        nmax: maximum data size > nmin
-        thresh: maximum prime factor allowed
-    Returns:
-        list of data sizes where the maximum prime factor is < thresh
+
+    :param int nmin: minimum data size >= 1
+    :param int nmax: maximum data size > nmin
+    :param int thresh: maximum prime factor allowed
+    :Returns: list of data sizes where the maximum prime factor is < thresh
     ''' 
     plist = []
     nmin = max(1,nmin)
@@ -324,7 +340,8 @@ np.seterr(divide='ignore')
 # loc = mu, scale = std
 _norm_pdf_C = 1./math.sqrt(2*math.pi)
 class norm_gen(st.rv_continuous):
-        
+    'needs a doc string'
+      
     def pdf(self,x,*args,**kwds):
         loc,scale=kwds['loc'],kwds['scale']
         x = (x-loc)/scale
@@ -345,6 +362,7 @@ normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
 # median = loc
 
 class cauchy_gen(st.rv_continuous):
+    'needs a doc string'
 
     def pdf(self,x,*args,**kwds):
         loc,scale=kwds['loc'],kwds['scale']
@@ -368,21 +386,22 @@ class fcjde_gen(st.rv_continuous):
     """
     Finger-Cox-Jephcoat D(2phi,2th) function for S/L = H/L
     Ref: J. Appl. Cryst. (1994) 27, 892-900.
-    Parameters
-    -----------------------------------------
-    x: array -1 to 1
-    t: 2-theta position of peak
-    s: sum(S/L,H/L); S: sample height, H: detector opening, 
-        L: sample to detector opening distance
-    dx: 2-theta step size in deg
-    Result for fcj.pdf
-    -----------------------------------------
-    T = x*dx+t
-    s = S/L+H/L
-    if x < 0: 
-        fcj.pdf = [1/sqrt({cos(T)**2/cos(t)**2}-1) - 1/s]/|cos(T)|    
-    if x >= 0:
-        fcj.pdf = 0    
+
+    :param x: array -1 to 1
+    :param t: 2-theta position of peak
+    :param s: sum(S/L,H/L); S: sample height, H: detector opening, 
+      L: sample to detector opening distance
+    :param dx: 2-theta step size in deg
+
+    :returns: for fcj.pdf
+
+     * T = x*dx+t
+     * s = S/L+H/L
+     * if x < 0::
+
+        fcj.pdf = [1/sqrt({cos(T)**2/cos(t)**2}-1) - 1/s]/|cos(T)| 
+
+     * if x >= 0: fcj.pdf = 0    
     """
     def _pdf(self,x,t,s,dx):
         T = dx*x+t
@@ -401,6 +420,7 @@ class fcjde_gen(st.rv_continuous):
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
 def getWidthsCW(pos,sig,gam,shl):
+    'needs a doc string'
     widths = [np.sqrt(sig)/100.,gam/200.]
     fwhm = 2.355*widths[0]+2.*widths[1]
     fmin = 10.*(fwhm+shl*abs(npcosd(pos)))
@@ -410,6 +430,7 @@ def getWidthsCW(pos,sig,gam,shl):
     return widths,fmin,fmax
     
 def getWidthsTOF(pos,alp,bet,sig,gam):
+    'needs a doc string'
     lnf = 3.3      # =log(0.001/2)
     widths = [np.sqrt(sig),gam]
     fwhm = 2.355*widths[0]+2.*widths[1]
@@ -418,6 +439,7 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     return widths,fmin,fmax
     
 def getFWHM(TTh,Inst):
+    'needs a doc string'
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*math.pi/180.
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
@@ -426,6 +448,7 @@ def getFWHM(TTh,Inst):
     return gamFW(g,s)    
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
+    'needs a doc string'
     DX = xdata[1]-xdata[0]
     widths,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
     x = np.linspace(pos-fmin,pos+fmin,256)
@@ -447,6 +470,7 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     return intens*Df(xdata)*DX/dx
 
 def getBackground(pfx,parmDict,bakType,xdata):
+    'needs a doc string'
     yb = np.zeros_like(xdata)
     nBak = 0
     cw = np.diff(xdata)
@@ -528,6 +552,7 @@ def getBackground(pfx,parmDict,bakType,xdata):
     return yb
     
 def getBackgroundDerv(pfx,parmDict,bakType,xdata):
+    'needs a doc string'
     nBak = 0
     while True:
         key = pfx+'Back:'+str(nBak)
@@ -625,6 +650,7 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
 
 #use old fortran routine
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
+    'needs a doc string'
     
     Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
 #    Df = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
@@ -632,6 +658,7 @@ def getFCJVoigt3(pos,sig,gam,shl,xdata):
     return Df
 
 def getdFCJVoigt3(pos,sig,gam,shl,xdata):
+    'needs a doc string'
     
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
 #    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
@@ -639,16 +666,19 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     return Df,dFdp,dFds,dFdg,dFdsh
 
 def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
+    'needs a doc string'
     Df = pyd.pyepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
     Df /= np.sum(Df)
     return Df  
     
 def getdEpsVoigt(pos,alp,bet,sig,gam,xdata):
+    'needs a doc string'
     Df,dFdp,dFda,dFdb,dFds,dFdg = pyd.pydepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
     sumDf = np.sum(Df)
     return Df,dFdp,dFda,dFdb,dFds,dFdg   
 
 def ellipseSize(H,Sij,GB):
+    'needs a doc string'
     HX = np.inner(H.T,GB)
     lenHX = np.sqrt(np.sum(HX**2))
     Esize,Rsize = nl.eigh(G2lat.U6toUij(Sij))            
@@ -657,6 +687,7 @@ def ellipseSize(H,Sij,GB):
     return lenR
 
 def ellipseSizeDerv(H,Sij,GB):
+    'needs a doc string'
     lenR = ellipseSize(H,Sij,GB)
     delt = 0.001
     dRdS = np.zeros(6)
@@ -667,6 +698,7 @@ def ellipseSizeDerv(H,Sij,GB):
     return lenR,dRdS
 
 def getHKLpeak(dmin,SGData,A):
+    'needs a doc string'
     HKL = G2lat.GenHLaue(dmin,SGData,A)        
     HKLs = []
     for h,k,l,d in HKL:
@@ -676,6 +708,7 @@ def getHKLpeak(dmin,SGData,A):
     return HKLs
 
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
+    'needs a doc string'
     
     yb = getBackground('',parmDict,bakType,xdata)
     yc = np.zeros_like(yb)
@@ -794,6 +827,7 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                 return yb+yc
             
 def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
+    'needs a doc string'
 # needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
     dMdb,dMddb,dMdpk = getBackgroundDerv('',parmDict,bakType,xdata)
@@ -1005,6 +1039,7 @@ def Values2Dict(parmdict, varylist, values):
     parmdict.update(zip(varylist,values))
     
 def SetBackgroundParms(Background):
+    'needs a doc string'
     if len(Background) == 1:            # fix up old backgrounds
         BackGround.append({'nDebye':0,'debyeTerms':[]})
     bakType,bakFlag = Background[0][:2]
@@ -1046,6 +1081,7 @@ def SetBackgroundParms(Background):
     return bakType,backDict,backVary
             
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,controls=None,dlg=None):
+    'needs a doc string'
     
         
     def GetBackgroundParms(parmList,Background):
@@ -1346,6 +1382,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     PeaksPrint(dataType,parmDict,sigDict,varyList)
 
 def calcIncident(Iparm,xdata):
+    'needs a doc string'
 
     def IfunAdv(Iparm,xdata):
         Itype = Iparm['Itype']
@@ -1402,6 +1439,7 @@ def calcIncident(Iparm,xdata):
 #testing data
 NeedTestData = True
 def TestData():
+    'needs a doc string'
 #    global NeedTestData
     NeedTestData = False
     global bakType

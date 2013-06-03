@@ -51,11 +51,11 @@
   <h1>Source code for GSASIIIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-15 14:56:28 -0500 (Wed, 15 May 2013) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 905 $</span>
+<span class="c"># $Date: 2013-05-31 18:14:01 -0500 (Fri, 31 May 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 938 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
-<span class="c"># $Id: GSASIIIO.py 905 2013-05-15 19:56:28Z vondreele $</span>
+<span class="c"># $Id: GSASIIIO.py 938 2013-05-31 23:14:01Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIIO: Misc I/O routines*</span>
@@ -79,7 +79,7 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 905 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 938 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -996,8 +996,20 @@
         <span class="n">wx</span><span class="o">.</span><span class="n">EndBusyCursor</span><span class="p">()</span>
     <span class="k">print</span> <span class="s">&#39;index peak list saved&#39;</span>
     </div>
-<span class="k">def</span> <span class="nf">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s">&#39;New Phase&#39;</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="s">&#39;P 1&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span><span class="n">cell</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">90.</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mf">90.</span><span class="p">,</span><span class="mf">1.</span><span class="p">]):</span>
-    <span class="s">&#39;Create a new phase&#39;</span>
+<div class="viewcode-block" id="SetNewPhase"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.SetNewPhase">[docs]</a><span class="k">def</span> <span class="nf">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s">&#39;New Phase&#39;</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">cell</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Create a new phase with default values for various parameters</span>
+
+<span class="sd">    :param str Name: Name for new Phase</span>
+
+<span class="sd">    :param dict SGData: space group data from :func:`GSASIIspc:SpcGroup`;</span>
+<span class="sd">      defaults to data for P 1</span>
+
+<span class="sd">    :param list cell: unit cell parameter list; defaults to</span>
+<span class="sd">      [1.0,1.0,1.0,90.,90,90.,1.]</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">SGData</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">SGData</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="s">&#39;P 1&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">cell</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">90.</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mf">90.</span><span class="p">,</span><span class="mf">1.</span><span class="p">]</span>
     <span class="n">phaseData</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s">&#39;ranId&#39;</span><span class="p">:</span><span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">),</span>
         <span class="s">&#39;General&#39;</span><span class="p">:{</span>
@@ -1025,7 +1037,7 @@
         <span class="s">&#39;RBModels&#39;</span><span class="p">:{},</span>
         <span class="p">}</span>
     <span class="k">return</span> <span class="n">phaseData</span>
-    
+    </div>
 <div class="viewcode-block" id="ReadEXPPhase"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ReadEXPPhase">[docs]</a><span class="k">def</span> <span class="nf">ReadEXPPhase</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">filename</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Read a phase from a GSAS .EXP file.</span>
 <span class="sd">    Called in the GSAS phase import routine (see imports/G2phase.py)</span>
@@ -1581,6 +1593,91 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">BlockSelector</span><span class="p">(</span><span class="n">ChoiceList</span><span class="p">,</span><span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span>
             <span class="n">size</span><span class="p">,</span><span class="n">header</span><span class="p">)</span>
+
+<span class="c">######################################################################</span></div></div>
+<div class="viewcode-block" id="ExportBaseclass"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass">[docs]</a><span class="k">class</span> <span class="nc">ExportBaseclass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Defines a base class for the exporting of GSAS-II results</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">G2frame</span><span class="p">,</span>
+                 <span class="n">formatName</span><span class="p">,</span>
+                 <span class="n">longFormatName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span> <span class="o">=</span> <span class="n">G2frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span> <span class="o">=</span> <span class="n">formatName</span> <span class="c"># short string naming file type</span>
+        <span class="k">if</span> <span class="n">longFormatName</span><span class="p">:</span> <span class="c"># longer string naming file type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">longFormatName</span> <span class="o">=</span> <span class="n">longFormatName</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">longFormatName</span> <span class="o">=</span> <span class="n">formatName</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span> <span class="o">=</span> <span class="p">{}</span>
+<div class="viewcode-block" id="ExportBaseclass.loadTree"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.loadTree">[docs]</a>    <span class="k">def</span> <span class="nf">loadTree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Load the contents of the data tree into a pair of dicts.</span>
+<span class="sd">        </span>
+<span class="sd">        The childrenless data tree items are overall parameters/controls for the</span>
+<span class="sd">        entire project and are placed in self.OverallParms</span>
+
+<span class="sd">        The data tree items with children are either Phase items or are</span>
+<span class="sd">        data of some sort. Date entries begin with a key, such as</span>
+<span class="sd">        PWDR, IMG, HKLF,... that identifies the data type.</span>
+<span class="sd">        * Phase items are placed in self.GroupedParms[&quot;Phases&quot;][item]</span>
+<span class="sd">        * Data items are placed in self.GroupedParms[&quot;Phases&quot;][key][item]</span>
+
+<span class="sd">          Note that there is no overall phase information, only information</span>
+<span class="sd">          stored for each phase, but there is overall information for each</span>
+<span class="sd">          data item. The overall data information is stored in</span>
+<span class="sd">          self.GroupedParms[&quot;Phases&quot;][key][None]</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">G2frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span>
+        <span class="k">if</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">IsEmpty</span><span class="p">():</span> <span class="k">return</span> <span class="c"># nothing to do</span>
+        <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">item2</span><span class="p">,</span> <span class="n">cookie2</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">item2</span><span class="p">:</span> 
+                <span class="n">key</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&quot;Phases&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="bp">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
+                <span class="k">while</span> <span class="n">item2</span><span class="p">:</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+                    <span class="n">d</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+                    <span class="n">item2</span><span class="p">,</span> <span class="n">cookie2</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">cookie2</span><span class="p">)</span>                            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ExportBaseclass.dumpTree"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.dumpTree">[docs]</a>    <span class="k">def</span> <span class="nf">dumpTree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;type&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Print out information on the data tree dicts loaded in loadTree</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Overall&#39;</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;type&#39;</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">Show</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span> <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">Show</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span> <span class="k">return</span> <span class="n">arg</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;  &#39;</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">Show</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Grouped&#39;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;Phases&quot;</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;  Phases&#39;</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                    <span class="k">print</span> <span class="s">&#39;    &#39;</span><span class="p">,</span><span class="n">key1</span><span class="p">,</span><span class="n">Show</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;  &#39;</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">Show</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                    <span class="k">print</span> <span class="s">&#39;    &#39;</span><span class="p">,</span><span class="n">key1</span><span class="p">,</span><span class="n">Show</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key1</span><span class="p">][</span><span class="bp">None</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key1</span><span class="p">]:</span>
+                        <span class="k">print</span> <span class="s">&#39;      &#39;</span><span class="p">,</span><span class="n">key2</span><span class="p">,</span><span class="n">Show</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key1</span><span class="p">][</span><span class="n">key2</span><span class="p">])</span>
 
 <span class="c">######################################################################</span></div></div>
 <div class="viewcode-block" id="ImportStructFactor"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor">[docs]</a><span class="k">class</span> <span class="nc">ImportStructFactor</span><span class="p">(</span><span class="n">ImportBaseclass</span><span class="p">):</span>

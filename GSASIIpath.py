@@ -1,6 +1,19 @@
 # -*- coding: utf-8 -*-
-'''Routines for dealing with file locations, etc.
 '''
+*GSASIIpath: locations & updates*
+---------------------------------
+
+Routines for dealing with file locations, etc.
+
+Determines the location of the compiled (.pyd or .so) libraries.
+
+Interfaces with subversion (svn): 
+Determine the subversion release number by determining the highest version number
+where :func:`SetVersionNumber` is called (best done in every GSASII file).
+Other routines will update GSASII from the subversion server if svn can be
+found.
+'''
+
 import os
 import sys
 import platform
@@ -40,8 +53,13 @@ if bindir == None:
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):
-    '''RevString is something like "$Revision$" that is set by subversion when
-    the file is retrieved from subversion.
+    '''Set the subversion version number
+
+    :param str RevString: something like "$Revision$"
+      that is set by subversion when the file is retrieved from subversion.
+
+    Place ``GSASIIpath.SetVersionNumber("$Revision$")`` in every python
+    file.
     '''
     try:
         RevVersion = int(RevString.split(':')[1].split()[0])
@@ -51,6 +69,8 @@ def SetVersionNumber(RevString):
         pass
         
 def GetVersionNumber():
+    '''Return the maximum version number seen in :func:`SetVersionNumber`
+    '''
     return version
 
 # routines to interface with subversion
@@ -58,7 +78,8 @@ def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.
     Searches the current path as well as subdirectory "svn" and
     "svn/bin" in the location of the GSASII source files.
-    returns None if svn is not found.
+
+    :returns: None if svn is not found.
     '''
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -76,16 +97,14 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
     '''This obtains the version number for the either the latest local last update
     or contacts the subversion server to get the latest update version (# of Head).
 
-    parameters:
-     fpath: path to repository dictionary, defaults to directory where
+    :param fpath: path to repository dictionary, defaults to directory where
        the current file is located
-     local: determines the type of version number, where
+    :param local: determines the type of version number, where
        True (default): returns the latest installed update 
        False: returns the version number of Head on the server
 
-    Returns that number as an str.
-
-    Returns None if there is a subversion error (likely because the path is
+    :Returns: the version number as an str or 
+       None if there is a subversion error (likely because the path is
        not a repository or svn is not found)
     '''
 
@@ -113,12 +132,12 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
     '''Returns a list of files that were changed locally. If no files are changed,
        the list has length 0
 
-    parameter:
-     fpath: path to repository dictionary, defaults to directory where
+    :param fpath: path to repository dictionary, defaults to directory where
        the current file is located
 
-    Returns None if there is a subversion error (likely because the path is
+    :returns: None if there is a subversion error (likely because the path is
        not a repository or svn is not found)
+
     '''
     import subprocess
     import xml.etree.ElementTree as ET
@@ -138,16 +157,14 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
 def svnUpdateDir(fpath=os.path.split(__file__)[0]):
     '''This performs an update of the files in a local directory from a server. 
 
-    parameter:
-     fpath: path to repository dictionary, defaults to directory where
+    :param fpath: path to repository dictionary, defaults to directory where
        the current file is located
 
-    Returns:
-       A dictionary with the files that have been changed/added and
-          a code describing how they have been updated (see changetype)
-          
-       None if there is a subversion error (likely because the path is
+    :returns: A dictionary with the files that have been changed/added and
+          a code describing how they have been updated (see changetype) ro 
+          None if there is a subversion error (likely because the path is
           not a repository or svn is not found)
+
     '''
     import subprocess
     changetype = {'A': 'Added', 'D': 'Deleted', 'U': 'Updated',

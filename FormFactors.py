@@ -1,5 +1,19 @@
 # -*- coding: utf-8 -*-
-#FormFactors.py
+'''
+*FormFactors: Scattering Data*
+------------------------------
+
+Contains atomic scattering factors from 
+"New Analytical Scattering Factor Functions for Free Atoms
+and Ions for Free Atoms and Ions", 
+D. Waasmaier & A. Kirfel,
+*Acta Cryst.* **(1995).** A51, 416-413.
+
+Also, tabulated coefficients for calculation of Compton Cross Section as a function of sin(theta)/lambda from
+"Analytic Approximations to Incoherently Scattered X-Ray Intensities", 
+H. H. M. Balyuzi, *Acta Cryst.* **(1975).** A31, 600.
+
+'''
 #  
 #  The atomic scattering factor is calculated using the method developed by  D. Waasmaier & A. Kirfel
 #

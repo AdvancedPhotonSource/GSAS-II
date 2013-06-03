@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-'''Perform lattice-related computations'''
+'''
+*GSASIIlattice: Unit cells*
+---------------------------
+
+Perform lattice-related computations'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -25,7 +29,7 @@ def sec2HMS(sec):
     """Convert time in sec to H:M:S string
     
     :param sec: time in seconds
-    return: H:M:S string (to nearest 100th second)
+    :return: H:M:S string (to nearest 100th second)
     
     """
     H = int(sec/3600)
@@ -87,9 +91,8 @@ def cell2Gmat(cell):
 def A2Gmat(A,inverse=True):
     """Fill real & reciprocal metric tensor (G) from A
 
-    :param
-        A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
-        inverse: if True return bot G and g; else just G
+    :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+    :param bool inverse: if True return bot G and g; else just G
     :return: reciprocal (G) & real (g) metric tensors (list of two numpy 3x3 arrays)
 
     """
@@ -164,7 +167,7 @@ def invcell2Gmat(invcell):
     return G,g
         
 def calc_rVsq(A):
-    """Compute the square of the reciprocal lattice volume (V* **2) from A'
+    """Compute the square of the reciprocal lattice volume (1/V**2) from A'
 
     """
     G,g = A2Gmat(A)
@@ -192,9 +195,12 @@ def A2invcell(A):
     
 def Gmat2AB(G):
     """Computes orthogonalization matrix from reciprocal metric tensor G
-    returns tuple of two 3x3 numpy arrays (A,B)
-       A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
-       B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x
+
+    :returns: tuple of two 3x3 numpy arrays (A,B)
+
+       * A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
+       * B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x
+
     """
     cellstar = Gmat2cell(G)
     g = nl.inv(G)
@@ -213,8 +219,9 @@ def Gmat2AB(G):
 
 def cell2AB(cell):
     """Computes orthogonalization matrix from unit cell constants
-    cell is tuple with a,b,c,alpha, beta, gamma (degrees)
-    returns tuple of two 3x3 numpy arrays (A,B)
+
+    :param tuple cell: a,b,c, alpha, beta, gamma (degrees)
+    :returns: tuple of two 3x3 numpy arrays (A,B)
        A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
        B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x
     """
@@ -234,9 +241,9 @@ def cell2AB(cell):
 def U6toUij(U6):
     """Fill matrix (Uij) from U6 = [U11,U22,U33,U12,U13,U23]
     NB: there is a non numpy version in GSASIIspc: U2Uij
-    input:
-        U6 - 6 terms of u11,u22,...
-    returns:
+
+    :param list U6: 6 terms of u11,u22,...
+    :returns:
         Uij - numpy [3][3] array of uij
     """
     U = np.array([
@@ -254,22 +261,22 @@ def UijtoU6(U):
 
 def Uij2betaij(Uij,G):
     """
-    Convert Uij to beta-ij tensors
-    input:
-        Uij - numpy array [Uij]
-        G - reciprocal metric tensor
-    returns:
-    beta-ij - numpy array [beta-ij]
+    Convert Uij to beta-ij tensors -- stub for eventual completion
+    
+    :param Uij: numpy array [Uij]
+    :param G: reciprocal metric tensor
+    :returns: beta-ij - numpy array [beta-ij]
     """
     pass
     
 def CosSinAngle(U,V,G):
     """ calculate sin & cos of angle betwee U & V in generalized coordinates 
     defined by metric tensor G
-    input:
-        U & V - 3-vectors assume numpy arrays
-        G - metric tensor for U & V defined space assume numpy array
-    return:
+
+    :param U: 3-vectors assume numpy arrays
+    :param V: 3-vectors assume numpy arrays
+    :param G: metric tensor for U & V defined space assume numpy array
+    :returns:
         cos(phi) & sin(phi)
     """
     u = U/np.sqrt(np.inner(U,np.inner(G,U)))
@@ -308,7 +315,13 @@ def CellBlock(nCells):
         return [0,0,0]
         
 def CellAbsorption(ElList,Volume):
-# ElList = dictionary of element contents including mu
+    '''Compute unit cell absorption
+
+    :param dict ElList: dictionary of element contents including mu and
+      number of atoms be cell
+    :param float Volume: unit cell volume
+    :returns: mu-total/Volume
+    '''
     muT = 0
     for El in ElList:
         muT += ElList[El]['mu']*ElList[El]['FormulaNo']
@@ -351,18 +364,22 @@ def permutations(items):
 #           cell - a,b,c,alp,bet,gam in A & deg
    
 def calc_rDsq(H,A):
+    'needs doc string'
     rdsq = H[0]*H[0]*A[0]+H[1]*H[1]*A[1]+H[2]*H[2]*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]
     return rdsq
     
 def calc_rDsq2(H,G):
+    'needs doc string'
     return np.inner(H,np.inner(G,H))
     
 def calc_rDsqZ(H,A,Z,tth,lam):
+    'needs doc string'
     rpd = np.pi/180.
     rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def MaxIndex(dmin,A):
+    'needs doc string'
     Hmax = [0,0,0]
     try:
         cell = A2cell(A)
@@ -373,8 +390,12 @@ def MaxIndex(dmin,A):
     return Hmax
     
 def sortHKLd(HKLd,ifreverse,ifdup):
-    #HKLd is a list of [h,k,l,d,...]; ifreverse=True for largest d first
-    #ifdup = True if duplicate d-spacings allowed 
+    '''needs doc string
+
+    :param HKLd: a list of [h,k,l,d,...];
+    :param ifreverse: True for largest d first
+    :param ifdup: True if duplicate d-spacings allowed
+    '''
     T = []
     for i,H in enumerate(HKLd):
         if ifdup:
@@ -393,6 +414,7 @@ def sortHKLd(HKLd,ifreverse,ifdup):
     return X
     
 def SwapIndx(Axis,H):
+    'needs doc string'
     if Axis in [1,-1]:
         return H
     elif Axis in [2,-3]:
@@ -401,6 +423,7 @@ def SwapIndx(Axis,H):
         return [H[2],H[0],H[1]]
         
 def Rh2Hx(Rh):
+    'needs doc string'
     Hx = [0,0,0]
     Hx[0] = Rh[0]-Rh[1]
     Hx[1] = Rh[1]-Rh[2]
@@ -408,20 +431,22 @@ def Rh2Hx(Rh):
     return Hx
     
 def Hx2Rh(Hx):
-        Rh = [0,0,0]
-        itk = -Hx[0]+Hx[1]+Hx[2]
-        if itk%3 != 0:
-            return 0        #error - not rhombohedral reflection
-        else:
-            Rh[1] = itk/3
-            Rh[0] = Rh[1]+Hx[0]
-            Rh[2] = Rh[1]-Hx[1]
-            if Rh[0] < 0:
-                for i in range(3):
-                    Rh[i] = -Rh[i]
-            return Rh
+    'needs doc string'
+    Rh = [0,0,0]
+    itk = -Hx[0]+Hx[1]+Hx[2]
+    if itk%3 != 0:
+        return 0        #error - not rhombohedral reflection
+    else:
+        Rh[1] = itk/3
+        Rh[0] = Rh[1]+Hx[0]
+        Rh[2] = Rh[1]-Hx[1]
+        if Rh[0] < 0:
+            for i in range(3):
+                Rh[i] = -Rh[i]
+        return Rh
         
 def CentCheck(Cent,H):
+    'needs doc string'
     h,k,l = H
     if Cent == 'A' and (k+l)%2:
         return False
@@ -443,9 +468,10 @@ def GetBraviasNum(center,system):
     
     :param center: one of: 'P', 'C', 'I', 'F', 'R' (see SGLatt from GSASIIspc.SpcGroup)
     :param system: one of 'cubic', 'hexagonal', 'tetragonal', 'orthorhombic', 'trigonal' (for R)
-             'monoclinic', 'triclinic' (see SGSys from GSASIIspc.SpcGroup)
+      'monoclinic', 'triclinic' (see SGSys from GSASIIspc.SpcGroup)
     :return: a number between 0 and 13 
-          or throws a ValueError exception if the combination of center, system is not found (i.e. non-standard)
+      or throws a ValueError exception if the combination of center, system is not found (i.e. non-standard)
+
     """
     if center.upper() == 'F' and system.lower() == 'cubic':
         return 0
@@ -481,8 +507,7 @@ def GenHBravais(dmin,Bravais,A):
     """Generate the positionally unique powder diffraction reflections
      
     :param dmin: minimum d-spacing in A
-    :param Bravais: lattice type (see GetBraviasNum)
-        Bravais is one of::
+    :param Bravais: lattice type (see GetBraviasNum). Bravais is one of::
              0 F cubic
              1 I cubic
              2 P cubic
@@ -493,10 +518,11 @@ def GenHBravais(dmin,Bravais,A):
              7 F orthorhombic
              8 I orthorhombic
              9 C orthorhombic
-            10 P orthorhombic
-            11 C monoclinic
-            12 P monoclinic
-            13 P triclinic
+             10 P orthorhombic
+             11 C monoclinic
+             12 P monoclinic
+             13 P triclinic
+            
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
             
@@ -589,7 +615,7 @@ def GenHBravais(dmin,Bravais,A):
     return sortHKLd(HKL,True,False)
     
 def getHKLmax(dmin,SGData,A):
-    #finds maximum allowed hkl for given A within dmin
+    'finds maximum allowed hkl for given A within dmin'
     SGLaue = SGData['SGLaue']
     if SGLaue in ['3R','3mR']:        #Rhombohedral axes
         Hmax = [0,0,0]
@@ -608,13 +634,11 @@ def GenHLaue(dmin,SGData,A):
     for a lattice and Bravais type
     
     :param dmin: minimum d-spacing
-    :param SGData: space group dictionary with at least::
+    :param SGData: space group dictionary with at least
     
-        'SGLaue': Laue group symbol: one of '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm',
-                 '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
-        'SGLatt': lattice centering: one of 'P','A','B','C','I','F'
-        'SGUniq': code for unique monoclinic axis one of 'a','b','c' (only if 'SGLaue' is '2/m')
-            otherwise ' '
+        * 'SGLaue': Laue group symbol: one of '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm', '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
+        * 'SGLatt': lattice centering: one of 'P','A','B','C','I','F'
+        * 'SGUniq': code for unique monoclinic axis one of 'a','b','c' (only if 'SGLaue' is '2/m') otherwise an empty string
         
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :return: HKL = list of [h,k,l,d] sorted with largest d first and is unique 
@@ -721,6 +745,7 @@ def GenHLaue(dmin,SGData,A):
 
 #Spherical harmonics routines
 def OdfChk(SGLaue,L,M):
+    'needs doc string'
     if not L%2 and abs(M) <= L:
         if SGLaue == '0':                      #cylindrical symmetry
             if M == 0: return True
@@ -757,6 +782,7 @@ def OdfChk(SGLaue,L,M):
     return False
         
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
+    'needs doc string'
     coeffNames = []
     for iord in [2*i+2 for i in range(L/2)]:
         for m in [i-iord for i in range(2*iord+1)]:
@@ -770,6 +796,7 @@ def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     return coeffNames
     
 def CrsAng(H,cell,SGData):
+    'needs doc string'
     a,b,c,al,be,ga = cell
     SQ3 = 1.732050807569
     H1 = np.array([1,0,0])
@@ -830,12 +857,12 @@ def CrsAng(H,cell,SGData):
     
 def SamAng(Tth,Gangls,Sangl,IFCoup):
     """Compute sample orientation angles vs laboratory coord. system
-    input:
-        Tth:        Signed theta                                   
-        Gangls:     Sample goniometer angles phi,chi,omega,azmuth  
-        Sangl:      Sample angle zeros om-0, chi-0, phi-0          
-        IFCoup:     =.TRUE. if omega & 2-theta coupled in CW scan
-    returns:  
+
+    :param Tth:        Signed theta                                   
+    :param Gangls:     Sample goniometer angles phi,chi,omega,azmuth  
+    :param Sangl:      Sample angle zeros om-0, chi-0, phi-0          
+    :param IFCoup:     True if omega & 2-theta coupled in CW scan
+    :returns:  
         psi,gam:    Sample odf angles                              
         dPSdA,dGMdA:    Angle zero derivatives
     """                         
@@ -941,6 +968,7 @@ BOH = {
 Lnorm = lambda L: 4.*np.pi/(2.0*L+1.)
 
 def GetKcl(L,N,SGLaue,phi,beta):
+    'needs doc string'
     import pytexture as ptx
     RSQ2PI = 0.3989422804014
     SQ2 = 1.414213562373
@@ -968,6 +996,7 @@ def GetKcl(L,N,SGLaue,phi,beta):
     return Kcl
     
 def GetKsl(L,M,SamSym,psi,gam):
+    'needs doc string'
     import pytexture as ptx
     RSQPI = 0.5641895835478
     SQ2 = 1.414213562373
@@ -1023,6 +1052,7 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     return Kcl*Ksl,Lnorm(L)
     
 def Glnh(Start,SHCoef,psi,gam,SamSym):
+    'needs doc string'
     import pytexture as ptx
     RSQPI = 0.5641895835478
     SQ2 = 1.414213562373
@@ -1046,6 +1076,7 @@ def Glnh(Start,SHCoef,psi,gam,SamSym):
     return ODFln
 
 def Flnh(Start,SHCoef,phi,beta,SGData):
+    'needs doc string'
     import pytexture as ptx
     
     FORPI = 12.5663706143592
@@ -1084,6 +1115,7 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
     return ODFln
     
 def polfcal(ODFln,SamSym,psi,gam):
+    'needs doc string'
     import pytexture as ptx
     RSQPI = 0.5641895835478
     SQ2 = 1.414213562373
@@ -1106,6 +1138,7 @@ def polfcal(ODFln,SamSym,psi,gam):
     return PolVal
     
 def invpolfcal(ODFln,SGData,phi,beta):
+    'needs doc string'
     import pytexture as ptx
     
     FORPI = 12.5663706143592
@@ -1142,19 +1175,34 @@ def invpolfcal(ODFln,SGData,phi,beta):
     
     
 def textureIndex(SHCoef):
+    'needs doc string'
     Tindx = 1.0
     for term in SHCoef:
         l = eval(term.strip('C'))[0]
         Tindx += SHCoef[term]**2/(2.0*l+1.)
     return Tindx
     
-# output from uctbx computed on platform darwin on 2010-05-28
+# self-test materials follow. 
+selftestlist = []
+'''Defines a list of self-tests'''
+selftestquiet = True
+def _ReportTest():
+    'Report name and doc string of current routine when ``selftestquiet`` is False'
+    if not selftestquiet:
+        import inspect
+        caller = inspect.stack()[1][3]
+        doc = eval(caller).__doc__
+        if doc is not None:
+            print('testing '+__file__+' with '+caller+' ('+doc+')')
+        else:
+            print('testing '+__file__()+" with "+caller)
 NeedTestData = True
 def TestData():
     array = np.array
     global NeedTestData
     NeedTestData = False
     global CellTestData
+    # output from uctbx computed on platform darwin on 2010-05-28
     CellTestData = [
 # cell, g, G, cell*, V, V*
   [(4, 4, 4, 90, 90, 90), 
@@ -1270,46 +1318,64 @@ def test0():
         assert np.allclose(cell,tcell),msg
         tcell = Gmat2cell(G)
         assert np.allclose(tcell,trcell),msg
+selftestlist.append(test0)
 
 def test1():
+    'test cell2A and A2Gmat'
+    _ReportTest()
     if NeedTestData: TestData()
     msg = 'test cell2A and A2Gmat'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         G, g = A2Gmat(cell2A(cell))
         assert np.allclose(G,tG),msg
         assert np.allclose(g,tg),msg
+selftestlist.append(test1)
 
 def test2():
+    'test Gmat2A, A2cell, A2Gmat, Gmat2cell'
+    _ReportTest()
     if NeedTestData: TestData()
     msg = 'test Gmat2A, A2cell, A2Gmat, Gmat2cell'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         G, g = cell2Gmat(cell)
         tcell = A2cell(Gmat2A(G))
         assert np.allclose(cell,tcell),msg
+selftestlist.append(test2)
 
 def test3():
+    'test invcell2Gmat'
+    _ReportTest()
     if NeedTestData: TestData()
     msg = 'test invcell2Gmat'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         G, g = invcell2Gmat(trcell)
         assert np.allclose(G,tG),msg
         assert np.allclose(g,tg),msg
+selftestlist.append(test3)
 
 def test4():
+    'test calc_rVsq, calc_rV, calc_V'
+    _ReportTest()
     if NeedTestData: TestData()
     msg = 'test calc_rVsq, calc_rV, calc_V'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         assert np.allclose(calc_rV(cell2A(cell)),trV), msg
         assert np.allclose(calc_V(cell2A(cell)),tV), msg
+selftestlist.append(test4)
 
 def test5():
+    'test A2invcell'
+    _ReportTest()
     if NeedTestData: TestData()
     msg = 'test A2invcell'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         rcell = A2invcell(cell2A(cell))
         assert np.allclose(rcell,trcell),msg
+selftestlist.append(test5)
 
 def test6():
+    'test cell2AB'
+    _ReportTest()
     if NeedTestData: TestData()
     msg = 'test cell2AB'
     for (cell,coordlist) in CoordTestData:
@@ -1323,9 +1389,11 @@ def test6():
             tf = np.sum(B*to,axis=1)
             assert np.allclose(ortho,to), msg
             assert np.allclose(frac,tf), msg
+selftestlist.append(test6)
 
-# test GetBraviasNum(...) and GenHBravais(...)
 def test7():
+    'test GetBraviasNum(...) and GenHBravais(...)'
+    _ReportTest()
     import os.path
     import sys
     import GSASIIspc as spc
@@ -1371,8 +1439,11 @@ def test7():
                         break
             else:
                 assert 0,'No match for %s at %s (%s)' % ((h,k,l),d,key)
+selftestlist.append(test7)
 
 def test8():
+    'test GenHLaue'
+    _ReportTest()
     import GSASIIspc as spc
     import sgtbxlattinp
     derror = 1e-4
@@ -1432,8 +1503,11 @@ def test8():
         #if not match: 
             #for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
             #print center, Laue, Axis, system
+selftestlist.append(test8)
             
 def test9():
+    'test GenHLaue'
+    _ReportTest()
     import GSASIIspc as G2spc
     if NeedTestData: TestData()
     for spc in LaueTestData:
@@ -1447,22 +1521,21 @@ def test9():
         SGData = G2spc.SpcGroup(spc)[1]
         hkls = np.array(GenHLaue(dmin,SGData,A))
         hklN = hkls.T[:3].T
-        print spc,hklO.shape,hklN.shape
+        #print spc,hklO.shape,hklN.shape
+        err = True
         for H in hklO:
             if H not in hklN:
                 print H,' missing from hkl from GSASII'
+                err = False
+        assert(err)
+selftestlist.append(test9)
         
         
     
 
 if __name__ == '__main__':
-    test0()
-    test1()
-    test2()
-    test3()
-    test4()
-    test5()
-    test6()
-    test7()
-    test8()
+    # run self-tests
+    selftestquiet = False
+    for test in selftestlist:
+        test()
     print "OK"

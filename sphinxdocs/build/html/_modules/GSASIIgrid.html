@@ -52,22 +52,22 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIgrid - data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-16 16:14:33 -0500 (Thu, 16 May 2013) $</span>
+<span class="c"># $Date: 2013-05-30 16:01:11 -0500 (Thu, 30 May 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 914 $</span>
+<span class="c"># $Revision: 937 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIgrid.py $</span>
-<span class="c"># $Id: GSASIIgrid.py 914 2013-05-16 21:14:33Z toby $</span>
+<span class="c"># $Id: GSASIIgrid.py 937 2013-05-30 21:01:11Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIgrid: Basic GUI routines*</span>
 <span class="sd">--------------------------------</span>
-
 
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">wx</span>
 <span class="kn">import</span> <span class="nn">wx.grid</span> <span class="kn">as</span> <span class="nn">wg</span>
 <span class="kn">import</span> <span class="nn">wx.wizard</span> <span class="kn">as</span> <span class="nn">wz</span>
 <span class="kn">import</span> <span class="nn">wx.aui</span>
+<span class="kn">import</span> <span class="nn">wx.lib.scrolledpanel</span> <span class="kn">as</span> <span class="nn">wxscroll</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -77,7 +77,7 @@
 <span class="kn">import</span> <span class="nn">wx.html</span>        <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">webbrowser</span>     <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 914 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 937 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -85,11 +85,11 @@
 <span class="kn">import</span> <span class="nn">GSASIIpwdGUI</span> <span class="kn">as</span> <span class="nn">G2pdG</span>
 <span class="kn">import</span> <span class="nn">GSASIIimgGUI</span> <span class="kn">as</span> <span class="nn">G2imG</span>
 <span class="kn">import</span> <span class="nn">GSASIIphsGUI</span> <span class="kn">as</span> <span class="nn">G2phG</span>
-<span class="kn">import</span> <span class="nn">GSASIIstruct</span> <span class="kn">as</span> <span class="nn">G2str</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIImapvars</span> <span class="kn">as</span> <span class="nn">G2mv</span>
 <span class="kn">import</span> <span class="nn">GSASIIconstrGUI</span> <span class="kn">as</span> <span class="nn">G2cnstG</span>
 <span class="kn">import</span> <span class="nn">GSASIIrestrGUI</span> <span class="kn">as</span> <span class="nn">G2restG</span>
+<span class="kn">import</span> <span class="nn">GSASIIpy3</span> <span class="kn">as</span> <span class="nn">G2py3</span>
 
 <span class="c"># trig functions in degrees</span>
 <span class="n">sind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
@@ -109,17 +109,17 @@
 
 <span class="p">[</span> <span class="n">wxID_FOURCALC</span><span class="p">,</span> <span class="n">wxID_FOURSEARCH</span><span class="p">,</span> <span class="n">wxID_FOURCLEAR</span><span class="p">,</span> <span class="n">wxID_PEAKSMOVE</span><span class="p">,</span> <span class="n">wxID_PEAKSCLEAR</span><span class="p">,</span> 
     <span class="n">wxID_CHARGEFLIP</span><span class="p">,</span> <span class="n">wxID_PEAKSUNIQUE</span><span class="p">,</span> <span class="n">wxID_PEAKSDELETE</span><span class="p">,</span> <span class="n">wxID_PEAKSDA</span><span class="p">,</span>
-    <span class="n">wxID_PEAKSDISTVP</span><span class="p">,</span> <span class="n">wxID_PEAKSVIEWPT</span><span class="p">,</span> <span class="n">wxID_FINDEQVPEAKS</span><span class="p">,</span><span class="n">wxID_SHOWBONDS</span><span class="p">,</span>
-<span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">13</span><span class="p">)]</span>
+    <span class="n">wxID_PEAKSDISTVP</span><span class="p">,</span> <span class="n">wxID_PEAKSVIEWPT</span><span class="p">,</span> <span class="n">wxID_FINDEQVPEAKS</span><span class="p">,</span><span class="n">wxID_SHOWBONDS</span><span class="p">,</span><span class="n">wxID_RUNMCSA</span><span class="p">,</span>
+<span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">14</span><span class="p">)]</span>
 
 <span class="p">[</span> <span class="n">wxID_PWDRADD</span><span class="p">,</span> <span class="n">wxID_HKLFADD</span><span class="p">,</span><span class="n">wxID_PWDANALYSIS</span><span class="p">,</span><span class="n">wxID_DATADELETE</span><span class="p">,</span>
 <span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
 
 <span class="p">[</span> <span class="n">wxID_ATOMSEDITADD</span><span class="p">,</span> <span class="n">wxID_ATOMSEDITINSERT</span><span class="p">,</span> <span class="n">wxID_ATOMSEDITDELETE</span><span class="p">,</span> <span class="n">wxID_ATOMSREFINE</span><span class="p">,</span> 
     <span class="n">wxID_ATOMSMODIFY</span><span class="p">,</span> <span class="n">wxID_ATOMSTRANSFORM</span><span class="p">,</span> <span class="n">wxID_ATOMSVIEWADD</span><span class="p">,</span> <span class="n">wxID_ATOMVIEWINSERT</span><span class="p">,</span>
-    <span class="n">wxID_RELOADDRAWATOMS</span><span class="p">,</span><span class="n">wxID_ATOMSDISAGL</span><span class="p">,</span><span class="n">wxID_ATOMMOVE</span><span class="p">,</span><span class="n">wxID_RBAPPEND</span><span class="p">,</span>
+    <span class="n">wxID_RELOADDRAWATOMS</span><span class="p">,</span><span class="n">wxID_ATOMSDISAGL</span><span class="p">,</span><span class="n">wxID_ATOMMOVE</span><span class="p">,</span>
     <span class="n">wxID_ASSIGNATMS2RB</span>
-<span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">13</span><span class="p">)]</span>
+<span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">)]</span>
 
 <span class="p">[</span> <span class="n">wxID_DRAWATOMSTYLE</span><span class="p">,</span> <span class="n">wxID_DRAWATOMLABEL</span><span class="p">,</span> <span class="n">wxID_DRAWATOMCOLOR</span><span class="p">,</span> <span class="n">wxID_DRAWATOMRESETCOLOR</span><span class="p">,</span> 
     <span class="n">wxID_DRAWVIEWPOINT</span><span class="p">,</span> <span class="n">wxID_DRAWTRANSFORM</span><span class="p">,</span> <span class="n">wxID_DRAWDELETE</span><span class="p">,</span> <span class="n">wxID_DRAWFILLCELL</span><span class="p">,</span> 
@@ -128,6 +128,9 @@
 <span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">13</span><span class="p">)]</span>
 
 <span class="p">[</span> <span class="n">wxID_DRAWRESTRBOND</span><span class="p">,</span> <span class="n">wxID_DRAWRESTRANGLE</span><span class="p">,</span> <span class="n">wxID_DRAWRESTRPLANE</span><span class="p">,</span> <span class="n">wxID_DRAWRESTRCHIRAL</span><span class="p">,</span>
+<span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+
+<span class="p">[</span> <span class="n">wxID_ADDMCSAATOM</span><span class="p">,</span><span class="n">wxID_ADDMCSARB</span><span class="p">,</span><span class="n">wxID_CLEARMCSARB</span><span class="p">,</span><span class="n">wxID_MOVEMCSA</span><span class="p">,</span>
 <span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wx</span><span class="o">.</span><span class="n">NewId</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
 
 <span class="p">[</span> <span class="n">wxID_CLEARTEXTURE</span><span class="p">,</span><span class="n">wxID_REFINETEXTURE</span><span class="p">,</span>
@@ -188,6 +191,524 @@
 <span class="c">#### GSAS-II class definitions</span>
 <span class="c">################################################################################</span>
         
+<div class="viewcode-block" id="ValidatedTxtCtrl"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.ValidatedTxtCtrl">[docs]</a><span class="k">class</span> <span class="nc">ValidatedTxtCtrl</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Create a TextCtrl widget that uses a validator to prevent the</span>
+<span class="sd">    entry of inappropriate characters and changes color to highlight</span>
+<span class="sd">    when invalid input is supplied. As valid values are typed,</span>
+<span class="sd">    they are placed into the dict or list where the initial value</span>
+<span class="sd">    came from. The type of the initial value must be int,</span>
+<span class="sd">    float or str or None (see :obj:`key` and :obj:`typeHint`);</span>
+<span class="sd">    this type (or the one in :obj:`typeHint`) is preserved.</span>
+
+<span class="sd">    Float values can be entered in the TextCtrl as numbers or also</span>
+<span class="sd">    as algebraic expressions using operators + - / \* () and \*\*,</span>
+<span class="sd">    in addition pi, sind(), cosd(), tand(), and sqrt() can be used,</span>
+<span class="sd">    as well as appreviations s, sin, c, cos, t, tan and sq. </span>
+
+<span class="sd">    :param wx.Panel parent: name of panel or frame that will be</span>
+<span class="sd">      the parent to the TextCtrl. Can be None.</span>
+
+<span class="sd">    :param dict/list loc: the dict or list with the initial value to be</span>
+<span class="sd">      placed in the TextCtrl. </span>
+
+<span class="sd">    :param int/str key: the dict key or the list index for the value to be</span>
+<span class="sd">      edited by the TextCtrl. The ``loc[key]`` element must exist, but may</span>
+<span class="sd">      have value None. If None, the type for the element is taken from</span>
+<span class="sd">      :obj:`typeHint` and the value for the control is set initially</span>
+<span class="sd">      blank (and thus invalid.) This is a way to specify a field without a</span>
+<span class="sd">      default value: a user must set a valid value. </span>
+<span class="sd">      If the value is not None, it must have a base</span>
+<span class="sd">      type of int, float, str or unicode; the TextCrtl will be initialized</span>
+<span class="sd">      from this value.</span>
+
+<span class="sd">    :param bool notBlank: if True (default) blank values are invalid</span>
+<span class="sd">      for str inputs.</span>
+<span class="sd">      </span>
+<span class="sd">    :param number min: minimum allowed valid value. If None (default) the</span>
+<span class="sd">      lower limit is unbounded.</span>
+
+<span class="sd">    :param number max: maximum allowed valid value. If None (default) the</span>
+<span class="sd">      upper limit is unbounded</span>
+
+<span class="sd">    :param wx.Size size: an optional size parameter that dictates the</span>
+<span class="sd">      size for the TextCtrl. None (the default) indicates that the</span>
+<span class="sd">      default size should be used.</span>
+
+<span class="sd">    :param function OKcontrol: specifies a function or method that will be</span>
+<span class="sd">      called when the input is validated. The called function is supplied</span>
+<span class="sd">      with one argument which is False if the TextCtrl contains an invalid</span>
+<span class="sd">      value and True if the value is valid.</span>
+<span class="sd">      Note that this function should check all values</span>
+<span class="sd">      in the dialog when True, since other entries might be invalid.</span>
+<span class="sd">      The default for this is None, which indicates no function should</span>
+<span class="sd">      be called.</span>
+
+<span class="sd">    :param function OnLeave: specifies a function or method that will be</span>
+<span class="sd">      called when the focus for the control is lost.</span>
+<span class="sd">      The called function is supplied with (at present) three keyword arguments:</span>
+
+<span class="sd">         * invalid: (*bool*) True if the value for the TextCtrl is invalid</span>
+<span class="sd">         * value:   (*int/float/str*)  the value contained in the TextCtrl</span>
+<span class="sd">         * tc:      (*wx.TextCtrl*)  the TextCtrl name</span>
+
+<span class="sd">      The number of keyword arguments may be increased in the future, if needs arise,</span>
+<span class="sd">      so it is best to code these functions with a \*\*kwargs argument so they will</span>
+<span class="sd">      continue to run without errors</span>
+
+<span class="sd">      The default for OnLeave is None, which indicates no function should</span>
+<span class="sd">      be called.</span>
+
+<span class="sd">    :param type typeHint: the value of typeHint is used if the initial value</span>
+<span class="sd">      for the dict/list element ``loc[key]`` is None. In this case typeHint</span>
+<span class="sd">      must be int or float, which specifies the type for input to the TextCtrl.</span>
+<span class="sd">      Defaults as None.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">loc</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">notBlank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="nb">min</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">OKcontrol</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">OnLeave</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">typeHint</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="c"># save passed values needed outside __init__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">loc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="o">=</span><span class="n">OKcontrol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OnLeave</span> <span class="o">=</span> <span class="n">OnLeave</span>
+        <span class="c"># initialization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">False</span>   <span class="c"># indicates if the control has invalid contents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evaluated</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># set to True when the validator recognizes an expression</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">typeHint</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
+                <span class="n">validator</span><span class="o">=</span><span class="n">NumberValidator</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span><span class="n">result</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span><span class="nb">min</span><span class="o">=</span><span class="nb">min</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="nb">max</span><span class="p">,</span>
+                                          <span class="n">OKcontrol</span><span class="o">=</span><span class="n">OKcontrol</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ShowStringValidity</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">typeHint</span> <span class="ow">is</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
+                <span class="n">validator</span><span class="o">=</span><span class="n">NumberValidator</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span><span class="n">result</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span><span class="nb">min</span><span class="o">=</span><span class="nb">min</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="nb">max</span><span class="p">,</span>
+                                          <span class="n">OKcontrol</span><span class="o">=</span><span class="n">OKcontrol</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ShowStringValidity</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="nb">unicode</span><span class="p">):</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">notBlank</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_CHAR</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_onStringKey</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ShowStringValidity</span><span class="p">()</span> <span class="c"># test if valid input</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">elif</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,(</span><span class="s">&quot;ValidatedTxtCtrl error: value of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span>
+                             <span class="s">&quot; element is None and typeHint not defined as int or float&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,(</span><span class="s">&quot;ValidatedTxtCtrl error: Unknown element (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span>
+                             <span class="s">&quot;) type: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">size</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="c"># When the mouse is moved away or the widget loses focus</span>
+        <span class="c"># display the last saved value, if an expression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_LEAVE_WINDOW</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onLoseFocus</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_KILL_FOCUS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onLoseFocus</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_onStringKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span> <span class="c"># check for validity after processing the keystroke</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ShowStringValidity</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span> <span class="c"># was invalid</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ShowStringValidity</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span> <span class="c"># was valid</span>
+
+<div class="viewcode-block" id="ValidatedTxtCtrl.ShowStringValidity"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.ValidatedTxtCtrl.ShowStringValidity">[docs]</a>    <span class="k">def</span> <span class="nf">ShowStringValidity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">previousInvalid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Check if input is valid. Anytime the input is</span>
+<span class="sd">        invalid, call self.OKcontrol (if defined) because it is fast.</span>
+<span class="sd">        If valid, check for any other invalid entries only when</span>
+<span class="sd">        changing from invalid to valid, since that is slower.</span>
+<span class="sd">        </span>
+<span class="sd">        :param bool previousInvalid: True if the TextCtrl contents were</span>
+<span class="sd">          invalid prior to the current change.</span>
+<span class="sd">          </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetValue</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">val</span>
+        <span class="s">&#39;Set the control colors to show invalid input&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetForegroundColour</span><span class="p">(</span><span class="s">&quot;red&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetBackgroundColour</span><span class="p">(</span><span class="s">&quot;yellow&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetFocus</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Refresh</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c"># valid input</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetBackgroundColour</span><span class="p">(</span>
+                <span class="n">wx</span><span class="o">.</span><span class="n">SystemSettings_GetColour</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">SYS_COLOUR_WINDOW</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetForegroundColour</span><span class="p">(</span><span class="s">&quot;black&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Refresh</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span> <span class="ow">and</span> <span class="n">previousInvalid</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span> <span class="c"># always store the result</span>
+</div>
+    <span class="k">def</span> <span class="nf">_onLoseFocus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluated</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">EvaluateExpression</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnLeave</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnLeave</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">invalid</span><span class="p">,</span>
+                                      <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">],</span>
+                                      <span class="n">tc</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            
+<div class="viewcode-block" id="ValidatedTxtCtrl.EvaluateExpression"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.ValidatedTxtCtrl.EvaluateExpression">[docs]</a>    <span class="k">def</span> <span class="nf">EvaluateExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Show the computed value when an expression is entered to the TextCtrl</span>
+<span class="sd">        Make sure that the number fits by truncating decimal places and switching</span>
+<span class="sd">        to scientific notation, as needed. </span>
+<span class="sd">        Called on loss of focus.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span> <span class="k">return</span> <span class="c"># don&#39;t substitute for an invalid expression</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluated</span><span class="p">:</span> <span class="k">return</span> <span class="c"># true when an expression is evaluated</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># retrieve the stored result</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">G2py3</span><span class="o">.</span><span class="n">FormatValue</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evaluated</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># expression has been recast as value, reset flag</span>
+        </div></div>
+<div class="viewcode-block" id="NumberValidator"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator">[docs]</a><span class="k">class</span> <span class="nc">NumberValidator</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">PyValidator</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A validator to be used with a TextCtrl to prevent</span>
+<span class="sd">    entering characters other than digits, signs, and for float</span>
+<span class="sd">    input, a period and exponents.</span>
+<span class="sd">    </span>
+<span class="sd">    The value is checked for validity after every keystroke</span>
+<span class="sd">      If an invalid number is entered, the box is highlighted.</span>
+<span class="sd">      If the number is valid, it is saved in result[key]</span>
+
+<span class="sd">    :param type typ: the base data type. Must be int or float.</span>
+
+<span class="sd">    :param bool positiveonly: If True, negative integers are not allowed</span>
+<span class="sd">      (default False). This prevents the + or - keys from being pressed.</span>
+<span class="sd">      Used with typ=int; ignored for typ=float.</span>
+
+<span class="sd">    :param number min: Minimum allowed value. If None (default) the</span>
+<span class="sd">      lower limit is unbounded</span>
+
+<span class="sd">    :param number max: Maximum allowed value. If None (default) the</span>
+<span class="sd">      upper limit is unbounded</span>
+<span class="sd">      </span>
+<span class="sd">    :param dict/list result: List or dict where value should be placed when valid</span>
+
+<span class="sd">    :param any key: key to use for result (int for list)</span>
+
+<span class="sd">    :param function OKcontrol: function or class method to control</span>
+<span class="sd">      an OK button for a window. </span>
+<span class="sd">      Ignored if None (default)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">positiveonly</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">result</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">OKcontrol</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="s">&#39;Create the validator&#39;</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">PyValidator</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c"># save passed parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">typ</span> <span class="o">=</span> <span class="n">typ</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positiveonly</span> <span class="o">=</span> <span class="n">positiveonly</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="nb">min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="nb">max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span> <span class="o">=</span> <span class="n">OKcontrol</span>
+        <span class="c"># set allowed keys by data type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">typ</span> <span class="o">==</span> <span class="nb">int</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">positiveonly</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validchars</span> <span class="o">=</span> <span class="s">&#39;0123456789&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">typ</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validchars</span> <span class="o">=</span> <span class="s">&#39;0123456789+-&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">typ</span> <span class="o">==</span> <span class="nb">float</span><span class="p">:</span>
+            <span class="c"># allow for above and sind, cosd, sqrt, tand, pi, and abbreviations</span>
+            <span class="c"># also addition, subtraction, division, multiplication, exponentiation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validchars</span> <span class="o">=</span> <span class="s">&#39;0123456789.-+eE/cosindcqrtap()*&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validchars</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_CHAR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnChar</span><span class="p">)</span>
+<div class="viewcode-block" id="NumberValidator.Clone"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator.Clone">[docs]</a>    <span class="k">def</span> <span class="nf">Clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Create a copy of the validator, a strange, but required component&#39;</span>
+        <span class="k">return</span> <span class="n">NumberValidator</span><span class="p">(</span><span class="n">typ</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">typ</span><span class="p">,</span> 
+                          <span class="n">positiveonly</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">positiveonly</span><span class="p">,</span>
+                          <span class="nb">min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">,</span>
+                          <span class="n">result</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
+                          <span class="n">OKcontrol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="p">)</span>
+        <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetWindow</span><span class="p">()</span>
+        <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># make sure the validity flag is defined in parent</span></div>
+<div class="viewcode-block" id="NumberValidator.TransferToWindow"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator.TransferToWindow">[docs]</a>    <span class="k">def</span> <span class="nf">TransferToWindow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Needed by validator, strange, but required component&#39;</span>
+        <span class="k">return</span> <span class="bp">True</span> <span class="c"># Prevent wxDialog from complaining.</span></div>
+<div class="viewcode-block" id="NumberValidator.TransferFromWindow"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator.TransferFromWindow">[docs]</a>    <span class="k">def</span> <span class="nf">TransferFromWindow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Needed by validator, strange, but required component&#39;</span>
+        <span class="k">return</span> <span class="bp">True</span> <span class="c"># Prevent wxDialog from complaining.</span></div>
+<div class="viewcode-block" id="NumberValidator.TestValid"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator.TestValid">[docs]</a>    <span class="k">def</span> <span class="nf">TestValid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">tc</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Check if the value is valid by casting the input string</span>
+<span class="sd">        into the current type.</span>
+
+<span class="sd">        Set the invalid variable in the TextCtrl object accordingly.</span>
+
+<span class="sd">        If the value is valid, save it in the dict/list where</span>
+<span class="sd">        the initial value was stored, if appropriate. </span>
+
+<span class="sd">        :param wx.TextCtrl tc: A reference to the TextCtrl that the validator</span>
+<span class="sd">          is associated with.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># assume invalid</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">typ</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">GetValue</span><span class="p">())</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">SyntaxError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">typ</span> <span class="ow">is</span> <span class="nb">float</span><span class="p">:</span> <span class="c"># for float values, see if an expression can be evaluated</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">G2py3</span><span class="o">.</span><span class="n">FormulaEval</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">GetValue</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tc</span><span class="o">.</span><span class="n">evaluated</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span> 
+                <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">!=</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">typ</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">:</span>
+                <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">!=</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">typ</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">:</span>
+                <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c"># invalid</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+</div>
+<div class="viewcode-block" id="NumberValidator.ShowValidity"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator.ShowValidity">[docs]</a>    <span class="k">def</span> <span class="nf">ShowValidity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">tc</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Set the control colors to show invalid input</span>
+
+<span class="sd">        :param wx.TextCtrl tc: A reference to the TextCtrl that the validator</span>
+<span class="sd">          is associated with.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">SetForegroundColour</span><span class="p">(</span><span class="s">&quot;red&quot;</span><span class="p">)</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">SetBackgroundColour</span><span class="p">(</span><span class="s">&quot;yellow&quot;</span><span class="p">)</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">SetFocus</span><span class="p">()</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">Refresh</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c"># valid input</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">SetBackgroundColour</span><span class="p">(</span>
+                <span class="n">wx</span><span class="o">.</span><span class="n">SystemSettings_GetColour</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">SYS_COLOUR_WINDOW</span><span class="p">))</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">SetForegroundColour</span><span class="p">(</span><span class="s">&quot;black&quot;</span><span class="p">)</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">Refresh</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="NumberValidator.CheckInput"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator.CheckInput">[docs]</a>    <span class="k">def</span> <span class="nf">CheckInput</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">previousInvalid</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;called to test every change to the TextCtrl for validity and</span>
+<span class="sd">        to change the appearance of the TextCtrl</span>
+
+<span class="sd">        Anytime the input is invalid, call self.OKcontrol</span>
+<span class="sd">        (if defined) because it is fast. </span>
+<span class="sd">        If valid, check for any other invalid entries only when</span>
+<span class="sd">        changing from invalid to valid, since that is slower.</span>
+
+<span class="sd">        :param bool previousInvalid: True if the TextCtrl contents were</span>
+<span class="sd">          invalid prior to the current change.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetWindow</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TestValid</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ShowValidity</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+        <span class="c"># if invalid and</span>
+        <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span> <span class="ow">and</span> <span class="n">previousInvalid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="NumberValidator.OnChar"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.NumberValidator.OnChar">[docs]</a>    <span class="k">def</span> <span class="nf">OnChar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Called each type a key is pressed</span>
+<span class="sd">        ignores keys that are not allowed for int and float types</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetKeyCode</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">WXK_RETURN</span><span class="p">:</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetWindow</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">CheckInput</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">CheckInput</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span> 
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="n">wx</span><span class="o">.</span><span class="n">WXK_SPACE</span> <span class="ow">or</span> <span class="n">key</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">WXK_DELETE</span> <span class="ow">or</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="mi">255</span><span class="p">:</span> <span class="c"># control characters get processed</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetWindow</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span>
+                <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CheckInput</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CheckInput</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span> 
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="nb">chr</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validchars</span><span class="p">:</span> <span class="c"># valid char pressed?</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetWindow</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span>
+                <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CheckInput</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CheckInput</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span> 
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">wx</span><span class="o">.</span><span class="n">Validator_IsSilent</span><span class="p">():</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">Bell</span><span class="p">()</span>
+        <span class="k">return</span>  <span class="c"># Returning without calling event.Skip, which eats the keystroke</span>
+
+<span class="c">################################################################################</span></div></div>
+<div class="viewcode-block" id="CallScrolledMultiEditor"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.CallScrolledMultiEditor">[docs]</a><span class="k">def</span> <span class="nf">CallScrolledMultiEditor</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">,</span><span class="n">prelbl</span><span class="o">=</span><span class="p">[],</span><span class="n">postlbl</span><span class="o">=</span><span class="p">[],</span>
+                 <span class="n">title</span><span class="o">=</span><span class="s">&#39;Edit items&#39;</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">250</span><span class="p">)):</span>
+    <span class="sd">&#39;&#39;&#39;Shell routine to call a ScrolledMultiEditor dialog. See</span>
+<span class="sd">    :class:`ScrolledMultiEditor` for parameter definitions.</span>
+
+<span class="sd">    :returns: True if the OK button is pressed; False if the window is closed</span>
+<span class="sd">      with the system menu or the Close button.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">dlg</span> <span class="o">=</span> <span class="n">ScrolledMultiEditor</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">,</span><span class="n">prelbl</span><span class="p">,</span><span class="n">postlbl</span><span class="p">,</span>
+                              <span class="n">title</span><span class="p">,</span><span class="n">header</span><span class="p">,</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="ScrolledMultiEditor"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.ScrolledMultiEditor">[docs]</a><span class="k">class</span> <span class="nc">ScrolledMultiEditor</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Define a window for editing a potentially large number of dict- or</span>
+<span class="sd">    list-contained values with validation for each item. Edited values are</span>
+<span class="sd">    automatically placed in their source location. If invalid entries</span>
+<span class="sd">    are provided, the TextCtrl is turned yellow and the OK button is disabled.</span>
+
+<span class="sd">    The type for each TextCtrl validation is determined by the</span>
+<span class="sd">    initial value of the entry (int, float or string). </span>
+<span class="sd">    Float values can be entered in the TextCtrl as numbers or also</span>
+<span class="sd">    as algebraic expressions using operators + - / \* () and \*\*,</span>
+<span class="sd">    in addition pi, sind(), cosd(), tand(), and sqrt() can be used,</span>
+<span class="sd">    as well as appreviations s(), sin(), c(), cos(), t(), tan() and sq(). </span>
+
+<span class="sd">    :param wx.Frame parent: name of parent window, or may be None</span>
+
+<span class="sd">    :param tuple dictlst: a list of dicts or lists containing values to edit</span>
+
+<span class="sd">    :param tuple elemlst: a list of keys for each item in a dictlst. Must have the</span>
+<span class="sd">      same length as dictlst.</span>
+
+<span class="sd">    :param wx.Frame parent: name of parent window, or may be None</span>
+<span class="sd">    </span>
+<span class="sd">    :param tuple prelbl: a list of labels placed before the TextCtrl for each</span>
+<span class="sd">      item (optional)</span>
+<span class="sd">   </span>
+<span class="sd">    :param tuple postlbl: a list of labels placed after the TextCtrl for each</span>
+<span class="sd">      item (optional)</span>
+
+<span class="sd">    :param str title: a title to place in the frame of the dialog</span>
+
+<span class="sd">    :param str header: text to place at the top of the window. May contain</span>
+<span class="sd">      new line characters. </span>
+
+<span class="sd">    :param wx.Size size: a size parameter that dictates the</span>
+<span class="sd">      size for the scrolled region of the dialog. The default is</span>
+<span class="sd">      (300,250). </span>
+
+<span class="sd">    :returns: the wx.Dialog created here. Use method .ShowModal() to display it.</span>
+<span class="sd">    </span>
+<span class="sd">    *Example for use of ScrolledMultiEditor:*</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        dlg = &lt;pkg&gt;.ScrolledMultiEditor(frame,dictlst,elemlst,prelbl,postlbl,</span>
+<span class="sd">                                        header=header)</span>
+<span class="sd">        if dlg.ShowModal() == wx.ID_OK:</span>
+<span class="sd">             for d,k in zip(dictlst,elemlst):</span>
+<span class="sd">                 print d[k]</span>
+
+<span class="sd">    *Example definitions for dictlst and elemlst:*</span>
+
+<span class="sd">    ::</span>
+<span class="sd">      </span>
+<span class="sd">          dictlst = (dict1,list1,dict1,list1)</span>
+<span class="sd">          elemlst = (&#39;a&#39;, 1, 2, 3)</span>
+
+<span class="sd">      This causes items dict1[&#39;a&#39;], list1[1], dict1[2] and list1[3] to be edited.</span>
+<span class="sd">    </span>
+<span class="sd">    Note that these items must have int, float or str values assigned to</span>
+<span class="sd">    them. The dialog will force these types to be retained. String values</span>
+<span class="sd">    that are blank are marked as invalid. </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">,</span><span class="n">prelbl</span><span class="o">=</span><span class="p">[],</span><span class="n">postlbl</span><span class="o">=</span><span class="p">[],</span>
+                 <span class="n">title</span><span class="o">=</span><span class="s">&#39;Edit items&#39;</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">250</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dictlst</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemlst</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;ScrolledMultiEditor error: len(dictlst) != len(elemlst) &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dictlst</span><span class="p">))</span><span class="o">+</span><span class="s">&quot; != &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">elemlst</span><span class="p">))</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># create dialog &amp; sizer</span>
+            <span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="p">)</span>
+        <span class="n">mainSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="c"># ad a header if supplied</span>
+        <span class="k">if</span> <span class="n">header</span><span class="p">:</span>
+            <span class="n">subSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+            <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">)</span>
+            <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">header</span><span class="p">))</span>
+            <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">)</span>
+            <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">subSizer</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c"># make OK button now, because we will need it for validation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">SetDefault</span><span class="p">()</span>
+        <span class="c"># create scrolled panel and sizer</span>
+        <span class="n">panel</span> <span class="o">=</span> <span class="n">wxscroll</span><span class="o">.</span><span class="n">ScrolledPanel</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+            <span class="n">style</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">TAB_TRAVERSAL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">SUNKEN_BORDER</span><span class="p">)</span>
+        <span class="n">subSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FlexGridSizer</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dictlst</span><span class="p">),</span><span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">hgap</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">vgap</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ValidatedControlsList</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># make list of TextCtrls</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">d</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prelbl</span><span class="p">):</span> <span class="c"># label before TextCtrl, or put in a blank</span>
+                <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">prelbl</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span>
+            <span class="c"># create the validated TextCrtl, store it and add it to the sizer</span>
+            <span class="n">ctrl</span> <span class="o">=</span> <span class="n">ValidatedTxtCtrl</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">OKcontrol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ControlOKButton</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ValidatedControlsList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+            <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">postlbl</span><span class="p">):</span> <span class="c"># label after TextCtrl, or put in a blank</span>
+                <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">postlbl</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span>
+        <span class="c"># finish up ScrolledPanel</span>
+        <span class="n">panel</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="n">subSizer</span><span class="p">)</span>
+        <span class="n">panel</span><span class="o">.</span><span class="n">SetAutoLayout</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">panel</span><span class="o">.</span><span class="n">SetupScrolling</span><span class="p">()</span>
+        <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c"># Sizer for OK/Close buttons. N.B. using Close rather than Cancel because</span>
+        <span class="c"># Cancel would imply that the changes should be discarded. In fact</span>
+        <span class="c"># any valid changes are retained, unless one makes a copy of the</span>
+        <span class="c"># input dicts &amp; lists and restores them.</span>
+        <span class="n">btnsizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="p">)</span>
+        <span class="n">btn</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_CLOSE</span><span class="p">)</span> 
+        <span class="n">btn</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_BUTTON</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_onClose</span><span class="p">)</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">btn</span><span class="p">)</span>
+        <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">btnsizer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="c"># size out the window. Set it to be enlarged but not made smaller</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="n">mainSizer</span><span class="p">)</span>
+        <span class="n">mainSizer</span><span class="o">.</span><span class="n">Fit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetSize</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_onClose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="s">&#39;Close the window&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EndModal</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_CANCEL</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="ScrolledMultiEditor.ControlOKButton"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.ScrolledMultiEditor.ControlOKButton">[docs]</a>    <span class="k">def</span> <span class="nf">ControlOKButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">setvalue</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Enable or Disable the OK button for the dialog. Note that this is</span>
+<span class="sd">        passed into the ValidatedTxtCtrl for use by validators.</span>
+
+<span class="sd">        :param bool setvalue: if True, all entries in the dialog are</span>
+<span class="sd">          checked for validity. if False then the OK button is disabled.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">setvalue</span><span class="p">:</span> <span class="c"># turn button on, do only if all controls show as valid</span>
+            <span class="k">for</span> <span class="n">ctrl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidatedControlsList</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">invalid</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">Disable</span><span class="p">()</span>
+                    <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">Enable</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">Disable</span><span class="p">()</span>
+
+<span class="c">################################################################################</span></div></div>
 <div class="viewcode-block" id="SymOpDialog"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.SymOpDialog">[docs]</a><span class="k">class</span> <span class="nc">SymOpDialog</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Class to select a symmetry operator</span>
 <span class="sd">    &#39;&#39;&#39;</span>
@@ -511,7 +1032,87 @@
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParent</span><span class="p">()</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">Raise</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EndModal</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_CANCEL</span><span class="p">)</span>
-        </div>
+
+<span class="c">################################################################################</span></div>
+<div class="viewcode-block" id="SingleStringDialog"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.SingleStringDialog">[docs]</a><span class="k">class</span> <span class="nc">SingleStringDialog</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Dialog to obtain a single string value from user</span>
+<span class="sd">    </span>
+<span class="sd">    :param wx.Frame parent: name of parent frame</span>
+<span class="sd">    :param str title: title string for dialog</span>
+<span class="sd">    :param str prompt: string to tell use what they are inputting</span>
+<span class="sd">    :param str value: default input value, if any</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">title</span><span class="p">,</span><span class="n">prompt</span><span class="p">,</span><span class="n">value</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> 
+            <span class="n">pos</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DefaultPosition</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="n">prompt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CenterOnParent</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">panel</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Panel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">mainSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valItem</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">value</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valItem</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">)</span>
+        <span class="n">btnsizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StdDialogButtonSizer</span><span class="p">()</span>
+        <span class="n">OKbtn</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">)</span>
+        <span class="n">OKbtn</span><span class="o">.</span><span class="n">SetDefault</span><span class="p">()</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">AddButton</span><span class="p">(</span><span class="n">OKbtn</span><span class="p">)</span>
+        <span class="n">btn</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_CANCEL</span><span class="p">)</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">AddButton</span><span class="p">(</span><span class="n">btn</span><span class="p">)</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">Realize</span><span class="p">()</span>
+        <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">btnsizer</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="n">mainSizer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="o">.</span><span class="n">Fit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Fit</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SingleStringDialog.Show"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.SingleStringDialog.Show">[docs]</a>    <span class="k">def</span> <span class="nf">Show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Use this method after creating the dialog to post it</span>
+<span class="sd">        :returns: True if the user pressed OK; False if the User pressed Cancel</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valItem</span><span class="o">.</span><span class="n">GetValue</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="SingleStringDialog.GetValue"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.SingleStringDialog.GetValue">[docs]</a>    <span class="k">def</span> <span class="nf">GetValue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Use this method to get the value entered by the user</span>
+<span class="sd">        :returns: string entered by user</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+<span class="c">################################################################################</span></div></div>
+<div class="viewcode-block" id="ItemSelector"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.ItemSelector">[docs]</a><span class="k">def</span> <span class="nf">ItemSelector</span><span class="p">(</span><span class="n">ChoiceList</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select an item&#39;</span><span class="p">,</span>
+                 <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="s">&#39;Item Selector&#39;</span><span class="p">,</span>
+                 <span class="n">useCancel</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Provide a wx dialog to select a single item from list of choices</span>
+
+<span class="sd">        :param list ChoiceList: a list of choices where one will be selected</span>
+<span class="sd">        :param wx.Frame ParentFrame: Name of parent frame (default None)</span>
+<span class="sd">        :param str title: heading above list of choices (default &#39;Select an item&#39;)</span>
+<span class="sd">        :param wx.Size size: Size for dialog to be created (default None -- size as needed)</span>
+<span class="sd">        :param str header: Title to place on window frame (default &#39;Item Selector&#39;)</span>
+<span class="sd">        :param bool useCancel: If True (default) both the OK and Cancel buttons are offered</span>
+
+<span class="sd">        :returns: the selection index or None</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
+                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
+                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span><span class="n">ChoiceList</span><span class="p">,</span>
+                <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">size</span><span class="p">:</span> <span class="n">dlg</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">sel</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+
+<span class="c">################################################################################</span></div>
 <div class="viewcode-block" id="GridFractionEditor"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.GridFractionEditor">[docs]</a><span class="k">class</span> <span class="nc">GridFractionEditor</span><span class="p">(</span><span class="n">wg</span><span class="o">.</span><span class="n">PyGridCellEditor</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;A grid cell editor class that allows entry of values as fractions as well</span>
 <span class="sd">    as sine and cosine values [as s() and c()]</span>
@@ -596,7 +1197,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_tc</span><span class="o">.</span><span class="n">WriteText</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">evt</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
-</div>
+
+<span class="c">################################################################################</span></div>
 <div class="viewcode-block" id="MyHelp"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.MyHelp">[docs]</a><span class="k">class</span> <span class="nc">MyHelp</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    A class that creates the contents of a help menu.</span>
@@ -754,14 +1356,15 @@
         <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MessageDialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span><span class="n">msg</span><span class="p">,</span> <span class="s">&#39;Update Completed&#39;</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
         <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span>
         <span class="k">return</span>
-</div></div>
-<div class="viewcode-block" id="AddHelp"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.AddHelp">[docs]</a><span class="k">class</span> <span class="nc">AddHelp</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;This class a single entry for the help menu (used on the Mac only):</span>
-<span class="sd">    &#39;Help on &lt;helpType&gt;&#39;: where helpType is a reference to an HTML page to</span>
-<span class="sd">    be opened</span>
 
-<span class="sd">    NOTE: the title when appending this menu should be &#39;&amp;Help&#39; so the wx handles</span>
-<span class="sd">    it correctly.</span>
+<span class="c">################################################################################</span></div></div>
+<div class="viewcode-block" id="AddHelp"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.AddHelp">[docs]</a><span class="k">class</span> <span class="nc">AddHelp</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;For the Mac: creates an entry to the help menu of type </span>
+<span class="sd">    &#39;Help on &lt;helpType&gt;&#39;: where helpType is a reference to an HTML page to</span>
+<span class="sd">    be opened.</span>
+
+<span class="sd">    NOTE: when appending this menu (menu.Append) be sure to set the title to</span>
+<span class="sd">    &#39;&amp;Help&#39; so that wx handles it correctly.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">frame</span><span class="p">,</span><span class="n">helpType</span><span class="p">,</span><span class="n">helpLbl</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
         <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">title</span><span class="p">)</span>
@@ -778,9 +1381,12 @@
 <span class="sd">        a web page for documentation.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">ShowHelp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">HelpById</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">)</span>
-</div></div>
+
+<span class="c">################################################################################</span></div></div>
 <div class="viewcode-block" id="MyHtmlPanel"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.MyHtmlPanel">[docs]</a><span class="k">class</span> <span class="nc">MyHtmlPanel</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Panel</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Defines a panel to display Help information&#39;&#39;&#39;</span>
+    <span class="sd">&#39;&#39;&#39;Defines a panel to display HTML help information, as an alternative to</span>
+<span class="sd">    displaying help information in a web browser.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span>
         <span class="n">wx</span><span class="o">.</span><span class="n">Panel</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
@@ -835,11 +1441,19 @@
     <span class="k">def</span> <span class="nf">TitlePage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetOpenedPage</span><span class="p">()</span> <span class="o">+</span> <span class="s">&#39; -- &#39;</span> <span class="o">+</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">GetOpenedPageTitle</span><span class="p">())</span>
-</div>
+
+<span class="c">################################################################################</span></div>
 <div class="viewcode-block" id="DataFrame"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.DataFrame">[docs]</a><span class="k">class</span> <span class="nc">DataFrame</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Frame</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Create the dataframe window and all the entries in menus. </span>
-<span class="sd">    The binding is for the menus is not done here, but rather is done</span>
-<span class="sd">    where the functions can be accessed (in various GSASII*GUI modules). </span>
+    <span class="sd">&#39;&#39;&#39;Create the data item window and all the entries in menus used in</span>
+<span class="sd">    that window. For Linux and windows, the menu entries are created for the</span>
+<span class="sd">    current data item window, but in the Mac the menu is accessed from all</span>
+<span class="sd">    windows. This means that a different menu is posted depending on which</span>
+<span class="sd">    data item is posted. On the Mac, all the menus contain the data tree menu</span>
+<span class="sd">    items, but additional menus are added specific to the data item. </span>
+
+<span class="sd">    Note that while the menus are created here, </span>
+<span class="sd">    the binding for the menus is done later in various GSASII*GUI modules,</span>
+<span class="sd">    where the functions to be called are defined.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 <div class="viewcode-block" id="DataFrame.Bind"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.DataFrame.Bind">[docs]</a>    <span class="k">def</span> <span class="nf">Bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Override the Bind() function: on the Mac the binding is to</span>
@@ -1177,6 +1791,8 @@
             <span class="n">text</span><span class="o">=</span><span class="s">&#39;Charge flipping&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">GeneralCalc</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s">&#39;Clear map&#39;</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_FOURCLEAR</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
             <span class="n">text</span><span class="o">=</span><span class="s">&#39;Clear map&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GeneralCalc</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s">&#39;Run Monte Carlo - Simulated Annealing&#39;</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_RUNMCSA</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="s">&#39;Run MC/SA&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PostfillDataMenu</span><span class="p">()</span>
         
         <span class="c"># Phase / Data tab</span>
@@ -1203,8 +1819,6 @@
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Appended as an H atom&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">AtomEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_ATOMSVIEWADD</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Append view point&#39;</span><span class="p">,</span>
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Appended as an H atom&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">AtomEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_RBAPPEND</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Append rigid body&#39;</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Append atoms for rigid body&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">AtomEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_ATOMSEDITINSERT</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Insert atom&#39;</span><span class="p">,</span>
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select atom row to insert before; inserted as an H atom&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">AtomEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_ATOMVIEWINSERT</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Insert view point&#39;</span><span class="p">,</span>
@@ -1294,6 +1908,21 @@
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Add chiral restraint for selected atoms (4: center atom 1st)&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DrawAtomRigidBody</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_DRAWDEFINERB</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Define rigid body&#39;</span><span class="p">,</span>
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Define rigid body with selected atoms&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PostfillDataMenu</span><span class="p">()</span>
+
+        <span class="c"># Phase / MCSA tab</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCSAMenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MenuBar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PrefillDataMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MCSAMenu</span><span class="p">,</span><span class="n">helpType</span><span class="o">=</span><span class="s">&#39;MC/SA&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCSAEdit</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCSAMenu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="n">menu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">MCSAEdit</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;MC/SA&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCSAEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_ADDMCSAATOM</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Add atom&#39;</span><span class="p">,</span> 
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Add single atom to MC/SA model&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCSAEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_ADDMCSARB</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Add rigid body&#39;</span><span class="p">,</span> 
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Add rigid body to MC/SA model&#39;</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCSAEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_CLEARMCSARB</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Clear rigid bodies&#39;</span><span class="p">,</span> 
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Clear all atoms &amp; rigid bodies from MC/SA model&#39;</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MCSAEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_MOVEMCSA</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Move MC/SA solution&#39;</span><span class="p">,</span> 
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Move MC/SA solution to atom list&#39;</span> <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PostfillDataMenu</span><span class="p">()</span>
             
         <span class="c"># Phase / Texture tab</span>
@@ -2446,7 +3075,44 @@
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">line</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticLine</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">LI_HORIZONTAL</span><span class="p">)</span>
     <span class="n">sizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-</pre></div></div>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c"># test ScrolledMultiEditor</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">PySimpleApp</span><span class="p">()</span>
+    <span class="n">frm</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span> <span class="c"># create a frame</span>
+    <span class="n">frm</span><span class="o">.</span><span class="n">Show</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">Data1</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;Order&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s">&#39;omega&#39;</span><span class="p">:</span><span class="s">&#39;string&#39;</span><span class="p">,</span>
+        <span class="s">&#39;chi&#39;</span><span class="p">:</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="s">&#39;phi&#39;</span><span class="p">:</span><span class="s">&#39;&#39;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="n">elemlst</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Data1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">postlbl</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Data1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">dictlst</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemlst</span><span class="p">)</span><span class="o">*</span><span class="p">[</span><span class="n">Data1</span><span class="p">,]</span>
+
+    <span class="n">Data2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+    <span class="n">elemlst</span> <span class="o">+=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">postlbl</span> <span class="o">+=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">dictlst</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">60</span><span class="p">))</span><span class="o">*</span><span class="p">[</span><span class="n">Data2</span><span class="p">,]</span>
+
+    <span class="n">prelbl</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">elemlst</span><span class="p">))</span>
+    <span class="n">postlbl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;a very long label for the 2nd item to force a horiz. scrollbar&quot;</span>
+    <span class="n">header</span><span class="o">=</span><span class="s">&quot;&quot;&quot;This is a longer</span><span class="se">\n</span><span class="s">multiline and perhaps silly header&quot;&quot;&quot;</span>
+    <span class="n">dlg</span> <span class="o">=</span> <span class="n">ScrolledMultiEditor</span><span class="p">(</span><span class="n">frm</span><span class="p">,</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">,</span><span class="n">prelbl</span><span class="p">,</span><span class="n">postlbl</span><span class="p">,</span>
+                              <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">Data1</span>
+    <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">d</span><span class="p">,</span><span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">):</span>
+            <span class="k">print</span> <span class="n">k</span><span class="p">,</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">CallScrolledMultiEditor</span><span class="p">(</span><span class="n">frm</span><span class="p">,</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">,</span><span class="n">prelbl</span><span class="p">,</span><span class="n">postlbl</span><span class="p">,</span>
+                               <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">d</span><span class="p">,</span><span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">):</span>
+            <span class="k">print</span> <span class="n">k</span><span class="p">,</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+<span class="c">#app.MainLoop()</span>
+</pre></div>
 
           </div>
         </div>

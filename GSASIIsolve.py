@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-#GSASIIsolve - structure solving routines
+'''
+*GSASIIsolve - structure solving routines*
+==========================================
+
+'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -21,6 +25,7 @@ import GSASIIspc as G2spc
 import GSASIIstrIO as G2stIO
 
 def ShowBanner():
+    'Print authorship, copyright and citation notice'
     print 80*'*'
     print '    General Structure Analysis System-II Crystal Structure Solution'
     print '              by Robert B. Von Dreele & Brian H. Toby'
@@ -30,14 +35,17 @@ def ShowBanner():
     print 80*'*','\n'
     
 def ShowControls(Controls):
+    'Print controls information'
     print ' Controls:'
     
 def Solve(GPXfile):
+    'perform the computation'
     ShowBanner()
     Controls = G2stIO.GetControls(GPXfile)
     ShowControls(Controls)
         
 def main():
+    'needs doc string'
     arg = sys.argv
     if len(arg) > 1:
         GPXfile = arg[1]

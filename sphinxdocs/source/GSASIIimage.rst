@@ -1,0 +1,2 @@
+.. automodule:: GSASIIimage
+    :members: 

@@ -47,16 +47,19 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 def scaleAbyV(A,V):
+    'needs a doc string'
     v = G2lat.calc_V(A)
     scale = math.exp(math.log(v/V)/3.)**2
     for i in range(6):
         A[i] *= scale
     
 def ranaxis(dmin,dmax):
+    'needs a doc string'
     import random as rand
     return rand.random()*(dmax-dmin)+dmin
     
 def ran2axis(k,N):
+    'needs a doc string'
     import random as rand
     T = 1.5+0.49*k/N
 #    B = 0.99-0.49*k/N
@@ -73,6 +76,7 @@ def ran2axis(k,N):
 #    return R
     
 def ranAbyV(Bravais,dmin,dmax,V):
+    'needs a doc string'
     cell = [0,0,0,0,0,0]
     bad = True
     while bad:
@@ -88,6 +92,7 @@ def ranAbyV(Bravais,dmin,dmax,V):
     return A
     
 def ranAbyR(Bravais,A,k,N,ranFunc):
+    'needs a doc string'
     R = ranFunc(k,N)
     if Bravais in [0,1,2]:          #cubic - not used
         A[0] = A[1] = A[2] = A[0]*R
@@ -121,6 +126,7 @@ def ranAbyR(Bravais,A,k,N,ranFunc):
     return A
     
 def rancell(Bravais,dmin,dmax):
+    'needs a doc string'
     if Bravais in [0,1,2]:          #cubic
         a = b = c = ranaxis(dmin,dmax)
         alp = bet = gam = 90
@@ -163,6 +169,7 @@ def rancell(Bravais,dmin,dmax):
     return [a,b,c,alp,bet,gam]
     
 def calc_M20(peaks,HKL):
+    'needs a doc string'
     diff = 0
     X20 = 0
     for Nobs20,peak in enumerate(peaks):
@@ -191,6 +198,7 @@ def calc_M20(peaks,HKL):
     return M20,X20
     
 def sortM20(cells):
+    'needs a doc string'
     #cells is M20,X20,Bravais,a,b,c,alp,bet,gam
     #sort highest M20 1st
     T = []
@@ -218,6 +226,7 @@ def sortVolume(cells):
     return X
                 
 def IndexPeaks(peaks,HKL):
+    'needs a doc string'
     import bisect
     N = len(HKL)
     if N == 0: return False
@@ -260,6 +269,7 @@ def IndexPeaks(peaks,HKL):
         return False
         
 def Values2A(ibrav,values):
+    'needs a doc string'
     if ibrav in [0,1,2]:
         return [values[0],values[0],values[0],0,0,0]
     elif ibrav in [3,4]:
@@ -274,6 +284,7 @@ def Values2A(ibrav,values):
         return list(values)
         
 def A2values(ibrav,A):
+    'needs a doc string'
     if ibrav in [0,1,2]:
         return [A[0],]
     elif ibrav in [3,4,5,6]:
@@ -286,6 +297,7 @@ def A2values(ibrav,A):
         return A
 
 def FitHKL(ibrav,peaks,A,Pwr):
+    'needs a doc string'
                 
     def errFit(values,ibrav,d,H,Pwr):
         A = Values2A(ibrav,values)
@@ -302,6 +314,7 @@ def FitHKL(ibrav,peaks,A,Pwr):
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result
            
 def FitHKLZ(wave,ibrav,peaks,A,Z,Zref,Pwr):
+    'needs a doc string'
     
     def errFit(values,ibrav,d,H,tth,wave,Zref,Pwr):
         Zero = Z
@@ -326,12 +339,15 @@ def FitHKLZ(wave,ibrav,peaks,A,Z,Zref,Pwr):
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Zref,Pwr)**2),A,Z,result
                
 def rotOrthoA(A):
+    'needs a doc string'
     return [A[1],A[2],A[0],0,0,0]
     
 def swapMonoA(A):
+    'needs a doc string'
     return [A[2],A[1],A[0],0,A[4],0]
     
 def oddPeak(indx,peaks):
+    'needs a doc string'
     noOdd = True
     for peak in peaks:
         H = peak[4:7]
@@ -340,6 +356,7 @@ def oddPeak(indx,peaks):
     return noOdd
     
 def halfCell(ibrav,A,peaks):
+    'needs a doc string'
     if ibrav in [0,1,2]:
         if oddPeak(0,peaks):
             A[0] *= 2
@@ -360,12 +377,15 @@ def halfCell(ibrav,A,peaks):
     return A
     
 def getDmin(peaks):
+    'needs a doc string'
     return peaks[-1][7]
     
 def getDmax(peaks):
+    'needs a doc string'
     return peaks[0][7]
     
 def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
+    'needs a doc string'
     dmin = getDmin(peaks)
     OK,smin,Aref,Z,result = FitHKLZ(wave,ibrav,peaks,A,Zero,ZeroRef,0)
     Peaks = np.array(peaks).T
@@ -377,6 +397,7 @@ def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
     return len(HKL),M20,X20,Aref,Z
     
 def refinePeaks(peaks,ibrav,A):
+    'needs a doc string'
     dmin = getDmin(peaks)
     smin = 1.0e10
     pwr = 8
@@ -421,6 +442,7 @@ def refinePeaks(peaks,ibrav,A):
     return len(HKL),M20,X20,A
         
 def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
+    'needs a doc string'
 # dlg & ncMax are used for wx progress bar 
 # A != 0 find the best A near input A,
 # A = 0 for random cell, volume normalized to V1;
@@ -481,6 +503,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         return GoOn,0,0,0,0
         
 def monoCellReduce(ibrav,A):
+    'needs a doc string'
     a,b,c,alp,bet,gam = G2lat.A2cell(A)
     G,g = G2lat.A2Gmat(A)
     if ibrav in [11]:
@@ -502,6 +525,7 @@ def monoCellReduce(ibrav,A):
     return A
 
 def DoIndexPeaks(peaks,wave,controls,bravais):
+    'needs a doc string'
     
     delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
     amin = 2.5
@@ -601,6 +625,7 @@ def DoIndexPeaks(peaks,wave,controls,bravais):
         
 NeedTestData = True
 def TestData():
+    'needs a doc string'
     array = np.array
     global NeedTestData
     NeedTestData = False

@@ -48,6 +48,7 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 def pointInPolygon(pXY,xy):
+    'Needs a doc string'
     #pXY - assumed closed 1st & last points are duplicates
     Inside = False
     N = len(pXY)
@@ -63,17 +64,23 @@ def pointInPolygon(pXY,xy):
     return Inside
     
 def peneCorr(tth,dep):
+    'Needs a doc string'
     return dep*(1.-npcosd(tth))         #best one
 #    return dep*npsind(tth)             #not as good as 1-cos2Q
         
 def makeMat(Angle,Axis):
-    #Make rotation matrix from Angle in degrees,Axis =0 for rotation about x, =1 for about y, etc.
+    '''Make rotation matrix from Angle and Axis
+
+    :param float Angle: in degrees
+    :param int Axis: 0 for rotation about x, 1 for about y, etc.
+    '''
     cs = cosd(Angle)
     ss = sind(Angle)
     M = np.array(([1.,0.,0.],[0.,cs,-ss],[0.,ss,cs]),dtype=np.float32)
     return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
                     
 def FitRing(ring,delta):
+    'Needs a doc string'
     parms = []
     if delta:
         err,parms = FitEllipse(ring)
@@ -86,6 +93,7 @@ def FitRing(ring,delta):
     return parms
         
 def FitCircle(ring):
+    'Needs a doc string'
     
     def makeParmsCircle(B):
         cent = [-B[0]/2,-B[1]/2]
@@ -103,6 +111,7 @@ def FitCircle(ring):
     return result[1],makeParmsCircle(result[0])
         
 def FitEllipse(ring):
+    'Needs a doc string'
             
     def makeParmsEllipse(B):
         det = 4.*(1.-B[0]**2)-B[1]**2
@@ -141,6 +150,7 @@ def FitEllipse(ring):
     return err,makeParmsEllipse(bb)
     
 def FitDetector(rings,varyList,parmDict):
+    'Needs a doc string'
         
     def CalibPrint(ValSig):
         print 'Image Parameters:'
@@ -219,6 +229,7 @@ def FitDetector(rings,varyList,parmDict):
 #        return result[0],wave
                     
 def ImageLocalMax(image,w,Xpix,Ypix):
+    'Needs a doc string'
     w2 = w*2
     sizey,sizex = image.shape
     xpix = int(Xpix)            #get reference corner of pixel chosen
@@ -234,6 +245,7 @@ def ImageLocalMax(image,w,Xpix,Ypix):
         return 0,0,0,0      
     
 def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
+    'Needs a doc string'
     cent,phi,radii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
@@ -261,6 +273,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     return ring,delt > 90
     
 def makeIdealRing(ellipse,azm=None):
+    'Needs a doc string'
     cent,phi,radii = ellipse
     cphi = cosd(phi)
     sphi = sind(phi)
@@ -279,12 +292,14 @@ def makeIdealRing(ellipse,azm=None):
     return zip(X,Y)
                 
 def calcDist(radii,tth):
+    'Needs a doc string'
     stth = sind(tth)
     ctth = cosd(tth)
     ttth = tand(tth)
     return math.sqrt(radii[0]**4/(ttth**2*((radii[0]*ctth)**2+(radii[1]*stth)**2)))
     
 def calcZdisCosB(radius,tth,radii):
+    'Needs a doc string'
     cosB = sinb = radii[0]**2/(radius*radii[1])
     if cosB > 1.:
         return 0.,1.
@@ -295,6 +310,7 @@ def calcZdisCosB(radius,tth,radii):
         return zdis,cosB
     
 def GetEllipse(dsp,data):
+    'Needs a doc string'
     dist = data['distance']
     cent = data['center']
     tilt = data['tilt']
@@ -319,6 +335,7 @@ def GetEllipse(dsp,data):
         return False
         
 def GetDetectorXY(dsp,azm,data):
+    'Needs a doc string'
     from scipy.optimize import fsolve
     def func(xy,*args):
        azm,phi,R0,R1,A,B = args
@@ -352,11 +369,13 @@ def GetDetectorXY(dsp,azm,data):
     return xy
     
 def GetDetXYfromThAzm(Th,Azm,data):
+    'Needs a doc string'
     dsp = data['wavelength']/(2.0*npsind(Th))
     
     return GetDetectorXY(dsp,azm,data)
                     
 def GetTthAzmDsp(x,y,data):
+    'Needs a doc string'
     wave = data['wavelength']
     dist = data['distance']
     cent = data['center']
@@ -378,29 +397,37 @@ def GetTthAzmDsp(x,y,data):
     return tth,azm,dsp
     
 def GetTth(x,y,data):
+    'Needs a doc string'
     return GetTthAzmDsp(x,y,data)[0]
     
 def GetTthAzm(x,y,data):
+    'Needs a doc string'
     return GetTthAzmDsp(x,y,data)[0:2]
     
 def GetDsp(x,y,data):
+    'Needs a doc string'
     return GetTthAzmDsp(x,y,data)[2]
        
 def GetAzm(x,y,data):
+    'Needs a doc string'
     return GetTthAzmDsp(x,y,data)[1]
        
 def ImageCompress(image,scale):
+    'Needs a doc string'
     if scale == 1:
         return image
     else:
         return image[::scale,::scale]
         
 def checkEllipse(Zsum,distSum,xSum,ySum,dist,x,y):
+    'Needs a doc string'
     avg = np.array([distSum/Zsum,xSum/Zsum,ySum/Zsum])
     curr = np.array([dist,x,y])
     return abs(avg-curr)/avg < .02
 
-def EdgeFinder(image,data):          #this makes list of all x,y where I>edgeMin suitable for an ellipse search?
+def EdgeFinder(image,data):
+    '''this makes list of all x,y where I>edgeMin suitable for an ellipse search?
+    '''
     import numpy.ma as ma
     Nx,Ny = data['size']
     pixelSize = data['pixelSize']
@@ -416,6 +443,7 @@ def EdgeFinder(image,data):          #this makes list of all x,y where I>edgeMin
     return zip(tax,tay)
     
 def ImageRecalibrate(self,data):
+    'Needs a doc string'
     import ImageCalibrants as calFile
     print 'Image recalibration:'
     time0 = time.time()
@@ -472,6 +500,7 @@ def ImageRecalibrate(self,data):
     return True
             
 def ImageCalibrate(self,data):
+    'Needs a doc string'
     import copy
     import ImageCalibrants as calFile
     print 'Image calibration:'
@@ -657,6 +686,7 @@ def ImageCalibrate(self,data):
     return True
     
 def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
+    'Needs a doc string'
     import numpy.ma as ma
     import polymask as pm
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
@@ -688,6 +718,7 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     return np.array(TA),tam           #2-theta & azimuth arrays & position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):
+    'Needs a doc string'
     import numpy.ma as ma
     Zlim = masks['Thresholds'][1]
     rings = masks['Rings']
@@ -709,6 +740,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     return tax,tay,taz
     
 def ImageIntegrate(image,data,masks):
+    'Needs a doc string'
     import histogram2d as h2d
     print 'Begin image integration'
     LUtth = data['IOtth']
@@ -780,6 +812,7 @@ def ImageIntegrate(image,data,masks):
     return H0,H1,H2
     
 def FitStrSta(Image,StrSta,Controls,Masks):
+    'Needs a doc string'
     
 #    print 'Masks:',Masks
     StaControls = copy.deepcopy(Controls)
@@ -808,12 +841,14 @@ def FitStrSta(Image,StrSta,Controls,Masks):
     StrSta['strain'] = E
 
 def calcFij(omg,phi,azm,th):
-    ''' Uses parameters as defined by Bob He & Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)
-    omg: his omega = sample omega rotation; 0 when incident beam || sample surface, 90 
-            when perp. to sample surface
-    phi: his phi = sample phi rotation; usually = 0, axis rotates with omg.
-    azm: his chi = azimuth around incident beam
-    th:  his theta = theta
+    '''Does something...
+
+    Uses parameters as defined by Bob He & Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)
+
+    :param omg: his omega = sample omega rotation; 0 when incident beam || sample surface, 90 when perp. to sample surface
+    :param phi: his phi = sample phi rotation; usually = 0, axis rotates with omg.
+    :param azm: his chi = azimuth around incident beam
+    :param th:  his theta = theta
     '''
     a = npsind(th)*npcosd(omg)+npsind(azm)*npcosd(th)*npsind(omg)
     b = -npcosd(azm)*npcosd(th)
@@ -827,7 +862,7 @@ def calcFij(omg,phi,azm,th):
     return -Fij*nptand(th)
 
 def FitStrain(rings,p0,wave,phi):
-
+    'Needs a doc string'
     def StrainPrint(ValSig):
         print 'Strain tensor:'
         ptlbls = 'names :'

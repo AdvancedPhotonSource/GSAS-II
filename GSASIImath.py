@@ -409,6 +409,16 @@ def getDensity(generalData):
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
     
+def getWave(Parms):
+    try:
+        return Parms['Lam'][1]
+    except KeyError:
+        return Parms['Lam1'][1]
+    
+################################################################################
+##### distance, angle, planes, torsion stuff stuff
+################################################################################
+
 def getSyXYZ(XYZ,ops,SGData):
     'Needs a doc string'
     XYZout = np.zeros_like(XYZ)
@@ -994,6 +1004,10 @@ def ValEsd(value,esd=0,nTZ=False):
         out += ("e{:d}").format(valoff) # add an exponent, when needed
     return out
 
+################################################################################
+##### Fourier & charge flip stuff
+################################################################################
+
 def adjHKLmax(SGData,Hmax):
     'Needs a doc string'        
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
@@ -1485,28 +1499,627 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         gam = ins['X']*dsp+ins['Y']*dsp**2
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
     return XY
+    
+################################################################################
+##### MC/SA stuff
+################################################################################
+
+#scipy/optimize/anneal.py code modified by R. Von Dreele 2013
+# Original Author: Travis Oliphant 2002
+# Bug-fixes in 2006 by Tim Leslie
+
+
+import numpy
+from numpy import asarray, tan, exp, ones, squeeze, sign, \
+     all, log, sqrt, pi, shape, array, minimum, where
+from numpy import random
+
+__all__ = ['anneal']
+
+_double_min = numpy.finfo(float).min
+_double_max = numpy.finfo(float).max
+class base_schedule(object):
+    def __init__(self):
+        self.dwell = 20
+        self.learn_rate = 0.5
+        self.lower = -10
+        self.upper = 10
+        self.Ninit = 50
+        self.accepted = 0
+        self.tests = 0
+        self.feval = 0
+        self.k = 0
+        self.T = None
+
+    def init(self, **options):
+        self.__dict__.update(options)
+        self.lower = asarray(self.lower)
+        self.lower = where(self.lower == numpy.NINF, -_double_max, self.lower)
+        self.upper = asarray(self.upper)
+        self.upper = where(self.upper == numpy.PINF, _double_max, self.upper)
+        self.k = 0
+        self.accepted = 0
+        self.feval = 0
+        self.tests = 0
+
+    def getstart_temp(self, best_state):
+        """ Find a matching starting temperature and starting parameters vector
+        i.e. find x0 such that func(x0) = T0.
+
+        Parameters
+        ----------
+        best_state : _state
+            A _state object to store the function value and x0 found.
+
+        Returns
+        -------
+        x0 : array
+            The starting parameters vector.
+        """
+
+        assert(not self.dims is None)
+        lrange = self.lower
+        urange = self.upper
+        fmax = _double_min
+        fmin = _double_max
+        for _ in range(self.Ninit):
+            x0 = random.uniform(size=self.dims)*(urange-lrange) + lrange
+            fval = self.func(x0, *self.args)
+            self.feval += 1
+            if fval > fmax:
+                fmax = fval
+            if fval < fmin:
+                fmin = fval
+                best_state.cost = fval
+                best_state.x = array(x0)
+
+        self.T0 = (fmax-fmin)*1.5
+        return best_state.x
+
+    def accept_test(self, dE):
+        T = self.T
+        self.tests += 1
+        if dE < 0:
+            self.accepted += 1
+            return 1
+        p = exp(-dE*1.0/self.boltzmann/T)
+        if (p > random.uniform(0.0, 1.0)):
+            self.accepted += 1
+            return 1
+        return 0
+
+    def update_guess(self, x0):
+        pass
+
+    def update_temp(self, x0):
+        pass
+
+
+#  A schedule due to Lester Ingber
+class fast_sa(base_schedule):
+    def init(self, **options):
+        self.__dict__.update(options)
+        if self.m is None:
+            self.m = 1.0
+        if self.n is None:
+            self.n = 1.0
+        self.c = self.m * exp(-self.n * self.quench)
+
+    def update_guess(self, x0):
+        x0 = asarray(x0)
+        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
+        T = self.T
+        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
+        xc = y*(self.upper - self.lower)
+        xnew = x0 + xc
+        return xnew
+
+    def update_temp(self):
+        self.T = self.T0*exp(-self.c * self.k**(self.quench))
+        self.k += 1
+        return
+
+class cauchy_sa(base_schedule):
+    def update_guess(self, x0):
+        x0 = asarray(x0)
+        numbers = squeeze(random.uniform(-pi/2, pi/2, size=self.dims))
+        xc = self.learn_rate * self.T * tan(numbers)
+        xnew = x0 + xc
+        return xnew
+
+    def update_temp(self):
+        self.T = self.T0/(1+self.k)
+        self.k += 1
+        return
+
+class boltzmann_sa(base_schedule):
+    def update_guess(self, x0):
+        std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
+        x0 = asarray(x0)
+        xc = squeeze(random.normal(0, 1.0, size=self.dims))
+
+        xnew = x0 + xc*std*self.learn_rate
+        return xnew
+
+    def update_temp(self):
+        self.k += 1
+        self.T = self.T0 / log(self.k+1.0)
+        return
+
+class log_sa(base_schedule):
+
+    def init(self,**options):
+        self.__dict__.update(options)
+        
+    def update_guess(self,x0):
+        x0 = np.asarray(x0)
+        u = np.squeeze(np.random.uniform(0.,1.,size=self.dims))
+        xnew = x0+u
+        return xnew
+        
+    def update_temp(self):
+        self.k += 1
+        self.T = self.T0*self.slope**k
+        
+class Tremayne_sa(base_schedule):   #needs fixing for two steps
+
+    def init(self,**options):
+        self.__dict__.update(options)
+
+    def update_guess(self,x0):
+        x0 = np.asarray(x0)
+        u = np.squeeze(np.random.uniform(0.,1.,size=self.dims))
+        xnew = x0+u
+        return xnew        
+    
+    def update_temp(self):
+        self.k += 1
+        self.T = self.T0*self.slope**k
+    
+class _state(object):
+    def __init__(self):
+        self.x = None
+        self.cost = None
+
+# TODO:
+#     allow for general annealing temperature profile
+#     in that case use update given by alpha and omega and
+#     variation of all previous updates and temperature?
+
+# Simulated annealing
+
+def anneal(func, x0, args=(), schedule='fast', full_output=0,
+           T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
+           boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
+           lower=-100, upper=100, dwell=50, slope=0.9):
+    """Minimize a function using simulated annealing.
+
+    Schedule is a schedule class implementing the annealing schedule.
+    Available ones are 'fast', 'cauchy', 'boltzmann'
+
+    Parameters
+    ----------
+    func : callable f(x, *args)
+        Function to be optimized.
+    x0 : ndarray
+        Initial guess.
+    args : tuple
+        Extra parameters to `func`.
+    schedule : base_schedule
+        Annealing schedule to use (a class).
+    full_output : bool
+        Whether to return optional outputs.
+    T0 : float
+        Initial Temperature (estimated as 1.2 times the largest
+        cost-function deviation over random points in the range).
+    Tf : float
+        Final goal temperature.
+    maxeval : int
+        Maximum function evaluations.
+    maxaccept : int
+        Maximum changes to accept.
+    maxiter : int
+        Maximum cooling iterations.
+    learn_rate : float
+        Scale constant for adjusting guesses.
+    boltzmann : float
+        Boltzmann constant in acceptance test
+        (increase for less stringent test at each temperature).
+    feps : float
+        Stopping relative error tolerance for the function value in
+        last four coolings.
+    quench, m, n : float
+        Parameters to alter fast_sa schedule.
+    lower, upper : float or ndarray
+        Lower and upper bounds on `x`.
+    dwell : int
+        The number of times to search the space at each temperature.
+    slope : float
+        Parameter for log schedule
+
+    Returns
+    -------
+    xmin : ndarray
+        Point giving smallest value found.
+    Jmin : float
+        Minimum value of function found.
+    T : float
+        Final temperature.
+    feval : int
+        Number of function evaluations.
+    iters : int
+        Number of cooling iterations.
+    accept : int
+        Number of tests accepted.
+    retval : int
+        Flag indicating stopping condition::
+
+                0 : Points no longer changing
+                1 : Cooled to final temperature
+                2 : Maximum function evaluations
+                3 : Maximum cooling iterations reached
+                4 : Maximum accepted query locations reached
+                5 : Final point not the minimum amongst encountered points
+
+    Notes
+    -----
+    Simulated annealing is a random algorithm which uses no derivative
+    information from the function being optimized. In practice it has
+    been more useful in discrete optimization than continuous
+    optimization, as there are usually better algorithms for continuous
+    optimization problems.
+
+    Some experimentation by trying the difference temperature
+    schedules and altering their parameters is likely required to
+    obtain good performance.
+
+    The randomness in the algorithm comes from random sampling in numpy.
+    To obtain the same results you can call numpy.random.seed with the
+    same seed immediately before calling scipy.optimize.anneal.
+
+    We give a brief description of how the three temperature schedules
+    generate new points and vary their temperature. Temperatures are
+    only updated with iterations in the outer loop. The inner loop is
+    over loop over xrange(dwell), and new points are generated for
+    every iteration in the inner loop. (Though whether the proposed
+    new points are accepted is probabilistic.)
+
+    For readability, let d denote the dimension of the inputs to func.
+    Also, let x_old denote the previous state, and k denote the
+    iteration number of the outer loop. All other variables not
+    defined below are input variables to scipy.optimize.anneal itself.
+
+    In the 'fast' schedule the updates are ::
+
+        u ~ Uniform(0, 1, size=d)
+        y = sgn(u - 0.5) * T * ((1+ 1/T)**abs(2u-1) -1.0)
+        xc = y * (upper - lower)
+        x_new = x_old + xc
+
+        c = n * exp(-n * quench)
+        T_new = T0 * exp(-c * k**quench)
+
+
+    In the 'cauchy' schedule the updates are ::
+
+        u ~ Uniform(-pi/2, pi/2, size=d)
+        xc = learn_rate * T * tan(u)
+        x_new = x_old + xc
+
+        T_new = T0 / (1+k)
+
+    In the 'boltzmann' schedule the updates are ::
+
+        std = minimum( sqrt(T) * ones(d), (upper-lower) / (3*learn_rate) )
+        y ~ Normal(0, std, size=d)
+        x_new = x_old + learn_rate * y
+
+        T_new = T0 / log(1+k)
+
+    """
+    x0 = asarray(x0)
+    lower = asarray(lower)
+    upper = asarray(upper)
+
+    schedule = eval(schedule+'_sa()')
+    #   initialize the schedule
+    schedule.init(dims=shape(x0),func=func,args=args,boltzmann=boltzmann,T0=T0,
+                  learn_rate=learn_rate, lower=lower, upper=upper,
+                  m=m, n=n, quench=quench, dwell=dwell)
+
+    current_state, last_state, best_state = _state(), _state(), _state()
+    if T0 is None:
+        x0 = schedule.getstart_temp(best_state)
+    else:
+        best_state.x = None
+        best_state.cost = numpy.Inf
+
+    last_state.x = asarray(x0).copy()
+    fval = func(x0,*args)
+    schedule.feval += 1
+    last_state.cost = fval
+    if last_state.cost < best_state.cost:
+        best_state.cost = fval
+        best_state.x = asarray(x0).copy()
+    schedule.T = schedule.T0
+    fqueue = [100, 300, 500, 700]
+    iters = 0
+    while 1:
+        for n in xrange(dwell):
+            current_state.x = schedule.update_guess(last_state.x)
+            current_state.cost = func(current_state.x,*args)
+            schedule.feval += 1
+
+            dE = current_state.cost - last_state.cost
+            if schedule.accept_test(dE):
+                last_state.x = current_state.x.copy()
+                last_state.cost = current_state.cost
+                if last_state.cost < best_state.cost:
+                    best_state.x = last_state.x.copy()
+                    best_state.cost = last_state.cost
+        schedule.update_temp()
+        iters += 1
+        # Stopping conditions
+        # 0) last saved values of f from each cooling step
+        #     are all very similar (effectively cooled)
+        # 1) Tf is set and we are below it
+        # 2) maxeval is set and we are past it
+        # 3) maxiter is set and we are past it
+        # 4) maxaccept is set and we are past it
+
+        fqueue.append(squeeze(last_state.cost))
+        fqueue.pop(0)
+        af = asarray(fqueue)*1.0
+        if all(abs((af-af[0])/af[0]) < feps):
+            retval = 0
+            if abs(af[-1]-best_state.cost) > feps*10:
+                retval = 5
+                print "Warning: Cooled to %f at %s but this is not" \
+                      % (squeeze(last_state.cost), str(squeeze(last_state.x))) \
+                      + " the smallest point found."
+            break
+        if (Tf is not None) and (schedule.T < Tf):
+            retval = 1
+            break
+        if (maxeval is not None) and (schedule.feval > maxeval):
+            retval = 2
+            break
+        if (iters > maxiter):
+            print "Warning: Maximum number of iterations exceeded."
+            retval = 3
+            break
+        if (maxaccept is not None) and (schedule.accepted > maxaccept):
+            retval = 4
+            break
+
+    if full_output:
+        return best_state.x, best_state.cost, schedule.T, \
+               schedule.feval, iters, schedule.accepted, retval
+    else:
+        return best_state.x, retval
+
 
 def mcsaSearch(data,reflType,reflData,covData,pgbar):
-    'Needs a doc string'        
-    generalData = data['General']
-    mcsaControls = generalData['MCSA controls']
-    reflName = mcsaData['Data source']
-    phaseName = generalData['Name']
-    MCSAObjs = data['MCSAModels']
+    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
+    
+    def getMDparms(item,pfx,parmDict,varyList):
+        parmDict[pfx+'MDaxis'] = item['axis']
+        parmDict[pfx+'MDval'] = item['Coef'][0]
+        if item['Coef'][1]:
+            varyList += [pfx+'MDval',]
+            limits = item['Coef'][2]
+            lower.append(limits[0])
+            upper.append(limits[1])
             
-#             = {'':'','Annealing':[50.0,0.001,0.90,1000],
-#            'dmin':2.0,'Algolrithm':'Normal','Jump coeff':[0.95,0.5]} #'Normal','Random jump','Tremayne jump'
+    def getAtomparms(item,pfx,parmDict,varyList):
+        parmDict[pfx+'Atype'] = item['atType']
+        pstr = ['x','y','z']
+        for i in range(3):
+            name = pfx+pstr[i]
+            parmDict[name] = item['Pos'][0][i]
+            if item['Pos'][1][i]:
+                varyList += [name,]
+                limits = item['Pos'][2][i]
+                lower.append(limits[0])
+                upper.append(limits[1])
+            
+    def getRBparms(item,pfx,parmDict,varyList):
+        parmDict['MolCent'] = item['MolCent']
+        parmDict['RBId'] = item['RBId']
+        pstr = ['Px','Py','Pz']
+        ostr = ['Qa','Qi','Qj','Qk']
+        for i in range(3):
+            name = pfx+pstr[i]
+            parmDict[name] = item['Pos'][0][i]
+            if item['Pos'][1][i]:
+                varyList += [name,]
+                limits = item['Pos'][2][i]
+                lower.append(limits[0])
+                upper.append(limits[1])
+        for i in range(4):
+            name = pfx+ostr[i]
+            parmDict[name] = item['Ori'][0][i]
+            if item['Ovar'] == 'AV' and i:
+                varyList += [name,]
+                limits = item['Ori'][2][i]
+                lower.append(limits[0])
+                upper.append(limits[1])
+            elif item['Ovar'] == 'A' and not i:
+                varyList += [name,]
+                limits = item['Ori'][2][i]
+                lower.append(limits[0])
+                upper.append(limits[1])
+        if 'Tor' in item:      #'Tor' not there for 'Vector' RBs
+            for i in range(len(item['Tor'][0])):
+                name = pfx+'Tor'+str(i)
+                parmDict[name] = item['Tor'][0][i]
+                if item['Tor'][1][i]:
+                    varyList += [name,]
+                    limits = item['Tor'][2][i]
+                    lower.append(limits[0])
+                    upper.append(limits[1])
+
+    def getFFvalues(FFtables,SQ):
+        FFvals = {}
+        for El in FFtables:
+            FFvals[El] = G2el.ScatFac(FFtables[El],SQ)[0]
+        return FFvals
+        
+    def getBLvalues(BLtables):
+        BLvals = {}
+        for El in BLtables:
+            BLvals[El] = BLtables[El][1][1]
+        return BLvals
+            
+#    def mcsaSfCalc(refList,G,SGData,calcControls,parmDict):
+#        ''' Compute structure factors for all h,k,l for phase
+#        input:
+#            refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
+#            G:      reciprocal metric tensor
+#            SGData: space group info. dictionary output from SpcGroup
+#            calcControls:
+#            ParmDict:
+#        puts result F^2 in each ref[8] in refList
+#        '''        
+#        twopi = 2.0*np.pi
+#        twopisq = 2.0*np.pi**2
+#        ast = np.sqrt(np.diag(G))
+#        Mast = twopisq*np.multiply.outer(ast,ast)
+#        FFtables = calcControls['FFtables']
+#        BLtables = calcControls['BLtables']
+#        Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+#        FF = np.zeros(len(Tdata))
+#        if 'N' in parmDict[hfx+'Type']:
+#            FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
+#        else:
+#            FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
+#            FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+#        maxPos = len(SGData['SGOps'])
+#        Uij = np.array(G2lat.U6toUij(Uijdata))
+#        bij = Mast*Uij.T
+#        for refl in refList:
+#            fbs = np.array([0,0])
+#            H = refl[:3]
+#            SQ = 1./(2.*refl[4])**2
+#            SQfactor = 4.0*SQ*twopisq
+#            Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
+#            if not len(refl[-1]):                #no form factors
+#                if 'N' in parmDict[hfx+'Type']:
+#                    refl[-1] = getBLvalues(BLtables)
+#                else:       #'X'
+#                    refl[-1] = getFFvalues(FFtables,SQ)
+#            for i,El in enumerate(Tdata):
+#                FF[i] = refl[-1][El]           
+#            Uniq = refl[11]
+#            phi = refl[12]
+#            phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+phi[:,np.newaxis])
+#            sinp = np.sin(phase)
+#            cosp = np.cos(phase)
+#            occ = Mdata*Fdata/len(Uniq)
+#            biso = -SQfactor*Uisodata
+#            Tiso = np.where(biso<1.,np.exp(biso),1.0)
+#            HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
+#            Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
+#            Tcorr = Tiso*Tuij
+#            fa = np.array([(FF+FP-Bab)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
+#            fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
+#            if not SGData['SGInv']:
+#                fb = np.array([(FF+FP-Bab)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
+#                fbs = np.sum(np.sum(fb,axis=1),axis=1)
+#            fasq = fas**2
+#            fbsq = fbs**2        #imaginary
+#            refl[9] = np.sum(fasq)+np.sum(fbsq)
+#            refl[10] = atan2d(fbs[0],fas[0])
+    
+    sq8ln2 = np.sqrt(8*np.log(2))
+    sq2pi = np.sqrt(2*np.pi)
+    sq4pi = np.sqrt(4*np.pi)
+    generalData = data['General']
+    pId = data['pId']
+    pfx = str(pId)+'::'
+    Atoms = data['Atoms']                       #if any
+    mcsaControls = generalData['MCSA controls']
+    reflName = mcsaControls['Data source']
+    phaseName = generalData['Name']
+    MCSAObjs = data['MCSA']['Models']               #list of MCSA models
+    parmDict = {}
+    varyList = []
+    upper = []
+    lower = []
+    for i,item in enumerate(MCSAObjs):
+        mfx = str(i)+':'
+        if item['Type'] == 'MD':
+            getMDparms(item,mfx,parmDict,varyList)
+        elif item['Type'] == 'Atom':
+            getAtomparms(item,mfx,parmDict,varyList)
+        elif item['Type'] in ['Residue','Vector']:
+            getRBparms(item,mfx,parmDict,varyList)
+    if 'PWDR' in reflName:
+        refs = []
+        for ref in reflData:
+            h,k,l,m,d,pos,sig,gam,Fsq = ref[:9]
+            if d >= mcsaControls['dmin']:
+                FWHM = gamFW(sig,gam)/2.35482        #sqrt(8ln2) --> sig from FWHM
+                Fsq *= m
+    elif 'Pawley' in reflName:
+        refs = []
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        for iref,refI in enumerate(reflData):
+            h,k,l,m,d,v,f,s = refI
+            if d >= mcsaControls['dmin'] and v:       #skip unrefined ones
+                nameI = pfx+'PWLref:'+str(iref)
+                if nameI in covData['varyList']:
+                    refs.append([h,k,l,f*m,0.,0.])
+        nRef = len(refs)
+        print nRef        
+        covTerms = np.zeros((nRef,nRef))
+        print covTerms.shape
+        
+        Iref = 0
+        for iref,refI in enumerate(reflData):
+            if refI[4] >= mcsaControls['dmin'] and refI[5]:       #skip unrefined ones
+                nameI = pfx+'PWLref:'+str(iref)
+                if nameI in covData['varyList']:
+                    Iindx = varyList.index(nameI)
+                    covTerms[Iref][Iref] = covMatrix[Iindx][Iindx]
+                    Jref = 0
+                    for jref,refJ in enumerate(reflData[:iref]):
+                        if refJ[5]:
+                            nameJ = pfx+'PWLref:'+str(jref)
+                            try:
+                                covTerms[Iref][Jref] = covMatrix[varyList.index(nameI)][varyList.index(nameJ)]
+                            except ValueError:
+                                covTerms[Iref][Jref] = covTerms[Iref][Jref-1]
+                            Jref += 1
+                Iref += 1
+        print covTerms
+                        
+                    
+#    covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+#        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
+    elif 'HKLF' in reflName:
+        refs = []
+        for ref in reflData:
+            h,k,l,m,d,Fsq = ref[:5],ref[6]
+            if d >= mcsaControls['dmin']:
+                Fsq *= m
+                refs.append([h,k,l,m,Fsq])
+        rcov = np.identity(len(refs))   
+                        
+        
+            
+#    generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50,1.e-6],
+#    'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':1,'boltzmann':1.0,
+#    'fast parms':[1.0,1.0,1.0],'log slope':0.9}
 
     return {}
 
         
-def getWave(Parms):
-    'Needs a doc string'        
-    try:
-        return Parms['Lam'][1]
-    except KeyError:
-        return Parms['Lam1'][1]
-    
+################################################################################
+##### Quaternion stuff
+################################################################################
+
 def prodQQ(QA,QB):
     ''' Grassman quaternion product
         QA,QB quaternions; q=r+ai+bj+ck
@@ -1662,3 +2275,17 @@ def makeQuat(A,B,C):
         if DM > DP:
             D *= -1.
     return Q,D
+    
+if __name__ == "__main__":
+    from numpy import cos
+    # minimum expected at ~-0.195
+    func = lambda x: cos(14.5*x-0.3) + (x+0.2)*x
+    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='cauchy')
+    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='fast')
+    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='boltzmann')
+
+    # minimum expected at ~[-0.195, -0.1]
+    func = lambda x: cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
+    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy')
+    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast')
+    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann')

@@ -119,9 +119,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Pawley dmin'] = 1.0
         if 'Pawley neg wt' not in generalData:
             generalData['Pawley neg wt'] = 0.0
-        if 'MCSA controls' not in generalData:
-            generalData['MCSA controls'] = {'Data source':'','Annealing':[50.0,0.001,0.90,1000],
-            'dmin':2.0,'Algolrithm':'Random jump','Jump coeff':[0.95,0.5],'nRuns':1} #'Random jump','Tremayne jump'
+        if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
+            'MCSA controls' not in generalData:
+            generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50,1.e-6],
+            'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':1,'boltzmann':1.0,
+            'fast parms':[1.0,1.0,1.0],'log slope':0.9}
 # end of patches
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
@@ -655,41 +657,49 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 MCSA['nRuns'] = int(noRuns.GetValue())
             
             def OnAlist(event):
-                MCSA['Algolrithm'] = Alist.GetValue()
-                if 'Tremayne' in MCSA['Algolrithm']:
-                    wx.CallAfter(UpdateGeneral)
+                MCSA['Algorithm'] = Alist.GetValue()
+                wx.CallAfter(UpdateGeneral)
+                
+            def OnSlope(event):
+                try:
+                    val = float(slope.GetValue())
+                    if .25 <= val < 1.0:
+                        MCSA['log slope'] = val
+                except ValueError:
+                    pass
+                Obj.SetValue("%.3f"%(MCSA['log slope']))          #reset in case of error                
             
             def OnAjump(event):
                 Obj = event.GetEventObject()
-                ind = Indx[Obj.GetId()]
+                name,ind = Indx[Obj.GetId()]
                 try:
                     val = float(Obj.GetValue())
                     if .0 <= val <= 1.0:
-                        MCSA['Jump coeff'][ind] = val
+                        MCSA[name][ind] = val
                 except ValueError:
                     pass
-                Obj.SetValue("%.3f"%(MCSA['Jump coeff'][ind]))          #reset in case of error
+                Obj.SetValue("%.3f"%(MCSA[name][ind]))
             
             def OnAnneal(event):
                 Obj = event.GetEventObject()
                 ind,fmt = Indx[Obj.GetId()]
-                if ind < 3:
+                if ind == 2:        #No. trials
                     try:
-                        val = float(Obj.GetValue())
-                        if .0 <= val:
+                        val = int(Obj.GetValue())
+                        if 1 <= val:
                             MCSA['Annealing'][ind] = val
                     except ValueError:
                         pass
                 else:
                     try:
-                        val = int(Obj.GetValue())
-                        if 1 <= val:
-                            MCSA['Annealing'][3] = val
+                        val = float(Obj.GetValue())
+                        if .0 <= val:
+                            MCSA['Annealing'][ind] = val
                     except ValueError:
-                        pass
-                    
-                Obj.SetValue(fmt%(MCSA['Annealing'][ind]))          #reset in case of error
+                        pass                    
+                Obj.SetValue(fmt%(MCSA['Annealing'][ind]))
                        
+#            MCSA = {'boltzmann':1.0,
             refList = []
             if len(data['Pawley ref']):
                 refList = ['Pawley reflections']
@@ -711,32 +721,45 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            Rchoice = ['1','2','3','5','10','15','20']
+            Rchoice = ['1','2','3','5','10','15','20','50','100','200','500']
             line2Sizer.Add(wx.StaticText(General,label=' No. MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
             noRuns = wx.ComboBox(General,-1,value=str(MCSA.get('nRuns',1)),choices=Rchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             noRuns.Bind(wx.EVT_COMBOBOX,OnNoRuns)
             line2Sizer.Add(noRuns,0,wx.ALIGN_CENTER_VERTICAL)
-            Achoice = ['Random jump','Tremayne jump']
-            line2Sizer.Add(wx.StaticText(General,label=' MC/SA algorithm: '),0,wx.ALIGN_CENTER_VERTICAL)
-            Alist = wx.ComboBox(General,-1,value=MCSA['Algolrithm'],choices=Achoice,
+            Achoice = ['log','fast','cauchy','boltzmann','Tremayne']
+            line2Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Alist = wx.ComboBox(General,-1,value=MCSA['Algorithm'],choices=Achoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Alist.Bind(wx.EVT_COMBOBOX,OnAlist)
             line2Sizer.Add(Alist,0,wx.ALIGN_CENTER_VERTICAL)
-            if 'Tremayne' in MCSA['Algolrithm']:
-                for i,name in enumerate([' A-jump: ',' B-jump: ']):
+            if MCSA['Algorithm'] in ['Tremayne','fast','boltzmann','cauchy']:
+                Names = [' A-jump: ',' B-jump: ']
+                parms = 'Jump coeff'
+                if MCSA['Algorithm'] in ['boltzmann','cauchy']:
+                    Names = [' A-jump: ']
+                elif 'fast' in MCSA['Algorithm']:
+                    Names = [' quench: ',' m-factor: ',' n-factor: ']
+                    parms = 'fast parms'
+                for i,name in enumerate(Names):
                     line2Sizer.Add(wx.StaticText(General,label=name),0,wx.ALIGN_CENTER_VERTICAL)
-                    Ajump =  wx.TextCtrl(General,-1,value='%.3f'%(MCSA['Jump coeff'][i]),style=wx.TE_PROCESS_ENTER)
+                    Ajump =  wx.TextCtrl(General,-1,value='%.3f'%(MCSA[parms][i]),style=wx.TE_PROCESS_ENTER)
                     Ajump.Bind(wx.EVT_TEXT_ENTER,OnAjump)        
                     Ajump.Bind(wx.EVT_KILL_FOCUS,OnAjump)
-                    Indx[Ajump.GetId()] = i
+                    Indx[Ajump.GetId()] = [parms,i]
                     line2Sizer.Add(Ajump,0,wx.ALIGN_CENTER_VERTICAL)
+            elif 'log' in MCSA['Algorithm']:
+                line2Sizer.Add(wx.StaticText(General,label=' slope: '),0,wx.ALIGN_CENTER_VERTICAL)
+                slope =  wx.TextCtrl(General,-1,value='%.3f'%(MCSA['log slope']),style=wx.TE_PROCESS_ENTER)
+                slope.Bind(wx.EVT_TEXT_ENTER,OnSlope)        
+                slope.Bind(wx.EVT_KILL_FOCUS,OnSlope)
+                line2Sizer.Add(slope,0,wx.ALIGN_CENTER_VERTICAL)
             mcsaSizer.Add(line2Sizer)
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line3Sizer.Add(wx.StaticText(General,label=' Annealing schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
-            names = [' Start temp: ',' Final temp: ',' Slope: ',' No. trials: ']
-            fmts = ['%.1f','%.5f','%.2f','%d']
+            names = [' Start temp: ',' Final temp: ',' No. trials: ',' feps: ']
+            fmts = ['%.1f','%.5f','%d','%.2g']
             for i,[name,fmt] in enumerate(zip(names,fmts)):
                 line3Sizer.Add(wx.StaticText(General,label=name),0,wx.ALIGN_CENTER_VERTICAL)
                 anneal =  wx.TextCtrl(General,-1,value=fmt%(MCSA['Annealing'][i]),style=wx.TE_PROCESS_ENTER)

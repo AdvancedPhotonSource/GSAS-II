@@ -108,12 +108,12 @@ found.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 772 $&#8221;
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 939 $&#8221;
 that is set by subversion when the file is retrieved from subversion.</td>
 </tr>
 </tbody>
 </table>
-<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">$&quot;)</span></tt> in every python
+<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">939</span> <span class="pre">$&quot;)</span></tt> in every python
 file.</p>
 </dd></dl>
 
@@ -998,7 +998,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17cc0930&gt;, &lt;function test1 at 0x17cc0970&gt;, &lt;function test2 at 0x17cc09b0&gt;, &lt;function test3 at 0x17cc09f0&gt;, &lt;function test4 at 0x17cc0a30&gt;, &lt;function test5 at 0x17cc0a70&gt;, &lt;function test6 at 0x17cc0ab0&gt;, &lt;function test7 at 0x17cc0af0&gt;, &lt;function test8 at 0x17cc0b30&gt;, &lt;function test9 at 0x17cc0b70&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0xc92aa30&gt;, &lt;function test1 at 0xc92aa70&gt;, &lt;function test2 at 0xc92aab0&gt;, &lt;function test3 at 0xc92aaf0&gt;, &lt;function test4 at 0xc92ab30&gt;, &lt;function test5 at 0xc92ab70&gt;, &lt;function test6 at 0xc92abb0&gt;, &lt;function test7 at 0xc92abf0&gt;, &lt;function test8 at 0xc92ac30&gt;, &lt;function test9 at 0xc92ac70&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1090,7 +1090,67 @@ unit cell constants</p>
 </div>
 <span class="target" id="module-GSASIIspc"></span><div class="section" id="gsasiispc-space-group-module">
 <h2><em>GSASIIspc: Space group module</em><a class="headerlink" href="#gsasiispc-space-group-module" title="Permalink to this headline">¶</a></h2>
-<p>Space group interpretion routines</p>
+<p>Space group interpretation routines.</p>
+<p>Space groups are interpreted and the information is placed in a SGdata object,
+which is a dict with these keys:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">explaination</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>SpGrp</td>
+<td>space group symbol (str)</td>
+</tr>
+<tr class="row-odd"><td>Laue</td>
+<td>one of the following 14 Laue classes:
+-1, 2/m, mmm, 4/m, 4/mmm, 3R,
+3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)</td>
+</tr>
+<tr class="row-even"><td>SGInv</td>
+<td>True if centrosymmetric, False if not (bool)</td>
+</tr>
+<tr class="row-odd"><td>SGLatt</td>
+<td>Lattice centering type. Will be one of
+P, A, B, C, I, F, R (str)</td>
+</tr>
+<tr class="row-even"><td>SGUniq</td>
+<td>unique axis if monoclinic. Will be
+a, b, or c for monoclinic space groups.
+Will be blank for non-monoclinic. (str)</td>
+</tr>
+<tr class="row-odd"><td>SGCen</td>
+<td>Symmetry cell centering vectors. A (n,3) np.array
+of centers. Will always have at least one row:
+<tt class="docutils literal"><span class="pre">np.array([[0,</span> <span class="pre">0,</span> <span class="pre">0]])</span></tt></td>
+</tr>
+<tr class="row-even"><td>SGOps</td>
+<td>symmetry operations as a list in form
+[[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array
+and T is a length 3 np.array.
+Atom coordinates are transformed where the
+Asymmetric unit coordinates [X=(x,y,z)] are
+transformed using <tt class="docutils literal"><span class="pre">M*X+T</span> <span class="pre">==&gt;</span> <span class="pre">X'</span></tt></td>
+</tr>
+<tr class="row-odd"><td>SGSys</td>
+<td>symmetry unit cell: type one of
+&#8216;triclinic&#8217;, &#8216;monoclinic&#8217;, &#8216;orthorhombic&#8217;,
+&#8216;tetragonal&#8217;, &#8216;rhombohedral&#8217;, &#8216;trigonal&#8217;,
+&#8216;hexagonal&#8217;, &#8216;cubic&#8217; (str)</td>
+</tr>
+<tr class="row-even"><td>SGPolax</td>
+<td>Axes for space group polarity. Will be one of
+&#8216;&#8217;, &#8216;x&#8217;, &#8216;y&#8217;, &#8216;x y&#8217;, &#8216;z&#8217;, &#8216;x z&#8217;, &#8216;y z&#8217;,
+&#8216;xyz&#8217;. In the case where axes are arbitrary
+&#8216;111&#8217; is used (P 1, and ?).</td>
+</tr>
+</tbody>
+</table>
 <dl class="function">
 <dt id="GSASIIspc.ApplyStringOps">
 <tt class="descclassname">GSASIIspc.</tt><tt class="descname">ApplyStringOps</tt><big>(</big><em>A</em>, <em>SGData</em>, <em>X</em>, <em>Uij=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#ApplyStringOps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.ApplyStringOps" title="Permalink to this definition">¶</a></dt>
@@ -1411,7 +1471,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x2376470&gt;, &lt;function test1 at 0x23764b0&gt;, &lt;function test2 at 0x23764f0&gt;, &lt;function test3 at 0x2376530&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0xbdfd7b0&gt;, &lt;function test1 at 0xbdfd930&gt;, &lt;function test2 at 0xbdfd9f0&gt;, &lt;function test3 at 0xbdfdb70&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 

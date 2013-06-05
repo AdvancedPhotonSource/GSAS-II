@@ -1594,11 +1594,17 @@ class ExportBaseclass(object):
                 else:
                     if self.GroupedParms.get(key) is None:
                         self.GroupedParms[key] = {}
+                    if self.GroupedParms[key].get(name):
+                        print("Aborting export: Histogram name repeated"+str(name))
+                        return
                     self.GroupedParms[key][name] = {}
                     self.GroupedParms[key][name][None] = G2frame.PatternTree.GetItemPyData(item)
                     d = self.GroupedParms[key][name]
                 while item2:
                     name = G2frame.PatternTree.GetItemText(item2)
+                    if d.get(name):
+                        print("Aborting export: phase name repeated"+str(name))
+                        return
                     d[name] = G2frame.PatternTree.GetItemPyData(item2)
                     item2, cookie2 = G2frame.PatternTree.GetNextChild(item, cookie2)                            
             else:

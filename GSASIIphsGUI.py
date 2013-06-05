@@ -16,6 +16,108 @@ in the data display window when a phase is selected.
 (pages displayed in response to some phase tabs are done in other modules,
 such as GSASIIddata.)
 
+Phase information is stored in the GSAS-II data tree as children of the
+Phases item in a dict with keys:
+
+.. tabularcolumns:: |l|l|p{4in}|
+
+==========  ===============  ====================================================
+  key         sub-key        explaination
+==========  ===============  ====================================================
+General         \            Overall information for the phase (dict)
+  \         AtomPtrs         ? (list)
+  \         F000X            x-ray F(000) intensity (float)
+  \         F000N            neutron F(000) intensity (float)
+  \         Mydir            directory of current .gpx file (str)
+  \         MCSA controls    ?
+  \         Cell             List with 7 items: cell refinement flag (bool)
+                             a, b, c, (Angstrom, float)
+                             alpha, beta & gamma (degrees, float)
+  \         Type             for now 'nuclear' (str)
+  \         Map              dict of map parameters
+  \         SH Texture       dict of spherical harmonic preferred orientation 
+                             parameters
+  \         Isotope          dict of isotopes for each atom type
+  \         Isotopes         dict of scattering lengths for each isotope
+                             combination for each element in phase  
+  \         Name             phase name (str)
+  \         SGData           Space group details, 
+                             as defined in :mod:`GSASIIspc`
+  \         Pawley neg wt    Restraint value for negative Pawley intensities
+                             (float)
+  \         Flip             Charge flip controls dict?
+  \         Data plot type   ?
+  \         Mass             Mass of unit cell contents in g/mm**3
+  \         POhkl            March-Dollase preferred orientation direction
+  \         Z                ?
+  \         vdWRadii         ?
+  \         Color            Colors for atoms (list of (r,b,g) triplets)
+  \         AtomTypes        List of atom types
+  \         AtomMass         List of masses for atoms
+  \         doPawley         Flag for Pawley intensity extraction (bool)
+  \         NoAtoms          Number of atoms per unit cell of each type (dict)
+  \         Pawley dmin      maximum Q (as d-space) to use for Pawley 
+                             extraction (float)
+  \         BondRadii        Radius for each atom used to compute 
+                             interatomic distances (list of floats)
+  \         AngleRadii       Radius for each atom used to compute 
+                             interatomic angles (list of floats)
+ranId           \            unique random number Id for phase (int)
+pId             \            ? (int)
+Atoms           \            Atoms in phase as a list of lists. The outer list
+                             is for each atom, the inner list contains 18
+                             items:
+                             0) atom label, 1) the atom type,
+                             2) the refinement flags, 3-6) x, y, z, frac
+                             7) site symmetry, 8) site multiplicity,
+                             9) 'I' or 'A' for iso/anisotropic,
+                             10) Uiso, 10-16) Uij, 16) unique Id #.
+                             (list of lists)
+Drawing         \            Display parameters (dict)
+\           ballScale        Size of spheres in ball-and-stick display (float)
+\           bondList         dict with bonds
+\           contourLevel     ? (float)
+\           showABC          Flag to show view point triplet (bool). True=show.
+\           viewDir          cartesian viewing direction (np.array with three
+                             elements)
+\           Zclip            clipping distance in A (float)
+\           backColor        background for plot as and R,G,B triplet
+                             (default = [0, 0, 0], black).
+                             (list with three atoms)
+\           selectedAtoms    List of selected atoms (list of int values)
+\           showRigidBodies  Flag to highlight rigid body placement
+\           sizeH            Size ratio for H atoms (float) 
+\           bondRadius       Size of binds in A (float)
+\           atomPtrs         ? (list)
+\           viewPoint        list of lists. First item in list is [x,y,z]
+                             in fractional coordinates for the center of
+                             the plot. Second item ?.
+\           showHydrogen     Flag to control plotting of H atoms.
+\           unitCellBox      Flag to control display of the unit cell.
+\           ellipseProb      Probability limit for display of thermal
+                             ellipsoids in % (float).
+\           vdwScale         Multiplier of van der Waals radius for
+                             display of vdW spheres. 
+\           Atoms            A list of lists with an entry for each atom
+                             that is plotted.
+\           Zstep            Step to de/increase Z-clip (float)
+\           Quaternion       Viewing quaternion (4 element np.array)
+\           radiusFactor     Distance ratio for searching for bonds. ? Bonds
+                             are located that are within r(Ra+Rb) and (Ra+Rb)/r
+                             where Ra and Rb are the atomic radii.
+\           oldxy            ? (list with two floats)
+\           cameraPos        Viewing position in A for plot (float)
+\           depthFog         ? (bool)
+RBModels        \            Rigid body assignments (note Rigid body definitions
+                             are stored in their own main top-level tree entry.)
+Pawley ref      \            Pawley reflections
+Histograms      \            A dict of dicts. The key for the outer dict is
+                             the histograms tied to this phase. The inner
+                             dict contains the combined phase/histogram
+                             parameters for items such as scale factors,
+                             size and strain parameters. (dict)
+MCSA            \            Monte-Carlo simulated annealing parameters
+==========  ===============  ====================================================
 '''
 import wx
 import wx.grid as wg
@@ -95,7 +197,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
     G2frame.dataFrame.CreateStatusBar()
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
-
+    G2frame.dataDisplay.gridList = [] # list of all grids in notebook
+    
     def SetupGeneral():
         generalData = data['General']
         atomData = data['Atoms']
@@ -960,7 +1063,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     wx.CallAfter(Paint)
                     
         def ChangeAtomCell(event):
-            
+
             def chkUij(Uij,CSI): #needs to do something!!!
                 return Uij
 
@@ -1951,7 +2054,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.setSizePosLeft([600,300])
         else:
             G2frame.dataFrame.Update()
-        
+
         FindBondsDraw()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
@@ -4832,6 +4935,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         '''This is called every time that a Notebook tab button is pressed
         on a Phase data item window
         '''
+        for page in G2frame.dataDisplay.gridList: # clear out all grids, forcing edits in progress to complete
+            page.ClearGrid()
         wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
@@ -4850,7 +4955,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
             for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
                 G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
-            
+                
             FillAtomsGrid(Atoms)
         elif text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
@@ -4942,25 +5047,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         event.Skip()
         
     wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
+    G2frame.dataDisplay.gridList = []
     General = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(General,'General')
     DData = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(DData,'Data')
     Atoms = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.gridList.append(Atoms)
     G2frame.dataDisplay.AddPage(Atoms,'Atoms')
     drawOptions = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
     drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.gridList.append(drawAtoms)
     G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
     RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
     MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.gridList.append(MapPeaks)    
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
     MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(MCSA,'MC/SA')
     Texture = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(Texture,'Texture')
     G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.dataDisplay.gridList.append(G2frame.PawleyRefl)
     G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
     
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)

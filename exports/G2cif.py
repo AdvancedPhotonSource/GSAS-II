@@ -24,14 +24,20 @@ class ExportCIF(G2IO.ExportBaseclass):
         '''
         def WriteCIFitem(name,value=''):
             if value:
-                if "\n" in value or len(value)+len(name)+4 > 70:
+                if "\n" in value or len(value)> 70:
                     if name.strip(): print name
                     print '; '+value
                     print '; '
                 elif " " in value:
-                    print name,'  ','"' + str(value) + '"'
+                    if len(name)+len(value) > 65:
+                        print name,'\n   ','"' + str(value) + '"'
+                    else:
+                        print name,'  ','"' + str(value) + '"'
                 else:
-                    print name,'  ',value
+                    if len(name)+len(value) > 65:
+                        print name,'\n   ',value
+                    else:
+                        print name,'  ',value
             else:
                 print name
 
@@ -47,6 +53,8 @@ class ExportCIF(G2IO.ExportBaseclass):
         def WriteOverall():
             '''TODO: Write out overall refinement information
             '''
+            WriteCIFitem('_pd_proc_info_datetime', self.CIFdate)
+            WriteCIFitem('_pd_calc_method', 'Rietveld Refinement')
             #WriteCIFitem('_refine_ls_shift/su_max',DAT1)
             #WriteCIFitem('_refine_ls_shift/su_mean',DAT2)
             WriteCIFitem('_computing_structure_refinement','GSAS-II')
@@ -62,9 +70,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             # _refine_ls_wR_factor_obs
             # _refine_ls_restrained_S_all
             # _refine_ls_restrained_S_obs
+
             # include an overall profile r-factor, if there is more than one powder histogram
             if self.npowder > 1:
-                WriteCIFitem('# Overall powder R-factors')
+                WriteCIFitem('\n# OVERALL POWDER R-FACTORS')
                 #WriteCIFitem('_pd_proc_ls_prof_R_factor',TEXT(11:20))
                 #WriteCIFitem('_pd_proc_ls_prof_wR_factor',TEXT(1:10))
             WriteCIFitem('_refine_ls_matrix_type','full')
@@ -95,21 +104,293 @@ class ExportCIF(G2IO.ExportBaseclass):
             print "TODO: single-crystal histogram template info goes here"
 
         def WritePhaseInfo(phasenam):
+            # see writepha.for
             print 'TODO: phase info for',phasenam,'goes here'
-            phasedict = self.GroupedParms['Phases'][phasenam] # pointer to current phase info
-            print phasedict.keys()
-            # see WRITEPHASE
+            # THINK: how to select publication flags for distances/angles?
+            phasedict = self.GroupedParms['Phases'][phasenam] # pointer to current phase info            
+            WriteCIFitem('_pd_phase_name', phasenam)
+            text = '?'
+            for lbl in 'a','b','c':
+                WriteCIFitem('_cell_length_'+lbl,text)
+            for lbl in 'alpha','beta ','gamma':
+                WriteCIFitem('_cell_angle_'+lbl,text)
+
+            WriteCIFitem('_cell_volume',text)
+
+            #print phasedict['Histograms']
+#            for key in phasedict['General']:
+#                print key,'=',phasedict['General'][key]
+#            print phasedict['pId']
+
+            #NSYS = (1,2,3,4,4,5,5,5,5,5,6,6,7,7)
+            #SYST = ('','triclinic','monoclinic','orthorhombic','tetragonal','trigonal ','hexagonal','cubic')
+
+            WriteCIFitem('_symmetry_cell_setting',
+                         phasedict['General']['SGData']['SGSys'])
+
+            spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
+            # regularize capitalization and remove trailing H/R
+            spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
+            WriteCIFitem('_symmetry_space_group_name_H-M',spacegroup)
+            # generate symmetry operations including centering and center of symmetry
+            WriteCIFitem('loop_ _symmetry_equiv_pos_site_id _symmetry_equiv_pos_as_xyz')
+
+            # loop over histogram(s) used in this phase
+            if not oneblock:
+                # pointers to histograms used in this phase
+                histlist = []
+                for hist in self.GroupedParms['Phases'][phasenam]['Histograms']:
+                    if self.GroupedParms['Phases'][phasenam]['Histograms'][hist]['Use']:
+                        if phasebyhistDict.get(hist):
+                            phasebyhistDict[hist].append(phasenam)
+                        else:
+                            phasebyhistDict[hist] = [phasenam,]
+                        blockid = datablockidDict.get(hist)
+                        if not blockid:
+                            print "Internal error: no block for data. Phase "+str(
+                                phasenam)+" histogram "+str(hist)
+                            histlist = []
+                            break
+                        histlist.append(blockid)
+
+                if len(histlist) == 0:
+                    WriteCIFitem('# Note: phase has no associated data')
+                else:
+                    WriteCIFitem('loop_  _pd_block_diffractogram_id')
+                    for hist in histlist:
+                        WriteCIFitem('',hist)
+                        # TODO: sample/histogram profile information and other "HAP" info should be
+                        # reported in this loop, such as
+                        # _pd_proc_ls_pref_orient_corr 
+                        # _pd_proc_ls_profile_function
+                        #txt = ' Spherical Harmonic ODF' + '\n spherical harmonic order='+'?'
+                        #IF ( ISAMSYM.EQ.1 ) THEN
+                        #txt += '\n No sample symmetry'
+                #ELSE IF ( ISAMSYM.EQ.2 ) THEN
+                #txt += ' The sample symmetry is: 2/m (shear texture)'
+                #ELSE IF ( ISAMSYM.EQ.3 ) THEN
+                #txt += ' The sample symmetry is: mmm (rolling texture)'
+                #ELSE IF ( ISAMSYM.EQ.0 ) THEN
+                #txt += ' The sample symmetry is: cylindrical (fiber texture)'
+                #WriteCIFitem('_pd_proc_ls_pref_orient_corr',txt)
+            else:
+                # report all profile information here (include instrumental)
+                # _pd_proc_ls_pref_orient_corr 
+                # _pd_proc_ls_profile_function 
+                pass
+            
+            WriteCIFitem('\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
+      
+            WriteCIFitem('loop_ '+
+                         '\n\t_atom_site_type_symbol'+
+                         '\n\t_atom_site_label'+
+                         '\n\t_atom_site_fract_x'+
+                         '\n\t_atom_site_fract_y'+
+                         '\n\t_atom_site_fract_z'+
+                         '\n\t_atom_site_occupancy'+
+                         '\n\t_atom_site_thermal_displace_type'+
+                         '\n\t_atom_site_U_iso_or_equiv'+
+                         '\n\t_atom_site_symmetry_multiplicity')
+
+            WriteCIFitem('loop_' + '\n\t_atom_site_aniso_label' + 
+                         '\n\t_atom_site_aniso_U_11' + '\n\t_atom_site_aniso_U_12' +
+                         '\n\t_atom_site_aniso_U_13' + '\n\t_atom_site_aniso_U_22' +
+                         '\n\t_atom_site_aniso_U_23' + '\n\t_atom_site_aniso_U_33')
+
+            # process the chemical formula: pick a Z value & generate molecular weight
+            # find the maximum possible Z value
+
+            # order the elements in "Hill" order: C, H, D, T & alphabetical or alphabetical
+            if not oneblock: # in single block, this is combined with the scattering factors
+                WriteCIFitem('loop_  _atom_type_symbol _atom_type_number_in_cell')
+
+            WriteCIFitem('# If you change Z, be sure to change all 3 of the following')
+            WriteCIFitem( '_chemical_formula_sum',text)
+            #WRITE(TEXT,'(F15.2)') ATMASS
+            WriteCIFitem( '_chemical_formula_weight',text)
+            #WRITE(TEXT,'(I4)') Z
+            WriteCIFitem( '_cell_formula_units_Z',text)
+
+            #C now loop over interatomic distances for this phase
+            WriteCIFitem('\n# MOLECULAR GEOMETRY')
+            WriteCIFitem('loop_' + 
+                         '\n\t_geom_bond_atom_site_label_1' +
+                         '\n\t_geom_bond_atom_site_label_2' + 
+                         '\n\t_geom_bond_distance' + 
+                         '\n\t_geom_bond_site_symmetry_1' + 
+                         '\n\t_geom_bond_site_symmetry_2' + 
+                         '\n\t_geom_bond_publ_flag')
+
+            #C now loop over interatomic angles for this phase
+            WriteCIFitem('loop_' + 
+                         '\n\t_geom_angle_atom_site_label_1' + 
+                         '\n\t_geom_angle_atom_site_label_2' + 
+                         '\n\t_geom_angle_atom_site_label_3' + 
+                         '\n\t_geom_angle' + 
+                         '\n\t_geom_angle_site_symmetry_1' +
+                         '\n\t_geom_angle_site_symmetry_2' + 
+                         '\n\t_geom_angle_site_symmetry_3' + 
+                         '\n\t_geom_angle_publ_flag')
 
         def WritePowderData(histlbl):
+            text = '?'
             histblk = self.GroupedParms['PWDR'][histlbl]
             print 'TODO: powder here data for',histblk["Sample Parameters"]['InstrName']
-            # see WRPOWDHIST & WRREFLIST
+            # see wrpowdhist.for & wrreflist.for
+            
+            refprx = '_refln.' # mm
+            refprx = '_refln_' # normal
 
+            if not oneblock:
+                if not phasebyhistDict.get(histlbl):
+                    WriteCIFitem('\n# No phases associated with this data set')
+                else:
+                    WriteCIFitem('\n# PHASE TABLE')
+                    WriteCIFitem('loop_' +
+                                 '\n\t_pd_phase_id' + 
+                                 '\n\t_pd_phase_block_id' + 
+                                 '\n\t_pd_phase_mass_%')
+                    for phasenam in phasebyhistDict.get(histlbl):
+                        pass
+
+            WriteCIFitem('\n# SCATTERING FACTOR INFO')
+            WriteCIFitem('_diffrn_radiation_wavelength' ,text)
+            #WriteCIFitem('_diffrn_radiation_type',text)
+            #C always assume Ka1 & Ka2 if two wavelengths are present
+            #WriteCIFitem('loop_' + 
+            #             '\n\t_diffrn_radiation_wavelength' +
+            #             '\n\t_diffrn_radiation_wavelength_wt' + 
+            #             '\n\t_diffrn_radiation_type' + 
+            #             '\n\t_diffrn_radiation_wavelength_id')
+            #WRITE LAM1,1.0,'K\\a~1~',1, LAM2,ratio,'K\\a~2~',2
+
+            WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
+            WriteCIFitem('_pd_proc_ls_prof_wR_factor','?')
+            WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
+            WriteCIFitem('_refine_ls_R_Fsqd_factor','?')
+            
+            #WriteCIFitem('_pd_meas_2theta_fixed',text)
+            WriteCIFitem('_diffrn_radiation_probe','x-ray')
+            WriteCIFitem('_diffrn_radiation_probe','neutron')
+            WriteCIFitem('_diffrn_radiation_polarisn_ratio','?')
+            
+            WriteCIFitem('loop_  _atom_type_symbol')
+            if oneblock:
+                WriteCIFitem('       _atom_type_number_in_cell')
+            #IF (HTYP(2:2) .eq. 'X' .AND. HTYP(3:3) .ne. 'E') THEN
+            WriteCIFitem('      _atom_type_scat_dispersion_real')
+            WriteCIFitem('      _atom_type_scat_dispersion_imag')
+            for lbl in ('a1','a2','a3', 'a4', 'b1', 'b2', 'b3', 'b4', 'c'):
+                WriteCIFitem('      _atom_type_scat_Cromer_Mann_'+lbl)
+            #ELSEIF (HTYP(2:2) .eq. 'N') THEN
+            WriteCIFitem('      _atom_type_scat_length_neutron')
+            #ENDIF
+            WriteCIFitem('      _atom_type_scat_source')
+
+            #C document the background function used
+            WriteCIFitem('_pd_proc_ls_background_function','?')
+
+            WriteCIFitem('_exptl_absorpt_process_details','?')
+            WriteCIFitem('_exptl_absorpt_correction_T_min','?')
+            WriteCIFitem('_exptl_absorpt_correction_T_max','?')
+            #C extinction
+            #WRITE(IUCIF,'(A)') '# Extinction correction'
+            #CALL WRVAL(IUCIF,'_gsas_exptl_extinct_corr_T_min',TEXT(1:10))
+            #CALL WRVAL(IUCIF,'_gsas_exptl_extinct_corr_T_max',TEXT(11:20))
+
+            if not oneblock:
+                # instrumental profile terms go here
+                WriteCIFitem('_pd_proc_ls_profile_function','?')
+
+            WriteCIFitem('\n# STRUCTURE FACTOR TABLE')            
+            WriteCIFitem('loop_' + 
+                         '\n\t' + refprx + 'index_h' + 
+                         '\n\t' + refprx + 'index_k' + 
+                         '\n\t' + refprx + 'index_l' + 
+                         '\n\t_pd_refln_wavelength_id' +
+                         '\n\t_pd_refln_phase_id' + 
+                         '\n\t' + refprx + 'status' + 
+                         '\n\t' + refprx + 'F_squared_meas' + 
+                         '\n\t' + refprx + 'F_squared_sigma' + 
+                         '\n\t' + refprx + 'F_squared_calc' + 
+                         '\n\t' + refprx + 'phase_calc' + 
+                         '\n\t_pd_refln_d_spacing' + 
+                         '\n\t_gsas_i100_meas')
+
+            WriteCIFitem('_reflns_number_total', text)
+            WriteCIFitem('_reflns_limit_h_min', text)
+            WriteCIFitem('_reflns_limit_h_max', text)
+            WriteCIFitem('_reflns_limit_k_min', text)
+            WriteCIFitem('_reflns_limit_k_max', text)
+            WriteCIFitem('_reflns_limit_l_min', text)
+            WriteCIFitem('_reflns_limit_l_max', text)
+            WriteCIFitem('_reflns_d_resolution_high', text)
+            WriteCIFitem('_reflns_d_resolution_low', text)
+            
+            WriteCIFitem('\n# POWDER DATA TABLE')
+            # is data fixed step?
+            fixedstep = False
+            # are ESDs sqrt(I)
+            countsdata = False
+            zero = 0.01
+            if fixedstep:
+                WriteCIFitem('_pd_meas_2theta_range_min', text)
+                WriteCIFitem('_pd_meas_2theta_range_max', text)
+                WriteCIFitem('_pd_meas_2theta_range_inc', text)
+                # zero correct
+                if zero != 0.0:
+                    WriteCIFitem('_pd_proc_2theta_range_min', text)
+                    WriteCIFitem('_pd_proc_2theta_range_max', text)
+                    WriteCIFitem('_pd_proc_2theta_range_inc', text)
+            WriteCIFitem('loop_' +
+                         '\n\t_pd_proc_d_spacing')
+                         #'_pd_meas_time_of_flight'
+            if not fixedstep:
+                if zero != 0.0:
+                    WriteCIFitem('\t_pd_proc_2theta_corrected')
+                else:
+                    WriteCIFitem('\t_pd_meas_2theta_scan')
+            if countsdata:
+                WriteCIFitem('\t_pd_meas_counts_total')
+            else:
+                WriteCIFitem('\t_pd_meas_intensity_total')
+            WriteCIFitem('\t_pd_proc_ls_weight')
+            WriteCIFitem('\t_pd_proc_intensity_bkg_calc')
+            WriteCIFitem('\t_pd_calc_intensity_total')
+            if zero != 0.0:
+                WriteCIFitem('_pd_proc_number_of_points', text)
+            else:
+                WriteCIFitem('_pd_meas_number_of_points', text)
+                         
         def WriteSingleXtalData(histlbl):
             histblk = self.GroupedParms['HKLF'][histlbl]
             print 'TODO: single xtal here data for',histblk["Instrument Parameters"][0]['InstrName']
-            # see WRREFLIST
+            # see wrreflist.for
+            refprx = '_refln.' # mm
+            refprx = '_refln_' # normal
+            
+            WriteCIFitem('\n# STRUCTURE FACTOR TABLE')            
+            WriteCIFitem('loop_' + 
+                         '\n\t' + refprx + 'index_h' + 
+                         '\n\t' + refprx + 'index_k' + 
+                         '\n\t' + refprx + 'index_l' + 
+                         '\n\t' + refprx + 'status' + 
+                         '\n\t' + refprx + 'F_squared_meas' + 
+                         '\n\t' + refprx + 'F_squared_sigma' + 
+                         '\n\t' + refprx + 'F_squared_calc' + 
+                         '\n\t' + refprx + 'phase_calc')
+            WriteCIFitem('_reflns_number_total', text)
+            WriteCIFitem('_reflns_number_observed', text)
+            WriteCIFitem('_reflns_limit_h_min', text)
+            WriteCIFitem('_reflns_limit_h_max', text)
+            WriteCIFitem('_reflns_limit_k_min', text)
+            WriteCIFitem('_reflns_limit_k_max', text)
+            WriteCIFitem('_reflns_limit_l_min', text)
+            WriteCIFitem('_reflns_limit_l_max', text)
+            WriteCIFitem('_reflns_d_resolution_high', text)
+            WriteCIFitem('_reflns_d_resolution_low', text)
 
+        #============================================================
         # the export process starts here
         self.loadTree()
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
@@ -272,23 +553,25 @@ class ExportCIF(G2IO.ExportBaseclass):
             # overall info
             WriteCIFitem('data_'+str(self.CIFname)+'_overall')
             WriteOverall()
-            WriteCIFitem('# pointers to phase and histogram blocks')
-            # loop over future phase blocks
+            #============================================================
+            WriteCIFitem('# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
+            datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
+            # loop over phase blocks
             if self.nphase > 1:
                 loopprefix = ''
                 WriteCIFitem('loop_   _pd_phase_block_id')
             else:
                 loopprefix = '_pd_phase_block_id'
+            
             for i,phasenam in enumerate(sorted(self.GroupedParms['Phases'].keys())):
-                WriteCIFitem(loopprefix,
-                             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                             'phase_'+ str(i) + '|' + str(self.shortauthorname))
-            # loop over future data blocks, create and save block names
+                datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                             'phase_'+ str(i+1) + '|' + str(self.shortauthorname))
+                WriteCIFitem(loopprefix,datablockidDict[phasenam])
+            # loop over data blocks
             i = 0
-            datablockidDict = {}
             if self.npowder + self.nsingle > 1:
                 loopprefix = ''
-                WriteCIFitem('loop_   _pd_block_diffractogramphase_id')
+                WriteCIFitem('loop_   _pd_block_diffractogram_id')
             else:
                 loopprefix = '_pd_block_diffractogram_id'
             for key in self.GroupedParms:
@@ -301,53 +584,38 @@ class ExportCIF(G2IO.ExportBaseclass):
                     elif key == "HKLF":
                         instnam = histblk["Instrument Parameters"][0]['InstrName']
                     instnam = instnam.replace(' ','')
+                    if datablockidDict.get(key1):
+                        print "Error: histogram name is duplicated: ",key1
+                        return
                     datablockidDict[key1] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
                                              str(self.shortauthorname) + "|" +
                                              instnam + "_hist_"+str(i))
                     WriteCIFitem(loopprefix,datablockidDict[key1])
             #============================================================
-            # export phase information
-            for i,phasenam in enumerate(sorted(self.GroupedParms['Phases'].keys())):
+            # loop over phases, exporting them
+            phasebyhistDict = {} # create a cross-reference to phases by histogram
+            for j,phasenam in enumerate(sorted(self.GroupedParms['Phases'].keys())):
+                i = j + 1
                 WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
                 print "debug, processing ",phasenam
                 WriteCIFitem('# Information for phase '+str(i))
-                WriteCIFitem('_pd_block_id',
-                             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                             'phase_'+ str(i) + '|' + str(self.shortauthorname))
-                # pointers to histograms used in this phase
-                histlist = []
-                for hist in self.GroupedParms['Phases'][phasenam]['Histograms']:
-                    if self.GroupedParms['Phases'][phasenam]['Histograms'][hist]['Use']:
-                        blockid = datablockidDict.get(hist)
-                        if not blockid:
-                            print "Internal error: no block for data. Phase "+str(
-                                phasenam)+" histogram "+str(hist)
-                            histlist = []
-                            break
-                        histlist.append(blockid)
-                if len(histlist) == 0:
-                    WriteCIFitem('# Note: phase has no associated data')
-                elif len(histlist) == 1:
-                    WriteCIFitem('_pd_block_diffractogram_id',histlist[0])
-                else:
-                    WriteCIFitem('loop_  _pd_block_diffractogram_id')
-                    for hist in histlist:
-                        WriteCIFitem('',hist)
+                WriteCIFitem('_pd_block_id',datablockidDict[phasenam])
                 # report the phase
                 WritePhaseTemplate()
                 WritePhaseInfo(phasenam)
 
             #============================================================
-            # loop over histograms
+            # loop over histograms, exporting them
+            i = 0
             for key in self.GroupedParms:
                 if key == 'Phases': continue
                 for key1 in self.GroupedParms[key]:
                     i += 1
                     histblk = self.GroupedParms[key][key1]
                     if key == "PWDR":
-                        WriteCIFitem('\ndata_'+self.CIFname+"_p_"+str(i))
+                        WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
                     elif key == "HKLF":
-                        WriteCIFitem('\ndata_'+self.CIFname+"_s_"+str(i))
+                        WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
                     WriteCIFitem('# Information for histogram '+str(i)+': '+
                                  key1)
                     WriteCIFitem('_pd_block_id',datablockidDict[key1])
@@ -357,4 +625,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     else:
                         WriteSnglXtalTemplate()
                         WriteSingleXtalData(key1)
+
+        # TODO: how to report _pd_proc_ls_peak_cutoff?
         WriteCIFitem('#--' + 15*'eof--' + '#')
+

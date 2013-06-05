@@ -482,36 +482,6 @@ def ShowControls(Controls,pFile=None):
         print >>pFile,' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
     print >>pFile,' Initial shift factor: ','%.3f'%(Controls['shift factor'])
     
-def GetFFtable(General):
-    ''' returns a dictionary of form factor data for atom types found in General
-
-    :param dict General: dictionary of phase info.; includes AtomTypes
-    :return: FFtable, dictionary of form factor data; key is atom type
-
-    '''
-    atomTypes = General['AtomTypes']
-    FFtable = {}
-    for El in atomTypes:
-        FFs = G2el.GetFormFactorCoeff(El.split('+')[0].split('-')[0])
-        for item in FFs:
-            if item['Symbol'] == El.upper():
-                FFtable[El] = item
-    return FFtable
-    
-def GetBLtable(General):
-    ''' returns a dictionary of neutron scattering length data for atom types & isotopes found in General
-
-    :param dict General: dictionary of phase info.; includes AtomTypes & Isotopes
-    :return: BLtable, dictionary of scattering length data; key is atom type
-    '''
-    atomTypes = General['AtomTypes']
-    BLtable = {}
-    isotopes = General['Isotopes']
-    isotope = General['Isotope']
-    for El in atomTypes:
-        BLtable[El] = [isotope[El],isotopes[El][isotope[El]]]
-    return BLtable
-        
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
     'needs a doc string'
 #    if SGLaue in ['-1','2/m','mmm']:
@@ -899,8 +869,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         General = PhaseData[name]['General']
         pId = PhaseData[name]['pId']
         pfx = str(pId)+'::'
-        FFtable = GetFFtable(General)
-        BLtable = GetBLtable(General)
+        FFtable = G2el.GetFFtable(General['AtomTypes'])
+        BLtable = G2el.GetBLtable(General)
         FFtables.update(FFtable)
         BLtables.update(BLtable)
         Atoms = PhaseData[name]['Atoms']

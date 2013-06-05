@@ -515,20 +515,6 @@ def GetAtomFXU(pfx,calcControls,parmDict):
                 keys[key][iatm] = parmDict[parm]
     return Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
     
-def getFFvalues(FFtables,SQ):
-    'Needs a doc string'
-    FFvals = {}
-    for El in FFtables:
-        FFvals[El] = G2el.ScatFac(FFtables[El],SQ)[0]
-    return FFvals
-    
-def getBLvalues(BLtables):
-    'Needs a doc string'
-    BLvals = {}
-    for El in BLtables:
-        BLvals[El] = BLtables[El][1][1]
-    return BLvals
-        
 def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     ''' Compute structure factors for all h,k,l for phase
     puts the result, F^2, in each ref[8] in refList
@@ -556,7 +542,6 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-    maxPos = len(SGData['SGOps'])
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     for refl in refList:
@@ -567,9 +552,9 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
         if not len(refl[-1]):                #no form factors
             if 'N' in parmDict[hfx+'Type']:
-                refl[-1] = getBLvalues(BLtables)
+                refl[-1] = G2el.getBLvalues(BLtables)
             else:       #'X'
-                refl[-1] = getFFvalues(FFtables,SQ)
+                refl[-1] = G2el.getFFvalues(FFtables,SQ)
         for i,El in enumerate(Tdata):
             FF[i] = refl[-1][El]           
         Uniq = refl[11]
@@ -610,7 +595,6 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-    maxPos = len(SGData['SGOps'])       
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     dFdvDict = {}

@@ -1899,7 +1899,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         return best_state.x, retval
 
 
-def mcsaSearch(data,reflType,reflData,covData,pgbar):
+def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
     
     def getMDparms(item,pfx,parmDict,varyList):
@@ -1911,25 +1911,29 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
             lower.append(limits[0])
             upper.append(limits[1])
             
-    def getAtomparms(item,pfx,parmDict,varyList):
+    def getAtomparms(item,pfx,aTypes,SGData,parmDict,varyList):
         parmDict[pfx+'Atype'] = item['atType']
-        pstr = ['x','y','z']
+        aTypes |= set([item['atType'],]) 
+        pstr = ['Ax','Ay','Az']
+        XYZ = [0,0,0]
         for i in range(3):
             name = pfx+pstr[i]
             parmDict[name] = item['Pos'][0][i]
+            XYZ[i] = parmDict[name]
             if item['Pos'][1][i]:
                 varyList += [name,]
                 limits = item['Pos'][2][i]
                 lower.append(limits[0])
                 upper.append(limits[1])
+        parmDict[pfx+'Amul'] = len(G2spc.GenAtom(XYZ,SGData))
             
-    def getRBparms(item,pfx,parmDict,varyList):
-        parmDict['MolCent'] = item['MolCent']
-        parmDict['RBId'] = item['RBId']
+    def getRBparms(item,mfx,aTypes,RBdata,parmDict,varyList):
+        parmDict[mfx+'MolCent'] = item['MolCent']
+        parmDict[mfx+'RBId'] = item['RBId']
         pstr = ['Px','Py','Pz']
         ostr = ['Qa','Qi','Qj','Qk']
         for i in range(3):
-            name = pfx+pstr[i]
+            name = mfx+pstr[i]
             parmDict[name] = item['Pos'][0][i]
             if item['Pos'][1][i]:
                 varyList += [name,]
@@ -1937,7 +1941,7 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
                 lower.append(limits[0])
                 upper.append(limits[1])
         for i in range(4):
-            name = pfx+ostr[i]
+            name = mfx+ostr[i]
             parmDict[name] = item['Ori'][0][i]
             if item['Ovar'] == 'AV' and i:
                 varyList += [name,]
@@ -1951,33 +1955,36 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
                 upper.append(limits[1])
         if 'Tor' in item:      #'Tor' not there for 'Vector' RBs
             for i in range(len(item['Tor'][0])):
-                name = pfx+'Tor'+str(i)
+                name = mfx+'Tor'+str(i)
                 parmDict[name] = item['Tor'][0][i]
                 if item['Tor'][1][i]:
                     varyList += [name,]
                     limits = item['Tor'][2][i]
                     lower.append(limits[0])
                     upper.append(limits[1])
+        aTypes |= set(RBdata[item['Type']][item['RBId']]['rbTypes'])
 
-    def getFFvalues(FFtables,SQ):
-        FFvals = {}
-        for El in FFtables:
-            FFvals[El] = G2el.ScatFac(FFtables[El],SQ)[0]
-        return FFvals
-        
-    def getBLvalues(BLtables):
-        BLvals = {}
-        for El in BLtables:
-            BLvals[El] = BLtables[El][1][1]
-        return BLvals
-            
-#    def mcsaSfCalc(refList,G,SGData,calcControls,parmDict):
+    def GetAtomFX(pfx,Natoms,parmDict):
+        'Needs a doc string'
+        Tdata = Natoms*[' ',]
+        Mdata = np.zeros(Natoms)
+        Fdata = np.zeros(Natoms)
+        Xdata = np.zeros((3,Natoms))
+        keys = {'Atype:':Tdata,'Amul:':Mdata,
+            'Ax:':Xdata[0],'Ay:':Xdata[1],'Az:':Xdata[2]}
+        for iatm in range(Natoms):
+            for key in keys:
+                parm = pfx+key+str(iatm)
+                if parm in parmDict:
+                    keys[key][iatm] = parmDict[parm]
+        return Tdata,Mdata,Xdata
+    
+#    def mcsaSfCalc(refList,G,SGData,parmDict):
 #        ''' Compute structure factors for all h,k,l for phase
 #        input:
 #            refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
 #            G:      reciprocal metric tensor
 #            SGData: space group info. dictionary output from SpcGroup
-#            calcControls:
 #            ParmDict:
 #        puts result F^2 in each ref[8] in refList
 #        '''        
@@ -1985,16 +1992,13 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
 #        twopisq = 2.0*np.pi**2
 #        ast = np.sqrt(np.diag(G))
 #        Mast = twopisq*np.multiply.outer(ast,ast)
-#        FFtables = calcControls['FFtables']
-#        BLtables = calcControls['BLtables']
-#        Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+#        Tdata,Mdata,Fdata,Xdata = GetAtomFX(pfx,calcControls,parmDict)
 #        FF = np.zeros(len(Tdata))
 #        if 'N' in parmDict[hfx+'Type']:
 #            FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
 #        else:
 #            FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
 #            FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-#        maxPos = len(SGData['SGOps'])
 #        Uij = np.array(G2lat.U6toUij(Uijdata))
 #        bij = Mast*Uij.T
 #        for refl in refList:
@@ -2012,16 +2016,11 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
 #                FF[i] = refl[-1][El]           
 #            Uniq = refl[11]
 #            phi = refl[12]
-#            phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+phi[:,np.newaxis])
+#            phase = twopi*(np.inner(Uniq,(Xdata.T))+phi[:,np.newaxis])
 #            sinp = np.sin(phase)
 #            cosp = np.cos(phase)
 #            occ = Mdata*Fdata/len(Uniq)
-#            biso = -SQfactor*Uisodata
-#            Tiso = np.where(biso<1.,np.exp(biso),1.0)
-#            HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
-#            Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
-#            Tcorr = Tiso*Tuij
-#            fa = np.array([(FF+FP-Bab)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
+#            fa = np.array([(FF+FP-Bab)*occ*cosp,-FPP*occ*sinp])
 #            fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
 #            if not SGData['SGInv']:
 #                fb = np.array([(FF+FP-Bab)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
@@ -2035,15 +2034,28 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
     sq2pi = np.sqrt(2*np.pi)
     sq4pi = np.sqrt(4*np.pi)
     generalData = data['General']
+    SGData = generalData['SGData']
     pId = data['pId']
-    pfx = str(pId)+'::'
-    Atoms = data['Atoms']                       #if any
+    fixAtoms = data['Atoms']                       #if any
+    cx,ct,cs = generalData['AtomPtrs'][:3]
+    aTypes = set([])
+    parmDict = {}
+    varyList = []
+    atNo = 0
+    for atm in fixAtoms:
+        pfx = ':'+str(atNo)+':'
+        parmDict[pfx+'Atype'] = atm[ct]
+        aTypes |= set([atm[ct],])
+        pstr = ['Ax','Ay','Az']
+        parmDict[pfx+'Amul'] = atm[cs+1]
+        for i in range(3):
+            name = pfx+pstr[i]
+            parmDict[name] = atm[cx+i]
+        atNo += 1        
     mcsaControls = generalData['MCSA controls']
     reflName = mcsaControls['Data source']
     phaseName = generalData['Name']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
-    parmDict = {}
-    varyList = []
     upper = []
     lower = []
     for i,item in enumerate(MCSAObjs):
@@ -2051,63 +2063,88 @@ def mcsaSearch(data,reflType,reflData,covData,pgbar):
         if item['Type'] == 'MD':
             getMDparms(item,mfx,parmDict,varyList)
         elif item['Type'] == 'Atom':
-            getAtomparms(item,mfx,parmDict,varyList)
+            pfx = mfx+str(atNo)+':'
+            getAtomparms(item,pfx,aTypes,SGData,parmDict,varyList)
+            atNo += 1
         elif item['Type'] in ['Residue','Vector']:
-            getRBparms(item,mfx,parmDict,varyList)
+            pfx = mfx+':'
+            getRBparms(item,pfx,aTypes,RBdata,parmDict,varyList)
+    FFtables = G2el.GetFFtable(aTypes)
+    refs = []
     if 'PWDR' in reflName:
-        refs = []
         for ref in reflData:
             h,k,l,m,d,pos,sig,gam,Fsq = ref[:9]
             if d >= mcsaControls['dmin']:
-                FWHM = gamFW(sig,gam)/2.35482        #sqrt(8ln2) --> sig from FWHM
-                Fsq *= m
+                sig = gamFW(sig,gam)/sq8ln2        #--> sig from FWHM
+                SQ = 0.25/d**2
+                Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
+                FFs = G2el.getFFvalues(FFtables,SQ)
+                refs.append([h,k,l,m,f*m,pos,sig,FFs,Uniq,phi])
+        nRef = len(refs)
+        rcov = np.zeros((nRef,nRef))
+        for iref,refI in enumerate(refs):
+            rcov[iref][iref] = 1./(sq4pi*refI[6])
+            for jref,refJ in enumerate(refs[:iref]):
+                t1 = refI[6]**2+refJ[6]**2
+                t2 = (refJ[5]-refI[5])**2/(2.*t1)
+                if t2 > 10.:
+                    rcov[iref][jref] = 0.
+                else:
+                    rcov[iref][jref] = 1./(sq2pi*np.sqrt(t1)*np.exp(t2))
+        rcov += (rcov.T-np.diagflat(np.diagonal(rcov)))
+        Rdiag = np.sqrt(np.diag(rcov))
+        Rnorm = np.outer(Rdiag,Rdiag)
+        rcov /= Rnorm
     elif 'Pawley' in reflName:
-        refs = []
         covMatrix = covData['covMatrix']
-        varyList = covData['varyList']
+        vList = covData['varyList']
         for iref,refI in enumerate(reflData):
             h,k,l,m,d,v,f,s = refI
             if d >= mcsaControls['dmin'] and v:       #skip unrefined ones
-                nameI = pfx+'PWLref:'+str(iref)
-                if nameI in covData['varyList']:
-                    refs.append([h,k,l,f*m,0.,0.])
+                SQ = 0.25/d**2
+                Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
+                FFs = G2el.getFFvalues(FFtables,SQ)
+                refs.append([h,k,l,m,f*m,0.,0.,FFs,Uniq,phi])
         nRef = len(refs)
-        print nRef        
-        covTerms = np.zeros((nRef,nRef))
-        print covTerms.shape
-        
+        rcov = np.zeros((nRef,nRef))        
         Iref = 0
         for iref,refI in enumerate(reflData):
             if refI[4] >= mcsaControls['dmin'] and refI[5]:       #skip unrefined ones
                 nameI = pfx+'PWLref:'+str(iref)
                 if nameI in covData['varyList']:
-                    Iindx = varyList.index(nameI)
-                    covTerms[Iref][Iref] = covMatrix[Iindx][Iindx]
+                    Iindx = vList.index(nameI)
+                    rcov[Iref][Iref] = covMatrix[Iindx][Iindx]
                     Jref = 0
                     for jref,refJ in enumerate(reflData[:iref]):
                         if refJ[5]:
                             nameJ = pfx+'PWLref:'+str(jref)
                             try:
-                                covTerms[Iref][Jref] = covMatrix[varyList.index(nameI)][varyList.index(nameJ)]
+                                rcov[Iref][Jref] = covMatrix[vList.index(nameI)][vList.index(nameJ)]
                             except ValueError:
-                                covTerms[Iref][Jref] = covTerms[Iref][Jref-1]
+                                rcov[Iref][Jref] = rcov[Iref][Jref-1]
                             Jref += 1
+                else:
+                    rcov[Iref] = rcov[Iref-1]
+                    rcov[Iref][Iref] = rcov[Iref-1][Iref-1]
                 Iref += 1
-        print covTerms
-                        
-                    
-#    covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-#        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
+        rcov += (rcov.T-np.diagflat(np.diagonal(rcov)))
+        Rdiag = np.sqrt(np.diag(rcov))
+        Rnorm = np.outer(Rdiag,Rdiag)
+        rcov /= Rnorm
     elif 'HKLF' in reflName:
-        refs = []
         for ref in reflData:
-            h,k,l,m,d,Fsq = ref[:5],ref[6]
+            [h,k,l,m,d],f = ref[:5],ref[6]
             if d >= mcsaControls['dmin']:
-                Fsq *= m
-                refs.append([h,k,l,m,Fsq])
-        rcov = np.identity(len(refs))   
-                        
+                SQ = 0.25/d**2
+                Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
+                FFs = G2el.getFFvalues(FFtables,SQ)
+                refs.append([h,k,l,m,f*m,0.,0.,FFs,Uniq,phi])
+        rcov = np.identity(len(refs))
         
+    for parm in parmDict:
+        print parm,parmDict[parm] 
+                        
+#    XYZ,aTypes = UpdateMCSAxyz(Bmat,MCSA)        
             
 #    generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50,1.e-6],
 #    'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':1,'boltzmann':1.0,

@@ -57,7 +57,6 @@ def makeInstDict(names,data,codes):
         inst[item] = list(inst[item])
     return inst
 
-
 def FileDlgFixExt(dlg,file):
     'this is needed to fix a problem in linux wx.FileDialog'
     ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')

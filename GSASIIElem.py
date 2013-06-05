@@ -58,6 +58,49 @@ def GetFormFactorCoeff(El):
     FFdata.close()
     return FormFactors
     
+def GetFFtable(atomTypes):
+    ''' returns a dictionary of form factor data for atom types found in atomTypes
+
+    :param list atomTypes: list of atom types
+    :return: FFtable, dictionary of form factor data; key is atom type
+
+    '''
+    FFtable = {}
+    for El in atomTypes:
+        FFs = GetFormFactorCoeff(El.split('+')[0].split('-')[0])
+        for item in FFs:
+            if item['Symbol'] == El.upper():
+                FFtable[El] = item
+    return FFtable
+    
+def GetBLtable(General):
+    ''' returns a dictionary of neutron scattering length data for atom types & isotopes found in General
+
+    :param dict General: dictionary of phase info.; includes AtomTypes & Isotopes
+    :return: BLtable, dictionary of scattering length data; key is atom type
+    '''
+    atomTypes = General['AtomTypes']
+    BLtable = {}
+    isotopes = General['Isotopes']
+    isotope = General['Isotope']
+    for El in atomTypes:
+        BLtable[El] = [isotope[El],isotopes[El][isotope[El]]]
+    return BLtable
+        
+def getFFvalues(FFtables,SQ):
+    'Needs a doc string'
+    FFvals = {}
+    for El in FFtables:
+        FFvals[El] = ScatFac(FFtables[El],SQ)[0]
+    return FFvals
+    
+def getBLvalues(BLtables):
+    'Needs a doc string'
+    BLvals = {}
+    for El in BLtables:
+        BLvals[El] = BLtables[El][1][1]
+    return BLvals
+        
 def GetFFC5(ElSym):
     '''Get 5 term form factor and Compton scattering data
 

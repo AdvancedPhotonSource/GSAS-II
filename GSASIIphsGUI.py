@@ -4369,6 +4369,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         else:
             print '**** ERROR - No data defined for MC/SA run'
             return
+        RBdata = G2frame.PatternTree.GetItemPyData(   
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         MCSAmodels = MCSAdata['Models']
         if not len(MCSAmodels):
             print '**** ERROR - no models defined for MC/SA run****'
@@ -4381,7 +4383,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         pgbar.SetSize(Size)
         try:
-            MCSAdata['Results'] = G2mth.mcsaSearch(data,reflType,reflData,covData,pgbar)
+            MCSAdata['Results'] = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
         finally:
             pgbar.Destroy()
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -4940,6 +4942,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
+        Atoms.ClearGrid()
         if text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)

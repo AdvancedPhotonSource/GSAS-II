@@ -445,9 +445,9 @@ class marFrame():
 
         File.seek(4096)
         self.image = ar.array(self.arrayTypeCode,File.read(self.byteDepth*self.TIFFsizeX*self.TIFFsizeY))
-	# reverse the array so if can have the same view as is read in marccd
-	# also switch the view direction 
-	self.image.reverse()
+    # reverse the array so if can have the same view as is read in marccd
+    # also switch the view direction 
+        self.image.reverse()
         self.viewDirection = abs(self.viewDirection - 1)
 
     def outputHead(self):

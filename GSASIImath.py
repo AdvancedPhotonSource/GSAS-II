@@ -1927,7 +1927,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 upper.append(limits[1])
         parmDict[pfx+'Amul'] = len(G2spc.GenAtom(XYZ,SGData))
             
-    def getRBparms(item,mfx,aTypes,RBdata,parmDict,varyList):
+    def getRBparms(item,mfx,aTypes,RBdata,atNo,parmDict,varyList):
         parmDict[mfx+'MolCent'] = item['MolCent']
         parmDict[mfx+'RBId'] = item['RBId']
         pstr = ['Px','Py','Pz']
@@ -1962,24 +1962,30 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     limits = item['Tor'][2][i]
                     lower.append(limits[0])
                     upper.append(limits[1])
-        aTypes |= set(RBdata[item['Type']][item['RBId']]['rbTypes'])
+        atypes = RBdata[item['Type']][item['RBId']]['rbTypes']
+        aTypes |= set(atypes)
+        atNo += len(atypes)
+        return atNo
 
-    def GetAtomFX(pfx,Natoms,parmDict):
+    def GetAtomTMX(pfx,RBdata,parmDict):
         'Needs a doc string'
-        Tdata = Natoms*[' ',]
-        Mdata = np.zeros(Natoms)
-        Fdata = np.zeros(Natoms)
-        Xdata = np.zeros((3,Natoms))
+        atNo = parmDIct['atNo']
+        nfixAt = parmDict['nfixAt']
+        Tdata = atNo*[' ',]
+        Mdata = np.zeros(atNo)
+        Fdata = np.zeros(atNo)
+        Xdata = np.zeros((3,atNo))
         keys = {'Atype:':Tdata,'Amul:':Mdata,
             'Ax:':Xdata[0],'Ay:':Xdata[1],'Az:':Xdata[2]}
-        for iatm in range(Natoms):
+        nObjs = parmDict['nObjs']
+        for iatm in range(nfixAt):
             for key in keys:
                 parm = pfx+key+str(iatm)
                 if parm in parmDict:
                     keys[key][iatm] = parmDict[parm]
         return Tdata,Mdata,Xdata
     
-#    def mcsaSfCalc(refList,G,SGData,parmDict):
+#    def mcsaSfCalc(refList,RBdata,G,SGData,parmDict):
 #        ''' Compute structure factors for all h,k,l for phase
 #        input:
 #            refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
@@ -2035,7 +2041,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     sq4pi = np.sqrt(4*np.pi)
     generalData = data['General']
     SGData = generalData['SGData']
-    pId = data['pId']
     fixAtoms = data['Atoms']                       #if any
     cx,ct,cs = generalData['AtomPtrs'][:3]
     aTypes = set([])
@@ -2051,7 +2056,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         for i in range(3):
             name = pfx+pstr[i]
             parmDict[name] = atm[cx+i]
-        atNo += 1        
+        atNo += 1
+    parmDict['nfixAt'] = len(fixAtoms)        
     mcsaControls = generalData['MCSA controls']
     reflName = mcsaControls['Data source']
     phaseName = generalData['Name']
@@ -2060,6 +2066,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     lower = []
     for i,item in enumerate(MCSAObjs):
         mfx = str(i)+':'
+        parmDict[mfx+'Type'] = item['Type']
         if item['Type'] == 'MD':
             getMDparms(item,mfx,parmDict,varyList)
         elif item['Type'] == 'Atom':
@@ -2068,12 +2075,14 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             atNo += 1
         elif item['Type'] in ['Residue','Vector']:
             pfx = mfx+':'
-            getRBparms(item,pfx,aTypes,RBdata,parmDict,varyList)
+            atNo = getRBparms(item,pfx,aTypes,RBdata,atNo,parmDict,varyList)
+    parmDict['atNo'] = atNo                 #total no. of atoms
+    parmDict['nObj'] = len(MCSAObjs)
     FFtables = G2el.GetFFtable(aTypes)
     refs = []
     if 'PWDR' in reflName:
         for ref in reflData:
-            h,k,l,m,d,pos,sig,gam,Fsq = ref[:9]
+            h,k,l,m,d,pos,sig,gam,f = ref[:9]
             if d >= mcsaControls['dmin']:
                 sig = gamFW(sig,gam)/sq8ln2        #--> sig from FWHM
                 SQ = 0.25/d**2
@@ -2104,29 +2113,26 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 SQ = 0.25/d**2
                 Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
                 FFs = G2el.getFFvalues(FFtables,SQ)
-                refs.append([h,k,l,m,f*m,0.,0.,FFs,Uniq,phi])
+                refs.append([h,k,l,m,f*m,iref,0.,FFs,Uniq,phi])
         nRef = len(refs)
+        pfx = str(data['pId'])+'::PWLref:'
         rcov = np.zeros((nRef,nRef))        
-        Iref = 0
-        for iref,refI in enumerate(reflData):
-            if refI[4] >= mcsaControls['dmin'] and refI[5]:       #skip unrefined ones
-                nameI = pfx+'PWLref:'+str(iref)
-                if nameI in covData['varyList']:
-                    Iindx = vList.index(nameI)
-                    rcov[Iref][Iref] = covMatrix[Iindx][Iindx]
-                    Jref = 0
-                    for jref,refJ in enumerate(reflData[:iref]):
-                        if refJ[5]:
-                            nameJ = pfx+'PWLref:'+str(jref)
-                            try:
-                                rcov[Iref][Jref] = covMatrix[vList.index(nameI)][vList.index(nameJ)]
-                            except ValueError:
-                                rcov[Iref][Jref] = rcov[Iref][Jref-1]
-                            Jref += 1
-                else:
-                    rcov[Iref] = rcov[Iref-1]
-                    rcov[Iref][Iref] = rcov[Iref-1][Iref-1]
-                Iref += 1
+        for iref,refI in enumerate(refs):
+            I = refI[5]
+            nameI = pfx+str(I)
+            if nameI in vList:
+                Iindx = vList.index(nameI)
+                rcov[iref][iref] = covMatrix[Iindx][Iindx]
+                for jref,refJ in enumerate(refs[:iref]):
+                    J = refJ[5]
+                    nameJ = pfx+str(J)
+                    try:
+                        rcov[iref][jref] = covMatrix[vList.index(nameI)][vList.index(nameJ)]
+                    except ValueError:
+                        rcov[iref][jref] = rcov[iref][jref-1]
+            else:
+                rcov[iref] = rcov[iref-1]
+                rcov[iref][iref] = rcov[iref-1][iref-1]
         rcov += (rcov.T-np.diagflat(np.diagonal(rcov)))
         Rdiag = np.sqrt(np.diag(rcov))
         Rnorm = np.outer(Rdiag,Rdiag)

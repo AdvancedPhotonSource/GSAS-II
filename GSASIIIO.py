@@ -378,11 +378,11 @@ def GetMAR345Data(filename,imageOnly=False):
     raw = File.read()
     File.close()
     image = np.zeros(shape=(size,size),dtype=np.int32)
-    image = pf.pack_f(len(raw),raw,size,image)
+    image = np.flipud(pf.pack_f(len(raw),raw,size,image).T)  #transpose to get it right way around & flip
     if imageOnly:
-        return image.T              #transpose to get it right way around
+        return image
     else:
-        return head,data,Npix,image.T
+        return head,data,Npix,image
 
 def GetTifData(filename,imageOnly=False):
     '''Read an image in a pseudo-tif format,
@@ -443,11 +443,11 @@ def GetTifData(filename,imageOnly=False):
     if 34710 in IFD:
         if not imageOnly:
             print 'Read MAR CCD tiff file: ',filename
-	marFrame = rmf.marFrame(File,byteOrd,IFD)
-	image = np.array(np.asarray(marFrame.image),dtype=np.int32)
-	tifType = marFrame.filetitle
-	pixy = (marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0)
-	head = marFrame.outputHead()
+        marFrame = rmf.marFrame(File,byteOrd,IFD)
+        image = np.flipud(np.array(np.asarray(marFrame.image),dtype=np.int32))
+        tifType = marFrame.filetitle
+        pixy = (marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0)
+        head = marFrame.outputHead()
     elif 272 in IFD:
         ifd = IFD[272]
         File.seek(ifd[2][0])

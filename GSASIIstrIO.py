@@ -141,7 +141,8 @@ def CheckConstraints(GPXfile):
     return G2mv.CheckConstraints(varyList,constrDict,fixedList)
     
 def GetRestraints(GPXfile):
-    '''Read the restraints from the GPX file
+    '''Read the restraints from the GPX file.
+    Throws an exception if not found in the .GPX file
     '''
     fl = open(GPXfile,'rb')
     while True:

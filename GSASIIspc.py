@@ -3,45 +3,8 @@
 *GSASIIspc: Space group module*
 -------------------------------
 
-Space group interpretation routines.
-
-Space groups are interpreted and the information is placed in a SGdata object,
-which is a dict with these keys:
-
-.. tabularcolumns:: |l|p{4.5in}|
-
-==========  ====================================================
-  key         explaination
-==========  ====================================================
-SpGrp       space group symbol (str)
-Laue        one of the following 14 Laue classes:
-            -1, 2/m, mmm, 4/m, 4/mmm, 3R,
-            3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)
-SGInv       True if centrosymmetric, False if not (bool)
-SGLatt      Lattice centering type. Will be one of
-            P, A, B, C, I, F, R (str)
-SGUniq      unique axis if monoclinic. Will be
-            a, b, or c for monoclinic space groups.
-            Will be blank for non-monoclinic. (str)
-SGCen       Symmetry cell centering vectors. A (n,3) np.array
-            of centers. Will always have at least one row:
-            ``np.array([[0, 0, 0]])``
-SGOps       symmetry operations as a list in form
-            [[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array
-            and T is a length 3 np.array.
-            Atom coordinates are transformed where the
-            Asymmetric unit coordinates [X=(x,y,z)] are
-            transformed using ``M*X+T ==> X'``
-SGSys       symmetry unit cell: type one of
-            'triclinic', 'monoclinic', 'orthorhombic',
-            'tetragonal', 'rhombohedral', 'trigonal',
-            'hexagonal', 'cubic' (str)
-SGPolax     Axes for space group polarity. Will be one of
-            '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
-            'xyz'. In the case where axes are arbitrary 
-            '111' is used (P 1, and ?).
-==========  ====================================================
-
+Space group interpretation routines. Note that space group information is
+stored in a :ref:`Space Group (SGData)<SGData_table>` object.
 
 """
 ########### SVN repository information ###################
@@ -69,9 +32,9 @@ def SpcGroup(SGSymbol):
     :param SGSymbol: space group symbol (string) with spaces between axial fields
     :returns: (SGError,SGData)
        * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
-       * SGData - dictionary with entries:
+       * SGData - is a dict (see :ref:`Space Group object<SGData_table>`) with entries:
        
-             * 'SpGrp': space group symbol slightly cleaned up
+             * 'SpGrp': space group symbol, slightly cleaned up
              * 'Laue':  one of '-1', '2/m', 'mmm', '4/m', '4/mmm', '3R',
                '3mR', '3', '3m1', '31m', '6/m', '6/mmm', 'm3', 'm3m'
              * 'SGInv': boolean; True if centrosymmetric, False if not

@@ -393,6 +393,43 @@ class ExportCIF(G2IO.ExportBaseclass):
         #============================================================
         # the export process starts here
         self.loadTree()
+        # ====== move this later ==================================================
+        #for key in self.OverallParms['Covariance']:
+        #    print key
+        #    print type(self.OverallParms['Covariance'][key])
+        sigDict = dict(zip(
+            self.OverallParms['Covariance']['varyList'],
+            self.OverallParms['Covariance']['sig'])
+                       )
+        # get restraint info
+        #restraintDict = self.OverallParms.get('Restraints',{})
+        for i in  self.OverallParms['Constraints']:
+            print i
+            for j in self.OverallParms['Constraints'][i]:
+                print j
+        return
+        parmDict = {}
+        #G2mv.InitVars()
+        # do constraint processing
+        #try:
+        #    groups,parmlist = G2mv.GroupConstraints(constrDict)
+        #    G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
+        #except:
+        #    import GSASIIstrIO as G2stIO
+        #    print ' *** ERROR - your constraints are internally inconsistent ***'
+        #    errmsg, warnmsg = G2stIO.CheckConstraints(varyList,constrDict,fixedList)
+        #    print 'Errors',errmsg
+        #    if warnmsg: print 'Warnings',warnmsg
+        #    raise Exception(' *** CIF creation aborted ***')
+        
+        # add the uncertainties into the esd dictionary (sigDict)
+        #sigDict.update(G2mv.ComputeDepESD(
+        #    self.OverallParms['Covariance']['covMatrix'],
+        #    self.OverallParms['Covariance']['varyList'],
+        #    parmDict))
+
+        return
+
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
         # count phases, powder and single crystal histograms
         self.nphase = len(self.GroupedParms.get("Phases",[]))

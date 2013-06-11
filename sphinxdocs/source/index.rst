@@ -8,6 +8,7 @@ GSAS-II Developer's Documentation
 .. toctree::
 
   GSASII.rst
+  GSASIIobj.rst
   GSASIIutil.rst
   GSASIIGUIr.rst
   GSASIIGUI.rst

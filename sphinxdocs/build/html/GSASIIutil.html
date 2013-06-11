@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
     <link rel="next" title="GSAS-II GUI Routines" href="GSASIIGUIr.html" />
-    <link rel="prev" title="GSAS-II Main Module" href="GSASII.html" /> 
+    <link rel="prev" title="GSASIIobj: Data objects" href="GSASIIobj.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="GSASIIGUIr.html" title="GSAS-II GUI Routines"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="GSASII.html" title="GSAS-II Main Module"
+          <a href="GSASIIobj.html" title="GSASIIobj: Data objects"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
       </ul>
@@ -273,6 +273,22 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIElem.GetBLtable">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetBLtable</tt><big>(</big><em>General</em><big>)</big><a class="headerlink" href="#GSASIIElem.GetBLtable" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary of neutron scattering length data for atom types &amp; isotopes found in General</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>General</strong> (<em>dict</em>) &#8211; dictionary of phase info.; includes AtomTypes &amp; Isotopes</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">BLtable, dictionary of scattering length data; key is atom type</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIElem.GetFFC5">
 <tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetFFC5</tt><big>(</big><em>ElSym</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetFFC5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetFFC5" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get 5 term form factor and Compton scattering data</p>
@@ -283,6 +299,22 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ElSym</strong> &#8211; str(1-2 character element symbol with proper case);</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return El:</th><td class="field-body">dictionary with 5 term form factor &amp; compton coefficients</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.GetFFtable">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetFFtable</tt><big>(</big><em>atomTypes</em><big>)</big><a class="headerlink" href="#GSASIIElem.GetFFtable" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary of form factor data for atom types found in atomTypes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>atomTypes</strong> (<em>list</em>) &#8211; list of atom types</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">FFtable, dictionary of form factor data; key is atom type</td>
 </tr>
 </tbody>
 </table>
@@ -387,6 +419,18 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.getBLvalues">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getBLvalues</tt><big>(</big><em>BLtables</em><big>)</big><a class="headerlink" href="#GSASIIElem.getBLvalues" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIElem.getFFvalues">
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getFFvalues</tt><big>(</big><em>FFtables</em>, <em>SQ</em><big>)</big><a class="headerlink" href="#GSASIIElem.getFFvalues" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
 </dd></dl>
 
 </div>
@@ -998,7 +1042,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0xc92aa30&gt;, &lt;function test1 at 0xc92aa70&gt;, &lt;function test2 at 0xc92aab0&gt;, &lt;function test3 at 0xc92aaf0&gt;, &lt;function test4 at 0xc92ab30&gt;, &lt;function test5 at 0xc92ab70&gt;, &lt;function test6 at 0xc92abb0&gt;, &lt;function test7 at 0xc92abf0&gt;, &lt;function test8 at 0xc92ac30&gt;, &lt;function test9 at 0xc92ac70&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17d4a070&gt;, &lt;function test1 at 0x17d4a0b0&gt;, &lt;function test2 at 0x17d4a0f0&gt;, &lt;function test3 at 0x17d4a130&gt;, &lt;function test4 at 0x17d4a170&gt;, &lt;function test5 at 0x17d4a1b0&gt;, &lt;function test6 at 0x17d4a1f0&gt;, &lt;function test7 at 0x17d4a230&gt;, &lt;function test8 at 0x17d4a270&gt;, &lt;function test9 at 0x17d4a2b0&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1090,67 +1134,8 @@ unit cell constants</p>
 </div>
 <span class="target" id="module-GSASIIspc"></span><div class="section" id="gsasiispc-space-group-module">
 <h2><em>GSASIIspc: Space group module</em><a class="headerlink" href="#gsasiispc-space-group-module" title="Permalink to this headline">¶</a></h2>
-<p>Space group interpretation routines.</p>
-<p>Space groups are interpreted and the information is placed in a SGdata object,
-which is a dict with these keys:</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="16%" />
-<col width="84%" />
-</colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">key</th>
-<th class="head">explaination</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr class="row-even"><td>SpGrp</td>
-<td>space group symbol (str)</td>
-</tr>
-<tr class="row-odd"><td>Laue</td>
-<td>one of the following 14 Laue classes:
--1, 2/m, mmm, 4/m, 4/mmm, 3R,
-3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)</td>
-</tr>
-<tr class="row-even"><td>SGInv</td>
-<td>True if centrosymmetric, False if not (bool)</td>
-</tr>
-<tr class="row-odd"><td>SGLatt</td>
-<td>Lattice centering type. Will be one of
-P, A, B, C, I, F, R (str)</td>
-</tr>
-<tr class="row-even"><td>SGUniq</td>
-<td>unique axis if monoclinic. Will be
-a, b, or c for monoclinic space groups.
-Will be blank for non-monoclinic. (str)</td>
-</tr>
-<tr class="row-odd"><td>SGCen</td>
-<td>Symmetry cell centering vectors. A (n,3) np.array
-of centers. Will always have at least one row:
-<tt class="docutils literal"><span class="pre">np.array([[0,</span> <span class="pre">0,</span> <span class="pre">0]])</span></tt></td>
-</tr>
-<tr class="row-even"><td>SGOps</td>
-<td>symmetry operations as a list in form
-[[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array
-and T is a length 3 np.array.
-Atom coordinates are transformed where the
-Asymmetric unit coordinates [X=(x,y,z)] are
-transformed using <tt class="docutils literal"><span class="pre">M*X+T</span> <span class="pre">==&gt;</span> <span class="pre">X'</span></tt></td>
-</tr>
-<tr class="row-odd"><td>SGSys</td>
-<td>symmetry unit cell: type one of
-&#8216;triclinic&#8217;, &#8216;monoclinic&#8217;, &#8216;orthorhombic&#8217;,
-&#8216;tetragonal&#8217;, &#8216;rhombohedral&#8217;, &#8216;trigonal&#8217;,
-&#8216;hexagonal&#8217;, &#8216;cubic&#8217; (str)</td>
-</tr>
-<tr class="row-even"><td>SGPolax</td>
-<td>Axes for space group polarity. Will be one of
-&#8216;&#8217;, &#8216;x&#8217;, &#8216;y&#8217;, &#8216;x y&#8217;, &#8216;z&#8217;, &#8216;x z&#8217;, &#8216;y z&#8217;,
-&#8216;xyz&#8217;. In the case where axes are arbitrary
-&#8216;111&#8217; is used (P 1, and ?).</td>
-</tr>
-</tbody>
-</table>
+<p>Space group interpretation routines. Note that space group information is
+stored in a <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em>Space Group (SGData)</em></a> object.</p>
 <dl class="function">
 <dt id="GSASIIspc.ApplyStringOps">
 <tt class="descclassname">GSASIIspc.</tt><tt class="descname">ApplyStringOps</tt><big>(</big><em>A</em>, <em>SGData</em>, <em>X</em>, <em>Uij=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#ApplyStringOps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.ApplyStringOps" title="Permalink to this definition">¶</a></dt>
@@ -1399,9 +1384,9 @@ Cell = unit cell translations needed to put new positions inside cell
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(SGError,SGData)
 * SGError = 0 for no errors; &gt;0 for errors (see SGErrors below for details)
-* SGData - dictionary with entries:<blockquote>
+* SGData - is a dict (see <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em>Space Group object</em></a>) with entries:<blockquote>
 <div><ul class="simple">
-<li>&#8216;SpGrp&#8217;: space group symbol slightly cleaned up</li>
+<li>&#8216;SpGrp&#8217;: space group symbol, slightly cleaned up</li>
 <li>&#8216;Laue&#8217;:  one of &#8216;-1&#8217;, &#8216;2/m&#8217;, &#8216;mmm&#8217;, &#8216;4/m&#8217;, &#8216;4/mmm&#8217;, &#8216;3R&#8217;,
 &#8216;3mR&#8217;, &#8216;3&#8217;, &#8216;3m1&#8217;, &#8216;31m&#8217;, &#8216;6/m&#8217;, &#8216;6/mmm&#8217;, &#8216;m3&#8217;, &#8216;m3m&#8217;</li>
 <li>&#8216;SGInv&#8217;: boolean; True if centrosymmetric, False if not</li>
@@ -1471,7 +1456,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0xbdfd7b0&gt;, &lt;function test1 at 0xbdfd930&gt;, &lt;function test2 at 0xbdfd9f0&gt;, &lt;function test3 at 0xbdfdb70&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17d4a2f0&gt;, &lt;function test1 at 0x17d4a730&gt;, &lt;function test2 at 0x17d4a870&gt;, &lt;function test3 at 0x17d4a9b0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1545,8 +1530,8 @@ Takes no input and returns nothing. Throws an Exception if a test fails.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="GSASII.html"
-                        title="previous chapter"><em>GSAS-II Main Module</em></a></p>
+  <p class="topless"><a href="GSASIIobj.html"
+                        title="previous chapter"><em>GSASIIobj: Data objects</em></a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="GSASIIGUIr.html"
                         title="next chapter"><em>GSAS-II GUI Routines</em></a></p>
@@ -1585,7 +1570,7 @@ Takes no input and returns nothing. Throws an Exception if a test fails.</p>
           <a href="GSASIIGUIr.html" title="GSAS-II GUI Routines"
              >next</a> |</li>
         <li class="right" >
-          <a href="GSASII.html" title="GSAS-II Main Module"
+          <a href="GSASIIobj.html" title="GSASIIobj: Data objects"
              >previous</a> |</li>
         <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
       </ul>

@@ -315,18 +315,6 @@ values corresponding to keys in varylist</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIstrMath.getBLvalues">
-<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">getBLvalues</tt><big>(</big><em>BLtables</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#getBLvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.getBLvalues" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="GSASIIstrMath.getFFvalues">
-<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">getFFvalues</tt><big>(</big><em>FFtables</em>, <em>SQ</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#getFFvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.getFFvalues" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="GSASIIstrMath.getPowderProfile">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">getPowderProfile</tt><big>(</big><em>parmDict</em>, <em>x</em>, <em>varylist</em>, <em>Histogram</em>, <em>Phases</em>, <em>calcControls</em>, <em>pawleyLookup</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#getPowderProfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.getPowderProfile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
@@ -403,22 +391,6 @@ a new file; if False, the last backup is overwritten</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIstrIO.GetBLtable">
-<tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetBLtable</tt><big>(</big><em>General</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetBLtable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetBLtable" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a dictionary of neutron scattering length data for atom types &amp; isotopes found in General</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>General</strong> (<em>dict</em>) &#8211; dictionary of phase info.; includes AtomTypes &amp; Isotopes</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">BLtable, dictionary of scattering length data; key is atom type</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="GSASIIstrIO.GetConstraints">
 <tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetConstraints</tt><big>(</big><em>GPXfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetConstraints" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read the constraints from the GPX file and interpret them</p>
@@ -435,22 +407,6 @@ a new file; if False, the last backup is overwritten</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>GPXfile</strong> (<em>str</em>) &#8211; full .gpx file name</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dictionary of control items</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="GSASIIstrIO.GetFFtable">
-<tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetFFtable</tt><big>(</big><em>General</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetFFtable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetFFtable" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a dictionary of form factor data for atom types found in General</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>General</strong> (<em>dict</em>) &#8211; dictionary of phase info.; includes AtomTypes</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">FFtable, dictionary of form factor data; key is atom type</td>
 </tr>
 </tbody>
 </table>
@@ -547,7 +503,8 @@ a new file; if False, the last backup is overwritten</li>
 <dl class="function">
 <dt id="GSASIIstrIO.GetRestraints">
 <tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetRestraints</tt><big>(</big><em>GPXfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetRestraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetRestraints" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read the restraints from the GPX file</p>
+<dd><p>Read the restraints from the GPX file.
+Throws an exception if not found in the .GPX file</p>
 </dd></dl>
 
 <dl class="function">

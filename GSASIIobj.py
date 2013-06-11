@@ -267,12 +267,14 @@ SGUniq      unique axis if monoclinic. Will be
 SGCen       Symmetry cell centering vectors. A (n,3) np.array
             of centers. Will always have at least one row:
             ``np.array([[0, 0, 0]])``
-SGOps       symmetry operations as a list in form
-            [[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array
-            and T is a length 3 np.array.
+SGOps       symmetry operations as a list of form
+            ``[[M1,T1], [M2,T2],...]``
+            where :math:`M_n` is a 3x3 np.array
+            and :math:`T_n` is a length 3 np.array.
             Atom coordinates are transformed where the
-            Asymmetric unit coordinates [X=(x,y,z)] are
-            transformed using ``M*X+T ==> X'``
+            Asymmetric unit coordinates [X is (x,y,z)]
+            are transformed using
+            :math:`X\prime = M_n*X+T_n`
 SGSys       symmetry unit cell: type one of
             'triclinic', 'monoclinic', 'orthorhombic',
             'tetragonal', 'rhombohedral', 'trigonal',

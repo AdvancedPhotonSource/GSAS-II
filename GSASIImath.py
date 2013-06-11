@@ -1735,72 +1735,62 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     Schedule is a schedule class implementing the annealing schedule.
     Available ones are 'fast', 'cauchy', 'boltzmann'
 
-    Parameters
-    ----------
-    func : callable f(x, *args)
+    :param callable func: f(x, \*args)
         Function to be optimized.
-    x0 : ndarray
+    :param ndarray x0:
         Initial guess.
-    args : tuple
+    :param tuple args: 
         Extra parameters to `func`.
-    schedule : base_schedule
+    :param base_schedule schedule: 
         Annealing schedule to use (a class).
-    full_output : bool
+    :param bool full_output:
         Whether to return optional outputs.
-    T0 : float
+    :param float T0: 
         Initial Temperature (estimated as 1.2 times the largest
         cost-function deviation over random points in the range).
-    Tf : float
+    :param float Tf: 
         Final goal temperature.
-    maxeval : int
+    :param int maxeval: 
         Maximum function evaluations.
-    maxaccept : int
+    :param int maxaccept:
         Maximum changes to accept.
-    maxiter : int
+    :param int maxiter: 
         Maximum cooling iterations.
-    learn_rate : float
+    :param float learn_rate:
         Scale constant for adjusting guesses.
-    boltzmann : float
+    :param float boltzmann: 
         Boltzmann constant in acceptance test
         (increase for less stringent test at each temperature).
-    feps : float
+    :param float feps:
         Stopping relative error tolerance for the function value in
         last four coolings.
-    quench, m, n : float
+    :param float quench,m,n:
         Parameters to alter fast_sa schedule.
-    lower, upper : float or ndarray
+    :param float/ndarray lower,upper: 
         Lower and upper bounds on `x`.
-    dwell : int
+    :param int dwell:
         The number of times to search the space at each temperature.
-    slope : float
+    :param float slope: 
         Parameter for log schedule
 
-    Returns
-    -------
-    xmin : ndarray
-        Point giving smallest value found.
-    Jmin : float
-        Minimum value of function found.
-    T : float
-        Final temperature.
-    feval : int
-        Number of function evaluations.
-    iters : int
-        Number of cooling iterations.
-    accept : int
-        Number of tests accepted.
-    retval : int
-        Flag indicating stopping condition::
+    :returns: (xmin, Jmin, T, feval, iters, accept, retval) where
 
-                0 : Points no longer changing
-                1 : Cooled to final temperature
-                2 : Maximum function evaluations
-                3 : Maximum cooling iterations reached
-                4 : Maximum accepted query locations reached
-                5 : Final point not the minimum amongst encountered points
+     * xmin (ndarray): Point giving smallest value found.
+     * Jmin (float): Minimum value of function found.
+     * T (float): Final temperature.
+     * feval (int): Number of function evaluations.
+     * iters (int): Number of cooling iterations.
+     * accept (int): Number of tests accepted.
+     * retval (int): Flag indicating stopping condition:
 
-    Notes
-    -----
+              *  0: Points no longer changing
+              *  1: Cooled to final temperature
+              *  2: Maximum function evaluations
+              *  3: Maximum cooling iterations reached
+              *  4: Maximum accepted query locations reached
+              *  5: Final point not the minimum amongst encountered points
+
+    *Notes*:
     Simulated annealing is a random algorithm which uses no derivative
     information from the function being optimized. In practice it has
     been more useful in discrete optimization than continuous

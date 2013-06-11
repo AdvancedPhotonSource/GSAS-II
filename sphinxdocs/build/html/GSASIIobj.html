@@ -1,0 +1,746 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSASIIobj: Data objects &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="GSAS-II Utility Modules" href="GSASIIutil.html" />
+    <link rel="prev" title="GSAS-II Main Module" href="GSASII.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIutil.html" title="GSAS-II Utility Modules"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="GSASII.html" title="GSAS-II Main Module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-GSASIIobj"></span><div class="section" id="gsasiiobj-data-objects">
+<h1><em>GSASIIobj: Data objects</em><a class="headerlink" href="#gsasiiobj-data-objects" title="Permalink to this headline">¶</a></h1>
+<p>This module defines and/or documents the data structures used in GSAS-II.</p>
+<div class="section" id="constraints-tree-item">
+<h2>Constraints Tree Item<a class="headerlink" href="#constraints-tree-item" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="constraints-table"></span><p id="index-0">Constraints are stored in a dict, separated into groups.
+Note that parameter are named in the following pattern,
+p:h:&lt;var&gt;:n, where p is the phase number, h is the histogram number
+&lt;var&gt; is a variable name and n is the parameter number.
+If a parameter does not depend on a histogram or phase or is unnumbered, that
+number is omitted.
+Note that the contents of each dict item is a List where each element in the
+list is a <a class="reference internal" href="#constraint-definitions-table"><em>constraint definition objects</em></a>.</p>
+<p>The keys in the Constraints dict are:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Hist</td>
+<td>This specifies a list of constraints on
+histogram-related parameters,
+which will be of form :h:&lt;var&gt;:n.</td>
+</tr>
+<tr class="row-odd"><td>HAP</td>
+<td>This specifies a list of constraints on parameters
+that are defined for every histogram in each phase
+and are of form p:h:&lt;var&gt;:n.</td>
+</tr>
+<tr class="row-even"><td>Phase</td>
+<td>This specifies a list of constraints on phase
+parameters,
+which will be of form p::&lt;var&gt;:n.</td>
+</tr>
+<tr class="row-odd"><td>Global</td>
+<td>This specifies a list of constraints on parameters
+that are not tied to a histogram or phase and
+are of form ::&lt;var&gt;:n</td>
+</tr>
+</tbody>
+</table>
+<span class="target" id="constraint-definitions-table"></span><p id="index-1">Each constraint is defined as a list using a series of terms of form</p>
+<div class="highlight-python"><pre>[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixed val&gt;, &lt;vary flag&gt;, &lt;cons type&gt;]</pre>
+</div>
+<p>Where the variable pair list item containing two values [&lt;mult&gt;, &lt;var&gt;],</p>
+<blockquote>
+<div><ul class="simple">
+<li>&lt;mult&gt; is a multiplier for the constraint (float)</li>
+<li>&lt;var&gt; is the name of the variable (str) (or to be implemented a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a> object.)</li>
+</ul>
+</div></blockquote>
+<p>Note that the last three items in the list play a special role:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">&lt;fixed val&gt; is the fixed value for a constraint equation or is None</p>
+</li>
+<li><p class="first">&lt;vary flag&gt; is True, False or None and is intended to use to indicate if new variables
+should be refined.</p>
+</li>
+<li><p class="first">&lt;cons type&gt; is one of four letters, &#8216;e&#8217;, &#8216;c&#8217;, &#8216;h&#8217;, &#8216;f&#8217; that determines the type of constraint.</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;e&#8217; defines a set of equivalent variables. Only the first variable is refined (if the
+appropriate refine flag is set) and and all other equivalent variables in the list
+are generated from that variable. The vary flag for those variables is ignored.</li>
+<li>&#8216;c&#8217; defines a constraint equation of form, <math xmlns="http://www.w3.org/1998/Math/MathML">
+<mrow><msub><mi>m</mi><mn>1</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>1</mn></msub><mo>+</mo><msub><mi>m</mi><mn>2</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>2</mn></msub><mo>+</mo><mo>.</mo><mo>.</mo><mo>.</mo><mo>=</mo><mi>c</mi></mrow></math></li>
+<li>&#8216;h&#8217; defines a variable to hold (not vary). Any variable on this list is not varied, even if its refinement
+flag is set. This is of particular value when needing to hold one or more variables in a set such as
+the reciprocal metric tensor or anisotropic displacement parameter.</li>
+<li>&#8216;f&#8217; defines a relationship to define a new variable according to relationship 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+<mrow><mi>n</mi><mi>e</mi><mi>w</mi><mi>v</mi><mi>a</mi><mi>r</mi><mo>=</mo><msub><mi>m</mi><mn>1</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>1</mn></msub><mo>+</mo><msub><mi>m</mi><mn>2</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>2</mn></msub><mo>+</mo><mo>.</mo><mo>.</mo><mo>.</mo></mrow></math></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="covariance-tree-item">
+<h2>Covariance Tree Item<a class="headerlink" href="#covariance-tree-item" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="covariance-table"></span><p id="index-2">The Covariance tree item has results from the last least-squares run. They
+are stored in a dict with these keys:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="19%" />
+<col width="65%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">sub-key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>newCellDict</td>
+<td></td>
+<td>dict with lattice parameters computed by
+<a class="reference internal" href="GSASIIstruc.html#GSASIIstrMath.GetNewCellParms" title="GSASIIstrMath.GetNewCellParms"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMath.GetNewCellParms()</span></tt></a> (dict)</td>
+</tr>
+<tr class="row-odd"><td>title</td>
+<td></td>
+<td>Name of gpx file(?) (str)</td>
+</tr>
+<tr class="row-even"><td>variables</td>
+<td></td>
+<td>Values for all N refined variables
+(list of float values, length N,
+ordered to match varyList)</td>
+</tr>
+<tr class="row-odd"><td>sig</td>
+<td></td>
+<td>Uncertainty values for all N refined variables
+(list of float values, length N,
+ordered to match varyList)</td>
+</tr>
+<tr class="row-even"><td>varyList</td>
+<td></td>
+<td>List of directly refined variables
+(list of str values, length N)</td>
+</tr>
+<tr class="row-odd"><td>newAtomDict</td>
+<td></td>
+<td>dict with atom position values computed in
+<a class="reference internal" href="GSASIIstruc.html#GSASIIstrMath.ApplyXYZshifts" title="GSASIIstrMath.ApplyXYZshifts"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMath.ApplyXYZshifts()</span></tt></a> (dict)</td>
+</tr>
+<tr class="row-even"><td>Rvals</td>
+<td></td>
+<td>R-factors, GOF, Marquardt value for last
+refinement cycle (dict)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Nobs</td>
+<td>Number of observed data points (int)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Rwp</td>
+<td>overall weighted profile R-factor (%, float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>chisq</td>
+<td>sum[w*(Iobs-Icalc)**2] for all data
+note this is not the reduced chi squared (float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>lamMax</td>
+<td>Marquardt value applied to Hessian diagonal
+(float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>GOF</td>
+<td>The goodness-of-fit, aka square root of
+the reduced chi squared. (float)</td>
+</tr>
+<tr class="row-even"><td>covMatrix</td>
+<td></td>
+<td>The (NxN) covVariance matrix (np.array)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="phase-tree-item">
+<h2>Phase Tree Item<a class="headerlink" href="#phase-tree-item" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="phase-table"></span><p id="index-3">Phase information is stored in the GSAS-II data tree as children of the
+Phases item in a dict with keys:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="15%" />
+<col width="75%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">sub-key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>General</td>
+<td></td>
+<td>Overall information for the phase (dict)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>AtomPtrs</td>
+<td>? (list)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>F000X</td>
+<td>x-ray F(000) intensity (float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>F000N</td>
+<td>neutron F(000) intensity (float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Mydir</td>
+<td>directory of current .gpx file (str)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>MCSA controls</td>
+<td>?</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Cell</td>
+<td>List with 7 items: cell refinement flag (bool)
+a, b, c, (Angstrom, float)
+alpha, beta &amp; gamma (degrees, float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Type</td>
+<td>for now &#8216;nuclear&#8217; (str)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Map</td>
+<td>dict of map parameters</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>SH Texture</td>
+<td>dict of spherical harmonic preferred orientation
+parameters</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Isotope</td>
+<td>dict of isotopes for each atom type</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Isotopes</td>
+<td>dict of scattering lengths for each isotope
+combination for each element in phase</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Name</td>
+<td>phase name (str)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>SGData</td>
+<td>Space group details,
+as defined in <a class="reference internal" href="GSASIIutil.html#module-GSASIIspc" title="GSASIIspc"><tt class="xref py py-mod docutils literal"><span class="pre">GSASIIspc</span></tt></a> as  <a class="reference internal" href="#sgdata-table"><em>SGData definition</em></a></td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Pawley neg wt</td>
+<td>Restraint value for negative Pawley intensities
+(float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Flip</td>
+<td>Charge flip controls dict?</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Data plot type</td>
+<td>?</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Mass</td>
+<td>Mass of unit cell contents in g/mol</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>POhkl</td>
+<td>March-Dollase preferred orientation direction</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Z</td>
+<td>?</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>vdWRadii</td>
+<td>?</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Color</td>
+<td>Colors for atoms (list of (r,b,g) triplets)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>AtomTypes</td>
+<td>List of atom types</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>AtomMass</td>
+<td>List of masses for atoms</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>doPawley</td>
+<td>Flag for Pawley intensity extraction (bool)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>NoAtoms</td>
+<td>Number of atoms per unit cell of each type (dict)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Pawley dmin</td>
+<td>maximum Q (as d-space) to use for Pawley
+extraction (float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>BondRadii</td>
+<td>Radius for each atom used to compute
+interatomic distances (list of floats)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>AngleRadii</td>
+<td>Radius for each atom used to compute
+interatomic angles (list of floats)</td>
+</tr>
+<tr class="row-odd"><td>ranId</td>
+<td></td>
+<td>unique random number Id for phase (int)</td>
+</tr>
+<tr class="row-even"><td>pId</td>
+<td></td>
+<td>? (int)</td>
+</tr>
+<tr class="row-odd"><td>Atoms</td>
+<td></td>
+<td>Atoms in phase as a list of lists. The outer list
+is for each atom, the inner list contains 18
+items:
+0) atom label, 1) the atom type,
+2) the refinement flags, 3-6) x, y, z, frac
+7) site symmetry, 8) site multiplicity,
+9) &#8216;I&#8217; or &#8216;A&#8217; for iso/anisotropic,
+10) Uiso, 10-16) Uij, 16) unique Id #.
+(list of lists)</td>
+</tr>
+<tr class="row-even"><td>Drawing</td>
+<td></td>
+<td>Display parameters (dict)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>ballScale</td>
+<td>Size of spheres in ball-and-stick display (float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>bondList</td>
+<td>dict with bonds</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>contourLevel</td>
+<td>? (float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>showABC</td>
+<td>Flag to show view point triplet (bool). True=show.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>viewDir</td>
+<td>cartesian viewing direction (np.array with three
+elements)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Zclip</td>
+<td>clipping distance in A (float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>backColor</td>
+<td>background for plot as and R,G,B triplet
+(default = [0, 0, 0], black).
+(list with three atoms)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>selectedAtoms</td>
+<td>List of selected atoms (list of int values)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>showRigidBodies</td>
+<td>Flag to highlight rigid body placement</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>sizeH</td>
+<td>Size ratio for H atoms (float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>bondRadius</td>
+<td>Size of binds in A (float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>atomPtrs</td>
+<td>? (list)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>viewPoint</td>
+<td>list of lists. First item in list is [x,y,z]
+in fractional coordinates for the center of
+the plot. Second item ?.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>showHydrogen</td>
+<td>Flag to control plotting of H atoms.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>unitCellBox</td>
+<td>Flag to control display of the unit cell.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>ellipseProb</td>
+<td>Probability limit for display of thermal
+ellipsoids in % (float).</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>vdwScale</td>
+<td>Multiplier of van der Waals radius for
+display of vdW spheres.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Atoms</td>
+<td>A list of lists with an entry for each atom
+that is plotted.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Zstep</td>
+<td>Step to de/increase Z-clip (float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Quaternion</td>
+<td>Viewing quaternion (4 element np.array)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>radiusFactor</td>
+<td>Distance ratio for searching for bonds. ? Bonds
+are located that are within r(Ra+Rb) and (Ra+Rb)/r
+where Ra and Rb are the atomic radii.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>oldxy</td>
+<td>? (list with two floats)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>cameraPos</td>
+<td>Viewing position in A for plot (float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>depthFog</td>
+<td>? (bool)</td>
+</tr>
+<tr class="row-odd"><td>RBModels</td>
+<td></td>
+<td>Rigid body assignments (note Rigid body definitions
+are stored in their own main top-level tree entry.)</td>
+</tr>
+<tr class="row-even"><td>Pawley ref</td>
+<td></td>
+<td>Pawley reflections</td>
+</tr>
+<tr class="row-odd"><td>Histograms</td>
+<td></td>
+<td>A dict of dicts. The key for the outer dict is
+the histograms tied to this phase. The inner
+dict contains the combined phase/histogram
+parameters for items such as scale factors,
+size and strain parameters. (dict)</td>
+</tr>
+<tr class="row-even"><td>MCSA</td>
+<td></td>
+<td>Monte-Carlo simulated annealing parameters</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="space-group-objects">
+<h2>Space Group Objects<a class="headerlink" href="#space-group-objects" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="sgdata-table"></span><p id="index-4">Space groups are interpreted by <a class="reference internal" href="GSASIIutil.html#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIspc.SpcGroup()</span></tt></a> 
+and the information is placed in a SGdata object,
+which is a dict with these keys:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>SpGrp</td>
+<td>space group symbol (str)</td>
+</tr>
+<tr class="row-odd"><td>Laue</td>
+<td>one of the following 14 Laue classes:
+-1, 2/m, mmm, 4/m, 4/mmm, 3R,
+3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)</td>
+</tr>
+<tr class="row-even"><td>SGInv</td>
+<td>True if centrosymmetric, False if not (bool)</td>
+</tr>
+<tr class="row-odd"><td>SGLatt</td>
+<td>Lattice centering type. Will be one of
+P, A, B, C, I, F, R (str)</td>
+</tr>
+<tr class="row-even"><td>SGUniq</td>
+<td>unique axis if monoclinic. Will be
+a, b, or c for monoclinic space groups.
+Will be blank for non-monoclinic. (str)</td>
+</tr>
+<tr class="row-odd"><td>SGCen</td>
+<td>Symmetry cell centering vectors. A (n,3) np.array
+of centers. Will always have at least one row:
+<tt class="docutils literal"><span class="pre">np.array([[0,</span> <span class="pre">0,</span> <span class="pre">0]])</span></tt></td>
+</tr>
+<tr class="row-even"><td>SGOps</td>
+<td>symmetry operations as a list in form
+[[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array
+and T is a length 3 np.array.
+Atom coordinates are transformed where the
+Asymmetric unit coordinates [X=(x,y,z)] are
+transformed using <tt class="docutils literal"><span class="pre">M*X+T</span> <span class="pre">==&gt;</span> <span class="pre">X'</span></tt></td>
+</tr>
+<tr class="row-odd"><td>SGSys</td>
+<td>symmetry unit cell: type one of
+&#8216;triclinic&#8217;, &#8216;monoclinic&#8217;, &#8216;orthorhombic&#8217;,
+&#8216;tetragonal&#8217;, &#8216;rhombohedral&#8217;, &#8216;trigonal&#8217;,
+&#8216;hexagonal&#8217;, &#8216;cubic&#8217; (str)</td>
+</tr>
+<tr class="row-even"><td>SGPolax</td>
+<td>Axes for space group polarity. Will be one of
+&#8216;&#8217;, &#8216;x&#8217;, &#8216;y&#8217;, &#8216;x y&#8217;, &#8216;z&#8217;, &#8216;x z&#8217;, &#8216;y z&#8217;,
+&#8216;xyz&#8217;. In the case where axes are arbitrary
+&#8216;111&#8217; is used (P 1, and ?).</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="GSASIIobj.LoadHistogramIDs">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LoadHistogramIDs</tt><big>(</big><em>histList</em>, <em>idList</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LoadHistogramIDs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LoadHistogramIDs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the Id values for a series of histograms</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIobj.VarName">
+<em class="property">class </em><tt class="descclassname">GSASIIobj.</tt><tt class="descname">VarName</tt><big>(</big><em>*args</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a GSAS-II variable either using the phase/atom/histogram
+unique Id numbers or using a character string that specifies
+variables by phase/atom/histogram number (which can change).
+Note that <tt class="xref py py-func docutils literal"><span class="pre">LoadID()</span></tt> should be used to (re)load the current Ids
+before creating or later using the VarName object.</p>
+<p>A <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a> object can be created with a single parameter:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>varname</strong> (<em>str</em>) &#8211; <dl class="docutils">
+<dt>a single value can be used to create a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a></dt>
+<dd>object. The string must be of form &#8220;p:h:var&#8221; or &#8220;p:h:var:a&#8221;, where</dd>
+</dl>
+<ul class="simple">
+<li>p is the phase number (which may be left blank);</li>
+<li>h is the histogram number (which may be left blank);</li>
+<li>a is the atom number (which may be left blank in which case the third colon is omitted).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Alternately, a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a> object can be created with exactly four positional parameters:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>phasenum</strong> (<em>int</em>) &#8211; The number for the phase</li>
+<li><strong>histnum</strong> (<em>int</em>) &#8211; The number for the histogram</li>
+<li><strong>varname</strong> (<em>str</em>) &#8211; a single value can be used to create a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a></li>
+<li><strong>atomnum</strong> (<em>int</em>) &#8211; The number for the atom</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIobj.VarName.fullDescr">
+<tt class="descname">fullDescr</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName.fullDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName.fullDescr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a longer description for a GSAS-II variable</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a short description or &#8216;no definition&#8217; if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.VarName.getDescr">
+<tt class="descname">getDescr</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName.getDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName.getDescr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a short description for a GSAS-II variable</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a short description or &#8216;no definition&#8217; if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.VarName.name">
+<tt class="descname">name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formats the GSAS-II variable name as a &#8220;traditional&#8221; string (p:h:&lt;var&gt;:a)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the variable name as a str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><em>GSASIIobj: Data objects</em></a><ul>
+<li><a class="reference internal" href="#constraints-tree-item">Constraints Tree Item</a></li>
+<li><a class="reference internal" href="#covariance-tree-item">Covariance Tree Item</a></li>
+<li><a class="reference internal" href="#phase-tree-item">Phase Tree Item</a></li>
+<li><a class="reference internal" href="#space-group-objects">Space Group Objects</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASII.html"
+                        title="previous chapter"><em>GSAS-II Main Module</em></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="GSASIIutil.html"
+                        title="next chapter"><em>GSAS-II Utility Modules</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIIobj.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIutil.html" title="GSAS-II Utility Modules"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="GSASII.html" title="GSAS-II Main Module"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

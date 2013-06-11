@@ -1,0 +1,439 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSASIIobj &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for GSASIIobj</h1><div class="highlight"><pre>
+<span class="c"># TODO: change this to assemble the look-up tables of atoms, phases and hists from the tree</span>
+<span class="c"># and then save/unsave those values in __init__ &amp; __str__, etc. </span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">*GSASIIobj: Data objects*</span>
+<span class="sd">=========================</span>
+
+<span class="sd">This module defines and/or documents the data structures used in GSAS-II.</span>
+
+
+<span class="sd">Constraints Tree Item</span>
+<span class="sd">----------------------</span>
+
+<span class="sd">.. _Constraints_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Constraints object description</span>
+<span class="sd">   single: Data object descriptions; Constraints</span>
+
+<span class="sd">Constraints are stored in a dict, separated into groups.</span>
+<span class="sd">Note that parameter are named in the following pattern,</span>
+<span class="sd">p:h:&lt;var&gt;:n, where p is the phase number, h is the histogram number</span>
+<span class="sd">&lt;var&gt; is a variable name and n is the parameter number.</span>
+<span class="sd">If a parameter does not depend on a histogram or phase or is unnumbered, that</span>
+<span class="sd">number is omitted.</span>
+<span class="sd">Note that the contents of each dict item is a List where each element in the</span>
+<span class="sd">list is a :ref:`constraint definition objects &lt;Constraint_definitions_table&gt;`.</span>
+
+<span class="sd">The keys in the Constraints dict are:</span>
+
+<span class="sd">.. tabularcolumns:: |l|p{4.5in}|</span>
+
+<span class="sd">==========  ====================================================</span>
+<span class="sd">  key         explanation</span>
+<span class="sd">==========  ====================================================</span>
+<span class="sd">Hist        This specifies a list of constraints on </span>
+<span class="sd">            histogram-related parameters,</span>
+<span class="sd">            which will be of form :h:&lt;var&gt;:n.</span>
+<span class="sd">HAP         This specifies a list of constraints on parameters</span>
+<span class="sd">            that are defined for every histogram in each phase</span>
+<span class="sd">            and are of form p:h:&lt;var&gt;:n.            </span>
+<span class="sd">Phase       This specifies a list of constraints on phase</span>
+<span class="sd">            parameters,</span>
+<span class="sd">            which will be of form p::&lt;var&gt;:n.</span>
+<span class="sd">Global      This specifies a list of constraints on parameters</span>
+<span class="sd">            that are not tied to a histogram or phase and</span>
+<span class="sd">            are of form ::&lt;var&gt;:n</span>
+<span class="sd">==========  ====================================================</span>
+
+<span class="sd">.. _Constraint_definitions_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Constraint definition object description</span>
+<span class="sd">   single: Data object descriptions; Constraint Definition</span>
+
+<span class="sd">Each constraint is defined as a list using a series of terms of form</span>
+
+<span class="sd">::</span>
+
+<span class="sd">[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixed val&gt;, &lt;vary flag&gt;, &lt;cons type&gt;]</span>
+
+<span class="sd">Where the variable pair list item containing two values [&lt;mult&gt;, &lt;var&gt;], </span>
+
+<span class="sd">  * &lt;mult&gt; is a multiplier for the constraint (float)</span>
+<span class="sd">  * &lt;var&gt; is the name of the variable (str) (or to be implemented a :class:`VarName` object.)</span>
+
+<span class="sd">Note that the last three items in the list play a special role:</span>
+
+<span class="sd"> * &lt;fixed val&gt; is the fixed value for a constraint equation or is None</span>
+<span class="sd"> * &lt;vary flag&gt; is True, False or None and is intended to use to indicate if new variables</span>
+<span class="sd">   should be refined.</span>
+<span class="sd"> * &lt;cons type&gt; is one of four letters, &#39;e&#39;, &#39;c&#39;, &#39;h&#39;, &#39;f&#39; that determines the type of constraint.</span>
+
+<span class="sd">    * &#39;e&#39; defines a set of equivalent variables. Only the first variable is refined (if the</span>
+<span class="sd">      appropriate refine flag is set) and and all other equivalent variables in the list</span>
+<span class="sd">      are generated from that variable. The vary flag for those variables is ignored.</span>
+<span class="sd">    * &#39;c&#39; defines a constraint equation of form, :math:`m_1 \\times var_1 + m_2 \\times var_2 + ... = c`</span>
+<span class="sd">    * &#39;h&#39; defines a variable to hold (not vary). Any variable on this list is not varied, even if its refinement</span>
+<span class="sd">      flag is set. This is of particular value when needing to hold one or more variables in a set such as</span>
+<span class="sd">      the reciprocal metric tensor or anisotropic displacement parameter. </span>
+<span class="sd">    * &#39;f&#39; defines a relationship to define a new variable according to relationship </span>
+<span class="sd">      :math:`newvar = m_1 \\times var_1 + m_2 \\times var_2 + ...`</span>
+
+<span class="sd">Covariance Tree Item</span>
+<span class="sd">--------------------</span>
+
+<span class="sd">.. _Covariance_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Covariance description</span>
+<span class="sd">   single: Data object descriptions; Covariance</span>
+
+<span class="sd">The Covariance tree item has results from the last least-squares run. They</span>
+<span class="sd">are stored in a dict with these keys:</span>
+
+<span class="sd">.. tabularcolumns:: |l|l|p{4in}|</span>
+
+<span class="sd">=============  ===============  ====================================================</span>
+<span class="sd">  key            sub-key        explanation</span>
+<span class="sd">=============  ===============  ====================================================</span>
+<span class="sd">newCellDict    \                dict with lattice parameters computed by</span>
+<span class="sd">                                :func:`GSASIIstrMath.GetNewCellParms` (dict)</span>
+<span class="sd">title          \                Name of gpx file(?) (str)</span>
+<span class="sd">variables      \                Values for all N refined variables</span>
+<span class="sd">                                (list of float values, length N,</span>
+<span class="sd">                                ordered to match varyList)</span>
+<span class="sd">sig            \                Uncertainty values for all N refined variables</span>
+<span class="sd">                                (list of float values, length N,</span>
+<span class="sd">                                ordered to match varyList)</span>
+<span class="sd">varyList       \                List of directly refined variables </span>
+<span class="sd">                                (list of str values, length N)</span>
+<span class="sd">newAtomDict    \                dict with atom position values computed in </span>
+<span class="sd">                                :func:`GSASIIstrMath.ApplyXYZshifts` (dict)</span>
+<span class="sd">Rvals          \                R-factors, GOF, Marquardt value for last</span>
+<span class="sd">                                refinement cycle (dict)</span>
+<span class="sd">\              Nobs             Number of observed data points (int)</span>
+<span class="sd">\              Rwp              overall weighted profile R-factor (%, float)</span>
+<span class="sd">\              chisq            sum[w*(Iobs-Icalc)**2] for all data</span>
+<span class="sd">                                note this is not the reduced chi squared (float)</span>
+<span class="sd">\              lamMax           Marquardt value applied to Hessian diagonal</span>
+<span class="sd">                                (float)</span>
+<span class="sd">\              GOF              The goodness-of-fit, aka square root of</span>
+<span class="sd">                                the reduced chi squared. (float)</span>
+<span class="sd">covMatrix      \                The (NxN) covVariance matrix (np.array)</span>
+<span class="sd">=============  ===============  ====================================================</span>
+
+<span class="sd">Space Group Objects</span>
+<span class="sd">-------------------</span>
+
+<span class="sd">.. _SGData_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: SGData description</span>
+<span class="sd">   single: Data object descriptions; SGData</span>
+
+<span class="sd">Space groups are interpreted by :func:`GSASIIspc:SpcGroup` </span>
+<span class="sd">and the information is placed in a SGdata object,</span>
+<span class="sd">which is a dict with these keys:</span>
+
+<span class="sd">.. tabularcolumns:: |l|p{4.5in}|</span>
+
+<span class="sd">==========  ====================================================</span>
+<span class="sd">  key         explanation</span>
+<span class="sd">==========  ====================================================</span>
+<span class="sd">SpGrp       space group symbol (str)</span>
+<span class="sd">Laue        one of the following 14 Laue classes:</span>
+<span class="sd">            -1, 2/m, mmm, 4/m, 4/mmm, 3R,</span>
+<span class="sd">            3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)</span>
+<span class="sd">SGInv       True if centrosymmetric, False if not (bool)</span>
+<span class="sd">SGLatt      Lattice centering type. Will be one of</span>
+<span class="sd">            P, A, B, C, I, F, R (str)</span>
+<span class="sd">SGUniq      unique axis if monoclinic. Will be</span>
+<span class="sd">            a, b, or c for monoclinic space groups.</span>
+<span class="sd">            Will be blank for non-monoclinic. (str)</span>
+<span class="sd">SGCen       Symmetry cell centering vectors. A (n,3) np.array</span>
+<span class="sd">            of centers. Will always have at least one row:</span>
+<span class="sd">            ``np.array([[0, 0, 0]])``</span>
+<span class="sd">SGOps       symmetry operations as a list in form</span>
+<span class="sd">            [[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array</span>
+<span class="sd">            and T is a length 3 np.array.</span>
+<span class="sd">            Atom coordinates are transformed where the</span>
+<span class="sd">            Asymmetric unit coordinates [X=(x,y,z)] are</span>
+<span class="sd">            transformed using ``M*X+T ==&gt; X&#39;``</span>
+<span class="sd">SGSys       symmetry unit cell: type one of</span>
+<span class="sd">            &#39;triclinic&#39;, &#39;monoclinic&#39;, &#39;orthorhombic&#39;,</span>
+<span class="sd">            &#39;tetragonal&#39;, &#39;rhombohedral&#39;, &#39;trigonal&#39;,</span>
+<span class="sd">            &#39;hexagonal&#39;, &#39;cubic&#39; (str)</span>
+<span class="sd">SGPolax     Axes for space group polarity. Will be one of</span>
+<span class="sd">            &#39;&#39;, &#39;x&#39;, &#39;y&#39;, &#39;x y&#39;, &#39;z&#39;, &#39;x z&#39;, &#39;y z&#39;,</span>
+<span class="sd">            &#39;xyz&#39;. In the case where axes are arbitrary </span>
+<span class="sd">            &#39;111&#39; is used (P 1, and ?).</span>
+<span class="sd">==========  ====================================================</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="LoadHistogramIDs"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LoadHistogramIDs">[docs]</a><span class="k">def</span> <span class="nf">LoadHistogramIDs</span><span class="p">(</span><span class="n">histList</span><span class="p">,</span><span class="n">idList</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Save the Id values for a series of histograms&#39;&#39;&#39;</span>
+    <span class="n">VarName</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">h</span><span class="p">,</span><span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">histList</span><span class="p">,</span><span class="n">idList</span><span class="p">):</span>
+        <span class="n">VarName</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span>
+</div>
+<span class="k">def</span> <span class="nf">LoadPhaseIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<div class="viewcode-block" id="VarName"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName">[docs]</a><span class="k">class</span> <span class="nc">VarName</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Defines a GSAS-II variable either using the phase/atom/histogram</span>
+<span class="sd">    unique Id numbers or using a character string that specifies</span>
+<span class="sd">    variables by phase/atom/histogram number (which can change).</span>
+<span class="sd">    Note that :func:`LoadID` should be used to (re)load the current Ids</span>
+<span class="sd">    before creating or later using the VarName object.</span>
+
+<span class="sd">    A :class:`VarName` object can be created with a single parameter:</span>
+<span class="sd">    </span>
+<span class="sd">    :param str varname: a single value can be used to create a :class:`VarName`</span>
+<span class="sd">      object. The string must be of form &quot;p:h:var&quot; or &quot;p:h:var:a&quot;, where</span>
+
+<span class="sd">     * p is the phase number (which may be left blank); </span>
+<span class="sd">     * h is the histogram number (which may be left blank); </span>
+<span class="sd">     * a is the atom number (which may be left blank in which case the third colon is omitted).</span>
+
+<span class="sd">    Alternately, a :class:`VarName` object can be created with exactly four positional parameters:</span>
+
+<span class="sd">    :param int phasenum: The number for the phase</span>
+<span class="sd">    :param int histnum: The number for the histogram</span>
+<span class="sd">    :param str varname: a single value can be used to create a :class:`VarName`</span>
+<span class="sd">    :param int atomnum: The number for the atom</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">IDdict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;phases&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c"># This dictionary lists descriptions for GSAS-II variables.</span>
+    <span class="c"># Note that keys may contain regular expressions, where &#39;[xyz]&#39;</span>
+    <span class="c"># matches &#39;x&#39; &#39;y&#39; or &#39;z&#39; (equivalently &#39;[x-z]&#39; describes this as range of values).</span>
+    <span class="c"># &#39;.*&#39; matches any string</span>
+    <span class="n">VarDesc</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c"># Phase vars (p::&lt;var&gt;)</span>
+        <span class="s">&#39;A[0-5]&#39;</span> <span class="p">:</span> <span class="s">&#39;Reciprocal metric tensor component&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Vol&#39;</span> <span class="p">:</span> <span class="s">&#39;Unit cell volume????&#39;</span><span class="p">,</span>
+        <span class="c"># Atom vars (p::&lt;var&gt;:a)</span>
+        <span class="s">&#39;dA[xyz]&#39;</span> <span class="p">:</span> <span class="s">&#39;change to atomic position&#39;</span><span class="p">,</span>
+        <span class="s">&#39;AUiso&#39;</span><span class="p">:</span><span class="s">&#39;Atomic isotropic displacement parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;AU[123][123]&#39;</span><span class="p">:</span><span class="s">&#39;Atomic anisotropic displacement parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;AFrac&#39;</span><span class="p">:</span> <span class="s">&#39;Atomic occupancy parameter&#39;</span><span class="p">,</span>
+        <span class="c"># Hist &amp; Phase (HAP) vars (p:h:&lt;var&gt;)</span>
+        <span class="s">&#39;Bab[AU]&#39;</span><span class="p">:</span> <span class="s">&#39;Babinet solvent scattering coef.&#39;</span><span class="p">,</span>
+        <span class="s">&#39;D[123][123]&#39;</span> <span class="p">:</span> <span class="s">&#39;Anisotropic strain coef.&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Extinction&#39;</span> <span class="p">:</span> <span class="s">&#39;Extinction coef.&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MD&#39;</span> <span class="p">:</span> <span class="s">&#39;March-Dollase coef.&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Mustrain;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Microstrain coef.&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Scale&#39;</span> <span class="p">:</span> <span class="s">&#39;Phase scale factor&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Size;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Crystallite size value&#39;</span><span class="p">,</span>
+        <span class="s">&#39;eA&#39;</span> <span class="p">:</span> <span class="s">&#39;?&#39;</span><span class="p">,</span>
+        <span class="c">#Histogram vars (:h:&lt;var&gt;)</span>
+        <span class="s">&#39;Absorption&#39;</span> <span class="p">:</span> <span class="s">&#39;Absorption coef.&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Displace[XY]&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer sample displacement&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Lam&#39;</span> <span class="p">:</span> <span class="s">&#39;Wavelength&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Polariz&#39;</span> <span class="p">:</span> <span class="s">&#39;Polarization correction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SH/L&#39;</span> <span class="p">:</span> <span class="s">&#39;FCJ peak asymmetry correction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Scale&#39;</span> <span class="p">:</span> <span class="s">&#39;Histogram scale factor&#39;</span><span class="p">,</span>
+        <span class="s">&#39;[UVW]&#39;</span> <span class="p">:</span> <span class="s">&#39;Gaussian instrument broadening&#39;</span><span class="p">,</span>
+        <span class="s">&#39;[XY]&#39;</span> <span class="p">:</span> <span class="s">&#39;Cauchy instrument broadening&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Zero&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer zero correction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;nDebye&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye model background corr. terms&#39;</span><span class="p">,</span>
+        <span class="s">&#39;nPeaks&#39;</span> <span class="p">:</span> <span class="s">&#39;Fixed peak  background corr. terms&#39;</span><span class="p">,</span>
+        <span class="c"># Global vars (::&lt;var&gt;)</span>
+        <span class="p">}</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">lst</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span> <span class="s">&quot;Need to look up IDs&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;Incorrectly called GSAS-II parameter name&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+
+<div class="viewcode-block" id="VarName.name"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName.name">[docs]</a>    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Formats the GSAS-II variable name as a &quot;traditional&quot; string (p:h:&lt;var&gt;:a)</span>
+
+<span class="sd">        :returns: the variable name as a str</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">_fmt</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s">&quot;&quot;</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span> <span class="o">+</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Return the detailed contents of the object</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Phase: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Histogram: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Variable name: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Atom number: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+
+        <span class="k">return</span> <span class="n">s</span><span class="o">+</span><span class="s">&quot;(&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">+</span><span class="s">&quot;)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">getDescr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Return a short description for a GSAS-II variable </span>
+
+<span class="sd">        :returns: a short description or &#39;no definition&#39; if not found</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># iterating over uncompiled regular expressions is not terribly fast,</span>
+        <span class="c"># but this routine should not need to be all that speedy</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s">&#39;no definition&#39;</span>
+
+<div class="viewcode-block" id="VarName.getDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName.getDescr">[docs]</a>    <span class="k">def</span> <span class="nf">getDescr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Return a short description for a GSAS-II variable </span>
+
+<span class="sd">        :returns: a short description or &#39;no definition&#39; if not found</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># iterating over uncompiled regular expressions is not terribly fast,</span>
+        <span class="c"># but this routine should not need to be all that speedy</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s">&#39;no definition&#39;</span>
+</div>
+<div class="viewcode-block" id="VarName.fullDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName.fullDescr">[docs]</a>    <span class="k">def</span> <span class="nf">fullDescr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Return a longer description for a GSAS-II variable </span>
+
+<span class="sd">        :returns: a short description or &#39;no definition&#39; if not found</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># iterating over uncompiled regular expressions is not terribly fast,</span>
+        <span class="c"># but this routine should not need to be all that speedy</span>
+        <span class="nb">str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s">&#39;no definition&#39;</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">_show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;For testing, shows the current lookup table&#39;</span>
+        <span class="k">print</span> <span class="s">&#39;phases&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;phases&#39;</span><span class="p">]</span>
+        <span class="k">print</span> <span class="s">&#39;hists&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span>
+        <span class="k">print</span> <span class="s">&#39;atomDict&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;atoms&#39;</span><span class="p">]</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

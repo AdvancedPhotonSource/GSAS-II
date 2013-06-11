@@ -1464,6 +1464,44 @@ def PeaksUnique(data,Ind):
             Ind.append(ind)
     return Ind
     
+def getCWsig(ins,pos):
+    tp = tand(pos/2.0)
+    return ins['U']*tp**2+ins['V']*tp+ins['W']
+    
+def getCWsigDeriv(pos):
+    tp = tand(pos/2.0)
+    return tp**2,tp,1.0
+    
+def getCWgam(ins,pos):
+    return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)
+    
+def getCWgamDeriv(pos):
+    return 1./cosd(pos/2.0),tand(pos/2.0)
+    
+def getTOFsig(ins,dsp):
+    return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-q']*dsp
+    
+def getTOFsigDeriv(dsp):
+    return 1.0,dsp**2,dsp
+    
+def getTOFgamma(ins,dsp):
+    return ins['X']*dsp+ins['Y']*dsp**2
+    
+def getTOFgammaDeriv(dsp):
+    return dsp,dsp**2
+    
+def getTOFbeta(ins,dsp):
+    return ins['beta-0']+ins['beta-1']/dsp**4+ins['beta-q']/dsp
+    
+def getTOFbetaDeriv(dsp):
+    return 1.0,1./dsp**4,1./dsp
+    
+def getTOFalpha(ins,dsp):
+    return ins['alpha']/dsp
+    
+def getTOFalphaDeriv(dsp):
+    return 1./dsp
+    
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     'Needs a doc string'        
     ind = 0
@@ -1475,8 +1513,8 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
             ins[x] = Parms[x][ind]
         if ifQ:                              #qplot - convert back to 2-theta
             pos = 2.0*asind(pos*wave/(4*math.pi))
-        sig = ins['U']*tand(pos/2.0)**2+ins['V']*tand(pos/2.0)+ins['W']
-        gam = ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)           
+        sig = getCWsig(ins,pos)
+        gam = getCWgam(ins,pos)           
         XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
     else:
         if ifQ:
@@ -1485,18 +1523,18 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         else:
             dsp = pos/Parms['difC'][1]
         if 'Pdabc' in Parms2:
-            for x in ['sig-0','sig-1','X','Y']:
+            for x in ['sig-0','sig-1','sig-q','X','Y']:
                 ins[x] = Parms[x][ind]
             Pdabc = Parms2['Pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])
             bet = np.interp(dsp,Pdabc[0],Pdabc[2])
         else:
-            for x in ['alpha','beta-0','beta-1','sig-0','sig-1','X','Y']:
+            for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']:
                 ins[x] = Parms[x][ind]
-            alp = ins['alpha']/dsp
-            bet = ins['beta-0']+ins['beta-1']/dsp**4
-        sig = ins['sig-0']+ins['sig-1']*dsp**2
-        gam = ins['X']*dsp+ins['Y']*dsp**2
+            alp = getTOFalpha(ins,dsp)
+            bet = getTOFbeta(ins,dsp)
+        sig = getTOFsig(ins,dsp)
+        gam = getTOFgamma(ins,dsp)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
     return XY
     

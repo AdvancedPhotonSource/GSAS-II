@@ -311,7 +311,7 @@ def UpdatePeakGrid(G2frame, data):
     T.sort()
     X = []
     for key in T: X.append(D[key])
-    data = X        
+    data = X
     G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
     G2frame.PeakTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Peak List')
@@ -603,6 +603,7 @@ def UpdateBackground(G2frame,data):
 def UpdateLimitsGrid(G2frame, data):
     '''respond to selection of PWDR Limits data tree item.
     '''
+    #Add excluded regions here
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
         
@@ -665,8 +666,8 @@ def UpdateInstrumentGrid(G2frame,data):
         good = []
         for key in keys:
             if key in ['Type','U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','sig-0','sig-1','Polariz.','Lam','Azimuth','2-theta',
-                'difC','difA','Zero','Lam1','Lam2']:
+                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','Polariz.',
+                'Lam','Azimuth','2-theta','difC','difA','Zero','Lam1','Lam2']:
                 good.append(key)
         return good
         
@@ -1008,7 +1009,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' difC: %8.2f'%(insVal['difC'])),0,wx.ALIGN_CENTER_VERTICAL)
                 topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' alpha, beta: fixed by table'),0,wx.ALIGN_CENTER_VERTICAL)
             else:
-                Items = ['difC','difA','Zero','alpha','beta-0','beta-1','sig-0','sig-1','X','Y']
+                Items = ['difC','difA','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']
             for item in Items:
                 fmt = '%10.3f'
                 if 'beta' in item:

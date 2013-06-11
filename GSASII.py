@@ -729,8 +729,9 @@ class GSASII(wx.Frame):
                 codes.extend([0,0,0,0,0,0,0])
                 return [G2IO.makeInstDict(names,data,codes),{}]
             elif 'T' in DataType:
-                names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1','sig-0','sig-1','X','Y','Azimuth']
-                codes = [0,0,0,0,0,0,0,0,0,0,0,0,0]
+                names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1',
+                    'beta-q','sig-0','sig-1','sig-q','X','Y','Azimuth']
+                codes = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
                 azm = 0.
                 if 'INS  1DETAZM' in Iparm:
                     azm = float(Iparm['INS  1DETAZM'])
@@ -744,14 +745,14 @@ class GSASII(wx.Frame):
                 if abs(pfType) == 1:
                     data.extend([G2IO.sfloat(s[1]),G2IO.sfloat(s[2]),G2IO.sfloat(s[3])])
                     s = Iparm['INS  1PRCF12'].split()
-                    data.extend([0.0,G2IO.sfloat(s[1]),0.0,0.0,azm])
+                    data.extend([0.0,0.0,G2IO.sfloat(s[1]),0.0,0.0,0.0,azm])
                 elif abs(pfType) in [3,4,5]:
                     data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])
                     if abs(pfType) == 4:
-                        data.extend([0.0,G2IO.sfloat(s[3]),0.0,0.0,azm])
+                        data.extend([0.0,0.0,G2IO.sfloat(s[3]),0.0,0.0,0.0,azm])
                     else:
                         s = Iparm['INS  1PRCF12'].split()
-                        data.extend([0.0,G2IO.sfloat(s[0]),0.0,0.0,azm])                       
+                        data.extend([0.0,0.0,G2IO.sfloat(s[0]),0.0,0.0,0.0,azm])                       
                 Inst1 = G2IO.makeInstDict(names,data,codes)
                 Inst2 = {}
                 if pfType < 0:

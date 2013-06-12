@@ -126,7 +126,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
             'MCSA controls' not in generalData:
             generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50,1.e-6],
-            'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':1,'boltzmann':1.0,
+            'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':50,'boltzmann':1.0,
             'fast parms':[1.0,1.0,1.0],'log slope':0.9}
 # end of patches
         generalData['NoAtoms'] = {}
@@ -725,8 +725,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            Rchoice = ['1','2','3','5','10','15','20','50','100','200','500']
-            line2Sizer.Add(wx.StaticText(General,label=' No. MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Rchoice = ['10','15','20','50','100','200','500']
+            line2Sizer.Add(wx.StaticText(General,label=' No. temp. steps: '),0,wx.ALIGN_CENTER_VERTICAL)
             noRuns = wx.ComboBox(General,-1,value=str(MCSA.get('nRuns',1)),choices=Rchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             noRuns.Bind(wx.EVT_COMBOBOX,OnNoRuns)

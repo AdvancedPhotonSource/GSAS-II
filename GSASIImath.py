@@ -1464,6 +1464,10 @@ def PeaksUnique(data,Ind):
             Ind.append(ind)
     return Ind
     
+################################################################################
+##### single peak fitting profile fxn stuff
+################################################################################
+
 def getCWsig(ins,pos):
     tp = tand(pos/2.0)
     return ins['U']*tp**2+ins['V']*tp+ins['W']
@@ -1627,7 +1631,7 @@ class base_schedule(object):
         return 0
 
     def update_guess(self, x0):
-        pass
+        return np.squeeze(np.random.uniform(0.,1.,size=self.dims))*(self.upper-self.lower)+self.lower
 
     def update_temp(self, x0):
         pass
@@ -1643,14 +1647,14 @@ class fast_sa(base_schedule):
             self.n = 1.0
         self.c = self.m * exp(-self.n * self.quench)
 
-    def update_guess(self, x0):
-        x0 = asarray(x0)
-        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
-        T = self.T
-        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
-        xc = y*(self.upper - self.lower)
-        xnew = x0 + xc
-        return xnew
+#    def update_guess(self, x0):
+#        x0 = asarray(x0)
+#        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
+#        T = self.T
+#        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
+#        xc = y*(self.upper - self.lower)
+#        xnew = x0 + xc
+#        return xnew
 
     def update_temp(self):
         self.T = self.T0*exp(-self.c * self.k**(self.quench))
@@ -1658,12 +1662,12 @@ class fast_sa(base_schedule):
         return
 
 class cauchy_sa(base_schedule):
-    def update_guess(self, x0):
-        x0 = asarray(x0)
-        numbers = squeeze(random.uniform(-pi/2, pi/2, size=self.dims))
-        xc = self.learn_rate * self.T * tan(numbers)
-        xnew = x0 + xc
-        return xnew
+#    def update_guess(self, x0):
+#        x0 = asarray(x0)
+#        numbers = squeeze(random.uniform(-pi/2, pi/2, size=self.dims))
+#        xc = self.learn_rate * self.T * tan(numbers)
+#        xnew = x0 + xc
+#        return xnew
 
     def update_temp(self):
         self.T = self.T0/(1+self.k)
@@ -1671,13 +1675,13 @@ class cauchy_sa(base_schedule):
         return
 
 class boltzmann_sa(base_schedule):
-    def update_guess(self, x0):
-        std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
-        x0 = asarray(x0)
-        xc = squeeze(random.normal(0, 1.0, size=self.dims))
-
-        xnew = x0 + xc*std*self.learn_rate
-        return xnew
+#    def update_guess(self, x0):
+#        std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
+#        x0 = asarray(x0)
+#        xc = squeeze(random.normal(0, 1.0, size=self.dims))
+#
+#        xnew = x0 + xc*std*self.learn_rate
+#        return xnew
 
     def update_temp(self):
         self.k += 1
@@ -1689,26 +1693,23 @@ class log_sa(base_schedule):
     def init(self,**options):
         self.__dict__.update(options)
         
-    def update_guess(self,x0):
-        x0 = np.asarray(x0)
-        u = np.squeeze(np.random.uniform(0.,1.,size=self.dims))
-        xnew = x0+u
-        return xnew
+#    def update_guess(self,x0):
+#        return np.squeeze(np.random.uniform(0.,1.,size=self.dims))*(self.upper-self.lower)+self.lower
         
     def update_temp(self):
         self.k += 1
-        self.T = self.T0*self.slope**k
+        self.T = self.T0*self.slope**self.k
         
 class Tremayne_sa(base_schedule):   #needs fixing for two steps
 
     def init(self,**options):
         self.__dict__.update(options)
 
-    def update_guess(self,x0):
-        x0 = np.asarray(x0)
-        u = np.squeeze(np.random.uniform(0.,1.,size=self.dims))
-        xnew = x0+u
-        return xnew        
+#    def update_guess(self,x0):
+#        x0 = np.asarray(x0)
+#        u = np.squeeze(np.random.uniform(0.,1.,size=self.dims))
+#        xnew = x0+u
+#        return xnew        
     
     def update_temp(self):
         self.k += 1
@@ -1729,7 +1730,7 @@ class _state(object):
 def anneal(func, x0, args=(), schedule='fast', full_output=0,
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
            boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
-           lower=-100, upper=100, dwell=50, slope=0.9):
+           lower=-100, upper=100, dwell=50, slope=0.9,dlg=None):
     """Minimize a function using simulated annealing.
 
     Schedule is a schedule class implementing the annealing schedule.
@@ -1808,7 +1809,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     We give a brief description of how the three temperature schedules
     generate new points and vary their temperature. Temperatures are
     only updated with iterations in the outer loop. The inner loop is
-    over loop over xrange(dwell), and new points are generated for
+    over xrange(dwell), and new points are generated for
     every iteration in the inner loop. (Though whether the proposed
     new points are accepted is probabilistic.)
 
@@ -1853,7 +1854,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     #   initialize the schedule
     schedule.init(dims=shape(x0),func=func,args=args,boltzmann=boltzmann,T0=T0,
                   learn_rate=learn_rate, lower=lower, upper=upper,
-                  m=m, n=n, quench=quench, dwell=dwell)
+                  m=m, n=n, quench=quench, dwell=dwell, slope=slope)
 
     current_state, last_state, best_state = _state(), _state(), _state()
     if T0 is None:
@@ -1885,6 +1886,11 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                 if last_state.cost < best_state.cost:
                     best_state.x = last_state.x.copy()
                     best_state.cost = last_state.cost
+        if dlg:
+            GoOn = dlg.Update(best_state.cost*100,
+                newmsg='%s%8.3f\n%s%8.3f%s'%('Temperature =',schedule.T,'MC/SA Residual =',best_state.cost*100,'%'))[0]
+            if not GoOn:
+                break
         schedule.update_temp()
         iters += 1
         # Stopping conditions
@@ -1938,7 +1944,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             limits = item['Coef'][2]
             lower.append(limits[0])
             upper.append(limits[1])
-            
+                        
     def getAtomparms(item,pfx,aTypes,SGData,parmDict,varyList):
         parmDict[pfx+'Atype'] = item['atType']
         aTypes |= set([item['atType'],]) 
@@ -1955,7 +1961,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 upper.append(limits[1])
         parmDict[pfx+'Amul'] = len(G2spc.GenAtom(XYZ,SGData))
             
-    def getRBparms(item,mfx,aTypes,RBdata,atNo,parmDict,varyList):
+    def getRBparms(item,mfx,aTypes,RBdata,SGData,atNo,parmDict,varyList):
         parmDict[mfx+'MolCent'] = item['MolCent']
         parmDict[mfx+'RBId'] = item['RBId']
         pstr = ['Px','Py','Pz']
@@ -1994,85 +2000,132 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         aTypes |= set(atypes)
         atNo += len(atypes)
         return atNo
+        
+    def GetAtomM(Xdata,SGData):
+        Mdata = []
+        for xyz in Xdata.T:
+            Mdata.append(len(G2spc.GenAtom(xyz,SGData)))
+        return np.array(Mdata)
 
-    def GetAtomTMX(pfx,RBdata,parmDict):
+    def GetAtomTX(RBdata,parmDict):
         'Needs a doc string'
-        atNo = parmDIct['atNo']
+        Bmat = parmDict['Bmat']
+        atNo = parmDict['atNo']
         nfixAt = parmDict['nfixAt']
         Tdata = atNo*[' ',]
-        Mdata = np.zeros(atNo)
-        Fdata = np.zeros(atNo)
         Xdata = np.zeros((3,atNo))
-        keys = {'Atype:':Tdata,'Amul:':Mdata,
-            'Ax:':Xdata[0],'Ay:':Xdata[1],'Az:':Xdata[2]}
-        nObjs = parmDict['nObjs']
+        keys = {':Atype':Tdata,':Ax':Xdata[0],':Ay':Xdata[1],':Az':Xdata[2]}
         for iatm in range(nfixAt):
             for key in keys:
-                parm = pfx+key+str(iatm)
+                parm = ':'+str(iatm)+key
                 if parm in parmDict:
                     keys[key][iatm] = parmDict[parm]
-        return Tdata,Mdata,Xdata
+        iatm = nfixAt
+        for iObj in range(parmDict['nObj']):
+            pfx = str(iObj)+':'
+            if parmDict[pfx+'Type'] in ['Vector','Residue']:
+                if parmDict[pfx+'Type'] == 'Vector':
+                    RBId = parmDict[pfx+':RBId']
+                    RBRes = RBdata['Vector'][RBId]
+                    aTypes = RBRes['rbTypes']
+                    vecs = RBRes['rbVect']
+                    mags = RBRes['VectMag']
+                    Cart = np.zeros_like(vecs[0])
+                    for vec,mag in zip(vecs,mags):
+                        Cart += vec*mag
+                elif parmDict[pfx+'Type'] == 'Residue':
+                    RBId = parmDict[pfx+':RBId']
+                    RBRes = RBdata['Residue'][RBId]
+                    aTypes = RBRes['rbTypes']
+                    Cart = np.array(RBRes['rbXYZ'])
+                    for itor,seq in enumerate(RBRes['rbSeq']):
+                        tName = pfx+':Tor'+str(itor)
+                        QuatA = AVdeg2Q(parmDict[tName],Cart[seq[0]]-Cart[seq[1]])
+                        for ride in seq[3]:
+                            Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+                if parmDict[pfx+':MolCent'][1]:
+                    Cart -= parmDict[pfx+':MolCent'][0]
+                Qori = np.array([parmDict[pfx+':Qa'],parmDict[pfx+':Qi'],parmDict[pfx+':Qj'],parmDict[pfx+':Qk']])
+                Pos = np.array([parmDict[pfx+':Px'],parmDict[pfx+':Py'],parmDict[pfx+':Pz']])
+                for i,x in enumerate(Cart):
+                    X = np.inner(Bmat,prodQVQ(Qori,x))+Pos
+                    for j in range(3):
+                        Xdata[j][iatm] = X[j]
+                    Tdata[iatm] = aTypes[i]
+                    iatm += 1
+            elif parmDict[pfx+'Type'] == 'Atom':
+                atNo = parmDict[pfx+'atNo']
+                afx = pfx+str(atNo)
+                for key in keys:
+                    parm = afx+key
+                    if parm in parmDict:
+                        keys[key][atNo] = parmDict[parm]
+            else:
+                continue        #skips March Dollase
+        return Tdata,Xdata
     
-#    def mcsaSfCalc(refList,RBdata,G,SGData,parmDict):
+    def calcMDcorr(MDval,MDaxis,Uniq,G):
+        sumMD = 0
+        for H in Uniq:            
+            cosP,sinP = G2lat.CosSinAngle(H,MDaxis,G)
+            A = 1.0/np.sqrt((MDval*cosP)**2+sinP**2/MDval)
+            sumMD += A**3
+        return sumMD
+        
+    def mcsaCalc(values,refList,rcov,ifInv,RBdata,varyList,parmDict):
 #        ''' Compute structure factors for all h,k,l for phase
 #        input:
 #            refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
-#            G:      reciprocal metric tensor
-#            SGData: space group info. dictionary output from SpcGroup
 #            ParmDict:
 #        puts result F^2 in each ref[8] in refList
 #        '''        
-#        twopi = 2.0*np.pi
-#        twopisq = 2.0*np.pi**2
-#        ast = np.sqrt(np.diag(G))
-#        Mast = twopisq*np.multiply.outer(ast,ast)
-#        Tdata,Mdata,Fdata,Xdata = GetAtomFX(pfx,calcControls,parmDict)
-#        FF = np.zeros(len(Tdata))
-#        if 'N' in parmDict[hfx+'Type']:
-#            FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
-#        else:
-#            FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
-#            FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-#        Uij = np.array(G2lat.U6toUij(Uijdata))
-#        bij = Mast*Uij.T
-#        for refl in refList:
-#            fbs = np.array([0,0])
-#            H = refl[:3]
-#            SQ = 1./(2.*refl[4])**2
-#            SQfactor = 4.0*SQ*twopisq
-#            Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
-#            if not len(refl[-1]):                #no form factors
-#                if 'N' in parmDict[hfx+'Type']:
-#                    refl[-1] = getBLvalues(BLtables)
-#                else:       #'X'
-#                    refl[-1] = getFFvalues(FFtables,SQ)
-#            for i,El in enumerate(Tdata):
-#                FF[i] = refl[-1][El]           
-#            Uniq = refl[11]
-#            phi = refl[12]
-#            phase = twopi*(np.inner(Uniq,(Xdata.T))+phi[:,np.newaxis])
-#            sinp = np.sin(phase)
-#            cosp = np.cos(phase)
-#            occ = Mdata*Fdata/len(Uniq)
-#            fa = np.array([(FF+FP-Bab)*occ*cosp,-FPP*occ*sinp])
-#            fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
-#            if not SGData['SGInv']:
-#                fb = np.array([(FF+FP-Bab)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
-#                fbs = np.sum(np.sum(fb,axis=1),axis=1)
-#            fasq = fas**2
-#            fbsq = fbs**2        #imaginary
-#            refl[9] = np.sum(fasq)+np.sum(fbsq)
-#            refl[10] = atan2d(fbs[0],fas[0])
+        twopi = 2.0*np.pi
+        parmDict.update(dict(zip(varyList,values)))
+        Tdata,Xdata = GetAtomTX(RBdata,parmDict)
+        Mdata = parmDict['Mdata']
+        FF = np.zeros(len(Tdata))
+        MDval = parmDict['0:MDval']
+        MDaxis = parmDict['0:MDaxis']
+        Gmat = parmDict['Gmat']
+        Srefs = np.zeros(len(refList))
+        sumFcsq = 0
+        for refl in refList:
+            fbs = 0
+            H = refl[:3]
+            for i,El in enumerate(Tdata):
+                FF[i] = refl[7][El]           
+            Uniq = refl[8]
+            phi = refl[9]
+            phase = twopi*(np.inner(Uniq,(Xdata.T))+phi[:,np.newaxis])
+            sinp = np.sin(phase)
+            cosp = np.cos(phase)
+            occ = Mdata/len(Uniq)
+            fa = np.asarray(FF*occ*cosp)
+            fas = np.sum(fa)
+            if not ifInv:
+                fb = np.asarray(FF*occ*sinp)
+                fbs = np.sum(fb)
+            fcsq = (fas**2+fbs**2)*refl[3]*calcMDcorr(MDval,MDaxis,Uniq,Gmat)
+            sumFcsq += fcsq
+            refl[5] = fcsq
+        scale = (parmDict['sumFosq']/sumFcsq)
+        for iref,refl in enumerate(refList):
+            refl[5] *= scale
+            Srefs[iref] = refl[4]-refl[5]
+        M = np.inner(Srefs,np.inner(rcov,Srefs))
+        return M/parmDict['sumFosq']**2
     
     sq8ln2 = np.sqrt(8*np.log(2))
     sq2pi = np.sqrt(2*np.pi)
     sq4pi = np.sqrt(4*np.pi)
     generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    Gmat = G2lat.cell2Gmat(generalData['Cell'][1:7])[0]
     SGData = generalData['SGData']
     fixAtoms = data['Atoms']                       #if any
     cx,ct,cs = generalData['AtomPtrs'][:3]
     aTypes = set([])
-    parmDict = {}
+    parmDict = {'Bmat':Bmat,'Gmat':Gmat}
     varyList = []
     atNo = 0
     for atm in fixAtoms:
@@ -2086,8 +2139,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             parmDict[name] = atm[cx+i]
         atNo += 1
     parmDict['nfixAt'] = len(fixAtoms)        
-    mcsaControls = generalData['MCSA controls']
-    reflName = mcsaControls['Data source']
+    MCSA = generalData['MCSA controls']
+    reflName = MCSA['Data source']
     phaseName = generalData['Name']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
@@ -2100,23 +2153,28 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         elif item['Type'] == 'Atom':
             pfx = mfx+str(atNo)+':'
             getAtomparms(item,pfx,aTypes,SGData,parmDict,varyList)
+            parmDict[mfx+'atNo'] = atNo
             atNo += 1
         elif item['Type'] in ['Residue','Vector']:
             pfx = mfx+':'
-            atNo = getRBparms(item,pfx,aTypes,RBdata,atNo,parmDict,varyList)
+            atNo = getRBparms(item,pfx,aTypes,RBdata,SGData,atNo,parmDict,varyList)
     parmDict['atNo'] = atNo                 #total no. of atoms
     parmDict['nObj'] = len(MCSAObjs)
+    Tdata,Xdata = GetAtomTX(RBdata,parmDict)
+    parmDict['Mdata'] = GetAtomM(Xdata,SGData)
     FFtables = G2el.GetFFtable(aTypes)
     refs = []
+    sumFosq = 0
     if 'PWDR' in reflName:
         for ref in reflData:
             h,k,l,m,d,pos,sig,gam,f = ref[:9]
-            if d >= mcsaControls['dmin']:
+            if d >= MCSA['dmin']:
                 sig = gamFW(sig,gam)/sq8ln2        #--> sig from FWHM
                 SQ = 0.25/d**2
                 Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
                 FFs = G2el.getFFvalues(FFtables,SQ)
                 refs.append([h,k,l,m,f*m,pos,sig,FFs,Uniq,phi])
+                sumFosq += f*m
         nRef = len(refs)
         rcov = np.zeros((nRef,nRef))
         for iref,refI in enumerate(refs):
@@ -2137,11 +2195,12 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         vList = covData['varyList']
         for iref,refI in enumerate(reflData):
             h,k,l,m,d,v,f,s = refI
-            if d >= mcsaControls['dmin'] and v:       #skip unrefined ones
+            if d >= MCSA['dmin'] and v:       #skip unrefined ones
                 SQ = 0.25/d**2
                 Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
                 FFs = G2el.getFFvalues(FFtables,SQ)
                 refs.append([h,k,l,m,f*m,iref,0.,FFs,Uniq,phi])
+                sumFosq += f*m
         nRef = len(refs)
         pfx = str(data['pId'])+'::PWLref:'
         rcov = np.zeros((nRef,nRef))        
@@ -2168,22 +2227,26 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     elif 'HKLF' in reflName:
         for ref in reflData:
             [h,k,l,m,d],f = ref[:5],ref[6]
-            if d >= mcsaControls['dmin']:
+            if d >= MCSA['dmin']:
                 SQ = 0.25/d**2
                 Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
                 FFs = G2el.getFFvalues(FFtables,SQ)
                 refs.append([h,k,l,m,f*m,0.,0.,FFs,Uniq,phi])
+                sumFosq += f*m
         rcov = np.identity(len(refs))
-        
-    for parm in parmDict:
-        print parm,parmDict[parm] 
+    parmDict['sumFosq'] = sumFosq
+    x0 = [parmDict[val] for val in varyList]
+    ifInv = SGData['SGInv']
+    results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,RBdata,varyList,parmDict), 
+        schedule=MCSA['Algorithm'], full_output=True,maxiter=MCSA['nRuns'],
+        T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
+        boltzmann=MCSA['boltzmann'], learn_rate=0.5, feps=MCSA['Annealing'][3], 
+        quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
+        lower=lower, upper=upper, slope=MCSA['log slope'],dlg=pgbar)
+    print results
+           
+#    parmDict.update(zip(varylist,results[0]))           
                         
-#    XYZ,aTypes = UpdateMCSAxyz(Bmat,MCSA)        
-            
-#    generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50,1.e-6],
-#    'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':1,'boltzmann':1.0,
-#    'fast parms':[1.0,1.0,1.0],'log slope':0.9}
-
     return {}
 
         

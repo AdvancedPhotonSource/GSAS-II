@@ -92,7 +92,7 @@ def A2Gmat(A,inverse=True):
     """Fill real & reciprocal metric tensor (G) from A
 
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
-    :param bool inverse: if True return bot G and g; else just G
+    :param bool inverse: if True return both G and g; else just G
     :return: reciprocal (G) & real (g) metric tensors (list of two numpy 3x3 arrays)
 
     """
@@ -270,7 +270,7 @@ def Uij2betaij(Uij,G):
     pass
     
 def CosSinAngle(U,V,G):
-    """ calculate sin & cos of angle betwee U & V in generalized coordinates 
+    """ calculate sin & cos of angle between U & V in generalized coordinates 
     defined by metric tensor G
 
     :param U: 3-vectors assume numpy arrays

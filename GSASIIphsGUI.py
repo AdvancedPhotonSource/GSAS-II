@@ -127,7 +127,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'MCSA controls' not in generalData:
             generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50,1.e-6],
             'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':50,'boltzmann':1.0,
-            'fast parms':[1.0,1.0,1.0],'log slope':0.9}
+            'fast parms':[1.0,1.0,1.0],'log slope':0.9,'Cycles':1,'Results':[]}
 # end of patches
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
@@ -656,7 +656,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 dmin.SetValue("%.3f"%(MCSA['dmin']))          #reset in case of error
-                
+
+            def OnCycles(event):
+                MCSA['Cycles'] = int(noRuns.GetValue())
+                               
             def OnNoRuns(event):
                 MCSA['nRuns'] = int(noRuns.GetValue())
             
@@ -722,6 +725,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dmin.Bind(wx.EVT_TEXT_ENTER,OnDmin)        
             dmin.Bind(wx.EVT_KILL_FOCUS,OnDmin)
             lineSizer.Add(dmin,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(General,label=' Cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
+            Cchoice = ['1','2','3','5','10','15','20','30']
+            cycles = wx.ComboBox(General,-1,value=str(MCSA.get('Cycles',1)),choices=Cchoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        
+            lineSizer.Add(cycles,0,wx.ALIGN_CENTER_VERTICAL)
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4284,12 +4293,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         pgbar.SetSize(Size)
         try:
-            MCSAdata['Results'] = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
+            G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
         finally:
             pgbar.Destroy()
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
-        print ' MC/SA run finished: best model residual: %f.3'%(0.01)
         UpdateMCSA()
 
     def OnMCSAaddAtom(event):

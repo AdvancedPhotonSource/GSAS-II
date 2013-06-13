@@ -64,7 +64,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
     :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
         until other limits are met (ftol, xtol)
 
-    :Returns: (x,cov_x,infodict) where
+    :returns: (x,cov_x,infodict) where
 
       * x : ndarray
         The solution (or the result of the last iteration for an unsuccessful
@@ -146,7 +146,18 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
         return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
    
 def getVCov(varyNames,varyList,covMatrix):
-    'Needs a doc string'
+    '''obtain variance-covariance terms for a set of variables. NB: the varyList 
+    and covMatrix were saved by the last least squares refineemnt so they must match
+    
+    :param list varyNames: variable names to find v-cov matric for
+    :param list varyList: full list of all variables in v-cov matrix
+    :param nparray covMatrix: full variance-covariance matrix from the last 
+     least squares refinement
+    
+    :returns: nparray vcov: variance-covariance matrix for the variables given
+     in varyNames
+    
+    '''
     vcov = np.zeros((len(varyNames),len(varyNames)))
     for i1,name1 in enumerate(varyNames):
         for i2,name2 in enumerate(varyNames):
@@ -157,7 +168,17 @@ def getVCov(varyNames,varyList,covMatrix):
     return vcov
 
 def FindAtomIndexByIDs(atomData,IDs,Draw=True):
-    'Needs a doc string'
+    '''finds the set of atom array indices for a list of atom IDs. Will search 
+    either the Atom table or the drawAtom table.
+    
+    :param list atomData: Atom or drawAtom table containting coordinates, etc.
+    :param list IDs: atom IDs to be found
+    :param bool Draw: True if drawAtom table to be searched; False if Atom table
+    is searched
+    
+    :returns: list indx: atom (or drawAtom) indices
+    
+    '''
     indx = []
     for i,atom in enumerate(atomData):
         if Draw and atom[-3] in IDs:
@@ -167,21 +188,45 @@ def FindAtomIndexByIDs(atomData,IDs,Draw=True):
     return indx
 
 def FillAtomLookUp(atomData):
-    'Needs a doc string'
+    '''create a dictionary of atom indexes with atom IDs as keys
+    
+    :param list atomData: Atom table to be used
+    
+    :returns: dict atomLookUp: dictionary of atom indexes with atom IDs as keys
+    
+    '''
     atomLookUp = {}
     for iatm,atom in enumerate(atomData):
         atomLookUp[atom[-1]] = iatm
     return atomLookUp
 
 def GetAtomsById(atomData,atomLookUp,IdList):
-    'Needs a doc string'
+    '''gets a list of atoms from Atom table that match a set of atom IDs
+    
+    :param list atomData: Atom table to be used
+    :param dict atomLookUp: dictionary of atom indexes with atom IDs as keys
+    :param list IdList: atom IDs to be found
+    
+    :returns: list atoms: list of atoms found
+    
+    '''
     atoms = []
     for id in IdList:
         atoms.append(atomData[atomLookUp[id]])
     return atoms
     
 def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
-    'Needs a doc string'
+    '''gets atom parameters for atoms using atom IDs
+    
+    :param list atomData: Atom table to be used
+    :param dict atomLookUp: dictionary of atom indexes with atom IDs as keys
+    :param list IdList: atom IDs to be found
+    :param int itemLoc: pointer to desired 1st item in an atom table entry
+    :param int numItems: number of items to be retrieved
+    
+    :returns: type name: description
+    
+    '''
     Items = []
     if not isinstance(IdList,list):
         IdList = [IdList,]
@@ -193,7 +238,13 @@ def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
     return Items
     
 def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     pfx = [str(pId)+'::A'+i+':' for i in ['x','y','z']]
     dpfx = [str(pId)+'::dA'+i+':' for i in ['x','y','z']]
     XYZ = []
@@ -204,14 +255,26 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
     return XYZ
 
 def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
-    'Needs a doc string; unfinished & not used'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     for atom in atomData:
         XYZ = np.inner(Amat,atom[cx:cx+3])
         if atom[cia] == 'A':
             UIJ = atom[cia+2:cia+8]
                 
 def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
-    'Needs a doc string; not used anywhere'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     TLStype,TLS = rbObj['ThermalMotion'][:2]
     Tmat = np.zeros((3,3))
     Lmat = np.zeros((3,3))
@@ -231,7 +294,13 @@ def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
     return G2lat.UijtoU6(beta)*gvec    
         
 def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be?
-    'Needs a doc string; not used anywhere'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     cx,ct,cs,cia = atPtrs
     TLStype,TLS = rbObj['ThermalMotion'][:2]
     Tmat = np.zeros((3,3))
@@ -258,20 +327,38 @@ def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be
             atom[cia+2:cia+8] = G2spc.U2Uij(beta/gvec)
 
 def GetXYZDist(xyz,XYZ,Amat):
-    ''' gets distance from position xyz to all XYZ, xyz & XYZ are np.array 
+    '''gets distance from position xyz to all XYZ, xyz & XYZ are np.array 
         and are in crystal coordinates; Amat is crystal to Cart matrix
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
     '''
     return np.sqrt(np.sum(np.inner(Amat,XYZ-xyz)**2,axis=0))
 
 def getAtomXYZ(atoms,cx):
-    'Needs a doc string; not used anywhere'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     XYZ = []
     for atom in atoms:
         XYZ.append(atom[cx:cx+3])
     return np.array(XYZ)
 
 def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
-    ''' Returns crystal coordinates for atoms described by RBObj
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    ''' returns crystal coordinates for atoms described by RBObj
     '''
     RBRes = RBData[RBType][RBObj['RBId']]
     if RBType == 'Vector':
@@ -293,7 +380,13 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
     return XYZ,Cart
 
 def UpdateMCSAxyz(Bmat,MCSA):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     xyz = []
     atTypes = []
     iatm = 0
@@ -328,7 +421,13 @@ def UpdateMCSAxyz(Bmat,MCSA):
     return np.array(xyz),atTypes
     
 def SetMolCent(model,RBData):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     rideList = []
     RBRes = RBData[model['Type']][model['RBId']]
     if model['Type'] == 'Vector':
@@ -348,7 +447,14 @@ def SetMolCent(model,RBData):
     model['MolCent'][0] = cent/len(centList)    
     
 def UpdateRBUIJ(Bmat,Cart,RBObj):
-    ''' Returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    ''' returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
     '''
     TLStype,TLS = RBObj['ThermalMotion'][:2]
     T = np.zeros(6)
@@ -388,7 +494,13 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
     return Uout
     
 def GetSHCoeff(pId,parmDict,SHkeys):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     SHCoeff = {}
     for shkey in SHkeys:
         shname = str(pId)+'::'+shkey
@@ -396,6 +508,13 @@ def GetSHCoeff(pId,parmDict,SHkeys):
     return SHCoeff
         
 def getMass(generalData):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     'Computes mass of unit cell contents'
     mass = 0.
     for i,elem in enumerate(generalData['AtomTypes']):
@@ -403,13 +522,26 @@ def getMass(generalData):
     return mass    
 
 def getDensity(generalData):
-    'Computes density of unit cell contents'    
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     mass = getMass(generalData)
     Volume = generalData['Cell'][7]
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
     
 def getWave(Parms):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     try:
         return Parms['Lam'][1]
     except KeyError:
@@ -420,7 +552,13 @@ def getWave(Parms):
 ################################################################################
 
 def getSyXYZ(XYZ,ops,SGData):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     XYZout = np.zeros_like(XYZ)
     for i,[xyz,op] in enumerate(zip(XYZ,ops)):
         if op == '1':
@@ -441,11 +579,23 @@ def getSyXYZ(XYZ,ops,SGData):
     return XYZout
     
 def getRestDist(XYZ,Amat):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
     
 def getRestDeriv(Func,XYZ,Amat,ops,SGData):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
@@ -459,7 +609,13 @@ def getRestDeriv(Func,XYZ,Amat,ops,SGData):
     return deriv.flatten()
 
 def getRestAngle(XYZ,Amat):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     
     def calcVec(Ox,Tx,Amat):
         return np.inner(Amat,(Tx-Ox))
@@ -475,7 +631,13 @@ def getRestAngle(XYZ,Amat):
     return acosd(angle)
     
 def getRestPlane(XYZ,Amat):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     sumXYZ = np.zeros(3)
     for xyz in XYZ:
         sumXYZ += xyz
@@ -491,7 +653,13 @@ def getRestPlane(XYZ,Amat):
     return Evec[Order[0]]
     
 def getRestChiral(XYZ,Amat):    
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     VecA = np.empty((3,3))    
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
     VecA[1] = np.inner(XYZ[2]-XYZ[0],Amat)
@@ -499,7 +667,13 @@ def getRestChiral(XYZ,Amat):
     return nl.det(VecA)
     
 def getRestTorsion(XYZ,Amat):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     VecA = np.empty((3,3))
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
     VecA[1] = np.inner(XYZ[2]-XYZ[1],Amat)
@@ -516,7 +690,13 @@ def getRestTorsion(XYZ,Amat):
     return TOR
     
 def calcTorsionEnergy(TOR,Coeff=[]):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     sum = 0.
     if len(Coeff):
         cof = np.reshape(Coeff,(3,3)).T
@@ -531,7 +711,13 @@ def calcTorsionEnergy(TOR,Coeff=[]):
     return sum,Eval
 
 def getTorsionDeriv(XYZ,Amat,Coeff):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
@@ -547,14 +733,37 @@ def getTorsionDeriv(XYZ,Amat,Coeff):
     return deriv.flatten()
 
 def getRestRama(XYZ,Amat):
-    'Needs a doc string'
+    '''Computes a pair of torsion angles in a 5 atom string
+    
+    :param nparray XYZ: crystallographic coordinates of 5 atoms
+    :param nparray Amat: crystal to cartesian transformation matrix
+    
+    :returns: list (phi,psi) two torsion angles in degrees
+    
+    '''
     phi = getRestTorsion(XYZ[:5],Amat)
     psi = getRestTorsion(XYZ[1:],Amat)
     return phi,psi
     
 def calcRamaEnergy(phi,psi,Coeff=[]):
-    'Needs a doc string'
+    '''Computes pseudo potential energy from a pair of torsion angles and a
+     numerical description of the potential energy surface. Used to create 
+     penalty function in LS refinement.
+     
+     Eval(phi,psi) = C[0]*exp(-V/1000) where
+     
+     V = -C[3]*(phi-C[1])**2-C[4]*(psi-C[2])**2-2*(phi-C[1])*(psi-C[2])
+    
+    :param float phi: first torsion angle
+    :param float psi: second torsion angle
+    :param list Coeff: pseudo potential coefficients
+    
+    :returns: list (sum,Eval): pseudo-potential difference from minimum 
+     & value; sum is used for penalty function.
+    
+    '''
     sum = 0.
+    Eval = 0.
     if len(Coeff):
         cof = Coeff.T
         dPhi = phi-cof[1]
@@ -571,7 +780,17 @@ def calcRamaEnergy(phi,psi,Coeff=[]):
     return sum,Eval
 
 def getRamaDeriv(XYZ,Amat,Coeff):
-    'Needs a doc string'
+    '''Computes numerical derivatives of torsion angle pair pseudo potential
+    with respect of crystallographic atom coordinates of the 5 atom sequence 
+    
+    :param nparray XYZ: crystallographic coordinates of 5 atoms
+    :param nparray Amat: crystal to cartesian transformation matrix
+    :param list Coeff: pseudo potential coefficients
+    
+    :returns: list (deriv) derivatives of pseudopotential with respect to 5 atom
+     crystallographic xyz coordinates.
+    
+    '''
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
     for j,xyz in enumerate(XYZ):
@@ -587,7 +806,13 @@ def getRamaDeriv(XYZ,Amat,Coeff):
     return deriv.flatten()
 
 def getRestPolefig(ODFln,SamSym,Grid):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     X,Y = np.meshgrid(np.linspace(1.,-1.,Grid),np.linspace(-1.,1.,Grid))
     R,P = np.sqrt(X**2+Y**2).flatten(),atan2d(Y,X).flatten()
     R = np.where(R <= 1.,2.*atand(R),0.0)
@@ -597,11 +822,23 @@ def getRestPolefig(ODFln,SamSym,Grid):
     return np.reshape(R,(Grid,Grid)),np.reshape(P,(Grid,Grid)),Z
 
 def getRestPolefigDerv(HKL,Grid,SHCoeff):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     pass
         
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
         return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
@@ -627,7 +864,13 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     return deriv
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
-    'Needs a doc string'    
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C
         TxT = G2spc.MoveToUnitCell(TxT)+U
@@ -691,7 +934,13 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
 
 def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     def calcDist(Atoms,SyOps,Amat):
         XYZ = []
         for i,atom in enumerate(Atoms):
@@ -736,7 +985,14 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Dist,sig
 
 def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    'Needs a doc string'        
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+
     def calcAngle(Atoms,SyOps,Amat):
         XYZ = []
         for i,atom in enumerate(Atoms):
@@ -786,7 +1042,14 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Angle,sig
 
 def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    'Needs a doc string'
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+
     def calcTorsion(Atoms,SyOps,Amat):
         
         XYZ = []
@@ -845,7 +1108,14 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
     return Tors,sig
         
 def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
-    'Needs a doc string'    
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+
     def calcDist(Atoms,SyOps,Amat):
         XYZ = []
         for i,atom in enumerate(Atoms):
@@ -1009,7 +1279,13 @@ def ValEsd(value,esd=0,nTZ=False):
 ################################################################################
 
 def adjHKLmax(SGData,Hmax):
-    'Needs a doc string'        
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
         Hmax[0] = ((Hmax[0]+3)/6)*6
         Hmax[1] = ((Hmax[1]+3)/6)*6
@@ -1020,7 +1296,13 @@ def adjHKLmax(SGData,Hmax):
         Hmax[2] = ((Hmax[2]+1)/4)*4
 
 def OmitMap(data,reflData):
-    'Needs a doc string'        
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     generalData = data['General']
     if not generalData['Map']['MapType']:
         print '**** ERROR - Fourier map not defined'
@@ -1058,7 +1340,13 @@ def OmitMap(data,reflData):
     return mapData
 
 def FourierMap(data,reflData):
-    'Needs a doc string'            
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     generalData = data['General']
     if not generalData['Map']['MapType']:
         print '**** ERROR - Fourier map not defined'
@@ -1120,7 +1408,13 @@ def FourierMap(data,reflData):
     
 # map printing for testing purposes
 def printRho(SGLaue,rho,rhoMax):                          
-    'Needs a doc string'        
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     dim = len(rho.shape)
     if dim == 2:
         ix,jy = rho.shape
@@ -1147,7 +1441,13 @@ def printRho(SGLaue,rho,rhoMax):
 ## keep this
                 
 def findOffset(SGData,A,Fhkl):    
-    'Needs a doc string'        
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     if SGData['SpGrp'] == 'P 1':
         return [0,0,0]    
     hklShape = Fhkl.shape
@@ -1204,7 +1504,13 @@ def findOffset(SGData,A,Fhkl):
     return DX
     
 def ChargeFlip(data,reflData,pgbar):
-    'Needs a doc string'        
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     generalData = data['General']
     mapData = generalData['Map']
     flipData = generalData['Flip']
@@ -1286,7 +1592,20 @@ def ChargeFlip(data,reflData,pgbar):
     return mapData
     
 def SearchMap(data):
-    'Needs a doc string'        
+    '''Does a search of a density map for peaks meeting the criterion of peak
+    height is greater than mapData['cutOff']/100 of mapData['rhoMax'] where 
+    mapData is data['General']['mapData']; the map is also in mapData.
+
+    :param data: the phase data structure
+    :returns: (peaks,mags,dzeros) where
+        * peaks : ndarray
+            x,y,z positions of the peaks found in the map
+        * mags : ndarray
+            the magnitudes of the peaks
+        * dzeros : ndarray
+            the distance of the peaks from  the unit cell origin
+
+    '''        
     rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
@@ -1404,7 +1723,15 @@ def sortArray(data,pos,reverse=False):
     return X
 
 def PeaksEquiv(data,Ind):
-    'Needs a doc string'        
+    '''Find the equivalent map peaks for those selected. Works on the 
+    contents of data['Map Peaks'].
+
+    :param data: the phase data structure
+    :param list Ind: list of selected peak indices
+    :returns: augmented list of peaks including those related by symmetry to the
+      ones in Ind
+
+    '''        
     def Duplicate(xyz,peaks,Amat):
         if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
             return True
@@ -1431,7 +1758,14 @@ def PeaksEquiv(data,Ind):
     return Ind
                 
 def PeaksUnique(data,Ind):
-    'Needs a doc string'        
+    '''Finds the symmetry unique set of peaks from those selected. Works on the 
+    contents of data['Map Peaks']. 
+
+    :param data: the phase data structure
+    :param list Ind: list of selected peak indices
+    :returns: the list of symmetry unique peaks from among those given in Ind
+
+    '''        
 #    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
     def noDuplicate(xyz,peaks,Amat):
@@ -1469,45 +1803,135 @@ def PeaksUnique(data,Ind):
 ################################################################################
 
 def getCWsig(ins,pos):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     tp = tand(pos/2.0)
     return ins['U']*tp**2+ins['V']*tp+ins['W']
     
 def getCWsigDeriv(pos):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     tp = tand(pos/2.0)
     return tp**2,tp,1.0
     
 def getCWgam(ins,pos):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)
     
 def getCWgamDeriv(pos):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return 1./cosd(pos/2.0),tand(pos/2.0)
     
 def getTOFsig(ins,dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-q']*dsp
     
 def getTOFsigDeriv(dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return 1.0,dsp**2,dsp
     
 def getTOFgamma(ins,dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return ins['X']*dsp+ins['Y']*dsp**2
     
 def getTOFgammaDeriv(dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return dsp,dsp**2
     
 def getTOFbeta(ins,dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return ins['beta-0']+ins['beta-1']/dsp**4+ins['beta-q']/dsp
     
 def getTOFbetaDeriv(dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return 1.0,1./dsp**4,1./dsp
     
 def getTOFalpha(ins,dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return ins['alpha']/dsp
     
 def getTOFalphaDeriv(dsp):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     return 1./dsp
     
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
-    'Needs a doc string'        
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     ind = 0
     if useFit:
         ind = 1
@@ -1593,7 +2017,7 @@ class base_schedule(object):
         best_state : _state
             A _state object to store the function value and x0 found.
 
-        Returns
+        returns
         -------
         x0 : array
             The starting parameters vector.
@@ -1647,10 +2071,13 @@ class fast_sa(base_schedule):
             self.n = 1.0
         self.c = self.m * exp(-self.n * self.quench)
 
-#    def update_guess(self, x0):
-#        x0 = asarray(x0)
-#        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
-#        T = self.T
+    def update_guess(self, x0):
+        x0 = asarray(x0)
+        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
+        T = self.T
+        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)+1.0
+        xc = y*(self.upper - self.lower)/2.0+self.lower
+        return xc
 #        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
 #        xc = y*(self.upper - self.lower)
 #        xnew = x0 + xc
@@ -1934,6 +2361,13 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
 
 def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
     
     def getMDparms(item,pfx,parmDict,varyList):
@@ -2140,6 +2574,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         atNo += 1
     parmDict['nfixAt'] = len(fixAtoms)        
     MCSA = generalData['MCSA controls']
+    Results = MCSA.get('Results',[])
     reflName = MCSA['Data source']
     phaseName = generalData['Name']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
@@ -2237,17 +2672,14 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
-    results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,RBdata,varyList,parmDict), 
-        schedule=MCSA['Algorithm'], full_output=True,maxiter=MCSA['nRuns'],
-        T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
-        boltzmann=MCSA['boltzmann'], learn_rate=0.5, feps=MCSA['Annealing'][3], 
-        quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
-        lower=lower, upper=upper, slope=MCSA['log slope'],dlg=pgbar)
-    print results
-           
-#    parmDict.update(zip(varylist,results[0]))           
-                        
-    return {}
+    for i in range(MCSA['Cycles']):     
+        results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,RBdata,varyList,parmDict), 
+            schedule=MCSA['Algorithm'], full_output=True,maxiter=MCSA['nRuns'],
+            T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
+            boltzmann=MCSA['boltzmann'], learn_rate=0.5, feps=MCSA['Annealing'][3], 
+            quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
+            lower=lower, upper=upper, slope=MCSA['log slope'],dlg=pgbar)
+        Results.append([results[1],results[2],results[0],varyList])
 
         
 ################################################################################
@@ -2381,7 +2813,7 @@ def makeQuat(A,B,C):
     ''' Make quaternion from rotation of A vector to B vector about C axis
 
         :param np.array A,B,C: Cartesian 3-vectors
-        :Returns: quaternion & rotation angle in radians q=r+ai+bj+ck
+        :returns: quaternion & rotation angle in radians q=r+ai+bj+ck
     '''
 
     V1 = np.cross(A,C)

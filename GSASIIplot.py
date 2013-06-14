@@ -2615,6 +2615,18 @@ def PlotStructure(G2frame,data):
     thermal motion ellipsoids and polyhedra
     '''
 
+    def FindPeaksBonds(XYZ):
+        rFact = drawingData['radiusFactor']
+        Bonds = [[] for x in XYZ]
+        for i,xyz in enumerate(XYZ):
+            Dx = XYZ-xyz
+            dist = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=1))
+            IndB = ma.nonzero(ma.masked_greater(dist,rFact*2.2))
+            for j in IndB[0]:
+                Bonds[i].append(Dx[j]/2.)
+                Bonds[j].append(-Dx[j]/2.)
+        return Bonds
+
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
     cell = generalData['Cell'][1:7]
@@ -2623,6 +2635,7 @@ def PlotStructure(G2frame,data):
     Gmat,gmat = G2lat.cell2Gmat(cell)
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    SGData = generalData['SGData']
     Mydir = generalData['Mydir']
     atomData = data['Atoms']
     mapPeaks = []
@@ -2642,6 +2655,13 @@ def PlotStructure(G2frame,data):
     rbObj = testRBObj.get('rbObj',{})
     MCSA = data.get('MCSA',{})
     mcsaModels = MCSA.get('Models',[])
+    if mcsaModels:
+            mcsaXYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,MCSA)
+            XYZeq = []
+            for xyz in mcsaXYZ:
+                XYZeq += G2spc.GenAtom(xyz,SGData)[0][1:]       #skip self xyz
+            
+            mcsaBonds = FindPeaksBonds(mcsaXYZ)        
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
     flipData = {}
@@ -2672,18 +2692,6 @@ def PlotStructure(G2frame,data):
     shiftDown = False
     ctrlDown = False
     
-    def FindPeaksBonds(XYZ):
-        rFact = drawingData['radiusFactor']
-        Bonds = [[] for x in XYZ]
-        for i,xyz in enumerate(XYZ):
-            Dx = XYZ-xyz
-            dist = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=1))
-            IndB = ma.nonzero(ma.masked_greater(dist,rFact*2.2))
-            for j in IndB[0]:
-                Bonds[i].append(Dx[j]/2.)
-                Bonds[j].append(-Dx[j]/2.)
-        return Bonds
-
     def OnKeyBox(event):
         import Image
 #        Draw()                          #make sure plot is fresh!!
@@ -3495,14 +3503,12 @@ def PlotStructure(G2frame,data):
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,Or)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
-            XYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,MCSA)
-            rbBonds = FindPeaksBonds(XYZ)
-            for ind,[x,y,z] in enumerate(XYZ):
+            for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = atTypes[ind]
                 name = '  '+aType+str(ind)
                 color = np.array(MCSA['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
-                RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
+                RenderBonds(x,y,z,mcsaBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,Or)
         if Backbones:
             for chain in Backbones:

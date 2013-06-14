@@ -2459,7 +2459,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             pfx = str(iObj)+':'
             if parmDict[pfx+'Type'] in ['Vector','Residue']:
                 if parmDict[pfx+'Type'] == 'Vector':
-                    RBId = parmDict[pfx+':RBId']
+                    RBId = parmDict[pfx+'RBId']
                     RBRes = RBdata['Vector'][RBId]
                     aTypes = RBRes['rbTypes']
                     vecs = RBRes['rbVect']
@@ -2468,19 +2468,19 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     for vec,mag in zip(vecs,mags):
                         Cart += vec*mag
                 elif parmDict[pfx+'Type'] == 'Residue':
-                    RBId = parmDict[pfx+':RBId']
+                    RBId = parmDict[pfx+'RBId']
                     RBRes = RBdata['Residue'][RBId]
                     aTypes = RBRes['rbTypes']
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
-                        tName = pfx+':Tor'+str(itor)
+                        tName = pfx+'Tor'+str(itor)
                         QuatA = AVdeg2Q(parmDict[tName],Cart[seq[0]]-Cart[seq[1]])
                         for ride in seq[3]:
                             Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
-                if parmDict[pfx+':MolCent'][1]:
-                    Cart -= parmDict[pfx+':MolCent'][0]
-                Qori = np.array([parmDict[pfx+':Qa'],parmDict[pfx+':Qi'],parmDict[pfx+':Qj'],parmDict[pfx+':Qk']])
-                Pos = np.array([parmDict[pfx+':Px'],parmDict[pfx+':Py'],parmDict[pfx+':Pz']])
+                if parmDict[pfx+'MolCent'][1]:
+                    Cart -= parmDict[pfx+'MolCent'][0]
+                Qori = np.array([parmDict[pfx+'Qa'],parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
+                Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
                 for i,x in enumerate(Cart):
                     X = np.inner(Bmat,prodQVQ(Qori,x))+Pos
                     for j in range(3):
@@ -2489,9 +2489,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     iatm += 1
             elif parmDict[pfx+'Type'] == 'Atom':
                 atNo = parmDict[pfx+'atNo']
-                afx = pfx+str(atNo)
                 for key in keys:
-                    parm = afx+key
+                    parm = pfx+key[1:]              #remove extra ':'
                     if parm in parmDict:
                         keys[key][atNo] = parmDict[parm]
             else:
@@ -2574,7 +2573,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         atNo += 1
     parmDict['nfixAt'] = len(fixAtoms)        
     MCSA = generalData['MCSA controls']
-    Results = MCSA.get('Results',[])
     reflName = MCSA['Data source']
     phaseName = generalData['Name']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
@@ -2586,13 +2584,11 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         if item['Type'] == 'MD':
             getMDparms(item,mfx,parmDict,varyList)
         elif item['Type'] == 'Atom':
-            pfx = mfx+str(atNo)+':'
-            getAtomparms(item,pfx,aTypes,SGData,parmDict,varyList)
+            getAtomparms(item,mfx,aTypes,SGData,parmDict,varyList)
             parmDict[mfx+'atNo'] = atNo
             atNo += 1
         elif item['Type'] in ['Residue','Vector']:
-            pfx = mfx+':'
-            atNo = getRBparms(item,pfx,aTypes,RBdata,SGData,atNo,parmDict,varyList)
+            atNo = getRBparms(item,mfx,aTypes,RBdata,SGData,atNo,parmDict,varyList)
     parmDict['atNo'] = atNo                 #total no. of atoms
     parmDict['nObj'] = len(MCSAObjs)
     Tdata,Xdata = GetAtomTX(RBdata,parmDict)
@@ -2672,14 +2668,13 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
-    for i in range(MCSA['Cycles']):     
-        results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,RBdata,varyList,parmDict), 
-            schedule=MCSA['Algorithm'], full_output=True,maxiter=MCSA['nRuns'],
-            T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
-            boltzmann=MCSA['boltzmann'], learn_rate=0.5, feps=MCSA['Annealing'][3], 
-            quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
-            lower=lower, upper=upper, slope=MCSA['log slope'],dlg=pgbar)
-        Results.append([results[1],results[2],results[0],varyList])
+    results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,RBdata,varyList,parmDict), 
+        schedule=MCSA['Algorithm'], full_output=True,
+        T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
+        boltzmann=MCSA['boltzmann'], learn_rate=0.5,  
+        quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
+        lower=lower, upper=upper, slope=MCSA['log slope'],dlg=pgbar)
+    return [False,results[1],results[2],results[0],varyList]
 
         
 ################################################################################

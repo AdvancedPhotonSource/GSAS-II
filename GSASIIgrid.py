@@ -79,8 +79,8 @@ htmlFirstUse = True
 [ wxID_DRAWRESTRBOND, wxID_DRAWRESTRANGLE, wxID_DRAWRESTRPLANE, wxID_DRAWRESTRCHIRAL,
 ] = [wx.NewId() for item in range(4)]
 
-[ wxID_ADDMCSAATOM,wxID_ADDMCSARB,wxID_CLEARMCSARB,wxID_MOVEMCSA,
-] = [wx.NewId() for item in range(4)]
+[ wxID_ADDMCSAATOM,wxID_ADDMCSARB,wxID_CLEARMCSARB,wxID_MOVEMCSA,wxID_MCSACLEARRESULTS,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
@@ -1741,7 +1741,7 @@ class DataFrame(wx.Frame):
         self.GeneralCalc.Append(help='Clear map',id=wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
             text='Clear map')
         self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing',id=wxID_RUNMCSA, kind=wx.ITEM_NORMAL,
-            text='Run MC/SA')
+            text='MC/SA')
         self.PostfillDataMenu()
         
         # Phase / Data tab
@@ -1872,6 +1872,8 @@ class DataFrame(wx.Frame):
             help='Clear all atoms & rigid bodies from MC/SA model' )
         self.MCSAEdit.Append(id=wxID_MOVEMCSA, kind=wx.ITEM_NORMAL,text='Move MC/SA solution', 
             help='Move MC/SA solution to atom list' )
+        self.MCSAEdit.Append(id=wxID_MCSACLEARRESULTS, kind=wx.ITEM_NORMAL,text='Clear results', 
+            help='Clear table of MC/SA results' )
         self.PostfillDataMenu()
             
         # Phase / Texture tab

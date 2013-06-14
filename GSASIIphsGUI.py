@@ -69,11 +69,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     when a tree item is selected.
 
     :param wx.frame G2frame: the main GSAS-II frame object
-
     :param wx.TreeItemId Item: the tree item that was selected
-
     :param dict data: all the information on the phase in a dictionary
-
     :param int oldPage: This sets a tab to select when moving
       from one phase to another, in which case the same tab is selected
       to display first. This is set only when the previous data tree
@@ -85,8 +82,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}
+    if isinstance(data['MCSA']['Results'],dict):
+        data['MCSA']['Results'] = []
     if 'MCSA' not in data:
-        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
+        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.3,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
 #end patch    
 
     global rbAtmDict   
@@ -125,8 +124,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Pawley neg wt'] = 0.0
         if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
             'MCSA controls' not in generalData:
-            generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50,1.e-6],
-            'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'nRuns':50,'boltzmann':1.0,
+            generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50],
+            'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'boltzmann':1.0,
             'fast parms':[1.0,1.0,1.0],'log slope':0.9,'Cycles':1,'Results':[]}
 # end of patches
         generalData['NoAtoms'] = {}
@@ -658,11 +657,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 dmin.SetValue("%.3f"%(MCSA['dmin']))          #reset in case of error
 
             def OnCycles(event):
-                MCSA['Cycles'] = int(noRuns.GetValue())
+                MCSA['Cycles'] = int(cycles.GetValue())
                                
-            def OnNoRuns(event):
-                MCSA['nRuns'] = int(noRuns.GetValue())
-            
             def OnAlist(event):
                 MCSA['Algorithm'] = Alist.GetValue()
                 wx.CallAfter(UpdateGeneral)
@@ -696,17 +692,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 1 <= val:
                             MCSA['Annealing'][ind] = val
                     except ValueError:
-                        pass
+                        Obj.SetValue(fmt%(MCSA['Annealing'][ind]))
                 else:
                     try:
                         val = float(Obj.GetValue())
                         if .0 <= val:
                             MCSA['Annealing'][ind] = val
+                        Obj.SetValue(fmt%(MCSA['Annealing'][ind]))
                     except ValueError:
-                        pass                    
-                Obj.SetValue(fmt%(MCSA['Annealing'][ind]))
+                        MCSA['Annealing'][ind] = None                    
+                        Obj.SetValue(str(MCSA['Annealing'][ind]))
                        
-#            MCSA = {'boltzmann':1.0,
             refList = []
             if len(data['Pawley ref']):
                 refList = ['Pawley reflections']
@@ -725,21 +721,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dmin.Bind(wx.EVT_TEXT_ENTER,OnDmin)        
             dmin.Bind(wx.EVT_KILL_FOCUS,OnDmin)
             lineSizer.Add(dmin,0,wx.ALIGN_CENTER_VERTICAL)
-            lineSizer.Add(wx.StaticText(General,label=' Cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mcsaSizer.Add(lineSizer)
+            mcsaSizer.Add((5,5),)
+            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            line2Sizer.Add(wx.StaticText(General,label=' Cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
             Cchoice = ['1','2','3','5','10','15','20','30']
             cycles = wx.ComboBox(General,-1,value=str(MCSA.get('Cycles',1)),choices=Cchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        
-            lineSizer.Add(cycles,0,wx.ALIGN_CENTER_VERTICAL)
-            mcsaSizer.Add(lineSizer)
-            mcsaSizer.Add((5,5),)
-            line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            Rchoice = ['10','15','20','50','100','200','500']
-            line2Sizer.Add(wx.StaticText(General,label=' No. temp. steps: '),0,wx.ALIGN_CENTER_VERTICAL)
-            noRuns = wx.ComboBox(General,-1,value=str(MCSA.get('nRuns',1)),choices=Rchoice,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            noRuns.Bind(wx.EVT_COMBOBOX,OnNoRuns)
-            line2Sizer.Add(noRuns,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(cycles,0,wx.ALIGN_CENTER_VERTICAL)
             Achoice = ['log','fast','cauchy','boltzmann','Tremayne']
             line2Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
             Alist = wx.ComboBox(General,-1,value=MCSA['Algorithm'],choices=Achoice,
@@ -771,11 +761,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line3Sizer.Add(wx.StaticText(General,label=' Annealing schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
-            names = [' Start temp: ',' Final temp: ',' No. trials: ',' feps: ']
-            fmts = ['%.1f','%.5f','%d','%.2g']
+            names = [' Start temp: ',' Final temp: ',' No. trials: ']
+            fmts = ['%.1f','%.5f','%d']
             for i,[name,fmt] in enumerate(zip(names,fmts)):
+                if MCSA['Annealing'][i]:
+                    text = fmt%(MCSA['Annealing'][i])
+                else:
+                    text = 'None'
                 line3Sizer.Add(wx.StaticText(General,label=name),0,wx.ALIGN_CENTER_VERTICAL)
-                anneal =  wx.TextCtrl(General,-1,value=fmt%(MCSA['Annealing'][i]),style=wx.TE_PROCESS_ENTER)
+                anneal =  wx.TextCtrl(General,-1,value=text,style=wx.TE_PROCESS_ENTER)
                 anneal.Bind(wx.EVT_TEXT_ENTER,OnAnneal)        
                 anneal.Bind(wx.EVT_KILL_FOCUS,OnAnneal)
                 Indx[anneal.GetId()] = [i,fmt]
@@ -4160,7 +4154,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Range = poRange.GetValue().split()
                 try:
                     rmin,rmax = [float(Range[i]) for i in range(2)]
-                    if rmin >= rmax:
+                    if 0. < rmin < rmax:
+                        pass
+                    else:
                         raise ValueError
                 except (ValueError,IndexError):
                     rmin,rmax = POData['Coef'][2]
@@ -4201,6 +4197,64 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
             poSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
             return poSizer
+            
+        def ResultsSizer(Results):
+            
+            def OnCellChange(event):
+                r,c = event.GetRow(),event.GetCol()
+                if c == 0:
+                    Models = data['MCSA']['Models']
+                    for row in range(resultsGrid.GetNumberRows()):
+                        resultsTable.SetValue(row,c,False)
+                    resultsTable.SetValue(r,c,True)
+                    resultsGrid.ForceRefresh()
+                    result = Results[r]
+                    for key,val in zip(result[4],result[3]):
+                        vals = key.split(':')
+                        nObj,name = int(vals[0]),vals[1]
+                        if 'A' in name:
+                            ind = ['Ax','Ay','Az'].index(name)
+                            Models[nObj]['Pos'][0][ind] = val                            
+                        elif 'O' in name:
+                            ind = ['Oa','Oi','Oj','Ok'].index(name)
+                            Models[nObj]['Ori'][0][ind] = val                            
+                        elif 'P' in name:
+                            ind = ['Px','Py','Pz'].index(name)
+                            Models[nObj]['Pos'][0][ind] = val                            
+                        elif 'T' in name:
+                            tnum = int(name.split('Tor'))
+                            Models[nObj]['Tor'][0][tnum] = val                                                        
+                        else:       #March Dollase
+                            Models[0]['Coef'][0] = val
+                    UpdateMCSA()
+                    G2plt.PlotStructure(G2frame,data)
+                
+            resultsSizer = wx.BoxSizer(wx.VERTICAL)
+            maxVary = 0
+            resultVals = []
+            for result in Results:
+                maxVary = max(maxVary,len(result[3]))
+                resultVals.append(result[:3]+list(result[3]))
+            rowLabels = []
+            for i in range(len(Results)): rowLabels.append(str(i))
+            colLabels = ['Select','Residual','Tmin',]
+            for i in range(maxVary): colLabels.append('variable:'+str(i))
+            Types = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,4',
+                wg.GRID_VALUE_FLOAT+':10,4',]+maxVary*[wg.GRID_VALUE_FLOAT+':10,5',]
+            resultsTable = G2gd.Table(resultVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            resultsGrid = G2gd.GSGrid(MCSA)
+            resultsGrid.SetTable(resultsTable, True)
+            resultsGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnCellChange)
+            resultsGrid.AutoSizeColumns(True)
+            for r in range(resultsGrid.GetNumberRows()):
+                for c in range(resultsGrid.GetNumberCols()):
+                    if c == 0:
+                        resultsGrid.SetReadOnly(r,c,isReadOnly=False)
+                    else:
+                        resultsGrid.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            resultsSizer.Add(resultsGrid)
+            return resultsSizer
+            
         
         # UpdateMCSA executable code starts here
         if refresh:
@@ -4237,8 +4291,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA results:'),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((5,5),0)
         else:
-            for result in data['MCSA']['Results']:
-                print result
+            mainSizer.Add((5,5),0)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA results:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add((5,5),0)
+            Results = data['MCSA']['Results']
+            mainSizer.Add(ResultsSizer(Results))
 
         MCSA.SetSizer(mainSizer)
         if G2frame.dataFrame.PhaseUserSize is None:
@@ -4293,12 +4350,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         pgbar.SetSize(Size)
         try:
-            G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
+            for i in range(mcsaControls['Cycles']):
+                MCSAdata['Results'].append(G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar))
         finally:
             pgbar.Destroy()
-        if not data['Drawing']:                 #if new drawing - no drawing data!
-            SetupDrawingData()
         UpdateMCSA()
+        G2plt.PlotStructure(G2frame,data)
 
     def OnMCSAaddAtom(event):
         dlg = G2elemGUI.PickElement(G2frame)
@@ -4362,6 +4419,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             x,y,z = xyz[iat]
             AtomAdd(x,y,z,atype,Name=atype+'(%d)'%(iat+1))            
         G2plt.PlotStructure(G2frame,data)
+        
+    def OnClearResults(event):
+        data['MCSA']['Results'] = []
+        UpdateMCSA()
                     
 ################################################################################
 ##### Pawley routines
@@ -4945,6 +5006,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2gd.wxID_ADDMCSARB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2gd.wxID_CLEARMCSARB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAmove, id=G2gd.wxID_MOVEMCSA)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearResults, id=G2gd.wxID_MCSACLEARRESULTS)
             UpdateMCSA()                        
             wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'Texture':

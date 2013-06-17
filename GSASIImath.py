@@ -2438,7 +2438,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     def GetAtomM(Xdata,SGData):
         Mdata = []
         for xyz in Xdata.T:
-            Mdata.append(len(G2spc.GenAtom(xyz,SGData)))
+            Mdata.append(float(len(G2spc.GenAtom(xyz,SGData))))
         return np.array(Mdata)
 
     def GetAtomTX(RBdata,parmDict):
@@ -2521,24 +2521,24 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         MDaxis = parmDict['0:MDaxis']
         Gmat = parmDict['Gmat']
         Srefs = np.zeros(len(refList))
-        sumFcsq = 0
+        sumFcsq = 0.
         for refl in refList:
-            fbs = 0
+            fbs = 0.
             H = refl[:3]
             for i,El in enumerate(Tdata):
-                FF[i] = refl[7][El]           
+                FF[i] = refl[7][El]
             Uniq = refl[8]
             phi = refl[9]
             phase = twopi*(np.inner(Uniq,(Xdata.T))+phi[:,np.newaxis])
             sinp = np.sin(phase)
             cosp = np.cos(phase)
             occ = Mdata/len(Uniq)
-            fa = np.asarray(FF*occ*cosp)
+            fa = np.array(FF*occ*cosp)
             fas = np.sum(fa)
             if not ifInv:
-                fb = np.asarray(FF*occ*sinp)
+                fb = np.array(FF*occ*sinp)
                 fbs = np.sum(fb)
-            fcsq = (fas**2+fbs**2)*refl[3]*calcMDcorr(MDval,MDaxis,Uniq,Gmat)
+            fcsq = (fas**2+fbs**2)*refl[3]      #*calcMDcorr(MDval,MDaxis,Uniq,Gmat)
             sumFcsq += fcsq
             refl[5] = fcsq
         scale = (parmDict['sumFosq']/sumFcsq)

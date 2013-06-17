@@ -82,10 +82,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}
-    if isinstance(data['MCSA']['Results'],dict):
-        data['MCSA']['Results'] = []
     if 'MCSA' not in data:
         data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.3,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
+    if isinstance(data['MCSA']['Results'],dict):
+        data['MCSA']['Results'] = []
 #end patch    
 
     global rbAtmDict   
@@ -4016,7 +4016,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj = event.GetEventObject()
                 model,ix = Indx[Obj.GetId()]
                 A,V = G2mth.Q2AVdeg(model['Ori'][0])
-#                V = np.inner(Bmat,V)
                 if ix:
                     Anew = A
                     Vec = Obj.GetValue().split()
@@ -4030,9 +4029,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Anew = float(Obj.GetValue())
                     except ValueError:
                         Anew = A
-#                V = np.inner(Amat,V)
-                Q = G2mth.AVdeg2Q(Anew,Vnew)
-                model['Ori'][0] = Q
+                model['Ori'][0] = G2mth.AVdeg2Q(Anew,Vnew)
                 G2plt.PlotStructure(G2frame,data)
                 UpdateMCSA()
 
@@ -4206,7 +4203,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Models = data['MCSA']['Models']
                     for row in range(resultsGrid.GetNumberRows()):
                         resultsTable.SetValue(row,c,False)
-                    resultsTable.SetValue(r,c,True)
+                        Results[row][0] = False
+                    Results[r][0] = True
                     resultsGrid.ForceRefresh()
                     result = Results[r]
                     for key,val in zip(result[4],result[3]):
@@ -4215,9 +4213,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'A' in name:
                             ind = ['Ax','Ay','Az'].index(name)
                             Models[nObj]['Pos'][0][ind] = val                            
-                        elif 'O' in name:
-                            ind = ['Oa','Oi','Oj','Ok'].index(name)
-                            Models[nObj]['Ori'][0][ind] = val                            
+                        elif 'Q' in name:
+                            A,V = G2mth.Q2AVdeg(Models[nObj]['Ori'][0])
+                            ind = ['Qa','Qi','Qj','Qk'].index(name)
+                            if ind:
+                                V[ind-1] = val
+                            else:
+                                A = val
+                            Models[nObj]['Ori'][0] = G2mth.AVdeg2Q(A,V)                           
                         elif 'P' in name:
                             ind = ['Px','Py','Pz'].index(name)
                             Models[nObj]['Pos'][0][ind] = val                            
@@ -4226,7 +4229,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Models[nObj]['Tor'][0][tnum] = val                                                        
                         else:       #March Dollase
                             Models[0]['Coef'][0] = val
-                    UpdateMCSA()
+                    wx.CallAfter(UpdateMCSA)
                     G2plt.PlotStructure(G2frame,data)
                 
             resultsSizer = wx.BoxSizer(wx.VERTICAL)
@@ -4244,7 +4247,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             resultsTable = G2gd.Table(resultVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             resultsGrid = G2gd.GSGrid(MCSA)
             resultsGrid.SetTable(resultsTable, True)
-            resultsGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnCellChange)
+            resultsGrid.Bind(wg.EVT_GRID_SELECT_CELL, OnCellChange)
             resultsGrid.AutoSizeColumns(True)
             for r in range(resultsGrid.GetNumberRows()):
                 for c in range(resultsGrid.GetNumberCols()):

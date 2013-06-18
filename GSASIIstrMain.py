@@ -40,7 +40,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
-DEBUG = False
+DEBUG = True
 
 
 def Refine(GPXfile,dlg):

@@ -129,6 +129,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
                 x0 += Xvec
                 lam /= 10.
                 break
+            if lam > 10.e5:
+                print 'ouch #3 chisq1 ',chisq1,' stuck > chisq0 ',chisq0
+                break
         if (chisq0-chisq1)/chisq0 < ftol:
             break
         icycle += 1
@@ -349,6 +352,23 @@ def getAtomXYZ(atoms,cx):
     for atom in atoms:
         XYZ.append(atom[cx:cx+3])
     return np.array(XYZ)
+
+def RotateRBXYZ(Bmat,Cart,oriQ):
+    '''rotate & transform cartesian coordinates to crystallographic ones
+    no translation applied. To be used for numerical derivatives 
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    ''' returns crystal coordinates for atoms described by RBObj
+    '''
+    XYZ = np.zeros_like(Cart)
+    for i,xyz in enumerate(Cart):
+        X = prodQVQ(oriQ,xyz)
+        XYZ[i] = np.inner(Bmat,X)
+    return XYZ
 
 def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
     '''default doc string

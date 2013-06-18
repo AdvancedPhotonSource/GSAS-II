@@ -187,11 +187,11 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                     dFdvDict['::RBV;'+str(iv)+':'+str(jrb)] += dXdv[iv][ia][ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             for i,name in enumerate(['RBVPx:','RBVPy:','RBVPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
-            for iv in range(4):         #there is a problem with the Oa,Oi,Oj,Ok derivatives
+            for iv in range(4):
                 Q[iv] -= dx
-                XYZ1,Cart1 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
+                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
                 Q[iv] += 2.*dx
-                XYZ2,Cart2 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
+                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
                 Q[iv] -= dx
                 dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
                 for ix in [0,1,2]:
@@ -250,14 +250,14 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                     dFdvDict[tname] += dRdT[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
-            dx = 0.0001
+            dx = 0.00001
             for i,name in enumerate(['RBRPx:','RBRPy:','RBRPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
                 Q[iv] -= dx
-                XYZ1,Cart1 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
                 Q[iv] += 2.*dx
-                XYZ2,Cart2 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')
+                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
                 Q[iv] -= dx
                 dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
                 for ix in [0,1,2]:

@@ -78,6 +78,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 RBObj['Orig'][0][i] = parmDict[pfx+px+rbsx]
             for i,po in enumerate(['RBVOa:','RBVOi:','RBVOj:','RBVOk:']):
                 RBObj['Orient'][0][i] = parmDict[pfx+po+rbsx]
+            RBObj['Orient'][0] = G2mth.normQ(RBObj['Orient'][0])
             TLS = RBObj['ThermalMotion']
             if 'T' in TLS[0]:
                 for i,pt in enumerate(['RBVT11:','RBVT22:','RBVT33:','RBVT12:','RBVT13:','RBVT23:']):
@@ -109,6 +110,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
                 RBObj['Orig'][0][i] = parmDict[pfx+px+rbsx]
             for i,po in enumerate(['RBROa:','RBROi:','RBROj:','RBROk:']):
                 RBObj['Orient'][0][i] = parmDict[pfx+po+rbsx]                
+            RBObj['Orient'][0] = G2mth.normQ(RBObj['Orient'][0])
             TLS = RBObj['ThermalMotion']
             if 'T' in TLS[0]:
                 for i,pt in enumerate(['RBRT11:','RBRT22:','RBRT33:','RBRT12:','RBRT13:','RBRT23:']):
@@ -179,13 +181,13 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         XYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
         for ia,atId in enumerate(RBObj['Ids']):
             atNum = AtLookup[atId]
-            dx = 0.0001
+            dx = 0.00001
             for iv in range(len(VModel['VectMag'])):
                 for ix in [0,1,2]:
                     dFdvDict['::RBV;'+str(iv)+':'+str(jrb)] += dXdv[iv][ia][ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             for i,name in enumerate(['RBVPx:','RBVPy:','RBVPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
-            for iv in range(4):
+            for iv in range(4):         #there is a problem with the Oa,Oi,Oj,Ok derivatives
                 Q[iv] -= dx
                 XYZ1,Cart1 = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Vector')
                 Q[iv] += 2.*dx

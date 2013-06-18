@@ -670,7 +670,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         MCSA['log slope'] = val
                 except ValueError:
                     pass
-                Obj.SetValue("%.3f"%(MCSA['log slope']))          #reset in case of error                
+                slope.SetValue("%.3f"%(MCSA['log slope']))          #reset in case of error                
             
             def OnAjump(event):
                 Obj = event.GetEventObject()
@@ -724,7 +724,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line2Sizer.Add(wx.StaticText(General,label=' Cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(General,label=' MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
             Cchoice = ['1','2','3','5','10','15','20','30']
             cycles = wx.ComboBox(General,-1,value=str(MCSA.get('Cycles',1)),choices=Cchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -4214,18 +4214,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             ind = ['Ax','Ay','Az'].index(name)
                             Models[nObj]['Pos'][0][ind] = val                            
                         elif 'Q' in name:
-                            A,V = G2mth.Q2AVdeg(Models[nObj]['Ori'][0])
+                            Q = Models[nObj]['Ori'][0]
+                            A,V = G2mth.Q2AVdeg(Q)
                             ind = ['Qa','Qi','Qj','Qk'].index(name)
                             if ind:
                                 V[ind-1] = val
                             else:
                                 A = val
-                            Models[nObj]['Ori'][0] = G2mth.AVdeg2Q(A,V)                           
+                            Q = G2mth.AVdeg2Q(A,V)
+                            Models[nObj]['Ori'][0] = Q                           
                         elif 'P' in name:
                             ind = ['Px','Py','Pz'].index(name)
                             Models[nObj]['Pos'][0][ind] = val                            
                         elif 'T' in name:
-                            tnum = int(name.split('Tor'))
+                            tnum = int(name.split('Tor')[1])
                             Models[nObj]['Tor'][0][tnum] = val                                                        
                         else:       #March Dollase
                             Models[0]['Coef'][0] = val
@@ -4241,7 +4243,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             rowLabels = []
             for i in range(len(Results)): rowLabels.append(str(i))
             colLabels = ['Select','Residual','Tmin',]
-            for i in range(maxVary): colLabels.append('variable:'+str(i))
+            for item in result[4]: colLabels.append(item)
+#            for i in range(maxVary): colLabels.append('variable:'+str(i))
             Types = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,4',
                 wg.GRID_VALUE_FLOAT+':10,4',]+maxVary*[wg.GRID_VALUE_FLOAT+':10,5',]
             resultsTable = G2gd.Table(resultVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
@@ -4355,6 +4358,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         try:
             for i in range(mcsaControls['Cycles']):
                 MCSAdata['Results'].append(G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar))
+                print ' MC/SA runs completed: ',i
         finally:
             pgbar.Destroy()
         UpdateMCSA()

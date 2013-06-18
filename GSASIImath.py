@@ -2315,7 +2315,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                     best_state.cost = last_state.cost
         if dlg:
             GoOn = dlg.Update(best_state.cost*100,
-                newmsg='%s%8.3f\n%s%8.3f%s'%('Temperature =',schedule.T,'MC/SA Residual =',best_state.cost*100,'%'))[0]
+                newmsg='%s%8.5f\n%s%8.4f%s'%('Temperature =',schedule.T,'MC/SA Residual =',best_state.cost*100,'%'))[0]
             if not GoOn:
                 break
         schedule.update_temp()
@@ -2479,7 +2479,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                             Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
                 if parmDict[pfx+'MolCent'][1]:
                     Cart -= parmDict[pfx+'MolCent'][0]
-                Qori = np.array([parmDict[pfx+'Qa'],parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
+                Qori = normQ(np.array([parmDict[pfx+'Qa'],parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']]))
                 Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
                 for i,x in enumerate(Cart):
                     X = np.inner(Bmat,prodQVQ(Qori,x))+Pos
@@ -2690,6 +2690,10 @@ def prodQQ(QA,QB):
     D[1] = QA[0]*QB[1]+QA[1]*QB[0]+QA[2]*QB[3]-QA[3]*QB[2]
     D[2] = QA[0]*QB[2]-QA[1]*QB[3]+QA[2]*QB[0]+QA[3]*QB[1]
     D[3] = QA[0]*QB[3]+QA[1]*QB[2]-QA[2]*QB[1]+QA[3]*QB[0]
+    
+#    D[0] = QA[0]*QB[0]-np.dot(QA[1:],QB[1:])
+#    D[1:] = QA[0]*QB[1:]+QB[0]*QA[1:]+np.cross(QA[1:],QB[1:])
+    
     return D
     
 def normQ(QA):

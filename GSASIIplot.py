@@ -2616,7 +2616,7 @@ def PlotStructure(G2frame,data):
     '''
 
     def FindPeaksBonds(XYZ):
-        rFact = drawingData['radiusFactor']
+        rFact = data['Drawing']['radiusFactor']
         Bonds = [[] for x in XYZ]
         for i,xyz in enumerate(XYZ):
             Dx = XYZ-xyz
@@ -2656,12 +2656,20 @@ def PlotStructure(G2frame,data):
     MCSA = data.get('MCSA',{})
     mcsaModels = MCSA.get('Models',[])
     if mcsaModels:
-            mcsaXYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,MCSA)
-            XYZeq = []
-            for xyz in mcsaXYZ:
-                XYZeq += G2spc.GenAtom(xyz,SGData)[0][1:]       #skip self xyz
-            
-            mcsaBonds = FindPeaksBonds(mcsaXYZ)        
+        XYZs,Types = G2mth.UpdateMCSAxyz(Bmat,MCSA)
+        mcsaXYZ = []
+        mcsaTypes = []
+        for xyz,atyp in zip(XYZs,Types):
+            for item in G2spc.GenAtom(xyz,SGData):
+                mcsaXYZ.append(item[0]) 
+                mcsaTypes.append(atyp)
+        mcsaBonds = FindPeaksBonds(mcsaXYZ)        
+#            mcsaXYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,MCSA)
+#            XYZeq = []
+#            for xyz in mcsaXYZ:
+#                XYZeq += G2spc.GenAtom(xyz,SGData)[0][1:]       #skip self xyz
+#            
+#            mcsaBonds = FindPeaksBonds(mcsaXYZ)        
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
     flipData = {}
@@ -3499,12 +3507,11 @@ def PlotStructure(G2frame,data):
                 name = '  '+aType+str(ind)
                 color = np.array(testRBObj['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
-#                RenderMapPeak(x,y,z,color,1.0)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,Or)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
-                aType = atTypes[ind]
+                aType = mcsaTypes[ind]
                 name = '  '+aType+str(ind)
                 color = np.array(MCSA['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)

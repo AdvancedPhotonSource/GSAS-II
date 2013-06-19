@@ -269,6 +269,22 @@ def Uij2betaij(Uij,G):
     """
     pass
     
+def cell2GS(cell):
+    ''' returns Uij to betaij conversion matrix'''
+    G,g = cell2Gmat(cell)
+    GS = G
+    GS[0][1] = GS[1][0] = math.sqrt(GS[0][0]*GS[1][1])
+    GS[0][2] = GS[2][0] = math.sqrt(GS[0][0]*GS[2][2])
+    GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
+    return GS    
+    
+def Uij2Ueqv(Uij,GS,Amat):
+    ''' returns 1/3 trace of diagonalized U matrix'''
+    U = np.multiply(U6toUij(Uij),GS)
+    U = np.inner(Amat,np.inner(U,Amat).T)
+    E,R = nl.eigh(U)
+    return (E[0]+E[2]+E[5])/3.      #lower triangle?
+        
 def CosSinAngle(U,V,G):
     """ calculate sin & cos of angle between U & V in generalized coordinates 
     defined by metric tensor G

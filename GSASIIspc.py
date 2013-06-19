@@ -198,6 +198,25 @@ def SGPrint(SGData):
             col = 0
     SGText.append(line)        
     return SGText
+
+def AllOps(SGData):
+    '''
+    Returns a list of all operators for a space group, including those for centering and a center of symmetry
+    
+    :param SGData: from :func:`SpcGroup`
+    :returns: list of strings of formatted symmetry operators
+    '''
+    SGText = []
+    onebar = (1,)
+    if SGData['SGInv']:
+        onebar += (-1,)
+    for cen in SGData['SGCen']:
+        for mult in onebar:
+            for M,T in SGData['SGOps']:
+                OPtxt = MT2text(mult*M,(mult*T)+cen)
+                SGText.append(OPtxt.replace(' ',''))
+    return SGText
+
     
 def MT2text(M,T):
     "From space group matrix/translation operator returns text version"

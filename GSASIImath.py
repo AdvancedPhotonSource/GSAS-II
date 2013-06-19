@@ -43,8 +43,9 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
     
     """
-    Minimize the sum of squares of a set of equations.
-
+    Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
+    values (y): :math:`\sum_{y=0}^{N_{obs}} f(y,{args})`
+    
     ::
     
                     Nobs
@@ -150,7 +151,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
    
 def getVCov(varyNames,varyList,covMatrix):
     '''obtain variance-covariance terms for a set of variables. NB: the varyList 
-    and covMatrix were saved by the last least squares refineemnt so they must match
+    and covMatrix were saved by the last least squares refinement so they must match.
     
     :param list varyNames: variable names to find v-cov matric for
     :param list varyList: full list of all variables in v-cov matrix
@@ -1276,8 +1277,10 @@ def ValEsd(value,esd=0,nTZ=False):
         # digits are needed
         if abs(value) > 1:
             valoff = int(math.log10(abs(value)))
-        else:
+        elif abs(value) > 0:
             valoff = int(math.log10(abs(value))-0.9999999)
+        else:
+            valoff = 0
     if esd != 0:
         out = ("{:."+str(valoff+esdoff)+"f}").format(value/10**valoff) # format the value
     elif valoff != 0: # esd = 0; exponential notation ==> esdoff decimal places
@@ -2000,7 +2003,7 @@ from numpy import asarray, tan, exp, ones, squeeze, sign, \
      all, log, sqrt, pi, shape, array, minimum, where
 from numpy import random
 
-__all__ = ['anneal']
+#__all__ = ['anneal']
 
 _double_min = numpy.finfo(float).min
 _double_max = numpy.finfo(float).max

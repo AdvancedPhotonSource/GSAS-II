@@ -5,8 +5,23 @@ The heavy lifting is done in method export
 import datetime as dt
 import os.path
 import GSASIIIO as G2IO
+reload(G2IO)
 import GSASIIgrid as G2gd
-#reload(G2gd)
+import GSASIIstrIO as G2stIO
+#import GSASIImapvars as G2mv
+import GSASIImath as G2mth
+import GSASIIlattice as G2lat
+import GSASIIspc as G2spg
+
+def getCallerDocString(): # for development
+    "Return the calling function's doc string"
+    import inspect as ins
+    for item in ins.stack()[1][0].f_code.co_consts:
+        if type(item) is str:
+            return item
+    else:
+        return '?'
+
 class ExportCIF(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
@@ -58,8 +73,16 @@ class ExportCIF(G2IO.ExportBaseclass):
             #WriteCIFitem('_refine_ls_shift/su_max',DAT1)
             #WriteCIFitem('_refine_ls_shift/su_mean',DAT2)
             WriteCIFitem('_computing_structure_refinement','GSAS-II')
-            #WriteCIFitem('_refine_ls_number_parameters',DAT1)
-            #WriteCIFitem('_refine_ls_goodness_of_fit_all',DAT2)
+            try:
+                vars = str(len(self.OverallParms['Covariance']['varyList']))
+            except:
+                vars = '?'
+            WriteCIFitem('_refine_ls_number_parameters',vars)
+            try:
+                GOF = str(self.OverallParms['Covariance']['Rvals']['GOF'])
+            except:
+                GOF = '?'
+            WriteCIFitem('_refine_ls_goodness_of_fit_all',GOF)
             #WriteCIFitem('_refine_ls_number_restraints',TEXT(1:7))
             # other things to consider reporting
             # _refine_ls_number_reflns
@@ -73,9 +96,13 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             # include an overall profile r-factor, if there is more than one powder histogram
             if self.npowder > 1:
-                WriteCIFitem('\n# OVERALL POWDER R-FACTORS')
-                #WriteCIFitem('_pd_proc_ls_prof_R_factor',TEXT(11:20))
-                #WriteCIFitem('_pd_proc_ls_prof_wR_factor',TEXT(1:10))
+                WriteCIFitem('\n# OVERALL POWDER R-FACTOR')
+                try:
+                    R = str(self.OverallParms['Covariance']['Rvals']['Rwp'])
+                except:
+                    R = '?'
+                WriteCIFitem('_pd_proc_ls_prof_wR_factor',R)
+                #WriteCIFitem('_pd_proc_ls_prof_R_factor',TEXT(11:20)) # who cares!
             WriteCIFitem('_refine_ls_matrix_type','full')
             #WriteCIFitem('_refine_ls_matrix_type','userblocks')
 
@@ -83,48 +110,228 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''TODO: insert the publication template ``template_publ.cif`` or some modified
             version for this project. Store this in the GPX file?
             '''
-            print "TODO: publication info goes here"
+            print getCallerDocString()
 
         def WritePhaseTemplate():
             '''TODO: insert the phase template ``template_phase.cif`` or some modified
             version for this project
             '''
-            print "TODO: phase template info goes here"
+            print getCallerDocString()
 
         def WritePowderTemplate():
             '''TODO: insert the phase template ``template_instrument.cif`` or some modified
             version for this project
             '''
-            print "TODO: powder histogram template info goes here"
+            print getCallerDocString()
 
         def WriteSnglXtalTemplate():
             '''TODO: insert the single-crystal histogram template 
             for this project
             '''
-            print "TODO: single-crystal histogram template info goes here"
+            print getCallerDocString()
 
+        def FormatSH(phasedict):
+            'Format a full spherical harmonics texture description as a string'
+            # SH Texture
+            pfx = str(phasedict['pId'])+'::'
+            s = ""
+            textureData = phasedict['General']['SH Texture']    
+            if textureData.get('Order'):
+                s += "Spherical Harmonics correction. Order = "+str(textureData['Order'])
+                s += " Model: " + str(textureData['Model']) + "\n    Orientation angles: "
+                for name in ['omega','chi','phi']:
+                    aname = pfx+'SH '+name
+                    s += name + " = "
+                    sig = self.sigDict.get(aname,-0.09)
+                    s += G2mth.ValEsd(self.parmDict[aname],sig)
+                    s += "; "
+                s += "\n"
+                s1 = "    Coefficients:  "
+                for name in textureData['SH Coeff'][1]:
+                    aname = pfx+name
+                    if len(s1) > 60:
+                        s += s1 + "\n"
+                        s1 = "    "
+                    s1 += aname + ' = '
+                    sig = self.sigDict.get(aname,-0.0009)
+                    s1 += G2mth.ValEsd(self.parmDict[aname],sig)
+                    s1 += "; "
+                s += s1
+            return s
+
+        def FormatHAPpo(phasedict):
+            'return the March-Dollase/SH correction for every histogram in the current phase'
+            s = ''
+            for histogram in sorted(phasedict['Histograms']):
+                Histogram = self.Histograms.get(histogram)
+                if not Histogram: continue
+                hapData = phasedict['Histograms'][histogram]
+                if hapData['Pref.Ori.'][0] == 'MD':
+                    aname = str(phasedict['pId'])+':'+str(Histogram['hId'])+':MD'
+                    if self.parmDict.get(aname,1.0) != 1.0: continue
+                    sig = self.sigDict.get(aname,-0.009)
+                    if s != "": s += '\n'
+                    s += 'March-Dollase correction'
+                    if self.npowder > 1:
+                        s += ', histogram '+str(Histogram['hId']+1)
+                    s += ' coef. = ' + G2mth.ValEsd(self.parmDict[aname],sig)
+                    s += ' axis = ' + str(hapData['Pref.Ori.'][3])
+                else: # must be SH
+                    if s != "": s += '\n'
+                    s += 'Simple spherical harmonic correction'
+                    if self.npowder > 1:
+                        s += ', histogram '+str(Histogram['hId']+1)
+                    s += ' Order = '+str(hapData['Pref.Ori.'][4])+'\n'
+                    s1 = "    Coefficients:  "
+                    for item in hapData['Pref.Ori.'][5]:
+                        print item
+                        aname = str(phasedict['pId'])+':'+str(Histogram['hId'])+':'+item
+                        print aname
+                        if len(s1) > 60:
+                            s += s1 + "\n"
+                            s1 = "    "
+                        s1 += aname + ' = '
+                        sig = self.sigDict.get(aname,-0.0009)
+                        s1 += G2mth.ValEsd(self.parmDict[aname],sig)
+                        s1 += "; "
+                    s += s1
+            return s
+        
+        def FmtAtomType(sym):
+            'Reformat a GSAS-II atom type symbol to match CIF rules'
+            sym = sym.replace('_','') # underscores are not allowed: no isotope designation?
+            # in CIF oxidation state symbols come after, not before
+            if '+' in sym:
+                sym = sym.replace('+','') + '+'
+            elif '-' in sym:
+                sym = sym.replace('-','') + '-'
+            return sym
+            
+        def PutInCol(val,wid):
+            '''Pad a value to >=wid+1 columns by adding spaces at the end. Always
+            adds at least one space
+            '''
+            val = str(val).replace(' ','')
+            if not val: val = '?'
+            fmt = '{:' + str(wid) + '} '
+            return fmt.format(val)
+
+        def MakeUniqueLabel(lbl,labellist):
+            'Make sure that every atom label is unique'
+            lbl = lbl.strip()
+            if not lbl: # deal with a blank label
+                lbl = 'A_1'
+            if lbl not in labellist:
+                labellist.append(lbl)
+                return lbl
+            i = 1
+            prefix = lbl
+            if '_' in lbl:
+                prefix = lbl[:lbl.rfind('_')]
+                suffix = lbl[lbl.rfind('_')+1:]
+                try:
+                    i = int(suffix)+1
+                except:
+                    pass
+            while prefix+'_'+str(i) in labellist:
+                i += 1
+            else:
+                lbl = prefix+'_'+str(i)
+                labellist.append(lbl)
+
+        def WriteAtomsNuclear(phasenam):
+            phasedict = self.Phases[phasenam] # pointer to current phase info            
+            General = phasedict['General']
+            WriteCIFitem('\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
+            Atoms = phasedict['Atoms']
+            WriteCIFitem('loop_ '+
+                         '\n\t_atom_site_label'+
+                         '\n\t_atom_site_type_symbol'+
+                         '\n\t_atom_site_fract_x'+
+                         '\n\t_atom_site_fract_y'+
+                         '\n\t_atom_site_fract_z'+
+                         '\n\t_atom_site_occupancy'+
+                         '\n\t_atom_site_adp_type'+
+                         '\n\t_atom_site_U_iso_or_equiv'+
+                         '\n\t_atom_site_symmetry_multiplicity')
+
+            varnames = {3:'Ax',4:'Ay',5:'Az',6:'Afrac',
+                        10:'AUiso',11:'AU11',12:'AU22',13:'AU33',
+                        14:'AU12',15:'AU13',16:'AU23'}
+            labellist = []
+            
+            pfx = str(phasedict['pId'])+'::'
+            for i,at in enumerate(Atoms):
+                print at
+            for i,at in enumerate(Atoms):
+                s = " "
+                s += PutInCol(MakeUniqueLabel(at[0],labellist),6) # label
+                #s += PutInCol(MakeUniqueLabel('A',labellist),6) # label
+                s += PutInCol(FmtAtomType(at[1]),6) # type
+                if at[9] == 'I':
+                    adp = 'Uiso '
+                else:
+                    adp = 'Uani '
+                    t = 0.0
+                    for j in (11,12,13):
+                        var = pfx+varnames[j]+":"+str(i)
+                        t += self.parmDict.get(var,at[j])
+                for j in (3,4,5,6,10):
+                    if j in (3,4,5):
+                        dig = 11
+                        sigdig = -0.00009
+                    else:
+                        dig = 9
+                        sigdig = -0.009
+                    var = pfx+varnames[j]+":"+str(i)
+                    dvar = pfx+"d"+varnames[j]+":"+str(i)
+                    if dvar not in self.sigDict:
+                        dvar = var
+                    if j == 10 and adp == 'Uani ':
+                        # compute Uequiv crudely
+                        t = 0.0
+                        for k in (11,12,13):
+                            var = pfx+varnames[j]+":"+str(i)
+                            t += self.parmDict.get(var,at[k])
+                        val = t/3.
+                        sig = sigdig
+                    else:
+                        val = self.parmDict.get(var,at[j])
+                        sig = self.sigDict.get(dvar,sigdig)
+                    s += PutInCol(G2mth.ValEsd(val,sig),dig)
+                s += adp
+                print s
+        
         def WritePhaseInfo(phasenam):
             # see writepha.for
             print 'TODO: phase info for',phasenam,'goes here'
             # THINK: how to select publication flags for distances/angles?
-            phasedict = self.GroupedParms['Phases'][phasenam] # pointer to current phase info            
+            phasedict = self.Phases[phasenam] # pointer to current phase info            
             WriteCIFitem('_pd_phase_name', phasenam)
-            text = '?'
-            for lbl in 'a','b','c':
-                WriteCIFitem('_cell_length_'+lbl,text)
-            for lbl in 'alpha','beta ','gamma':
-                WriteCIFitem('_cell_angle_'+lbl,text)
-
-            WriteCIFitem('_cell_volume',text)
-
-            #print phasedict['Histograms']
-#            for key in phasedict['General']:
-#                print key,'=',phasedict['General'][key]
-#            print phasedict['pId']
-
-            #NSYS = (1,2,3,4,4,5,5,5,5,5,6,6,7,7)
-            #SYST = ('','triclinic','monoclinic','orthorhombic','tetragonal','trigonal ','hexagonal','cubic')
-
+            # replace some of these later
+            #General = phasedict['General']
+            #SGData = phasedict['General']['SGData']
+            #cell = General['Cell']
+            pfx = str(phasedict['pId'])+'::'
+            #covData = self.OverallParms['Covariance']
+            A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
+            cellSig = G2stIO.getCellEsd(pfx,
+                                       phasedict['General']['SGData'],A,
+                                       self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
+            cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
+            defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+            names = ['length_a','length_b','length_c',
+                     'angle_alpha','angle_beta ','angle_gamma',
+                     'volume']
+            prevsig = 0
+            for lbl,defsig,val,sig in zip(names,defsigL,cellList,cellSig):
+                if sig:
+                    txt = G2mth.ValEsd(val,sig)
+                    prevsig = -sig # use this as the significance for next value
+                else:
+                    txt = G2mth.ValEsd(val,min(defsig,prevsig),True)
+                WriteCIFitem('_cell_'+lbl,txt)
+                    
             WriteCIFitem('_symmetry_cell_setting',
                          phasedict['General']['SGData']['SGSys'])
 
@@ -132,15 +339,32 @@ class ExportCIF(G2IO.ExportBaseclass):
             # regularize capitalization and remove trailing H/R
             spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
             WriteCIFitem('_symmetry_space_group_name_H-M',spacegroup)
+
             # generate symmetry operations including centering and center of symmetry
             WriteCIFitem('loop_ _symmetry_equiv_pos_site_id _symmetry_equiv_pos_as_xyz')
+            for i,op in enumerate(G2spg.AllOps(phasedict['General']['SGData']),start=1):
+                WriteCIFitem('   {:3d}  {:}'.format(i,op.lower()))
+
+            # preferred orientation (always reported by phase)
+            SH = FormatSH(phasedict)
+            MD = FormatHAPpo(phasedict)
+            if SH and MD:
+                WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
+            elif SH or MD:
+                WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
+            else:
+                WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
 
             # loop over histogram(s) used in this phase
-            if not oneblock:
+            if oneblock:
+                # report all profile information here (include histogram & phase)
+                # _pd_proc_ls_profile_function 
+                pass
+            else:
                 # pointers to histograms used in this phase
                 histlist = []
-                for hist in self.GroupedParms['Phases'][phasenam]['Histograms']:
-                    if self.GroupedParms['Phases'][phasenam]['Histograms'][hist]['Use']:
+                for hist in self.Phases[phasenam]['Histograms']:
+                    if self.Phases[phasenam]['Histograms'][hist]['Use']:
                         if phasebyhistDict.get(hist):
                             phasebyhistDict[hist].append(phasenam)
                         else:
@@ -157,40 +381,17 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem('# Note: phase has no associated data')
                 else:
                     WriteCIFitem('loop_  _pd_block_diffractogram_id')
-                    for hist in histlist:
-                        WriteCIFitem('',hist)
-                        # TODO: sample/histogram profile information and other "HAP" info should be
-                        # reported in this loop, such as
-                        # _pd_proc_ls_pref_orient_corr 
-                        # _pd_proc_ls_profile_function
-                        #txt = ' Spherical Harmonic ODF' + '\n spherical harmonic order='+'?'
-                        #IF ( ISAMSYM.EQ.1 ) THEN
-                        #txt += '\n No sample symmetry'
-                #ELSE IF ( ISAMSYM.EQ.2 ) THEN
-                #txt += ' The sample symmetry is: 2/m (shear texture)'
-                #ELSE IF ( ISAMSYM.EQ.3 ) THEN
-                #txt += ' The sample symmetry is: mmm (rolling texture)'
-                #ELSE IF ( ISAMSYM.EQ.0 ) THEN
-                #txt += ' The sample symmetry is: cylindrical (fiber texture)'
-                #WriteCIFitem('_pd_proc_ls_pref_orient_corr',txt)
-            else:
-                # report all profile information here (include instrumental)
-                # _pd_proc_ls_pref_orient_corr 
+
+                # report sample profile information here (phase only)
                 # _pd_proc_ls_profile_function 
-                pass
             
-            WriteCIFitem('\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
+            if phasedict['General']['Type'] == 'nuclear':        #this needs macromolecular variant, etc!
+                WriteAtomsNuclear(phasenam)
+            else:
+                raise Exception,"no export for mm coordinates implemented"
       
-            WriteCIFitem('loop_ '+
-                         '\n\t_atom_site_type_symbol'+
-                         '\n\t_atom_site_label'+
-                         '\n\t_atom_site_fract_x'+
-                         '\n\t_atom_site_fract_y'+
-                         '\n\t_atom_site_fract_z'+
-                         '\n\t_atom_site_occupancy'+
-                         '\n\t_atom_site_thermal_displace_type'+
-                         '\n\t_atom_site_U_iso_or_equiv'+
-                         '\n\t_atom_site_symmetry_multiplicity')
+
+            raise Exception,'Testing'
 
             WriteCIFitem('loop_' + '\n\t_atom_site_aniso_label' + 
                          '\n\t_atom_site_aniso_U_11' + '\n\t_atom_site_aniso_U_12' +
@@ -234,7 +435,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
         def WritePowderData(histlbl):
             text = '?'
-            histblk = self.GroupedParms['PWDR'][histlbl]
+            histblk = self.Histograms[histlbl]
             print 'TODO: powder here data for',histblk["Sample Parameters"]['InstrName']
             # see wrpowdhist.for & wrreflist.for
             
@@ -363,7 +564,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem('_pd_meas_number_of_points', text)
                          
         def WriteSingleXtalData(histlbl):
-            histblk = self.GroupedParms['HKLF'][histlbl]
+            histblk = self.Histograms[histlbl]
             print 'TODO: single xtal here data for',histblk["Instrument Parameters"][0]['InstrName']
             # see wrreflist.for
             refprx = '_refln.' # mm
@@ -392,49 +593,30 @@ class ExportCIF(G2IO.ExportBaseclass):
 
         #============================================================
         # the export process starts here
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        # also load all of the tree into a set of dicts
         self.loadTree()
-        # ====== move this later ==================================================
-        #for key in self.OverallParms['Covariance']:
-        #    print key
-        #    print type(self.OverallParms['Covariance'][key])
-        sigDict = dict(zip(
-            self.OverallParms['Covariance']['varyList'],
-            self.OverallParms['Covariance']['sig'])
-                       )
+        #self.dumpTree()
+
         # get restraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
-        for i in  self.OverallParms['Constraints']:
-            print i
-            for j in self.OverallParms['Constraints'][i]:
-                print j
-        return
-        parmDict = {}
-        #G2mv.InitVars()
-        # do constraint processing
-        #try:
-        #    groups,parmlist = G2mv.GroupConstraints(constrDict)
-        #    G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
-        #except:
-        #    import GSASIIstrIO as G2stIO
-        #    print ' *** ERROR - your constraints are internally inconsistent ***'
-        #    errmsg, warnmsg = G2stIO.CheckConstraints(varyList,constrDict,fixedList)
-        #    print 'Errors',errmsg
-        #    if warnmsg: print 'Warnings',warnmsg
-        #    raise Exception(' *** CIF creation aborted ***')
-        
-        # add the uncertainties into the esd dictionary (sigDict)
-        #sigDict.update(G2mv.ComputeDepESD(
-        #    self.OverallParms['Covariance']['covMatrix'],
-        #    self.OverallParms['Covariance']['varyList'],
-        #    parmDict))
-
-        return
+        #for i in  self.OverallParms['Constraints']:
+        #    print i
+        #    for j in self.OverallParms['Constraints'][i]:
+        #        print j
+        #return
 
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
         # count phases, powder and single crystal histograms
-        self.nphase = len(self.GroupedParms.get("Phases",[]))
-        self.npowder = len(self.GroupedParms.get("PWDR",[]))
-        self.nsingle = len(self.GroupedParms.get("HKLF",[]))
+        self.nphase = len(self.Phases)
+        self.npowder = 0
+        self.nsingle = 0
+        for hist in self.Histograms:
+            if hist.startswith("PWDR"): 
+                self.npowder += 1
+            elif hist.startswith("HKLF"): 
+                self.nsingle += 1
         # is there anything to export?
         if self.nphase + self.npowder + self.nsingle == 0: 
             self.G2frame.ErrorDialog(
@@ -463,7 +645,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     'Cannot create a coordinates CIF with no phases')
                 return
             elif self.nphase > 1: # quick mode: choose one phase
-                choices = sorted(self.GroupedParms['Phases'].keys())
+                choices = sorted(self.Phases.keys())
                 phasenum = G2gd.ItemSelector(choices,self.G2frame)
                 if phasenum is None: return
                 phasenam = choices[phasenum]
@@ -499,30 +681,26 @@ class ExportCIF(G2IO.ExportBaseclass):
             lbllist = []
             invalid = 0
             key3 = 'InstrName'
-            for key in self.GroupedParms:
-                if key == 'Phases': continue
-                for key1 in self.GroupedParms[key]:
-                    if key == "PWDR":
-                        key2 = "Sample Parameters"
-                        d = self.GroupedParms[key][key1][key2]
-                    elif key == "HKLF":
-                        key2 = "Instrument Parameters"
-                        d = self.GroupedParms[key][key1][key2][0]
-                    else:
-                        raise Exception,"Unexpected histogram type for CIF: "+str(key)
-                        
-                    lbllist.append(key1)
-                    dictlist.append(d)
-                    keylist.append(key3)
-                    instrname = d.get(key3)
-                    if instrname is None:
-                        d[key3] = ''
-                        invalid += 1
-                    elif instrname.strip() == '':
-                        invalid += 1
+            for hist in self.Histograms:
+                if hist.startswith("PWDR"): 
+                    key2 = "Sample Parameters"
+                    d = self.Histograms[hist][key2]
+                elif hist.startswith("HKLF"): 
+                    key2 = "Instrument Parameters"
+                    d = self.Histograms[hist][key2][0]
+                    
+                lbllist.append(hist)
+                dictlist.append(d)
+                keylist.append(key3)
+                instrname = d.get(key3)
+                if instrname is None:
+                    d[key3] = ''
+                    invalid += 1
+                elif instrname.strip() == '':
+                    invalid += 1
             if invalid:
                 msg = ""
-                if invalid > 1: msg = (
+                if invalid > 3: msg = (
                     "\n\nNote: it may be faster to set the name for\n"
                     "one histogram for each instrument and use the\n"
                     "File/Copy option to duplicate the name"
@@ -539,43 +717,38 @@ class ExportCIF(G2IO.ExportBaseclass):
         # Start writing the CIF - single block
         #======================================================================
         if oneblock:
-            if phasenam is None: # if not already selected, select the first phase (should be one) 
-                phasenam = self.GroupedParms['Phases'].keys()[0]
-            #print 'phasenam',phasenam
-            phaseblk = self.GroupedParms['Phases'][phasenam] # pointer to current phase info
-            # select data, should only be one set, but take whatever comes 1st
-            if not self.quickmode:
-                for key in self.GroupedParms:
-                    if key == 'Phases': continue
-                    for key1 in self.GroupedParms[key]:
-                        histblk = self.GroupedParms[key][key1]
-                        histkey = key1
-                        histtyp = key
-                        if key == "PWDR":
-                            instnam = histblk["Sample Parameters"]['InstrName']
-                        elif key == "HKLF":
-                            instnam = histblk["Instrument Parameters"][0]['InstrName']
-                        break
-                    break
-                instnam = instnam.replace(' ','')
             WriteCIFitem('data_'+self.CIFname)
-            if not self.quickmode: # publication information
+            if phasenam is None: # if not already selected, select the first phase (should be one) 
+                phasenam = self.Phases.keys()[0]
+            #print 'phasenam',phasenam
+            phaseblk = self.Phases[phasenam] # pointer to current phase info
+            if not self.quickmode:
+                # select data, should only be one set in oneblock, but take whatever comes 1st
+                for hist in self.Histograms:
+                    histblk = self.Histograms[hist]
+                    if hist.startswith("PWDR"): 
+                        instnam = histblk["Sample Parameters"]['InstrName']
+                        break # ignore all but 1st data histogram
+                    elif hist.startswith("HKLF"): 
+                        instnam = histblk["Instrument Parameters"][0]['InstrName']
+                        break # ignore all but 1st data histogram
+                instnam = instnam.replace(' ','')
                 WriteCIFitem('_pd_block_id',
                              str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
                              str(self.shortauthorname) + "|" + instnam)
                 WriteAudit()
                 WritePubTemplate()
                 WriteOverall()
-            # report the phase
+            # report the phase info
             WritePhaseTemplate()
             WritePhaseInfo(phasenam)
             if not self.quickmode:
-                if histtyp == "PWDR":
+                if hist.startswith("PWDR"):
                     WritePowderTemplate()
-                    WritePowderData(histkey)
-                else:
+                    WritePowderData(hist)
+                elif hist.startswith("HKLF"):
                     WriteSnglXtalTemplate()
-                    WriteSingleXtalData(histkey)
+                    WriteSingleXtalData(hist)
         else:
         #======================================================================
         # Start writing the CIF - multiblock
@@ -600,39 +773,34 @@ class ExportCIF(G2IO.ExportBaseclass):
             else:
                 loopprefix = '_pd_phase_block_id'
             
-            for i,phasenam in enumerate(sorted(self.GroupedParms['Phases'].keys())):
+            for phasenam in sorted(self.Phases.keys()):
+                i = self.Phases[phasenam]['pId']
                 datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                             'phase_'+ str(i+1) + '|' + str(self.shortauthorname))
+                             'phase_'+ str(i) + '|' + str(self.shortauthorname))
                 WriteCIFitem(loopprefix,datablockidDict[phasenam])
             # loop over data blocks
-            i = 0
             if self.npowder + self.nsingle > 1:
                 loopprefix = ''
                 WriteCIFitem('loop_   _pd_block_diffractogram_id')
             else:
                 loopprefix = '_pd_block_diffractogram_id'
-            for key in self.GroupedParms:
-                if key == 'Phases': continue
-                for key1 in self.GroupedParms[key]:
-                    i += 1
-                    histblk = self.GroupedParms[key][key1]
-                    if key == "PWDR":
-                        instnam = histblk["Sample Parameters"]['InstrName']
-                    elif key == "HKLF":
-                        instnam = histblk["Instrument Parameters"][0]['InstrName']
-                    instnam = instnam.replace(' ','')
-                    if datablockidDict.get(key1):
-                        print "Error: histogram name is duplicated: ",key1
-                        return
-                    datablockidDict[key1] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                             str(self.shortauthorname) + "|" +
-                                             instnam + "_hist_"+str(i))
-                    WriteCIFitem(loopprefix,datablockidDict[key1])
+            for hist in self.Histograms:
+                histblk = self.Histograms[hist]
+                if hist.startswith("PWDR"): 
+                    instnam = histblk["Sample Parameters"]['InstrName']
+                elif hist.startswith("HKLF"): 
+                    instnam = histblk["Instrument Parameters"][0]['InstrName']
+                instnam = instnam.replace(' ','')
+                i = histblk['hId']
+                datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                                         str(self.shortauthorname) + "|" +
+                                         instnam + "_hist_"+str(i))
+                WriteCIFitem(loopprefix,datablockidDict[hist])
             #============================================================
             # loop over phases, exporting them
             phasebyhistDict = {} # create a cross-reference to phases by histogram
-            for j,phasenam in enumerate(sorted(self.GroupedParms['Phases'].keys())):
-                i = j + 1
+            for j,phasenam in enumerate(sorted(self.Phases.keys())):
+                i = self.Phases[phasenam]['pId']
                 WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
                 print "debug, processing ",phasenam
                 WriteCIFitem('# Information for phase '+str(i))
@@ -643,25 +811,25 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             #============================================================
             # loop over histograms, exporting them
-            i = 0
-            for key in self.GroupedParms:
-                if key == 'Phases': continue
-                for key1 in self.GroupedParms[key]:
-                    i += 1
-                    histblk = self.GroupedParms[key][key1]
-                    if key == "PWDR":
-                        WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
-                    elif key == "HKLF":
-                        WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
+            for hist in self.Histograms:
+                histblk = self.Histograms[hist]
+                i = histblk['hId']
+                if hist.startswith("PWDR"): 
+                    WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
+                    #instnam = histblk["Sample Parameters"]['InstrName']
                     WriteCIFitem('# Information for histogram '+str(i)+': '+
-                                 key1)
-                    WriteCIFitem('_pd_block_id',datablockidDict[key1])
-                    if key == "PWDR":
-                        WritePowderTemplate()
-                        WritePowderData(key1)
-                    else:
-                        WriteSnglXtalTemplate()
-                        WriteSingleXtalData(key1)
+                                 hist)
+                    WriteCIFitem('_pd_block_id',datablockidDict[hist])
+                    WritePowderTemplate()
+                    WritePowderData(key1)
+                elif hist.startswith("HKLF"): 
+                    WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
+                    #instnam = histblk["Instrument Parameters"][0]['InstrName']
+                    WriteCIFitem('# Information for histogram '+str(i)+': '+
+                                 hist)
+                    WriteCIFitem('_pd_block_id',datablockidDict[hist])
+                    WriteSnglXtalTemplate()
+                    WriteSingleXtalData(key1)
 
         # TODO: how to report _pd_proc_ls_peak_cutoff?
         WriteCIFitem('#--' + 15*'eof--' + '#')

@@ -158,8 +158,8 @@ General         \            Overall information for the phase (dict)
   \         Isotopes         dict of scattering lengths for each isotope
                              combination for each element in phase  
   \         Name             phase name (str)
-  \         SGData           Space group details, 
-                             as defined in :mod:`GSASIIspc` as  :ref:`SGData definition <SGData_table>`
+  \         SGData           Space group details as a :ref:`space group (SGData) object <SGData_table>`
+                             as defined in :func:`GSASIIspc.SpcGroup`.
   \         Pawley neg wt    Restraint value for negative Pawley intensities
                              (float)
   \         Flip             Charge flip controls dict?
@@ -180,7 +180,7 @@ General         \            Overall information for the phase (dict)
   \         AngleRadii       Radius for each atom used to compute 
                              interatomic angles (list of floats)
 ranId           \            unique random number Id for phase (int)
-pId             \            ? (int)
+pId             \            Phase Id number for current project (int).
 Atoms           \            Atoms in phase as a list of lists. The outer list
                              is for each atom, the inner list contains 18
                              items:

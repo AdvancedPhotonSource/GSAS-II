@@ -34,6 +34,8 @@ import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIpwdGUI as G2pdG
 import GSASIIElem as G2el
+import GSASIIstrIO as G2stIO
+import GSASIImapvars as G2mv
 import os
 import os.path as ospath
 
@@ -1558,57 +1560,93 @@ class ExportBaseclass(object):
         else:
             self.longFormatName = formatName
         self.OverallParms = {}
-        self.GroupedParms = {}
+        self.Phases = {}
+        self.Histograms = {}
+
+    def loadParmDict(self):
+        '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
+        refined values to those from the last cycle and set the uncertainties for the
+        refined parameters in another dict (self.sigDict).
+
+        Expands the parm & sig dicts to include values derived from constraints.
+        '''
+        self.parmDict = {}
+        self.sigDict = {}
+        rigidbodyDict = {}
+        covDict = {}
+        consDict = {}
+        Histograms,Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
+        if self.G2frame.PatternTree.IsEmpty(): return # nothing to do
+        item, cookie = self.G2frame.PatternTree.GetFirstChild(self.G2frame.root)
+        while item:
+            name = self.G2frame.PatternTree.GetItemText(item)
+            if name == 'Rigid bodies':
+                 rigidbodyDict = self.G2frame.PatternTree.GetItemPyData(item)
+            elif name == 'Covariance':
+                 covDict = self.G2frame.PatternTree.GetItemPyData(item)
+            elif name == 'Constraints':
+                 consDict = self.G2frame.PatternTree.GetItemPyData(item)
+            item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
+        rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+        self.parmDict.update(rbDict)
+        rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables =  G2stIO.GetPhaseData(
+            Phases,RestraintDict=None,rbIds=rbIds,Print=False)
+        self.parmDict.update(phaseDict)
+        hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
+        self.parmDict.update(hapDict)
+        histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
+        self.parmDict.update(histDict)
+        self.parmDict.update(zip(
+            covDict.get('varyList',[]),
+            covDict.get('variables',[])))
+        self.sigDict = dict(zip(
+            covDict.get('varyList',[]),
+            covDict.get('sig',[])))
+        # expand to include constraints: first compile a list of constraints
+        constList = []
+        for item in consDict:
+            constList += consDict[item]
+        constDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
+        # now process the constraints
+        G2mv.InitVars()
+        varyList = covDict.get('varyList',[])
+        try:
+            groups,parmlist = G2mv.GroupConstraints(constDict)
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList)
+        except:
+            # this really should not happen
+            print ' *** ERROR - constraints are internally inconsistent ***'
+            errmsg, warnmsg = G2mv.CheckConstraints(varyList,constDict,fixedList)
+            print 'Errors',errmsg
+            if warnmsg: print 'Warnings',warnmsg
+            raise Exception(' *** CIF creation aborted ***')
+        # add the constrained values to the parameter dictionary
+        G2mv.Dict2Map(self.parmDict,varyList)
+        # and add their uncertainties into the esd dictionary (sigDict)
+        if covDict.get('covMatrix') is not None:
+            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],varyList,self.parmDict))
+
     def loadTree(self):
-        '''Load the contents of the data tree into a pair of dicts.
+        '''Load the contents of the data tree into a set of dicts
+        (self.OverallParms, self.Phases and self.Histogram)
         
-        The childrenless data tree items are overall parameters/controls for the
-        entire project and are placed in self.OverallParms
-
-        The data tree items with children are either Phase items or are
-        data of some sort. Date entries begin with a key, such as
-        PWDR, IMG, HKLF,... that identifies the data type.
-        * Phase items are placed in self.GroupedParms["Phases"][item]
-        * Data items are placed in self.GroupedParms["Phases"][key][item]
-
-          Note that there is no overall phase information, only information
-          stored for each phase, but there is overall information for each
-          data item. The overall data information is stored in
-          self.GroupedParms["Phases"][key][None]
-        
+        * The childrenless data tree items are overall parameters/controls for the
+          entire project and are placed in self.OverallParms
+        * Phase items are placed in self.Phases
+        * Data items are placed in self.Histogram. The key for these data items
+          begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.
         '''
         self.OverallParms = {}
-        self.GroupedParms = {}
-        G2frame = self.G2frame
-        if G2frame.PatternTree.IsEmpty(): return # nothing to do
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        self.Histograms,self.Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
+        if self.G2frame.PatternTree.IsEmpty(): return # nothing to do
+        item, cookie = self.G2frame.PatternTree.GetFirstChild(self.G2frame.root)
         while item:
-            name = G2frame.PatternTree.GetItemText(item)
-            item2, cookie2 = G2frame.PatternTree.GetFirstChild(item)
-            if item2: 
-                key = name.split()[0]
-                if name == "Phases":
-                    self.GroupedParms[name] = {}
-                    d = self.GroupedParms[name]
-                else:
-                    if self.GroupedParms.get(key) is None:
-                        self.GroupedParms[key] = {}
-                    if self.GroupedParms[key].get(name):
-                        print("Aborting export: Histogram name repeated"+str(name))
-                        return
-                    self.GroupedParms[key][name] = {}
-                    self.GroupedParms[key][name][None] = G2frame.PatternTree.GetItemPyData(item)
-                    d = self.GroupedParms[key][name]
-                while item2:
-                    name = G2frame.PatternTree.GetItemText(item2)
-                    if d.get(name):
-                        print("Aborting export: phase name repeated"+str(name))
-                        return
-                    d[name] = G2frame.PatternTree.GetItemPyData(item2)
-                    item2, cookie2 = G2frame.PatternTree.GetNextChild(item, cookie2)                            
-            else:
-                self.OverallParms[name] = G2frame.PatternTree.GetItemPyData(item)
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            name = self.G2frame.PatternTree.GetItemText(item)
+            item2, cookie2 = self.G2frame.PatternTree.GetFirstChild(item)
+            if not item2: 
+                self.OverallParms[name] = self.G2frame.PatternTree.GetItemPyData(item)
+            item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
 
     def dumpTree(self,mode='type'):
         '''Print out information on the data tree dicts loaded in loadTree
@@ -1620,19 +1658,15 @@ class ExportBaseclass(object):
             def Show(arg): return arg
         for key in self.OverallParms:
             print '  ',key,Show(self.OverallParms[key])
-        print '\nGrouped'
-        for key in self.GroupedParms:
-            if key == "Phases":
-                print '  Phases'
-                for key1 in self.GroupedParms[key]:
-                    print '    ',key1,Show(self.GroupedParms[key][key1])
-            else:
-                print '  ',key,Show(self.GroupedParms[key])
-                for key1 in self.GroupedParms[key]:
-                    print '    ',key1,Show(self.GroupedParms[key][key1][None])
-                    for key2 in self.GroupedParms[key][key1]:
-                        print '      ',key2,Show(self.GroupedParms[key][key1][key2])
-
+        print 'Phases'
+        for key1 in self.Phases:
+            print '    ',key1,Show(self.Phases[key1])
+        print 'Histogram'
+        for key1 in self.Histograms:
+            print '    ',key1,Show(self.Histograms[key1])
+            for key2 in self.Histograms[key1]:
+                print '      ',key2,Show(self.Histograms[key1][key2])
+                    
 ######################################################################
 class ImportStructFactor(ImportBaseclass):
     '''Defines a base class for the reading of files with tables

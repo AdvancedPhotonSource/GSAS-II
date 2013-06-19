@@ -25,6 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
     <link rel="next" title="GSAS-II GUI Submodules" href="GSASIIGUI.html" />
     <link rel="prev" title="GSAS-II Utility Modules" href="GSASIIutil.html" /> 
@@ -722,21 +723,26 @@ that does exist or False if the user presses Cancel</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.loadParmDict">
+<tt class="descname">loadParmDict</tt><big>(</big><big>)</big><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadParmDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
+refined values to those from the last cycle and set the uncertainties for the
+refined parameters in another dict (self.sigDict).</p>
+<p>Expands the parm &amp; sig dicts to include values derived from constraints.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.loadTree">
 <tt class="descname">loadTree</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.loadTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadTree" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load the contents of the data tree into a pair of dicts.</p>
-<p>The childrenless data tree items are overall parameters/controls for the
-entire project and are placed in self.OverallParms</p>
-<p>The data tree items with children are either Phase items or are
-data of some sort. Date entries begin with a key, such as
-PWDR, IMG, HKLF,... that identifies the data type.
-* Phase items are placed in self.GroupedParms[&#8220;Phases&#8221;][item]
-* Data items are placed in self.GroupedParms[&#8220;Phases&#8221;][key][item]</p>
-<blockquote>
-<div>Note that there is no overall phase information, only information
-stored for each phase, but there is overall information for each
-data item. The overall data information is stored in
-self.GroupedParms[&#8220;Phases&#8221;][key][None]</div></blockquote>
+<dd><p>Load the contents of the data tree into a set of dicts
+(self.OverallParms, self.Phases and self.Histogram)</p>
+<ul class="simple">
+<li>The childrenless data tree items are overall parameters/controls for the
+entire project and are placed in self.OverallParms</li>
+<li>Phase items are placed in self.Phases</li>
+<li>Data items are placed in self.Histogram. The key for these data items
+begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.</li>
+</ul>
 </dd></dl>
 
 </dd></dl>
@@ -1157,6 +1163,9 @@ evaluate to a valid number.</td>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#"><em>GSAS-II GUI Routines</em></a><ul>

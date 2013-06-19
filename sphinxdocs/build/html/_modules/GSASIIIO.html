@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -51,11 +52,11 @@
   <h1>Source code for GSASIIIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-31 18:14:01 -0500 (Fri, 31 May 2013) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 938 $</span>
+<span class="c"># $Date: 2013-06-05 16:13:00 -0500 (Wed, 05 Jun 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 944 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
-<span class="c"># $Id: GSASIIIO.py 938 2013-05-31 23:14:01Z toby $</span>
+<span class="c"># $Id: GSASIIIO.py 944 2013-06-05 21:13:00Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIIO: Misc I/O routines*</span>
@@ -79,7 +80,7 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 938 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 944 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -107,7 +108,6 @@
     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">:</span>
         <span class="n">inst</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">inst</span><span class="p">[</span><span class="n">item</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">inst</span>
-
 
 <div class="viewcode-block" id="FileDlgFixExt"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.FileDlgFixExt">[docs]</a><span class="k">def</span> <span class="nf">FileDlgFixExt</span><span class="p">(</span><span class="n">dlg</span><span class="p">,</span><span class="nb">file</span><span class="p">):</span>
     <span class="s">&#39;this is needed to fix a problem in linux wx.FileDialog&#39;</span>
@@ -430,11 +430,11 @@
     <span class="n">raw</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="n">File</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="n">size</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-    <span class="n">image</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pack_f</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">raw</span><span class="p">),</span><span class="n">raw</span><span class="p">,</span><span class="n">size</span><span class="p">,</span><span class="n">image</span><span class="p">)</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">pf</span><span class="o">.</span><span class="n">pack_f</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">raw</span><span class="p">),</span><span class="n">raw</span><span class="p">,</span><span class="n">size</span><span class="p">,</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>  <span class="c">#transpose to get it right way around &amp; flip</span>
     <span class="k">if</span> <span class="n">imageOnly</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">image</span><span class="o">.</span><span class="n">T</span>              <span class="c">#transpose to get it right way around</span>
+        <span class="k">return</span> <span class="n">image</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">head</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">image</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">return</span> <span class="n">head</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">image</span>
 </div>
 <div class="viewcode-block" id="GetTifData"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.GetTifData">[docs]</a><span class="k">def</span> <span class="nf">GetTifData</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">imageOnly</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Read an image in a pseudo-tif format,</span>
@@ -495,11 +495,11 @@
     <span class="k">if</span> <span class="mi">34710</span> <span class="ow">in</span> <span class="n">IFD</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;Read MAR CCD tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
-	<span class="n">marFrame</span> <span class="o">=</span> <span class="n">rmf</span><span class="o">.</span><span class="n">marFrame</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">byteOrd</span><span class="p">,</span><span class="n">IFD</span><span class="p">)</span>
-	<span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">image</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-	<span class="n">tifType</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">filetitle</span>
-	<span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeX</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeY</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
-	<span class="n">head</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">outputHead</span><span class="p">()</span>
+        <span class="n">marFrame</span> <span class="o">=</span> <span class="n">rmf</span><span class="o">.</span><span class="n">marFrame</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">byteOrd</span><span class="p">,</span><span class="n">IFD</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">image</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
+        <span class="n">tifType</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">filetitle</span>
+        <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeX</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeY</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">outputHead</span><span class="p">()</span>
     <span class="k">elif</span> <span class="mi">272</span> <span class="ow">in</span> <span class="n">IFD</span><span class="p">:</span>
         <span class="n">ifd</span> <span class="o">=</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">272</span><span class="p">]</span>
         <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">ifd</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
@@ -1645,11 +1645,17 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Aborting export: Histogram name repeated&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+                        <span class="k">return</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="bp">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
                     <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupedParms</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
                 <span class="k">while</span> <span class="n">item2</span><span class="p">:</span>
                     <span class="n">name</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Aborting export: phase name repeated&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+                        <span class="k">return</span>
                     <span class="n">d</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
                     <span class="n">item2</span><span class="p">,</span> <span class="n">cookie2</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">cookie2</span><span class="p">)</span>                            
             <span class="k">else</span><span class="p">:</span>
@@ -1870,6 +1876,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

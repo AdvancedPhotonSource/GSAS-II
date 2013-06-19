@@ -25,6 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
     <link rel="next" title="GSAS-II GUI Routines" href="GSASIIGUIr.html" />
     <link rel="prev" title="GSASIIobj: Data objects" href="GSASIIobj.html" /> 
@@ -274,7 +275,7 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 
 <dl class="function">
 <dt id="GSASIIElem.GetBLtable">
-<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetBLtable</tt><big>(</big><em>General</em><big>)</big><a class="headerlink" href="#GSASIIElem.GetBLtable" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetBLtable</tt><big>(</big><em>General</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetBLtable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetBLtable" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns a dictionary of neutron scattering length data for atom types &amp; isotopes found in General</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -306,7 +307,7 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 
 <dl class="function">
 <dt id="GSASIIElem.GetFFtable">
-<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetFFtable</tt><big>(</big><em>atomTypes</em><big>)</big><a class="headerlink" href="#GSASIIElem.GetFFtable" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetFFtable</tt><big>(</big><em>atomTypes</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetFFtable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetFFtable" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns a dictionary of form factor data for atom types found in atomTypes</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -423,13 +424,13 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 
 <dl class="function">
 <dt id="GSASIIElem.getBLvalues">
-<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getBLvalues</tt><big>(</big><em>BLtables</em><big>)</big><a class="headerlink" href="#GSASIIElem.getBLvalues" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getBLvalues</tt><big>(</big><em>BLtables</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#getBLvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.getBLvalues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIElem.getFFvalues">
-<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getFFvalues</tt><big>(</big><em>FFtables</em>, <em>SQ</em><big>)</big><a class="headerlink" href="#GSASIIElem.getFFvalues" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getFFvalues</tt><big>(</big><em>FFtables</em>, <em>SQ</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#getFFvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.getFFvalues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -447,7 +448,7 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>A</strong> &#8211; reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]</li>
-<li><strong>inverse</strong> (<em>bool</em>) &#8211; if True return bot G and g; else just G</li>
+<li><strong>inverse</strong> (<em>bool</em>) &#8211; if True return both G and g; else just G</li>
 </ul>
 </td>
 </tr>
@@ -519,7 +520,7 @@ currently only works for nCells = 0 or 1 (not &gt;1)</p>
 <dl class="function">
 <dt id="GSASIIlattice.CosSinAngle">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CosSinAngle</tt><big>(</big><em>U</em>, <em>V</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CosSinAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CosSinAngle" title="Permalink to this definition">¶</a></dt>
-<dd><p>calculate sin &amp; cos of angle betwee U &amp; V in generalized coordinates 
+<dd><p>calculate sin &amp; cos of angle between U &amp; V in generalized coordinates 
 defined by metric tensor G</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1042,7 +1043,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17d4a070&gt;, &lt;function test1 at 0x17d4a0b0&gt;, &lt;function test2 at 0x17d4a0f0&gt;, &lt;function test3 at 0x17d4a130&gt;, &lt;function test4 at 0x17d4a170&gt;, &lt;function test5 at 0x17d4a1b0&gt;, &lt;function test6 at 0x17d4a1f0&gt;, &lt;function test7 at 0x17d4a230&gt;, &lt;function test8 at 0x17d4a270&gt;, &lt;function test9 at 0x17d4a2b0&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17e346f0&gt;, &lt;function test1 at 0x17e34730&gt;, &lt;function test2 at 0x17e34770&gt;, &lt;function test3 at 0x17e347b0&gt;, &lt;function test4 at 0x17e347f0&gt;, &lt;function test5 at 0x17e34830&gt;, &lt;function test6 at 0x17e34870&gt;, &lt;function test7 at 0x17e348b0&gt;, &lt;function test8 at 0x17e348f0&gt;, &lt;function test9 at 0x17e34930&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1136,6 +1137,22 @@ unit cell constants</p>
 <h2><em>GSASIIspc: Space group module</em><a class="headerlink" href="#gsasiispc-space-group-module" title="Permalink to this headline">¶</a></h2>
 <p>Space group interpretation routines. Note that space group information is
 stored in a <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em>Space Group (SGData)</em></a> object.</p>
+<dl class="function">
+<dt id="GSASIIspc.AllOps">
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">AllOps</tt><big>(</big><em>SGData</em><big>)</big><a class="headerlink" href="#GSASIIspc.AllOps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all operators for a space group, including those for centering and a center of symmetry</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>SGData</strong> &#8211; from <a class="reference internal" href="#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">SpcGroup()</span></tt></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of strings of formatted symmetry operators</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="function">
 <dt id="GSASIIspc.ApplyStringOps">
 <tt class="descclassname">GSASIIspc.</tt><tt class="descname">ApplyStringOps</tt><big>(</big><em>A</em>, <em>SGData</em>, <em>X</em>, <em>Uij=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#ApplyStringOps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.ApplyStringOps" title="Permalink to this definition">¶</a></dt>
@@ -1456,7 +1473,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17d4a2f0&gt;, &lt;function test1 at 0x17d4a730&gt;, &lt;function test2 at 0x17d4a870&gt;, &lt;function test3 at 0x17d4a9b0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17e36430&gt;, &lt;function test1 at 0x17e36630&gt;, &lt;function test2 at 0x17e36530&gt;, &lt;function test3 at 0x17e364b0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1513,6 +1530,9 @@ Takes no input and returns nothing. Throws an Exception if a test fails.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#"><em>GSAS-II Utility Modules</em></a><ul>

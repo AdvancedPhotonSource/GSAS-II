@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -52,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIImath - major mathematics routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-30 09:05:36 -0500 (Thu, 30 May 2013) $</span>
+<span class="c"># $Date: 2013-06-11 10:58:44 -0400 (Tue, 11 Jun 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 936 $</span>
+<span class="c"># $Revision: 945 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $</span>
-<span class="c"># $Id: GSASIImath.py 936 2013-05-30 14:05:36Z vondreele $</span>
+<span class="c"># $Id: GSASIImath.py 945 2013-06-11 14:58:44Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIImath: computation module*</span>
@@ -77,7 +78,7 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 936 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 945 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2el</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
@@ -460,6 +461,16 @@
     <span class="n">density</span> <span class="o">=</span> <span class="n">mass</span><span class="o">/</span><span class="p">(</span><span class="mf">0.6022137</span><span class="o">*</span><span class="n">Volume</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">density</span><span class="p">,</span><span class="n">Volume</span><span class="o">/</span><span class="n">mass</span>
     </div>
+<div class="viewcode-block" id="getWave"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getWave">[docs]</a><span class="k">def</span> <span class="nf">getWave</span><span class="p">(</span><span class="n">Parms</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Parms</span><span class="p">[</span><span class="s">&#39;Lam&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Parms</span><span class="p">[</span><span class="s">&#39;Lam1&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    
+<span class="c">################################################################################</span>
+<span class="c">##### distance, angle, planes, torsion stuff stuff</span>
+<span class="c">################################################################################</span>
+</div>
 <div class="viewcode-block" id="getSyXYZ"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getSyXYZ">[docs]</a><span class="k">def</span> <span class="nf">getSyXYZ</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">ops</span><span class="p">,</span><span class="n">SGData</span><span class="p">):</span>
     <span class="s">&#39;Needs a doc string&#39;</span>
     <span class="n">XYZout</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">XYZ</span><span class="p">)</span>
@@ -985,38 +996,70 @@
             <span class="n">sig</span> <span class="o">=</span> <span class="n">sigVals</span><span class="p">[</span><span class="n">M</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
     
     <span class="k">return</span> <span class="n">Val</span><span class="p">,</span><span class="n">sig</span>
-        
-    </div>
-<div class="viewcode-block" id="ValEsd"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.ValEsd">[docs]</a><span class="k">def</span> <span class="nf">ValEsd</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">esd</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">nTZ</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>                  <span class="c">#NOT complete - don&#39;t use</span>
+        </div>
+<div class="viewcode-block" id="ValEsd"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.ValEsd">[docs]</a><span class="k">def</span> <span class="nf">ValEsd</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">esd</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">nTZ</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Format a floating point number with a given level of precision or</span>
-<span class="sd">    with in crystallographic format with a &quot;esd&quot;, as value(esd)</span>
-<span class="sd">    e.g. value=1.2345; esd=0.003 is formatted as 1.234(3)</span>
+<span class="sd">    with in crystallographic format with a &quot;esd&quot;, as value(esd). If esd is</span>
+<span class="sd">    negative the number is formatted with the level of significant figures</span>
+<span class="sd">    appropriate if abs(esd) were the esd, but the esd is not included.</span>
+<span class="sd">    if the esd is zero, approximately 6 significant figures are printed.</span>
+<span class="sd">    nTZ=True causes &quot;extra&quot; zeros to be removed after the decimal place.</span>
+<span class="sd">    for example:</span>
+
+<span class="sd">      * &quot;1.235(3)&quot; for value=1.2346 &amp; esd=0.003</span>
+<span class="sd">      * &quot;1.235(3)e4&quot; for value=12346. &amp; esd=30</span>
+<span class="sd">      * &quot;1.235(3)e6&quot; for value=0.12346e7 &amp; esd=3000</span>
+<span class="sd">      * &quot;1.235&quot; for value=1.2346 &amp; esd=-0.003</span>
+<span class="sd">      * &quot;1.240&quot; for value=1.2395 &amp; esd=-0.003</span>
+<span class="sd">      * &quot;1.24&quot; for value=1.2395 &amp; esd=-0.003 with nTZ=True</span>
+<span class="sd">      * &quot;1.23460&quot; for value=1.2346 &amp; esd=0.0</span>
 
 <span class="sd">    :param float value: number to be formatted</span>
 <span class="sd">    :param float esd: uncertainty or if esd &lt; 0, specifies level of</span>
 <span class="sd">      precision to be shown e.g. esd=-0.01 gives 2 places beyond decimal</span>
 <span class="sd">    :param bool nTZ: True to remove trailing zeros (default is False)</span>
 <span class="sd">    :returns: value(esd) or value as a string</span>
+
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="c">#get the 2 significant digits in the esd </span>
-    <span class="n">edig</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">esd</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">esd</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="p">)))</span>
-    <span class="c">#get the number of digits to represent them </span>
-    <span class="n">epl</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">esd</span><span class="p">:</span> <span class="mi">2</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="mf">1.545</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">edig</span><span class="p">(</span><span class="n">esd</span><span class="p">)))</span>
-    
-    <span class="n">mdec</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">esd</span><span class="p">:</span> <span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">esd</span><span class="p">))))</span><span class="o">+</span><span class="mi">1</span>
-    <span class="n">ndec</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">esd</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.545</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">esd</span><span class="p">)))</span>
-    <span class="k">if</span> <span class="n">esd</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">fmt</span> <span class="o">=</span> <span class="s">&#39;&quot;%.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ndec</span><span class="p">(</span><span class="n">esd</span><span class="p">))</span><span class="o">+</span><span class="s">&#39;f(</span><span class="si">%d</span><span class="s">)&quot;&#39;</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">fmt</span><span class="o">%</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">esd</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">mdec</span><span class="p">(</span><span class="n">esd</span><span class="p">))))))</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">esd</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">mdec</span><span class="p">(</span><span class="n">esd</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="c"># Note: this routine is Python 3 compatible -- I think</span>
+    <span class="k">if</span> <span class="n">esd</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c"># transform the esd to a one or two digit integer</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">esd</span><span class="p">))</span> <span class="o">%</span> <span class="mi">1</span>
+        <span class="c"># cut off of 19 1.9==&gt;(19) but 1.95==&gt;(2) N.B. log10(1.95) = 0.2900...</span>
+        <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="mf">0.290034611362518</span><span class="p">:</span> <span class="n">l</span><span class="o">+=</span> <span class="mf">1.</span>        
+        <span class="n">intesd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="n">l</span><span class="p">))</span> <span class="c"># esd as integer</span>
+        <span class="c"># determine the number of digits offset for the esd</span>
+        <span class="n">esdoff</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">intesd</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="nb">abs</span><span class="p">(</span><span class="n">esd</span><span class="p">))))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">nTZ</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
+        <span class="n">esdoff</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">valoff</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">esdoff</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0e6</span> <span class="ow">or</span> <span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0e-4</span><span class="p">:</span> <span class="c"># use scientific notation</span>
+        <span class="c"># where the digit offset is to the left of the decimal place or where too many</span>
+        <span class="c"># digits are needed</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">valoff</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">text</span>
-            </div>
+            <span class="n">valoff</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="o">-</span><span class="mf">0.9999999</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">esd</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;{:.&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">valoff</span><span class="o">+</span><span class="n">esdoff</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;f}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="o">/</span><span class="mi">10</span><span class="o">**</span><span class="n">valoff</span><span class="p">)</span> <span class="c"># format the value</span>
+    <span class="k">elif</span> <span class="n">valoff</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="c"># esd = 0; exponential notation ==&gt; esdoff decimal places</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;{:.&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">esdoff</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;f}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="o">/</span><span class="mi">10</span><span class="o">**</span><span class="n">valoff</span><span class="p">)</span> <span class="c"># format the value</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c"># esd = 0; non-exponential notation ==&gt; esdoff+1 significant digits</span>
+        <span class="n">extra</span> <span class="o">=</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">extra</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">extra</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;{:.&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">esdoff</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="n">extra</span><span class="p">)))</span><span class="o">+</span><span class="s">&quot;f}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="c"># format the value</span>
+    <span class="k">if</span> <span class="n">esd</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&quot;({:d})&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">intesd</span><span class="p">)</span>  <span class="c"># add the esd</span>
+    <span class="k">elif</span> <span class="n">nTZ</span> <span class="ow">and</span> <span class="s">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>  <span class="c"># strip digits to right of decimal</span>
+    <span class="k">if</span> <span class="n">valoff</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&quot;e{:d}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">valoff</span><span class="p">)</span> <span class="c"># add an exponent, when needed</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+<span class="c">################################################################################</span>
+<span class="c">##### Fourier &amp; charge flip stuff</span>
+<span class="c">################################################################################</span>
+</div>
 <div class="viewcode-block" id="adjHKLmax"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.adjHKLmax">[docs]</a><span class="k">def</span> <span class="nf">adjHKLmax</span><span class="p">(</span><span class="n">SGData</span><span class="p">,</span><span class="n">Hmax</span><span class="p">):</span>
     <span class="s">&#39;Needs a doc string&#39;</span>        
     <span class="k">if</span> <span class="n">SGData</span><span class="p">[</span><span class="s">&#39;SGLaue&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;3&#39;</span><span class="p">,</span><span class="s">&#39;3m1&#39;</span><span class="p">,</span><span class="s">&#39;31m&#39;</span><span class="p">,</span><span class="s">&#39;6/m&#39;</span><span class="p">,</span><span class="s">&#39;6/mmm&#39;</span><span class="p">]:</span>
@@ -1473,6 +1516,44 @@
             <span class="n">Ind</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Ind</span>
     </div>
+<div class="viewcode-block" id="getCWsig"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWsig">[docs]</a><span class="k">def</span> <span class="nf">getCWsig</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">pos</span><span class="p">):</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;U&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tp</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;V&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tp</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;W&#39;</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="getCWsigDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWsigDeriv">[docs]</a><span class="k">def</span> <span class="nf">getCWsigDeriv</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tp</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">tp</span><span class="p">,</span><span class="mf">1.0</span>
+    </div>
+<div class="viewcode-block" id="getCWgam"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWgam">[docs]</a><span class="k">def</span> <span class="nf">getCWgam</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">pos</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">cosd</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="getCWgamDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWgamDeriv">[docs]</a><span class="k">def</span> <span class="nf">getCWgamDeriv</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="n">cosd</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">),</span><span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="getTOFsig"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFsig">[docs]</a><span class="k">def</span> <span class="nf">getTOFsig</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-1&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-q&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span>
+    </div>
+<div class="viewcode-block" id="getTOFsigDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFsigDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFsigDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">dsp</span>
+    </div>
+<div class="viewcode-block" id="getTOFgamma"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFgamma">[docs]</a><span class="k">def</span> <span class="nf">getTOFgamma</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
+    </div>
+<div class="viewcode-block" id="getTOFgammaDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFgammaDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFgammaDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">dsp</span><span class="p">,</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
+    </div>
+<div class="viewcode-block" id="getTOFbeta"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFbeta">[docs]</a><span class="k">def</span> <span class="nf">getTOFbeta</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-1&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-q&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span>
+    </div>
+<div class="viewcode-block" id="getTOFbetaDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFbetaDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFbetaDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span>
+    </div>
+<div class="viewcode-block" id="getTOFalpha"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFalpha">[docs]</a><span class="k">def</span> <span class="nf">getTOFalpha</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span>
+    </div>
+<div class="viewcode-block" id="getTOFalphaDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFalphaDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFalphaDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span>
+    </div>
 <div class="viewcode-block" id="setPeakparms"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.setPeakparms">[docs]</a><span class="k">def</span> <span class="nf">setPeakparms</span><span class="p">(</span><span class="n">Parms</span><span class="p">,</span><span class="n">Parms2</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">mag</span><span class="p">,</span><span class="n">ifQ</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">useFit</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="s">&#39;Needs a doc string&#39;</span>        
     <span class="n">ind</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1484,8 +1565,8 @@
             <span class="n">ins</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">Parms</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">ind</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">ifQ</span><span class="p">:</span>                              <span class="c">#qplot - convert back to 2-theta</span>
             <span class="n">pos</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">asind</span><span class="p">(</span><span class="n">pos</span><span class="o">*</span><span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
-        <span class="n">sig</span> <span class="o">=</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;U&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;V&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;W&#39;</span><span class="p">]</span>
-        <span class="n">gam</span> <span class="o">=</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">cosd</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>           
+        <span class="n">sig</span> <span class="o">=</span> <span class="n">getCWsig</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">pos</span><span class="p">)</span>
+        <span class="n">gam</span> <span class="o">=</span> <span class="n">getCWgam</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">pos</span><span class="p">)</span>           
         <span class="n">XY</span> <span class="o">=</span> <span class="p">[</span><span class="n">pos</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">mag</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">gam</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>       <span class="c">#default refine intensity 1st</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">ifQ</span><span class="p">:</span>
@@ -1494,42 +1575,674 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dsp</span> <span class="o">=</span> <span class="n">pos</span><span class="o">/</span><span class="n">Parms</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="s">&#39;Pdabc&#39;</span> <span class="ow">in</span> <span class="n">Parms2</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
                 <span class="n">ins</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">Parms</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">ind</span><span class="p">]</span>
             <span class="n">Pdabc</span> <span class="o">=</span> <span class="n">Parms2</span><span class="p">[</span><span class="s">&#39;Pdabc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
             <span class="n">alp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">dsp</span><span class="p">,</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">bet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">dsp</span><span class="p">,</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;beta-q&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
                 <span class="n">ins</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">Parms</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">ind</span><span class="p">]</span>
-            <span class="n">alp</span> <span class="o">=</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span>
-            <span class="n">bet</span> <span class="o">=</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-1&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span>
-        <span class="n">sig</span> <span class="o">=</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-1&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">gam</span> <span class="o">=</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">alp</span> <span class="o">=</span> <span class="n">getTOFalpha</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">)</span>
+            <span class="n">bet</span> <span class="o">=</span> <span class="n">getTOFbeta</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">)</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="n">getTOFsig</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">)</span>
+        <span class="n">gam</span> <span class="o">=</span> <span class="n">getTOFgamma</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">)</span>
         <span class="n">XY</span> <span class="o">=</span> <span class="p">[</span><span class="n">pos</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">mag</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">alp</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">bet</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">sig</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">gam</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">XY</span>
+    
+<span class="c">################################################################################</span>
+<span class="c">##### MC/SA stuff</span>
+<span class="c">################################################################################</span>
+
+<span class="c">#scipy/optimize/anneal.py code modified by R. Von Dreele 2013</span>
+<span class="c"># Original Author: Travis Oliphant 2002</span>
+<span class="c"># Bug-fixes in 2006 by Tim Leslie</span>
+
 </div>
-<div class="viewcode-block" id="mcsaSearch"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.mcsaSearch">[docs]</a><span class="k">def</span> <span class="nf">mcsaSearch</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">reflType</span><span class="p">,</span><span class="n">reflData</span><span class="p">,</span><span class="n">covData</span><span class="p">,</span><span class="n">pgbar</span><span class="p">):</span>
-    <span class="s">&#39;Needs a doc string&#39;</span>        
-    <span class="n">generalData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
-    <span class="n">mcsaControls</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;MCSA controls&#39;</span><span class="p">]</span>
-    <span class="n">reflName</span> <span class="o">=</span> <span class="n">mcsaData</span><span class="p">[</span><span class="s">&#39;Data source&#39;</span><span class="p">]</span>
-    <span class="n">phaseName</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">]</span>
-    <span class="n">MCSAObjs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;MCSAModels&#39;</span><span class="p">]</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">asarray</span><span class="p">,</span> <span class="n">tan</span><span class="p">,</span> <span class="n">exp</span><span class="p">,</span> <span class="n">ones</span><span class="p">,</span> <span class="n">squeeze</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> \
+     <span class="nb">all</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">where</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;anneal&#39;</span><span class="p">]</span>
+
+<span class="n">_double_min</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">min</span>
+<span class="n">_double_max</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
+<span class="k">class</span> <span class="nc">base_schedule</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dwell</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learn_rate</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ninit</span> <span class="o">=</span> <span class="mi">50</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tests</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feval</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">=</span> <span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">NINF</span><span class="p">,</span> <span class="o">-</span><span class="n">_double_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">=</span> <span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">PINF</span><span class="p">,</span> <span class="n">_double_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feval</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tests</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">getstart_temp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">best_state</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Find a matching starting temperature and starting parameters vector</span>
+<span class="sd">        i.e. find x0 such that func(x0) = T0.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        best_state : _state</span>
+<span class="sd">            A _state object to store the function value and x0 found.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        x0 : array</span>
+<span class="sd">            The starting parameters vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dims</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">lrange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span>
+        <span class="n">urange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="n">_double_min</span>
+        <span class="n">fmin</span> <span class="o">=</span> <span class="n">_double_max</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ninit</span><span class="p">):</span>
+            <span class="n">x0</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">urange</span><span class="o">-</span><span class="n">lrange</span><span class="p">)</span> <span class="o">+</span> <span class="n">lrange</span>
+            <span class="n">fval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">feval</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">fval</span> <span class="o">&gt;</span> <span class="n">fmax</span><span class="p">:</span>
+                <span class="n">fmax</span> <span class="o">=</span> <span class="n">fval</span>
+            <span class="k">if</span> <span class="n">fval</span> <span class="o">&lt;</span> <span class="n">fmin</span><span class="p">:</span>
+                <span class="n">fmin</span> <span class="o">=</span> <span class="n">fval</span>
+                <span class="n">best_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">fval</span>
+                <span class="n">best_state</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">T0</span> <span class="o">=</span> <span class="p">(</span><span class="n">fmax</span><span class="o">-</span><span class="n">fmin</span><span class="p">)</span><span class="o">*</span><span class="mf">1.5</span>
+        <span class="k">return</span> <span class="n">best_state</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">accept_test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dE</span><span class="p">):</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tests</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">dE</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">dE</span><span class="o">*</span><span class="mf">1.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">boltzmann</span><span class="o">/</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">&gt;</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">update_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">update_temp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+<span class="c">#  A schedule due to Lester Ingber</span>
+<span class="k">class</span> <span class="nc">fast_sa</span><span class="p">(</span><span class="n">base_schedule</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">quench</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">squeeze</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">sign</span><span class="p">(</span><span class="n">u</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="n">T</span><span class="o">*</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="mf">1.0</span><span class="o">/</span><span class="n">T</span><span class="p">)</span><span class="o">**</span><span class="nb">abs</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">u</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">xc</span> <span class="o">=</span> <span class="n">y</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span>
+        <span class="n">xnew</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">xc</span>
+        <span class="k">return</span> <span class="n">xnew</span>
+
+    <span class="k">def</span> <span class="nf">update_temp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T0</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quench</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span>
+
+<span class="k">class</span> <span class="nc">cauchy_sa</span><span class="p">(</span><span class="n">base_schedule</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">update_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">numbers</span> <span class="o">=</span> <span class="n">squeeze</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+        <span class="n">xc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">learn_rate</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">tan</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span>
+        <span class="n">xnew</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">xc</span>
+        <span class="k">return</span> <span class="n">xnew</span>
+
+    <span class="k">def</span> <span class="nf">update_temp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T0</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span>
+
+<span class="k">class</span> <span class="nc">boltzmann_sa</span><span class="p">(</span><span class="n">base_schedule</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">update_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">minimum</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">*</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span><span class="o">/</span><span class="mf">3.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">learn_rate</span><span class="p">)</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">xc</span> <span class="o">=</span> <span class="n">squeeze</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+
+        <span class="n">xnew</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">xc</span><span class="o">*</span><span class="n">std</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">learn_rate</span>
+        <span class="k">return</span> <span class="n">xnew</span>
+
+    <span class="k">def</span> <span class="nf">update_temp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T0</span> <span class="o">/</span> <span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<span class="k">class</span> <span class="nc">log_sa</span><span class="p">(</span><span class="n">base_schedule</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">update_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x0</span><span class="p">):</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+        <span class="n">xnew</span> <span class="o">=</span> <span class="n">x0</span><span class="o">+</span><span class="n">u</span>
+        <span class="k">return</span> <span class="n">xnew</span>
+        
+    <span class="k">def</span> <span class="nf">update_temp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">slope</span><span class="o">**</span><span class="n">k</span>
+        
+<span class="k">class</span> <span class="nc">Tremayne_sa</span><span class="p">(</span><span class="n">base_schedule</span><span class="p">):</span>   <span class="c">#needs fixing for two steps</span>
+
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x0</span><span class="p">):</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+        <span class="n">xnew</span> <span class="o">=</span> <span class="n">x0</span><span class="o">+</span><span class="n">u</span>
+        <span class="k">return</span> <span class="n">xnew</span>        
+    
+    <span class="k">def</span> <span class="nf">update_temp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">slope</span><span class="o">**</span><span class="n">k</span>
+    
+<span class="k">class</span> <span class="nc">_state</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="c"># TODO:</span>
+<span class="c">#     allow for general annealing temperature profile</span>
+<span class="c">#     in that case use update given by alpha and omega and</span>
+<span class="c">#     variation of all previous updates and temperature?</span>
+
+<span class="c"># Simulated annealing</span>
+
+<div class="viewcode-block" id="anneal"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.anneal">[docs]</a><span class="k">def</span> <span class="nf">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(),</span> <span class="n">schedule</span><span class="o">=</span><span class="s">&#39;fast&#39;</span><span class="p">,</span> <span class="n">full_output</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+           <span class="n">T0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">Tf</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">maxeval</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">maxaccept</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
+           <span class="n">boltzmann</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">learn_rate</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">feps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">quench</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+           <span class="n">lower</span><span class="o">=-</span><span class="mi">100</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">dwell</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">slope</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Minimize a function using simulated annealing.</span>
+
+<span class="sd">    Schedule is a schedule class implementing the annealing schedule.</span>
+<span class="sd">    Available ones are &#39;fast&#39;, &#39;cauchy&#39;, &#39;boltzmann&#39;</span>
+
+<span class="sd">    :param callable func: f(x, \*args)</span>
+<span class="sd">        Function to be optimized.</span>
+<span class="sd">    :param ndarray x0:</span>
+<span class="sd">        Initial guess.</span>
+<span class="sd">    :param tuple args: </span>
+<span class="sd">        Extra parameters to `func`.</span>
+<span class="sd">    :param base_schedule schedule: </span>
+<span class="sd">        Annealing schedule to use (a class).</span>
+<span class="sd">    :param bool full_output:</span>
+<span class="sd">        Whether to return optional outputs.</span>
+<span class="sd">    :param float T0: </span>
+<span class="sd">        Initial Temperature (estimated as 1.2 times the largest</span>
+<span class="sd">        cost-function deviation over random points in the range).</span>
+<span class="sd">    :param float Tf: </span>
+<span class="sd">        Final goal temperature.</span>
+<span class="sd">    :param int maxeval: </span>
+<span class="sd">        Maximum function evaluations.</span>
+<span class="sd">    :param int maxaccept:</span>
+<span class="sd">        Maximum changes to accept.</span>
+<span class="sd">    :param int maxiter: </span>
+<span class="sd">        Maximum cooling iterations.</span>
+<span class="sd">    :param float learn_rate:</span>
+<span class="sd">        Scale constant for adjusting guesses.</span>
+<span class="sd">    :param float boltzmann: </span>
+<span class="sd">        Boltzmann constant in acceptance test</span>
+<span class="sd">        (increase for less stringent test at each temperature).</span>
+<span class="sd">    :param float feps:</span>
+<span class="sd">        Stopping relative error tolerance for the function value in</span>
+<span class="sd">        last four coolings.</span>
+<span class="sd">    :param float quench,m,n:</span>
+<span class="sd">        Parameters to alter fast_sa schedule.</span>
+<span class="sd">    :param float/ndarray lower,upper: </span>
+<span class="sd">        Lower and upper bounds on `x`.</span>
+<span class="sd">    :param int dwell:</span>
+<span class="sd">        The number of times to search the space at each temperature.</span>
+<span class="sd">    :param float slope: </span>
+<span class="sd">        Parameter for log schedule</span>
+
+<span class="sd">    :returns: (xmin, Jmin, T, feval, iters, accept, retval) where</span>
+
+<span class="sd">     * xmin (ndarray): Point giving smallest value found.</span>
+<span class="sd">     * Jmin (float): Minimum value of function found.</span>
+<span class="sd">     * T (float): Final temperature.</span>
+<span class="sd">     * feval (int): Number of function evaluations.</span>
+<span class="sd">     * iters (int): Number of cooling iterations.</span>
+<span class="sd">     * accept (int): Number of tests accepted.</span>
+<span class="sd">     * retval (int): Flag indicating stopping condition:</span>
+
+<span class="sd">              *  0: Points no longer changing</span>
+<span class="sd">              *  1: Cooled to final temperature</span>
+<span class="sd">              *  2: Maximum function evaluations</span>
+<span class="sd">              *  3: Maximum cooling iterations reached</span>
+<span class="sd">              *  4: Maximum accepted query locations reached</span>
+<span class="sd">              *  5: Final point not the minimum amongst encountered points</span>
+
+<span class="sd">    *Notes*:</span>
+<span class="sd">    Simulated annealing is a random algorithm which uses no derivative</span>
+<span class="sd">    information from the function being optimized. In practice it has</span>
+<span class="sd">    been more useful in discrete optimization than continuous</span>
+<span class="sd">    optimization, as there are usually better algorithms for continuous</span>
+<span class="sd">    optimization problems.</span>
+
+<span class="sd">    Some experimentation by trying the difference temperature</span>
+<span class="sd">    schedules and altering their parameters is likely required to</span>
+<span class="sd">    obtain good performance.</span>
+
+<span class="sd">    The randomness in the algorithm comes from random sampling in numpy.</span>
+<span class="sd">    To obtain the same results you can call numpy.random.seed with the</span>
+<span class="sd">    same seed immediately before calling scipy.optimize.anneal.</span>
+
+<span class="sd">    We give a brief description of how the three temperature schedules</span>
+<span class="sd">    generate new points and vary their temperature. Temperatures are</span>
+<span class="sd">    only updated with iterations in the outer loop. The inner loop is</span>
+<span class="sd">    over loop over xrange(dwell), and new points are generated for</span>
+<span class="sd">    every iteration in the inner loop. (Though whether the proposed</span>
+<span class="sd">    new points are accepted is probabilistic.)</span>
+
+<span class="sd">    For readability, let d denote the dimension of the inputs to func.</span>
+<span class="sd">    Also, let x_old denote the previous state, and k denote the</span>
+<span class="sd">    iteration number of the outer loop. All other variables not</span>
+<span class="sd">    defined below are input variables to scipy.optimize.anneal itself.</span>
+
+<span class="sd">    In the &#39;fast&#39; schedule the updates are ::</span>
+
+<span class="sd">        u ~ Uniform(0, 1, size=d)</span>
+<span class="sd">        y = sgn(u - 0.5) * T * ((1+ 1/T)**abs(2u-1) -1.0)</span>
+<span class="sd">        xc = y * (upper - lower)</span>
+<span class="sd">        x_new = x_old + xc</span>
+
+<span class="sd">        c = n * exp(-n * quench)</span>
+<span class="sd">        T_new = T0 * exp(-c * k**quench)</span>
+
+
+<span class="sd">    In the &#39;cauchy&#39; schedule the updates are ::</span>
+
+<span class="sd">        u ~ Uniform(-pi/2, pi/2, size=d)</span>
+<span class="sd">        xc = learn_rate * T * tan(u)</span>
+<span class="sd">        x_new = x_old + xc</span>
+
+<span class="sd">        T_new = T0 / (1+k)</span>
+
+<span class="sd">    In the &#39;boltzmann&#39; schedule the updates are ::</span>
+
+<span class="sd">        std = minimum( sqrt(T) * ones(d), (upper-lower) / (3*learn_rate) )</span>
+<span class="sd">        y ~ Normal(0, std, size=d)</span>
+<span class="sd">        x_new = x_old + learn_rate * y</span>
+
+<span class="sd">        T_new = T0 / log(1+k)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">lower</span><span class="p">)</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">upper</span><span class="p">)</span>
+
+    <span class="n">schedule</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">schedule</span><span class="o">+</span><span class="s">&#39;_sa()&#39;</span><span class="p">)</span>
+    <span class="c">#   initialize the schedule</span>
+    <span class="n">schedule</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="n">shape</span><span class="p">(</span><span class="n">x0</span><span class="p">),</span><span class="n">func</span><span class="o">=</span><span class="n">func</span><span class="p">,</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span><span class="n">boltzmann</span><span class="o">=</span><span class="n">boltzmann</span><span class="p">,</span><span class="n">T0</span><span class="o">=</span><span class="n">T0</span><span class="p">,</span>
+                  <span class="n">learn_rate</span><span class="o">=</span><span class="n">learn_rate</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="n">upper</span><span class="p">,</span>
+                  <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">quench</span><span class="o">=</span><span class="n">quench</span><span class="p">,</span> <span class="n">dwell</span><span class="o">=</span><span class="n">dwell</span><span class="p">)</span>
+
+    <span class="n">current_state</span><span class="p">,</span> <span class="n">last_state</span><span class="p">,</span> <span class="n">best_state</span> <span class="o">=</span> <span class="n">_state</span><span class="p">(),</span> <span class="n">_state</span><span class="p">(),</span> <span class="n">_state</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">T0</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">schedule</span><span class="o">.</span><span class="n">getstart_temp</span><span class="p">(</span><span class="n">best_state</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">best_state</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">best_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">Inf</span>
+
+    <span class="n">last_state</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">fval</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">schedule</span><span class="o">.</span><span class="n">feval</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">last_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">fval</span>
+    <span class="k">if</span> <span class="n">last_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">&lt;</span> <span class="n">best_state</span><span class="o">.</span><span class="n">cost</span><span class="p">:</span>
+        <span class="n">best_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">fval</span>
+        <span class="n">best_state</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">schedule</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="n">schedule</span><span class="o">.</span><span class="n">T0</span>
+    <span class="n">fqueue</span> <span class="o">=</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">700</span><span class="p">]</span>
+    <span class="n">iters</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">dwell</span><span class="p">):</span>
+            <span class="n">current_state</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">schedule</span><span class="o">.</span><span class="n">update_guess</span><span class="p">(</span><span class="n">last_state</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">current_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">current_state</span><span class="o">.</span><span class="n">x</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">schedule</span><span class="o">.</span><span class="n">feval</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">dE</span> <span class="o">=</span> <span class="n">current_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">-</span> <span class="n">last_state</span><span class="o">.</span><span class="n">cost</span>
+            <span class="k">if</span> <span class="n">schedule</span><span class="o">.</span><span class="n">accept_test</span><span class="p">(</span><span class="n">dE</span><span class="p">):</span>
+                <span class="n">last_state</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">current_state</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">last_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">current_state</span><span class="o">.</span><span class="n">cost</span>
+                <span class="k">if</span> <span class="n">last_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">&lt;</span> <span class="n">best_state</span><span class="o">.</span><span class="n">cost</span><span class="p">:</span>
+                    <span class="n">best_state</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">last_state</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">best_state</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">last_state</span><span class="o">.</span><span class="n">cost</span>
+        <span class="n">schedule</span><span class="o">.</span><span class="n">update_temp</span><span class="p">()</span>
+        <span class="n">iters</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c"># Stopping conditions</span>
+        <span class="c"># 0) last saved values of f from each cooling step</span>
+        <span class="c">#     are all very similar (effectively cooled)</span>
+        <span class="c"># 1) Tf is set and we are below it</span>
+        <span class="c"># 2) maxeval is set and we are past it</span>
+        <span class="c"># 3) maxiter is set and we are past it</span>
+        <span class="c"># 4) maxaccept is set and we are past it</span>
+
+        <span class="n">fqueue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">squeeze</span><span class="p">(</span><span class="n">last_state</span><span class="o">.</span><span class="n">cost</span><span class="p">))</span>
+        <span class="n">fqueue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">af</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">fqueue</span><span class="p">)</span><span class="o">*</span><span class="mf">1.0</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">abs</span><span class="p">((</span><span class="n">af</span><span class="o">-</span><span class="n">af</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">af</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">feps</span><span class="p">):</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">af</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">best_state</span><span class="o">.</span><span class="n">cost</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">feps</span><span class="o">*</span><span class="mi">10</span><span class="p">:</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="mi">5</span>
+                <span class="k">print</span> <span class="s">&quot;Warning: Cooled to </span><span class="si">%f</span><span class="s"> at </span><span class="si">%s</span><span class="s"> but this is not&quot;</span> \
+                      <span class="o">%</span> <span class="p">(</span><span class="n">squeeze</span><span class="p">(</span><span class="n">last_state</span><span class="o">.</span><span class="n">cost</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">squeeze</span><span class="p">(</span><span class="n">last_state</span><span class="o">.</span><span class="n">x</span><span class="p">)))</span> \
+                      <span class="o">+</span> <span class="s">&quot; the smallest point found.&quot;</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">Tf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">schedule</span><span class="o">.</span><span class="n">T</span> <span class="o">&lt;</span> <span class="n">Tf</span><span class="p">):</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">maxeval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">schedule</span><span class="o">.</span><span class="n">feval</span> <span class="o">&gt;</span> <span class="n">maxeval</span><span class="p">):</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">iters</span> <span class="o">&gt;</span> <span class="n">maxiter</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&quot;Warning: Maximum number of iterations exceeded.&quot;</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">maxaccept</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">schedule</span><span class="o">.</span><span class="n">accepted</span> <span class="o">&gt;</span> <span class="n">maxaccept</span><span class="p">):</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">full_output</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">best_state</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">best_state</span><span class="o">.</span><span class="n">cost</span><span class="p">,</span> <span class="n">schedule</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> \
+               <span class="n">schedule</span><span class="o">.</span><span class="n">feval</span><span class="p">,</span> <span class="n">iters</span><span class="p">,</span> <span class="n">schedule</span><span class="o">.</span><span class="n">accepted</span><span class="p">,</span> <span class="n">retval</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">best_state</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">retval</span>
+
+</div>
+<div class="viewcode-block" id="mcsaSearch"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.mcsaSearch">[docs]</a><span class="k">def</span> <span class="nf">mcsaSearch</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">RBdata</span><span class="p">,</span><span class="n">reflType</span><span class="p">,</span><span class="n">reflData</span><span class="p">,</span><span class="n">covData</span><span class="p">,</span><span class="n">pgbar</span><span class="p">):</span>
+    <span class="n">gamFW</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">,</span><span class="n">g</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">s</span><span class="o">**</span><span class="mi">5</span><span class="o">+</span><span class="mf">2.69269</span><span class="o">*</span><span class="n">s</span><span class="o">**</span><span class="mi">4</span><span class="o">*</span><span class="n">g</span><span class="o">+</span><span class="mf">2.42843</span><span class="o">*</span><span class="n">s</span><span class="o">**</span><span class="mi">3</span><span class="o">*</span><span class="n">g</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="mf">4.47163</span><span class="o">*</span><span class="n">s</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">g</span><span class="o">**</span><span class="mi">3</span><span class="o">+</span><span class="mf">0.07842</span><span class="o">*</span><span class="n">s</span><span class="o">*</span><span class="n">g</span><span class="o">**</span><span class="mi">4</span><span class="o">+</span><span class="n">g</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span><span class="o">/</span><span class="mf">5.</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">getMDparms</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">pfx</span><span class="p">,</span><span class="n">parmDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">):</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;MDaxis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;axis&#39;</span><span class="p">]</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;MDval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Coef&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Coef&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">varyList</span> <span class="o">+=</span> <span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;MDval&#39;</span><span class="p">,]</span>
+            <span class="n">limits</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Coef&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             
-<span class="c">#             = {&#39;&#39;:&#39;&#39;,&#39;Annealing&#39;:[50.0,0.001,0.90,1000],</span>
-<span class="c">#            &#39;dmin&#39;:2.0,&#39;Algolrithm&#39;:&#39;Normal&#39;,&#39;Jump coeff&#39;:[0.95,0.5]} #&#39;Normal&#39;,&#39;Random jump&#39;,&#39;Tremayne jump&#39;</span>
+    <span class="k">def</span> <span class="nf">getAtomparms</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">pfx</span><span class="p">,</span><span class="n">aTypes</span><span class="p">,</span><span class="n">SGData</span><span class="p">,</span><span class="n">parmDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">):</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Atype&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;atType&#39;</span><span class="p">]</span>
+        <span class="n">aTypes</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">([</span><span class="n">item</span><span class="p">[</span><span class="s">&#39;atType&#39;</span><span class="p">],])</span> 
+        <span class="n">pstr</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Ax&#39;</span><span class="p">,</span><span class="s">&#39;Ay&#39;</span><span class="p">,</span><span class="s">&#39;Az&#39;</span><span class="p">]</span>
+        <span class="n">XYZ</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">pfx</span><span class="o">+</span><span class="n">pstr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">parmDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Pos&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">XYZ</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Pos&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">varyList</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">,]</span>
+                <span class="n">limits</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Pos&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Amul&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">G2spc</span><span class="o">.</span><span class="n">GenAtom</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">SGData</span><span class="p">))</span>
+            
+    <span class="k">def</span> <span class="nf">getRBparms</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">mfx</span><span class="p">,</span><span class="n">aTypes</span><span class="p">,</span><span class="n">RBdata</span><span class="p">,</span><span class="n">atNo</span><span class="p">,</span><span class="n">parmDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">):</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">mfx</span><span class="o">+</span><span class="s">&#39;MolCent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;MolCent&#39;</span><span class="p">]</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">mfx</span><span class="o">+</span><span class="s">&#39;RBId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;RBId&#39;</span><span class="p">]</span>
+        <span class="n">pstr</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Px&#39;</span><span class="p">,</span><span class="s">&#39;Py&#39;</span><span class="p">,</span><span class="s">&#39;Pz&#39;</span><span class="p">]</span>
+        <span class="n">ostr</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Qa&#39;</span><span class="p">,</span><span class="s">&#39;Qi&#39;</span><span class="p">,</span><span class="s">&#39;Qj&#39;</span><span class="p">,</span><span class="s">&#39;Qk&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">mfx</span><span class="o">+</span><span class="n">pstr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">parmDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Pos&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Pos&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">varyList</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">,]</span>
+                <span class="n">limits</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Pos&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">mfx</span><span class="o">+</span><span class="n">ostr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">parmDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Ori&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Ovar&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;AV&#39;</span> <span class="ow">and</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">varyList</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">,]</span>
+                <span class="n">limits</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Ori&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Ovar&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;A&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">varyList</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">,]</span>
+                <span class="n">limits</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Ori&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;Tor&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>      <span class="c">#&#39;Tor&#39; not there for &#39;Vector&#39; RBs</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s">&#39;Tor&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">mfx</span><span class="o">+</span><span class="s">&#39;Tor&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">parmDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Tor&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Tor&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="n">varyList</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">,]</span>
+                    <span class="n">limits</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Tor&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">atypes</span> <span class="o">=</span> <span class="n">RBdata</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]][</span><span class="n">item</span><span class="p">[</span><span class="s">&#39;RBId&#39;</span><span class="p">]][</span><span class="s">&#39;rbTypes&#39;</span><span class="p">]</span>
+        <span class="n">aTypes</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">atypes</span><span class="p">)</span>
+        <span class="n">atNo</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atypes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">atNo</span>
+
+    <span class="k">def</span> <span class="nf">GetAtomTMX</span><span class="p">(</span><span class="n">pfx</span><span class="p">,</span><span class="n">RBdata</span><span class="p">,</span><span class="n">parmDict</span><span class="p">):</span>
+        <span class="s">&#39;Needs a doc string&#39;</span>
+        <span class="n">atNo</span> <span class="o">=</span> <span class="n">parmDIct</span><span class="p">[</span><span class="s">&#39;atNo&#39;</span><span class="p">]</span>
+        <span class="n">nfixAt</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="s">&#39;nfixAt&#39;</span><span class="p">]</span>
+        <span class="n">Tdata</span> <span class="o">=</span> <span class="n">atNo</span><span class="o">*</span><span class="p">[</span><span class="s">&#39; &#39;</span><span class="p">,]</span>
+        <span class="n">Mdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">atNo</span><span class="p">)</span>
+        <span class="n">Fdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">atNo</span><span class="p">)</span>
+        <span class="n">Xdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="n">atNo</span><span class="p">))</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;Atype:&#39;</span><span class="p">:</span><span class="n">Tdata</span><span class="p">,</span><span class="s">&#39;Amul:&#39;</span><span class="p">:</span><span class="n">Mdata</span><span class="p">,</span>
+            <span class="s">&#39;Ax:&#39;</span><span class="p">:</span><span class="n">Xdata</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;Ay:&#39;</span><span class="p">:</span><span class="n">Xdata</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;Az:&#39;</span><span class="p">:</span><span class="n">Xdata</span><span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
+        <span class="n">nObjs</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="s">&#39;nObjs&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">iatm</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nfixAt</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+                <span class="n">parm</span> <span class="o">=</span> <span class="n">pfx</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">iatm</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">parm</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+                    <span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">iatm</span><span class="p">]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">parm</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">Tdata</span><span class="p">,</span><span class="n">Mdata</span><span class="p">,</span><span class="n">Xdata</span>
+    
+<span class="c">#    def mcsaSfCalc(refList,RBdata,G,SGData,parmDict):</span>
+<span class="c">#        &#39;&#39;&#39; Compute structure factors for all h,k,l for phase</span>
+<span class="c">#        input:</span>
+<span class="c">#            refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] </span>
+<span class="c">#            G:      reciprocal metric tensor</span>
+<span class="c">#            SGData: space group info. dictionary output from SpcGroup</span>
+<span class="c">#            ParmDict:</span>
+<span class="c">#        puts result F^2 in each ref[8] in refList</span>
+<span class="c">#        &#39;&#39;&#39;        </span>
+<span class="c">#        twopi = 2.0*np.pi</span>
+<span class="c">#        twopisq = 2.0*np.pi**2</span>
+<span class="c">#        ast = np.sqrt(np.diag(G))</span>
+<span class="c">#        Mast = twopisq*np.multiply.outer(ast,ast)</span>
+<span class="c">#        Tdata,Mdata,Fdata,Xdata = GetAtomFX(pfx,calcControls,parmDict)</span>
+<span class="c">#        FF = np.zeros(len(Tdata))</span>
+<span class="c">#        if &#39;N&#39; in parmDict[hfx+&#39;Type&#39;]:</span>
+<span class="c">#            FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+&#39;Lam&#39;])</span>
+<span class="c">#        else:</span>
+<span class="c">#            FP = np.array([FFtables[El][hfx+&#39;FP&#39;] for El in Tdata])</span>
+<span class="c">#            FPP = np.array([FFtables[El][hfx+&#39;FPP&#39;] for El in Tdata])</span>
+<span class="c">#        Uij = np.array(G2lat.U6toUij(Uijdata))</span>
+<span class="c">#        bij = Mast*Uij.T</span>
+<span class="c">#        for refl in refList:</span>
+<span class="c">#            fbs = np.array([0,0])</span>
+<span class="c">#            H = refl[:3]</span>
+<span class="c">#            SQ = 1./(2.*refl[4])**2</span>
+<span class="c">#            SQfactor = 4.0*SQ*twopisq</span>
+<span class="c">#            Bab = parmDict[phfx+&#39;BabA&#39;]*np.exp(-parmDict[phfx+&#39;BabU&#39;]*SQfactor)</span>
+<span class="c">#            if not len(refl[-1]):                #no form factors</span>
+<span class="c">#                if &#39;N&#39; in parmDict[hfx+&#39;Type&#39;]:</span>
+<span class="c">#                    refl[-1] = getBLvalues(BLtables)</span>
+<span class="c">#                else:       #&#39;X&#39;</span>
+<span class="c">#                    refl[-1] = getFFvalues(FFtables,SQ)</span>
+<span class="c">#            for i,El in enumerate(Tdata):</span>
+<span class="c">#                FF[i] = refl[-1][El]           </span>
+<span class="c">#            Uniq = refl[11]</span>
+<span class="c">#            phi = refl[12]</span>
+<span class="c">#            phase = twopi*(np.inner(Uniq,(Xdata.T))+phi[:,np.newaxis])</span>
+<span class="c">#            sinp = np.sin(phase)</span>
+<span class="c">#            cosp = np.cos(phase)</span>
+<span class="c">#            occ = Mdata*Fdata/len(Uniq)</span>
+<span class="c">#            fa = np.array([(FF+FP-Bab)*occ*cosp,-FPP*occ*sinp])</span>
+<span class="c">#            fas = np.sum(np.sum(fa,axis=1),axis=1)        #real</span>
+<span class="c">#            if not SGData[&#39;SGInv&#39;]:</span>
+<span class="c">#                fb = np.array([(FF+FP-Bab)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])</span>
+<span class="c">#                fbs = np.sum(np.sum(fb,axis=1),axis=1)</span>
+<span class="c">#            fasq = fas**2</span>
+<span class="c">#            fbsq = fbs**2        #imaginary</span>
+<span class="c">#            refl[9] = np.sum(fasq)+np.sum(fbsq)</span>
+<span class="c">#            refl[10] = atan2d(fbs[0],fas[0])</span>
+    
+    <span class="n">sq8ln2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">sq2pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">sq4pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">generalData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
+    <span class="n">SGData</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;SGData&#39;</span><span class="p">]</span>
+    <span class="n">fixAtoms</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span>                       <span class="c">#if any</span>
+    <span class="n">cx</span><span class="p">,</span><span class="n">ct</span><span class="p">,</span><span class="n">cs</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">][:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">aTypes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+    <span class="n">parmDict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">varyList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">atNo</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">atm</span> <span class="ow">in</span> <span class="n">fixAtoms</span><span class="p">:</span>
+        <span class="n">pfx</span> <span class="o">=</span> <span class="s">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">atNo</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Atype&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm</span><span class="p">[</span><span class="n">ct</span><span class="p">]</span>
+        <span class="n">aTypes</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">([</span><span class="n">atm</span><span class="p">[</span><span class="n">ct</span><span class="p">],])</span>
+        <span class="n">pstr</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Ax&#39;</span><span class="p">,</span><span class="s">&#39;Ay&#39;</span><span class="p">,</span><span class="s">&#39;Az&#39;</span><span class="p">]</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Amul&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm</span><span class="p">[</span><span class="n">cs</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">pfx</span><span class="o">+</span><span class="n">pstr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">parmDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm</span><span class="p">[</span><span class="n">cx</span><span class="o">+</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">atNo</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">parmDict</span><span class="p">[</span><span class="s">&#39;nfixAt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fixAtoms</span><span class="p">)</span>        
+    <span class="n">mcsaControls</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;MCSA controls&#39;</span><span class="p">]</span>
+    <span class="n">reflName</span> <span class="o">=</span> <span class="n">mcsaControls</span><span class="p">[</span><span class="s">&#39;Data source&#39;</span><span class="p">]</span>
+    <span class="n">phaseName</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">]</span>
+    <span class="n">MCSAObjs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;MCSA&#39;</span><span class="p">][</span><span class="s">&#39;Models&#39;</span><span class="p">]</span>               <span class="c">#list of MCSA models</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">MCSAObjs</span><span class="p">):</span>
+        <span class="n">mfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span>
+        <span class="n">parmDict</span><span class="p">[</span><span class="n">mfx</span><span class="o">+</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;MD&#39;</span><span class="p">:</span>
+            <span class="n">getMDparms</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">mfx</span><span class="p">,</span><span class="n">parmDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Atom&#39;</span><span class="p">:</span>
+            <span class="n">pfx</span> <span class="o">=</span> <span class="n">mfx</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">atNo</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span>
+            <span class="n">getAtomparms</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">pfx</span><span class="p">,</span><span class="n">aTypes</span><span class="p">,</span><span class="n">SGData</span><span class="p">,</span><span class="n">parmDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">)</span>
+            <span class="n">atNo</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;Residue&#39;</span><span class="p">,</span><span class="s">&#39;Vector&#39;</span><span class="p">]:</span>
+            <span class="n">pfx</span> <span class="o">=</span> <span class="n">mfx</span><span class="o">+</span><span class="s">&#39;:&#39;</span>
+            <span class="n">atNo</span> <span class="o">=</span> <span class="n">getRBparms</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">pfx</span><span class="p">,</span><span class="n">aTypes</span><span class="p">,</span><span class="n">RBdata</span><span class="p">,</span><span class="n">atNo</span><span class="p">,</span><span class="n">parmDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">)</span>
+    <span class="n">parmDict</span><span class="p">[</span><span class="s">&#39;atNo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atNo</span>                 <span class="c">#total no. of atoms</span>
+    <span class="n">parmDict</span><span class="p">[</span><span class="s">&#39;nObj&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">MCSAObjs</span><span class="p">)</span>
+    <span class="n">FFtables</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">GetFFtable</span><span class="p">(</span><span class="n">aTypes</span><span class="p">)</span>
+    <span class="n">refs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">reflData</span><span class="p">:</span>
+            <span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">sig</span><span class="p">,</span><span class="n">gam</span><span class="p">,</span><span class="n">f</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[:</span><span class="mi">9</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;=</span> <span class="n">mcsaControls</span><span class="p">[</span><span class="s">&#39;dmin&#39;</span><span class="p">]:</span>
+                <span class="n">sig</span> <span class="o">=</span> <span class="n">gamFW</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span><span class="n">gam</span><span class="p">)</span><span class="o">/</span><span class="n">sq8ln2</span>        <span class="c">#--&gt; sig from FWHM</span>
+                <span class="n">SQ</span> <span class="o">=</span> <span class="mf">0.25</span><span class="o">/</span><span class="n">d</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">],</span><span class="n">SGData</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span>
+                <span class="n">FFs</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">)</span>
+                <span class="n">refs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">f</span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">sig</span><span class="p">,</span><span class="n">FFs</span><span class="p">,</span><span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span><span class="p">])</span>
+        <span class="n">nRef</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span>
+        <span class="n">rcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nRef</span><span class="p">,</span><span class="n">nRef</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">iref</span><span class="p">,</span><span class="n">refI</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refs</span><span class="p">):</span>
+            <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">iref</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">sq4pi</span><span class="o">*</span><span class="n">refI</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">jref</span><span class="p">,</span><span class="n">refJ</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refs</span><span class="p">[:</span><span class="n">iref</span><span class="p">]):</span>
+                <span class="n">t1</span> <span class="o">=</span> <span class="n">refI</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">refJ</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">t2</span> <span class="o">=</span> <span class="p">(</span><span class="n">refJ</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">-</span><span class="n">refI</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">t1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">t2</span> <span class="o">&gt;</span> <span class="mf">10.</span><span class="p">:</span>
+                    <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">jref</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">jref</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">sq2pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">t1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">t2</span><span class="p">))</span>
+        <span class="n">rcov</span> <span class="o">+=</span> <span class="p">(</span><span class="n">rcov</span><span class="o">.</span><span class="n">T</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">rcov</span><span class="p">)))</span>
+        <span class="n">Rdiag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">rcov</span><span class="p">))</span>
+        <span class="n">Rnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">Rdiag</span><span class="p">,</span><span class="n">Rdiag</span><span class="p">)</span>
+        <span class="n">rcov</span> <span class="o">/=</span> <span class="n">Rnorm</span>
+    <span class="k">elif</span> <span class="s">&#39;Pawley&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
+        <span class="n">covMatrix</span> <span class="o">=</span> <span class="n">covData</span><span class="p">[</span><span class="s">&#39;covMatrix&#39;</span><span class="p">]</span>
+        <span class="n">vList</span> <span class="o">=</span> <span class="n">covData</span><span class="p">[</span><span class="s">&#39;varyList&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">iref</span><span class="p">,</span><span class="n">refI</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">reflData</span><span class="p">):</span>
+            <span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">s</span> <span class="o">=</span> <span class="n">refI</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;=</span> <span class="n">mcsaControls</span><span class="p">[</span><span class="s">&#39;dmin&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">v</span><span class="p">:</span>       <span class="c">#skip unrefined ones</span>
+                <span class="n">SQ</span> <span class="o">=</span> <span class="mf">0.25</span><span class="o">/</span><span class="n">d</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">],</span><span class="n">SGData</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span>
+                <span class="n">FFs</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">)</span>
+                <span class="n">refs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">f</span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="n">iref</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="n">FFs</span><span class="p">,</span><span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span><span class="p">])</span>
+        <span class="n">nRef</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span>
+        <span class="n">pfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;::PWLref:&#39;</span>
+        <span class="n">rcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nRef</span><span class="p">,</span><span class="n">nRef</span><span class="p">))</span>        
+        <span class="k">for</span> <span class="n">iref</span><span class="p">,</span><span class="n">refI</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refs</span><span class="p">):</span>
+            <span class="n">I</span> <span class="o">=</span> <span class="n">refI</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+            <span class="n">nameI</span> <span class="o">=</span> <span class="n">pfx</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nameI</span> <span class="ow">in</span> <span class="n">vList</span><span class="p">:</span>
+                <span class="n">Iindx</span> <span class="o">=</span> <span class="n">vList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">nameI</span><span class="p">)</span>
+                <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">iref</span><span class="p">]</span> <span class="o">=</span> <span class="n">covMatrix</span><span class="p">[</span><span class="n">Iindx</span><span class="p">][</span><span class="n">Iindx</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">jref</span><span class="p">,</span><span class="n">refJ</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refs</span><span class="p">[:</span><span class="n">iref</span><span class="p">]):</span>
+                    <span class="n">J</span> <span class="o">=</span> <span class="n">refJ</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+                    <span class="n">nameJ</span> <span class="o">=</span> <span class="n">pfx</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">J</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">jref</span><span class="p">]</span> <span class="o">=</span> <span class="n">covMatrix</span><span class="p">[</span><span class="n">vList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">nameI</span><span class="p">)][</span><span class="n">vList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">nameJ</span><span class="p">)]</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">jref</span><span class="p">]</span> <span class="o">=</span> <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">jref</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">]</span> <span class="o">=</span> <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="p">][</span><span class="n">iref</span><span class="p">]</span> <span class="o">=</span> <span class="n">rcov</span><span class="p">[</span><span class="n">iref</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">iref</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">rcov</span> <span class="o">+=</span> <span class="p">(</span><span class="n">rcov</span><span class="o">.</span><span class="n">T</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">rcov</span><span class="p">)))</span>
+        <span class="n">Rdiag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">rcov</span><span class="p">))</span>
+        <span class="n">Rnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">Rdiag</span><span class="p">,</span><span class="n">Rdiag</span><span class="p">)</span>
+        <span class="n">rcov</span> <span class="o">/=</span> <span class="n">Rnorm</span>
+    <span class="k">elif</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">reflData</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">d</span><span class="p">],</span><span class="n">f</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span><span class="n">ref</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;=</span> <span class="n">mcsaControls</span><span class="p">[</span><span class="s">&#39;dmin&#39;</span><span class="p">]:</span>
+                <span class="n">SQ</span> <span class="o">=</span> <span class="mf">0.25</span><span class="o">/</span><span class="n">d</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">],</span><span class="n">SGData</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span>
+                <span class="n">FFs</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">)</span>
+                <span class="n">refs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">f</span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="n">FFs</span><span class="p">,</span><span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span><span class="p">])</span>
+        <span class="n">rcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">))</span>
+        
+    <span class="k">for</span> <span class="n">parm</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">parm</span><span class="p">,</span><span class="n">parmDict</span><span class="p">[</span><span class="n">parm</span><span class="p">]</span> 
+                        
+<span class="c">#    XYZ,aTypes = UpdateMCSAxyz(Bmat,MCSA)        </span>
+            
+<span class="c">#    generalData[&#39;MCSA controls&#39;] = {&#39;Data source&#39;:&#39;&#39;,&#39;Annealing&#39;:[50.,0.001,50,1.e-6],</span>
+<span class="c">#    &#39;dmin&#39;:2.0,&#39;Algorithm&#39;:&#39;fast&#39;,&#39;Jump coeff&#39;:[0.95,0.5],&#39;nRuns&#39;:1,&#39;boltzmann&#39;:1.0,</span>
+<span class="c">#    &#39;fast parms&#39;:[1.0,1.0,1.0],&#39;log slope&#39;:0.9}</span>
 
     <span class="k">return</span> <span class="p">{}</span>
 
-        </div>
-<div class="viewcode-block" id="getWave"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getWave">[docs]</a><span class="k">def</span> <span class="nf">getWave</span><span class="p">(</span><span class="n">Parms</span><span class="p">):</span>
-    <span class="s">&#39;Needs a doc string&#39;</span>        
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Parms</span><span class="p">[</span><span class="s">&#39;Lam&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Parms</span><span class="p">[</span><span class="s">&#39;Lam1&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-    </div>
+        
+<span class="c">################################################################################</span>
+<span class="c">##### Quaternion stuff</span>
+<span class="c">################################################################################</span>
+</div>
 <div class="viewcode-block" id="prodQQ"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.prodQQ">[docs]</a><span class="k">def</span> <span class="nf">prodQQ</span><span class="p">(</span><span class="n">QA</span><span class="p">,</span><span class="n">QB</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Grassman quaternion product</span>
 <span class="sd">        QA,QB quaternions; q=r+ai+bj+ck</span>
@@ -1686,6 +2399,19 @@
             <span class="n">D</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.</span>
     <span class="k">return</span> <span class="n">Q</span><span class="p">,</span><span class="n">D</span>
     </div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">cos</span>
+    <span class="c"># minimum expected at ~-0.195</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">cos</span><span class="p">(</span><span class="mf">14.5</span><span class="o">*</span><span class="n">x</span><span class="o">-</span><span class="mf">0.3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mf">0.2</span><span class="p">)</span><span class="o">*</span><span class="n">x</span>
+    <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span><span class="n">lower</span><span class="o">=-</span><span class="mf">3.0</span><span class="p">,</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;cauchy&#39;</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span><span class="n">lower</span><span class="o">=-</span><span class="mf">3.0</span><span class="p">,</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;fast&#39;</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span><span class="n">lower</span><span class="o">=-</span><span class="mf">3.0</span><span class="p">,</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;boltzmann&#39;</span><span class="p">)</span>
+
+    <span class="c"># minimum expected at ~[-0.195, -0.1]</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">cos</span><span class="p">(</span><span class="mf">14.5</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.2</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.2</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span><span class="n">lower</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">],</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;cauchy&#39;</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span><span class="n">lower</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">],</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;fast&#39;</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span><span class="n">lower</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">],</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;boltzmann&#39;</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -1693,6 +2419,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

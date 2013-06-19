@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -52,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIpwdGUI - powder data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-31 18:14:01 -0500 (Fri, 31 May 2013) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 938 $</span>
+<span class="c"># $Date: 2013-06-11 10:58:44 -0400 (Tue, 11 Jun 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 945 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIpwdGUI.py $</span>
-<span class="c"># $Id: GSASIIpwdGUI.py 938 2013-05-31 23:14:01Z toby $</span>
+<span class="c"># $Id: GSASIIpwdGUI.py 945 2013-06-11 14:58:44Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIpwdGUI: Powder Pattern GUI routines*</span>
@@ -78,7 +79,7 @@
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 938 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 945 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">GSASIIpwd</span> <span class="kn">as</span> <span class="nn">G2pwd</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
@@ -362,7 +363,7 @@
     <span class="n">T</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
     <span class="n">X</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span> <span class="n">X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">X</span>        
+    <span class="n">data</span> <span class="o">=</span> <span class="n">X</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PickId</span><span class="p">,</span><span class="n">data</span><span class="p">)</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">PeakTable</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">rowLabels</span><span class="o">=</span><span class="n">rowLabels</span><span class="p">,</span><span class="n">colLabels</span><span class="o">=</span><span class="n">colLabels</span><span class="p">,</span><span class="n">types</span><span class="o">=</span><span class="n">Types</span><span class="p">)</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="s">&#39;Peak List&#39;</span><span class="p">)</span>
@@ -654,6 +655,7 @@
 <div class="viewcode-block" id="UpdateLimitsGrid"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIpwdGUI.UpdateLimitsGrid">[docs]</a><span class="k">def</span> <span class="nf">UpdateLimitsGrid</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;respond to selection of PWDR Limits data tree item.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c">#Add excluded regions here</span>
     <span class="k">if</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">:</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
         
@@ -716,8 +718,8 @@
         <span class="n">good</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">,</span><span class="s">&#39;U&#39;</span><span class="p">,</span><span class="s">&#39;V&#39;</span><span class="p">,</span><span class="s">&#39;W&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">,</span><span class="s">&#39;SH/L&#39;</span><span class="p">,</span><span class="s">&#39;I(L2)/I(L1)&#39;</span><span class="p">,</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span>
-                <span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;Polariz.&#39;</span><span class="p">,</span><span class="s">&#39;Lam&#39;</span><span class="p">,</span><span class="s">&#39;Azimuth&#39;</span><span class="p">,</span><span class="s">&#39;2-theta&#39;</span><span class="p">,</span>
-                <span class="s">&#39;difC&#39;</span><span class="p">,</span><span class="s">&#39;difA&#39;</span><span class="p">,</span><span class="s">&#39;Zero&#39;</span><span class="p">,</span><span class="s">&#39;Lam1&#39;</span><span class="p">,</span><span class="s">&#39;Lam2&#39;</span><span class="p">]:</span>
+                <span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;beta-q&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;Polariz.&#39;</span><span class="p">,</span>
+                <span class="s">&#39;Lam&#39;</span><span class="p">,</span><span class="s">&#39;Azimuth&#39;</span><span class="p">,</span><span class="s">&#39;2-theta&#39;</span><span class="p">,</span><span class="s">&#39;difC&#39;</span><span class="p">,</span><span class="s">&#39;difA&#39;</span><span class="p">,</span><span class="s">&#39;Zero&#39;</span><span class="p">,</span><span class="s">&#39;Lam1&#39;</span><span class="p">,</span><span class="s">&#39;Lam2&#39;</span><span class="p">]:</span>
                 <span class="n">good</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">good</span>
         
@@ -1059,7 +1061,7 @@
                 <span class="n">topSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39; difC: </span><span class="si">%8.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">insVal</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">])),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
                 <span class="n">topSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39; alpha, beta: fixed by table&#39;</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">Items</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">,</span><span class="s">&#39;difA&#39;</span><span class="p">,</span><span class="s">&#39;Zero&#39;</span><span class="p">,</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]</span>
+                <span class="n">Items</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">,</span><span class="s">&#39;difA&#39;</span><span class="p">,</span><span class="s">&#39;Zero&#39;</span><span class="p">,</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;beta-q&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Items</span><span class="p">:</span>
                 <span class="n">fmt</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%10.3f</span><span class="s">&#39;</span>
                 <span class="k">if</span> <span class="s">&#39;beta&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
@@ -2603,6 +2605,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

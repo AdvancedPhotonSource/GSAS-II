@@ -27,6 +27,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" /> 
   </head>
   <body>
@@ -66,6 +67,7 @@
  | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
@@ -109,14 +111,22 @@
   <dt><a href="GSASIIGUIr.html#GSASIIgrid.AddHelp">AddHelp (class in GSASIIgrid)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIplot.html#GSASIIplot.G2PlotNoteBook.addMpl">addMpl() (GSASIIplot.G2PlotNoteBook method)</a>
   </dt>
 
       
   <dt><a href="GSASIIplot.html#GSASIIplot.G2PlotNoteBook.addOgl">addOgl() (GSASIIplot.G2PlotNoteBook method)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.adjHKLmax">adjHKLmax() (in module GSASIImath)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="GSASIIutil.html#GSASIIspc.AllOps">AllOps() (in module GSASIIspc)</a>
   </dt>
 
       
@@ -137,6 +147,22 @@
 
       
   <dt><a href="GSASIIstruc.html#GSASIIstrMath.ApplyXYZshifts">ApplyXYZshifts() (in module GSASIIstrMath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.AtomTLS2UIJ">AtomTLS2UIJ() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.AtomUij2TLS">AtomUij2TLS() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.AV2Q">AV2Q() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.AVdeg2Q">AVdeg2Q() (in module GSASIImath)</a>
   </dt>
 
   </dl></td>
@@ -210,6 +236,14 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.calcRamaEnergy">calcRamaEnergy() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.calcTorsionEnergy">calcTorsionEnergy() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIimage.html#GSASIIimage.calcZdisCosB">calcZdisCosB() (in module GSASIIimage)</a>
   </dt>
 
@@ -245,14 +279,18 @@
   <dt><a href="GSASIIstruc.html#GSASIIstrIO.cellFill">cellFill() (in module GSASIIstrIO)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIstruc.html#GSASIIstrIO.cellVary">cellVary() (in module GSASIIstrIO)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIutil.html#GSASIIlattice.CentCheck">CentCheck() (in module GSASIIlattice)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.ChargeFlip">ChargeFlip() (in module GSASIImath)</a>
   </dt>
 
       
@@ -519,6 +557,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.FillAtomLookUp">FillAtomLookUp() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIutil.html#GSASIIlattice.fillgmat">fillgmat() (in module GSASIIlattice)</a>
   </dt>
 
@@ -527,7 +569,15 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.FindAtomIndexByIDs">FindAtomIndexByIDs() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIindex.html#GSASIIindex.findBestCell">findBestCell() (in module GSASIIindex)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.findOffset">findOffset() (in module GSASIImath)</a>
   </dt>
 
       
@@ -542,12 +592,12 @@
   <dt><a href="GSASIIimage.html#GSASIIimage.FitEllipse">FitEllipse() (in module GSASIIimage)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIindex.html#GSASIIindex.FitHKL">FitHKL() (in module GSASIIindex)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIindex.html#GSASIIindex.FitHKLZ">FitHKLZ() (in module GSASIIindex)</a>
   </dt>
@@ -582,6 +632,10 @@
 
       
   <dt><a href="GSASIIGUIr.html#GSASIIpy3.FormulaEval">FormulaEval() (in module GSASIIpy3)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.FourierMap">FourierMap() (in module GSASIImath)</a>
   </dt>
 
       
@@ -655,7 +709,19 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.GetAngleSig">GetAngleSig() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getAngSig">getAngSig() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIpwd.html#GSASIIpwd.GetAsfMean">GetAsfMean() (in module GSASIIpwd)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.GetAtomCoordsByID">GetAtomCoordsByID() (in module GSASIImath)</a>
   </dt>
 
       
@@ -664,6 +730,18 @@
 
       
   <dt><a href="GSASIIutil.html#GSASIIElem.GetAtomInfo">GetAtomInfo() (in module GSASIIElem)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.GetAtomItemsById">GetAtomItemsById() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.GetAtomsById">GetAtomsById() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getAtomXYZ">getAtomXYZ() (in module GSASIImath)</a>
   </dt>
 
       
@@ -715,6 +793,30 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.getCWgam">getCWgam() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getCWgamDeriv">getCWgamDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getCWsig">getCWsig() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getCWsigDeriv">getCWsigDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.GetDATSig">GetDATSig() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getDensity">getDensity() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIImapvars.html#GSASIImapvars.GetDependentVars">GetDependentVars() (in module GSASIImapvars)</a>
   </dt>
 
@@ -736,6 +838,14 @@
 
       
   <dt><a href="GSASIIpwd.html#GSASIIpwd.getdFCJVoigt3">getdFCJVoigt3() (in module GSASIIpwd)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getDistDerv">getDistDerv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.GetDistSig">GetDistSig() (in module GSASIImath)</a>
   </dt>
 
       
@@ -891,6 +1001,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.getMass">getMass() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIstruc.html#GSASIIstrMath.GetNewCellParms">GetNewCellParms() (in module GSASIIstrMath)</a>
   </dt>
 
@@ -902,8 +1016,6 @@
   <dt><a href="GSASIIutil.html#GSASIIspc.GetNXUPQsym">GetNXUPQsym() (in module GSASIIspc)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIutil.html#GSASIIspc.GetOprPtrName">GetOprPtrName() (in module GSASIIspc)</a>
   </dt>
@@ -924,6 +1036,8 @@
   <dt><a href="GSASIIpwd.html#GSASIIpwd.getPeakProfile">getPeakProfile() (in module GSASIIpwd)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIpwd.html#GSASIIpwd.getPeakProfileDerv">getPeakProfileDerv() (in module GSASIIpwd)</a>
   </dt>
@@ -971,6 +1085,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.getRamaDeriv">getRamaDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIstruc.html#GSASIIstrMath.GetReflPos">GetReflPos() (in module GSASIIstrMath)</a>
   </dt>
 
@@ -979,7 +1097,43 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.getRestAngle">getRestAngle() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestChiral">getRestChiral() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestDeriv">getRestDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestDist">getRestDist() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestPlane">getRestPlane() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestPolefig">getRestPolefig() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestPolefigDerv">getRestPolefigDerv() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIstruc.html#GSASIIstrIO.GetRestraints">GetRestraints() (in module GSASIIstrIO)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestRama">getRestRama() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getRestTorsion">getRestTorsion() (in module GSASIImath)</a>
   </dt>
 
       
@@ -999,7 +1153,55 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.GetSHCoeff">GetSHCoeff() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getSyXYZ">getSyXYZ() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIGUIr.html#GSASIIIO.GetTifData">GetTifData() (in module GSASIIIO)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFalpha">getTOFalpha() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFalphaDeriv">getTOFalphaDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFbeta">getTOFbeta() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFbetaDeriv">getTOFbetaDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFgamma">getTOFgamma() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFgammaDeriv">getTOFgammaDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFsig">getTOFsig() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTOFsigDeriv">getTOFsigDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getTorsionDeriv">getTorsionDeriv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.GetTorsionSig">GetTorsionSig() (in module GSASIImath)</a>
   </dt>
 
       
@@ -1027,7 +1229,15 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.getVCov">getVCov() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIutil.html#GSASIIpath.GetVersionNumber">GetVersionNumber() (in module GSASIIpath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.getWave">getWave() (in module GSASIImath)</a>
   </dt>
 
       
@@ -1040,6 +1250,10 @@
 
       
   <dt><a href="GSASIIutil.html#GSASIIElem.GetXsectionCoeff">GetXsectionCoeff() (in module GSASIIElem)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.GetXYZDist">GetXYZDist() (in module GSASIImath)</a>
   </dt>
 
       
@@ -1231,15 +1445,19 @@
   </dt>
 
       
-  <dt><a href="GSASIIstruc.html#GSASIIstrMath.HessRefine">HessRefine() (in module GSASIIstrMath)</a>
+  <dt><a href="GSASIImath.html#GSASIImath.HessianLSQ">HessianLSQ() (in module GSASIImath)</a>
   </dt>
 
       
-  <dt><a href="GSASIIGUIr.html#GSASIIgrid.HorizontalLine">HorizontalLine() (in module GSASIIgrid)</a>
+  <dt><a href="GSASIIstruc.html#GSASIIstrMath.HessRefine">HessRefine() (in module GSASIIstrMath)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="GSASIIGUIr.html#GSASIIgrid.HorizontalLine">HorizontalLine() (in module GSASIIgrid)</a>
+  </dt>
+
       
   <dt><a href="GSASIIutil.html#GSASIIspc.HStrainNames">HStrainNames() (in module GSASIIspc)</a>
   </dt>
@@ -1317,6 +1535,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.invQ">invQ() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIGUI.html#GSASIIpwdGUI.IsHistogramInAnyPhase">IsHistogramInAnyPhase() (in module GSASIIpwdGUI)</a>
   </dt>
 
@@ -1336,6 +1558,10 @@
 
       
   <dt><a href="GSASIIobj.html#GSASIIobj.LoadHistogramIDs">LoadHistogramIDs() (in module GSASIIobj)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIIGUIr.html#GSASIIIO.ExportBaseclass.loadParmDict">loadParmDict() (GSASIIIO.ExportBaseclass method)</a>
   </dt>
 
   </dl></td>
@@ -1385,6 +1611,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.makeQuat">makeQuat() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIimage.html#GSASIIimage.makeRing">makeRing() (in module GSASIIimage)</a>
   </dt>
 
@@ -1401,15 +1631,19 @@
   </dt>
 
       
-  <dt><a href="GSASIIindex.html#GSASIIindex.monoCellReduce">monoCellReduce() (in module GSASIIindex)</a>
+  <dt><a href="GSASIImath.html#GSASIImath.mcsaSearch">mcsaSearch() (in module GSASIImath)</a>
   </dt>
 
       
-  <dt><a href="GSASIIGUIr.html#GSASIIgrid.MovePatternTreeToGrid">MovePatternTreeToGrid() (in module GSASIIgrid)</a>
+  <dt><a href="GSASIIindex.html#GSASIIindex.monoCellReduce">monoCellReduce() (in module GSASIIindex)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="GSASIIGUIr.html#GSASIIgrid.MovePatternTreeToGrid">MovePatternTreeToGrid() (in module GSASIIgrid)</a>
+  </dt>
+
       
   <dt><a href="GSASIIutil.html#GSASIIspc.MoveToUnitCell">MoveToUnitCell() (in module GSASIIspc)</a>
   </dt>
@@ -1471,6 +1705,10 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="GSASIImath.html#GSASIImath.normQ">normQ() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIGUIr.html#GSASIIgrid.NumberValidator">NumberValidator (class in GSASIIgrid)</a>
   </dt>
 
@@ -1490,6 +1728,10 @@
 
       
   <dt><a href="GSASIIutil.html#GSASIIlattice.OdfChk">OdfChk() (in module GSASIIlattice)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.OmitMap">OmitMap() (in module GSASIImath)</a>
   </dt>
 
       
@@ -1663,6 +1905,14 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.PeaksEquiv">PeaksEquiv() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.PeaksUnique">PeaksUnique() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIstruc.html#GSASIIstrMath.penaltyDeriv">penaltyDeriv() (in module GSASIIstrMath)</a>
   </dt>
 
@@ -1813,7 +2063,19 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.printRho">printRho() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIstruc.html#GSASIIstrIO.ProcessConstraints">ProcessConstraints() (in module GSASIIstrIO)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.prodQQ">prodQQ() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.prodQVQ">prodQVQ() (in module GSASIImath)</a>
   </dt>
 
       
@@ -1826,6 +2088,26 @@
 
       
   <dt><a href="GSASIIGUIr.html#GSASIIIO.PutG2Image">PutG2Image() (in module GSASIIIO)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="GSASIImath.html#GSASIImath.Q2AV">Q2AV() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.Q2AVdeg">Q2AVdeg() (in module GSASIImath)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="GSASIImath.html#GSASIImath.Q2Mat">Q2Mat() (in module GSASIImath)</a>
   </dt>
 
   </dl></td>
@@ -1897,6 +2179,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.RotateRBXYZ">RotateRBXYZ() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIutil.html#GSASIIlattice.rotdMat">rotdMat() (in module GSASIIlattice)</a>
   </dt>
 
@@ -1943,6 +2229,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.SearchMap">SearchMap() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIutil.html#GSASIIlattice.sec2HMS">sec2HMS() (in module GSASIIlattice)</a>
   </dt>
 
@@ -1985,7 +2275,15 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.SetMolCent">SetMolCent() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIGUIr.html#GSASIIIO.SetNewPhase">SetNewPhase() (in module GSASIIIO)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.setPeakparms">setPeakparms() (in module GSASIImath)</a>
   </dt>
 
       
@@ -2032,6 +2330,8 @@
   <dt><a href="GSASIIGUIr.html#GSASIIgrid.SingleStringDialog.Show">Show() (GSASIIgrid.SingleStringDialog method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIsolve.html#GSASIIsolve.ShowBanner">ShowBanner() (in module GSASIIsolve)</a>
   </dt>
@@ -2042,8 +2342,6 @@
   </dt>
 
       </dl></dd>
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIsolve.html#GSASIIsolve.ShowControls">ShowControls() (in module GSASIIsolve)</a>
   </dt>
@@ -2096,6 +2394,10 @@
 
       
   <dt><a href="GSASIIsolve.html#GSASIIsolve.Solve">Solve() (in module GSASIIsolve)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.sortArray">sortArray() (in module GSASIImath)</a>
   </dt>
 
       
@@ -2259,6 +2561,10 @@
   </dt>
 
       
+  <dt><a href="GSASIImath.html#GSASIImath.TLS2Uij">TLS2Uij() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIGUIr.html#GSASIIgrid.NumberValidator.TransferFromWindow">TransferFromWindow() (GSASIIgrid.NumberValidator method)</a>
   </dt>
 
@@ -2338,10 +2644,14 @@
   <dt><a href="GSASIIGUI.html#GSASIIpwdGUI.UpdateLimitsGrid">UpdateLimitsGrid() (in module GSASIIpwdGUI)</a>
   </dt>
 
+      
+  <dt><a href="GSASIIGUI.html#GSASIIimgGUI.UpdateMasks">UpdateMasks() (in module GSASIIimgGUI)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="GSASIIGUI.html#GSASIIimgGUI.UpdateMasks">UpdateMasks() (in module GSASIIimgGUI)</a>
+  <dt><a href="GSASIImath.html#GSASIImath.UpdateMCSAxyz">UpdateMCSAxyz() (in module GSASIImath)</a>
   </dt>
 
       
@@ -2362,6 +2672,14 @@
 
       
   <dt><a href="GSASIIGUIr.html#GSASIIgrid.UpdatePWHKPlot">UpdatePWHKPlot() (in module GSASIIgrid)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.UpdateRBUIJ">UpdateRBUIJ() (in module GSASIImath)</a>
+  </dt>
+
+      
+  <dt><a href="GSASIImath.html#GSASIImath.UpdateRBXYZ">UpdateRBXYZ() (in module GSASIImath)</a>
   </dt>
 
       
@@ -2399,6 +2717,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="GSASIImath.html#GSASIImath.ValEsd">ValEsd() (in module GSASIImath)</a>
+  </dt>
+
+      
   <dt><a href="GSASIIGUIr.html#GSASIIgrid.ValidatedTxtCtrl">ValidatedTxtCtrl (class in GSASIIgrid)</a>
   </dt>
 
@@ -2406,6 +2728,8 @@
   <dt><a href="GSASIIindex.html#GSASIIindex.Values2A">Values2A() (in module GSASIIindex)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIpwd.html#GSASIIpwd.Values2Dict">Values2Dict() (in module GSASIIpwd)</a>
   </dt>
@@ -2416,8 +2740,6 @@
   </dt>
 
       </dl></dd>
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="GSASIIobj.html#GSASIIobj.VarName">VarName (class in GSASIIobj)</a>
   </dt>
@@ -2446,6 +2768,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 
    
 

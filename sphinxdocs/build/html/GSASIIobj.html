@@ -25,6 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
     <link rel="next" title="GSAS-II Utility Modules" href="GSASIIutil.html" />
     <link rel="prev" title="GSAS-II Main Module" href="GSASII.html" /> 
@@ -125,14 +126,12 @@ should be refined.</p>
 <li>&#8216;e&#8217; defines a set of equivalent variables. Only the first variable is refined (if the
 appropriate refine flag is set) and and all other equivalent variables in the list
 are generated from that variable. The vary flag for those variables is ignored.</li>
-<li>&#8216;c&#8217; defines a constraint equation of form, <math xmlns="http://www.w3.org/1998/Math/MathML">
-<mrow><msub><mi>m</mi><mn>1</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>1</mn></msub><mo>+</mo><msub><mi>m</mi><mn>2</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>2</mn></msub><mo>+</mo><mo>.</mo><mo>.</mo><mo>.</mo><mo>=</mo><mi>c</mi></mrow></math></li>
+<li>&#8216;c&#8217; defines a constraint equation of form, <span class="math">\(m_1 \times var_1 + m_2 \times var_2 + ... = c\)</span></li>
 <li>&#8216;h&#8217; defines a variable to hold (not vary). Any variable on this list is not varied, even if its refinement
 flag is set. This is of particular value when needing to hold one or more variables in a set such as
 the reciprocal metric tensor or anisotropic displacement parameter.</li>
 <li>&#8216;f&#8217; defines a relationship to define a new variable according to relationship 
-<math xmlns="http://www.w3.org/1998/Math/MathML">
-<mrow><mi>n</mi><mi>e</mi><mi>w</mi><mi>v</mi><mi>a</mi><mi>r</mi><mo>=</mo><msub><mi>m</mi><mn>1</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>1</mn></msub><mo>+</mo><msub><mi>m</mi><mn>2</mn></msub><mo>×</mo><mi>v</mi><mi>a</mi><msub><mi>r</mi><mn>2</mn></msub><mo>+</mo><mo>.</mo><mo>.</mo><mo>.</mo></mrow></math></li>
+<span class="math">\(newvar = m_1 \times var_1 + m_2 \times var_2 + ...\)</span></li>
 </ul>
 </div></blockquote>
 </li>
@@ -297,8 +296,8 @@ combination for each element in phase</td>
 </tr>
 <tr class="row-odd"><td></td>
 <td>SGData</td>
-<td>Space group details,
-as defined in <a class="reference internal" href="GSASIIutil.html#module-GSASIIspc" title="GSASIIspc"><tt class="xref py py-mod docutils literal"><span class="pre">GSASIIspc</span></tt></a> as  <a class="reference internal" href="#sgdata-table"><em>SGData definition</em></a></td>
+<td>Space group details as a <a class="reference internal" href="#sgdata-table"><em>space group (SGData) object</em></a>
+as defined in <a class="reference internal" href="GSASIIutil.html#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIspc.SpcGroup()</span></tt></a>.</td>
 </tr>
 <tr class="row-even"><td></td>
 <td>Pawley neg wt</td>
@@ -370,7 +369,7 @@ interatomic angles (list of floats)</td>
 </tr>
 <tr class="row-even"><td>pId</td>
 <td></td>
-<td>? (int)</td>
+<td>Phase Id number for current project (int).</td>
 </tr>
 <tr class="row-odd"><td>Atoms</td>
 <td></td>
@@ -560,12 +559,14 @@ of centers. Will always have at least one row:
 <tt class="docutils literal"><span class="pre">np.array([[0,</span> <span class="pre">0,</span> <span class="pre">0]])</span></tt></td>
 </tr>
 <tr class="row-even"><td>SGOps</td>
-<td>symmetry operations as a list in form
-[[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array
-and T is a length 3 np.array.
+<td>symmetry operations as a list of form
+<tt class="docutils literal"><span class="pre">[[M1,T1],</span> <span class="pre">[M2,T2],...]</span></tt>
+where <span class="math">\(M_n\)</span> is a 3x3 np.array
+and <span class="math">\(T_n\)</span> is a length 3 np.array.
 Atom coordinates are transformed where the
-Asymmetric unit coordinates [X=(x,y,z)] are
-transformed using <tt class="docutils literal"><span class="pre">M*X+T</span> <span class="pre">==&gt;</span> <span class="pre">X'</span></tt></td>
+Asymmetric unit coordinates [X is (x,y,z)]
+are transformed using
+<span class="math">\(X\prime = M_n*X+T_n\)</span></td>
 </tr>
 <tr class="row-odd"><td>SGSys</td>
 <td>symmetry unit cell: type one of
@@ -681,6 +682,9 @@ before creating or later using the VarName object.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#"><em>GSASIIobj: Data objects</em></a><ul>

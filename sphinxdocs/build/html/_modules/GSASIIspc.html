@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -50,18 +51,20 @@
             
   <h1>Source code for GSASIIspc</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">*GSASIIspc: Space group module*</span>
 <span class="sd">-------------------------------</span>
 
-<span class="sd">Space group interpretion routines</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Space group interpretation routines. Note that space group information is</span>
+<span class="sd">stored in a :ref:`Space Group (SGData)&lt;SGData_table&gt;` object.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2012-12-05 10:06:52 -0600 (Wed, 05 Dec 2012) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 808 $</span>
+<span class="c"># $Date: 2013-06-11 11:08:43 -0400 (Tue, 11 Jun 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 946 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIspc.py $</span>
-<span class="c"># $Id: GSASIIspc.py 808 2012-12-05 16:06:52Z vondreele $</span>
+<span class="c"># $Id: GSASIIspc.py 946 2013-06-11 15:08:43Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="kn">as</span> <span class="nn">ma</span>
@@ -71,7 +74,7 @@
 <span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">ospath</span>
 
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 808 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 946 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">pyspg</span>
 
 <div class="viewcode-block" id="SpcGroup"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.SpcGroup">[docs]</a><span class="k">def</span> <span class="nf">SpcGroup</span><span class="p">(</span><span class="n">SGSymbol</span><span class="p">):</span>
@@ -81,9 +84,9 @@
 <span class="sd">    :param SGSymbol: space group symbol (string) with spaces between axial fields</span>
 <span class="sd">    :returns: (SGError,SGData)</span>
 <span class="sd">       * SGError = 0 for no errors; &gt;0 for errors (see SGErrors below for details)</span>
-<span class="sd">       * SGData - dictionary with entries:</span>
+<span class="sd">       * SGData - is a dict (see :ref:`Space Group object&lt;SGData_table&gt;`) with entries:</span>
 <span class="sd">       </span>
-<span class="sd">             * &#39;SpGrp&#39;: space group symbol slightly cleaned up</span>
+<span class="sd">             * &#39;SpGrp&#39;: space group symbol, slightly cleaned up</span>
 <span class="sd">             * &#39;Laue&#39;:  one of &#39;-1&#39;, &#39;2/m&#39;, &#39;mmm&#39;, &#39;4/m&#39;, &#39;4/mmm&#39;, &#39;3R&#39;,</span>
 <span class="sd">               &#39;3mR&#39;, &#39;3&#39;, &#39;3m1&#39;, &#39;31m&#39;, &#39;6/m&#39;, &#39;6/mmm&#39;, &#39;m3&#39;, &#39;m3m&#39;</span>
 <span class="sd">             * &#39;SGInv&#39;: boolean; True if centrosymmetric, False if not</span>
@@ -1085,16 +1088,32 @@
                <span class="s">&#39;trigonal&#39;</span><span class="p">,</span> <span class="s">&#39;hexagonal&#39;</span><span class="p">,</span> <span class="s">&#39;cubic&#39;</span><span class="p">)</span>
 
 <span class="c"># self-test materials follow. Requires files in directory testinp</span>
+<span class="n">selftestlist</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="sd">&#39;&#39;&#39;Defines a list of self-tests&#39;&#39;&#39;</span>
+<span class="n">selftestquiet</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="k">def</span> <span class="nf">_ReportTest</span><span class="p">():</span>
+    <span class="s">&#39;Report name and doc string of current routine when ``selftestquiet`` is False&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">selftestquiet</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">inspect</span>
+        <span class="n">caller</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">caller</span><span class="p">)</span><span class="o">.</span><span class="n">__doc__</span>
+        <span class="k">if</span> <span class="n">doc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;testing &#39;</span><span class="o">+</span><span class="n">__file__</span><span class="o">+</span><span class="s">&#39; with &#39;</span><span class="o">+</span><span class="n">caller</span><span class="o">+</span><span class="s">&#39; (&#39;</span><span class="o">+</span><span class="n">doc</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;testing &#39;</span><span class="o">+</span><span class="n">__file__</span><span class="p">()</span><span class="o">+</span><span class="s">&quot; with &quot;</span><span class="o">+</span><span class="n">caller</span><span class="p">)</span>
 <div class="viewcode-block" id="test0"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.test0">[docs]</a><span class="k">def</span> <span class="nf">test0</span><span class="p">():</span>
-    <span class="sd">&#39;&#39;&#39;test #0: exercise MoveToUnitCell&#39;&#39;&#39;</span>
+    <span class="sd">&#39;&#39;&#39;self-test #0: exercise MoveToUnitCell&#39;&#39;&#39;</span>
+    <span class="n">_ReportTest</span><span class="p">()</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;MoveToUnitCell failed&quot;</span>
     <span class="k">assert</span> <span class="p">(</span><span class="n">MoveToUnitCell</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">,</span> <span class="n">msg</span>
     <span class="k">assert</span> <span class="p">(</span><span class="n">MoveToUnitCell</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">,</span> <span class="n">msg</span>
     <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">MoveToUnitCell</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-.</span><span class="mi">1</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.9</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">msg</span>
-    <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">MoveToUnitCell</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">.</span><span class="mi">1</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">msg</span>
-</div>
+    <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">MoveToUnitCell</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">.</span><span class="mi">1</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">msg</span></div>
+<span class="n">selftestlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test0</span><span class="p">)</span>
+
 <div class="viewcode-block" id="test1"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.test1">[docs]</a><span class="k">def</span> <span class="nf">test1</span><span class="p">():</span>
-    <span class="sd">&#39;&#39;&#39; test #1: SpcGroup and SGPrint against previous results&#39;&#39;&#39;</span>
+    <span class="sd">&#39;&#39;&#39;self-test #1: SpcGroup and SGPrint against previous results&#39;&#39;&#39;</span>
+    <span class="n">_ReportTest</span><span class="p">()</span>
     <span class="n">testdir</span> <span class="o">=</span> <span class="n">ospath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ospath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">ospath</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span> <span class="n">__file__</span> <span class="p">))[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;testinp&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ospath</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">testdir</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">testdir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">testdir</span><span class="p">)</span>
@@ -1126,10 +1145,12 @@
         <span class="c">#    assert l2.replace(&#39;\t&#39;,&#39;&#39;).replace(&#39; &#39;,&#39;&#39;) == l1.replace(&#39; &#39;,&#39;&#39;), &#39;SGPrint &#39; +msg</span>
         <span class="k">assert</span> <span class="n">reflist</span> <span class="o">==</span> <span class="n">SGPrint</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="s">&#39;SGPrint &#39;</span> <span class="o">+</span><span class="n">msg</span>
     <span class="k">for</span> <span class="n">spc</span> <span class="ow">in</span> <span class="n">spctestinp</span><span class="o">.</span><span class="n">SGdat</span><span class="p">:</span>
-        <span class="n">CompareSpcGroup</span><span class="p">(</span><span class="n">spc</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">spctestinp</span><span class="o">.</span><span class="n">SGdat</span><span class="p">[</span><span class="n">spc</span><span class="p">],</span> <span class="n">spctestinp</span><span class="o">.</span><span class="n">SGlist</span><span class="p">[</span><span class="n">spc</span><span class="p">]</span> <span class="p">)</span>
-</div>
+        <span class="n">CompareSpcGroup</span><span class="p">(</span><span class="n">spc</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">spctestinp</span><span class="o">.</span><span class="n">SGdat</span><span class="p">[</span><span class="n">spc</span><span class="p">],</span> <span class="n">spctestinp</span><span class="o">.</span><span class="n">SGlist</span><span class="p">[</span><span class="n">spc</span><span class="p">]</span> <span class="p">)</span></div>
+<span class="n">selftestlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test1</span><span class="p">)</span>
+
 <div class="viewcode-block" id="test2"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.test2">[docs]</a><span class="k">def</span> <span class="nf">test2</span><span class="p">():</span>
-    <span class="sd">&#39;&#39;&#39; test #2: SpcGroup against cctbx (sgtbx) computations&#39;&#39;&#39;</span>
+    <span class="sd">&#39;&#39;&#39;self-test #2: SpcGroup against cctbx (sgtbx) computations&#39;&#39;&#39;</span>
+    <span class="n">_ReportTest</span><span class="p">()</span>
     <span class="n">testdir</span> <span class="o">=</span> <span class="n">ospath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ospath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">ospath</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span> <span class="n">__file__</span> <span class="p">))[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;testinp&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ospath</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">testdir</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">testdir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">testdir</span><span class="p">)</span>
@@ -1167,11 +1188,13 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">assert</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&quot;failed on </span><span class="si">%s</span><span class="s">:</span><span class="se">\n\t</span><span class="s"> </span><span class="si">%s</span><span class="s"> + </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">spcname</span><span class="p">,</span><span class="n">mult</span><span class="p">,</span><span class="n">noff</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sgtbxtestinp</span><span class="o">.</span><span class="n">sgtbx</span><span class="p">:</span>
-        <span class="n">CompareWcctbx</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sgtbxtestinp</span><span class="o">.</span><span class="n">sgtbx</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-</div>
+        <span class="n">CompareWcctbx</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sgtbxtestinp</span><span class="o">.</span><span class="n">sgtbx</span><span class="p">[</span><span class="n">key</span><span class="p">])</span></div>
+<span class="n">selftestlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test2</span><span class="p">)</span>
+
 <div class="viewcode-block" id="test3"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.test3">[docs]</a><span class="k">def</span> <span class="nf">test3</span><span class="p">():</span> 
-    <span class="sd">&#39;&#39;&#39; test #3: exercise SytSym (includes GetOprPtrName, GenAtom, GetKNsym)</span>
+    <span class="sd">&#39;&#39;&#39;self-test #3: exercise SytSym (includes GetOprPtrName, GenAtom, GetKNsym)</span>
 <span class="sd">     for selected space groups against info in IT Volume A &#39;&#39;&#39;</span>
+    <span class="n">_ReportTest</span><span class="p">()</span>
     <span class="k">def</span> <span class="nf">ExerciseSiteSym</span> <span class="p">(</span><span class="n">spc</span><span class="p">,</span> <span class="n">crdlist</span><span class="p">):</span>
         <span class="s">&#39;compare site symmetries and multiplicities for a specified space group&#39;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;failed on site sym test for </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">spc</span>
@@ -1238,13 +1261,14 @@
             <span class="p">((</span><span class="mf">0.11</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.25</span><span class="p">),</span><span class="mi">24</span><span class="p">,</span><span class="s">&#39;2(100)&#39;</span><span class="p">),</span>
             <span class="p">((</span><span class="mf">0.11</span><span class="p">,</span><span class="mf">0.11</span><span class="p">,</span><span class="mf">0.11</span><span class="p">),</span><span class="mi">16</span><span class="p">,</span><span class="s">&#39;3(111)&#39;</span><span class="p">),</span>
             <span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="mi">8</span><span class="p">,</span><span class="s">&#39;-3(111)&#39;</span><span class="p">),</span>
-            <span class="p">])</span>
-</div>
+            <span class="p">])</span></div>
+<span class="n">selftestlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test3</span><span class="p">)</span>
+
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">test0</span><span class="p">()</span>
-    <span class="n">test1</span><span class="p">()</span>
-    <span class="n">test2</span><span class="p">()</span>
-    <span class="n">test3</span><span class="p">()</span>
+    <span class="c"># run self-tests</span>
+    <span class="n">selftestquiet</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">selftestlist</span><span class="p">:</span>
+        <span class="n">test</span><span class="p">()</span>
     <span class="k">print</span> <span class="s">&quot;OK&quot;</span>
 </pre></div>
 
@@ -1253,6 +1277,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

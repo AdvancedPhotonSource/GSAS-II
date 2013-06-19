@@ -178,7 +178,7 @@ def FindAtomIndexByIDs(atomData,IDs,Draw=True):
     :param list atomData: Atom or drawAtom table containting coordinates, etc.
     :param list IDs: atom IDs to be found
     :param bool Draw: True if drawAtom table to be searched; False if Atom table
-    is searched
+      is searched
     
     :returns: list indx: atom (or drawAtom) indices
     
@@ -768,19 +768,18 @@ def getRestRama(XYZ,Amat):
     
 def calcRamaEnergy(phi,psi,Coeff=[]):
     '''Computes pseudo potential energy from a pair of torsion angles and a
-     numerical description of the potential energy surface. Used to create 
-     penalty function in LS refinement.
-     
-     Eval(phi,psi) = C[0]*exp(-V/1000) where
-     
-     V = -C[3]*(phi-C[1])**2-C[4]*(psi-C[2])**2-2*(phi-C[1])*(psi-C[2])
+    numerical description of the potential energy surface. Used to create 
+    penalty function in LS refinement:     
+    :math:`Eval(\\phi,\\psi) = C[0]*exp(-V/1000)`
+
+    where :math:`V = -C[3] * (\\phi-C[1])^2 - C[4]*(\\psi-C[2])^2 - 2*(\\phi-C[1])*(\\psi-C[2])`
     
-    :param float phi: first torsion angle
-    :param float psi: second torsion angle
+    :param float phi: first torsion angle (:math:`\\phi`)
+    :param float psi: second torsion angle (:math:`\\psi`)
     :param list Coeff: pseudo potential coefficients
     
-    :returns: list (sum,Eval): pseudo-potential difference from minimum 
-     & value; sum is used for penalty function.
+    :returns: list (sum,Eval): pseudo-potential difference from minimum & value;
+      sum is used for penalty function.
     
     '''
     sum = 0.
@@ -1620,13 +1619,15 @@ def SearchMap(data):
     mapData is data['General']['mapData']; the map is also in mapData.
 
     :param data: the phase data structure
+
     :returns: (peaks,mags,dzeros) where
+
         * peaks : ndarray
-            x,y,z positions of the peaks found in the map
+          x,y,z positions of the peaks found in the map
         * mags : ndarray
-            the magnitudes of the peaks
+          the magnitudes of the peaks
         * dzeros : ndarray
-            the distance of the peaks from  the unit cell origin
+          the distance of the peaks from  the unit cell origin
 
     '''        
     rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)

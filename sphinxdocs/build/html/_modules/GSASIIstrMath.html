@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -566,20 +567,6 @@
                 <span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">iatm</span><span class="p">]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">parm</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">Tdata</span><span class="p">,</span><span class="n">Mdata</span><span class="p">,</span><span class="n">Fdata</span><span class="p">,</span><span class="n">Xdata</span><span class="p">,</span><span class="n">dXdata</span><span class="p">,</span><span class="n">IAdata</span><span class="p">,</span><span class="n">Uisodata</span><span class="p">,</span><span class="n">Uijdata</span>
     </div>
-<div class="viewcode-block" id="getFFvalues"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrMath.getFFvalues">[docs]</a><span class="k">def</span> <span class="nf">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">):</span>
-    <span class="s">&#39;Needs a doc string&#39;</span>
-    <span class="n">FFvals</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">FFtables</span><span class="p">:</span>
-        <span class="n">FFvals</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">ScatFac</span><span class="p">(</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">],</span><span class="n">SQ</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">FFvals</span>
-    </div>
-<div class="viewcode-block" id="getBLvalues"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrMath.getBLvalues">[docs]</a><span class="k">def</span> <span class="nf">getBLvalues</span><span class="p">(</span><span class="n">BLtables</span><span class="p">):</span>
-    <span class="s">&#39;Needs a doc string&#39;</span>
-    <span class="n">BLvals</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">BLtables</span><span class="p">:</span>
-        <span class="n">BLvals</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">BLvals</span>
-        </div>
 <div class="viewcode-block" id="StructureFactor"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrMath.StructureFactor">[docs]</a><span class="k">def</span> <span class="nf">StructureFactor</span><span class="p">(</span><span class="n">refList</span><span class="p">,</span><span class="n">G</span><span class="p">,</span><span class="n">hfx</span><span class="p">,</span><span class="n">pfx</span><span class="p">,</span><span class="n">SGData</span><span class="p">,</span><span class="n">calcControls</span><span class="p">,</span><span class="n">parmDict</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Compute structure factors for all h,k,l for phase</span>
 <span class="sd">    puts the result, F^2, in each ref[8] in refList</span>
@@ -607,7 +594,6 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">FP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="n">hfx</span><span class="o">+</span><span class="s">&#39;FP&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Tdata</span><span class="p">])</span>
         <span class="n">FPP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="n">hfx</span><span class="o">+</span><span class="s">&#39;FPP&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Tdata</span><span class="p">])</span>
-    <span class="n">maxPos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">SGData</span><span class="p">[</span><span class="s">&#39;SGOps&#39;</span><span class="p">])</span>
     <span class="n">Uij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">U6toUij</span><span class="p">(</span><span class="n">Uijdata</span><span class="p">))</span>
     <span class="n">bij</span> <span class="o">=</span> <span class="n">Mast</span><span class="o">*</span><span class="n">Uij</span><span class="o">.</span><span class="n">T</span>
     <span class="k">for</span> <span class="n">refl</span> <span class="ow">in</span> <span class="n">refList</span><span class="p">:</span>
@@ -618,9 +604,9 @@
         <span class="n">Bab</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">phfx</span><span class="o">+</span><span class="s">&#39;BabA&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">parmDict</span><span class="p">[</span><span class="n">phfx</span><span class="o">+</span><span class="s">&#39;BabU&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">SQfactor</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">refl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>                <span class="c">#no form factors</span>
             <span class="k">if</span> <span class="s">&#39;N&#39;</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">hfx</span><span class="o">+</span><span class="s">&#39;Type&#39;</span><span class="p">]:</span>
-                <span class="n">refl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">getBLvalues</span><span class="p">(</span><span class="n">BLtables</span><span class="p">)</span>
+                <span class="n">refl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">getBLvalues</span><span class="p">(</span><span class="n">BLtables</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>       <span class="c">#&#39;X&#39;</span>
-                <span class="n">refl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">)</span>
+                <span class="n">refl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">El</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Tdata</span><span class="p">):</span>
             <span class="n">FF</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">refl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">El</span><span class="p">]</span>           
         <span class="n">Uniq</span> <span class="o">=</span> <span class="n">refl</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
@@ -661,7 +647,6 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">FP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="n">hfx</span><span class="o">+</span><span class="s">&#39;FP&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Tdata</span><span class="p">])</span>
         <span class="n">FPP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="n">hfx</span><span class="o">+</span><span class="s">&#39;FPP&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Tdata</span><span class="p">])</span>
-    <span class="n">maxPos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">SGData</span><span class="p">[</span><span class="s">&#39;SGOps&#39;</span><span class="p">])</span>       
     <span class="n">Uij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">U6toUij</span><span class="p">(</span><span class="n">Uijdata</span><span class="p">))</span>
     <span class="n">bij</span> <span class="o">=</span> <span class="n">Mast</span><span class="o">*</span><span class="n">Uij</span><span class="o">.</span><span class="n">T</span>
     <span class="n">dFdvDict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1983,6 +1968,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

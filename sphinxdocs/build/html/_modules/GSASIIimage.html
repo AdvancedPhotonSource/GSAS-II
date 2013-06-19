@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -52,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII image calculations: ellipse fitting &amp; image integration        </span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-17 16:25:32 -0500 (Fri, 17 May 2013) $</span>
+<span class="c"># $Date: 2013-06-02 23:07:35 -0500 (Sun, 02 Jun 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 923 $</span>
+<span class="c"># $Revision: 939 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIimage.py $</span>
-<span class="c"># $Id: GSASIIimage.py 923 2013-05-17 21:25:32Z toby $</span>
+<span class="c"># $Id: GSASIIimage.py 939 2013-06-03 04:07:35Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIimage: Image calc module*</span>
@@ -75,7 +76,7 @@
 <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">leastsq</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 923 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 939 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIplot</span> <span class="kn">as</span> <span class="nn">G2plt</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIpwd</span> <span class="kn">as</span> <span class="nn">G2pwd</span>
@@ -959,6 +960,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

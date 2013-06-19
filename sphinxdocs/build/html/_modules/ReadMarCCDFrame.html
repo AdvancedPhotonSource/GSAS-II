@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -316,8 +317,8 @@
     <span class="sd">&#39;&#39;&#39;A class to extract correct mar header and image info from a MarCCD file</span>
 
 <span class="sd">    :param str File: file object [from open()]</span>
-<span class="sd">    :param byteOrd: &#39;&lt;&#39; (defaults) or &#39;&gt;&#39;  </span>
-<span class="sd">    :param dict IFD: ?    </span>
+<span class="sd">    :param byteOrd: &#39;&lt;&#39; (default) or &#39;&gt;&#39;  </span>
+<span class="sd">    :param dict IFD: ?</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">File</span><span class="p">,</span><span class="n">byteOrd</span><span class="o">=</span><span class="s">&#39;&lt;&#39;</span><span class="p">,</span><span class="n">IFD</span><span class="o">=</span><span class="p">{}):</span>
         <span class="c"># simple TIFF header info</span>
@@ -496,9 +497,9 @@
 
         <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrayTypeCode</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">byteDepth</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">TIFFsizeX</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">TIFFsizeY</span><span class="p">))</span>
-	<span class="c"># reverse the array so if can have the same view as is read in marccd</span>
-	<span class="c"># also switch the view direction </span>
-	<span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+    <span class="c"># reverse the array so if can have the same view as is read in marccd</span>
+    <span class="c"># also switch the view direction </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">viewDirection</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">viewDirection</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">outputHead</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -518,6 +519,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

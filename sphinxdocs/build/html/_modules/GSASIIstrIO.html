@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -192,7 +193,8 @@
     <span class="k">return</span> <span class="n">G2mv</span><span class="o">.</span><span class="n">CheckConstraints</span><span class="p">(</span><span class="n">varyList</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="GetRestraints"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.GetRestraints">[docs]</a><span class="k">def</span> <span class="nf">GetRestraints</span><span class="p">(</span><span class="n">GPXfile</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Read the restraints from the GPX file</span>
+    <span class="sd">&#39;&#39;&#39;Read the restraints from the GPX file.</span>
+<span class="sd">    Throws an exception if not found in the .GPX file</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">fl</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">GPXfile</span><span class="p">,</span><span class="s">&#39;rb&#39;</span><span class="p">)</span>
     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
@@ -533,36 +535,6 @@
         <span class="k">print</span> <span class="o">&gt;&gt;</span><span class="n">pFile</span><span class="p">,</span><span class="s">&#39; Minimum delta-M/M for convergence: &#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.2g</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;min dM/M&#39;</span><span class="p">])</span>
     <span class="k">print</span> <span class="o">&gt;&gt;</span><span class="n">pFile</span><span class="p">,</span><span class="s">&#39; Initial shift factor: &#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.3f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;shift factor&#39;</span><span class="p">])</span>
     </div>
-<div class="viewcode-block" id="GetFFtable"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.GetFFtable">[docs]</a><span class="k">def</span> <span class="nf">GetFFtable</span><span class="p">(</span><span class="n">General</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; returns a dictionary of form factor data for atom types found in General</span>
-
-<span class="sd">    :param dict General: dictionary of phase info.; includes AtomTypes</span>
-<span class="sd">    :return: FFtable, dictionary of form factor data; key is atom type</span>
-
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">atomTypes</span> <span class="o">=</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;AtomTypes&#39;</span><span class="p">]</span>
-    <span class="n">FFtable</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">atomTypes</span><span class="p">:</span>
-        <span class="n">FFs</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">GetFormFactorCoeff</span><span class="p">(</span><span class="n">El</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">FFs</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s">&#39;Symbol&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">El</span><span class="o">.</span><span class="n">upper</span><span class="p">():</span>
-                <span class="n">FFtable</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span>
-    <span class="k">return</span> <span class="n">FFtable</span>
-    </div>
-<div class="viewcode-block" id="GetBLtable"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.GetBLtable">[docs]</a><span class="k">def</span> <span class="nf">GetBLtable</span><span class="p">(</span><span class="n">General</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; returns a dictionary of neutron scattering length data for atom types &amp; isotopes found in General</span>
-
-<span class="sd">    :param dict General: dictionary of phase info.; includes AtomTypes &amp; Isotopes</span>
-<span class="sd">    :return: BLtable, dictionary of scattering length data; key is atom type</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">atomTypes</span> <span class="o">=</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;AtomTypes&#39;</span><span class="p">]</span>
-    <span class="n">BLtable</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">isotopes</span> <span class="o">=</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;Isotopes&#39;</span><span class="p">]</span>
-    <span class="n">isotope</span> <span class="o">=</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;Isotope&#39;</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">atomTypes</span><span class="p">:</span>
-        <span class="n">BLtable</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">isotope</span><span class="p">[</span><span class="n">El</span><span class="p">],</span><span class="n">isotopes</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="n">isotope</span><span class="p">[</span><span class="n">El</span><span class="p">]]]</span>
-    <span class="k">return</span> <span class="n">BLtable</span>
-        </div>
 <div class="viewcode-block" id="GetPawleyConstr"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.GetPawleyConstr">[docs]</a><span class="k">def</span> <span class="nf">GetPawleyConstr</span><span class="p">(</span><span class="n">SGLaue</span><span class="p">,</span><span class="n">PawleyRef</span><span class="p">,</span><span class="n">pawleyVary</span><span class="p">):</span>
     <span class="s">&#39;needs a doc string&#39;</span>
 <span class="c">#    if SGLaue in [&#39;-1&#39;,&#39;2/m&#39;,&#39;mmm&#39;]:</span>
@@ -950,8 +922,8 @@
         <span class="n">General</span> <span class="o">=</span> <span class="n">PhaseData</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
         <span class="n">pId</span> <span class="o">=</span> <span class="n">PhaseData</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s">&#39;pId&#39;</span><span class="p">]</span>
         <span class="n">pfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pId</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;::&#39;</span>
-        <span class="n">FFtable</span> <span class="o">=</span> <span class="n">GetFFtable</span><span class="p">(</span><span class="n">General</span><span class="p">)</span>
-        <span class="n">BLtable</span> <span class="o">=</span> <span class="n">GetBLtable</span><span class="p">(</span><span class="n">General</span><span class="p">)</span>
+        <span class="n">FFtable</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">GetFFtable</span><span class="p">(</span><span class="n">General</span><span class="p">[</span><span class="s">&#39;AtomTypes&#39;</span><span class="p">])</span>
+        <span class="n">BLtable</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">GetBLtable</span><span class="p">(</span><span class="n">General</span><span class="p">)</span>
         <span class="n">FFtables</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">FFtable</span><span class="p">)</span>
         <span class="n">BLtables</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">BLtable</span><span class="p">)</span>
         <span class="n">Atoms</span> <span class="o">=</span> <span class="n">PhaseData</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span>
@@ -2531,6 +2503,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

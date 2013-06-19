@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
@@ -175,6 +176,118 @@
 <span class="sd">covMatrix      \                The (NxN) covVariance matrix (np.array)</span>
 <span class="sd">=============  ===============  ====================================================</span>
 
+<span class="sd">Phase Tree Item</span>
+<span class="sd">----------------</span>
+
+<span class="sd">.. _Phase_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Phase object description</span>
+<span class="sd">   single: Data object descriptions; Phase</span>
+
+<span class="sd">Phase information is stored in the GSAS-II data tree as children of the</span>
+<span class="sd">Phases item in a dict with keys:</span>
+
+<span class="sd">.. tabularcolumns:: |l|l|p{4in}|</span>
+
+<span class="sd">==========  ===============  ====================================================</span>
+<span class="sd">  key         sub-key        explanation</span>
+<span class="sd">==========  ===============  ====================================================</span>
+<span class="sd">General         \            Overall information for the phase (dict)</span>
+<span class="sd">  \         AtomPtrs         ? (list)</span>
+<span class="sd">  \         F000X            x-ray F(000) intensity (float)</span>
+<span class="sd">  \         F000N            neutron F(000) intensity (float)</span>
+<span class="sd">  \         Mydir            directory of current .gpx file (str)</span>
+<span class="sd">  \         MCSA controls    ?</span>
+<span class="sd">  \         Cell             List with 7 items: cell refinement flag (bool)</span>
+<span class="sd">                             a, b, c, (Angstrom, float)</span>
+<span class="sd">                             alpha, beta &amp; gamma (degrees, float)</span>
+<span class="sd">  \         Type             for now &#39;nuclear&#39; (str)</span>
+<span class="sd">  \         Map              dict of map parameters</span>
+<span class="sd">  \         SH Texture       dict of spherical harmonic preferred orientation </span>
+<span class="sd">                             parameters</span>
+<span class="sd">  \         Isotope          dict of isotopes for each atom type</span>
+<span class="sd">  \         Isotopes         dict of scattering lengths for each isotope</span>
+<span class="sd">                             combination for each element in phase  </span>
+<span class="sd">  \         Name             phase name (str)</span>
+<span class="sd">  \         SGData           Space group details, </span>
+<span class="sd">                             as defined in :mod:`GSASIIspc` as  :ref:`SGData definition &lt;SGData_table&gt;`</span>
+<span class="sd">  \         Pawley neg wt    Restraint value for negative Pawley intensities</span>
+<span class="sd">                             (float)</span>
+<span class="sd">  \         Flip             Charge flip controls dict?</span>
+<span class="sd">  \         Data plot type   ?</span>
+<span class="sd">  \         Mass             Mass of unit cell contents in g/mol</span>
+<span class="sd">  \         POhkl            March-Dollase preferred orientation direction</span>
+<span class="sd">  \         Z                ?</span>
+<span class="sd">  \         vdWRadii         ?</span>
+<span class="sd">  \         Color            Colors for atoms (list of (r,b,g) triplets)</span>
+<span class="sd">  \         AtomTypes        List of atom types</span>
+<span class="sd">  \         AtomMass         List of masses for atoms</span>
+<span class="sd">  \         doPawley         Flag for Pawley intensity extraction (bool)</span>
+<span class="sd">  \         NoAtoms          Number of atoms per unit cell of each type (dict)</span>
+<span class="sd">  \         Pawley dmin      maximum Q (as d-space) to use for Pawley </span>
+<span class="sd">                             extraction (float)</span>
+<span class="sd">  \         BondRadii        Radius for each atom used to compute </span>
+<span class="sd">                             interatomic distances (list of floats)</span>
+<span class="sd">  \         AngleRadii       Radius for each atom used to compute </span>
+<span class="sd">                             interatomic angles (list of floats)</span>
+<span class="sd">ranId           \            unique random number Id for phase (int)</span>
+<span class="sd">pId             \            ? (int)</span>
+<span class="sd">Atoms           \            Atoms in phase as a list of lists. The outer list</span>
+<span class="sd">                             is for each atom, the inner list contains 18</span>
+<span class="sd">                             items:</span>
+<span class="sd">                             0) atom label, 1) the atom type,</span>
+<span class="sd">                             2) the refinement flags, 3-6) x, y, z, frac</span>
+<span class="sd">                             7) site symmetry, 8) site multiplicity,</span>
+<span class="sd">                             9) &#39;I&#39; or &#39;A&#39; for iso/anisotropic,</span>
+<span class="sd">                             10) Uiso, 10-16) Uij, 16) unique Id #.</span>
+<span class="sd">                             (list of lists)</span>
+<span class="sd">Drawing         \            Display parameters (dict)</span>
+<span class="sd">\           ballScale        Size of spheres in ball-and-stick display (float)</span>
+<span class="sd">\           bondList         dict with bonds</span>
+<span class="sd">\           contourLevel     ? (float)</span>
+<span class="sd">\           showABC          Flag to show view point triplet (bool). True=show.</span>
+<span class="sd">\           viewDir          cartesian viewing direction (np.array with three</span>
+<span class="sd">                             elements)</span>
+<span class="sd">\           Zclip            clipping distance in A (float)</span>
+<span class="sd">\           backColor        background for plot as and R,G,B triplet</span>
+<span class="sd">                             (default = [0, 0, 0], black).</span>
+<span class="sd">                             (list with three atoms)</span>
+<span class="sd">\           selectedAtoms    List of selected atoms (list of int values)</span>
+<span class="sd">\           showRigidBodies  Flag to highlight rigid body placement</span>
+<span class="sd">\           sizeH            Size ratio for H atoms (float) </span>
+<span class="sd">\           bondRadius       Size of binds in A (float)</span>
+<span class="sd">\           atomPtrs         ? (list)</span>
+<span class="sd">\           viewPoint        list of lists. First item in list is [x,y,z]</span>
+<span class="sd">                             in fractional coordinates for the center of</span>
+<span class="sd">                             the plot. Second item ?.</span>
+<span class="sd">\           showHydrogen     Flag to control plotting of H atoms.</span>
+<span class="sd">\           unitCellBox      Flag to control display of the unit cell.</span>
+<span class="sd">\           ellipseProb      Probability limit for display of thermal</span>
+<span class="sd">                             ellipsoids in % (float).</span>
+<span class="sd">\           vdwScale         Multiplier of van der Waals radius for</span>
+<span class="sd">                             display of vdW spheres. </span>
+<span class="sd">\           Atoms            A list of lists with an entry for each atom</span>
+<span class="sd">                             that is plotted.</span>
+<span class="sd">\           Zstep            Step to de/increase Z-clip (float)</span>
+<span class="sd">\           Quaternion       Viewing quaternion (4 element np.array)</span>
+<span class="sd">\           radiusFactor     Distance ratio for searching for bonds. ? Bonds</span>
+<span class="sd">                             are located that are within r(Ra+Rb) and (Ra+Rb)/r</span>
+<span class="sd">                             where Ra and Rb are the atomic radii.</span>
+<span class="sd">\           oldxy            ? (list with two floats)</span>
+<span class="sd">\           cameraPos        Viewing position in A for plot (float)</span>
+<span class="sd">\           depthFog         ? (bool)</span>
+<span class="sd">RBModels        \            Rigid body assignments (note Rigid body definitions</span>
+<span class="sd">                             are stored in their own main top-level tree entry.)</span>
+<span class="sd">Pawley ref      \            Pawley reflections</span>
+<span class="sd">Histograms      \            A dict of dicts. The key for the outer dict is</span>
+<span class="sd">                             the histograms tied to this phase. The inner</span>
+<span class="sd">                             dict contains the combined phase/histogram</span>
+<span class="sd">                             parameters for items such as scale factors,</span>
+<span class="sd">                             size and strain parameters. (dict)</span>
+<span class="sd">MCSA            \            Monte-Carlo simulated annealing parameters</span>
+<span class="sd">==========  ===============  ====================================================</span>
+
 <span class="sd">Space Group Objects</span>
 <span class="sd">-------------------</span>
 
@@ -184,7 +297,7 @@
 <span class="sd">   single: SGData description</span>
 <span class="sd">   single: Data object descriptions; SGData</span>
 
-<span class="sd">Space groups are interpreted by :func:`GSASIIspc:SpcGroup` </span>
+<span class="sd">Space groups are interpreted by :func:`GSASIIspc.SpcGroup` </span>
 <span class="sd">and the information is placed in a SGdata object,</span>
 <span class="sd">which is a dict with these keys:</span>
 
@@ -206,12 +319,13 @@
 <span class="sd">SGCen       Symmetry cell centering vectors. A (n,3) np.array</span>
 <span class="sd">            of centers. Will always have at least one row:</span>
 <span class="sd">            ``np.array([[0, 0, 0]])``</span>
-<span class="sd">SGOps       symmetry operations as a list in form</span>
-<span class="sd">            [[M1,T1],[M2,T2,...] where Mn is a 3x3 np.array</span>
-<span class="sd">            and T is a length 3 np.array.</span>
+<span class="sd">SGOps       symmetry operations as a list of form</span>
+<span class="sd">            ``[[M1,T1], [M2,T2],...]``</span>
+<span class="sd">            where :math:`M_n` is a 3x3 np.array</span>
+<span class="sd">            and :math:`T_n` is a length 3 np.array.</span>
 <span class="sd">            Atom coordinates are transformed where the</span>
-<span class="sd">            Asymmetric unit coordinates [X=(x,y,z)] are</span>
-<span class="sd">            transformed using ``M*X+T ==&gt; X&#39;``</span>
+<span class="sd">            Asymmetric unit coordinates [X is (x,y,z)]</span>
+<span class="sd">            are transformed using :math:`X\prime = M*X+T`</span>
 <span class="sd">SGSys       symmetry unit cell: type one of</span>
 <span class="sd">            &#39;triclinic&#39;, &#39;monoclinic&#39;, &#39;orthorhombic&#39;,</span>
 <span class="sd">            &#39;tetragonal&#39;, &#39;rhombohedral&#39;, &#39;trigonal&#39;,</span>
@@ -401,6 +515,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">

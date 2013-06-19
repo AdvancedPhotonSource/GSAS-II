@@ -1291,7 +1291,8 @@ def ValEsd(value,esd=0,nTZ=False):
     if esd > 0:
         out += ("({:d})").format(intesd)  # add the esd
     elif nTZ and '.' in out:
-        out = out.rstrip('0')  # strip digits to right of decimal
+        out = out.rstrip('0')  # strip zeros to right of decimal
+        out = out.rstrip('.')  # and decimal place when not needed
     if valoff != 0:
         out += ("e{:d}").format(valoff) # add an exponent, when needed
     return out

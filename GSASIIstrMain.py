@@ -87,6 +87,7 @@ def Refine(GPXfile,dlg):
     parmDict.update(histDict)
     G2stIO.GetFprime(calcControls,Histograms)
     # do constraint processing
+    varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
     try:
         groups,parmlist = G2mv.GroupConstraints(constrDict)
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
@@ -175,7 +176,9 @@ def Refine(GPXfile,dlg):
     newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
     newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
     covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-        'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
+               'varyListStart':varyListStart,
+               'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
+               'newCellDict':newCellDict}
     # add the uncertainties into the esd dictionary (sigDict)
     sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
@@ -288,6 +291,7 @@ def SeqRefine(GPXfile,dlg):
         parmDict.update(histDict)
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
+        varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
         try:
             groups,parmlist = G2mv.GroupConstraints(constrDict)
             G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
@@ -365,7 +369,9 @@ def SeqRefine(GPXfile,dlg):
         newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
         newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-            'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,'newCellDict':newCellDict}
+                   'varyListStart':varyListStart,
+                   'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
+                   'newCellDict':newCellDict}
         # add the uncertainties into the esd dictionary (sigDict)
         G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
 #??        SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)

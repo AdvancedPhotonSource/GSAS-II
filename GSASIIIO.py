@@ -1607,10 +1607,19 @@ class ExportBaseclass(object):
         constList = []
         for item in consDict:
             constList += consDict[item]
-        constDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
         # now process the constraints
         G2mv.InitVars()
-        varyList = covDict.get('varyList',[])
+        constDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
+        varyList = covDict.get('varyListStart')
+        if varyList is None and len(constDict) == 0:
+            # no constraints can use varyList
+            varyList = covDict.get('varyList')
+        elif varyList is None:
+            # old GPX file from before pre-constraint varyList is saved
+            print ' *** Old refinement: Please use Calculate/Refine to redo  ***'
+            raise Exception(' *** CIF creation aborted ***')
+        else:
+            varyList = list(varyList)
         try:
             groups,parmlist = G2mv.GroupConstraints(constDict)
             G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList)
@@ -1625,7 +1634,7 @@ class ExportBaseclass(object):
         G2mv.Dict2Map(self.parmDict,varyList)
         # and add their uncertainties into the esd dictionary (sigDict)
         if covDict.get('covMatrix') is not None:
-            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],varyList,self.parmDict))
+            self.sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],self.parmDict))
 
     def loadTree(self):
         '''Load the contents of the data tree into a set of dicts

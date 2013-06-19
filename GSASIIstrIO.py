@@ -82,7 +82,32 @@ def GetConstraints(GPXfile):
     return constDict,fixedList
     
 def ProcessConstraints(constList):
-    "interpret constraints"
+    """Interpret the constraints in the constList input into a dictionary, etc.
+    
+    :param list constList: a list of lists where each item in the outer list
+      specifies a constraint of some form. The last item in each inner list
+      determines which of the four constraints types has been input:
+
+        * h (hold): a single variable that will not be varied. It
+          will be removed from the varyList later.
+        * c (constraint): specifies a linear relationship that
+          can be varied as a new grouped variable
+          a fixed value.
+        * f (fixed): specifies a linear relationship that is assigned
+          a fixed value.
+        * e (equivalence): specifies a series of variables where the
+          first variable in the last can be used to generate the
+          values for all the remaining variables.
+
+    :returns:  a tuple of (constDict,fixedList,ignored) where:
+      
+      * constDict (list) contains the constraint relationships
+      * fixedList (list) contains the fixed values for type
+        of constraint.
+      * ignored (int) counts the number of invalid constraint items
+        (should always be zero!)
+
+    """
     constDict = []
     fixedList = []
     ignored = 0

@@ -3246,6 +3246,7 @@ def PlotStructure(G2frame,data):
         glShadeModel(GL_SMOOTH)
         
     def RenderPolyhedra(x,y,z,Faces,color):
+        glShadeModel(GL_FLAT)
         glPushMatrix()
         glTranslate(x,y,z)
         glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
@@ -3260,6 +3261,7 @@ def PlotStructure(G2frame,data):
                 glVertex3fv(vert)
             glEnd()
         glPopMatrix()
+        glShadeModel(GL_SMOOTH)
 
     def RenderMapPeak(x,y,z,color,den):
         glShadeModel(GL_FLAT)

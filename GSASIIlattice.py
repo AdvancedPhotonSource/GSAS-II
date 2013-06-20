@@ -283,7 +283,7 @@ def Uij2Ueqv(Uij,GS,Amat):
     U = np.multiply(U6toUij(Uij),GS)
     U = np.inner(Amat,np.inner(U,Amat).T)
     E,R = nl.eigh(U)
-    return (E[0]+E[2]+E[5])/3.      #lower triangle?
+    return np.sum(E)/3.
         
 def CosSinAngle(U,V,G):
     """ calculate sin & cos of angle between U & V in generalized coordinates 

@@ -57,9 +57,10 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
     if RBIds['Vector']:                       # first update the vector magnitudes
         VRBData = RBData['Vector']
         for i,rbId in enumerate(VRBIds):
-            for j in range(len(VRBData[rbId]['VectMag'])):
-                name = '::RBV;'+str(j)+':'+str(i)
-                VRBData[rbId]['VectMag'][j] = parmDict[name]
+            if VRBData[rbId]['useCount']:
+                for j in range(len(VRBData[rbId]['VectMag'])):
+                    name = '::RBV;'+str(j)+':'+str(i)
+                    VRBData[rbId]['VectMag'][j] = parmDict[name]
     for phase in Phases:
         Phase = Phases[phase]
         General = Phase['General']

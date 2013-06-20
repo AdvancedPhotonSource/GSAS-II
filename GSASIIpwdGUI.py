@@ -2115,7 +2115,7 @@ def UpdatePDFGrid(G2frame,data):
             ElData['FormulaNo'] = value
             data['Form Vol'] = max(10.0,SumElementVolumes())
             formVol.SetValue('%.2f'%(data['Form Vol']))
-            UpdatePDFGrid(G2frame,data)
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
             auxPlot = ComputePDF(data)
             G2plt.PlotISFG(G2frame,newPlot=True)        
         

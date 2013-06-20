@@ -4207,7 +4207,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Results[r][0] = True
                     resultsGrid.ForceRefresh()
                     result = Results[r]
-                    for key,val in zip(result[4],result[3]):
+                    for key,val in zip(result[-1],result[4:-1]):
                         vals = key.split(':')
                         nObj,name = int(vals[0]),vals[1]
                         if 'A' in name:
@@ -4233,19 +4233,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Models[0]['Coef'][0] = val
                     wx.CallAfter(UpdateMCSA)
                     G2plt.PlotStructure(G2frame,data)
+                elif c == 1:
+                    if Results[r][1]:
+                        Results[r][1] = False
+                    else:
+                        Results[r][1] = True
+                    resultsTable.SetValue(r,c,Results[r][1])
+                    resultsGrid.ForceRefresh()
+                        
                 
             resultsSizer = wx.BoxSizer(wx.VERTICAL)
             maxVary = 0
             resultVals = []
             for result in Results:
-                maxVary = max(maxVary,len(result[3]))
-                resultVals.append(result[:3]+list(result[3]))
+                maxVary = max(maxVary,len(result[-1]))
+                resultVals.append(result[:-1])
             rowLabels = []
             for i in range(len(Results)): rowLabels.append(str(i))
-            colLabels = ['Select','Residual','Tmin',]
-            for item in result[4]: colLabels.append(item)
-#            for i in range(maxVary): colLabels.append('variable:'+str(i))
-            Types = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,4',
+            colLabels = ['Select','Keep','Residual','Tmin',]
+            for item in result[-1]: colLabels.append(item)   #from last result from for loop above
+            Types = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,4',
                 wg.GRID_VALUE_FLOAT+':10,4',]+maxVary*[wg.GRID_VALUE_FLOAT+':10,5',]
             resultsTable = G2gd.Table(resultVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             resultsGrid = G2gd.GSGrid(MCSA)
@@ -4254,7 +4261,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             resultsGrid.AutoSizeColumns(True)
             for r in range(resultsGrid.GetNumberRows()):
                 for c in range(resultsGrid.GetNumberCols()):
-                    if c == 0:
+                    if c in [0,1]:
                         resultsGrid.SetReadOnly(r,c,isReadOnly=False)
                     else:
                         resultsGrid.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
@@ -4306,9 +4313,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         MCSA.SetSizer(mainSizer)
         if G2frame.dataFrame.PhaseUserSize is None:
             mainSizer.FitInside(G2frame.dataFrame)
-            Size = mainSizer.GetMinSize()
+            Size = mainSizer.Fit()
             Size[0] += 40
-            Size[1] = max(Size[1],290) + 35
+            Size[1] = max(Size[1],350) + 35
             MCSA.SetSize(Size)
             MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
             Size[1] = min(Size[1],450)
@@ -4325,6 +4332,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         reflName = mcsaControls['Data source']
         phaseName = generalData['Name']
         MCSAdata = data['MCSA']
+        saveResult = []
+        for result in MCSAdata['Results']:
+            if result[1]:       #keep?
+                saveResult.append(result)
+        MCSAdata['Results'] = saveResult           
         covData = {}
         if 'PWDR' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
@@ -4355,12 +4367,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
         pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         pgbar.SetSize(Size)
+        time1 = time.time()
         try:
+            tsf = 0.
             for i in range(mcsaControls['Cycles']):
-                MCSAdata['Results'].append(G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar))
-                print ' MC/SA runs completed: ',i
+                Result,tsum = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
+                MCSAdata['Results'].append(Result)
+                print ' MC/SA runs completed: %d residual: %.3f%%'%(i,100*Result[2])
+                tsf += tsum
+            print ' MC/SA run time: %.2f'%(time.time()-time1)
+            print ' Structure factor time: %.2f'%(tsf)
         finally:
             pgbar.Destroy()
+        MCSAdata['Results'] = G2mth.sortArray(MCSAdata['Results'],2,reverse=False)
         UpdateMCSA()
         G2plt.PlotStructure(G2frame,data)
 

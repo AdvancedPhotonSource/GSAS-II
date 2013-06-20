@@ -986,6 +986,7 @@ def UpdateRigidBodies(G2frame,data):
                 rbId = Indx[Obj.GetId()]
                 del data['Vector'][rbId]
                 data['RBIds']['Vector'].remove(rbId)
+                rbData['useCount'] -= 1
                 wx.CallAfter(UpdateVectorRB)
                 
             def OnPlotRB(event):

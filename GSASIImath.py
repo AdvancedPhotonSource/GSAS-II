@@ -2086,7 +2086,7 @@ class base_schedule(object):
         pass
 
 
-#  A schedule due to Lester Ingber
+#  A schedule due to Lester Ingber modified to use bounds - OK
 class fast_sa(base_schedule):
     def init(self, **options):
         self.__dict__.update(options)
@@ -2100,9 +2100,9 @@ class fast_sa(base_schedule):
         x0 = asarray(x0)
         u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
         T = self.T
-        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)+1.0
-        xc = y*(self.upper - self.lower)/2.0+self.lower
-        return xc
+        xc = (sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)+1.0)/2.0
+        xnew = xc*(self.upper - self.lower)+self.lower
+        return xnew
 #        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
 #        xc = y*(self.upper - self.lower)
 #        xnew = x0 + xc
@@ -2113,9 +2113,13 @@ class fast_sa(base_schedule):
         self.k += 1
         return
 
-class cauchy_sa(base_schedule):
-#    def update_guess(self, x0):
-#        x0 = asarray(x0)
+class cauchy_sa(base_schedule):     #modified to use bounds - not good
+    def update_guess(self, x0):
+        x0 = asarray(x0)
+        numbers = squeeze(random.uniform(-pi/4, pi/4, size=self.dims))
+        xc = (1.+(self.learn_rate * self.T * tan(numbers))%1.)
+        xnew = xc*(self.upper - self.lower)+self.lower
+        return xnew
 #        numbers = squeeze(random.uniform(-pi/2, pi/2, size=self.dims))
 #        xc = self.learn_rate * self.T * tan(numbers)
 #        xnew = x0 + xc
@@ -2140,7 +2144,7 @@ class boltzmann_sa(base_schedule):
         self.T = self.T0 / log(self.k+1.0)
         return
 
-class log_sa(base_schedule):
+class log_sa(base_schedule):        #OK
 
     def init(self,**options):
         self.__dict__.update(options)
@@ -2360,9 +2364,9 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             retval = 0
             if abs(af[-1]-best_state.cost) > feps*10:
                 retval = 5
-                print "Warning: Cooled to %f at %s but this is not" \
-                      % (squeeze(last_state.cost), str(squeeze(last_state.x))) \
-                      + " the smallest point found."
+#                print "Warning: Cooled to %f at %s but this is not" \
+#                      % (squeeze(last_state.cost), str(squeeze(last_state.x))) \
+#                      + " the smallest point found."
             break
         if (Tf is not None) and (schedule.T < Tf):
             retval = 1
@@ -2394,6 +2398,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     
     '''
     gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
+    
+    twopi = 2.0*np.pi
+    global tsum
+    tsum = 0.
     
     def getMDparms(item,pfx,parmDict,varyList):
         parmDict[pfx+'MDaxis'] = item['axis']
@@ -2462,7 +2470,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         
     def GetAtomM(Xdata,SGData):
         Mdata = []
-        for xyz in Xdata.T:
+        for xyz in Xdata:
             Mdata.append(float(len(G2spc.GenAtom(xyz,SGData))))
         return np.array(Mdata)
 
@@ -2484,8 +2492,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             pfx = str(iObj)+':'
             if parmDict[pfx+'Type'] in ['Vector','Residue']:
                 if parmDict[pfx+'Type'] == 'Vector':
-                    RBId = parmDict[pfx+'RBId']
-                    RBRes = RBdata['Vector'][RBId]
+                    RBRes = RBdata['Vector'][parmDict[pfx+'RBId']]
                     aTypes = RBRes['rbTypes']
                     vecs = RBRes['rbVect']
                     mags = RBRes['VectMag']
@@ -2493,8 +2500,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     for vec,mag in zip(vecs,mags):
                         Cart += vec*mag
                 elif parmDict[pfx+'Type'] == 'Residue':
-                    RBId = parmDict[pfx+'RBId']
-                    RBRes = RBdata['Residue'][RBId]
+                    RBRes = RBdata['Residue'][parmDict[pfx+'RBId']]
                     aTypes = RBRes['rbTypes']
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
@@ -2518,9 +2524,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     parm = pfx+key[1:]              #remove extra ':'
                     if parm in parmDict:
                         keys[key][atNo] = parmDict[parm]
+                iatm += 1
             else:
                 continue        #skips March Dollase
-        return Tdata,Xdata
+        return Tdata,Xdata.T
     
     def calcMDcorr(MDval,MDaxis,Uniq,G):
         sumMD = 0
@@ -2536,8 +2543,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
 #            refList: [ref] where each ref = h,k,l,m,d,...,[equiv h,k,l],phase[equiv] 
 #            ParmDict:
 #        puts result F^2 in each ref[8] in refList
-#        '''        
-        twopi = 2.0*np.pi
+#        '''       
+        global tsum
         parmDict.update(dict(zip(varyList,values)))
         Tdata,Xdata = GetAtomTX(RBdata,parmDict)
         Mdata = parmDict['Mdata']
@@ -2547,25 +2554,23 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         Gmat = parmDict['Gmat']
         Srefs = np.zeros(len(refList))
         sumFcsq = 0.
+        t0 = time.time()
         for refl in refList:
-            fbs = 0.
-            H = refl[:3]
-            for i,El in enumerate(Tdata):
+            for i,El in enumerate(Tdata):       #NB: generator here is slower!
                 FF[i] = refl[7][El]
-            Uniq = refl[8]
-            phi = refl[9]
-            phase = twopi*(np.inner(Uniq,(Xdata.T))+phi[:,np.newaxis])
-            sinp = np.sin(phase)
-            cosp = np.cos(phase)
-            occ = Mdata/len(Uniq)
-            fa = np.array(FF*occ*cosp)
-            fas = np.sum(fa)
-            if not ifInv:
-                fb = np.array(FF*occ*sinp)
-                fbs = np.sum(fb)
-            fcsq = (fas**2+fbs**2)*refl[3]      #*calcMDcorr(MDval,MDaxis,Uniq,Gmat)
-            sumFcsq += fcsq
-            refl[5] = fcsq
+            FF *= Mdata/len(refl[8])            #FF*occ
+            phase = np.inner(refl[8],Xdata)     #hx+ky+lz
+            phase += refl[9][:,np.newaxis]      #hx+ky+lz+phi
+            cosp = np.cos(twopi*phase)
+            fas = np.sum(FF*cosp)
+            if ifInv:
+                fbs = 0.
+            else:
+                sinp = np.sin(twopi*phase)
+                fbs = np.sum(FF*sinp)
+            refl[5] = (fas**2+fbs**2)*refl[3]  #*calcMDcorr(MDval,MDaxis,Uniq,Gmat)
+            sumFcsq += refl[5]
+        tsum += (time.time()-t0)
         scale = (parmDict['sumFosq']/sumFcsq)
         for iref,refl in enumerate(refList):
             refl[5] *= scale
@@ -2699,7 +2704,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         boltzmann=MCSA['boltzmann'], learn_rate=0.5,  
         quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
         lower=lower, upper=upper, slope=MCSA['log slope'],dlg=pgbar)
-    return [False,results[1],results[2],results[0],varyList]
+    Result = [False,False,results[1],results[2],]+list(results[0])
+    Result.append(varyList)
+    return Result,tsum
 
         
 ################################################################################

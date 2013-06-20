@@ -201,22 +201,53 @@ def SGPrint(SGData):
 
 def AllOps(SGData):
     '''
-    Returns a list of all operators for a space group, including those for centering and a center of symmetry
+    Returns a list of all operators for a space group, including those for
+    centering and a center of symmetry
     
     :param SGData: from :func:`SpcGroup`
-    :returns: list of strings of formatted symmetry operators
+    :returns: (SGTextList,offsetList,symOpList,G2oprList) where
+
+      * SGTextList: a list of strings with formatted and normalized
+        symmetry operators.
+      * offsetList: a tuple of (dx,dy,dz) offsets that relate the GSAS-II
+        symmetry operation to the operator in SGTextList and symOpList.
+        these dx (etc.) values are added to the GSAS-II generated
+        positions to provide the positions that are generated
+        by the normalized symmetry operators.        
+      * symOpList: a list of tuples with the normalized symmetry
+        operations as (M,T) values
+        (see ``SGOps`` in the :ref:`Space Group object<SGData_table>`)
+      * G2oprList: The GSAS-II operations for each symmetry operation as
+        a tuple with (center,mult,opnum), where center is (0,0,0), (0.5,0,0),
+        (0.5,0.5,0.5),...; where mult is 1 or -1 for the center of symmetry
+        and opnum is the number for the symmetry operation, in ``SGOps``
+        (starting with 0).
     '''
-    SGText = []
+    SGTextList = []
+    offsetList = []
+    symOpList = []
+    G2oprList = []
     onebar = (1,)
     if SGData['SGInv']:
         onebar += (-1,)
     for cen in SGData['SGCen']:
         for mult in onebar:
-            for M,T in SGData['SGOps']:
-                OPtxt = MT2text(mult*M,(mult*T)+cen)
-                SGText.append(OPtxt.replace(' ',''))
-    return SGText
-
+            for j,(M,T) in enumerate(SGData['SGOps']):
+                offset = [0,0,0]
+                Tprime = (mult*T)+cen
+                for i in range(3):
+                    while Tprime[i] < 0:
+                        Tprime[i] += 1
+                        offset[i] += 1
+                    while Tprime[i] >= 1:
+                        Tprime[i] += -1
+                        offset[i] += -1
+                OPtxt = MT2text(mult*M,Tprime)
+                SGTextList.append(OPtxt.replace(' ',''))
+                offsetList.append(tuple(offset))
+                symOpList.append((mult*M,Tprime))
+                G2oprList.append((cen,mult,j))
+    return SGTextList,offsetList,symOpList,G2oprList
     
 def MT2text(M,T):
     "From space group matrix/translation operator returns text version"

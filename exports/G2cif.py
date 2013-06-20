@@ -5,13 +5,14 @@ The heavy lifting is done in method export
 import datetime as dt
 import os.path
 import GSASIIIO as G2IO
-reload(G2IO)
+#reload(G2IO)
 import GSASIIgrid as G2gd
 import GSASIIstrIO as G2stIO
 #import GSASIImapvars as G2mv
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spg
+reload(G2spg)
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -66,7 +67,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                          self.CIFdate+'  Initial software-generated CIF')
 
         def WriteOverall():
-            '''TODO: Write out overall refinement information
+            '''Write out overall refinement information.
+
+            More could be done here, but this is a good start.
             '''
             WriteCIFitem('_pd_proc_info_datetime', self.CIFdate)
             WriteCIFitem('_pd_calc_method', 'Rietveld Refinement')
@@ -84,6 +87,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                 GOF = '?'
             WriteCIFitem('_refine_ls_goodness_of_fit_all',GOF)
 
+            # get restraint info
+            # restraintDict = self.OverallParms.get('Restraints',{})
+            # for i in  self.OverallParms['Constraints']:
+            #     print i
+            #     for j in self.OverallParms['Constraints'][i]:
+            #         print j
             #WriteCIFitem('_refine_ls_number_restraints',TEXT)
             
             # other things to consider reporting
@@ -299,13 +308,13 @@ class ExportCIF(G2IO.ExportBaseclass):
             varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
                         cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
                         cia+5:'AU12',cia+6:'AU13',cia+7:'AU23'}
-            labellist = []
+            self.labellist = []
             
             pfx = str(phasedict['pId'])+'::'
             # loop over all atoms
             naniso = 0
             for i,at in enumerate(Atoms):
-                s = PutInCol(MakeUniqueLabel(at[ct-1],labellist),6) # label
+                s = PutInCol(MakeUniqueLabel(at[ct-1],self.labellist),6) # label
                 fval = self.parmDict.get(fpfx+str(i),at[cfrac])
                 if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
                 s += PutInCol(FmtAtomType(at[ct]),4) # type
@@ -353,7 +362,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 fval = self.parmDict.get(fpfx+str(i),at[cfrac])
                 if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
                 if at[cia] == 'I': continue
-                s = PutInCol(labellist[i],6) # label
+                s = PutInCol(self.labellist[i],6) # label
                 for j in (2,3,4,5,6,7):
                     sigdig = -0.0009
                     var = pfx+varnames[cia+j]+":"+str(i)
@@ -443,10 +452,55 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem( '_chemical_formula_weight',
                           G2mth.ValEsd(cellmass/Z,-0.09,True))
 
+        def WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList):
+            '''Report bond distances and angles for the CIF
+
+            Note that _geom_*_symmetry_* fields are values of form
+            n_klm where n is the symmetry operation in SymOpList (counted
+            starting with 1) and (k-5, l-5, m-5) are translations to add
+            to (x,y,z). See
+            http://www.iucr.org/__data/iucr/cifdic_html/1/cif_core.dic/Igeom_angle_site_symmetry_.html
+
+            TODO: need a method to select publication flags for distances/angles
+            '''
+            phasedict = self.Phases[phasenam] # pointer to current phase info            
+            Atoms = phasedict['Atoms']
+            cx,ct,cs,cia = phasedict['General']['AtomPtrs']
+            fpfx = str(phasedict['pId'])+'::Afrac:'        
+            cfrac = cx+3
+            # loop over interatomic distances for this phase
+            WriteCIFitem('\n# MOLECULAR GEOMETRY')
+            WriteCIFitem('loop_' + 
+                         '\n\t_geom_bond_atom_site_label_1' +
+                         '\n\t_geom_bond_atom_site_label_2' + 
+                         '\n\t_geom_bond_distance' + 
+                         '\n\t_geom_bond_site_symmetry_1' + 
+                         '\n\t_geom_bond_site_symmetry_2' + 
+                         '\n\t_geom_bond_publ_flag')
+
+            # Note that labels should be read from self.labellist to correspond
+            # to the values reported in the atoms table and zero occupancy atoms
+            # should not be included
+            fpfx = str(phasedict['pId'])+'::Afrac:'        
+            for i,at in enumerate(Atoms):
+                if self.parmDict.get(fpfx+str(i),at[cfrac]) == 0.0: continue
+                lbl = self.labellist[i]
+
+
+            # loop over interatomic angles for this phase
+            WriteCIFitem('loop_' + 
+                         '\n\t_geom_angle_atom_site_label_1' + 
+                         '\n\t_geom_angle_atom_site_label_2' + 
+                         '\n\t_geom_angle_atom_site_label_3' + 
+                         '\n\t_geom_angle' + 
+                         '\n\t_geom_angle_site_symmetry_1' +
+                         '\n\t_geom_angle_site_symmetry_2' + 
+                         '\n\t_geom_angle_site_symmetry_3' + 
+                         '\n\t_geom_angle_publ_flag')
+
+
         def WritePhaseInfo(phasenam):
-            # see writepha.for
-            print 'TODO: phase info for',phasenam,'goes here'
-            # THINK: how to select publication flags for distances/angles?
+            WriteCIFitem('\n# phase info for '+str(phasenam) + ' follows')
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             WriteCIFitem('_pd_phase_name', phasenam)
             pfx = str(phasedict['pId'])+'::'
@@ -477,8 +531,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('_symmetry_space_group_name_H-M',spacegroup)
 
             # generate symmetry operations including centering and center of symmetry
-            WriteCIFitem('loop_ _symmetry_equiv_pos_site_id _symmetry_equiv_pos_as_xyz')
-            for i,op in enumerate(G2spg.AllOps(phasedict['General']['SGData']),start=1):
+            SymOpList,offsetList,symOpList,G2oprList = G2spg.AllOps(
+                phasedict['General']['SGData'])
+            WriteCIFitem('loop_ _space_group_symop_id _space_group_symop_operation_xyz')
+            for i,op in enumerate(SymOpList,start=1):
                 WriteCIFitem('   {:3d}  {:}'.format(i,op.lower()))
 
             # loop over histogram(s) used in this phase
@@ -511,32 +567,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                 raise Exception,"no export for mm coordinates implemented"
             # report cell contents
             WriteComposition(phasenam)
-#            if not self.quickmode:
-                # report distances and angles
-#                WriteDistances(phasenam)
+            if not self.quickmode:      # report distances and angles
+                WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList)
 
             #raise Exception,'Testing'
-
-            #C now loop over interatomic distances for this phase
-            WriteCIFitem('\n# MOLECULAR GEOMETRY')
-            WriteCIFitem('loop_' + 
-                         '\n\t_geom_bond_atom_site_label_1' +
-                         '\n\t_geom_bond_atom_site_label_2' + 
-                         '\n\t_geom_bond_distance' + 
-                         '\n\t_geom_bond_site_symmetry_1' + 
-                         '\n\t_geom_bond_site_symmetry_2' + 
-                         '\n\t_geom_bond_publ_flag')
-
-            #C now loop over interatomic angles for this phase
-            WriteCIFitem('loop_' + 
-                         '\n\t_geom_angle_atom_site_label_1' + 
-                         '\n\t_geom_angle_atom_site_label_2' + 
-                         '\n\t_geom_angle_atom_site_label_3' + 
-                         '\n\t_geom_angle' + 
-                         '\n\t_geom_angle_site_symmetry_1' +
-                         '\n\t_geom_angle_site_symmetry_2' + 
-                         '\n\t_geom_angle_site_symmetry_3' + 
-                         '\n\t_geom_angle_publ_flag')
 
         def WritePowderData(histlbl):
             text = '?'
@@ -967,6 +1001,5 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteSnglXtalTemplate()
                     WriteSingleXtalData(key1)
 
-        # TODO: how to report _pd_proc_ls_peak_cutoff?
         WriteCIFitem('#--' + 15*'eof--' + '#')
 

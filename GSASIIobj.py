@@ -142,7 +142,8 @@ Phases item in a dict with keys:
   key         sub-key        explanation
 ==========  ===============  ====================================================
 General         \            Overall information for the phase (dict)
-  \         AtomPtrs         ? (list)
+  \         AtomPtrs         list of four locations to use to pull info
+                             from the atom records (list)
   \         F000X            x-ray F(000) intensity (float)
   \         F000N            neutron F(000) intensity (float)
   \         Mydir            directory of current .gpx file (str)
@@ -182,13 +183,9 @@ General         \            Overall information for the phase (dict)
 ranId           \            unique random number Id for phase (int)
 pId             \            Phase Id number for current project (int).
 Atoms           \            Atoms in phase as a list of lists. The outer list
-                             is for each atom, the inner list contains 18
-                             items:
-                             0) atom label, 1) the atom type,
-                             2) the refinement flags, 3-6) x, y, z, frac
-                             7) site symmetry, 8) site multiplicity,
-                             9) 'I' or 'A' for iso/anisotropic,
-                             10) Uiso, 10-16) Uij, 16) unique Id #.
+                             is for each atom, the inner list contains varying
+                             items depending on the type of phase, see
+                             the :ref:`Atom Records <Atoms_table>` description.
                              (list of lists)
 Drawing         \            Display parameters (dict)
 \           ballScale        Size of spheres in ball-and-stick display (float)
@@ -284,6 +281,43 @@ SGPolax     Axes for space group polarity. Will be one of
             'xyz'. In the case where axes are arbitrary 
             '111' is used (P 1, and ?).
 ==========  ====================================================
+
+Atom Records
+------------
+
+.. _Atoms_table:
+
+.. index::
+   single: Atoms record description
+   single: Data object descriptions; Atoms record
+
+
+If ``phasedict`` points to the phase information in the data tree, then
+atoms are contained in a list of atom records (list) in
+``phasedict['Atoms']``. Also needed to read atom information 
+are four pointers, ``cx,ct,cs,cia = phasedict['General']['AtomPtrs']``,
+which define locations in the atom record, as shown below. 
+
+.. tabularcolumns:: |l|p{4.5in}|
+
+==============   ====================================================
+location         explanation
+==============   ====================================================
+cx,cx+1,cx+2      the x,y and z coordinates
+cx+3              fractional occupancy (also cs-1)
+ct-1              atom label
+ct                atom type
+ct+1              refinement flags
+cs                site symmetry string
+cs+1              site multiplicity
+cia               ADP flag: Isotropic ('I') or Anisotropic ('A')
+cia+1             Uiso
+cia+2...cia+6     U11, U22, U33, U12, U13, U23
+==============   ====================================================
+
+
+*Classes and routines*
+----------------------
 
 '''
 

@@ -725,12 +725,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
-            Cchoice = ['1','2','3','5','10','15','20','30']
+            Cchoice = ['1','2','3','4','8','12','20','32','64','128']
             cycles = wx.ComboBox(General,-1,value=str(MCSA.get('Cycles',1)),choices=Cchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        
             line2Sizer.Add(cycles,0,wx.ALIGN_CENTER_VERTICAL)
-            Achoice = ['log','fast','cauchy','boltzmann','Tremayne']
+            Achoice = ['log','fast']                #these work
+#            Achoice = ['log','fast','cauchy','boltzmann','Tremayne']
             line2Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
             Alist = wx.ComboBox(General,-1,value=MCSA['Algorithm'],choices=Achoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -4325,8 +4326,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             MCSA.SetSize(Size)
             MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
             G2frame.dataFrame.Update()
+            
+    def OnRunMultiMCSA(event):
+        RunMCSA('multi')
+        
+    def OnRunSingleMCSA(event):
+        RunMCSA('single')
 
-    def OnRunMCSA(event):
+    def RunMCSA(process):
         generalData = data['General']
         mcsaControls = generalData['MCSA controls']
         reflName = mcsaControls['Data source']
@@ -4360,25 +4367,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if not len(MCSAmodels):
             print '**** ERROR - no models defined for MC/SA run****'
             return
-        pgbar = wx.ProgressDialog('MC/SA','Residual Rcf =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-        screenSize = wx.ClientDisplayRect()
-        Size = pgbar.GetSize()
-        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
-        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-        pgbar.SetSize(Size)
+        if process == 'single':
+            pgbar = wx.ProgressDialog('MC/SA','Residual Rcf =',101.0, 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+            screenSize = wx.ClientDisplayRect()
+            Size = pgbar.GetSize()
+            Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+            pgbar.SetSize(Size)
+        else:
+            pgbar = None
         time1 = time.time()
         try:
             tsf = 0.
-            for i in range(mcsaControls['Cycles']):
-                Result,tsum = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
-                MCSAdata['Results'].append(Result)
-                print ' MC/SA runs completed: %d residual: %.3f%%'%(i,100*Result[2])
-                tsf += tsum
+            nCyc = mcsaControls['Cycles']
+            if process == 'single':
+                for i in range(nCyc):
+                    Result,tsum = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
+                    MCSAdata['Results'].append(Result)
+                    print ' MC/SA run completed: %d residual: %.3f%%'%(i,100*Result[2])
+                    tsf += tsum
+                print ' Structure factor time: %.2f'%(tsf)
+            else:
+                MCSAdata['Results'] = G2mth.MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData)
             print ' MC/SA run time: %.2f'%(time.time()-time1)
-            print ' Structure factor time: %.2f'%(tsf)
         finally:
-            pgbar.Destroy()
+            if process == 'single':
+                pgbar.Destroy()
         MCSAdata['Results'] = G2mth.sortArray(MCSAdata['Results'],2,reverse=False)
         UpdateMCSA()
         G2plt.PlotStructure(G2frame,data)
@@ -5077,7 +5092,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMCSA, id=G2gd.wxID_RUNMCSA)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)    
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)

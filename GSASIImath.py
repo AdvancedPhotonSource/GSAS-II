@@ -2316,6 +2316,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
+        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
         best_state.x = None
         best_state.cost = numpy.Inf
 
@@ -2346,6 +2347,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             GoOn = dlg.Update(best_state.cost*100,
                 newmsg='%s%8.5f\n%s%8.4f%s'%('Temperature =',schedule.T,'MC/SA Residual =',best_state.cost*100,'%'))[0]
             if not GoOn:
+                best_state.x = last_state.x.copy()
+                best_state.cost = last_state.cost
                 break
         schedule.update_temp()
         iters += 1
@@ -2388,6 +2391,35 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     else:
         return best_state.x, retval
 
+def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q):
+    outlist = []
+    for n in range(iCyc):
+        result = mcsaSearch(data,RBdata,reflType,reflData,covData,None)
+        outlist.append(result[0])
+        print ' MC/SA residual: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1])
+    out_q.put(outlist)
+
+def MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData):
+    import multiprocessing as mp
+    
+    nprocs = mp.cpu_count()
+    out_q = mp.Queue()
+    procs = []
+    iCyc = np.zeros(nprocs)
+    for i in range(nCyc):
+        iCyc[i%nprocs] += 1
+    for i in range(nprocs):
+        p = mp.Process(target=worker,args=(int(iCyc[i]),data,RBdata,reflType,reflData,covData,out_q))
+        procs.append(p)
+        p.start()
+    resultlist = []
+    for i in range(nprocs):
+        resultlist += out_q.get()
+    for p in procs:
+        p.join()
+        
+    return resultlist
+    
 
 def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     '''default doc string

@@ -58,8 +58,9 @@ htmlFirstUse = True
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
-    wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,wxID_RUNMCSA,
-] = [wx.NewId() for item in range(14)]
+    wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,wxID_MULTIMCSA,
+    wxID_SINGLEMCSA
+] = [wx.NewId() for item in range(15)]
 
 [ wxID_PWDRADD, wxID_HKLFADD,wxID_PWDANALYSIS,wxID_DATADELETE,
 ] = [wx.NewId() for item in range(4)]
@@ -1740,8 +1741,10 @@ class DataFrame(wx.Frame):
             text='Charge flipping')
         self.GeneralCalc.Append(help='Clear map',id=wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
             text='Clear map')
-        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing',id=wxID_RUNMCSA, kind=wx.ITEM_NORMAL,
-            text='MC/SA')
+        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on single processor',id=wxID_SINGLEMCSA, kind=wx.ITEM_NORMAL,
+            text='Single MC/SA')
+        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on multiprocessors',id=wxID_MULTIMCSA, kind=wx.ITEM_NORMAL,
+            text='Multi MC/SA')
         self.PostfillDataMenu()
         
         # Phase / Data tab

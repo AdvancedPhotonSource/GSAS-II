@@ -4361,6 +4361,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         else:
             print '**** ERROR - No data defined for MC/SA run'
             return
+        print 'MC/SA run:'
+        print 'Reflection type:',reflType,' Total No. reflections: ',len(reflData)
         RBdata = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         MCSAmodels = MCSAdata['Models']

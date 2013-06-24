@@ -1741,10 +1741,10 @@ class DataFrame(wx.Frame):
             text='Charge flipping')
         self.GeneralCalc.Append(help='Clear map',id=wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
             text='Clear map')
-        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on single processor',id=wxID_SINGLEMCSA, kind=wx.ITEM_NORMAL,
-            text='Single MC/SA')
-        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on multiprocessors',id=wxID_MULTIMCSA, kind=wx.ITEM_NORMAL,
-            text='Multi MC/SA')
+        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing',id=wxID_SINGLEMCSA, kind=wx.ITEM_NORMAL,
+            text='MC/SA')
+#        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on multiprocessors',id=wxID_MULTIMCSA, kind=wx.ITEM_NORMAL,
+#            text='Multi MC/SA')            #currently not useful
         self.PostfillDataMenu()
         
         # Phase / Data tab

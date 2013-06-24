@@ -1022,10 +1022,11 @@ class GSASII(wx.Frame):
 
     def OnTestCIF(self,event):
         # hard-code CIF testing here
-        if event.EventObject.GetLabelText(event.Id).split()[0].lower() == "quick":
-            mode = 'simple'
-        else:
-            mode = 'full'
+#        if event.EventObject.GetLabelText(event.Id).split()[0].lower() == "quick":
+#            mode = 'simple'
+#        else:
+#            mode = 'full'
+        mode = 'full'
         path2GSAS2 = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), # location of this file
             'exports')

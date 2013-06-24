@@ -87,11 +87,16 @@ def GetBLtable(General):
         BLtable[El] = [isotope[El],isotopes[El][isotope[El]]]
     return BLtable
         
-def getFFvalues(FFtables,SQ):
+def getFFvalues(FFtables,SQ,ifList=False):
     'Needs a doc string'
-    FFvals = {}
-    for El in FFtables:
-        FFvals[El] = ScatFac(FFtables[El],SQ)[0]
+    if ifList:
+        FFvals = []
+        for El in FFtables:
+            FFvals.append(ScatFac(FFtables[El],SQ)[0])
+    else:
+        FFvals = {}
+        for El in FFtables:
+            FFvals[El] = ScatFac(FFtables[El],SQ)[0]
     return FFvals
     
 def getBLvalues(BLtables):

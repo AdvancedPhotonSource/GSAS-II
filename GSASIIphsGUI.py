@@ -4387,7 +4387,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for i in range(nCyc):
                     Result,tsum = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
                     MCSAdata['Results'].append(Result)
-                    print ' MC/SA run completed: %d residual: %.3f%%'%(i,100*Result[2])
+                    print ' MC/SA run completed: %d residual: %.3f%% SFcalc time: %.2fs'%(i,100*Result[2],tsum)
                     tsf += tsum
                 print ' Structure factor time: %.2f'%(tsf)
             else:

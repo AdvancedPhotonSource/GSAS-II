@@ -2317,7 +2317,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-#        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
+        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
         best_state.x = None
         best_state.cost = numpy.Inf
 
@@ -2331,7 +2331,9 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     schedule.T = schedule.T0
     fqueue = [100, 300, 500, 700]
     iters = 0
-    while 1:
+    keepGoing = True
+    while keepGoing:
+        retval = 0
         for n in xrange(dwell):
             current_state.x = schedule.update_guess(last_state.x)
             current_state.cost = func(current_state.x,*args)
@@ -2350,7 +2352,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             if not GoOn:
                 best_state.x = last_state.x.copy()
                 best_state.cost = last_state.cost
-                break
+                retval = 5
         schedule.update_temp()
         iters += 1
         # Stopping conditions
@@ -2360,10 +2362,15 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         # 2) maxeval is set and we are past it
         # 3) maxiter is set and we are past it
         # 4) maxaccept is set and we are past it
+        # 5) user canceled run via progress bar
 
         fqueue.append(squeeze(last_state.cost))
         fqueue.pop(0)
         af = asarray(fqueue)*1.0
+        if retval == 5:
+            print ' User terminated run; incomplete MC/SA'
+            keepGoing = False
+            break
         if all(abs((af-af[0])/af[0]) < feps):
             retval = 0
             if abs(af[-1]-best_state.cost) > feps*10:
@@ -2587,17 +2594,15 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
 #        FF *= Mdata/len(Phi)            #FF*occ
 #        phase = np.inner(Uniq,Xdata)     #hx+ky+lz
 #        phase += Phi[:,np.newaxis]      #hx+ky+lz+phi
-#        if len(Uniq) == 3: print 'python',phase
 #        cosp = np.cos(twopi*phase)
 #        fas = np.sum(FF*cosp)
-#        print fas
 #        if ifInv:
 #            fbs = 0.
 #        else:
 #            sinp = np.sin(twopi*phase)
 #            fbs = np.sum(FF*sinp)
-#        return (fas**2+fbs**2)*mul       
-        
+#        return (fas**2+fbs**2)*mul
+
     def mcsaCalc(values,refList,rcov,ifInv,RBdata,varyList,parmDict):
         ''' Compute structure factors for all h,k,l for phase
         input:
@@ -2617,7 +2622,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         for refl in refList:
             t0 = time.time()
             refl[5] = mcsasfCalc(ifInv,Tdata,Mdata,Xdata,refl[3],refl[7],refl[8],refl[9])
-#            refl[5] *= calcMDcorr(MDval,MDaxis,Uniq,Gmat) 
+#            refl[5] *= calcMDcorr(MDval,MDaxis,Uniq,Gmat)
             tsum += (time.time()-t0)
             sumFcsq += refl[5]
         scale = (parmDict['sumFosq']/sumFcsq)
@@ -2750,7 +2755,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
-    results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,RBdata,varyList,parmDict), 
+    results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,RBdata,varyList,parmDict),
         schedule=MCSA['Algorithm'], full_output=True,
         T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
         boltzmann=MCSA['boltzmann'], learn_rate=0.5,  

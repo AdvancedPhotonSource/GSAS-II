@@ -383,7 +383,7 @@ def GenHKLf(HKL,SGData):
     :param SGData: space group data obtained from SpcGroup
     :returns: iabsnt,mulp,Uniq,phi
 
-     *   iabsnt = True is reflection is forbidden by symmetry
+     *   iabsnt = True if reflection is forbidden by symmetry
      *   mulp = reflection multiplicity including Friedel pairs
      *   Uniq = numpy array of equivalent hkl in descending order of h,k,l
 

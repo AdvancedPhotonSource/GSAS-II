@@ -2572,18 +2572,18 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         return Tdata,Xdata.T
     
     def calcMDcorr(MDval,MDaxis,Uniq,G):
-        sumMD = len(Uniq)
-        if MDval != 1.0:
-            VA = MDaxis/np.sqrt(np.inner(MDaxis,np.inner(G,MDaxis)))
-            DB = np.sqrt(np.dot(Uniq[0],np.inner(G,Uniq[0])))
-            for H in Uniq:
-                cosP2 = np.dot(VA,np.inner(G,H/DB))
-                A = 1.0/np.sqrt(cosP2*MDval**2+(1.-cosP2)/MDval)
-                sumMD += A**3
-        return sumMD/len(Uniq)
+        ''' Calls fortran routine'''
+        MDcorr = pyd.pymdcalc(MDval,MDaxis,len(Uniq),Uniq.flatten(),G)
+        return MDcorr
         
-    def mcsasfCalc(ifInv,Tdata,Mdata,Xdata,mul,FFs,Uniq,Phi):
-        ''' Code here needs to be in fortran'''
+    def mcsaMDSFcalc(ifInv,Tdata,Mdata,Xdata,MDval,MDaxis,G,mul,FFs,Uniq,Phi):
+        ''' Calls fortran routine'''
+        Icalc = pyd.pymcsamdsfcalc(ifInv,len(Tdata),Tdata,Mdata,Xdata.flatten(),
+            MDval,MDaxis,G,mul,len(FFs),FFs,len(Uniq),Uniq.flatten(),Phi)
+        return Icalc
+
+    def mcsaSFcalc(ifInv,Tdata,Mdata,Xdata,mul,FFs,Uniq,Phi):
+        ''' Calls fortran routine'''
         Icalc = pyd.pymcsasfcalc(ifInv,len(Tdata),Tdata,Mdata,Xdata.flatten(),
             mul,len(FFs),FFs,len(Uniq),Uniq.flatten(),Phi)
         return Icalc
@@ -2606,8 +2606,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         sumFcsq = 0.
         for refl in refList:
             t0 = time.time()
-            refl[5] = mcsasfCalc(ifInv,Tdata,Mdata,Xdata,refl[3],refl[7],refl[8],refl[9])
-            refl[5] *= calcMDcorr(MDval,MDaxis,Uniq,Gmat)
+            refl[5] = mcsaMDSFcalc(ifInv,Tdata,Mdata,Xdata,MDval,MDaxis,Gmat,
+                refl[3],refl[7],refl[8],refl[9])
+#            refl[5] = mcsaSFcalc(ifInv,Tdata,Mdata,Xdata,refl[3],refl[7],refl[8],refl[9])
+#            refl[5] *= calcMDcorr(MDval,MDaxis,refl[8],Gmat)
             tsum += (time.time()-t0)
             sumFcsq += refl[5]
         scale = (parmDict['sumFosq']/sumFcsq)

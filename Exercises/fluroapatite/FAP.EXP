@@ -1,6 +1,8 @@
      VERSION    6     Sat Jan 01 16:30:48 2011                                  
       DESCR   fluoroapatite                                                     
     HSTRY  1 EXPEDT  Win32  Jun 23 14:59:14 2011 P PH        LA  O              
+    HSTRY  2 POWPREF Win32  Jun 23 14:59:14 2011                                
+    HSTRY  3 POWPREF Win32  Jun 27 16:05:04 2013                                
   DSGL CDAT1  DRAD ARAD NOFO                                                    
   GNLS CDAT1  MXCY  3                                                           
  AFAC  F     3.539210.2825 2.6412 4.2944 1.5170  .2615 1.024326.1476  .2776 RHF 
@@ -66,7 +68,7 @@ HAP1 1PRCF 2   0.100000E+01   0.000000E+00   0.000000E+00   0.000000E+00
 HAP1 1PRCF 3   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
 HAP1 1PRCF 4   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
 HAP1 1PRCF 5   0.000000E+00   0.000000E+00                                      
-HAP1 1PREFO1   1.00000   1.00000   0.00000   0.00000   1.00000   NN    0        
+HAP1 1PREFO1  1.000000  1.000000  0.000000  0.000000  1.000000   NN    0    0   
 HAP1 1RADDAM    0.00000E+00    N    0      0.00                                 
 HST  1  HFIL  c:\gsas\class\data\fap.xra                                        
 HST  1  HNAM   15.000    .020  90.000 PS1286 90MR21 Y286 DOUBLE  T=19X2        1
@@ -77,27 +79,48 @@ HST  1 EPHAS    0    0    0    0    0    0    0    0    0    Y
 HST  1 ICONR  1.540500  1.544300       0.0         0       0.5    0             
 HST  1 ICONS  1.540500  1.544300       0.0         0       0.5    0             
 HST  1 IRAD     3                                                               
+HST  1 MAXRF   14                                                               
 HST  1 NEXC     2                                                               
 HST  1 NPHAS    1    0    0    0    0    0    0    0    0                       
-HST  1 NREF   652    0.8499                                                     
+HST  1 NREF   652    0.8499    Y    Y                                           
+HST  1 TRNGE  15.00000 129.98000                                                
+HST  1 WREXP    0.0561                                                          
 HST  1ABSCOR   0.000000E+00   0.000000E+00    N    0                            
 HST  1BAKGD     5    3    Y    0    Y                                           
-HST  1BAKGD1   0.100000E+01   0.000000E+00   0.000000E+00                       
+HST  1BAKGD1   0.666448E+02   0.742536E+03  -0.462682E+02                       
 HST  1CHI       0.0000                                                          
 HST  1DETAZM    0.0000                                                          
 HST  1EXC  1     0.000     0.000                                                
 HST  1EXC  2   130.000  1000.000                                                
-HST  1HSCALE   1.000000E+00    Y    0                                           
+HST  1HSCALE     47.361        Y    0                                           
 HST  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER                  
 HST  1I ITYP    0    0.0000  180.0000         1                                 
+HST  1MNREF     0    1.0000                                                     
 HST  1OMEGA     0.0000    Y                                                     
 HST  1PHI       0.0000                                                          
 HST  1PRCF1     2    6      0.01                                                
 HST  1PRCF11   2.000000E+00  -2.000000E+00   5.000000E+00   1.000000E+00        
 HST  1PRCF12   1.000000E+00   0.000000E+00                                      
 ZZZZZZZZZZZZ  Last EXP file record                                              
-    HSTRY  2 POWPREF Win32  Jun 23 14:59:14 2011                                
-HST  1 TRNGE  15.00000 129.98000                                                
-HST  1 WREXP    0.0561                                                          
-HST  1MNREF     0    1.0000                                                     
-HST  1 MAXRF   14                                                               
+    HSTRY  4 GENLES  Win32  Jun 27 16:05:09 2013 Sdsq= 0.443E+06 S/E= 0.112E-06 
+HST  1TRMNMX   1.00000   1.00000                                                
+HST  1EXMNMX   1.00000   1.00000                                                
+HST  1ODMNMX   1.00000   1.00000                                                
+HST  1 BIGFO   0.154218E+06                                                     
+HST  1RSP    0.2012 0.5103 0.5297 0.4337 0.3914 0.3425 0.2708 0.2233 0.1673     
+HST  1RSPW   0.3422 0.6010 0.5929 0.5003 0.4625 0.4065 0.3233 0.2730 0.2016     
+HST  1RSPA   0.4694 0.5608 0.5860 0.4999 0.4472 0.4003 0.3111 0.2624 0.1939     
+HST  1RSPWA  0.6347 0.6513 0.6537 0.5753 0.5306 0.4847 0.3796 0.3270 0.2309     
+HST  1RSPTT  15.00 27.76 40.54 53.32 66.10 78.86 91.64104.42117.20129.98        
+HST  1 RPOWD    0.4926    0.3915   5750 4.43421E+05    0.0000    0.0000    0    
+ REFN RPOWD     0.4926    0.3915   5750 4.43421E+05    0.0000    0.0000     0   
+ REFN STATS  Cycle   2 There were  5750 observations. Total CHI**2 = 4.4342E+05 
+ REFN GDNFT  Reduced CHI**2 =  77.17     for    4 variables                     
+HST  1 NFOBS  650    0    0    0    0    0    0    0    0                       
+HST  1 R-FAC  650   0.44212   3.826640E+07                                      
+  GNLS SHFTS      0.00      0.00                                                
+CRS1  CHMF 1  CA            5.00                                                
+CRS1  CHMF 2  P             3.00                                                
+CRS1  CHMF 3  F             1.00                                                
+CRS1  CHMF 4  O            12.00                                                
+  GNLS  RUN on Jun 27 16:05:09 2013    Total cycles run   2      0.44342E+06    

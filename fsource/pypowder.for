@@ -180,55 +180,71 @@ Cf2py depend(NPTS) GAMPART
       END DO
       RETURN
       END
+      
+      SUBROUTINE PYSETUPSINTAB()
+      CALL SETUPSINTAB
+      RETURN
+      END
 
-      SUBROUTINE PYMCSASFCALC(INV,NTD,TDATA,MDATA,X,MUL,NFFS,FFS,
-     1  NUNIQ,U,PHI,ICALC)
+      
+      SUBROUTINE PYMDCALC(MDVAL,MDAXIS,NUNIQ,UNIQ,G,MDCORR)
+Cf2py intent(in) MDVAL
+Cf2py intent(in) MDAXIS
+Cf2py intent(in) NUNIQ
+cf2py depend(NUNIQ) UNIQ
+Cf2py intent(in) G
+Cf2py intent(out) MDCORR
+
+      INTEGER*4 NUNIQ
+      REAL*4 MDVAL,MDAXIS(0:2),UNIQ(0:3*NUNIQ-1),G(3,3),MDCORR
+      REAL*4 SUMMD
+
+      SUMMD = FLOAT(NUNIQ)
+c      IF ( MDVAL .NE. 1.0) THEN
+c        DO I=0,NUNIQ-1
+
+
+
+c        sumMD = len(Uniq)
+c        if MDval != 1.0:
+c            for H in Uniq:
+c                cosP,sinP = G2lat.CosSinAngle(H,MDaxis,G)
+c                A = 1.0/np.sqrt((MDval*cosP)**2+sinP**2/MDval)
+c                sumMD += A**3
+c            sumMD = np.sum(1./np.sqrt((MDval*cosP)**2+sinP**2/MDval)**3)
+c        return sumMD/len(Uniq)
+      RETURN
+      END
+
+      SUBROUTINE PYMCSASFCALC(INV,NTD,TDATA,MDATA,XDATA,MUL,NFFS,FFS,
+     1  NUNIQ,UNIQ,PHI,ICALC)
 Cf2py intent(in) INV
 Cf2py intent(in) NTD
 Cf2py intent(in) TDATA
 cf2py depend(NTD) TDATA
 Cf2py intent(in) MDATA
 cf2py depend(NTD) MDATA
-Cf2py intent(in) X
-cf2py depend(NTD) X
+Cf2py intent(in) XDATA
+cf2py depend(NTD) XDATA
 Cf2py intent(in) MUL
 Cf2py intent(in) NFFS
 Cf2py intent(in) FFS
 cf2py depend(NFFS) FFS
 Cf2py intent(in) NUNIQ
-Cf2py intent(in) U
-cf2py depend(NUNIQ) U
+Cf2py intent(in) UNIQ
+cf2py depend(NUNIQ) UNIQ
 Cf2py intent(in) PHI
 cf2py depend(NUNIQ) PHI
 Cf2py intent(out) ICALC
 
       LOGICAL*4 INV
-      INTEGER*4 NTD,MUL,NFFS,NUNIQ,I,J,K,TDATA(0:NTD-1)
-      REAL*4 X(0:3*NTD-1),U(0:3*NUNIQ-1)
+      INTEGER*4 NTD,MUL,NFFS,NUNIQ,TDATA(0:NTD-1)
+      REAL*4 XDATA(0:3*NTD-1),UNIQ(0:3*NUNIQ-1)
       REAL*4 MDATA(0:NTD-1),FFS(0:NFFS-1)
       REAL*4 ICALC,PHI(0:NUNIQ-1)
-      REAL*4 PHASE(0:NTD,0:NUNIQ),FF(0:NTD-1),FAS,FBS,TWOPI
 
-      TWOPI = 8.0*ATAN(1.0)
-      DO I=0,NTD-1
-        FF(I) = FFS(TDATA(I))*MDATA(I)/NUNIQ
-        DO J=0,NUNIQ-1
-          PHASE(I,J) = 0.
-          DO K=0,2
-            PHASE(I,J) = PHASE(I,J)+U(3*J+K)*X(3*I+K)
-          END DO
-          PHASE(I,J) = PHASE(I,J)+PHI(J)
-        END DO
-      END DO
-      FAS = 0.
-      FBS = 0.
-      DO I=0,NTD-1
-        DO J=0,NUNIQ-1
-          FAS = FAS+FF(I)*COS(TWOPI*PHASE(I,J))
-          IF ( .NOT. INV ) FBS = FBS+FF(I)*SIN(TWOPI*PHASE(I,J))
-        END DO
-      END DO
-      ICALC = (FAS**2+FBS**2)*MUL
+      CALL MCSASFCALC(INV,NTD,TDATA,MDATA,XDATA,MUL,NFFS,FFS,
+     1  NUNIQ,UNIQ,PHI,ICALC)
       RETURN
       END
 

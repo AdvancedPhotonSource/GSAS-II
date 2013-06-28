@@ -2317,7 +2317,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
+#        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
         best_state.x = None
         best_state.cost = numpy.Inf
 
@@ -2425,9 +2425,7 @@ def MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData):
         resultlist += out_q.get()
     for p in procs:
         p.join()
-        
     return resultlist
-    
 
 def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     '''default doc string
@@ -2576,11 +2574,12 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     def calcMDcorr(MDval,MDaxis,Uniq,G):
         sumMD = len(Uniq)
         if MDval != 1.0:
+            VA = MDaxis/np.sqrt(np.inner(MDaxis,np.inner(G,MDaxis)))
+            DB = np.sqrt(np.dot(Uniq[0],np.inner(G,Uniq[0])))
             for H in Uniq:
-                cosP,sinP = G2lat.CosSinAngle(H,MDaxis,G)
-                A = 1.0/np.sqrt((MDval*cosP)**2+sinP**2/MDval)
+                cosP2 = np.dot(VA,np.inner(G,H/DB))
+                A = 1.0/np.sqrt(cosP2*MDval**2+(1.-cosP2)/MDval)
                 sumMD += A**3
-            sumMD = np.sum(1./np.sqrt((MDval*cosP)**2+sinP**2/MDval)**3)
         return sumMD/len(Uniq)
         
     def mcsasfCalc(ifInv,Tdata,Mdata,Xdata,mul,FFs,Uniq,Phi):
@@ -2588,20 +2587,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         Icalc = pyd.pymcsasfcalc(ifInv,len(Tdata),Tdata,Mdata,Xdata.flatten(),
             mul,len(FFs),FFs,len(Uniq),Uniq.flatten(),Phi)
         return Icalc
-#        FF = np.zeros(len(Tdata))
-#        for i,j in enumerate(Tdata):       #NB: generator here is slower!
-#            FF[i] = FFs[j]
-#        FF *= Mdata/len(Phi)            #FF*occ
-#        phase = np.inner(Uniq,Xdata)     #hx+ky+lz
-#        phase += Phi[:,np.newaxis]      #hx+ky+lz+phi
-#        cosp = np.cos(twopi*phase)
-#        fas = np.sum(FF*cosp)
-#        if ifInv:
-#            fbs = 0.
-#        else:
-#            sinp = np.sin(twopi*phase)
-#            fbs = np.sum(FF*sinp)
-#        return (fas**2+fbs**2)*mul
 
     def mcsaCalc(values,refList,rcov,ifInv,RBdata,varyList,parmDict):
         ''' Compute structure factors for all h,k,l for phase
@@ -2622,7 +2607,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         for refl in refList:
             t0 = time.time()
             refl[5] = mcsasfCalc(ifInv,Tdata,Mdata,Xdata,refl[3],refl[7],refl[8],refl[9])
-#            refl[5] *= calcMDcorr(MDval,MDaxis,Uniq,Gmat)
+            refl[5] *= calcMDcorr(MDval,MDaxis,Uniq,Gmat)
             tsum += (time.time()-t0)
             sumFcsq += refl[5]
         scale = (parmDict['sumFosq']/sumFcsq)

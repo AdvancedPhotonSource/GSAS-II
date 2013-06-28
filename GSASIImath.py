@@ -2317,7 +2317,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-#        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
+        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
         best_state.x = None
         best_state.cost = numpy.Inf
 
@@ -2739,6 +2739,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         nRef = len(refs)
         rcov = np.identity(len(refs))
     print ' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef)
+    print ' Number of parameters varied: %d'%(len(varyList))
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']

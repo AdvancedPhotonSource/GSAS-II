@@ -118,7 +118,7 @@ def Refine(GPXfile,dlg):
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
         elif 'Hessian' in Controls['deriv type']:
-            result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,maxcyc=maxCyc,
+            result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,maxcyc=maxCyc,Print=True,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']

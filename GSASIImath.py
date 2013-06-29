@@ -41,7 +41,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
-def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
+def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Print=False):
     
     """
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
@@ -65,6 +65,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
     :param float xtol: Relative error desired in the approximate solution.
     :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
         until other limits are met (ftol, xtol)
+    :param bool Print: True for printing results (residuals & times) by cycle
 
     :returns: (x,cov_x,infodict) where
 
@@ -99,8 +100,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
     lam = 0.001
     lamMax = lam
     nfev = 0
+    if Print:
+        print ' Hessian refinement on %d variables:'%(n)
     while icycle < maxcyc:
-        lamMax = max(lamMax,lam)
+        time0 = time.time()
         M = func(x0,*args)
         nfev += 1
         chisq0 = np.sum(M**2)
@@ -111,7 +114,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
             return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
         Anorm = np.outer(Adiag,Adiag)
         Yvec /= Adiag
-        Amat /= Anorm        
+        Amat /= Anorm
         while True:
             Lam = np.eye(Amat.shape[0])*lam
             Amatlam = Amat*(One+Lam)
@@ -134,14 +137,19 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0):
             if lam > 10.e5:
                 print 'ouch #3 chisq1 ',chisq1,' stuck > chisq0 ',chisq0
                 break
+        lamMax = max(lamMax,lam)
+        if Print:
+            print ' Cycle: %d, Time: %.2fs, Chi**2: %.3g, Lambda: %.3g'%(icycle,time.time()-time0,chisq1,lam)
         if (chisq0-chisq1)/chisq0 < ftol:
             break
         icycle += 1
     M = func(x0,*args)
     nfev += 1
     Yvec,Amat = Hess(x0,*args)
+    Lam = np.eye(Amat.shape[0])*lam
+    Amatlam = Amat*(One+Lam)
     try:
-        Bmat = nl.inv(Amat)
+        Bmat = nl.inv(Amatlam)
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[]}]
     except nl.LinAlgError:
         print 'ouch #2 linear algebra error in LS'

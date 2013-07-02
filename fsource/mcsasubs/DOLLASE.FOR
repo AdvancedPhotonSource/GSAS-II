@@ -8,16 +8,16 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        CA                  !Cos(alpha)**2
-      REAL*4        RAT                 !PO ellipsoid axis ratio
-      REAL*4        CORR                !March-Dollase function
+      REAL*8        CA                  !Cos(alpha)**2
+      REAL*8        RAT                 !PO ellipsoid axis ratio
+      REAL*8        CORR                !March-Dollase function
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*4        SA                  !Sin(alpha)**2
-      REAL*4        A                   !Intermediate value
+      REAL*8        SA                  !Sin(alpha)**2
+      REAL*8        A                   !Intermediate value
 
 !SUBROUTINES CALLED:
 

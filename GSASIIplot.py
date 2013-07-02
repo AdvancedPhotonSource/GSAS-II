@@ -39,8 +39,9 @@ import GSASIImath as G2mth
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
-from OpenGL.GLUT import *
+#from OpenGL.GLUT import *
 from OpenGL.GLE import *
+import glFreeType
 from matplotlib.backends.backend_wx import _load_bitmap
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
@@ -214,6 +215,14 @@ class GSASIItoolbar(Toolbar):
                 event.key = parent.Choice[sel][0]
                 parent.keyPress(event)
             dlg.Destroy()
+            
+def getFont(size=16):
+    if 'win' in sys.platform:
+        return glFreeType.font_data ("cour.ttf", size)
+    elif 'linux' in sys.platform:
+        return glFreeType.font_data ("cour.ttf", size)    #needs readily available linux font
+    else:       #Mac?
+        return glFreeType.font_data ("cour.ttf", size)    #needs readily available Mac font
     
 ################################################################################
 ##### PlotSngl
@@ -2686,6 +2695,7 @@ def PlotStructure(G2frame,data):
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
     Or = np.array([255,128,0])
+    our_font = getFont()
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -3297,8 +3307,9 @@ def PlotStructure(G2frame,data):
         glDisable(GL_LIGHTING)
         glColor3fv(color)
         glRasterPos3f(0,0,0)
-        for c in list(label):
-            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        our_font.glPrint(300,300,label)
+#        for c in list(label):
+#            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
         glEnable(GL_LIGHTING)
         glPopMatrix()
         
@@ -3602,6 +3613,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
     uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
     uColors = [Rd,Gr,Bl]
+    our_font = getFont()
     if rbType == 'Vector':
         atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
@@ -3776,8 +3788,9 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         glDisable(GL_LIGHTING)
         glColor3f(1.0,1.0,1.0)
         glRasterPos3f(0,0,0)
-        for c in list(label):
-            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        our_font.glPrint(0,0,label)
+#        for c in list(label):
+#            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
         glEnable(GL_LIGHTING)
         glPopMatrix()
         

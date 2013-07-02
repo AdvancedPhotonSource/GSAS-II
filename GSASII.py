@@ -2043,8 +2043,7 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.PatternTree.SetItemText(self.root,'Saving project as'+self.GSASprojectfile)
-                self.SetTitle("GSAS-II data tree: "+
-                              os.path.split(self.GSASprojectfile)[1])
+                self.SetTitle("GSAS-II data tree: "+os.path.split(self.GSASprojectfile)[1])
                 G2IO.ProjFileSave(self)
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
         finally:

@@ -3466,7 +3466,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         RigidBodies.SetSizer(mainSizer)
         if G2frame.dataFrame.PhaseUserSize is None:
             mainSizer.FitInside(G2frame.dataFrame)
-            Size = mainSizer.GetMinSize()
+            Size = mainSizer.Fit()
             Size[0] += 40
             Size[1] = max(Size[1],290) + 35
             RigidBodies.SetSize(Size)
@@ -3910,6 +3910,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 RBData[RBType][rbId]['useCount'] = 0        
         FillRigidBodyGrid(True)
         
+    def OnGlobalResRBTherm(event):
+        RBObjs = data['RBModels']['Residue']
+        names = ['None','Uiso','T','TL','TLS']
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Residue thermal motion model',names)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            parm = names[sel]
+        for rbObj in RBObjs:
+            rbObj['ThermalMotion'][0] = parm
+        dlg.Destroy()
+        FillRigidBodyGrid(True)
+
     def OnGlobalResRBRef(event):
         RBObjs = data['RBModels']['Residue']
         names = ['Origin','Orient. angle','Full Orient.']
@@ -3917,6 +3929,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for rbObj in RBObjs:
             nTor = max(nTor,len(rbObj['Torsions']))
         names += ['Torsion '+str(i) for i in range(nTor)]
+        if np.any([rbObj['ThermalMotion'][0] == 'Uiso' for rbObj in RBObjs]):
+           names += ['Uiso',]
+        if np.any([rbObj['ThermalMotion'][0] == 'TLS' for rbObj in RBObjs]):
+           names += ['Tii','Tij','Lii','Lij','Sij']
+        elif np.any([rbObj['ThermalMotion'][0] == 'TL' for rbObj in RBObjs]):
+           names += ['Tii','Tij','Lii','Lij']
+        elif np.any([rbObj['ThermalMotion'][0] == 'T' for rbObj in RBObjs]):
+           names += ['Tii','Tij']
+
         dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',names)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
@@ -3940,7 +3961,35 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'Torsion '+str(i) in parms:
                             rbObj['Torsions'][i][1] = True
                         else:
-                            rbObj['Torsions'][i][1] = False            
+                            rbObj['Torsions'][i][1] = False
+                    if rbObj['ThermalMotion'][0] == 'Uiso':
+                        if 'Uiso' in parms:
+                           rbObj['ThermalMotion'][2][0] = True
+                        else:
+                           rbObj['ThermalMotion'][2][0] = False
+                    elif 'T' in rbObj['ThermalMotion'][0]:
+                        if 'Tii' in parms:
+                            rbObj['ThermalMotion'][2][0:2] = [True,True,True]
+                        else:
+                            rbObj['ThermalMotion'][2][0:2] = [False,False,False]
+                        if 'Tij' in parms:
+                            rbObj['ThermalMotion'][2][3:6] = [True,True,True]
+                        else:
+                            rbObj['ThermalMotion'][2][3:6] = [False,False,False]
+                    elif 'L' in rbObj['ThermalMotion'][0]:
+                        if 'Lii' in parms:
+                            rbObj['ThermalMotion'][2][6:9] = [True,True,True]
+                        else:
+                            rbObj['ThermalMotion'][2][6:9] = [False,False,False]
+                        if 'Lij' in parms:
+                            rbObj['ThermalMotion'][2][9:12] = [True,True,True]
+                        else:
+                            rbObj['ThermalMotion'][2][9:12] = [False,False,False]
+                    elif 'S' in rbObj['ThermalMotion'][0]:
+                        if 'Sij' in parms:
+                            rbObj['ThermalMotion'][2][12:20] = [True,True,True,True,True,True,True,True]
+                        else:
+                            rbObj['ThermalMotion'][2][12:20] = [False,False,False,False,False,False,False,False]
             finally:
                 wx.EndBusyCursor()
             FillRigidBodyGrid()
@@ -5018,7 +5067,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2gd.wxID_AUTOFINDRESRB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBAssign, id=G2gd.wxID_ASSIGNATMS2RB)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2gd.wxID_COPYRBPARMS)            
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2gd.wxID_COPYRBPARMS)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBTherm, id=G2gd.wxID_GLOBALTHERM)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2gd.wxID_GLOBALRESREFINE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2gd.wxID_RBREMOVEALL)
             FillRigidBodyGrid()

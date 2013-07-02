@@ -4,7 +4,7 @@
 !
 ! ROUTINE TO COMPUTE THE DOT PRODUCT OF TWO 3 VECTORS
 
-      REAL          X(3),Y(3),A(3,3),PRODVMV 
+      REAL*8        X(3),Y(3),A(3,3),PRODVMV 
 
       T1 = 0.0
       DO J=1,3

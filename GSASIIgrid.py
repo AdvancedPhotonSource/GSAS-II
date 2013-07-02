@@ -123,7 +123,8 @@ htmlFirstUse = True
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
     wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,wxID_COPYRBPARMS,
-] = [wx.NewId() for item in range(8)]
+    wxID_GLOBALTHERM,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
@@ -1941,6 +1942,8 @@ class DataFrame(wx.Frame):
             help='Auto find of residue RBs in macromolecule')
         self.RigidBodiesEdit.Append(id=wxID_COPYRBPARMS, kind=wx.ITEM_NORMAL,text='Copy rigid body parms',
             help='Copy rigid body location & TLS parameters')
+        self.RigidBodiesEdit.Append(id=wxID_GLOBALTHERM, kind=wx.ITEM_NORMAL,text='Global thermal motion',
+            help='Global setting of residue thermal motion models')
         self.RigidBodiesEdit.Append(id=wxID_GLOBALRESREFINE, kind=wx.ITEM_NORMAL,text='Global residue refine',
             help='Global setting of residue RB refinement flags')
         self.RigidBodiesEdit.Append(id=wxID_RBREMOVEALL, kind=wx.ITEM_NORMAL,text='Remove all rigid bodies',

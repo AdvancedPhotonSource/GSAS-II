@@ -2325,7 +2325,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
+#        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
         best_state.x = None
         best_state.cost = numpy.Inf
 

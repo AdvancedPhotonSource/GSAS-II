@@ -1022,11 +1022,19 @@ class GSASII(wx.Frame):
 
     def OnTestCIF(self,event):
         # hard-code CIF testing here
-#        if event.EventObject.GetLabelText(event.Id).split()[0].lower() == "quick":
-#            mode = 'simple'
-#        else:
-#            mode = 'full'
+        
+        # get the menu command on Windows and Linux
+        menu = self.ExportMenu.FindItemById(event.GetId())
         mode = 'full'
+        if menu:
+            if menu.GetLabel().split()[0].lower() == "quick":
+                mode = 'simple'
+        else: # this works on the Mac
+            try: 
+                if event.EventObject.GetLabelText(event.Id).split()[0].lower() == "quick":
+                    mode = 'simple'
+            except:
+                pass
         path2GSAS2 = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), # location of this file
             'exports')
@@ -1105,10 +1113,10 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_Phase(Import)
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)
-        Export = wx.Menu(title='')        
-        menubar.Append(menu=Export, title='Export')
-        self._init_Exports(Export)
-        self._Add_ExportMenuItems(Export)
+        self.ExportMenu = wx.Menu(title='')
+        menubar.Append(menu=self.ExportMenu, title='Export')
+        self._init_Exports(self.ExportMenu)
+        self._Add_ExportMenuItems(self.ExportMenu)
         HelpMenu=G2gd.MyHelp(self,helpType='Data tree',
             morehelpitems=[('&Tutorials','Tutorials')])
         menubar.Append(menu=HelpMenu,title='&Help')
@@ -1943,11 +1951,11 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
 
-    def OnFileOpen(self, event):
+    def OnFileOpen(self, event, filename=None):
         '''Reads in a GSAS-II .gpx project file in response to the
         File/Open Project menu button
         '''
-        result = ''
+        result = wx.ID_OK
         Id = 0
         if self.PatternTree.GetChildrenCount(self.root,False):
             if self.dataFrame:
@@ -1967,36 +1975,42 @@ class GSASII(wx.Frame):
                         self.G2plotNB.clear()
             finally:
                 dlg.Destroy()
-        if result != wx.ID_CANCEL:    
+        if result != wx.ID_OK: return
+
+        if not filename:
             if self.dataDisplay: self.dataDisplay.Destroy()
             dlg = wx.FileDialog(self, 'Choose GSAS-II project file', '.', '', 
                 'GSAS-II project file (*.gpx)|*.gpx',wx.OPEN|wx.CHANGE_DIR)
             try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    self.GSASprojectfile = dlg.GetPath()
-                    self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
-                    self.dirname = dlg.GetDirectory()
-                    G2IO.ProjFileOpen(self)
-                    self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
-                    self.PatternTree.Expand(self.root)
-                    self.HKL = []
-                    item, cookie = self.PatternTree.GetFirstChild(self.root)
-                    while item and not Id:
-                        name = self.PatternTree.GetItemText(item)
-                        if name[:4] in ['PWDR','HKLF','IMG ','PDF ']:
-                            Id = item
-                        elif name == 'Controls':
-                            data = self.PatternTree.GetItemPyData(item)
-                            if data:
-                                for item in self.Refine: item.Enable(True)
-                                for item in self.SeqRefine: item.Enable(True)
-                        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
-                    if Id:
-                        self.PatternTree.SelectItem(Id)
-                    self.CheckNotebook()
-                    os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
+                if dlg.ShowModal() != wx.ID_OK: return
+                self.GSASprojectfile = dlg.GetPath()
+                self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
+                self.dirname = dlg.GetDirectory()
             finally:
                 dlg.Destroy()
+        else:
+            self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
+            self.dirname = os.path.split(filename)[0]
+
+        G2IO.ProjFileOpen(self)
+        self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
+        self.PatternTree.Expand(self.root)
+        self.HKL = []
+        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        while item and not Id:
+            name = self.PatternTree.GetItemText(item)
+            if name[:4] in ['PWDR','HKLF','IMG ','PDF ']:
+                Id = item
+            elif name == 'Controls':
+                data = self.PatternTree.GetItemPyData(item)
+                if data:
+                    for item in self.Refine: item.Enable(True)
+                    for item in self.SeqRefine: item.Enable(True)
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+        if Id:
+            self.PatternTree.SelectItem(Id)
+        self.CheckNotebook()
+        os.chdir(self.dirname)           # to get Mac/Linux to change directory!
 
     def OnFileClose(self, event):
         '''Clears the data tree in response to the
@@ -2508,9 +2522,17 @@ class GSASIImain(wx.App):
         self.main.Show()
         self.SetTopWindow(self.main)
         return True
+    def MacOpenFile(self, filename):
+        '''Called on Mac every time a file is dropped on the app when it is running,
+        treat this like a File/Open project menu action.
+        Should be ignored on other platforms
+        '''
+        self.main.OnFileOpen(None,filename)
 
 def main():
     '''Start up the GSAS-II application'''
+    #application = GSASIImain() # don't redirect output, someday we
+    # may want to do this if we can 
     application = GSASIImain(0)
     if wxInspector: wxeye.InspectionTool().Show()
 

@@ -124,7 +124,7 @@ Rvals          \                R-factors, GOF, Marquardt value for last
 covMatrix      \                The (NxN) covVariance matrix (np.array)
 =============  ===============  ====================================================
 
-Phase Tree Item
+Phase Tree Items
 ----------------
 
 .. _Phase_table:
@@ -271,7 +271,7 @@ SGOps       symmetry operations as a list of form
             Atom coordinates are transformed where the
             Asymmetric unit coordinates [X is (x,y,z)]
             are transformed using
-            :math:`X\prime = M_n*X+T_n`
+            :math:`X^\prime = M_n*X+T_n`
 SGSys       symmetry unit cell: type one of
             'triclinic', 'monoclinic', 'orthorhombic',
             'tetragonal', 'rhombohedral', 'trigonal',
@@ -314,6 +314,167 @@ cia               ADP flag: Isotropic ('I') or Anisotropic ('A')
 cia+1             Uiso
 cia+2...cia+6     U11, U22, U33, U12, U13, U23
 ==============   ====================================================
+
+Powder Diffraction Tree Items
+-----------------------------
+
+.. _Powder_table:
+
+.. index::
+   single: Powder data object description
+   single: Data object descriptions; Powder Data
+
+Every powder diffraction histogram is stored in the GSAS-II data tree
+with a top-level entry named beginning with the string "PWDR ". The
+diffraction data for that information are directly associated with
+that tree item and there are a series of children to that item. The
+routine :func:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree` will
+load this information into a dictionary where the child tree name is
+used as a key, and the information in the main entry is assigned
+a key of ``Data``, as outlined below.
+
+.. tabularcolumns:: |l|l|p{4in}|
+
+======================  ===============  ====================================================
+  key                      sub-key        explanation
+======================  ===============  ====================================================
+Limits                       \            A list of two two element lists, as [[Ld,Hd],[L,H]]
+                                          where L and Ld are the current and default lowest
+                                          two-theta value to be used and 
+                                          where H and Hd are the current and default highest
+                                          two-theta value to be used.
+Reflection Lists              \           A dict with an entry for each phase in the
+                                          histogram. The contents of each dict item
+                                          is a list or reflections as described in the
+                                          :ref:`Powder Reflections <PowderRefl_table>`
+                                          description.
+Instrument Parameters         \           A list containing two dicts where the possible
+                                          keys in each dict are listed below. The value
+                                          for each item is a list containing three values:
+                                          the initial value, the current value and a
+                                          refinement flag which can have a value of
+                                          True, False or 0 where 0 indicates a value that
+                                          cannot be refined. The first and second
+                                          values are floats unless otherwise noted.
+                                          Items in the first dict are noted as [1]
+\                         Lam             Specifies a wavelength in Angstroms [1]
+\                         Lam1            Specifies the primary wavelength in
+                                          Angstrom, when an alpha1, alpha2
+                                          source is used [1]
+\                         Lam2            Specifies the secondary wavelength in
+                                          Angstrom, when an alpha1, alpha2
+                                          source is used [1]
+                          I(L2)/I(L1)     Ratio of Lam2 to Lam1 [1]           
+\                         Type            Histogram type (str) [1]: 
+                                           * 'PXC' for constant wavelength x-ray
+                                           * 'PNC' for constant wavelength neutron
+                                           * 'PNT' for time of flight neutron
+\                         Zero            Two-theta zero correction in *degrees* [1]
+\                         Azimuth         Azimuthal setting angle for data recorded
+                                          with differing setting angles [1]
+\                         U, V, W         Cagliotti profile coefficients
+                                          for Gaussian instrumental broadening, where the
+                                          FWHM goes as
+                                          :math:`U \\tan^2\\theta + V \\tan\\theta + W` [1]
+\                         X, Y            Cauchy (Lorentzian) instrumental broadening
+                                          coefficients [1]
+\                         SH/L            Variant of the Finger-Cox-Jephcoat asymmetric
+                                          peak broadening ratio. Note that this is the
+                                          average between S/L and H/L where S is
+                                          sample height, H is the slit height and
+                                          L is the goniometer diameter. [1]
+\                         Polariz.        Polarization coefficient. [1]
+wtFactor                      \           A weighting factor to increase or decrease
+                                          the leverage of data in the histogram (float).
+                                          A value of 1.0 weights the data with their
+                                          standard uncertainties and a larger value
+                                          increases the weighting of the data (equivalent
+                                          to decreasing the uncertainties).
+Sample Parameters             \           Specifies a dict with parameters that describe how
+                                          the data were collected, as listed
+                                          below. Refinable parameters are a list containing
+                                          a float and a bool, where the second value
+                                          specifies if the value is refined, otherwise
+                                          the value is a float unless otherwise noted.
+\                         Scale           The histogram scale factor (refinable) 
+\                         Absorption      The sample absorption coefficient as
+                                          :math:`\\mu r` where r is the radius
+                                          (refinable).
+\                         DisplaceX,      Sample displacement from goniometer center
+                          DisplaceY       where Y is along the beam direction and
+                                          X is perpendicular. Units are :math:`\\mu m`
+                                          (refinable).
+\                         Phi, Chi,       Goniometer sample setting angles, in degrees.
+                          Omega
+\                         Gonio. radius   Radius of the diffractometer in mm
+\                         InstrName       A name for the instrument, used in preparing
+                                          a CIF (str).
+\                         Force,          Variables that describe how the measurement
+                          Temperature,    was performed. Not used directly in 
+                          Humidity,       any computations. 
+                          Pressure,
+                          Voltage
+\                         ranId           The random-number Id for the histogram
+                                          (same value as where top-level key is ranId)
+\                         Type            Type of diffraction data, may be 'Debye-Scherrer'
+                                          or 'Bragg-Brentano' (str).
+\                         Diffuse         not in use?
+hId                           \           The number assigned to the histogram when
+                                          the project is loaded or edited (can change)
+ranId                         \           A random number id for the histogram
+                                          that does not change
+Background                    \           The background is stored as a list with where
+                                          the first item in the list is list and the second
+                                          item is a dict. The list contains the background
+                                          function and its coefficients; the dict contains
+                                          Debye diffuse terms and background peaks.
+                                          (TODO: this needs to be expanded.)
+Data                          \           The data consist of a list of 6 np.arrays 
+                                          containing in order:
+
+                                           1. the x-postions (two-theta in degrees),
+                                           2. the intensity values (Yobs),
+                                           3. the weights for each Yobs value
+                                           4. the computed intensity values (Ycalc)
+                                           5. the background values
+                                           6. Yobs-Ycalc
+======================  ===============  ====================================================
+
+Powder Reflection Data Structure
+--------------------------------
+
+.. _PowderRefl_table:
+
+.. index::
+   single: Powder reflection object description
+   single: Data object descriptions; Powder Reflections
+   
+For every phase in a histogram, the ``Reflection Lists`` value is a list of
+reflections. The items in that list are documented below.
+
+==========  ====================================================
+  index         explanation
+==========  ====================================================
+ 0,1,2       h,k,l (float)
+ 3           multiplicity
+ 4           d-space, Angstrom
+ 5           pos, two-theta
+ 6           sig, Gaussian width
+ 7           gam, Lorenzian width
+ 8           Fobs**2
+ 9           Fcalc**2
+ 10          reflection phase, in degrees
+ 11          the equivalent reflections as a (m x 3) 
+             np.array, where m is 0.5 * multiplicity. Note
+             that Freidel pairs, (-h,-k-,l), are not
+             included. 
+ 12          phase shift for each of the equivalent
+             reflections as a length (m) array
+ 13          intensity correction for reflection, this times
+             Fobs**2 or Fcalc**2 gives Iobs or Icalc 
+ 14          dict with the form factor (f or b) by atom type
+             symbol at the reflection position.
+==========  ====================================================
 
 
 *Classes and routines*

@@ -79,7 +79,8 @@ def whichsvn():
     Searches the current path as well as subdirectory "svn" and
     "svn/bin" in the location of the GSASII source files.
 
-    :returns: None if svn is not found.
+    :returns: None if svn is not found or an absolute path to the subversion
+    executable file .
     '''
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -91,15 +92,52 @@ def whichsvn():
     for path in pathlist:
         exe_file = os.path.join(path, svnprog)
         if is_exe(exe_file):
-            return exe_file
+            return os.path.abspath(exe_file)
+
+def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
+    '''Get the revision log information for a specific version of the 
+
+    :param str fpath: path to repository dictionary, defaults to directory where
+       the current file is located.
+    :param int version: the version number to be looked up or None (default)
+       for the latest version.
+
+    :returns: a dictionary with keys (one hopes) 'author', 'date', 'msg', and 'revision'
+
+    '''
+    import subprocess
+    import xml.etree.ElementTree as ET
+    svn = whichsvn()
+    if not svn: return
+    if version is not None:
+        vstr = '-r'+str(version)
+    else:
+        vstr = '-rHEAD'
+
+    cmd = [svn,'log',fpath,'--xml',vstr]
+    s = subprocess.Popen(cmd,
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = s.communicate()
+    if err:
+        print 'out=',out
+        print 'err=',err
+        return None
+    x = ET.fromstring(out)
+    d = {}
+    for i in x.iter('logentry'):
+        d = {'revision':i.attrib.get('revision','?')}
+        for j in i:
+            d[j.tag] = j.text
+        break # only need the first
+    return d
 
 def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
-    '''This obtains the version number for the either the latest local last update
+    '''Obtain the version number for the either the last update of the local version
     or contacts the subversion server to get the latest update version (# of Head).
 
-    :param fpath: path to repository dictionary, defaults to directory where
+    :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located
-    :param local: determines the type of version number, where
+    :param bool local: determines the type of version number, where
        True (default): returns the latest installed update 
        False: returns the version number of Head on the server
 
@@ -154,7 +192,7 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
             changed.append(i.attrib.get('path'))
     return changed
 
-def svnUpdateDir(fpath=os.path.split(__file__)[0]):
+def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
     '''This performs an update of the files in a local directory from a server. 
 
     :param fpath: path to repository dictionary, defaults to directory where
@@ -171,13 +209,20 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0]):
                   'C': 'Conflict', 'G': 'Merged', 'E': 'Replaced'}
     svn = whichsvn()
     if not svn: return
-    cmd = [svn,'update',fpath,'-rHEAD',
+    if version:
+        verstr = '-r' + str(version)
+    else:
+        verstr = '-rHEAD'
+    cmd = [svn,'update',fpath,verstr,
            '--non-interactive',
            '--accept','theirs-conflict','--force']
     s = subprocess.Popen(cmd, 
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
-    if err: return
+    print out
+    if err:
+        print err
+        return
     l = out.split()
     updates = {}
     for i,j in zip(l[::2],l[1::2]):
@@ -185,5 +230,9 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0]):
         if i == 'At': break
         t = changetype.get(i[0])
         if not t: continue
-        updates[j] = t
+        f = os.path.split(j)[1]
+        if updates.get(t):
+            updates[t] += ', '+f
+        else:
+            updates[t] = f
     return updates

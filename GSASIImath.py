@@ -1280,7 +1280,9 @@ def ValEsd(value,esd=0,nTZ=False):
     else:
         esdoff = 5
     valoff = 0
-    if esdoff < 0 or abs(value) > 1.0e6 or abs(value) < 1.0e-4: # use scientific notation
+    if abs(value) < abs(esdoff): # value is effectively zero
+        pass
+    elif esdoff < 0 or abs(value) > 1.0e6 or abs(value) < 1.0e-4: # use scientific notation
         # where the digit offset is to the left of the decimal place or where too many
         # digits are needed
         if abs(value) > 1:
@@ -1296,6 +1298,7 @@ def ValEsd(value,esd=0,nTZ=False):
     else: # esd = 0; non-exponential notation ==> esdoff+1 significant digits
         extra = -math.log10(abs(value))
         if extra > 0: extra += 1
+        print 'fmt=',"{:."+str(max(0,esdoff+int(extra)))+"f}"
         out = ("{:."+str(max(0,esdoff+int(extra)))+"f}").format(value) # format the value
     if esd > 0:
         out += ("({:d})").format(intesd)  # add the esd

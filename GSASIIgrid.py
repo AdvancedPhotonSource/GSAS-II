@@ -1150,6 +1150,77 @@ class GridFractionEditor(wg.PyGridCellEditor):
             evt.Skip()
 
 ################################################################################
+class downdate(wx.Dialog):
+    '''Dialog to allow a user to select a version of GSAS-II to install
+    '''
+    def __init__(self,parent=None):
+        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select Version', style=style)
+        pnl = wx.Panel(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        insver = GSASIIpath.svnGetRev(local=True)
+        curver = int(GSASIIpath.svnGetRev(local=False))
+        label = wx.StaticText(
+            pnl,  wx.ID_ANY,
+            'Select a specific GSAS-II version to install'
+            )
+        sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add(
+            wx.StaticText(pnl,  wx.ID_ANY,
+                          'Currently installed version: '+str(insver)),
+            0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        sizer.Add(sizer1)
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer1.Add(
+            wx.StaticText(pnl,  wx.ID_ANY,
+                          'Select GSAS-II version to install: '),
+            0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        self.spin = wx.SpinCtrl(pnl, wx.ID_ANY)
+        self.spin.SetRange(1, curver)
+        self.spin.SetValue(curver)
+        self.Bind(wx.EVT_SPINCTRL, self._onSpin, self.spin)
+        self.Bind(wx.EVT_KILL_FOCUS, self._onSpin, self.spin)
+        sizer1.Add(self.spin)
+        sizer.Add(sizer1)
+
+        line = wx.StaticLine(pnl,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
+        sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+
+        self.text = wx.StaticText(pnl,  wx.ID_ANY, "")
+        sizer.Add(self.text, 0, wx.ALIGN_LEFT, 5)
+
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(pnl, wx.ID_OK, "Install")
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(pnl, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        pnl.SetSizer(sizer)
+        sizer.Fit(self)
+        self.topsizer=sizer
+        self.CenterOnParent()
+        self._onSpin(None)
+
+    def _onSpin(self,event):
+        'Called to load info about the selected version in the dialog'
+        ver = self.spin.GetValue()
+        d = GSASIIpath.svnGetLog(version=ver)
+        date = d.get('date','?').split('T')[0]
+        s = '(Version '+str(ver)+' created '+date
+        s += ' by '+d.get('author','?')+')'
+        msg = d.get('msg')
+        if msg: s += '\n\nComment: '+msg
+        self.text.SetLabel(s)
+        self.topsizer.Fit(self)
+
+    def getVersion(self):
+        'Get the version number in the dialog'
+        return self.spin.GetValue()
+
+################################################################################
 class MyHelp(wx.Menu):
     '''
     A class that creates the contents of a help menu.
@@ -1180,6 +1251,10 @@ class MyHelp(wx.Menu):
                 help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
                 text='&Check for updates')
             frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
+            helpobj = self.Append(
+                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
+                text='&Regress to an old GSAS-II version')
+            frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
         for lbl,indx in morehelpitems:
             helpobj = self.Append(text=lbl,
                 id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
@@ -1267,9 +1342,9 @@ General Structure Analysis System - GSAS-II
             dlg = wx.MessageDialog(self.frame,
                                    'You have version '+local+
                                    ' of GSAS-II installed, but the current version is '+repos+
-                                   '. However, you have modified '+str(len(mods))+
+                                   '. However, '+str(len(mods))+
                                    ' file(s) on your local computer have been modified.'
-                                   ' Updating could wipe out your local changes. Press OK to start an update:',
+                                   ' Updating could cause you to lose your changes, if conflicts arise. Press OK to start an update if this is acceptable:',
                                    'Local GSAS-II Mods',
                                    wx.OK|wx.CANCEL)
             if dlg.ShowModal() != wx.ID_OK: return
@@ -1293,17 +1368,62 @@ General Structure Analysis System - GSAS-II
                                    wx.OK)
             dlg.ShowModal()
             return
-        modsbytype = {}
-        for key in moddict:
-            typ = moddict[key]
-            if modsbytype.get(typ) is None:
-                modsbytype[typ] = []
-            modsbytype[typ].append(key)
-        msg = 'Update was completed. Changes will take effect when GSAS-II is next updated. The following files were updated, ordered by status:'
-        for key in modsbytype:
-            msg += '\n' + key + ':\n\t'
-            for fil in modsbytype:
-                msg += fil + ', '
+        msg = 'Update was completed. Changes will take effect when GSAS-II is restarted.\n\nThe following files were affected, ordered by change,'
+        for key in sorted(moddict.keys()):
+            msg += '\n\n' + key + ': '+moddict[key]
+        dlg = wx.MessageDialog(self.frame,msg, 'Update Completed', wx.OK)
+        dlg.ShowModal()
+        return
+
+    def OnSelectVersion(self,event):
+        '''Allow the user to select a specific version of GSAS-II
+        '''
+        if not GSASIIpath.whichsvn():
+            dlg = wx.MessageDialog(self,'No Subversion','Cannot update GSAS-II because subversion (svn) '+
+                                   'was not found.'
+                                   ,wx.OK)
+            dlg.ShowModal()
+            return
+        local = GSASIIpath.svnGetRev()
+        if local is None: 
+            dlg = wx.MessageDialog(self.frame,
+                                   'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
+                                   'Subversion error',
+                                   wx.OK)
+            dlg.ShowModal()
+            return
+        mods = GSASIIpath.svnFindLocalChanges()
+        if mods:
+            dlg = wx.MessageDialog(self.frame,
+                                   'You have version '+local+
+                                   ' of GSAS-II installed. However, '+str(len(mods))+
+                                   ' file(s) on your local computer have been modified.'
+                                   ' Downdating is not encouraged as this could cause you to lose these changes. Press OK to continue anyway:',
+                                   'Local GSAS-II Mods',
+                                   wx.OK|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK: return
+        dlg = downdate(parent=self.frame)
+        if dlg.ShowModal() == wx.ID_OK:
+            ver = dlg.getVersion()
+            print('start update to '+str(ver))
+            wx.BeginBusyCursor()
+            moddict = GSASIIpath.svnUpdateDir(version=ver)
+            wx.EndBusyCursor()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+        if moddict is None: 
+            dlg = wx.MessageDialog(self.frame,
+                                   'Error accessing the GSAS-II server or performing the update. '+
+                                   'Try again later or perform a manual update',
+                                   'Update Error',
+                                   wx.OK)
+            dlg.ShowModal()
+            return
+        msg = 'Update was completed. Changes will take effect when GSAS-II is restarted.\n\nThe following files were affected, ordered by change,'
+        for key in sorted(moddict.keys()):
+            msg += '\n\n' + key + ': '+moddict[key]
         dlg = wx.MessageDialog(self.frame,msg, 'Update Completed', wx.OK)
         dlg.ShowModal()
         return

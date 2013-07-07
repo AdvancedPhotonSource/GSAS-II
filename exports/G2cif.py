@@ -12,7 +12,8 @@ import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spg
-reload(G2spg)
+#reload(G2spg)
+reload(G2mth)
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -38,6 +39,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         :param str mode: "full" (default) to create a complete CIF of project,
           "simple" for a simple CIF with only coordinates
         '''
+    
         def WriteCIFitem(name,value=''):
             if value:
                 if "\n" in value or len(value)> 70:
@@ -570,16 +572,52 @@ class ExportCIF(G2IO.ExportBaseclass):
             if not self.quickmode:      # report distances and angles
                 WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList)
 
-            #raise Exception,'Testing'
-
         def WritePowderData(histlbl):
             text = '?'
             histblk = self.Histograms[histlbl]
+            inst = histblk['Instrument Parameters'][0]
+            hId = histblk['hId']
+            pfx = ':' + str(hId) + ':'
             print 'TODO: powder here data for',histblk["Sample Parameters"]['InstrName']
             # see wrpowdhist.for & wrreflist.for
             
-            refprx = '_refln.' # mm
+            #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
+
+            print histblk.keys()
+            #            for key in histblk:
+            #                print key
+            print inst
+            print self.parmDict.keys()
+            print self.sigDict.keys()
+            WriteCIFitem('\n# SCATTERING FACTOR INFO')
+            if 'Lam1' in inst:
+                ratio = self.parmDict.get('I(L2)/I(L1)',inst['I(L2)/I(L1)'][1])
+                sratio = self.sigDict.get('I(L2)/I(L1)',-0.0009)
+                lam1 = self.parmDict.get('Lam1',inst['Lam1'][1])
+                slam1 = self.sigDict.get('Lam1',-0.00009)
+                lam2 = self.parmDict.get('Lam2',inst['Lam2'][1])
+                slam2 = self.sigDict.get('Lam2',-0.00009)
+                # always assume Ka1 & Ka2 if two wavelengths are present
+                WriteCIFitem('loop_' + 
+                             '\n\t_diffrn_radiation_wavelength' +
+                             '\n\t_diffrn_radiation_wavelength_wt' + 
+                             '\n\t_diffrn_radiation_type' + 
+                             '\n\t_diffrn_radiation_wavelength_id')
+                WriteCIFitem('  ' + PutInCol(G2mth.ValEsd(lam1,slam1),15)+
+                             PutInCol('1.0',15) + 
+                             PutInCol('K\\a~1~',10) + 
+                             PutInCol('1',5))
+                WriteCIFitem('  ' + PutInCol(G2mth.ValEsd(lam2,slam2),15)+
+                             PutInCol(G2mth.ValEsd(ratio,sratio),15)+
+                             PutInCol('K\\a~2~',10) + 
+                             PutInCol('2',5))                
+            else:
+                lam1 = self.parmDict.get('Lam',inst['Lam'])
+                slam1 = self.sigDict.get('Lam',-0.00009)
+                WriteCIFitem('_diffrn_radiation_wavelength',G2mth.ValEsd(lam1,slam1))
+
+            raise Exception, "testing"
 
             if not oneblock:
                 if not phasebyhistDict.get(histlbl):
@@ -592,17 +630,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                                  '\n\t_pd_phase_mass_%')
                     for phasenam in phasebyhistDict.get(histlbl):
                         pass
-
-            WriteCIFitem('\n# SCATTERING FACTOR INFO')
-            WriteCIFitem('_diffrn_radiation_wavelength' ,text)
-            #WriteCIFitem('_diffrn_radiation_type',text)
-            #C always assume Ka1 & Ka2 if two wavelengths are present
-            #WriteCIFitem('loop_' + 
-            #             '\n\t_diffrn_radiation_wavelength' +
-            #             '\n\t_diffrn_radiation_wavelength_wt' + 
-            #             '\n\t_diffrn_radiation_type' + 
-            #             '\n\t_diffrn_radiation_wavelength_id')
-            #WRITE LAM1,1.0,'K\\a~1~',1, LAM2,ratio,'K\\a~2~',2
 
             WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
             WriteCIFitem('_pd_proc_ls_prof_wR_factor','?')
@@ -641,6 +668,36 @@ class ExportCIF(G2IO.ExportBaseclass):
             if not oneblock:
                 # instrumental profile terms go here
                 WriteCIFitem('_pd_proc_ls_profile_function','?')
+
+            #print 'Data'
+            #for item in histblk['Data']:
+            #    print item
+                #try:
+                #    print key,histblk[key].keys()
+                #except:
+                #    print key
+                #    print histblk[key]
+            #print 'Background'
+            print histblk['Reflection Lists']['Garnet'][1]
+            for i in range(0,80):
+                for j in [0,1,2,13]:
+                    print histblk['Reflection Lists']['Garnet'][i][j],
+                print
+                #print histblk['Reflection Lists']['Garnet'][i][12].shape
+                #print histblk['Reflection Lists']['Garnet'][i][14]
+            #print histblk['Background'][0]
+            #print histblk['Background'][1]
+            import numpy as np
+            refList = np.array([refl[:11] for refl in histblk['Reflection Lists']['Garnet']])
+            #refList = histblk['Reflection Lists']['Garnet']
+            Icorr = np.array([refl[13] for refl in histblk['Reflection Lists']['Garnet']])
+            FO2 = np.array([refl[8] for refl in histblk['Reflection Lists']['Garnet']])
+            print Icorr
+            I100 = refList.T[8]*Icorr
+            print I100
+            print I100/max(I100)
+            Icorr = np.array([refl[13] for refl in histblk['Reflection Lists']['Garnet']]) * np.array([refl[8] for refl in histblk['Reflection Lists']['Garnet']])
+            print I100/max(I100)
 
             WriteCIFitem('\n# STRUCTURE FACTOR TABLE')            
             WriteCIFitem('loop_' + 
@@ -732,11 +789,12 @@ class ExportCIF(G2IO.ExportBaseclass):
 
         #============================================================
         # the export process starts here
-        # create a dict with refined values and their uncertainties
-        self.loadParmDict()
         # also load all of the tree into a set of dicts
         self.loadTree()
         #self.dumpTree()
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        #
 
         # get restraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
@@ -880,8 +938,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteAudit()
                 WritePubTemplate()
                 WriteOverall()
+                WritePhaseTemplate()
             # report the phase info
-            WritePhaseTemplate()
             WritePhaseInfo(phasenam)
             if hist.startswith("PWDR") and not self.quickmode:
                 # preferred orientation

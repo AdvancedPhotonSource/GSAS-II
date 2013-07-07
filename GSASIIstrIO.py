@@ -1513,8 +1513,21 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
 ##### Histogram & Phase data
 ################################################################################        
                     
-def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
-    'needs a doc string'
+def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=True):
+    '''Loads the HAP histogram/phase information into dicts
+
+    :param dict Phases: phase information
+    :param dict Histograms: Histogram information
+    :param bool Print: prints information as it is read
+    :param file pFile: file object to print to (the default, None causes printing to the console)
+    :param bool resetRefList: Should the contents of the Reflection List be initialized
+      on loading. The default, True, initializes the Reflection List as it is loaded.
+
+    :returns: (hapVary,hapDict,controlDict)
+      * hapVary: list of refined variables
+      * hapDict: dict with refined variables and their values
+      * controlDict: dict with computation controls (?)
+    '''
     
     def PrintSize(hapData):
         if hapData[0] in ['isotropic','uniaxial']:
@@ -1721,7 +1734,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None):
                             #last item should contain form factor values by atom type
                     else:
                         raise ValueError 
-                Histogram['Reflection Lists'][phase] = refList
+                if resetRefList: Histogram['Reflection Lists'][phase] = refList
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
                 hId = Histogram['hId']

@@ -146,6 +146,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
     M = func(x0,*args)
     nfev += 1
     Yvec,Amat = Hess(x0,*args)
+    lam = 1.e-8          #unmodified matrix - comment out for matrix modification
     Lam = np.eye(Amat.shape[0])*lam
     Amatlam = Amat*(One+Lam)
     try:
@@ -2328,7 +2329,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-#        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
+        x0 = random.uniform(size=len(x0))*(upper-lower) + lower #comment to avoid random start
         best_state.x = None
         best_state.cost = numpy.Inf
 

@@ -3307,7 +3307,7 @@ def PlotStructure(G2frame,data):
         glDisable(GL_LIGHTING)
         glColor3fv(color)
         glRasterPos3f(0,0,0)
-        our_font.glPrint(300,300,label)
+#        our_font.glPrint(300,300,label)
 #        for c in list(label):
 #            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
         glEnable(GL_LIGHTING)
@@ -3788,7 +3788,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         glDisable(GL_LIGHTING)
         glColor3f(1.0,1.0,1.0)
         glRasterPos3f(0,0,0)
-        our_font.glPrint(0,0,label)
+#        our_font.glPrint(0,0,label)
 #        for c in list(label):
 #            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
         glEnable(GL_LIGHTING)

@@ -4418,6 +4418,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if not len(MCSAmodels):
             print '**** ERROR - no models defined for MC/SA run****'
             return
+        time1 = time.time()
         if process == 'single':
             pgbar = wx.ProgressDialog('MC/SA','Residual Rcf =',101.0, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
@@ -4428,7 +4429,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pgbar.SetSize(Size)
         else:
             pgbar = None
-        time1 = time.time()
         try:
             tsf = 0.
             nCyc = mcsaControls['Cycles']
@@ -4446,7 +4446,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if process == 'single':
                 pgbar.Destroy()
         MCSAdata['Results'] = G2mth.sortArray(MCSAdata['Results'],2,reverse=False)
-        UpdateMCSA()
+        Page = G2frame.dataDisplay.FindPage('MC/SA')
+        G2frame.dataDisplay.SetSelection(Page)
+        wx.CallAfter(UpdateMCSA)
         G2plt.PlotStructure(G2frame,data)
 
     def OnMCSAaddAtom(event):
@@ -4931,15 +4933,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print ' Map search finished, time = %.2fs'%(time.time()-time0)
             print ' No.peaks found:',len(peaks)    
             Page = G2frame.dataDisplay.FindPage('Map peaks')
-            G2frame.dataDisplay.ChangeSelection(Page)
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
+            G2frame.dataDisplay.SetSelection(Page)
+            wx.CallAfter(FillMapPeaksGrid)
             UpdateDrawAtoms()
-            FillMapPeaksGrid()
         else:
             print 'No map available'
         

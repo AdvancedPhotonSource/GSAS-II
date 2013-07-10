@@ -39,9 +39,9 @@ import GSASIImath as G2mth
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
-#from OpenGL.GLUT import *
+from OpenGL.GLUT import *
 from OpenGL.GLE import *
-import glFreeType
+import gltext
 from matplotlib.backends.backend_wx import _load_bitmap
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
@@ -2695,7 +2695,7 @@ def PlotStructure(G2frame,data):
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
     Or = np.array([255,128,0])
-    our_font = getFont()
+#    our_font = getFont()
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -3307,9 +3307,13 @@ def PlotStructure(G2frame,data):
         glDisable(GL_LIGHTING)
         glColor3fv(color)
         glRasterPos3f(0,0,0)
-#        our_font.glPrint(300,300,label)
-#        for c in list(label):
-#            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        if bool(glutBitmapCharacter):       #seems to only exist in 32 bit Windows
+            for c in list(label):
+                glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        else:
+            text = gltext.TextElement(text=label,font=Font)
+            text.draw_text(scale=0.025)
+#           our_font.glPrint(0,0,label)
         glEnable(GL_LIGHTING)
         glPopMatrix()
         
@@ -3553,6 +3557,7 @@ def PlotStructure(G2frame,data):
         Page.views = False
         view = False
         altDown = False
+    Font = Page.GetFont()
     Page.SetFocus()
     Page.Choice = None
     if mapData['Flip']:
@@ -3613,7 +3618,6 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
     uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
     uColors = [Rd,Gr,Bl]
-    our_font = getFont()
     if rbType == 'Vector':
         atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])
@@ -3788,9 +3792,12 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         glDisable(GL_LIGHTING)
         glColor3f(1.0,1.0,1.0)
         glRasterPos3f(0,0,0)
-#        our_font.glPrint(0,0,label)
-#        for c in list(label):
-#            glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        if bool(glutBitmapCharacter):
+            for c in list(label):
+                glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
+        else:
+            text = gltext.TextElement(text=label,font=Font)
+            text.draw_text(scale=0.025)
         glEnable(GL_LIGHTING)
         glPopMatrix()
         
@@ -3845,6 +3852,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         view = False
         altDown = False
     Page.SetFocus()
+    Font = Page.GetFont()
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)

@@ -216,14 +216,6 @@ class GSASIItoolbar(Toolbar):
                 parent.keyPress(event)
             dlg.Destroy()
             
-def getFont(size=16):
-    if 'win' in sys.platform:
-        return glFreeType.font_data ("cour.ttf", size)
-    elif 'linux' in sys.platform:
-        return glFreeType.font_data ("cour.ttf", size)    #needs readily available linux font
-    else:       #Mac?
-        return glFreeType.font_data ("cour.ttf", size)    #needs readily available Mac font
-    
 ################################################################################
 ##### PlotSngl
 ################################################################################
@@ -2695,7 +2687,6 @@ def PlotStructure(G2frame,data):
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
     Or = np.array([255,128,0])
-#    our_font = getFont()
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 

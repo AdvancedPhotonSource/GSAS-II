@@ -3189,6 +3189,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif val == 'TLS':
                 RBObj['ThermalMotion'][0] = 'TLS'
             wx.CallAfter(FillRigidBodyGrid,True)
+            #need to set atom I/A here & update Uiso/Uij
+            G2plt.PlotStructure(G2frame,data)
             
         def ThermDataSizer(RBObj):
             
@@ -3201,6 +3203,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 Obj.SetValue('%8.4f'%(RBObj['ThermalMotion'][1][item]))
+                #need to update atom Uiso/Uij here!
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnTLSRef(event):

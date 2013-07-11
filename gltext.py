@@ -306,7 +306,7 @@ class Text(object):
                  text = 'Text',
                  font = None,
                  font_size = 8,
-                 foreground = wx.BLACK,
+                 foreground = wx.WHITE,
                  centered = False):
         """
             text (string)           - displayed text

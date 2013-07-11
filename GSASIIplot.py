@@ -39,7 +39,6 @@ import GSASIImath as G2mth
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
-from OpenGL.GLUT import *
 from OpenGL.GLE import *
 import gltext
 from matplotlib.backends.backend_wx import _load_bitmap
@@ -2685,8 +2684,10 @@ def PlotStructure(G2frame,data):
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
+    wxGreen = wx.Color(0,255,0)
     Bl = np.array([0,0,255])
     Or = np.array([255,128,0])
+    wxOrange = wx.Color(255,128,0)
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -3291,20 +3292,19 @@ def PlotStructure(G2frame,data):
         glPopMatrix()        
         glDisable(GL_COLOR_MATERIAL)
         
-    def RenderLabel(x,y,z,label,r,color):       
+    def RenderLabel(x,y,z,label,r,color,matRot):
+        '''
+        color wx.Color object
+        '''       
         glPushMatrix()
         glTranslate(x,y,z)
         glMultMatrixf(B4mat.T)
         glDisable(GL_LIGHTING)
-        glColor3fv(color)
         glRasterPos3f(0,0,0)
-        if bool(glutBitmapCharacter):       #seems to only exist in 32 bit Windows
-            for c in list(label):
-                glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
-        else:
-            text = gltext.TextElement(text=label,font=Font)
-            text.draw_text(scale=0.025)
-#           our_font.glPrint(0,0,label)
+        glMultMatrixf(matRot)
+        glRotate(180,1,0,0)             #fix to flip about x-axis
+        text = gltext.Text(text=label,font=Font,foreground=color)
+        text.draw_text(scale=0.025)
         glEnable(GL_LIGHTING)
         glPopMatrix()
         
@@ -3483,17 +3483,17 @@ def PlotStructure(G2frame,data):
                     BackboneColor.append(list(atColor))
                     
             if atom[cs+1] == 'type':
-                RenderLabel(x,y,z,'  '+atom[ct],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct],radius,wxGreen,matRot)
             elif atom[cs+1] == 'name':
-                RenderLabel(x,y,z,'  '+atom[ct-1],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-1],radius,wxGreen,matRot)
             elif atom[cs+1] == 'number':
-                RenderLabel(x,y,z,'  '+str(iat),radius,Gr)
+                RenderLabel(x,y,z,'  '+str(iat),radius,wxGreen,matRot)
             elif atom[cs+1] == 'residue' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,'  '+atom[ct-4],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-4],radius,wxGreen,matRot)
             elif atom[cs+1] == '1-letter' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,'  '+atom[ct-3],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-3],radius,wxGreen,matRot)
             elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
-                RenderLabel(x,y,z,'  '+atom[ct-2],radius,Gr)
+                RenderLabel(x,y,z,'  '+atom[ct-2],radius,wxGreen,matRot)
 #        glDisable(GL_BLEND)
         if len(rhoXYZ):
             RenderMap(rho,rhoXYZ,indx,Rok)
@@ -3516,7 +3516,7 @@ def PlotStructure(G2frame,data):
                 color = np.array(testRBObj['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
                 RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
-                RenderLabel(x,y,z,name,0.2,Or)
+                RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]
@@ -3524,7 +3524,7 @@ def PlotStructure(G2frame,data):
                 color = np.array(MCSA['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
                 RenderBonds(x,y,z,mcsaBonds[ind],0.03,Gr)
-                RenderLabel(x,y,z,name,0.2,Or)
+                RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
         if Backbones:
             for chain in Backbones:
                 Backbone = Backbones[chain]
@@ -3777,18 +3777,15 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             glPopMatrix()            
         glPopMatrix()
                 
-    def RenderLabel(x,y,z,label):       
+    def RenderLabel(x,y,z,label,matRot):       
         glPushMatrix()
         glTranslate(x,y,z)
         glDisable(GL_LIGHTING)
-        glColor3f(1.0,1.0,1.0)
         glRasterPos3f(0,0,0)
-        if bool(glutBitmapCharacter):
-            for c in list(label):
-                glutBitmapCharacter(GLUT_BITMAP_8_BY_13,ord(c))
-        else:
-            text = gltext.TextElement(text=label,font=Font)
-            text.draw_text(scale=0.025)
+        glMultMatrixf(matRot)
+        glRotate(180,1,0,0)             #fix to flip about x-axis
+        text = gltext.TextElement(text=label,font=Font,foreground=wx.WHITE)
+        text.draw_text(scale=0.025)
         glEnable(GL_LIGHTING)
         glPopMatrix()
         
@@ -3826,7 +3823,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
-            RenderLabel(x,y,z,'  '+atNames[iat])
+            RenderLabel(x,y,z,'  '+atNames[iat],matRot)
         Page.canvas.SwapBuffers()
 
     def OnSize(event):

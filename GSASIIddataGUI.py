@@ -987,16 +987,10 @@ def UpdateDData(G2frame,DData,data):
     mainSizer.Add((5,5),0)
 
     DData.SetSizer(mainSizer,True)
-    if G2frame.dataFrame.PhaseUserSize is None:
-        Size = mainSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],290) + 35
-        DData.SetSize(Size)
-        DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],450)
-        G2frame.dataFrame.setSizePosLeft(Size)
-    else:
-        Size = G2frame.dataFrame.PhaseUserSize
-        DData.SetSize(G2frame.dataFrame.GetClientSize())
-        DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.Update()
+    Size = mainSizer.GetMinSize()
+    Size[0] += 40
+    Size[1] = max(Size[1],290) + 35
+    DData.SetSize(Size)
+    DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+    Size[1] = min(Size[1],450)
+    G2frame.dataFrame.setSizePosLeft(Size)

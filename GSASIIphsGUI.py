@@ -60,6 +60,14 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 
+def SetPhaseWindow(mainFrame,phasePage,mainSizer):
+        phasePage.SetSizer(mainSizer)
+        Size = mainSizer.GetMinSize()
+        Size[0] += 40
+        Size[1] = max(Size[1],430) + 35
+        phasePage.SetSize(Size)
+        phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        mainFrame.setSizePosLeft(Size)
 
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
@@ -807,25 +815,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2gd.HorizontalLine(mainSizer,General)
 
         mainSizer.Add(MCSASizer())
-
-        General.SetSizer(mainSizer)
-        General.SetScrollbars(1,1,1,1)
-
-        if G2frame.dataFrame.PhaseUserSize is None:
-            Size = mainSizer.GetMinSize()
-            Size[0] += 40
-            Size[1] = max(Size[1],290) + 35
-            General.SetSize(Size)
-            General.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            Size[1] = min(Size[1],500) # don't let initial size get larger than 500 points
-            G2frame.dataFrame.setSizePosLeft(Size)
-        else:
-            Size = G2frame.dataFrame.PhaseUserSize
-            General.SetSize(G2frame.dataFrame.GetClientSize())
-            Size = mainSizer.ComputeFittingWindowSize(G2frame.dataFrame)
-            General.SetVirtualSize(Size)
-            General.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            G2frame.dataFrame.Update()
+        SetPhaseWindow(G2frame.dataFrame,General,mainSizer)
+#        General.SetSizer(mainSizer)
+#        General.SetScrollbars(1,1,1,1)
+#        Size = mainSizer.GetMinSize()
+#        Size[0] += 40
+#        Size[1] = max(Size[1],290) + 35
+#        General.SetSize(Size)
+#        General.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+#        G2frame.dataFrame.setSizePosLeft(Size)
         G2frame.dataFrame.SetStatusText('')
 
 ################################################################################
@@ -1227,10 +1225,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
         Atoms.SetMargins(0,0)
-        if G2frame.dataFrame.PhaseUserSize is None:
-            G2frame.dataFrame.setSizePosLeft([700,300])
-        else:
-            G2frame.dataFrame.Update()
+        
+        G2frame.dataFrame.setSizePosLeft([700,300])
         Paint()
 
     def OnAtomAdd(event):
@@ -1955,10 +1951,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
            attr.SetBackgroundColour(VERY_LIGHT_GREY)
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
-        if G2frame.dataFrame.PhaseUserSize is None:
-            G2frame.dataFrame.setSizePosLeft([600,300])
-        else:
-            G2frame.dataFrame.Update()
+        G2frame.dataFrame.setSizePosLeft([600,300])
 
         FindBondsDraw()
         drawAtoms.ClearSelection()
@@ -2804,24 +2797,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(ShowSizer(),0,)
         mainSizer.Add((5,5),0)
         mainSizer.Add(RadSizer(),0,)
+        SetPhaseWindow(G2frame.dataFrame,drawOptions,mainSizer)
 
-        drawOptions.SetSizer(mainSizer)
-        #if G2frame.dataFrame.PhaseUserSize is None:
-        if True: # Bob wants this tab to always resize -- let's try that. 
-            Size = mainSizer.Fit(G2frame.dataFrame)
-  #          Size[0] = max(Size[0]+35,400)           # leave some extra room and don't get too small
-            Size[0] += 35                           #compensate for scroll bar
-            Size[1] = max(Size[1]+35,350)                           #compensate for status bar
-            drawOptions.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            G2frame.dataFrame.setSizePosLeft(Size)
-        else:
-            Size = G2frame.dataFrame.PhaseUserSize
-            drawOptions.SetSize(G2frame.dataFrame.GetClientSize())
-            Size = mainSizer.ComputeFittingWindowSize(G2frame.dataFrame)
-            drawOptions.SetVirtualSize(Size)
-            drawOptions.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            G2frame.dataFrame.Update()
-        drawOptions.SetSize(G2frame.dataFrame.GetClientSize())
+#        drawOptions.SetSizer(mainSizer)
+#        Size = mainSizer.Fit(G2frame.dataFrame)
+#        Size[0] += 35                           #compensate for scroll bar
+#        Size[1] = max(Size[1]+35,350)                           #compensate for status bar
+#        drawOptions.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+#        G2frame.dataFrame.setSizePosLeft(Size)
+#        drawOptions.SetSize(G2frame.dataFrame.GetClientSize())
 
 ################################################################################
 ####  Texture routines
@@ -3044,21 +3028,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             angSizer.Add(angVal,0,wx.ALIGN_CENTER_VERTICAL)
             angSizer.Add((5,0),0)
         mainSizer.Add(angSizer,0,wx.ALIGN_CENTER_VERTICAL)
-        Texture.SetSizer(mainSizer,True)
-        if G2frame.dataFrame.PhaseUserSize is None:
-            mainSizer.Fit(G2frame.dataFrame)
-            Size = mainSizer.GetMinSize()
-            Size[0] += 40
-            Size[1] = max(Size[1],250) + 35
-            Texture.SetSize(Size)
-            Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            Size[1] = min(Size[1],450)
-            G2frame.dataFrame.setSizePosLeft(Size)
-        else:
-            Size = G2frame.dataFrame.PhaseUserSize
-            Texture.SetSize(G2frame.dataFrame.GetClientSize())
-            Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            G2frame.dataFrame.Update()
+        SetPhaseWindow(G2frame.dataFrame,Texture,mainSizer)
+#        Texture.SetSizer(mainSizer,True)
+#        mainSizer.Fit(G2frame.dataFrame)
+#        Size = mainSizer.GetMinSize()
+#        Size[0] += 40
+#        Size[1] = max(Size[1],250) + 35
+#        Texture.SetSize(Size)
+#        Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+#        Size[1] = min(Size[1],450)
+#        G2frame.dataFrame.setSizePosLeft(Size)
 ################################################################################
 ##### DData routines - GUI stuff in GSASIIddataGUI.py
 ################################################################################
@@ -3466,21 +3445,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for RBObj in data['RBModels']['Vector']:
                 mainSizer.Add(VecrbSizer(RBObj))
 
-        RigidBodies.SetSizer(mainSizer)
-        if G2frame.dataFrame.PhaseUserSize is None:
-            mainSizer.FitInside(G2frame.dataFrame)
-            Size = mainSizer.Fit()
-            Size[0] += 40
-            Size[1] = max(Size[1],290) + 35
-            RigidBodies.SetSize(Size)
-            RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            Size[1] = min(Size[1],450)
-            G2frame.dataFrame.setSizePosLeft(Size)
-        else:
-            Size = G2frame.dataFrame.PhaseUserSize
-            RigidBodies.SetSize(Size)
-            RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            G2frame.dataFrame.Update()
+        SetPhaseWindow(G2frame.dataFrame,RigidBodies,mainSizer)
+#        RigidBodies.SetSizer(mainSizer)
+#        mainSizer.FitInside(G2frame.dataFrame)
+#        Size = mainSizer.Fit(G2frame.dataFrame)
+#        Size[0] += 40
+#        Size[1] = max(Size[1],290) + 35
+#        RigidBodies.SetSize(Size)
+#        RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+#        Size[1] = min(Size[1],450)
+#        G2frame.dataFrame.setSizePosLeft(Size)
 
     def OnRBCopyParms(event):
         RBObjs = []
@@ -3809,13 +3783,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             btnSizer.Add(CancelBtn)
             btnSizer.Add((20,20),1)
             mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-            RigidBodies.SetSizer(mainSizer)
-            Size = mainSizer.Fit(RigidBodies)
-            Size[0] += 40
-            Size[1] = min(max(Size[1],290) + 35,560)
-            RigidBodies.SetSize(Size)
-            RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            G2frame.dataFrame.setSizePosLeft(Size)
+            SetPhaseWindow(G2frame.dataFrame,RigidBodies,mainSizer)
+#            RigidBodies.SetSizer(mainSizer)
+#            Size = mainSizer.Fit(RigidBodies)
+#            Size[0] += 40
+#            Size[1] = min(max(Size[1],290) + 35,560)
+#            RigidBodies.SetSize(Size)
+#            RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+#            G2frame.dataFrame.setSizePosLeft(Size)
         Draw()
         
     def OnAutoFindResRB(event):
@@ -4363,21 +4338,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Results = data['MCSA']['Results']
             mainSizer.Add(ResultsSizer(Results))
 
-        MCSA.SetSizer(mainSizer)
-        if G2frame.dataFrame.PhaseUserSize is None:
-            mainSizer.FitInside(G2frame.dataFrame)
-            Size = mainSizer.Fit()
-            Size[0] += 40
-            Size[1] = max(Size[1],350) + 35
-            MCSA.SetSize(Size)
-            MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            Size[1] = min(Size[1],450)
-            G2frame.dataFrame.setSizePosLeft(Size)
-        else:
-            Size = G2frame.dataFrame.PhaseUserSize
-            MCSA.SetSize(Size)
-            MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-            G2frame.dataFrame.Update()
+        SetPhaseWindow(G2frame.dataFrame,MCSA,mainSizer)
+#        MCSA.SetSizer(mainSizer)
+#        mainSizer.FitInside(G2frame.dataFrame)
+#        Size = mainSizer.Fit(G2frame.dataFrame)
+#        Size[0] += 40
+#        Size[1] = max(Size[1],350) + 35
+#        MCSA.SetSize(Size)
+#        MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+#        Size[1] = min(Size[1],450)
+#        G2frame.dataFrame.setSizePosLeft(Size)
             
     def OnRunMultiMCSA(event):
         RunMCSA('multi')
@@ -4566,10 +4536,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
-            if G2frame.dataFrame.PhaseUserSize is None:
-                G2frame.dataFrame.setSizePosLeft([500,300])
-            else:
-                G2frame.dataFrame.Update()
+            G2frame.dataFrame.setSizePosLeft([450,300])
                     
     def OnPawleyLoad(event):
         generalData = data['General']
@@ -4716,10 +4683,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(FillMapPeaksGrid)
             G2plt.PlotStructure(G2frame,data)                    
             
-        if G2frame.dataFrame.PhaseUserSize is None:
-            G2frame.dataFrame.setSizePosLeft([450,300])
-        else:
-            G2frame.dataFrame.Update()
+        G2frame.dataFrame.setSizePosLeft([450,300])
         G2frame.dataFrame.SetStatusText('')
         if 'Map Peaks' in data:
             G2frame.dataFrame.SetStatusText('Select mag or dzero columns to sort')

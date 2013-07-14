@@ -181,7 +181,7 @@ def UpdateImageControls(G2frame,data,masks):
                             oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')))
                             Data['range'] = oldData['range']
                             Data['size'] = oldData['size']
-                            Data['GonioAngles'] = oldData['GonioAngles']
+                            Data['GonioAngles'] = oldData.get('GonioAngles', [0.,0.,0.])
                             Data['ring'] = []
                             Data['rings'] = []
                             Data['ellipses'] = []

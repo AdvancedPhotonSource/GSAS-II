@@ -1018,45 +1018,69 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
     return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables
     
 def cellFill(pfx,SGData,parmDict,sigDict): 
-    'needs a doc string'
+    '''Returns the filled-out reciprocal cell (A) terms and their uncertainties
+    from the parameter and sig dictionaries.
+
+    :param str pfx: parameter prefix ("n::", where n is a phase number)
+    :param dict SGdata: a symmetry object
+    :param dict parmDict: a dictionary of parameters
+    :param dict sigDict:  a dictionary of uncertainties on parameters
+
+    :returns: A,sigA where each is a list of six terms with the A terms 
+    '''
     if SGData['SGLaue'] in ['-1',]:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
             parmDict[pfx+'A3'],parmDict[pfx+'A4'],parmDict[pfx+'A5']]
-        sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-            sigDict[pfx+'A3'],sigDict[pfx+'A4'],sigDict[pfx+'A5']]
     elif SGData['SGLaue'] in ['2/m',]:
         if SGData['SGUniq'] == 'a':
             A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
                 parmDict[pfx+'A3'],0,0]
-            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                sigDict[pfx+'A3'],0,0]
         elif SGData['SGUniq'] == 'b':
             A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
                 0,parmDict[pfx+'A4'],0]
-            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                0,sigDict[pfx+'A4'],0]
         else:
             A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
                 0,0,parmDict[pfx+'A5']]
-            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                0,0,sigDict[pfx+'A5']]
     elif SGData['SGLaue'] in ['mmm',]:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],0,0,0]
-        sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],0,0,0]
     elif SGData['SGLaue'] in ['4/m','4/mmm']:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A2'],0,0,0]
-        sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
     elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A2'],
             parmDict[pfx+'A0'],0,0]
-        sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
     elif SGData['SGLaue'] in ['3R', '3mR']:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],
             parmDict[pfx+'A3'],parmDict[pfx+'A3'],parmDict[pfx+'A3']]
-        sigA = [sigDict[pfx+'A0'],0,0,sigDict[pfx+'A3'],0,0]
     elif SGData['SGLaue'] in ['m3m','m3']:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A0'],parmDict[pfx+'A0'],0,0,0]
-        sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
+
+    try:
+        if SGData['SGLaue'] in ['-1',]:
+            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+                sigDict[pfx+'A3'],sigDict[pfx+'A4'],sigDict[pfx+'A5']]
+        elif SGData['SGLaue'] in ['2/m',]:
+            if SGData['SGUniq'] == 'a':
+                sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+                    sigDict[pfx+'A3'],0,0]
+            elif SGData['SGUniq'] == 'b':
+                sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+                    0,sigDict[pfx+'A4'],0]
+            else:
+                sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
+                    0,0,sigDict[pfx+'A5']]
+        elif SGData['SGLaue'] in ['mmm',]:
+            sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],0,0,0]
+        elif SGData['SGLaue'] in ['4/m','4/mmm']:
+            sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
+        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+            sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
+        elif SGData['SGLaue'] in ['3R', '3mR']:
+            sigA = [sigDict[pfx+'A0'],0,0,sigDict[pfx+'A3'],0,0]
+        elif SGData['SGLaue'] in ['m3m','m3']:
+            sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
+    except KeyError:
+        sigA = [0,0,0,0,0,0]
+
     return A,sigA
         
 def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):

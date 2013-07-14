@@ -1270,7 +1270,12 @@ def ValEsd(value,esd=0,nTZ=False):
 
     '''
     # Note: this routine is Python 3 compatible -- I think
-    if esd != 0:
+    if math.isnan(value): # invalid value, bail out
+        return '?'
+    if math.isnan(esd): # invalid esd, treat as zero
+        esd = 0
+        esdoff = 5
+    elif esd != 0:
         # transform the esd to a one or two digit integer
         l = math.log10(abs(esd)) % 1
         # cut off of 19 1.9==>(19) but 1.95==>(2) N.B. log10(1.95) = 0.2900...
@@ -1299,7 +1304,6 @@ def ValEsd(value,esd=0,nTZ=False):
     else: # esd = 0; non-exponential notation ==> esdoff+1 significant digits
         extra = -math.log10(abs(value))
         if extra > 0: extra += 1
-        print 'fmt=',"{:."+str(max(0,esdoff+int(extra)))+"f}"
         out = ("{:."+str(max(0,esdoff+int(extra)))+"f}").format(value) # format the value
     if esd > 0:
         out += ("({:d})").format(intesd)  # add the esd

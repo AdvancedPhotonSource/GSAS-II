@@ -905,8 +905,8 @@ def Dict2Deriv(varyList,derivDict,dMdv):
     :param dict derivDict: a dict containing derivatives for parameter values keyed by the
       parameter names.
 
-    :param dict dMdv: a dict containing derivatives for dependent parameter computed from
-      derivDict
+    :param list dMdv: a Jacobian, as a list of np.array containing derivatives for dependent
+      parameter computed from derivDict
 
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,invarrayList

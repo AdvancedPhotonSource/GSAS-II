@@ -80,7 +80,7 @@ def whichsvn():
     "svn/bin" in the location of the GSASII source files.
 
     :returns: None if svn is not found or an absolute path to the subversion
-    executable file .
+      executable file.
     '''
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -195,14 +195,16 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
 def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
     '''This performs an update of the files in a local directory from a server. 
 
-    :param fpath: path to repository dictionary, defaults to directory where
+    :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located
-
+    :param version: the number of the version to be loaded. Used only
+       cast as a string, but should be an integer or something that corresponds to a
+       string representation of an integer value when cast. A value of None (default)
+       causes the latest version on the server to be used.
     :returns: A dictionary with the files that have been changed/added and
-          a code describing how they have been updated (see changetype) ro 
+          a code describing how they have been updated (see changetype) or
           None if there is a subversion error (likely because the path is
           not a repository or svn is not found)
-
     '''
     import subprocess
     changetype = {'A': 'Added', 'D': 'Deleted', 'U': 'Updated',

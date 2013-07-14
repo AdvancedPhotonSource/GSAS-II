@@ -8,12 +8,13 @@ import GSASIIIO as G2IO
 #reload(G2IO)
 import GSASIIgrid as G2gd
 import GSASIIstrIO as G2stIO
+#reload(G2stIO)
 #import GSASIImapvars as G2mv
 import GSASIImath as G2mth
+reload(G2mth)
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spg
 #reload(G2spg)
-reload(G2mth)
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -584,12 +585,6 @@ class ExportCIF(G2IO.ExportBaseclass):
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
 
-            print histblk.keys()
-            #            for key in histblk:
-            #                print key
-            print inst
-            print self.parmDict.keys()
-            print self.sigDict.keys()
             WriteCIFitem('\n# SCATTERING FACTOR INFO')
             if 'Lam1' in inst:
                 ratio = self.parmDict.get('I(L2)/I(L1)',inst['I(L2)/I(L1)'][1])
@@ -617,7 +612,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 slam1 = self.sigDict.get('Lam',-0.00009)
                 WriteCIFitem('_diffrn_radiation_wavelength',G2mth.ValEsd(lam1,slam1))
 
-            raise Exception, "testing"
 
             if not oneblock:
                 if not phasebyhistDict.get(histlbl):
@@ -628,13 +622,46 @@ class ExportCIF(G2IO.ExportBaseclass):
                                  '\n\t_pd_phase_id' + 
                                  '\n\t_pd_phase_block_id' + 
                                  '\n\t_pd_phase_mass_%')
+                    wtFrSum = 0.
                     for phasenam in phasebyhistDict.get(histlbl):
-                        pass
+                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
+                        General = self.Phases[phasenam]['General']
+                        wtFrSum += hapData['Scale'][0]*General['Mass']
 
-            WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
-            WriteCIFitem('_pd_proc_ls_prof_wR_factor','?')
-            WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
-            WriteCIFitem('_refine_ls_R_Fsqd_factor','?')
+                    for phasenam in phasebyhistDict.get(histlbl):
+                        hapData = self.Phases[phasenam]['Histograms'][histlbl]
+                        General = self.Phases[phasenam]['General']
+                        wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum
+                        pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
+                        if pfx+'Scale' in self.sigDict:
+                            sig = self.sigDict[pfx+'Scale']*wtFr/hapData['Scale'][0]
+                        else:
+                            sig = -0.0001
+                        WriteCIFitem(
+                            '  '+
+                            str(self.Phases[phasenam]['pId']) +
+                            '  '+datablockidDict[phasenam]+
+                            '  '+G2mth.ValEsd(wtFr,sig)
+                            )
+
+            # this will need help from Bob
+            # WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
+            # WriteCIFitem('_pd_proc_ls_prof_wR_factor','?')
+            # WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
+            # WriteCIFitem('_refine_ls_R_Fsqd_factor','?')
+
+            phasenam = self.Phases.keys()[0]
+            for key in self.Phases[phasenam]['Histograms']:
+                print key
+                print '------------'
+                print self.Phases[phasenam]['Histograms'][key]
+            raise Exception, "testing"
+            print histblk.keys()
+            for key in histblk:
+                print key,histblk[key]
+            print inst
+            #print self.parmDict.keys()
+            #print self.sigDict.keys()
             
             #WriteCIFitem('_pd_meas_2theta_fixed',text)
             WriteCIFitem('_diffrn_radiation_probe','x-ray')
@@ -1049,7 +1076,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                                  hist)
                     WriteCIFitem('_pd_block_id',datablockidDict[hist])
                     WritePowderTemplate()
-                    WritePowderData(key1)
+                    WritePowderData(hist)
                 elif hist.startswith("HKLF"): 
                     WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
                     #instnam = histblk["Instrument Parameters"][0]['InstrName']
@@ -1057,7 +1084,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                                  hist)
                     WriteCIFitem('_pd_block_id',datablockidDict[hist])
                     WriteSnglXtalTemplate()
-                    WriteSingleXtalData(key1)
+                    WriteSingleXtalData(hist)
 
         WriteCIFitem('#--' + 15*'eof--' + '#')
 

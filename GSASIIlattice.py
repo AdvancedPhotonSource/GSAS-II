@@ -3,7 +3,25 @@
 *GSASIIlattice: Unit cells*
 ---------------------------
 
-Perform lattice-related computations'''
+Perform lattice-related computations
+
+Note that *g* is the reciprocal lattice tensor, and *G* is its inverse,
+:math:`G = g^{-1}`, where 
+
+  .. math::
+
+   G = \\left( \\begin{matrix}
+   a^2 & a b\\cos\gamma & a c\\cos\\beta \\\\
+   a b\\cos\\gamma & b^2 & b c \cos\\alpha \\\\
+   a c\\cos\\beta &  b c \\cos\\alpha & c^2
+   \\end{matrix}\\right)
+
+The "*A* tensor" terms are defined as
+:math:`A = (\\begin{matrix} G_{11} & G_{22} & G_{33} & 2G_{12} & 2G_{13} & 2G_{23}\\end{matrix})` and *A* can be used in this fashion:
+:math:`d^* = \sqrt {A_1 h^2 + A_2 k^2 + A_3 l^2 + A_4 hk + A_5 hl + A_6 kl}`, where
+*d* is the d-spacing, and :math:`d^*` is the reciprocal lattice spacing, 
+:math:`Q = 2 \\pi d^* = 2 \\pi / d`
+'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -89,7 +107,7 @@ def cell2Gmat(cell):
     return G,g
 
 def A2Gmat(A,inverse=True):
-    """Fill real & reciprocal metric tensor (G) from A
+    """Fill real & reciprocal metric tensor (G) from A.
 
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :param bool inverse: if True return both G and g; else just G

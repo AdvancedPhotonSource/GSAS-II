@@ -215,6 +215,25 @@ class ExportCIF(G2IO.ExportBaseclass):
                         s1 += "; "
                     s += s1
             return s
+        def FormatBackground(bkg):
+            '''Display the Background information as a descriptive text string.
+            
+            TODO: this needs to be expanded to show the diffuse peak and
+            Debye term information as well. 
+
+            :returns: the text description (str)
+            '''
+            fxn, bkgdict = bkg
+            terms = fxn[2]
+            txt = 'Background function: "'+fxn[0]+'" function with '+str(terms)+' terms:\n'
+            l = "   "
+            for v in fxn[3:]:
+                if len(l) > 60:
+                    txt += l + '\n'
+                    l = '   '
+                l += G2mth.ValEsd(v,-.009)+', '
+            txt += l
+            return txt
 
         def FormatInstProfile(instparmdict):
             '''Format the instrumental profile parameters with a
@@ -585,7 +604,6 @@ class ExportCIF(G2IO.ExportBaseclass):
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
 
-            WriteCIFitem('\n# SCATTERING FACTOR INFO')
             if 'Lam1' in inst:
                 ratio = self.parmDict.get('I(L2)/I(L1)',inst['I(L2)/I(L1)'][1])
                 sratio = self.sigDict.get('I(L2)/I(L1)',-0.0009)
@@ -644,49 +662,47 @@ class ExportCIF(G2IO.ExportBaseclass):
                             '  '+G2mth.ValEsd(wtFr,sig)
                             )
 
-            # this will need help from Bob
+            # TODO: this will need help from Bob
             # WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
             # WriteCIFitem('_pd_proc_ls_prof_wR_factor','?')
             # WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
             # WriteCIFitem('_refine_ls_R_Fsqd_factor','?')
 
-            phasenam = self.Phases.keys()[0]
-            for key in self.Phases[phasenam]['Histograms']:
-                print key
-                print '------------'
-                print self.Phases[phasenam]['Histograms'][key]
-            raise Exception, "testing"
-            print histblk.keys()
-            for key in histblk:
-                print key,histblk[key]
-            print inst
-            #print self.parmDict.keys()
-            #print self.sigDict.keys()
+            print histblk['Instrument Parameters'][0]['Type']
             
-            #WriteCIFitem('_pd_meas_2theta_fixed',text)
-            WriteCIFitem('_diffrn_radiation_probe','x-ray')
-            WriteCIFitem('_diffrn_radiation_probe','neutron')
-            WriteCIFitem('_diffrn_radiation_polarisn_ratio','?')
+            if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
+                WriteCIFitem('_diffrn_radiation_probe','x-ray')
+                pola = histblk['Instrument Parameters'][0].get('Polariz.')
+                if pola:
+                    pfx = ':' + str(hId) + ':'
+                    sig = self.sigDict.get(pfx+'Polariz.',-0.0009)
+                    txt = G2mth.ValEsd(pola[1],sig)
+                    WriteCIFitem('_diffrn_radiation_polarisn_ratio',txt)
+            elif histblk['Instrument Parameters'][0]['Type'][1][1] == 'N':
+                WriteCIFitem('_diffrn_radiation_probe','neutron')
+            # TOF (note that this may not be defined)
+            #if histblk['Instrument Parameters'][0]['Type'][1][2] == 'T':
+            #    WriteCIFitem('_pd_meas_2theta_fixed',text)
             
-            WriteCIFitem('loop_  _atom_type_symbol')
-            if oneblock:
-                WriteCIFitem('       _atom_type_number_in_cell')
-            #IF (HTYP(2:2) .eq. 'X' .AND. HTYP(3:3) .ne. 'E') THEN
-            WriteCIFitem('      _atom_type_scat_dispersion_real')
-            WriteCIFitem('      _atom_type_scat_dispersion_imag')
-            for lbl in ('a1','a2','a3', 'a4', 'b1', 'b2', 'b3', 'b4', 'c'):
-                WriteCIFitem('      _atom_type_scat_Cromer_Mann_'+lbl)
-            #ELSEIF (HTYP(2:2) .eq. 'N') THEN
-            WriteCIFitem('      _atom_type_scat_length_neutron')
-            #ENDIF
-            WriteCIFitem('      _atom_type_scat_source')
 
-            #C document the background function used
-            WriteCIFitem('_pd_proc_ls_background_function','?')
+            # TODO: this will need help from Bob
+            #if not oneblock:
+            #WriteCIFitem('\n# SCATTERING FACTOR INFO')
+            #WriteCIFitem('loop_  _atom_type_symbol')
+            #if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
+            #    WriteCIFitem('      _atom_type_scat_dispersion_real')
+            #    WriteCIFitem('      _atom_type_scat_dispersion_imag')
+            #    for lbl in ('a1','a2','a3', 'a4', 'b1', 'b2', 'b3', 'b4', 'c'):
+            #        WriteCIFitem('      _atom_type_scat_Cromer_Mann_'+lbl)
+            #elif histblk['Instrument Parameters'][0]['Type'][1][1] == 'N':
+            #    WriteCIFitem('      _atom_type_scat_length_neutron')
+            #WriteCIFitem('      _atom_type_scat_source')
 
-            WriteCIFitem('_exptl_absorpt_process_details','?')
-            WriteCIFitem('_exptl_absorpt_correction_T_min','?')
-            WriteCIFitem('_exptl_absorpt_correction_T_max','?')
+            WriteCIFitem('_pd_proc_ls_background_function',FormatBackground(histblk['Background']))
+
+            #WriteCIFitem('_exptl_absorpt_process_details','?')
+            #WriteCIFitem('_exptl_absorpt_correction_T_min','?')
+            #WriteCIFitem('_exptl_absorpt_correction_T_max','?')
             #C extinction
             #WRITE(IUCIF,'(A)') '# Extinction correction'
             #CALL WRVAL(IUCIF,'_gsas_exptl_extinct_corr_T_min',TEXT(1:10))
@@ -695,6 +711,19 @@ class ExportCIF(G2IO.ExportBaseclass):
             if not oneblock:
                 # instrumental profile terms go here
                 WriteCIFitem('_pd_proc_ls_profile_function','?')
+
+            raise Exception, "testing"
+            phasenam = self.Phases.keys()[0]
+            for key in self.Phases[phasenam]['Histograms']:
+                print key
+                print '------------'
+                print self.Phases[phasenam]['Histograms'][key]
+            print histblk.keys()
+            for key in histblk:
+                print key,histblk[key]
+            print inst
+            #print self.parmDict.keys()
+            #print self.sigDict.keys()
 
             #print 'Data'
             #for item in histblk['Data']:

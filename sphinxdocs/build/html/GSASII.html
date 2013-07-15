@@ -226,7 +226,7 @@ the project.</p>
 
 <dl class="method">
 <dt id="GSASII.GSASII.OnFileOpen">
-<tt class="descclassname">GSASII.</tt><tt class="descname">OnFileOpen</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnFileOpen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnFileOpen" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnFileOpen</tt><big>(</big><em>event</em>, <em>filename=None</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnFileOpen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnFileOpen" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads in a GSAS-II .gpx project file in response to the
 File/Open Project menu button</p>
 </dd></dl>
@@ -478,6 +478,14 @@ Called from <tt class="xref py py-mod docutils literal"><span class="pre">OnView
 <dd><p>Defines a wxApp for GSAS-II</p>
 <p>Creates a wx frame (self.main) which contains the display of the
 data tree.</p>
+<dl class="method">
+<dt id="GSASII.GSASIImain.MacOpenFile">
+<tt class="descname">MacOpenFile</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#GSASII.GSASIImain.MacOpenFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called on Mac every time a file is dropped on the app when it is running,
+treat this like a File/Open project menu action.
+Should be ignored on other platforms</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="GSASII.GSASIImain.OnInit">
 <tt class="descname">OnInit</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASIImain.OnInit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASIImain.OnInit" title="Permalink to this definition">¶</a></dt>

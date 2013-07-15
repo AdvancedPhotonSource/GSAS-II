@@ -232,7 +232,21 @@ in parmdict, as selected by key in varylist</p>
 <dl class="function">
 <dt id="GSASIIstrMath.HessRefine">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">HessRefine</tt><big>(</big><em>values</em>, <em>HistoPhases</em>, <em>parmDict</em>, <em>varylist</em>, <em>calcControls</em>, <em>pawleyLookup</em>, <em>dlg</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#HessRefine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.HessRefine" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Loop over histograms and compute derivatives of the fitting
+model (M) with respect to all parameters.  For each histogram, the
+Jacobian matrix, dMdv, with dimensions (n by m) where n is the
+number of parameters and m is the number of data points <em>in the
+histogram</em>. The (n by n) Hessian is computed from each Jacobian
+and it is returned.  This routine is used when refinement
+derivatives are selected as &#8220;analtytic Hessian&#8221; in Controls.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Vec,Hess where Vec is the least-squares vector and Hess is the Hessian</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -306,7 +320,21 @@ values corresponding to keys in varylist</p>
 <dl class="function">
 <dt id="GSASIIstrMath.dervRefine">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">dervRefine</tt><big>(</big><em>values</em>, <em>HistoPhases</em>, <em>parmDict</em>, <em>varylist</em>, <em>calcControls</em>, <em>pawleyLookup</em>, <em>dlg</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#dervRefine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.dervRefine" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Loop over histograms and compute derivatives of the fitting
+model (M) with respect to all parameters.  Results are returned in
+a Jacobian matrix (aka design matrix) of dimensions (n by m) where
+n is the number of parameters and m is the number of data
+points. This can exceed memory when m gets large. This routine is
+used when refinement derivatives are selected as &#8220;analtytic
+Jacobian&#8221; in Controls.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Jacobian numpy.array dMdv for all histograms concatinated</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -448,8 +476,30 @@ a new file; if False, the last backup is overwritten</li>
 
 <dl class="function">
 <dt id="GSASIIstrIO.GetHistogramPhaseData">
-<tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetHistogramPhaseData</tt><big>(</big><em>Phases</em>, <em>Histograms</em>, <em>Print=True</em>, <em>pFile=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetHistogramPhaseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetHistogramPhaseData" title="Permalink to this definition">¶</a></dt>
-<dd><p>needs a doc string</p>
+<tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetHistogramPhaseData</tt><big>(</big><em>Phases</em>, <em>Histograms</em>, <em>Print=True</em>, <em>pFile=None</em>, <em>resetRefList=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetHistogramPhaseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetHistogramPhaseData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the HAP histogram/phase information into dicts</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Phases</strong> (<em>dict</em>) &#8211; phase information</li>
+<li><strong>Histograms</strong> (<em>dict</em>) &#8211; Histogram information</li>
+<li><strong>Print</strong> (<em>bool</em>) &#8211; prints information as it is read</li>
+<li><strong>pFile</strong> (<em>file</em>) &#8211; file object to print to (the default, None causes printing to the console)</li>
+<li><strong>resetRefList</strong> (<em>bool</em>) &#8211; Should the contents of the Reflection List be initialized
+on loading. The default, True, initializes the Reflection List as it is loaded.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(hapVary,hapDict,controlDict)
+* hapVary: list of refined variables
+* hapDict: dict with refined variables and their values
+* controlDict: dict with computation controls (?)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -550,7 +600,41 @@ and any phase that uses a histogram</p>
 <dl class="function">
 <dt id="GSASIIstrIO.ProcessConstraints">
 <tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">ProcessConstraints</tt><big>(</big><em>constList</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#ProcessConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.ProcessConstraints" title="Permalink to this definition">¶</a></dt>
-<dd><p>interpret constraints</p>
+<dd><p>Interpret the constraints in the constList input into a dictionary, etc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>constList</strong> (<em>list</em>) &#8211; <p>a list of lists where each item in the outer list
+specifies a constraint of some form. The last item in each inner list
+determines which of the four constraints types has been input:</p>
+<blockquote>
+<div><ul class="simple">
+<li>h (hold): a single variable that will not be varied. It
+will be removed from the varyList later.</li>
+<li>c (constraint): specifies a linear relationship that
+can be varied as a new grouped variable
+a fixed value.</li>
+<li>f (fixed): specifies a linear relationship that is assigned
+a fixed value.</li>
+<li>e (equivalence): specifies a series of variables where the
+first variable in the last can be used to generate the
+values for all the remaining variables.</li>
+</ul>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple of (constDict,fixedList,ignored) where:<ul class="simple">
+<li>constDict (list) contains the constraint relationships</li>
+<li>fixedList (list) contains the fixed values for type
+of constraint.</li>
+<li>ignored (int) counts the number of invalid constraint items
+(should always be zero!)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -629,7 +713,25 @@ and any phase that used a histogram. Also updates rigid body definitions.</p>
 <dl class="function">
 <dt id="GSASIIstrIO.cellFill">
 <tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">cellFill</tt><big>(</big><em>pfx</em>, <em>SGData</em>, <em>parmDict</em>, <em>sigDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#cellFill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.cellFill" title="Permalink to this definition">¶</a></dt>
-<dd><p>needs a doc string</p>
+<dd><p>Returns the filled-out reciprocal cell (A) terms and their uncertainties
+from the parameter and sig dictionaries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pfx</strong> (<em>str</em>) &#8211; parameter prefix (&#8220;n::&#8221;, where n is a phase number)</li>
+<li><strong>SGdata</strong> (<em>dict</em>) &#8211; a symmetry object</li>
+<li><strong>parmDict</strong> (<em>dict</em>) &#8211; a dictionary of parameters</li>
+<li><strong>sigDict</strong> (<em>dict</em>) &#8211; a dictionary of uncertainties on parameters</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A,sigA where each is a list of six terms with the A terms</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">

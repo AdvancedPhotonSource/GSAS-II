@@ -146,8 +146,9 @@ class TextElement(object):
         DRAWBACK of the whole conversion thing is a really long time for creating the
         texture. If you see any optimizations that could save time PLEASE CREATE A PATCH!!!
         """
-        # get a memory dc
+        # get a memory dc and assign a temporary bitmap
         dc = wx.MemoryDC()
+        dc.SelectObject(wx.EmptyBitmap(100, 100))
         
         # set our font
         dc.SetFont(self._font)

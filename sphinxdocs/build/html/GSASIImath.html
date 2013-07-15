@@ -337,7 +337,7 @@ and are in crystal coordinates; Amat is crystal to Cart matrix</p>
 
 <dl class="function">
 <dt id="GSASIImath.HessianLSQ">
-<tt class="descclassname">GSASIImath.</tt><tt class="descname">HessianLSQ</tt><big>(</big><em>func</em>, <em>x0</em>, <em>Hess</em>, <em>args=()</em>, <em>ftol=1.49012e-08</em>, <em>xtol=1.49012e-08</em>, <em>maxcyc=0</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#HessianLSQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.HessianLSQ" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">HessianLSQ</tt><big>(</big><em>func</em>, <em>x0</em>, <em>Hess</em>, <em>args=()</em>, <em>ftol=1.49012e-08</em>, <em>xtol=1.49012e-08</em>, <em>maxcyc=0</em>, <em>Print=False</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#HessianLSQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.HessianLSQ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Minimize the sum of squares of a function (<span class="math">\(f\)</span>) evaluated on a series of
 values (y): <span class="math">\(\sum_{y=0}^{N_{obs}} f(y,{args})\)</span></p>
 <div class="highlight-python"><pre>            Nobs
@@ -361,6 +361,7 @@ It must be a symmetric NxN array</li>
 <li><strong>xtol</strong> (<em>float</em>) &#8211; Relative error desired in the approximate solution.</li>
 <li><strong>maxcyc</strong> (<em>int</em>) &#8211; The maximum number of cycles of refinement to execute, if -1 refine 
 until other limits are met (ftol, xtol)</li>
+<li><strong>Print</strong> (<em>bool</em>) &#8211; True for printing results (residuals &amp; times) by cycle</li>
 </ul>
 </td>
 </tr>

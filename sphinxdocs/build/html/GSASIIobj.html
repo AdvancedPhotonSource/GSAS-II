@@ -221,8 +221,8 @@ the reduced chi squared. (float)</td>
 </tbody>
 </table>
 </div>
-<div class="section" id="phase-tree-item">
-<h2>Phase Tree Item<a class="headerlink" href="#phase-tree-item" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="phase-tree-items">
+<h2>Phase Tree Items<a class="headerlink" href="#phase-tree-items" title="Permalink to this headline">¶</a></h2>
 <span class="target" id="phase-table"></span><p id="index-3">Phase information is stored in the GSAS-II data tree as children of the
 Phases item in a dict with keys:</p>
 <table border="1" class="docutils">
@@ -244,7 +244,8 @@ Phases item in a dict with keys:</p>
 </tr>
 <tr class="row-odd"><td></td>
 <td>AtomPtrs</td>
-<td>? (list)</td>
+<td>list of four locations to use to pull info
+from the atom records (list)</td>
 </tr>
 <tr class="row-even"><td></td>
 <td>F000X</td>
@@ -374,13 +375,9 @@ interatomic angles (list of floats)</td>
 <tr class="row-odd"><td>Atoms</td>
 <td></td>
 <td>Atoms in phase as a list of lists. The outer list
-is for each atom, the inner list contains 18
-items:
-0) atom label, 1) the atom type,
-2) the refinement flags, 3-6) x, y, z, frac
-7) site symmetry, 8) site multiplicity,
-9) &#8216;I&#8217; or &#8216;A&#8217; for iso/anisotropic,
-10) Uiso, 10-16) Uij, 16) unique Id #.
+is for each atom, the inner list contains varying
+items depending on the type of phase, see
+the <a class="reference internal" href="#atoms-table"><em>Atom Records</em></a> description.
 (list of lists)</td>
 </tr>
 <tr class="row-even"><td>Drawing</td>
@@ -566,7 +563,7 @@ and <span class="math">\(T_n\)</span> is a length 3 np.array.
 Atom coordinates are transformed where the
 Asymmetric unit coordinates [X is (x,y,z)]
 are transformed using
-<span class="math">\(X\prime = M_n*X+T_n\)</span></td>
+<span class="math">\(X^\prime = M_n*X+T_n\)</span></td>
 </tr>
 <tr class="row-odd"><td>SGSys</td>
 <td>symmetry unit cell: type one of
@@ -582,6 +579,351 @@ are transformed using
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section" id="atom-records">
+<h2>Atom Records<a class="headerlink" href="#atom-records" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="atoms-table"></span><p id="index-5">If <tt class="docutils literal"><span class="pre">phasedict</span></tt> points to the phase information in the data tree, then
+atoms are contained in a list of atom records (list) in
+<tt class="docutils literal"><span class="pre">phasedict['Atoms']</span></tt>. Also needed to read atom information 
+are four pointers, <tt class="docutils literal"><span class="pre">cx,ct,cs,cia</span> <span class="pre">=</span> <span class="pre">phasedict['General']['AtomPtrs']</span></tt>,
+which define locations in the atom record, as shown below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">location</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>cx,cx+1,cx+2</td>
+<td>the x,y and z coordinates</td>
+</tr>
+<tr class="row-odd"><td>cx+3</td>
+<td>fractional occupancy (also cs-1)</td>
+</tr>
+<tr class="row-even"><td>ct-1</td>
+<td>atom label</td>
+</tr>
+<tr class="row-odd"><td>ct</td>
+<td>atom type</td>
+</tr>
+<tr class="row-even"><td>ct+1</td>
+<td>refinement flags</td>
+</tr>
+<tr class="row-odd"><td>cs</td>
+<td>site symmetry string</td>
+</tr>
+<tr class="row-even"><td>cs+1</td>
+<td>site multiplicity</td>
+</tr>
+<tr class="row-odd"><td>cia</td>
+<td>ADP flag: Isotropic (&#8216;I&#8217;) or Anisotropic (&#8216;A&#8217;)</td>
+</tr>
+<tr class="row-even"><td>cia+1</td>
+<td>Uiso</td>
+</tr>
+<tr class="row-odd"><td>cia+2...cia+6</td>
+<td>U11, U22, U33, U12, U13, U23</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="powder-diffraction-tree-items">
+<h2>Powder Diffraction Tree Items<a class="headerlink" href="#powder-diffraction-tree-items" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="powder-table"></span><p id="index-6">Every powder diffraction histogram is stored in the GSAS-II data tree
+with a top-level entry named beginning with the string &#8220;PWDR &#8221;. The
+diffraction data for that information are directly associated with
+that tree item and there are a series of children to that item. The
+routine <a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-func docutils literal"><span class="pre">GetUsedHistogramsAndPhasesfromTree()</span></tt></a> will
+load this information into a dictionary where the child tree name is
+used as a key, and the information in the main entry is assigned
+a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as outlined below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="17%" />
+<col width="58%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">sub-key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Limits</td>
+<td></td>
+<td>A list of two two element lists, as [[Ld,Hd],[L,H]]
+where L and Ld are the current and default lowest
+two-theta value to be used and
+where H and Hd are the current and default highest
+two-theta value to be used.</td>
+</tr>
+<tr class="row-odd"><td>Reflection Lists</td>
+<td></td>
+<td>A dict with an entry for each phase in the
+histogram. The contents of each dict item
+is a list or reflections as described in the
+<a class="reference internal" href="#powderrefl-table"><em>Powder Reflections</em></a>
+description.</td>
+</tr>
+<tr class="row-even"><td>Instrument Parameters</td>
+<td></td>
+<td>A list containing two dicts where the possible
+keys in each dict are listed below. The value
+for each item is a list containing three values:
+the initial value, the current value and a
+refinement flag which can have a value of
+True, False or 0 where 0 indicates a value that
+cannot be refined. The first and second
+values are floats unless otherwise noted.
+Items in the first dict are noted as [1]</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Lam</td>
+<td>Specifies a wavelength in Angstroms [1]</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Lam1</td>
+<td>Specifies the primary wavelength in
+Angstrom, when an alpha1, alpha2
+source is used [1]</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p class="first">Lam2</p>
+<p class="last">I(L2)/I(L1)</p>
+</td>
+<td>Specifies the secondary wavelength in
+Angstrom, when an alpha1, alpha2
+source is used [1]
+Ratio of Lam2 to Lam1 [1]</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Type</td>
+<td><dl class="first last docutils">
+<dt>Histogram type (str) [1]:</dt>
+<dd><ul class="first last simple">
+<li>&#8216;PXC&#8217; for constant wavelength x-ray</li>
+<li>&#8216;PNC&#8217; for constant wavelength neutron</li>
+<li>&#8216;PNT&#8217; for time of flight neutron</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Zero</td>
+<td>Two-theta zero correction in <em>degrees</em> [1]</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Azimuth</td>
+<td>Azimuthal setting angle for data recorded
+with differing setting angles [1]</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>U, V, W</td>
+<td>Cagliotti profile coefficients
+for Gaussian instrumental broadening, where the
+FWHM goes as
+<span class="math">\(U \tan^2\theta + V \tan\theta + W\)</span> [1]</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>X, Y</td>
+<td>Cauchy (Lorentzian) instrumental broadening
+coefficients [1]</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>SH/L</td>
+<td>Variant of the Finger-Cox-Jephcoat asymmetric
+peak broadening ratio. Note that this is the
+average between S/L and H/L where S is
+sample height, H is the slit height and
+L is the goniometer diameter. [1]</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Polariz.</td>
+<td>Polarization coefficient. [1]</td>
+</tr>
+<tr class="row-odd"><td>wtFactor</td>
+<td></td>
+<td>A weighting factor to increase or decrease
+the leverage of data in the histogram (float).
+A value of 1.0 weights the data with their
+standard uncertainties and a larger value
+increases the weighting of the data (equivalent
+to decreasing the uncertainties).</td>
+</tr>
+<tr class="row-even"><td>Sample Parameters</td>
+<td></td>
+<td>Specifies a dict with parameters that describe how
+the data were collected, as listed
+below. Refinable parameters are a list containing
+a float and a bool, where the second value
+specifies if the value is refined, otherwise
+the value is a float unless otherwise noted.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Scale</td>
+<td>The histogram scale factor (refinable)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Absorption</td>
+<td>The sample absorption coefficient as
+<span class="math">\(\mu r\)</span> where r is the radius
+(refinable).</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>DisplaceX,
+DisplaceY</td>
+<td>Sample displacement from goniometer center
+where Y is along the beam direction and
+X is perpendicular. Units are <span class="math">\(\mu m\)</span>
+(refinable).</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Phi, Chi,
+Omega</td>
+<td>Goniometer sample setting angles, in degrees.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Gonio. radius</td>
+<td>Radius of the diffractometer in mm</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>InstrName</td>
+<td>A name for the instrument, used in preparing
+a CIF (str).</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Force,
+Temperature,
+Humidity,
+Pressure,
+Voltage</td>
+<td>Variables that describe how the measurement
+was performed. Not used directly in
+any computations.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>ranId</td>
+<td>The random-number Id for the histogram
+(same value as where top-level key is ranId)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Type</td>
+<td>Type of diffraction data, may be &#8216;Debye-Scherrer&#8217;
+or &#8216;Bragg-Brentano&#8217; (str).</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Diffuse</td>
+<td>not in use?</td>
+</tr>
+<tr class="row-odd"><td>hId</td>
+<td></td>
+<td>The number assigned to the histogram when
+the project is loaded or edited (can change)</td>
+</tr>
+<tr class="row-even"><td>ranId</td>
+<td></td>
+<td>A random number id for the histogram
+that does not change</td>
+</tr>
+<tr class="row-odd"><td>Background</td>
+<td></td>
+<td>The background is stored as a list with where
+the first item in the list is list and the second
+item is a dict. The list contains the background
+function and its coefficients; the dict contains
+Debye diffuse terms and background peaks.
+(TODO: this needs to be expanded.)</td>
+</tr>
+<tr class="row-even"><td>Data</td>
+<td></td>
+<td><p class="first">The data consist of a list of 6 np.arrays
+containing in order:</p>
+<blockquote class="last">
+<div><ol class="arabic simple">
+<li>the x-postions (two-theta in degrees),</li>
+<li>the intensity values (Yobs),</li>
+<li>the weights for each Yobs value</li>
+<li>the computed intensity values (Ycalc)</li>
+<li>the background values</li>
+<li>Yobs-Ycalc</li>
+</ol>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="powder-reflection-data-structure">
+<h2>Powder Reflection Data Structure<a class="headerlink" href="#powder-reflection-data-structure" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="powderrefl-table"></span><p id="index-7">For every phase in a histogram, the <tt class="docutils literal"><span class="pre">Reflection</span> <span class="pre">Lists</span></tt> value is a list of
+reflections. The items in that list are documented below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">index</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0,1,2</td>
+<td>h,k,l (float)</td>
+</tr>
+<tr class="row-odd"><td>3</td>
+<td>multiplicity</td>
+</tr>
+<tr class="row-even"><td>4</td>
+<td>d-space, Angstrom</td>
+</tr>
+<tr class="row-odd"><td>5</td>
+<td>pos, two-theta</td>
+</tr>
+<tr class="row-even"><td>6</td>
+<td>sig, Gaussian width</td>
+</tr>
+<tr class="row-odd"><td>7</td>
+<td>gam, Lorenzian width</td>
+</tr>
+<tr class="row-even"><td>8</td>
+<td>Fobs**2</td>
+</tr>
+<tr class="row-odd"><td>9</td>
+<td>Fcalc**2</td>
+</tr>
+<tr class="row-even"><td>10</td>
+<td>reflection phase, in degrees</td>
+</tr>
+<tr class="row-odd"><td>11</td>
+<td>the equivalent reflections as a (m x 3)
+np.array, where m is 0.5 * multiplicity. Note
+that Freidel pairs, (-h,-k-,l), are not
+included.</td>
+</tr>
+<tr class="row-even"><td>12</td>
+<td>phase shift for each of the equivalent
+reflections as a length (m) array</td>
+</tr>
+<tr class="row-odd"><td>13</td>
+<td>intensity correction for reflection, this times
+Fobs**2 or Fcalc**2 gives Iobs or Icalc</td>
+</tr>
+<tr class="row-even"><td>14</td>
+<td>dict with the form factor (f or b) by atom type
+symbol at the reflection position.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="classes-and-routines">
+<h2><em>Classes and routines</em><a class="headerlink" href="#classes-and-routines" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="GSASIIobj.LoadHistogramIDs">
 <tt class="descclassname">GSASIIobj.</tt><tt class="descname">LoadHistogramIDs</tt><big>(</big><em>histList</em>, <em>idList</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LoadHistogramIDs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LoadHistogramIDs" title="Permalink to this definition">¶</a></dt>
@@ -690,8 +1032,12 @@ before creating or later using the VarName object.</p>
 <li><a class="reference internal" href="#"><em>GSASIIobj: Data objects</em></a><ul>
 <li><a class="reference internal" href="#constraints-tree-item">Constraints Tree Item</a></li>
 <li><a class="reference internal" href="#covariance-tree-item">Covariance Tree Item</a></li>
-<li><a class="reference internal" href="#phase-tree-item">Phase Tree Item</a></li>
+<li><a class="reference internal" href="#phase-tree-items">Phase Tree Items</a></li>
 <li><a class="reference internal" href="#space-group-objects">Space Group Objects</a></li>
+<li><a class="reference internal" href="#atom-records">Atom Records</a></li>
+<li><a class="reference internal" href="#powder-diffraction-tree-items">Powder Diffraction Tree Items</a></li>
+<li><a class="reference internal" href="#powder-reflection-data-structure">Powder Reflection Data Structure</a></li>
+<li><a class="reference internal" href="#classes-and-routines"><em>Classes and routines</em></a></li>
 </ul>
 </li>
 </ul>

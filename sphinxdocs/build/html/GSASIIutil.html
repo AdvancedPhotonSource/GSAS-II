@@ -109,12 +109,12 @@ found.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 939 $&#8221;
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 989 $&#8221;
 that is set by subversion when the file is retrieved from subversion.</td>
 </tr>
 </tbody>
 </table>
-<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">939</span> <span class="pre">$&quot;)</span></tt> in every python
+<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">989</span> <span class="pre">$&quot;)</span></tt> in every python
 file.</p>
 </dd></dl>
 
@@ -138,18 +138,41 @@ not a repository or svn is not found)</td>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIpath.svnGetLog">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetLog</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>version=None</em><big>)</big><a class="headerlink" href="#GSASIIpath.svnGetLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the revision log information for a specific version of the</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fpath</strong> (<em>str</em>) &#8211; path to repository dictionary, defaults to directory where
+the current file is located.</li>
+<li><strong>version</strong> (<em>int</em>) &#8211; the version number to be looked up or None (default)
+for the latest version.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a dictionary with keys (one hopes) &#8216;author&#8217;, &#8216;date&#8217;, &#8216;msg&#8217;, and &#8216;revision&#8217;</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIpath.svnGetRev">
 <tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetRev</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>local=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnGetRev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnGetRev" title="Permalink to this definition">¶</a></dt>
-<dd><p>This obtains the version number for the either the latest local last update
+<dd><p>Obtain the version number for the either the last update of the local version
 or contacts the subversion server to get the latest update version (# of Head).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>fpath</strong> &#8211; path to repository dictionary, defaults to directory where
+<li><strong>fpath</strong> (<em>str</em>) &#8211; path to repository dictionary, defaults to directory where
 the current file is located</li>
-<li><strong>local</strong> &#8211; determines the type of version number, where
+<li><strong>local</strong> (<em>bool</em>) &#8211; determines the type of version number, where
 True (default): returns the latest installed update 
 False: returns the version number of Head on the server</li>
 </ul>
@@ -166,19 +189,27 @@ not a repository or svn is not found)</p>
 
 <dl class="function">
 <dt id="GSASIIpath.svnUpdateDir">
-<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnUpdateDir</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnUpdateDir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnUpdateDir" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnUpdateDir</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>version=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnUpdateDir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnUpdateDir" title="Permalink to this definition">¶</a></dt>
 <dd><p>This performs an update of the files in a local directory from a server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fpath</strong> &#8211; path to repository dictionary, defaults to directory where
-the current file is located</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fpath</strong> (<em>str</em>) &#8211; path to repository dictionary, defaults to directory where
+the current file is located</li>
+<li><strong>version</strong> &#8211; the number of the version to be loaded. Used only
+cast as a string, but should be an integer or something that corresponds to a
+string representation of an integer value when cast. A value of None (default)
+causes the latest version on the server to be used.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with the files that have been changed/added and
-a code describing how they have been updated (see changetype) ro 
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A dictionary with the files that have been changed/added and
+a code describing how they have been updated (see changetype) or
 None if there is a subversion error (likely because the path is
-not a repository or svn is not found)</td>
+not a repository or svn is not found)</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -194,7 +225,8 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if svn is not found.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if svn is not found or an absolute path to the subversion
+executable file.</td>
 </tr>
 </tbody>
 </table>
@@ -430,7 +462,7 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 
 <dl class="function">
 <dt id="GSASIIElem.getFFvalues">
-<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getFFvalues</tt><big>(</big><em>FFtables</em>, <em>SQ</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#getFFvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.getFFvalues" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getFFvalues</tt><big>(</big><em>FFtables</em>, <em>SQ</em>, <em>ifList=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#getFFvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.getFFvalues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -438,10 +470,25 @@ Searches the current path as well as subdirectory &#8220;svn&#8221; and
 <span class="target" id="module-GSASIIlattice"></span><div class="section" id="gsasiilattice-unit-cells">
 <h2><em>GSASIIlattice: Unit cells</em><a class="headerlink" href="#gsasiilattice-unit-cells" title="Permalink to this headline">¶</a></h2>
 <p>Perform lattice-related computations</p>
+<p>Note that <em>g</em> is the reciprocal lattice tensor, and <em>G</em> is its inverse,
+<span class="math">\(G = g^{-1}\)</span>, where</p>
+<blockquote>
+<div><div class="math">
+\[\begin{split}G = \left( \begin{matrix}
+a^2 &amp; a b\cos\gamma &amp; a c\cos\beta \\
+a b\cos\gamma &amp; b^2 &amp; b c \cos\alpha \\
+a c\cos\beta &amp;  b c \cos\alpha &amp; c^2
+\end{matrix}\right)\end{split}\]</div>
+</div></blockquote>
+<p>The &#8220;<em>A</em> tensor&#8221; terms are defined as
+<span class="math">\(A = (\begin{matrix} G_{11} &amp; G_{22} &amp; G_{33} &amp; 2G_{12} &amp; 2G_{13} &amp; 2G_{23}\end{matrix})\)</span> and <em>A</em> can be used in this fashion:
+<span class="math">\(d^* = \sqrt {A_1 h^2 + A_2 k^2 + A_3 l^2 + A_4 hk + A_5 hl + A_6 kl}\)</span>, where
+<em>d</em> is the d-spacing, and <span class="math">\(d^*\)</span> is the reciprocal lattice spacing, 
+<span class="math">\(Q = 2 \pi d^* = 2 \pi / d\)</span></p>
 <dl class="function">
 <dt id="GSASIIlattice.A2Gmat">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">A2Gmat</tt><big>(</big><em>A</em>, <em>inverse=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#A2Gmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.A2Gmat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fill real &amp; reciprocal metric tensor (G) from A</p>
+<dd><p>Fill real &amp; reciprocal metric tensor (G) from A.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -795,6 +842,12 @@ NB: there is a non numpy version in GSASIIspc: U2Uij</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIlattice.Uij2Ueqv">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Uij2Ueqv</tt><big>(</big><em>Uij</em>, <em>GS</em>, <em>Amat</em><big>)</big><a class="headerlink" href="#GSASIIlattice.Uij2Ueqv" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns 1/3 trace of diagonalized U matrix</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIlattice.Uij2betaij">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Uij2betaij</tt><big>(</big><em>Uij</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Uij2betaij"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Uij2betaij" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert Uij to beta-ij tensors &#8211; stub for eventual completion</p>
@@ -890,6 +943,12 @@ B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) =
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.cell2GS">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">cell2GS</tt><big>(</big><em>cell</em><big>)</big><a class="headerlink" href="#GSASIIlattice.cell2GS" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns Uij to betaij conversion matrix</p>
 </dd></dl>
 
 <dl class="function">
@@ -1043,7 +1102,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17e346f0&gt;, &lt;function test1 at 0x17e34730&gt;, &lt;function test2 at 0x17e34770&gt;, &lt;function test3 at 0x17e347b0&gt;, &lt;function test4 at 0x17e347f0&gt;, &lt;function test5 at 0x17e34830&gt;, &lt;function test6 at 0x17e34870&gt;, &lt;function test7 at 0x17e348b0&gt;, &lt;function test8 at 0x17e348f0&gt;, &lt;function test9 at 0x17e34930&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x279ea70&gt;, &lt;function test1 at 0x279eab0&gt;, &lt;function test2 at 0x279eaf0&gt;, &lt;function test3 at 0x279eb30&gt;, &lt;function test4 at 0x279eb70&gt;, &lt;function test5 at 0x279ebb0&gt;, &lt;function test6 at 0x279ebf0&gt;, &lt;function test7 at 0x279ec30&gt;, &lt;function test8 at 0x279ec70&gt;, &lt;function test9 at 0x279ecb0&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1140,14 +1199,32 @@ stored in a <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em
 <dl class="function">
 <dt id="GSASIIspc.AllOps">
 <tt class="descclassname">GSASIIspc.</tt><tt class="descname">AllOps</tt><big>(</big><em>SGData</em><big>)</big><a class="headerlink" href="#GSASIIspc.AllOps" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of all operators for a space group, including those for centering and a center of symmetry</p>
+<dd><p>Returns a list of all operators for a space group, including those for
+centering and a center of symmetry</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>SGData</strong> &#8211; from <a class="reference internal" href="#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">SpcGroup()</span></tt></a></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of strings of formatted symmetry operators</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(SGTextList,offsetList,symOpList,G2oprList) where<ul class="simple">
+<li>SGTextList: a list of strings with formatted and normalized
+symmetry operators.</li>
+<li>offsetList: a tuple of (dx,dy,dz) offsets that relate the GSAS-II
+symmetry operation to the operator in SGTextList and symOpList.
+these dx (etc.) values are added to the GSAS-II generated
+positions to provide the positions that are generated
+by the normalized symmetry operators.</li>
+<li>symOpList: a list of tuples with the normalized symmetry
+operations as (M,T) values
+(see <tt class="docutils literal"><span class="pre">SGOps</span></tt> in the <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em>Space Group object</em></a>)</li>
+<li>G2oprList: The GSAS-II operations for each symmetry operation as
+a tuple with (center,mult,opnum), where center is (0,0,0), (0.5,0,0),
+(0.5,0.5,0.5),...; where mult is 1 or -1 for the center of symmetry
+and opnum is the number for the symmetry operation, in <tt class="docutils literal"><span class="pre">SGOps</span></tt>
+(starting with 0).</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1218,7 +1295,7 @@ Cell = unit cell translations needed to put new positions inside cell
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>iabsnt,mulp,Uniq,phi</p>
 <ul class="simple">
-<li>iabsnt = True is reflection is forbidden by symmetry</li>
+<li>iabsnt = True if reflection is forbidden by symmetry</li>
 <li>mulp = reflection multiplicity including Friedel pairs</li>
 <li>Uniq = numpy array of equivalent hkl in descending order of h,k,l</li>
 </ul>
@@ -1473,7 +1550,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x17e36430&gt;, &lt;function test1 at 0x17e36630&gt;, &lt;function test2 at 0x17e36530&gt;, &lt;function test3 at 0x17e364b0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x27b6630&gt;, &lt;function test1 at 0x27b6670&gt;, &lt;function test2 at 0x27b66b0&gt;, &lt;function test3 at 0x27b66f0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 

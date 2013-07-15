@@ -1584,7 +1584,16 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     return dMdv
 
 def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
-    'Needs a doc string'
+    '''Loop over histograms and compute derivatives of the fitting
+    model (M) with respect to all parameters.  Results are returned in
+    a Jacobian matrix (aka design matrix) of dimensions (n by m) where
+    n is the number of parameters and m is the number of data
+    points. This can exceed memory when m gets large. This routine is
+    used when refinement derivatives are selected as "analtytic
+    Jacobian" in Controls.
+
+    :returns: Jacobian numpy.array dMdv for all histograms concatinated
+    '''
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
@@ -1697,6 +1706,16 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     return dMdv
 
 def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+    '''Loop over histograms and compute derivatives of the fitting
+    model (M) with respect to all parameters.  For each histogram, the
+    Jacobian matrix, dMdv, with dimensions (n by m) where n is the
+    number of parameters and m is the number of data points *in the
+    histogram*. The (n by n) Hessian is computed from each Jacobian
+    and it is returned.  This routine is used when refinement
+    derivatives are selected as "analtytic Hessian" in Controls.
+
+    :returns: Vec,Hess where Vec is the least-squares vector and Hess is the Hessian
+    '''
     'Needs a doc string'
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)

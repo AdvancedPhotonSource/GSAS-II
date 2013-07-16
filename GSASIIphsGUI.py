@@ -4919,7 +4919,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             page.ClearGrid()
         wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetId()
-        print 'Select',page
+#        print 'Select',page
         G2frame.dataDisplay.SetSelection(page)
         
     def OnPageChanged(event):
@@ -4930,13 +4930,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             page.ClearGrid()
         wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
-        print 'Tab',page
+#        print 'Tab',page
         ChangePage(page)
         
     def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
-        print page,text
-        print
+#        print page,text
         if text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             FillSelectPageMenu(G2frame.dataFrame.AtomsMenu)

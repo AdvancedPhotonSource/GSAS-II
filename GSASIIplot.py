@@ -3552,7 +3552,8 @@ def PlotStructure(G2frame,data):
     Page.SetFocus()
     Page.Choice = None
     if mapData['Flip']:
-        choice = [' save as/key:','jpeg','tiff','bmp','u: roll up','d: roll down','l: roll left','r: roll right']
+        choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2',
+            'u: roll up','d: roll down','l: roll left','r: roll right']
     else:
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)

@@ -816,14 +816,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         mainSizer.Add(MCSASizer())
         SetPhaseWindow(G2frame.dataFrame,General,mainSizer)
-#        General.SetSizer(mainSizer)
-#        General.SetScrollbars(1,1,1,1)
-#        Size = mainSizer.GetMinSize()
-#        Size[0] += 40
-#        Size[1] = max(Size[1],290) + 35
-#        General.SetSize(Size)
-#        General.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        G2frame.dataFrame.setSizePosLeft(Size)
         G2frame.dataFrame.SetStatusText('')
 
 ################################################################################
@@ -2799,14 +2791,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(RadSizer(),0,)
         SetPhaseWindow(G2frame.dataFrame,drawOptions,mainSizer)
 
-#        drawOptions.SetSizer(mainSizer)
-#        Size = mainSizer.Fit(G2frame.dataFrame)
-#        Size[0] += 35                           #compensate for scroll bar
-#        Size[1] = max(Size[1]+35,350)                           #compensate for status bar
-#        drawOptions.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        G2frame.dataFrame.setSizePosLeft(Size)
-#        drawOptions.SetSize(G2frame.dataFrame.GetClientSize())
-
 ################################################################################
 ####  Texture routines
 ################################################################################
@@ -3029,15 +3013,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             angSizer.Add((5,0),0)
         mainSizer.Add(angSizer,0,wx.ALIGN_CENTER_VERTICAL)
         SetPhaseWindow(G2frame.dataFrame,Texture,mainSizer)
-#        Texture.SetSizer(mainSizer,True)
-#        mainSizer.Fit(G2frame.dataFrame)
-#        Size = mainSizer.GetMinSize()
-#        Size[0] += 40
-#        Size[1] = max(Size[1],250) + 35
-#        Texture.SetSize(Size)
-#        Texture.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        Size[1] = min(Size[1],450)
-#        G2frame.dataFrame.setSizePosLeft(Size)
+
 ################################################################################
 ##### DData routines - GUI stuff in GSASIIddataGUI.py
 ################################################################################
@@ -3446,15 +3422,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mainSizer.Add(VecrbSizer(RBObj))
 
         SetPhaseWindow(G2frame.dataFrame,RigidBodies,mainSizer)
-#        RigidBodies.SetSizer(mainSizer)
-#        mainSizer.FitInside(G2frame.dataFrame)
-#        Size = mainSizer.Fit(G2frame.dataFrame)
-#        Size[0] += 40
-#        Size[1] = max(Size[1],290) + 35
-#        RigidBodies.SetSize(Size)
-#        RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        Size[1] = min(Size[1],450)
-#        G2frame.dataFrame.setSizePosLeft(Size)
 
     def OnRBCopyParms(event):
         RBObjs = []
@@ -3784,13 +3751,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             btnSizer.Add((20,20),1)
             mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
             SetPhaseWindow(G2frame.dataFrame,RigidBodies,mainSizer)
-#            RigidBodies.SetSizer(mainSizer)
-#            Size = mainSizer.Fit(RigidBodies)
-#            Size[0] += 40
-#            Size[1] = min(max(Size[1],290) + 35,560)
-#            RigidBodies.SetSize(Size)
-#            RigidBodies.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#            G2frame.dataFrame.setSizePosLeft(Size)
         Draw()
         
     def OnAutoFindResRB(event):
@@ -4339,15 +4299,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(ResultsSizer(Results))
 
         SetPhaseWindow(G2frame.dataFrame,MCSA,mainSizer)
-#        MCSA.SetSizer(mainSizer)
-#        mainSizer.FitInside(G2frame.dataFrame)
-#        Size = mainSizer.Fit(G2frame.dataFrame)
-#        Size[0] += 40
-#        Size[1] = max(Size[1],350) + 35
-#        MCSA.SetSize(Size)
-#        MCSA.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        Size[1] = min(Size[1],450)
-#        G2frame.dataFrame.setSizePosLeft(Size)
             
     def OnRunMultiMCSA(event):
         RunMCSA('multi')
@@ -4953,11 +4904,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print 'clear texture?'
         event.Skip()
 
-    def OnDataResize(event):
-        'Called when the data item window is resized by the user.'
-        G2frame.dataFrame.PhaseUserSize = G2frame.dataFrame.GetSize()
-        event.Skip()
+    def FillSelectPageMenu(menuBar):
+        mid = menuBar.FindMenu('Select page')
+        for ipage,page in enumerate(Pages):
+            menu = menuBar.GetMenu(mid)
+            if menu.FindItem(page) < 0:
+                menu.Append(id=ipage,kind=wx.ITEM_NORMAL,text=page)
+                G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=ipage)
 
+    def OnSelectPage(event):
+        '''This is called when an item is selected from the Select page menu
+        '''
+        for page in G2frame.dataDisplay.gridList: # clear out all grids, forcing edits in progress to complete
+            page.ClearGrid()
+        wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
+        page = event.GetId()
+        print 'Select',page
+        G2frame.dataDisplay.SetSelection(page)
+        
     def OnPageChanged(event):
         '''This is called every time that a Notebook tab button is pressed
         on a Phase data item window
@@ -4966,10 +4930,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             page.ClearGrid()
         wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
+        print 'Tab',page
+        ChangePage(page)
+        
+    def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
-        Atoms.ClearGrid()
+        print page,text
+        print
         if text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
+            FillSelectPageMenu(G2frame.dataFrame.AtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
@@ -4982,11 +4952,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
             for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
-                G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
-                
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
             FillAtomsGrid(Atoms)
         elif text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
+            FillSelectPageMenu(G2frame.dataFrame.DataGeneral)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
@@ -4994,6 +4964,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UpdateGeneral()
         elif text == 'Data':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
+            FillSelectPageMenu(G2frame.dataFrame.DataMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
@@ -5001,11 +4972,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotSizeStrainPO(G2frame,data,Start=True)
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
+            FillSelectPageMenu(G2frame.dataFrame.DataDrawOptions)
             UpdateDrawOptions()
-            #G2plt.PlotStructure(G2frame,data)
             wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'Draw Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
+            FillSelectPageMenu(G2frame.dataFrame.DrawAtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
@@ -5025,9 +4997,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
             UpdateDrawAtoms()
-            G2plt.PlotStructure(G2frame,data)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
+            FillSelectPageMenu(G2frame.dataFrame.RigidBodiesMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2gd.wxID_AUTOFINDRESRB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBAssign, id=G2gd.wxID_ASSIGNATMS2RB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2gd.wxID_COPYRBPARMS)
@@ -5037,6 +5009,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             FillRigidBodyGrid()
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
+            FillSelectPageMenu(G2frame.dataFrame.PawleyMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
@@ -5044,6 +5017,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             FillPawleyReflectionsGrid()
         elif text == 'Map peaks':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
+            FillSelectPageMenu(G2frame.dataFrame.MapPeaksMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
@@ -5054,10 +5028,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
             FillMapPeaksGrid()
-            #G2plt.PlotStructure(G2frame,data)
             wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'MC/SA':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MCSAMenu)
+            FillSelectPageMenu(G2frame.dataFrame.MCSAMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2gd.wxID_ADDMCSAATOM)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2gd.wxID_ADDMCSARB)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2gd.wxID_CLEARMCSARB)
@@ -5067,62 +5041,52 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
+            FillSelectPageMenu(G2frame.dataFrame.TextureMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
             UpdateTexture()                        
             G2plt.PlotTexture(G2frame,data,Start=True)            
         else:
             G2gd.SetDataMenuBar(G2frame)
-        wx.Frame.Bind(G2frame.dataFrame,wx.EVT_SIZE,OnDataResize) # capture user resize events again
-        event.Skip()
-        
+    Pages = []    
     wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
     G2frame.dataDisplay.gridList = []
     General = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(General,'General')
+    Pages.append('General')
     DData = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(DData,'Data')
+    Pages.append('Data')
     Atoms = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(Atoms)
     G2frame.dataDisplay.AddPage(Atoms,'Atoms')
+    Pages.append('Atoms')
     drawOptions = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
+    Pages.append('Draw Options')
     drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(drawAtoms)
     G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
+    Pages.append('Draw Atoms')
     RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
+    Pages.append('RB Models')
     MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(MapPeaks)    
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
+    Pages.append('Map peaks')
     MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(MCSA,'MC/SA')
+    Pages.append('MC/SA')
     Texture = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(Texture,'Texture')
+    Pages.append('Texture')
     G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(G2frame.PawleyRefl)
     G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
+    Pages.append('Pawley reflections')
     
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)    
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)    
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
-
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
-    SetupGeneral()
-    
-    GeneralData = data['General']
-    
-    if oldPage is None:
-        # when entering a Phase data item from any other item,
-        # reset a saved size, if any.
-        G2frame.dataFrame.PhaseUserSize = None 
-        UpdateGeneral()
-    elif oldPage:
-        G2frame.dataDisplay.SetSelection(oldPage)
-    else:
-        UpdateGeneral()
-    wx.Frame.Bind(G2frame.dataFrame,wx.EVT_SIZE,OnDataResize) # capture user resizing
+    SetupGeneral()    
+    GeneralData = data['General']    
+    ChangePage(0)

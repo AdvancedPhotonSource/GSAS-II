@@ -146,11 +146,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
     M = func(x0,*args)
     nfev += 1
     Yvec,Amat = Hess(x0,*args)
-    lam = 1.e-8          #unmodified matrix - comment out for matrix modification
-    Lam = np.eye(Amat.shape[0])*lam
     Amatlam = Amat*(One+Lam)
     try:
-        Bmat = nl.inv(Amatlam)
+        Bmat = nl.inv(Amatlam)*(One+Lam)/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[]}]
     except nl.LinAlgError:
         print 'ouch #2 linear algebra error in LS'

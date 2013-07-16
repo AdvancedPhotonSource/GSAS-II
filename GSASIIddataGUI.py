@@ -37,6 +37,7 @@ import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
+import GSASIIphsGUI as G2phsGUI
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -985,12 +986,4 @@ def UpdateDData(G2frame,DData,data):
             pass
         #G2gd.HorizontalLine(mainSizer,DData)
     mainSizer.Add((5,5),0)
-
-    DData.SetSizer(mainSizer,True)
-    Size = mainSizer.GetMinSize()
-    Size[0] += 40
-    Size[1] = max(Size[1],290) + 35
-    DData.SetSize(Size)
-    DData.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-    Size[1] = min(Size[1],450)
-    G2frame.dataFrame.setSizePosLeft(Size)
+    G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer)

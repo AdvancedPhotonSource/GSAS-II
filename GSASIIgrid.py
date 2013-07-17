@@ -129,8 +129,8 @@ htmlFirstUse = True
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
 
-[ wxID_SELECTPHASE,wxID_SELECTPAGE,
-] = [wx.NewId() for item in range(2)]
+[ wxID_SELECTPHASE,
+] = [wx.NewId() for item in range(1)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -2135,7 +2135,7 @@ class GSNoteBook(wx.aui.AuiNotebook):
                 return page
 
     def ChangeSelection(self,page):
-        # in the wx.Notebook ChangeSelection is like SetSelection, but it
+        # in wx.Notebook ChangeSelection is like SetSelection, but it
         # does not invoke the event related to pressing the tab button
         # I don't see a way to do that in aui.
         oldPage = self.GetSelection()

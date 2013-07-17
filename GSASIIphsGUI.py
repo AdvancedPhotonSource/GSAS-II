@@ -4915,11 +4915,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnSelectPage(event):
         '''This is called when an item is selected from the Select page menu
         '''
-        for page in G2frame.dataDisplay.gridList: # clear out all grids, forcing edits in progress to complete
-            page.ClearGrid()
-        wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetId()
-#        print 'Select',page
         G2frame.dataDisplay.SetSelection(page)
         
     def OnPageChanged(event):
@@ -4930,13 +4926,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             page.ClearGrid()
         wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
-#        print 'Tab',page
+        print 'Tab',page
         ChangePage(page)
         
     def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
-#        print page,text
-        if text == 'Atoms':
+        print page,text
+        if text == 'General':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
+            FillSelectPageMenu(G2frame.dataFrame.DataGeneral)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
+            UpdateGeneral()
+        elif text == 'Data':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
+            FillSelectPageMenu(G2frame.dataFrame.DataMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
+            G2ddG.UpdateDData(G2frame,DData,data)
+            G2plt.PlotSizeStrainPO(G2frame,data,Start=True)            
+        elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             FillSelectPageMenu(G2frame.dataFrame.AtomsMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
@@ -4953,22 +4965,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
                 G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
             FillAtomsGrid(Atoms)
-        elif text == 'General':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
-            FillSelectPageMenu(G2frame.dataFrame.DataGeneral)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
-            UpdateGeneral()
-        elif text == 'Data':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
-            FillSelectPageMenu(G2frame.dataFrame.DataMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
-            G2ddG.UpdateDData(G2frame,DData,data)
-            G2plt.PlotSizeStrainPO(G2frame,data,Start=True)
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
             FillSelectPageMenu(G2frame.dataFrame.DataDrawOptions)
@@ -5006,14 +5002,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2gd.wxID_GLOBALRESREFINE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2gd.wxID_RBREMOVEALL)
             FillRigidBodyGrid()
-        elif text == 'Pawley reflections':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
-            FillSelectPageMenu(G2frame.dataFrame.PawleyMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
-            FillPawleyReflectionsGrid()
         elif text == 'Map peaks':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
             FillSelectPageMenu(G2frame.dataFrame.MapPeaksMenu)
@@ -5045,6 +5033,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
             UpdateTexture()                        
             G2plt.PlotTexture(G2frame,data,Start=True)            
+        elif text == 'Pawley reflections':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
+            FillSelectPageMenu(G2frame.dataFrame.PawleyMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
+            FillPawleyReflectionsGrid()
         else:
             G2gd.SetDataMenuBar(G2frame)
     Pages = []    
@@ -5087,5 +5083,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     SetupGeneral()    
-    GeneralData = data['General']    
-    ChangePage(0)
+    GeneralData = data['General']
+    print 'oldPage',oldPage    
+    if oldPage is None:
+        UpdateGeneral()
+    elif oldPage:
+        G2frame.dataDisplay.SetSelection(oldPage)
+    else:
+        UpdateGeneral()

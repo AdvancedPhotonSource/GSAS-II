@@ -1067,7 +1067,6 @@ class GSASII(wx.Frame):
             kind=wx.ITEM_NORMAL,
             text='Export HKLs...')
         self.ExportHKL.append(item)
-        item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnExportHKL, id=item.GetId())
 
         item = parent.Append(
@@ -2138,7 +2137,36 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         
     def OnExportHKL(self,event):
-        event.Skip()
+        dlg = wx.FileDialog(self, 'Choose output reflection list file name', '.', '', 
+            '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.peaklistfile = dlg.GetPath()
+                self.peaklistfile = G2IO.FileDlgFixExt(dlg,self.peaklistfile)
+                file = open(self.peaklistfile,'w')                
+                item, cookie = self.PatternTree.GetFirstChild(self.root)
+                while item:
+                    name = self.PatternTree.GetItemText(item)
+                    if 'PWDR' in name:
+                        item2, cookie2 = self.PatternTree.GetFirstChild(item)
+                        while item2:
+                            name2 = self.PatternTree.GetItemText(item2)
+                            if name2 == 'Reflection Lists':
+                                data = self.PatternTree.GetItemPyData(item2)
+                                phases = data.keys()
+                                for phase in phases:
+                                    peaks = data[phase]
+                                    file.write("%s %s %s \n" % (name,phase,' Reflection List'))
+                                    file.write('%s \n'%(' h  k  l  m  2-theta wid F**2'))                
+                                    for peak in peaks:
+                                        FWHM = G2pwd.getgamFW(peak[7],peak[6])
+                                        file.write(" %3d %3d %3d %3d %10.5f %10.5f %10.3f \n" % \
+                                            (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[5],FWHM,peak[8]))
+                            item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
+                    item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
+                file.close()
+        finally:
+            dlg.Destroy()
         
     def OnExportPDF(self,event):
         #need S(Q) and G(R) to be saved here - probably best from selection?

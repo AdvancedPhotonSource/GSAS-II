@@ -442,10 +442,14 @@ def getFWHM(TTh,Inst):
     'needs a doc string'
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*math.pi/180.
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
-    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
     s = sig(TTh/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])*100.
     g = gam(TTh/2.,Inst['X'][1],Inst['Y'][1])*100.
-    return gamFW(g,s)    
+    return getgamFW(g,s)
+    
+def getgamFW(g,s):
+    'needs a doc string'
+    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
+    return gamFW(g,s)
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
     'needs a doc string'

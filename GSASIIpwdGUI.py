@@ -1980,7 +1980,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 dlg.Destroy()
             G2plt.PlotPatterns(G2frame)
         
-        
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     rowLabels = []

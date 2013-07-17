@@ -1852,7 +1852,7 @@ class DataFrame(wx.Frame):
         # Phase / General tab
         self.DataGeneral = wx.MenuBar()
         self.PrefillDataMenu(self.DataGeneral,helpType='General', helpLbl='Phase/General')
-        self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select page')
+        self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select tab')
         self.GeneralCalc = wx.Menu(title='')
         self.DataGeneral.Append(menu=self.GeneralCalc,title='Compute')
         self.GeneralCalc.Append(help='Compute Fourier map',id=wxID_FOURCALC, kind=wx.ITEM_NORMAL,
@@ -1872,7 +1872,7 @@ class DataFrame(wx.Frame):
         # Phase / Data tab
         self.DataMenu = wx.MenuBar()
         self.PrefillDataMenu(self.DataMenu,helpType='Data', helpLbl='Phase/Data')
-        self.DataMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.DataMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.DataEdit = wx.Menu(title='')
         self.DataMenu.Append(menu=self.DataEdit, title='Edit')
         self.DataEdit.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
@@ -1886,7 +1886,7 @@ class DataFrame(wx.Frame):
         # Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.AtomsMenu,helpType='Atoms')
-        self.AtomsMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.AtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.AtomEdit = wx.Menu(title='')
         self.AtomCompute = wx.Menu(title='')
         self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit')
@@ -1935,13 +1935,13 @@ class DataFrame(wx.Frame):
         # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
         self.PrefillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options',empty=True)
-        self.DataDrawOptions.Append(menu=wx.Menu(title=''),title='Select page')
+        self.DataDrawOptions.Append(menu=wx.Menu(title=''),title='Select tab')
         self.PostfillDataMenu(empty=True)
         
         # Phase / Draw Atoms tab 
         self.DrawAtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.DrawAtomsMenu,helpType='Draw Atoms')
-        self.DrawAtomsMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.DrawAtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.DrawAtomEdit = wx.Menu(title='')
         self.DrawAtomCompute = wx.Menu(title='')
         self.DrawAtomRestraint = wx.Menu(title='')
@@ -1991,7 +1991,7 @@ class DataFrame(wx.Frame):
         # Phase / MCSA tab
         self.MCSAMenu = wx.MenuBar()
         self.PrefillDataMenu(self.MCSAMenu,helpType='MC/SA')
-        self.MCSAMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.MCSAMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.MCSAEdit = wx.Menu(title='')
         self.MCSAMenu.Append(menu=self.MCSAEdit, title='MC/SA')
         self.MCSAEdit.Append(id=wxID_ADDMCSAATOM, kind=wx.ITEM_NORMAL,text='Add atom', 
@@ -2009,7 +2009,7 @@ class DataFrame(wx.Frame):
         # Phase / Texture tab
         self.TextureMenu = wx.MenuBar()
         self.PrefillDataMenu(self.TextureMenu,helpType='Texture')
-        self.TextureMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.TextureMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.TextureEdit = wx.Menu(title='')
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
         self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
@@ -2021,7 +2021,7 @@ class DataFrame(wx.Frame):
         # Phase / Pawley tab
         self.PawleyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PawleyMenu,helpType='Pawley')
-        self.PawleyMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.PawleyMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.PawleyEdit = wx.Menu(title='')
         self.PawleyMenu.Append(menu=self.PawleyEdit,title='Operations')
         self.PawleyEdit.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
@@ -2037,7 +2037,7 @@ class DataFrame(wx.Frame):
         # Phase / Map peaks tab
         self.MapPeaksMenu = wx.MenuBar()
         self.PrefillDataMenu(self.MapPeaksMenu,helpType='Map peaks')
-        self.MapPeaksMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.MapPeaksMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.MapPeaksEdit = wx.Menu(title='')
         self.MapPeaksMenu.Append(menu=self.MapPeaksEdit, title='Map peaks')
         self.MapPeaksEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks', 
@@ -2063,7 +2063,7 @@ class DataFrame(wx.Frame):
         # Phase / Rigid bodies tab
         self.RigidBodiesMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RigidBodiesMenu,helpType='Rigid bodies')
-        self.RigidBodiesMenu.Append(menu=wx.Menu(title=''),title='Select page')
+        self.RigidBodiesMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.RigidBodiesEdit = wx.Menu(title='')
         self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit')
         self.RigidBodiesEdit.Append(id=wxID_ASSIGNATMS2RB, kind=wx.ITEM_NORMAL,text='Assign atoms to rigid body',

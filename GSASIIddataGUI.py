@@ -17,15 +17,10 @@ information that is shown in the data display window
 
 '''
 import wx
-import wx.grid as wg
-import wx.lib.gridmovers as wgmove
-import matplotlib as mpl
 import math
 import copy
 import time
 import sys
-import random as ran
-import cPickle
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 844 $")
 import GSASIIlattice as G2lat
@@ -39,20 +34,12 @@ import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phsGUI
 import numpy as np
-import numpy.linalg as nl
-import numpy.ma as ma
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
 mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
-# trig functions in degrees
-sind = lambda x: np.sin(x*np.pi/180.)
-tand = lambda x: np.tan(x*np.pi/180.)
-cosd = lambda x: np.cos(x*np.pi/180.)
-asind = lambda x: 180.*np.arcsin(x)/np.pi
-acosd = lambda x: 180.*np.arccos(x)/np.pi
 
 ################################################################################
 ##### DData routines
@@ -410,8 +397,8 @@ def UpdateDData(G2frame,DData,data):
             nTerm = len(UseList[item]['Mustrain'][4])
             for i in range(nTerm):
                 UseList[item]['Mustrain'][4][i] = 0.01
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
         G2plt.PlotSizeStrainPO(G2frame,data)
+        wx.CallAfter(UpdateDData,G2frame,DData,data)
             
     def OnHstrainRef(event):
         Obj = event.GetEventObject()

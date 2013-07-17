@@ -1947,7 +1947,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         FindBondsDraw()
         drawAtoms.ClearSelection()
-        G2plt.PlotStructure(G2frame,data)
+#        G2plt.PlotStructure(G2frame,data)
 
     def DrawAtomStyle(event):
         indx = drawAtoms.GetSelectedRows()
@@ -4905,7 +4905,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         event.Skip()
 
     def FillSelectPageMenu(menuBar):
-        mid = menuBar.FindMenu('Select page')
+        mid = menuBar.FindMenu('Select tab')
         for ipage,page in enumerate(Pages):
             menu = menuBar.GetMenu(mid)
             if menu.FindItem(page) < 0:
@@ -4926,12 +4926,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             page.ClearGrid()
         wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
-        print 'Tab',page
         ChangePage(page)
         
     def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
-        print page,text
+        print 'Select',page,text
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
             FillSelectPageMenu(G2frame.dataFrame.DataGeneral)
@@ -4992,6 +4991,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
             UpdateDrawAtoms()
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
             FillSelectPageMenu(G2frame.dataFrame.RigidBodiesMenu)
@@ -5084,7 +5084,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     SetupGeneral()    
     GeneralData = data['General']
-    print 'oldPage',oldPage    
     if oldPage is None:
         UpdateGeneral()
     elif oldPage:

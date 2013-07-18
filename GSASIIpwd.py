@@ -448,7 +448,7 @@ def getFWHM(TTh,Inst):
     
 def getgamFW(g,s):
     'needs a doc string'
-    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
+    gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
     return gamFW(g,s)
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    

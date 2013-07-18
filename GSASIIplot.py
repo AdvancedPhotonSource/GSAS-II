@@ -1314,7 +1314,7 @@ def PlotPeakWidths(G2frame):
             data = G2mth.setPeakparms(Parms,Parms2,X,Z)
             s = 1.17741*np.sqrt(data[4])*np.pi/18000.
             g = data[6]*np.pi/18000.
-            G = gamFW(g,s)
+            G = G2pwd.getgamFW(g,s)
             Y = s/nptand(X/2.)
             Z = g/nptand(X/2.)
             W = G/nptand(X/2.)
@@ -1325,7 +1325,7 @@ def PlotPeakWidths(G2frame):
             fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
             sf = 1.17741*np.sqrt(fit[4])*np.pi/18000.
             gf = fit[6]*np.pi/18000.
-            Gf = gamFW(gf,sf)
+            Gf = G2pwd.getgamFW(gf,sf)
             Yf = sf/nptand(X/2.)
             Zf = gf/nptand(X/2.)
             Wf = Gf/nptand(X/2.)
@@ -1345,7 +1345,7 @@ def PlotPeakWidths(G2frame):
                 except ValueError:
                     s = 0.01
                 g = peak[6]*math.pi/18000.
-                G = gamFW(g,s)
+                G = G2pwd.getgamFW(g,s)
                 Y.append(s/tand(peak[0]/2.))
                 Z.append(g/tand(peak[0]/2.))
                 W.append(G/tand(peak[0]/2.))

@@ -690,6 +690,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 Obj.SetValue("%.3f"%(MCSA[name][ind]))
+                
+            def OnRanStart(event):
+                MCSA['ranStart'] = ranStart.GetValue()
             
             def OnAnneal(event):
                 Obj = event.GetEventObject()
@@ -733,18 +736,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
-            Cchoice = ['1','2','3','4','8','12','20','32','64','128']
+            Cchoice = ['1','2','3','6','10','20','30','60','100']
             cycles = wx.ComboBox(General,-1,value=str(MCSA.get('Cycles',1)),choices=Cchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        
             line2Sizer.Add(cycles,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add((5,0),)
+            ranStart = wx.CheckBox(General,-1,label=' Random start? (ignored if Start temp = None)')
+            ranStart.Bind(wx.EVT_CHECKBOX, OnRanStart)
+            ranStart.SetValue(MCSA.get('ranStart',True))
+            line2Sizer.Add(ranStart,0,wx.ALIGN_CENTER_VERTICAL)            
+            mcsaSizer.Add(line2Sizer)
+            mcsaSizer.Add((5,5),)
+            line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             Achoice = ['log','fast']                #these work
 #            Achoice = ['log','fast','cauchy','boltzmann','Tremayne']
-            line2Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line3Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
             Alist = wx.ComboBox(General,-1,value=MCSA['Algorithm'],choices=Achoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Alist.Bind(wx.EVT_COMBOBOX,OnAlist)
-            line2Sizer.Add(Alist,0,wx.ALIGN_CENTER_VERTICAL)
+            line3Sizer.Add(Alist,0,wx.ALIGN_CENTER_VERTICAL)
             if MCSA['Algorithm'] in ['Tremayne','fast','boltzmann','cauchy']:
                 Names = [' A-jump: ',' B-jump: ']
                 parms = 'Jump coeff'
@@ -754,19 +765,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Names = [' quench: ',' m-factor: ',' n-factor: ']
                     parms = 'fast parms'
                 for i,name in enumerate(Names):
-                    line2Sizer.Add(wx.StaticText(General,label=name),0,wx.ALIGN_CENTER_VERTICAL)
+                    line3Sizer.Add(wx.StaticText(General,label=name),0,wx.ALIGN_CENTER_VERTICAL)
                     Ajump =  wx.TextCtrl(General,-1,value='%.3f'%(MCSA[parms][i]),style=wx.TE_PROCESS_ENTER)
                     Ajump.Bind(wx.EVT_TEXT_ENTER,OnAjump)        
                     Ajump.Bind(wx.EVT_KILL_FOCUS,OnAjump)
                     Indx[Ajump.GetId()] = [parms,i]
-                    line2Sizer.Add(Ajump,0,wx.ALIGN_CENTER_VERTICAL)
+                    line3Sizer.Add(Ajump,0,wx.ALIGN_CENTER_VERTICAL)
             elif 'log' in MCSA['Algorithm']:
-                line2Sizer.Add(wx.StaticText(General,label=' slope: '),0,wx.ALIGN_CENTER_VERTICAL)
+                line3Sizer.Add(wx.StaticText(General,label=' slope: '),0,wx.ALIGN_CENTER_VERTICAL)
                 slope =  wx.TextCtrl(General,-1,value='%.3f'%(MCSA['log slope']),style=wx.TE_PROCESS_ENTER)
                 slope.Bind(wx.EVT_TEXT_ENTER,OnSlope)        
                 slope.Bind(wx.EVT_KILL_FOCUS,OnSlope)
-                line2Sizer.Add(slope,0,wx.ALIGN_CENTER_VERTICAL)
-            mcsaSizer.Add(line2Sizer)
+                line3Sizer.Add(slope,0,wx.ALIGN_CENTER_VERTICAL)
+            mcsaSizer.Add(line3Sizer)
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line3Sizer.Add(wx.StaticText(General,label=' Annealing schedule: '),0,wx.ALIGN_CENTER_VERTICAL)

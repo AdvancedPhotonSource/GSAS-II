@@ -30,6 +30,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
+import GSASIIpwd as G2pwd
 import numpy.fft as fft
 import pypowder as pyd
 
@@ -2201,7 +2202,7 @@ class _state(object):
 def anneal(func, x0, args=(), schedule='fast', full_output=0,
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
            boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
-           lower=-100, upper=100, dwell=50, slope=0.9,dlg=None):
+           lower=-100, upper=100, dwell=50, slope=0.9,ranStart=True,dlg=None):
     """Minimize a function using simulated annealing.
 
     Schedule is a schedule class implementing the annealing schedule.
@@ -2244,6 +2245,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         The number of times to search the space at each temperature.
     :param float slope: 
         Parameter for log schedule
+    :param bool ranStart=True:
+        False for fixed point start
 
     :returns: (xmin, Jmin, T, feval, iters, accept, retval) where
 
@@ -2331,7 +2334,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-        x0 = random.uniform(size=len(x0))*(upper-lower) + lower #comment to avoid random start
+        if ranStart:
+            x0 = random.uniform(size=len(x0))*(upper-lower) + lower #comment to avoid random start
         best_state.x = None
         best_state.cost = numpy.Inf
 
@@ -2344,7 +2348,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         best_state.x = asarray(x0).copy()
     schedule.T = schedule.T0
     fqueue = [100, 300, 500, 700]
-    iters = 0
+    iters = 1
     keepGoing = True
     while keepGoing:
         retval = 0
@@ -2449,7 +2453,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     :returns: type name: description
     
     '''
-    gamFW = lambda s,g: math.exp(math.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
     
     twopi = 2.0*np.pi
     global tsum
@@ -2585,22 +2588,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 continue        #skips March Dollase
         return Tdata,Xdata.T
     
-    def calcMDcorr(MDval,MDaxis,Uniq,G):
-        ''' Calls fortran routine'''
-        MDcorr = pyd.pymdcalc(MDval,MDaxis,len(Uniq),Uniq.flatten(),G)
-        return MDcorr
-        
-    def mcsaMDSFcalc(ifInv,Tdata,Mdata,Xdata,MDval,MDaxis,G,mul,FFs,Uniq,Phi):
-        ''' Calls fortran routine'''
-        Icalc = pyd.pymcsamdsfcalc(ifInv,len(Tdata),Tdata,Mdata,Xdata.flatten(),
-            MDval,MDaxis,G,mul,len(FFs),FFs,len(Uniq),Uniq.flatten(),Phi)
-        return Icalc
-
-    def mcsaSFcalc(ifInv,Tdata,Mdata,Xdata,mul,FFs,Uniq,Phi):
-        ''' Calls fortran routine'''
-        Icalc = pyd.pymcsasfcalc(ifInv,len(Tdata),Tdata,Mdata,Xdata.flatten(),
-            mul,len(FFs),FFs,len(Uniq),Uniq.flatten(),Phi)
-        return Icalc
 
     def mcsaCalc(values,refList,rcov,ifInv,RBdata,varyList,parmDict):
         ''' Compute structure factors for all h,k,l for phase
@@ -2609,6 +2596,11 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             ParmDict:
         puts result F^2 in each ref[8] in refList
         '''       
+        def mcsaMDSFcalc(mul,FFs,Uniq,Phi):
+            ''' Calls fortran routine'''
+            Icalc = pyd.pymcsamdsfcalc(ifInv,len(Tdata),Tdata,Mdata,Xdata.flatten(),
+                MDval,MDaxis,Gmat,mul,len(FFs),FFs,len(Uniq),Uniq.flatten(),Phi)
+            return Icalc
         global tsum
         parmDict.update(dict(zip(varyList,values)))
         Tdata,Xdata = GetAtomTX(RBdata,parmDict)
@@ -2620,10 +2612,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         sumFcsq = 0.
         for refl in refList:
             t0 = time.time()
-            refl[5] = mcsaMDSFcalc(ifInv,Tdata,Mdata,Xdata,MDval,MDaxis,Gmat,
-                refl[3],refl[7],refl[8],refl[9])
-#            refl[5] = mcsaSFcalc(ifInv,Tdata,Mdata,Xdata,refl[3],refl[7],refl[8],refl[9])
-#            refl[5] *= calcMDcorr(MDval,MDaxis,refl[8],Gmat)
+            refl[5] = mcsaMDSFcalc(refl[3],refl[7],refl[8],refl[9])
             tsum += (time.time()-t0)
             sumFcsq += refl[5]
         scale = (parmDict['sumFosq']/sumFcsq)
@@ -2686,7 +2675,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         for ref in reflData:
             h,k,l,m,d,pos,sig,gam,f = ref[:9]
             if d >= MCSA['dmin']:
-                sig = gamFW(sig,gam)/sq8ln2        #--> sig from FWHM
+                sig = G2pwd.getgamFW(sig,gam)/sq8ln2        #--> sig from FWHM
                 SQ = 0.25/d**2
                 Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)[2:]
                 FFs = G2el.getFFvalues(FFtables,SQ,True)
@@ -2762,7 +2751,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
         boltzmann=MCSA['boltzmann'], learn_rate=0.5,  
         quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
-        lower=lower, upper=upper, slope=MCSA['log slope'],dlg=pgbar)
+        lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',True),dlg=pgbar)
     Result = [False,False,results[1],results[2],]+list(results[0])
     Result.append(varyList)
     return Result,tsum

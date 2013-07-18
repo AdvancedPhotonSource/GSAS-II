@@ -5086,8 +5086,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     SetupGeneral()    
     GeneralData = data['General']
     if oldPage is None:
-        UpdateGeneral()
+        ChangePage(0)
     elif oldPage:
         G2frame.dataDisplay.SetSelection(oldPage)
     else:
-        UpdateGeneral()
+        ChangePage(0)

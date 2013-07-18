@@ -2157,11 +2157,11 @@ class GSASII(wx.Frame):
                                 for phase in phases:
                                     peaks = data[phase]
                                     file.write("%s %s %s \n" % (name,phase,' Reflection List'))
-                                    file.write('%s \n'%(' h  k  l  m  2-theta wid F**2'))                
+                                    file.write('%s \n'%(' h  k  l  m  d-space 2-theta wid F**2'))                
                                     for peak in peaks:
                                         FWHM = G2pwd.getgamFW(peak[7],peak[6])/50.      #to get delta-2-theta in deg.
-                                        file.write(" %3d %3d %3d %3d %10.5f %10.5f %10.3f \n" % \
-                                            (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[5],FWHM,peak[8]))
+                                        file.write(" %3d %3d %3d %3d %10.5f %10.5f %10.5f %10.3f \n" % \
+                                            (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM,peak[8]))
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()

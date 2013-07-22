@@ -1025,11 +1025,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
             wx.CallAfter(OnPlotKeyPress,event)
-        try:
-            Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
-        except:
-            pass
-
+        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
                         
     def OnMotion(event):
         xpos = event.xdata
@@ -2147,10 +2143,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             cb.SetValue(' key press')
             if event.key in 'l':
                 wx.CallAfter(OnImPlotKeyPress,event)
-        try:
-            Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
-        except:
-            pass
+        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
                         
     def OnImPick(event):
         if G2frame.PatternTree.GetItemText(G2frame.PickId) not in ['Image Controls','Masks']:
@@ -2749,10 +2742,7 @@ def PlotStructure(G2frame,data):
             event.key = cb.GetValue()[0]
             cb.SetValue(' save as/key:')
             wx.CallAfter(OnKey,event)
-        try:
-            Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
-        except:
-            pass
+        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
 
     def OnKey(event):           #on key UP!!
 #        Draw()                          #make sure plot is fresh!!
@@ -2781,7 +2771,11 @@ def PlotStructure(G2frame,data):
             G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
         elif key in ['N']:
             drawAtoms = drawingData['Atoms']
+            if not len(drawAtoms):      #no atoms
+                return
             pI = drawingData['viewPoint'][1]
+            if not len(pI):
+                pI = [0,0]
             if indx:
                 pI[0] = indx[pI[1]]
                 Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
@@ -2799,7 +2793,11 @@ def PlotStructure(G2frame,data):
                 
         elif key in ['P']:
             drawAtoms = drawingData['Atoms']
+            if not len(drawAtoms):      #no atoms
+                return
             pI = drawingData['viewPoint'][1]
+            if not len(pI):
+                pI = [0,0]
             if indx:
                 pI[0] = indx[pI[1]]
                 Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]

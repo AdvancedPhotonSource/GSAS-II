@@ -121,9 +121,25 @@ class G2PlotNoteBook(wx.Panel):
         self.status.SetFieldsCount(2)
         self.status.SetStatusWidths([150,-1])
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
+        self.nb.Bind(wx.EVT_KEY_UP,self.OnNotebookKey)
         
         self.plotList = []
             
+    def OnNotebookKey(self,event):
+        '''Called when a keystroke event gets picked up by the notebook window
+        rather the child. This is not expected, but somehow it does sometimes
+        on the Mac and perhaps Linux.
+
+        Assume that the page associated with the currently displayed tab
+        has a child, .canvas; give that child the focus and pass it the event.
+        '''
+        Page = self.nb.GetPage(self.nb.GetSelection())
+        try:
+            Page.canvas.SetFocus()
+            wx.PostEvent(Page.canvas,event)
+        except AttributeError:
+            pass
+
     def addMpl(self,name=""):
         'Add a tabbed page with a matplotlib plot'
         page = G2PlotMpl(self.nb)
@@ -1009,6 +1025,11 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
             wx.CallAfter(OnPlotKeyPress,event)
+        try:
+            Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
+        except:
+            pass
+
                         
     def OnMotion(event):
         xpos = event.xdata
@@ -2126,6 +2147,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             cb.SetValue(' key press')
             if event.key in 'l':
                 wx.CallAfter(OnImPlotKeyPress,event)
+        try:
+            Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
+        except:
+            pass
                         
     def OnImPick(event):
         if G2frame.PatternTree.GetItemText(G2frame.PickId) not in ['Image Controls','Masks']:
@@ -2724,6 +2749,10 @@ def PlotStructure(G2frame,data):
             event.key = cb.GetValue()[0]
             cb.SetValue(' save as/key:')
             wx.CallAfter(OnKey,event)
+        try:
+            Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
+        except:
+            pass
 
     def OnKey(event):           #on key UP!!
 #        Draw()                          #make sure plot is fresh!!

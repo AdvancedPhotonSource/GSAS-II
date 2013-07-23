@@ -112,7 +112,8 @@ class CIFPhaseReader(G2IO.ImportPhase):
                         if i == 5: fmt = "%.f"
                         choice[-1] += fmt % cif.get_number_with_esd(
                             cf[blknm].get(key))[0]
-                    sg = cf[blknm].get("_symmetry_space_group_name_H-M")
+                    sg = cf[blknm].get("_symmetry_space_group_name_H-M",'')
+                    if not sg: sg = cf[blknm].get("_space_group_name_H-M_alt",'')
                     if sg: choice[-1] += ', (' + sg.strip() + ')'
                 selblk = self.PhaseSelector(
                     choice,
@@ -126,8 +127,10 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 blknm = str_blklist[selblk]
                 blk = cf[str_blklist[selblk]]
                 E = True
-                SpGrp = blk.get("_symmetry_space_group_name_H-M")
-                # try normalizing the space group, see if we can pick the space group out of a table
+                SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
+                if not SpGrp:
+                    SpGrp = blk.get("_space_group_name_H-M_alt",'')
+                # try normalizing the space group, to see if we can pick the space group out of a table
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 if SpGrpNorm:
                     E,SGData = G2spc.SpcGroup(SpGrpNorm)
@@ -135,9 +138,16 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 if E and SpGrp:
                     E,SGData = G2spc.SpcGroup(SpGrp)
                 if E:
-                    self.warnings += 'ERROR in space group symbol '+SpGrp
-                    self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
-                    self.warnings += G2spc.SGErrors(E)
+                    if not SpGrp:
+                        self.warnings += 'No space group name was found in the CIF.'
+                        self.warnings += '\nThe space group has been set to "P 1". '
+                        self.warnings += "Change this in phase's General tab."
+                    else:
+                        self.warnings += 'ERROR in space group symbol '+SpGrp
+                        self.warnings += '\nThe space group has been set to "P 1". '
+                        self.warnings += "Change this in phase's General tab."
+                        self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
+                        self.warnings += G2spc.SGErrors(E)
                     SGData = G2IO.SGData # P 1
                 self.Phase['General']['SGData'] = SGData
                 # cell parameters

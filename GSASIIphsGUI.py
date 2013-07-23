@@ -72,8 +72,8 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer):
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
     in the man (data tree) window.
-    Called only from :mod:`GSASIIgrid.MovePatternTreeToGrid`,
-    which in turn is called from :mod:`GSASII.GSASII.OnPatternTreeSelChanged`
+    Called only from :meth:`GSASIIgrid.MovePatternTreeToGrid`,
+    which in turn is called from :meth:`GSASII.GSASII.OnPatternTreeSelChanged`
     when a tree item is selected.
 
     :param wx.frame G2frame: the main GSAS-II frame object

@@ -1681,6 +1681,15 @@ class ExportBaseclass(object):
 class ImportStructFactor(ImportBaseclass):
     '''Defines a base class for the reading of files with tables
     of structure factors
+
+    Note that the default controls are stored in self.Controls and the
+    default instrument parameters are stored in self.Parameters.
+    These can be changed, but any changes will be the defaults for all
+    subsequent uses of the :class:`ImportStructFactor` derived classes
+    until :meth:`InitControls` and :meth:`InitParameters` are
+    called. Probably better to use :meth:`UpdateControls` and
+    :meth:`UpdateControls` (adding new args if needed) to change
+    values.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
@@ -1688,6 +1697,12 @@ class ImportStructFactor(ImportBaseclass):
             extensionlist,strictExtension)
 
         # define contents of Structure Factor entry
+        self.InitParameters()
+        self.InitControls()
+        self.RefList = []
+        
+    def InitControls(self):
+        'initialize the controls structure'
         self.Controls = { # dictionary with plotting controls
             'Type' : 'Fosq',
             'ifFc' : False,    # 
@@ -1699,21 +1714,21 @@ class ImportStructFactor(ImportBaseclass):
             'Scale' : 1.0,
             'log-lin' : 'lin',
             }
-        self.Parameters = [ # list with data collection parameters
-            ('SXC',0.70926),
-            ['SXC',0.70926],
-            ['Type','Lam']
-            ]
-        self.RefList = []
+
+    def InitParameters(self):
+        'initialize the instrument parameters structure'
+        Lambda = 0.70926
+        HistType = 'SXC'
+        self.Parameters = [{'Type':[HistType,HistType], # create the structure
+                            'Lam':[Lambda,Lambda]
+                            }, {}]
 
     def UpdateParameters(self,Type=None,Wave=None):
-        HistType = self.Parameters[0][0]
-        HistWave = self.Parameters[0][1]
+        'Revise the '
         if Type is not None:
-            HistType = Type
+            self.Parameters[0]['Type'] = [Type,Type]
         if Wave is not None:
-            HistWave = Wave
-        self.Parameters = [{'Type':[HistType,HistType],'Lam':[HistWave,HistWave]},{}]  # overwrite entire list 
+            self.Parameters[0]['Lam'] = [HistWave,HistWave]
             
     def UpdateControls(self,Type='Fosq',FcalcPresent=False):
         '''Scan through the reflections to update the Controls dictionary

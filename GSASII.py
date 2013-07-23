@@ -361,12 +361,12 @@ class GSASII(wx.Frame):
             # set what formats are compatible with this file
             primaryReaders = []
             secondaryReaders = []
-            for reader in readerlist:
-                flag = reader.ExtensionValidator(filename)
+            for r in readerlist:
+                flag = r.ExtensionValidator(filename)
                 if flag is None: 
-                    secondaryReaders.append(reader)
+                    secondaryReaders.append(r)
                 elif flag:
-                    primaryReaders.append(reader)
+                    primaryReaders.append(r)
             if len(secondaryReaders) + len(primaryReaders) == 0:
                 self.ErrorDialog('No Format','No matching format for file '+filename)
                 return []
@@ -436,7 +436,11 @@ class GSASII(wx.Frame):
                                              rd.warnings)
                         break # success reading
                 else:
-                    self.ErrorDialog('Read Error','No reader is able to read from file '+filename+msg)
+                    if reader:
+                        self.ErrorDialog('Read Error','The '+ rd.formatName+
+                                         ' reader was not able to read file '+filename+msg)
+                    else:
+                        self.ErrorDialog('Read Error','No reader is able to read file '+filename+msg)
             except:
                 import traceback
                 print traceback.format_exc()
@@ -2246,7 +2250,7 @@ class GSASII(wx.Frame):
         ''' Returns powder data from GSASII tree
 
         :param str PWDRname: a powder histogram name as obtained from
-          :mod:`GSASIIstruct.GetHistogramNames`
+          :meth:`GSASIIstruct.GetHistogramNames`
 
         :returns: PWDRdata = powder data dictionary with
           Powder data arrays, Limits, Instrument Parameters,
@@ -2273,7 +2277,7 @@ class GSASII(wx.Frame):
 
         :param str HKLFname: a single crystal histogram name as obtained
           from
-          :mod:`GSASIIstruct.GetHistogramNames`
+          :meth:`GSASIIstruct.GetHistogramNames`
 
         :returns: HKLFdata = single crystal data list of reflections
 
@@ -2289,7 +2293,7 @@ class GSASII(wx.Frame):
         
     def GetPhaseData(self):
         '''Returns a list of defined phases. Used only in GSASIIgrid
-        Note routine :mod:`GSASIIstruct.GetPhaseData` also exists.
+        Note routine :meth:`GSASIIstruct.GetPhaseData` also exists.
         '''
         phaseData = {}
         if G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
@@ -2343,7 +2347,7 @@ class GSASII(wx.Frame):
         
     class ViewParmDialog(wx.Dialog):
         '''Window to show all parameters in the refinement.
-        Called from :mod:`OnViewLSParms`
+        Called from :meth:`OnViewLSParms`
         '''
         def __init__(self,parent,title,parmDict):
             wx.Dialog.__init__(self,parent,-1,title,size=(300,430),

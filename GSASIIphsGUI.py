@@ -496,7 +496,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         generalData['Pawley neg wt'] = wt
                 except ValueError:
                     pass
-                pawlNegWt.SetValue("%.2f"%(generalData['Pawley neg wt']))          #reset in case of error                
+                pawlNegWt.SetValue("%.4f"%(generalData['Pawley neg wt']))          #reset in case of error                
 
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -510,7 +510,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
             pawleySizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,wx.ALIGN_CENTER_VERTICAL)
-            pawlNegWt = wx.TextCtrl(General,value='%.2f'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
+            pawlNegWt = wx.TextCtrl(General,value='%.4f'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
             pawlNegWt.Bind(wx.EVT_TEXT_ENTER,OnPawleyNegWt)        
             pawlNegWt.Bind(wx.EVT_KILL_FOCUS,OnPawleyNegWt)
             pawleySizer.Add(pawlNegWt,0,wx.ALIGN_CENTER_VERTICAL)
@@ -4560,6 +4560,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillPawleyReflectionsGrid()
 
     def OnPawleyUpdate(event):
+        '''This is the place for any reflection modification trick
+        Patterson squared, leBail extraction, etc.
+        '''
         try:
             Refs = data['Pawley ref']
             Histograms = data['Histograms']
@@ -4569,13 +4572,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         HistoNames = Histograms.keys()
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))[PhaseName]
-
+        Inv = data['General']['SGData']['SGInv']
+        mult = 0.5
+        if Inv:
+            mult = 0.3
         wx.BeginBusyCursor()
         try:
             for iref,ref in enumerate(Refs):
                 try:
                     if refData[iref][9] < 0.:
-                        ref[6] = abs(refData[iref][9])
+                        ref[6] = abs(refData[iref][9])*mult
+                        refData[iref][8] *= -mult
+                        refData[iref][9] *= -mult
+                        ref[5] = False
                         ref[7] = 1.0
                 except IndexError:
                     pass

@@ -438,12 +438,19 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     fmax = 10.*fwhm*(1.+1./bet)
     return widths,fmin,fmax
     
-def getFWHM(TTh,Inst):
+def getFWHM(pos,Inst):
     'needs a doc string'
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*math.pi/180.
+    sigTOF = lambda dsp,S0,S1,Sq:  S0+S1*dsp**2+Sq*dsp
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
-    s = sig(TTh/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])*100.
-    g = gam(TTh/2.,Inst['X'][1],Inst['Y'][1])*100.
+    gamTOF = lambda dsp,X,Y: X*dsp+Y*dsp**2
+    if 'C' in Inst['Type'][0]:
+        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])*100.
+        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1])*100.
+    else:
+        dsp = pos/Inst['difC'][0]
+        s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-q'][1])
+        g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1])
     return getgamFW(g,s)
     
 def getgamFW(g,s):

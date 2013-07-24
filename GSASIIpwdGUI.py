@@ -99,7 +99,14 @@ def UpdatePeakGrid(G2frame, data):
         indx = ymask.nonzero()
         mags = ymask[indx]
         poss = x[indx]
-        for pos,mag in zip(poss,mags):
+        refs = zip(poss,mags)
+        refs = G2mth.sortArray(refs,0,reverse=True)
+        for i,ref1 in enumerate(refs):
+            for ref2 in refs[i+1:]:
+                if abs(ref2[0]-ref1[0]) < 0.1*G2pwd.getFWHM(ref1[0],inst):
+                    del(refs[i])    
+        refs = G2mth.sortArray(refs,1,reverse=True)
+        for pos,mag in refs:
             data.append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)        

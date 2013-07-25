@@ -1297,11 +1297,16 @@ def ValEsd(value,esd=0,nTZ=False):
         else:
             valoff = 0
     if esd != 0:
+        if valoff+esdoff < 0:
+            valoff = esdoff = 0
         out = ("{:."+str(valoff+esdoff)+"f}").format(value/10**valoff) # format the value
     elif valoff != 0: # esd = 0; exponential notation ==> esdoff decimal places
         out = ("{:."+str(esdoff)+"f}").format(value/10**valoff) # format the value
     else: # esd = 0; non-exponential notation ==> esdoff+1 significant digits
-        extra = -math.log10(abs(value))
+        if abs(value) > 0:            
+            extra = -math.log10(abs(value))
+        else:
+            extra = 0
         if extra > 0: extra += 1
         out = ("{:."+str(max(0,esdoff+int(extra)))+"f}").format(value) # format the value
     if esd > 0:

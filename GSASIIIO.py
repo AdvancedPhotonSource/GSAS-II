@@ -1724,7 +1724,7 @@ class ImportStructFactor(ImportBaseclass):
                             }, {}]
 
     def UpdateParameters(self,Type=None,Wave=None):
-        'Revise the '
+        'Revise the instrument parameters'
         if Type is not None:
             self.Parameters[0]['Type'] = [Type,Type]
         if Wave is not None:

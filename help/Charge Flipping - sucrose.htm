@@ -23,17 +23,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>15</o:Revision>
-  <o:TotalTime>1426</o:TotalTime>
+  <o:Revision>16</o:Revision>
+  <o:TotalTime>1433</o:TotalTime>
   <o:Created>2013-03-15T18:32:00Z</o:Created>
-  <o:LastSaved>2013-03-22T15:29:00Z</o:LastSaved>
+  <o:LastSaved>2013-07-25T22:42:00Z</o:LastSaved>
   <o:Pages>17</o:Pages>
-  <o:Words>3416</o:Words>
-  <o:Characters>19477</o:Characters>
+  <o:Words>3448</o:Words>
+  <o:Characters>19659</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>162</o:Lines>
-  <o:Paragraphs>45</o:Paragraphs>
-  <o:CharactersWithSpaces>22848</o:CharactersWithSpaces>
+  <o:Lines>163</o:Lines>
+  <o:Paragraphs>46</o:Paragraphs>
+  <o:CharactersWithSpaces>23061</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -1269,19 +1269,17 @@ mso-hansi-theme-font:minor-latin'>Pawley update</span></b>, this replaces all
 the values with those in the extracted from the profile as listed in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Reflection
-list</span></b> for the PWDR data set. This makes all the negative intensities
-positive. Next in the <b style='mso-bidi-font-weight:normal'><span
+list</span></b> for the PWDR data set each multiplied by 0.5. Additionally
+their refinement flags are turned off. Do <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>General</span></b> tab set the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Pawley neg.
-wt.</span></b> to <b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>0.01</span></b>; this will suppress the
-negative Pawley intensities. Do <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b>. After
-refinement, mine converged to ~5.7% and the plot looked like</p>
+mso-hansi-theme-font:minor-latin'>; this will adjust all the reflections in the
+vicinity of the reset ones</span>. You may repeat this process to suppress any
+new negatives that may appear. Then set all the Pawley refinement flags back on
+(excluding any that lead to a singular matrix) and repeat the refinement. After
+refinement, mine converged to ~5.7% with very few negatives and and the plot
+looked like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_29" o:spid="_x0000_i1056" type="#_x0000_t75" style='width:507pt;
@@ -1577,8 +1575,9 @@ style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Map peaks/Unique peaks</span></b>. That should
 select (grey) 23 out of 46 peak positions in the table and all should be near
 the top of the list. Given the formula for sucrose is C<sub>12</sub>H<sub>22</sub>O<sub>11</sub>
-that would be all the C &amp; O atoms! They will be colored green in the plot. If
-more are selected then check the map offset – it may need a slight correction.</p>
+that would be all the C &amp; O atoms! They will be colored green in the plot.
+If more are selected then check the map offset – it may need a slight
+correction.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_13" o:spid="_x0000_i1052" type="#_x0000_t75" style='width:337.5pt;
@@ -1653,10 +1652,10 @@ by magnitude, my list is now </p>
 src="Charge%20Flipping%20-%20sucrose_files/image022.png" v:shapes="Picture_x0020_17"><![endif]></span></p>
 
 <p class=MsoNormal>Notice that in this case the atom list is neatly sorted out
-into two groups with a clear gap between M79 and M64. The higher ones are likely
-to be the 11 O-atoms and the rest are the 12 C-atoms. There may be a bit of
-ambiguity in the middle, but just assign the top 11 as O and the rest as C and
-see what happens. You can do this by selecting a block of atoms, go to <b
+into two groups with a clear gap between M79 and M64. The higher ones are
+likely to be the 11 O-atoms and the rest are the 12 C-atoms. There may be a bit
+of ambiguity in the middle, but just assign the top 11 as O and the rest as C
+and see what happens. You can do this by selecting a block of atoms, go to <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Edit/Modify
 atom parameters</span></b> and select <b style='mso-bidi-font-weight:normal'><span
@@ -2132,9 +2131,9 @@ style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-ser
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Contour
 level</span></b> and <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Map radius</span></b> as desired. Look for the
-remaining H-atoms; you may have to guess positions for some of them using known
-stereochemistry rules. My model looked like</p>
+mso-hansi-theme-font:minor-latin'>Map radius</span></b> as desired. Look for
+the remaining H-atoms; you may have to guess positions for some of them using
+known stereochemistry rules. My model looked like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_39" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:502.5pt;

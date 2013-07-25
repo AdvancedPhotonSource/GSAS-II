@@ -3146,7 +3146,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Obj = event.GetEventObject()
             RBObj = Indx[Obj.GetId()]
             val = Obj.GetValue()
+            Ttype = 'A'
             if val == 'Uiso':
+                Ttype = 'I'
                 RBObj['ThermalMotion'][0] = 'Uiso'
             elif val == 'T':
                 RBObj['ThermalMotion'][0] = 'T'
@@ -3155,10 +3157,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif val == 'TLS':
                 RBObj['ThermalMotion'][0] = 'TLS'
             wx.CallAfter(FillRigidBodyGrid,True)
-            #need to set atom I/A here & update Uiso/Uij
+            if val != 'None':
+                cia = data['General']['AtomPtrs'][3]
+                for i,id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[id]][cia] = Ttype
             G2plt.PlotStructure(G2frame,data)
             
-        def ThermDataSizer(RBObj):
+        def ThermDataSizer(RBObj,rbType):
             
             def OnThermval(event):
                 Obj = event.GetEventObject()
@@ -3169,7 +3174,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 Obj.SetValue('%8.4f'%(RBObj['ThermalMotion'][1][item]))
-                #need to update atom Uiso/Uij here!
+                Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[1]
+                Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
+                cia = data['General']['AtomPtrs'][3]
+                for i,id in enumerate(RBObj['Ids']):
+                    if Uout[i][0] == 'I':
+                        data['Atoms'][AtLookUp[id]][cia+1] = Uout[i][1]
+                    else:
+                        data['Atoms'][AtLookUp[id]][cia+2:cia+8] = Uout[i][2:8]
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnTLSRef(event):
@@ -3357,7 +3369,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,wx.ALIGN_CENTER_VERTICAL)
             resrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
-                resrbSizer.Add(ThermDataSizer(RBObj))
+                resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
             return resrbSizer
             
         def VecrbSizer(RBObj):
@@ -3397,7 +3409,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,wx.ALIGN_CENTER_VERTICAL)
             vecrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
-                vecrbSizer.Add(ThermDataSizer(RBObj))
+                vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
             return vecrbSizer                
         
         # FillRigidBodyGrid executable code starts here
@@ -3860,16 +3872,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillRigidBodyGrid(True)
         
     def OnGlobalResRBTherm(event):
+        AtLookUp = G2mth.FillAtomLookUp(data['Atoms'])
         RBObjs = data['RBModels']['Residue']
         names = ['None','Uiso','T','TL','TLS']
+        cia = data['General']['AtomPtrs'][3]
         dlg = wx.SingleChoiceDialog(G2frame,'Select','Residue thermal motion model',names)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             parm = names[sel]
-        for rbObj in RBObjs:
-            rbObj['ThermalMotion'][0] = parm
+            Ttype = 'A'
+            if parm == 'Uiso':
+                Ttype = 'I'        
+            for rbObj in RBObjs:
+                rbObj['ThermalMotion'][0] = parm
+                if parm != 'None':
+                    for i,id in enumerate(rbObj['Ids']):
+                        data['Atoms'][AtLookUp[id]][cia] = Ttype
         dlg.Destroy()
-        FillRigidBodyGrid(True)
+        wx.CallAfter(FillRigidBodyGrid,True)
 
     def OnGlobalResRBRef(event):
         RBObjs = data['RBModels']['Residue']
@@ -4950,7 +4970,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
-        print 'Select',page,text
+#        print 'Select',page,text
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
             FillSelectPageMenu(G2frame.dataFrame.DataGeneral)

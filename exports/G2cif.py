@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#G2cif
+########### SVN repository information ###################
+# $Date: 2013-07-22 20:57:37 -0500 (Mon, 22 Jul 2013) $
+# $Author: toby $
+# $Revision: 1006 $
+# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2cif.py $
+# $Id: G2cif.py 1006 2013-07-23 01:57:37Z toby $
+########### SVN repository information ###################
 '''Development code to export a GSAS-II project as a CIF
 The heavy lifting is done in method export
 '''
@@ -7,6 +17,8 @@ The heavy lifting is done in method export
 import datetime as dt
 import os.path
 import numpy as np
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 1006 $")
 import GSASIIIO as G2IO
 #reload(G2IO)
 import GSASIIgrid as G2gd
@@ -18,6 +30,8 @@ reload(G2mth)
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spg
 #reload(G2spg)
+
+DEBUG = True    #True to skip printing of reflection/powder profile lists
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -242,8 +256,18 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''Format the instrumental profile parameters with a
             string description. Will only be called on PWDR histograms
             '''
-            #print instparmdict[0].keys()
-            return 'TODO: Instrument profile goes here'
+            s = ''
+            inst = instparmdict[0]
+            if 'C' in inst['Type'][0]:
+                s = 'Finger-Cox-Jephcoat function parameters U, V, W, X, Y, SH/L:\n   '
+                for item in ['U','V','W','X','Y','SH/L']:
+                    s += G2mth.ValEsd(inst[item][1],-.009)+', '                    
+            elif 'T' in inst['Type'][0]:    #to be tested after TOF Rietveld done
+                s = 'Von Dreele-Jorgenson-Windsor function parameters\n'+ \
+                    '   alpha, beta-0, beta-1, beta-q, sig-0, sig-1, sig-q, X, Y:\n   '
+                for item in ['alpha','bet-0','bet-1','bet-q','sig-0','sig-1','sig-q','X','Y']:
+                    s += G2mth.ValEsd(inst[item][1],-.009)+', '
+            return s
 
         def FormatPhaseProfile(phasenam):
             '''Format the phase-related profile parameters (size/strain)
@@ -708,7 +732,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             if not oneblock:                 # instrumental profile terms go here
                 WriteCIFitem('_pd_proc_ls_profile_function', 
-                             FormatInstProfile(histblk["Instrument Parameters"]))
+                    FormatInstProfile(histblk["Instrument Parameters"]))
 
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
@@ -748,6 +772,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                 phaseid = self.Phases[phasenam]['pId']
                 refcount += len(histblk['Reflection Lists'][phasenam])
                 for ref in histblk['Reflection Lists'][phasenam]:
+                    if DEBUG:
+                        print 'DEBUG: skip reflection list'
+                        break
                     if hklmin is None:
                         hklmin = ref[0:3]
                         hklmax = ref[0:3]
@@ -831,6 +858,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                                             histblk['Data'][2],
                                             histblk['Data'][3],
                                             histblk['Data'][4]):
+                if DEBUG:
+                    print 'DEBUG: skip reflection list'
+                    break
                 if fixedstep:
                     s = ""
                 else:
@@ -1163,9 +1193,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     #instnam = histblk["Sample Parameters"]['InstrName']
                     # report instrumental profile terms
                     WriteCIFitem('_pd_proc_ls_profile_function',
-                                 FormatInstProfile(histblk["Instrument Parameters"]))
-                    WriteCIFitem('# Information for histogram '+str(i)+': '+
-                                 hist)
+                        FormatInstProfile(histblk["Instrument Parameters"]))
+                    WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
                     WriteCIFitem('_pd_block_id',datablockidDict[hist])
                     WritePowderTemplate()
                     WritePowderData(hist)
@@ -1175,8 +1204,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 if hist.startswith("HKLF"): 
                     WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
                     #instnam = histblk["Instrument Parameters"][0]['InstrName']
-                    WriteCIFitem('# Information for histogram '+str(i)+': '+
-                                 hist)
+                    WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
                     WriteCIFitem('_pd_block_id',datablockidDict[hist])
                     WriteSnglXtalTemplate()
                     WriteSingleXtalData(hist)

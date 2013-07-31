@@ -3967,7 +3967,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ##### MC/SA routines
 ################################################################################
 
-    def UpdateMCSA(refresh=True):
+    def UpdateMCSA(Scroll=0):
         Indx = {}
         
         def OnPosRef(event):
@@ -4250,7 +4250,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Models[nObj]['Tor'][0][tnum] = val                                                        
                         else:       #March Dollase
                             Models[0]['Coef'][0] = val
-                    wx.CallAfter(UpdateMCSA)
+                    wx.CallAfter(UpdateMCSA,MCSA.GetScrollPos(wx.VERTICAL))
                     G2plt.PlotStructure(G2frame,data)
                 elif c == 1:
                     if Results[r][1]:
@@ -4259,7 +4259,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Results[r][1] = True
                     resultsTable.SetValue(r,c,Results[r][1])
                     resultsGrid.ForceRefresh()
-                        
                 
             resultsSizer = wx.BoxSizer(wx.VERTICAL)
             maxVary = 0
@@ -4289,8 +4288,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         
         # UpdateMCSA executable code starts here
-        if refresh:
-            MCSA.DestroyChildren()
         general = data['General']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         RBData = G2frame.PatternTree.GetItemPyData(   
@@ -4330,6 +4327,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(ResultsSizer(Results))
 
         SetPhaseWindow(G2frame.dataFrame,MCSA,mainSizer)
+        MCSA.Scroll(0,Scroll)
             
     def OnRunMultiMCSA(event):
         RunMCSA('multi')

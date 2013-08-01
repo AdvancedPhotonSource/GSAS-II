@@ -244,15 +244,33 @@ class ExportCIF(G2IO.ExportBaseclass):
             fxn, bkgdict = bkg
             terms = fxn[2]
             txt = 'Background function: "'+fxn[0]+'" function with '+str(terms)+' terms:\n'
-            l = "   "
+            l = "    "
             for i,v in enumerate(fxn[3:]):
                 name = '%sBack:%d'%(hfx,i)
                 sig = self.sigDict.get(name,-0.009)
                 if len(l) > 60:
                     txt += l + '\n'
-                    l = '   '
+                    l = '    '
                 l += G2mth.ValEsd(v,sig)+', '
             txt += l
+            if bkgdict['nDebye']:
+                txt += '\n  Background Debye function parameters: A, R, U:'
+                names = ['A:','R:','U:']
+                for i in range(bkgdict['nDebye']):
+                    txt += '\n    '
+                    for j in range(3):
+                        name = hfx+'Debye'+names[j]+str(i)
+                        sig = self.sigDict.get(name,-0.009)
+                        txt += G2mth.ValEsd(bkgdict['debyeTerms'][i][2*j],sig)+', '
+            if bkgdict['nPeaks']:
+                txt += '\n  Background peak parameters: pos, int, sig, gam:'
+                names = ['pos:','int:','sig:','gam:']
+                for i in range(bkgdict['nPeaks']):
+                    txt += '\n    '
+                    for j in range(4):
+                        name = hfx+'BkPk'+names[j]+str(i)
+                        sig = self.sigDict.get(name,-0.009)
+                        txt += G2mth.ValEsd(bkgdict['peaksList'][i][2*j],sig)+', '
             return txt
 
         def FormatInstProfile(instparmdict,hId):
@@ -266,14 +284,14 @@ class ExportCIF(G2IO.ExportBaseclass):
                 s = 'Finger-Cox-Jephcoat function parameters U, V, W, X, Y, SH/L:\n'
                 s += '  peak variance(Gauss) = Utan(Th)^2+Vtan(Th)+W:\n'
                 s += '  peak HW(Lorentz) = X/cos(Th)+Ytan(Th); SH/L = S/L+H/L\n'
-                s += '  U, V, W in (centideg)^2, X & Y in centideg\n  '
+                s += '  U, V, W in (centideg)^2, X & Y in centideg\n    '
                 for item in ['U','V','W','X','Y','SH/L']:
                     name = hfx+item
                     sig = self.sigDict.get(name,-0.009)
                     s += G2mth.ValEsd(inst[item][1],sig)+', '                    
             elif 'T' in inst['Type'][0]:    #to be tested after TOF Rietveld done
                 s = 'Von Dreele-Jorgenson-Windsor function parameters\n'+ \
-                    '   alpha, beta-0, beta-1, beta-q, sig-0, sig-1, sig-q, X, Y:\n   '
+                    '   alpha, beta-0, beta-1, beta-q, sig-0, sig-1, sig-q, X, Y:\n    '
                 for item in ['alpha','bet-0','bet-1','bet-q','sig-0','sig-1','sig-q','X','Y']:
                     name = hfx+item
                     sig = self.sigDict.get(name,-0.009)
@@ -300,18 +318,18 @@ class ExportCIF(G2IO.ExportBaseclass):
                 size = hapData['Size']
                 mustrain = hapData['Mustrain']
                 hstrain = hapData['HStrain']
-                s = '  Crystallite size model "%s" for %s (microns)\n'%(size[0],phasenam)
+                s = '  Crystallite size model "%s" for %s (microns)\n  '%(size[0],phasenam)
                 names = ['Size;i','Size;mx']
                 if 'uniax' in size[0]:
                     names = ['Size;i','Size;a','Size;mx']
-                    s += '  anisotropic axis is %s\n  '%(str(size[3]))
-                    s += '  parameters: equatorial size, axial size, G/L mix\n  '
+                    s += 'anisotropic axis is %s\n  '%(str(size[3]))
+                    s += 'parameters: equatorial size, axial size, G/L mix\n    '
                     for i,item in enumerate(names):
                         name = phfx+item
                         sig = self.sigDict.get(name,-0.009)
                         s += G2mth.ValEsd(size[1][i],sig)+', '
                 elif 'ellip' in size[0]:
-                    s += '  parameters: S11, S22, S33, S12, S13, S23, G/L mix\n  '
+                    s += 'parameters: S11, S22, S33, S12, S13, S23, G/L mix\n    '
                     for i in range(6):
                         name = phfx+'Size:'+str(i)
                         sig = self.sigDict.get(name,-0.009)
@@ -319,37 +337,37 @@ class ExportCIF(G2IO.ExportBaseclass):
                     sig = self.sigDict.get(phfx+'Size;mx',-0.009)
                     s += G2mth.ValEsd(size[1][2],sig)+', '                                           
                 else:       #isotropic
-                    s += '  parameters: Size, G/L mix\n  '
+                    s += 'parameters: Size, G/L mix\n    '
                     i = 0
                     for item in names:
                         name = phfx+item
                         sig = self.sigDict.get(name,-0.009)
                         s += G2mth.ValEsd(size[1][i],sig)+', '
                         i = 2    #skip the aniso value                
-                s += '\n  Mustrain model "%s" for %s (10^6)\n'%(mustrain[0],phasenam)
+                s += '\n  Mustrain model "%s" for %s (10^6)\n  '%(mustrain[0],phasenam)
                 names = ['Mustrain;i','Mustrain;mx']
                 if 'uniax' in mustrain[0]:
                     names = ['Mustrain;i','Mustrain;a','Mustrain;mx']
-                    s += '  anisotropic axis is %s\n  '%(str(size[3]))
-                    s += '  parameters: equatorial mustrain, axial mustrain, G/L mix\n  '
+                    s += 'anisotropic axis is %s\n  '%(str(size[3]))
+                    s += 'parameters: equatorial mustrain, axial mustrain, G/L mix\n    '
                     for i,item in enumerate(names):
                         name = phfx+item
                         sig = self.sigDict.get(name,-0.009)
                         s += G2mth.ValEsd(mustrain[1][i],sig)+', '
                 elif 'general' in mustrain[0]:
-                    names = '  parameters: '
+                    names = 'parameters: '
                     for i,name in enumerate(G2spc.MustrainNames(SGData)):
                         names += name+', '
                         if i == 9:
                             names += '\n  '
-                    names += 'G/L mix\n  '
+                    names += 'G/L mix\n    '
                     s += names
                     txt = ''
                     for i in range(len(mustrain[4])):
                         name = phfx+'Mustrain:'+str(i)
                         sig = self.sigDict.get(name,-0.009)
                         if len(txt) > 60:
-                            s += txt+'\n  '
+                            s += txt+'\n    '
                             txt = ''
                         txt += G2mth.ValEsd(mustrain[4][i],sig)+', '
                     s += txt                                           
@@ -357,7 +375,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += G2mth.ValEsd(mustrain[1][2],sig)+', '
                     
                 else:       #isotropic
-                    s += '  parameters: Mustrain, G/L mix\n  '
+                    s += '  parameters: Mustrain, G/L mix\n    '
                     i = 0
                     for item in names:
                         name = phfx+item
@@ -369,7 +387,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 names = G2spc.HStrainNames(SGData)
                 for name in names:
                     txt += name+', '
-                s += txt+'\n   '
+                s += txt+'\n    '
                 for i in range(len(names)):
                     name = phfx+name[i]
                     sig = self.sigDict.get(name,-0.009)

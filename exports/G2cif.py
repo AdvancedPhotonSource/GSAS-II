@@ -8,7 +8,7 @@
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2cif.py $
 # $Id: G2cif.py 1006 2013-07-23 01:57:37Z toby $
 ########### SVN repository information ###################
-'''Development code to export a GSAS-II project as a CIF
+'''Code to export a GSAS-II project as a CIF
 The heavy lifting is done in method export
 '''
 
@@ -28,8 +28,8 @@ import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
 reload(G2mth)
 import GSASIIlattice as G2lat
-import GSASIIspc as G2spg
-#reload(G2spg)
+import GSASIIspc as G2spc
+#reload(G2spc)
 
 DEBUG = True    #True to skip printing of reflection/powder profile lists
 
@@ -232,7 +232,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         s1 += "; "
                     s += s1
             return s
-        def FormatBackground(bkg):
+        def FormatBackground(bkg,hId):
             '''Display the Background information as a descriptive text string.
             
             TODO: this needs to be expanded to show the diffuse peak and
@@ -240,49 +240,141 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             :returns: the text description (str)
             '''
+            hfx = ':'+str(hId)+':'
             fxn, bkgdict = bkg
             terms = fxn[2]
             txt = 'Background function: "'+fxn[0]+'" function with '+str(terms)+' terms:\n'
             l = "   "
-            for v in fxn[3:]:
+            for i,v in enumerate(fxn[3:]):
+                name = '%sBack:%d'%(hfx,i)
+                sig = self.sigDict.get(name,-0.009)
                 if len(l) > 60:
                     txt += l + '\n'
                     l = '   '
-                l += G2mth.ValEsd(v,-.009)+', '
+                l += G2mth.ValEsd(v,sig)+', '
             txt += l
             return txt
 
-        def FormatInstProfile(instparmdict):
+        def FormatInstProfile(instparmdict,hId):
             '''Format the instrumental profile parameters with a
             string description. Will only be called on PWDR histograms
             '''
             s = ''
             inst = instparmdict[0]
+            hfx = ':'+str(hId)+':'
             if 'C' in inst['Type'][0]:
-                s = 'Finger-Cox-Jephcoat function parameters U, V, W, X, Y, SH/L:\n   '
+                s = 'Finger-Cox-Jephcoat function parameters U, V, W, X, Y, SH/L:\n'
+                s += '  peak variance(Gauss) = Utan(Th)^2+Vtan(Th)+W:\n'
+                s += '  peak HW(Lorentz) = X/cos(Th)+Ytan(Th); SH/L = S/L+H/L\n'
+                s += '  U, V, W in (centideg)^2, X & Y in centideg\n  '
                 for item in ['U','V','W','X','Y','SH/L']:
-                    s += G2mth.ValEsd(inst[item][1],-.009)+', '                    
+                    name = hfx+item
+                    sig = self.sigDict.get(name,-0.009)
+                    s += G2mth.ValEsd(inst[item][1],sig)+', '                    
             elif 'T' in inst['Type'][0]:    #to be tested after TOF Rietveld done
                 s = 'Von Dreele-Jorgenson-Windsor function parameters\n'+ \
                     '   alpha, beta-0, beta-1, beta-q, sig-0, sig-1, sig-q, X, Y:\n   '
                 for item in ['alpha','bet-0','bet-1','bet-q','sig-0','sig-1','sig-q','X','Y']:
-                    s += G2mth.ValEsd(inst[item][1],-.009)+', '
+                    name = hfx+item
+                    sig = self.sigDict.get(name,-0.009)
+                    s += G2mth.ValEsd(inst[item][1],sig)+', '
             return s
 
         def FormatPhaseProfile(phasenam):
             '''Format the phase-related profile parameters (size/strain)
             with a string description.
-            return an empty string or None there are no
+            return an empty string or None if there are no
             powder histograms for this phase.
             '''
             s = ''
-            phasedict = self.Phases[phasenam] # pointer to current phase info            
+            phasedict = self.Phases[phasenam] # pointer to current phase info
+            SGData = phasedict['General'] ['SGData']          
             for histogram in sorted(phasedict['Histograms']):
                 if histogram.startswith("HKLF"): continue # powder only
                 Histogram = self.Histograms.get(histogram)
                 if not Histogram: continue
                 hapData = phasedict['Histograms'][histogram]
-            return 'TODO: Phase profile goes here'
+                pId = phasedict['pId']
+                hId = Histogram['hId']
+                phfx = '%d:%d:'%(pId,hId)
+                size = hapData['Size']
+                mustrain = hapData['Mustrain']
+                hstrain = hapData['HStrain']
+                s = '  Crystallite size model "%s" for %s (microns)\n'%(size[0],phasenam)
+                names = ['Size;i','Size;mx']
+                if 'uniax' in size[0]:
+                    names = ['Size;i','Size;a','Size;mx']
+                    s += '  anisotropic axis is %s\n  '%(str(size[3]))
+                    s += '  parameters: equatorial size, axial size, G/L mix\n  '
+                    for i,item in enumerate(names):
+                        name = phfx+item
+                        sig = self.sigDict.get(name,-0.009)
+                        s += G2mth.ValEsd(size[1][i],sig)+', '
+                elif 'ellip' in size[0]:
+                    s += '  parameters: S11, S22, S33, S12, S13, S23, G/L mix\n  '
+                    for i in range(6):
+                        name = phfx+'Size:'+str(i)
+                        sig = self.sigDict.get(name,-0.009)
+                        s += G2mth.ValEsd(size[4][i],sig)+', '
+                    sig = self.sigDict.get(phfx+'Size;mx',-0.009)
+                    s += G2mth.ValEsd(size[1][2],sig)+', '                                           
+                else:       #isotropic
+                    s += '  parameters: Size, G/L mix\n  '
+                    i = 0
+                    for item in names:
+                        name = phfx+item
+                        sig = self.sigDict.get(name,-0.009)
+                        s += G2mth.ValEsd(size[1][i],sig)+', '
+                        i = 2    #skip the aniso value                
+                s += '\n  Mustrain model "%s" for %s (10^6)\n'%(mustrain[0],phasenam)
+                names = ['Mustrain;i','Mustrain;mx']
+                if 'uniax' in mustrain[0]:
+                    names = ['Mustrain;i','Mustrain;a','Mustrain;mx']
+                    s += '  anisotropic axis is %s\n  '%(str(size[3]))
+                    s += '  parameters: equatorial mustrain, axial mustrain, G/L mix\n  '
+                    for i,item in enumerate(names):
+                        name = phfx+item
+                        sig = self.sigDict.get(name,-0.009)
+                        s += G2mth.ValEsd(mustrain[1][i],sig)+', '
+                elif 'general' in mustrain[0]:
+                    names = '  parameters: '
+                    for i,name in enumerate(G2spc.MustrainNames(SGData)):
+                        names += name+', '
+                        if i == 9:
+                            names += '\n  '
+                    names += 'G/L mix\n  '
+                    s += names
+                    txt = ''
+                    for i in range(len(mustrain[4])):
+                        name = phfx+'Mustrain:'+str(i)
+                        sig = self.sigDict.get(name,-0.009)
+                        if len(txt) > 60:
+                            s += txt+'\n  '
+                            txt = ''
+                        txt += G2mth.ValEsd(mustrain[4][i],sig)+', '
+                    s += txt                                           
+                    sig = self.sigDict.get(phfx+'Mustrain;mx',-0.009)
+                    s += G2mth.ValEsd(mustrain[1][2],sig)+', '
+                    
+                else:       #isotropic
+                    s += '  parameters: Mustrain, G/L mix\n  '
+                    i = 0
+                    for item in names:
+                        name = phfx+item
+                        sig = self.sigDict.get(name,-0.009)
+                        s += G2mth.ValEsd(mustrain[1][i],sig)+', '
+                        i = 2    #skip the aniso value                
+                s += '\n  Macrostrain for %s\n'%(phasenam)
+                txt = '  parameters: '
+                names = G2spc.HStrainNames(SGData)
+                for name in names:
+                    txt += name+', '
+                s += txt+'\n   '
+                for i in range(len(names)):
+                    name = phfx+name[i]
+                    sig = self.sigDict.get(name,-0.009)
+                    s += G2mth.ValEsd(hstrain[0][i],sig)+', '
+            return s
         
         def FmtAtomType(sym):
             'Reformat a GSAS-II atom type symbol to match CIF rules'
@@ -580,7 +672,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('_symmetry_space_group_name_H-M',spacegroup)
 
             # generate symmetry operations including centering and center of symmetry
-            SymOpList,offsetList,symOpList,G2oprList = G2spg.AllOps(
+            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
                 phasedict['General']['SGData'])
             WriteCIFitem('loop_ _space_group_symop_id _space_group_symop_operation_xyz')
             for i,op in enumerate(SymOpList,start=1):
@@ -720,7 +812,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             #    WriteCIFitem('      _atom_type_scat_length_neutron')
             #WriteCIFitem('      _atom_type_scat_source')
 
-            WriteCIFitem('_pd_proc_ls_background_function',FormatBackground(histblk['Background']))
+            WriteCIFitem('_pd_proc_ls_background_function',FormatBackground(histblk['Background'],histblk['hId']))
 
             #WriteCIFitem('_exptl_absorpt_process_details','?')
             #WriteCIFitem('_exptl_absorpt_correction_T_min','?')
@@ -732,7 +824,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             if not oneblock:                 # instrumental profile terms go here
                 WriteCIFitem('_pd_proc_ls_profile_function', 
-                    FormatInstProfile(histblk["Instrument Parameters"]))
+                    FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
 
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
@@ -1094,9 +1186,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
                     # report profile, since one-block: include both histogram and phase info
                 WriteCIFitem('_pd_proc_ls_profile_function',
-                             FormatInstProfile(histblk["Instrument Parameters"])
-                             + '\n' +
-                             FormatPhaseProfile(phasenam))
+                    FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
+                    +'\n'+FormatPhaseProfile(phasenam))
                 WritePowderTemplate()
                 WritePowderData(hist)
             elif hist.startswith("HKLF") and not self.quickmode:
@@ -1193,7 +1284,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     #instnam = histblk["Sample Parameters"]['InstrName']
                     # report instrumental profile terms
                     WriteCIFitem('_pd_proc_ls_profile_function',
-                        FormatInstProfile(histblk["Instrument Parameters"]))
+                        FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
                     WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
                     WriteCIFitem('_pd_block_id',datablockidDict[hist])
                     WritePowderTemplate()

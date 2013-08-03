@@ -4478,6 +4478,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def FillPawleyReflectionsGrid():
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()
+            rowList = G2frame.PawleyRefl.GetSelectedRows()
             PawleyPeaks = data['Pawley ref']
             if event.GetKeyCode() == wx.WXK_RETURN:
                 event.Skip(True)
@@ -4495,9 +4496,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         elif key == 78:  #'N'
                             for row in range(PawleyTable.GetNumberRows()): PawleyPeaks[row][col]=False
                         FillPawleyReflectionsGrid()
+            elif rowList:
+                if event.GetKeyCode() == wx.WXK_DELETE:
+                    rowList.reverse()
+                    for row in rowList:
+                        del(PawleyPeaks[row])
+                    FillPawleyReflectionsGrid()
             
         # FillPawleyReflectionsGrid executable starts here
-        G2frame.dataFrame.SetStatusText('')                        
+        G2frame.dataFrame.SetStatusText('To delete a few Pawley reflections: select rows & press Delete')                        
         if 'Pawley ref' in data:
             PawleyPeaks = data['Pawley ref']                        
             rowLabels = []

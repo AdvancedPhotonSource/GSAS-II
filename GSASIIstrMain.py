@@ -148,7 +148,7 @@ def Refine(GPXfile,dlg):
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
             break                   #refinement succeeded - finish up!
-        except TypeError:          #result[1] is None on singular matrix
+        except TypeError,FloatingPointError:          #result[1] is None on singular matrix
             print '**** Refinement failed - singular matrix ****'
             if 'Hessian' in Controls['deriv type']:
                 num = len(varyList)-1

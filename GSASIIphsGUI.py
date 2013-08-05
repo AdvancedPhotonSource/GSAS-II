@@ -4605,35 +4605,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         try:
             for iref,ref in enumerate(Refs):
                 try:
-                    if refData[iref][9] < 0.:
-                        ref[6] = abs(refData[iref][9])*mult
+                    if ref[6] < 0.:
+                        ref[6] *= -mult
                         refData[iref][8] *= -mult
                         refData[iref][9] *= -mult
                         ref[5] = False
                         ref[7] = 1.0
                 except IndexError:
+                    print 'skipped',ref
                     pass
         finally:
             wx.EndBusyCursor()
-        FillPawleyReflectionsGrid()
+        wx.CallAfter(FillPawleyReflectionsGrid)
                             
-    def OnPawleyDelete(event):          #doesn't work
-        dlg = wx.MessageDialog(G2frame,'Do you really want to delete selected Pawley reflections?','Delete', 
-            wx.YES_NO | wx.ICON_QUESTION)
-        try:
-            result = dlg.ShowModal()
-            if result == wx.ID_YES: 
-                Refs = data['Pawley ref']
-                Ind = G2frame.PawleyRefl.GetSelectedRows()
-                Ind.sort()
-                Ind.reverse()
-                for ind in Ind:
-                    Refs = np.delete(Refs,ind,0)
-                data['Pawley ref'] = Refs
-                FillPawleyReflectionsGrid()
-        finally:
-            dlg.Destroy()
-
 ################################################################################
 ##### Fourier routines
 ################################################################################
@@ -5085,7 +5069,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyDelete, id=G2gd.wxID_PAWLEYDELETE)            
             FillPawleyReflectionsGrid()
         else:
             G2gd.SetDataMenuBar(G2frame)

@@ -86,9 +86,8 @@ htmlFirstUse = True
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
 
-[ wxID_PAWLEYLOAD, wxID_PAWLEYDELETE, wxID_PAWLEYESTIMATE,
-    wxID_PAWLEYUPDATE,
-] = [wx.NewId() for item in range(4)]
+[ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
@@ -2030,8 +2029,6 @@ class DataFrame(wx.Frame):
             help='Estimate initial Pawley intensities')
         self.PawleyEdit.Append(id=wxID_PAWLEYUPDATE, kind=wx.ITEM_NORMAL,text='Pawley update',
             help='Update negative Pawley intensities with -0.5*Fobs and turn off refinemnt')
-#        self.PawleyEdit.Append(id=wxID_PAWLEYDELETE, kind=wx.ITEM_NORMAL,text='Pawley delete',
-#            help='Delete selected Pawley reflection')
         self.PostfillDataMenu()
             
         # Phase / Map peaks tab

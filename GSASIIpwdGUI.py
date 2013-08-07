@@ -610,10 +610,19 @@ def UpdateBackground(G2frame,data):
 def UpdateLimitsGrid(G2frame, data):
     '''respond to selection of PWDR Limits data tree item.
     '''
-    #Add excluded regions here
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
         
+    def KeyEditPeakGrid(event):
+        row = G2frame.dataDisplay.GetSelectedRows()[0]
+        if row > 1: #can't delete limits!
+            G2frame.dataDisplay.ClearSelection()
+            if event.GetKeyCode() == wx.WXK_DELETE:
+                G2frame.dataDisplay.ClearGrid()
+                del(data[row])
+                wx.CallAfter(UpdateLimitsGrid,G2frame,data)
+                G2plt.PlotPatterns(G2frame)
+                        
     def RefreshLimitsGrid(event):
         event.StopPropagation()
         data = G2frame.LimitsTable.GetData()
@@ -621,7 +630,13 @@ def UpdateLimitsGrid(G2frame, data):
         new = data[1]
         new[0] = max(old[0],new[0])
         new[1] = max(new[0],min(old[1],new[1]))
-        data = [old,new]
+        if len(data) > 2:
+            excl = data[2:]
+            for item in excl:
+                item[0] = max(old[0],item[0])
+                item[1] = max(item[0],min(old[1],item[1]))
+        data = [old,new]+excl
+        G2frame.LimitsTable.SetData(data)
         G2plt.PlotPatterns(G2frame)
         
     def OnLimitCopy(event):
@@ -643,10 +658,16 @@ def UpdateLimitsGrid(G2frame, data):
                     copy.copy(data))
         finally:
             dlg.Destroy()
+            
+    def OnAddExcl(event):
+        G2frame.ifGetExclude = True
+        print 'Add excluded region'
         
     G2frame.LimitsTable = []
     colLabels = ['Tmin','Tmax']
     rowLabels = ['original','changed']
+    for i in range(len(data)-2):
+        rowLabels.append('exclude')
     Types = 2*[wg.GRID_VALUE_FLOAT+':10,3',]
     G2frame.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Limits')
@@ -654,12 +675,14 @@ def UpdateLimitsGrid(G2frame, data):
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
     G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
+    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)    
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
     G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
+    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
-    G2frame.dataFrame.setSizePosLeft([230,160])
+    G2frame.dataFrame.setSizePosLeft([230,260])
     
 ################################################################################
 #####  Instrument parameters
@@ -2038,7 +2061,7 @@ def UpdatePDFGrid(G2frame,data):
     dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     powName = 'PWDR'+dataFile[4:]
     powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
-    fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))
+    fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
     inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
     if 'Lam' in inst:
         keV = 12.397639/inst['Lam'][1]

@@ -1739,7 +1739,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             xF = np.searchsorted(x,Limits[1])
             dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
-            Wt = np.sqrt(W[xB:xF])[np.newaxis,:]
+            Wt = ma.sqrt(W[xB:xF])[np.newaxis,:]
             Dy = dy[xB:xF][np.newaxis,:]
             dMdvh *= Wt
             if dlg:
@@ -1877,17 +1877,17 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             yd *= 0.0
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
-            Histogram['Nobs'] = xF-xB
+            Histogram['Nobs'] = ma.count(x[xB:xF])
             Nobs += Histogram['Nobs']
-            Histogram['sumwYo'] = np.sum(W[xB:xF]*y[xB:xF]**2)
+            Histogram['sumwYo'] = ma.sum(W[xB:xF]*y[xB:xF]**2)
             SumwYo += Histogram['sumwYo']
             yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
-            Histogram['sumwYd'] = np.sum(np.sqrt(W[xB:xF])*(yd[xB:xF]))
-            wdy = -np.sqrt(W[xB:xF])*(yd[xB:xF])
-            Histogram['wR'] = min(100.,np.sqrt(np.sum(wdy**2)/Histogram['sumwYo'])*100.)
+            Histogram['sumwYd'] = ma.sum(np.sqrt(W[xB:xF])*(yd[xB:xF]))
+            wdy = -ma.sqrt(W[xB:xF])*(yd[xB:xF])
+            Histogram['wR'] = min(100.,ma.sqrt(ma.sum(wdy**2)/Histogram['sumwYo'])*100.)
             if dlg:
                 dlg.Update(Histogram['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
             M = np.concatenate((M,wdy))

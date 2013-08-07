@@ -100,8 +100,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(5)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
-    wxID_SAMPLESAVE, wxID_SAMPLELOAD,
-] = [wx.NewId() for item in range(7)]
+    wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE,
@@ -1665,9 +1665,11 @@ class DataFrame(wx.Frame):
         self.LimitMenu = wx.MenuBar()
         self.PrefillDataMenu(self.LimitMenu,helpType='Limits')
         self.LimitEdit = wx.Menu(title='')
-        self.LimitMenu.Append(menu=self.LimitEdit, title='File')
+        self.LimitMenu.Append(menu=self.LimitEdit, title='Edit')
         self.LimitEdit.Append(id=wxID_LIMITCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy limits to other histograms')
+        self.LimitEdit.Append(id=wxID_ADDEXCLREGION, kind=wx.ITEM_NORMAL,text='Add exclude',
+            help='Add excluded region - select a point on plot; drag to adjust')            
         self.PostfillDataMenu()
             
         # PDR / Background

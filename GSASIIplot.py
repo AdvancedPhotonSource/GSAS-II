@@ -397,6 +397,7 @@ def PlotPatterns(G2frame,newPlot=False):
 #            cb.SetValue(' key press')
 #            wx.CallAfter(OnPlotKeyPress,event)
 #                        
+    global exclLines
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w':
@@ -572,13 +573,20 @@ def PlotPatterns(G2frame,newPlot=False):
                 if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
                     if G2frame.qPlot:                              #qplot - convert back to 2-theta
                         xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
-                if mouse.button==1:
-                    data[1][0] = min(xy[0],data[1][1])
-                if mouse.button==3:
-                    data[1][1] = max(xy[0],data[1][0])
+                if G2frame.ifGetExclude:
+                    excl = [0,0]
+                    excl[0] = max(data[1][0],min(xy[0],data[1][1]))
+                    excl[1] = excl[0]+0.1
+                    data.append(excl)
+                    G2frame.ifGetExclude = False
+                else:
+                    if mouse.button==1:
+                        data[1][0] = min(xy[0],data[1][1])
+                    if mouse.button==3:
+                        data[1][1] = max(xy[0],data[1][0])
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 G2pdG.UpdateLimitsGrid(G2frame,data)
-                PlotPatterns(G2frame)
+                wx.CallAfter(PlotPatterns,G2frame)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
         elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
@@ -601,23 +609,24 @@ def PlotPatterns(G2frame,newPlot=False):
                 lines.append(line.get_xdata()[0])
 #            print G2frame.itemPicked.get_xdata()
             lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
-            if  lineNo in [0,1]:
+            if  lineNo in [0,1] or lineNo in exclLines:
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
+                id = lineNo/2+1
+                id2 = lineNo%2
                 if G2frame.qPlot:
                     if 'C' in Parms['Type'][0]:
-                        data[1][lineNo] = 2.0*asind(wave*xpos/(4*math.pi))
+                        data[id][id2] = 2.0*asind(wave*xpos/(4*math.pi))
                     else:
-                        data[1][lineNo] = 2*math.pi*Parms['difC'][1]/xpos
+                        data[id][id2] = 2*math.pi*Parms['difC'][1]/xpos
                 else:
-                    data[1][lineNo] = xpos
+                    data[id][id2] = xpos
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,data)
             else:
                 PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 data = G2frame.PatternTree.GetItemPyData(PeakId)
-#                print 'peaks',xpos
                 if event.button == 3:
                     del data[lineNo-2]
                 else:
@@ -678,6 +687,7 @@ def PlotPatterns(G2frame,newPlot=False):
     PatternId = G2frame.PatternId
     colors=['b','g','r','c','m','k']
     Lines = []
+    exclLines = []
     if G2frame.SinglePlot:
         Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
         Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
@@ -747,10 +757,14 @@ def PlotPatterns(G2frame,newPlot=False):
             difC = Parms['difC'][1]
         ifpicked = False
         LimitId = 0
-        xye = np.array(Pattern[1])
+        xye = ma.array(Pattern[1])
         if PickId:
             ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
+            limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
+            excls = limits[2:]
+            for excl in excls:
+                xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
         if G2frame.qPlot:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             if 'C' in Parms['Type'][0]:
@@ -770,7 +784,11 @@ def PlotPatterns(G2frame,newPlot=False):
                 else:
                     limits = 2*np.pi*difC/limits
             Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
-            Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))                    
+            Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))
+            for i,item in enumerate(limits[2:]):
+                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.))    
+                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.))
+                exclLines += [2*i+2,2*i+3]
         if G2frame.Contour:
             
             if lenX == len(X):
@@ -781,6 +799,7 @@ def PlotPatterns(G2frame,newPlot=False):
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
             X += G2frame.Offset[1]*.005*N
+            Xum = ma.getdata(X)
             if ifpicked:
                 Z = xye[3]+offset*N
                 W = xye[4]+offset*N
@@ -800,10 +819,10 @@ def PlotPatterns(G2frame,newPlot=False):
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
                     if G2frame.SubBack:
-                        Plot.plot(X,Y-W,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(Xum,Y-W,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)
                     else:
-                        Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                     Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)
@@ -1016,8 +1035,6 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 G2frame.Legend = False
             else:
                 G2frame.Legend = True
-            
-            
         PlotISFG(G2frame,newPlot=newPlot,type=type)
         
     def OnKeyBox(event):
@@ -1286,7 +1303,7 @@ def PlotPeakWidths(G2frame):
     PatternId = G2frame.PatternId
     limitID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
     if limitID:
-        limits = G2frame.PatternTree.GetItemPyData(limitID)
+        limits = G2frame.PatternTree.GetItemPyData(limitID)[:2]
     else:
         return
     Parms,Parms2 = G2frame.PatternTree.GetItemPyData( \

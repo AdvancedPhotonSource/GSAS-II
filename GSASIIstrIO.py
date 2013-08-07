@@ -282,8 +282,8 @@ def GetHistograms(GPXfile,hNames):
                     PWDRdata.update(datum[1][0])        #weight factor
                 except ValueError:
                     PWDRdata['wtFactor'] = 1.0          #patch
-                PWDRdata['Data'] = datum[1][1]          #powder data arrays
-                PWDRdata[data[2][0]] = data[2][1]       #Limits
+                PWDRdata['Data'] = ma.array(datum[1][1])          #masked powder data arrays
+                PWDRdata[data[2][0]] = data[2][1]       #Limits & excluded regions (if any)
                 PWDRdata[data[3][0]] = data[3][1]       #Background
                 PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
                 PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
@@ -439,7 +439,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
         try:
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]
-            data[0][1][1] = histogram['Data']
+            data[0][1][1] = list(histogram['Data'])
             for datus in data[1:]:
 #                print '    read: ',datus[0]
                 if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
@@ -473,7 +473,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
             data[0][1] = SeqResult
         try:
             histogram = Histograms[datum[0]]
-            data[0][1][1] = histogram['Data']
+            data[0][1][1] = list(histogram['Data'])
             for datus in data[1:]:
                 if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
                     datus[1] = histogram[datus[0]]
@@ -2271,6 +2271,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             pfx = ':'+str(hId)+':'
             controlDict[pfx+'wtFactor'] = Histogram['wtFactor']
             controlDict[pfx+'Limits'] = Histogram['Limits'][1]
+            controlDict[pfx+'Exclude'] = Histogram['Limits'][2:]
+            for excl in controlDict[pfx+'Exclude']:
+                Histogram['Data'][0] = ma.masked_inside(Histogram['Data'][0],excl[0],excl[1])
             
             Background = Histogram['Background']
             Type,bakDict,bakVary = GetBackgroundParms(hId,Background)
@@ -2302,7 +2305,11 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 units = Units[controlDict[pfx+'histType'][2]]
                 Limits = controlDict[pfx+'Limits']
                 print >>pFile,' Instrument type: ',Sample['Type']
-                print >>pFile,' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)     
+                print >>pFile,' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)
+                if len(controlDict[pfx+'Exclude']):
+                    excls = controlDict[pfx+'Exclude']
+                    for excl in excls:
+                        print >>pFile,' Excluded region:  %8.2f%s to %8.2f%s'%(excl[0],units,excl[1],units)    
                 PrintSampleParms(Sample)
                 PrintInstParms(Inst)
                 PrintBackground(Background)

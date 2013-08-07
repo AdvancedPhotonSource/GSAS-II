@@ -2274,7 +2274,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             controlDict[pfx+'Exclude'] = Histogram['Limits'][2:]
             for excl in controlDict[pfx+'Exclude']:
                 Histogram['Data'][0] = ma.masked_inside(Histogram['Data'][0],excl[0],excl[1])
-            
+            ma.mask_rows(Histogram['Data'])
             Background = Histogram['Background']
             Type,bakDict,bakVary = GetBackgroundParms(hId,Background)
             controlDict[pfx+'bakType'] = Type

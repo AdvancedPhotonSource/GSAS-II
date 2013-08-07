@@ -1551,10 +1551,12 @@ class ExportBaseclass(object):
     def __init__(self,
                  G2frame,
                  formatName,
+                 extension,
                  longFormatName=None,
                  ):
         self.G2frame = G2frame
         self.formatName = formatName # short string naming file type
+        self.extension = extension
         if longFormatName: # longer string naming file type
             self.longFormatName = longFormatName
         else:
@@ -1676,6 +1678,35 @@ class ExportBaseclass(object):
             print '    ',key1,Show(self.Histograms[key1])
             for key2 in self.Histograms[key1]:
                 print '      ',key2,Show(self.Histograms[key1][key2])
+
+    def defSaveFile(self):
+        return os.path.abspath(
+            os.path.splitext(self.G2frame.GSASprojectfile
+                             )[0]+self.extension)
+        
+    def askSaveFile(self):
+        '''Ask the user to supply a file name
+
+        :returns: a file name (str)
+        '''
+        defnam = os.path.splitext(
+            os.path.split(self.G2frame.GSASprojectfile)[1]
+            )[0]+self.extension
+        dlg = wx.FileDialog(
+            self.G2frame, 'Input name for file to write', '.', defnam,
+            self.longFormatName+' (*'+self.extension+')|*'+self.extension,
+            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                # make sure extension is correct
+                filename = os.path.splitext(filename)[0]+self.extension
+            else:
+                filename = None
+        finally:
+            dlg.Destroy()
+        return filename
+        
                     
 ######################################################################
 class ImportStructFactor(ImportBaseclass):

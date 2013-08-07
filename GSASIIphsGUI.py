@@ -86,7 +86,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
       is to bring up the General tab.
 
     '''
-       
+
 #patch
     if 'RBModels' not in data:
         data['RBModels'] = {}
@@ -1563,6 +1563,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData)
             if dlg.ShowModal() == wx.ID_OK:
                 DisAglCtls = dlg.GetData()
+            else:
+                dlg.Destroy()
+                return
             dlg.Destroy()
             generalData['DisAglCtls'] = DisAglCtls
             atomData = data['Atoms']
@@ -1585,7 +1588,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2stMn.DistAngle(DisAglCtls,DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
-                
+        else:
+                print "select one or more rows of atoms"
+                G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+                        
     def OnReImport(event):
         print 'reimport atoms from file to be developed'
         reqrdr = G2frame.dataFrame.ReImportMenuId.get(event.GetId())

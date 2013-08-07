@@ -215,11 +215,11 @@ class GSASII(wx.Frame):
         #path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file
         #pathlist = sys.path[:]
         #if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
-        path2GSAS2 = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), # location of this file
-            'imports')
+        #path2GSAS2 = os.path.join(
+        #    os.path.dirname(os.path.realpath(__file__)), # location of this file
+        #    'imports')
         pathlist = sys.path[:]
-        if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
+        #if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
 
         filelist = []
         for path in pathlist:
@@ -1039,10 +1039,10 @@ class GSASII(wx.Frame):
                     mode = 'simple'
             except:
                 pass
-        path2GSAS2 = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), # location of this file
-            'exports')
-        if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
+        #path2GSAS2 = os.path.join(
+        #    os.path.dirname(os.path.realpath(__file__)), # location of this file
+        #    'exports')
+        #if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
         #reload(G2IO)
         import G2cif
         reload(G2cif)

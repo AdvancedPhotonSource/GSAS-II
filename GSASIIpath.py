@@ -36,7 +36,7 @@ elif sys.platform == "linux2":
         bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
     else:
         bindir = 'binlinux%d.%d' % sys.version_info[0:2]
-for loc in sys.path[0],os.path.split(__file__)[0]:
+for loc in sys.path[0],os.path.abspath(os.path.split(__file__)[0]):
     if bindir:
         if os.path.exists(os.path.join(loc,bindir)) and os.path.join(loc,bindir) not in sys.path: 
             sys.path.insert(0,os.path.join(loc,bindir))
@@ -49,7 +49,16 @@ for loc in sys.path[0],os.path.split(__file__)[0]:
 print 'GSAS-II binary directory: ',os.path.join(loc,bindir)
 if bindir == None:
     raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II fails ****"
-
+# add the data import and export directory to the search path
+path2GSAS2 = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), # location of this file
+    'imports')
+pathlist = sys.path[:]
+if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
+path2GSAS2 = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), # location of this file
+    'exports')
+if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):

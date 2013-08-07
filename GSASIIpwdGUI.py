@@ -612,13 +612,12 @@ def UpdateLimitsGrid(G2frame, data):
     '''
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
+    G2frame.ifGetExclude = False
         
     def KeyEditPeakGrid(event):
-        row = G2frame.dataDisplay.GetSelectedRows()[0]
-        if row > 1: #can't delete limits!
-            G2frame.dataDisplay.ClearSelection()
-            if event.GetKeyCode() == wx.WXK_DELETE:
-                G2frame.dataDisplay.ClearGrid()
+        if event.GetKeyCode() == wx.WXK_DELETE:
+            row = G2frame.dataDisplay.GetSelectedRows()[0]
+            if row > 1: #can't delete limits!
                 del(data[row])
                 wx.CallAfter(UpdateLimitsGrid,G2frame,data)
                 G2plt.PlotPatterns(G2frame)
@@ -630,6 +629,7 @@ def UpdateLimitsGrid(G2frame, data):
         new = data[1]
         new[0] = max(old[0],new[0])
         new[1] = max(new[0],min(old[1],new[1]))
+        excl = []
         if len(data) > 2:
             excl = data[2:]
             for item in excl:

@@ -17,6 +17,7 @@ The heavy lifting is done in method export
 import datetime as dt
 import os.path
 import numpy as np
+import wx
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1006 $")
 import GSASIIIO as G2IO
@@ -26,12 +27,16 @@ import GSASIIstrIO as G2stIO
 #reload(G2stIO)
 #import GSASIImapvars as G2mv
 import GSASIImath as G2mth
-reload(G2mth)
+#reload(G2mth)
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 #reload(G2spc)
+import GSASIIphsGUI as G2pg
+#reload(G2pg)
+import GSASIIstrMain as G2stMn
 
-DEBUG = True    #True to skip printing of reflection/powder profile lists
+DEBUG = False
+#DEBUG = True    #True to skip printing of reflection/powder profile lists
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -47,7 +52,8 @@ class ExportCIF(G2IO.ExportBaseclass):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
             formatName = 'full CIF',
-            longFormatName = 'Export project as complete CIF'
+            extension='.cif',
+            longFormatName = 'Export project as CIF'
             )
         self.author = ''
 
@@ -58,24 +64,30 @@ class ExportCIF(G2IO.ExportBaseclass):
           "simple" for a simple CIF with only coordinates
         '''
     
+        def openCIF(filnam):
+            self.fp = open(filnam,'w')
+
+        def closeCIF():
+            self.fp.close()
+            
         def WriteCIFitem(name,value=''):
             if value:
                 if "\n" in value or len(value)> 70:
-                    if name.strip(): print name
-                    print '; '+value
-                    print '; '
+                    if name.strip(): self.fp.write(name+'\n')
+                    self.fp.write('; '+value+'\n')
+                    self.fp.write('; '+'\n')
                 elif " " in value:
                     if len(name)+len(value) > 65:
-                        print name,'\n   ','"' + str(value) + '"'
+                        self.fp.write(name + '\n   ' + '"' + str(value) + '"'+'\n')
                     else:
-                        print name,'  ','"' + str(value) + '"'
+                        self.fp.write(name + '  ' + '"' + str(value) + '"'+'\n')
                 else:
                     if len(name)+len(value) > 65:
-                        print name,'\n   ',value
+                        self.fp.write(name+'\n   ' + value+'\n')
                     else:
-                        print name,'  ',value
+                        self.fp.write(name+'  ' + value+'\n')
             else:
-                print name
+                self.fp.write(name+'\n')
 
         def WriteAudit():
             WriteCIFitem('_audit_creation_method',
@@ -236,7 +248,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''Display the Background information as a descriptive text string.
             
             TODO: this needs to be expanded to show the diffuse peak and
-            Debye term information as well. 
+            Debye term information as well. (Bob)
 
             :returns: the text description (str)
             '''
@@ -624,9 +636,49 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             Atoms = phasedict['Atoms']
+            generalData = phasedict['General']
             cx,ct,cs,cia = phasedict['General']['AtomPtrs']
+            cn = ct-1
             fpfx = str(phasedict['pId'])+'::Afrac:'        
             cfrac = cx+3
+            DisAglData = {}
+            DisAglCtls = {}
+            xyz = []
+            for i,atom in enumerate(Atoms):
+                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+            if 'DisAglCtls' in generalData:
+                DisAglCtls = generalData['DisAglCtls']
+            else:
+                dlg = G2gd.DisAglDialog(self.G2frame,DisAglCtls,generalData)
+                if dlg.ShowModal() == wx.ID_OK:
+                    DisAglCtls = dlg.GetData()
+                    generalData['DisAglCtls'] = DisAglCtls
+                else:
+                    dlg.Destroy()
+                    return
+                dlg.Destroy()
+            DisAglData['OrigAtoms'] = xyz
+            DisAglData['TargAtoms'] = xyz
+            DisAglData['SGData'] = generalData['SGData']
+            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
+                generalData['SGData'])
+
+#            print len(SymOpList),len(offsetList),len(symOpList),len(G2oprList)
+#            raise Exception
+
+            
+            DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
+            if 'pId' in phasedict:
+                DisAglData['pId'] = phasedict['pId']
+                DisAglData['covData'] = self.OverallParms['Covariance']
+            try:
+                G2stMn.DistAngle(DisAglCtls,DisAglData)
+            except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
+                print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
+                    
+
+            raise Exception
+        
             # loop over interatomic distances for this phase
             WriteCIFitem('\n# MOLECULAR GEOMETRY')
             WriteCIFitem('loop_' + 
@@ -728,15 +780,18 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteComposition(phasenam)
             if not self.quickmode:      # report distances and angles
                 WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList)
+                
+        def Yfmt(ndec,val):
+            'Format intensity values'
+            out = ("{:."+str(ndec)+"f}").format(val)
+            out = out.rstrip('0')  # strip zeros to right of decimal
+            return out.rstrip('.')  # and decimal place when not needed
 
         def WritePowderData(histlbl):
-            text = '?'
             histblk = self.Histograms[histlbl]
             inst = histblk['Instrument Parameters'][0]
             hId = histblk['hId']
             pfx = ':' + str(hId) + ':'
-            print 'TODO: powder here data for',histblk["Sample Parameters"]['InstrName']
-            # see wrpowdhist.for & wrreflist.for
             
             if 'Lam1' in inst:
                 ratio = self.parmDict.get('I(L2)/I(L1)',inst['I(L2)/I(L1)'][1])
@@ -832,6 +887,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             WriteCIFitem('_pd_proc_ls_background_function',FormatBackground(histblk['Background'],histblk['hId']))
 
+            # TODO: this will need help from Bob
             #WriteCIFitem('_exptl_absorpt_process_details','?')
             #WriteCIFitem('_exptl_absorpt_correction_T_min','?')
             #WriteCIFitem('_exptl_absorpt_correction_T_max','?')
@@ -862,10 +918,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('\t' + refprx + 'index_h' + 
                          '\n\t' + refprx + 'index_k' + 
                          '\n\t' + refprx + 'index_l' + 
-#                         '\n\t_pd_refln_wavelength_id' +
-#                         '\n\t' + refprx + 'status' + 
                          '\n\t' + refprx + 'F_squared_meas' + 
-#                         '\n\t' + refprx + 'F_squared_sigma' + 
                          '\n\t' + refprx + 'F_squared_calc' + 
                          '\n\t' + refprx + 'phase_calc' + 
                          '\n\t_pd_refln_d_spacing')
@@ -937,7 +990,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 zerolst = histblk['Instrument Parameters'][0].get('Zero')
                 if zerolst: zero = zerolst[1]
                 zero = self.parmDict.get('Zero',zero)
-                # TODO: Bob is zero added or subtracted?
                 if zero:
                     WriteCIFitem('_pd_proc_2theta_range_min', G2mth.ValEsd(histblk['Data'][0][0]-zero,-0.00009))
                     WriteCIFitem('_pd_proc_2theta_range_max', G2mth.ValEsd(histblk['Data'][0][-1]-zero,-0.00009))
@@ -954,7 +1006,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem('\t_pd_proc_2theta_corrected')
                 else:
                     WriteCIFitem('\t_pd_meas_2theta_scan')
-            # at least for now, always report weights. TODO: Should they be multiplied by weights? 
+            # at least for now, always report weights.
             #if countsdata:
             #    WriteCIFitem('\t_pd_meas_counts_total')
             #else:
@@ -962,34 +1014,39 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('\t_pd_calc_intensity_total')
             WriteCIFitem('\t_pd_proc_intensity_bkg_calc')
             WriteCIFitem('\t_pd_proc_ls_weight')
-            # TODO: are data excluded? 
+            maxY = max(histblk['Data'][1].max(),histblk['Data'][3].max())
+            if maxY < 0: maxY *= -10 # this should never happen, but...
+            ndec = max(0,10-int(np.log10(maxY))-1) # 10 sig figs should be enough
+            maxSU = histblk['Data'][2].max()
+            if maxSU < 0: maxSU *= -1 # this should never happen, but...
+            ndecSU = max(0,8-int(np.log10(maxSU))-1) # 8 sig figs should be enough
+            lowlim,highlim = histblk['Limits'][1]
+
             for x,yobs,yw,ycalc,ybkg in zip(histblk['Data'][0],
                                             histblk['Data'][1],
                                             histblk['Data'][2],
                                             histblk['Data'][3],
                                             histblk['Data'][4]):
-                if DEBUG:
-                    print 'DEBUG: skip reflection list'
-                    break
+                if lowlim <= x <= highlim:
+                    pass
+                else:
+                    yw = 0.0 # show the point is not in use
+
                 if fixedstep:
                     s = ""
                 else:
                     s = PutInCol(G2mth.ValEsd(x-zero,-0.00009),10)
-                s += PutInCol(G2mth.ValEsd(yobs,-0.00009),14)
-                s += PutInCol(G2mth.ValEsd(ycalc,-0.00009),14)
-                s += PutInCol(G2mth.ValEsd(ybkg,-0.00009),14)
-                s += PutInCol(G2mth.ValEsd(yw,-0.000009),14)
+                s += PutInCol(Yfmt(ndec,yobs),12)
+                s += PutInCol(Yfmt(ndec,ycalc),12)
+                s += PutInCol(Yfmt(ndec,ybkg),11)
+                s += PutInCol(Yfmt(ndecSU,yw),9)
                 WriteCIFitem("  "+s)
-                         
+
         def WriteSingleXtalData(histlbl):
             histblk = self.Histograms[histlbl]
-            print 'TODO: single xtal here data for',histblk["Instrument Parameters"][0]['InstrName']
-
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
 
-            print histblk.keys()
-            
             WriteCIFitem('\n# STRUCTURE FACTOR TABLE')            
             WriteCIFitem('loop_' + 
                          '\n\t' + refprx + 'index_h' + 
@@ -1039,24 +1096,20 @@ class ExportCIF(G2IO.ExportBaseclass):
 
         #============================================================
         # the export process starts here
-        # also load all of the tree into a set of dicts
+        # load all of the tree into a set of dicts
         self.loadTree()
-        #self.dumpTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        #
 
-        # get restraint info
+        # Someday: get restraint & constraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
         #for i in  self.OverallParms['Constraints']:
         #    print i
         #    for j in self.OverallParms['Constraints'][i]:
         #        print j
-        #return
 
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
-        # count phases, powder and single crystal histograms
-        self.nphase = len(self.Phases)
+        # index powder and single crystal histograms
         self.powderDict = {}
         self.xtalDict = {}
         for hist in self.Histograms:
@@ -1066,7 +1119,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             elif hist.startswith("HKLF"): 
                 self.xtalDict[i] = hist
         # is there anything to export?
-        if self.nphase + len(self.powderDict) + len(self.xtalDict) == 0: 
+        if len(self.Phases) + len(self.powderDict) + len(self.xtalDict) == 0: 
             self.G2frame.ErrorDialog(
                 'Empty project',
                 'No data or phases to include in CIF')
@@ -1087,18 +1140,18 @@ class ExportCIF(G2IO.ExportBaseclass):
         if mode != "full" or len(self.powderDict) + len(self.xtalDict) == 0:
             self.quickmode = True
             oneblock = True
-            if self.nphase == 0:
+            if len(self.Phases) == 0:
                 self.G2frame.ErrorDialog(
                     'No phase present',
                     'Cannot create a coordinates CIF with no phases')
                 return
-            elif self.nphase > 1: # quick mode: choose one phase
+            elif len(self.Phases) > 1: # quick mode: choose one phase
                 choices = sorted(self.Phases.keys())
                 phasenum = G2gd.ItemSelector(choices,self.G2frame)
                 if phasenum is None: return
                 phasenam = choices[phasenum]
         # will this require a multiblock CIF?
-        elif self.nphase > 1:
+        elif len(self.Phases) > 1:
             oneblock = False
         elif len(self.powderDict) + len(self.xtalDict) > 1:
             oneblock = False
@@ -1172,6 +1225,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                 elif hist.startswith("HKLF"): 
                     instnam = histblk["Instrument Parameters"][0]['InstrName']
                     break # ignore all but 1st data histogram
+        if self.quickmode:
+            fil = self.askSaveFile()
+        else:
+            fil = self.defSaveFile()
+        if not fil: return
+        openCIF(fil)
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================
@@ -1229,7 +1288,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
             datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
             # loop over phase blocks
-            if self.nphase > 1:
+            if len(self.Phases) > 1:
                 loopprefix = ''
                 WriteCIFitem('loop_   _pd_phase_block_id')
             else:
@@ -1319,4 +1378,4 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteSingleXtalData(hist)
 
         WriteCIFitem('#--' + 15*'eof--' + '#')
-
+        closeCIF()

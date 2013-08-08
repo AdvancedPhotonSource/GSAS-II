@@ -1236,7 +1236,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         AtomAdd(0,0,0)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
-        G2plt.PlotStructure(G2frame,data)
+        if data['Drawing']:
+            G2plt.PlotStructure(G2frame,data)
         
     def OnAtomViewAdd(event):
         try:

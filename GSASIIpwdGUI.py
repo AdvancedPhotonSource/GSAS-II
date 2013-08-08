@@ -1322,7 +1322,7 @@ def UpdateSampleGrid(G2frame,data):
     def SetNameVal():
         inst = instNameVal.GetValue()
         data['InstrName'] = inst.strip()
-        print data['InstrName']
+
     def OnNameVal(event):
         event.Skip()
         wx.CallAfter(SetNameVal)       

@@ -1556,9 +1556,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
     def PrintSize(hapData):
         if hapData[0] in ['isotropic','uniaxial']:
             line = '\n Size model    : %9s'%(hapData[0])
-            line += ' equatorial:'+'%12.3f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
+            line += ' equatorial:'+'%12.5f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
             if hapData[0] == 'uniaxial':
-                line += ' axial:'+'%12.3f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
+                line += ' axial:'+'%12.5f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             line += '\n\t LG mixing coeff.: %12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             print >>pFile,line
         else:
@@ -1816,7 +1816,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         line = '\n Size model:     %9s'%(hapData[0])
         refine = False
         if hapData[0] in ['isotropic','uniaxial']:
-            line += ' equatorial:%12.4f'%(hapData[1][0])
+            line += ' equatorial:%12.5f'%(hapData[1][0])
             if sizeSig[0][0]:
                 line += ', sig:%8.4f'%(sizeSig[0][0])
                 refine = True

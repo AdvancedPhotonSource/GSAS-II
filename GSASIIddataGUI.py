@@ -290,7 +290,7 @@ def UpdateDData(G2frame,DData,data):
                 UseList[hist]['Size'][4][pid] = size                    
             except ValueError:
                 pass
-            Obj.SetValue("%.3f"%(UseList[hist]['Size'][4][pid]))          #reset in case of error
+            Obj.SetValue("%.5f"%(UseList[hist]['Size'][4][pid]))          #reset in case of error
         else:
             try:
                 size = float(Obj.GetValue())
@@ -299,7 +299,7 @@ def UpdateDData(G2frame,DData,data):
                 UseList[hist]['Size'][1][pid] = size
             except ValueError:
                 pass
-            Obj.SetValue("%.3f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
+            Obj.SetValue("%.5f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
         G2plt.PlotSizeStrainPO(G2frame,data)
         
     def OnSizeAxis(event):            

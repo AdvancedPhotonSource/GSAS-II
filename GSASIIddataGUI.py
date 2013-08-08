@@ -895,7 +895,7 @@ def UpdateDData(G2frame,DData,data):
                 isoSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                 isoSizer.Add(ResetSizer('isotropic',OnResetSize),0,wx.ALIGN_CENTER_VERTICAL)
                 mainSizer.Add(isoSizer)
-                mainSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.3f',
+                mainSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.5f',
                     OnSizeVal,OnSizeRef),0,wx.ALIGN_CENTER_VERTICAL)
             elif UseList[item]['Size'][0] == 'uniaxial':
                 uniSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -905,7 +905,7 @@ def UpdateDData(G2frame,DData,data):
                 uniSizer.Add(ResetSizer('uniaxial',OnResetSize),0,wx.ALIGN_CENTER_VERTICAL)
                 mainSizer.Add(UniSizer('Size',OnSizeAxis),0,wx.ALIGN_CENTER_VERTICAL)
                 mainSizer.Add(uniSizer)
-                mainSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef))
+                mainSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.5f',OnSizeVal,OnSizeRef))
             elif UseList[item]['Size'][0] == 'ellipsoidal':
                 ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                 ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],

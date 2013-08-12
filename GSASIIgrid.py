@@ -2402,6 +2402,8 @@ def UpdateControls(G2frame,data):
     if 'F**2' not in data:
         data['F**2'] = True
         data['minF/sig'] = 0
+    if 'Author' not in data:
+        data['Author'] = 'no name'
     #end patch
 
     def SeqSizer():
@@ -2522,6 +2524,21 @@ def UpdateControls(G2frame,data):
             LSSizer.Add(minSig,0,wx.ALIGN_CENTER_VERTICAL)
         return LSSizer
         
+    def AuthSizer():
+
+        def OnAuthor(event):
+            data['Author'] = auth.GetValue()
+
+        Author = data['Author']
+        authSizer = wx.BoxSizer(wx.HORIZONTAL)
+        authSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' CIF Author (last, first):'),0,wx.ALIGN_CENTER_VERTICAL)
+        auth = wx.TextCtrl(G2frame.dataDisplay,-1,value=Author,style=wx.TE_PROCESS_ENTER)
+        auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
+        auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
+        authSizer.Add(auth,0,wx.ALIGN_CENTER_VERTICAL)
+        return authSizer
+        
+        
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     if not G2frame.dataFrame.GetStatusBar():
@@ -2536,6 +2553,8 @@ def UpdateControls(G2frame,data):
     mainSizer.Add(LSSizer())
     mainSizer.Add((5,5),0)
     mainSizer.Add(SeqSizer())
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(AuthSizer())
     mainSizer.Add((5,5),0)
         
     mainSizer.Layout()    

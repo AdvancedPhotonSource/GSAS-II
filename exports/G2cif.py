@@ -37,7 +37,7 @@ import GSASIIphsGUI as G2pg
 import GSASIIstrMain as G2stMn
 reload(G2stMn)
 
-DEBUG = True    #True to skip printing of reflection/powder profile lists
+DEBUG = False    #True to skip printing of reflection/powder profile lists
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -112,7 +112,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('_pd_calc_method', 'Rietveld Refinement')
             #WriteCIFitem('_refine_ls_shift/su_max',DAT1)
             #WriteCIFitem('_refine_ls_shift/su_mean',DAT2)
-            WriteCIFitem('_computing_structure_refinement','GSAS-II')
+            WriteCIFitem('_computing_structure_refinement','GSAS-II (Toby & Von Dreele, 2013)')
             try:
                 vars = str(len(self.OverallParms['Covariance']['varyList']))
             except:
@@ -299,9 +299,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             hfx = ':'+str(hId)+':'
             if 'C' in inst['Type'][0]:
                 s = 'Finger-Cox-Jephcoat function parameters U, V, W, X, Y, SH/L:\n'
-                s += '  peak variance(Gauss) = Utan(Th)^2+Vtan(Th)+W:\n'
+                s += '  peak variance(Gauss) = Utan(Th)^2^+Vtan(Th)+W:\n'
                 s += '  peak HW(Lorentz) = X/cos(Th)+Ytan(Th); SH/L = S/L+H/L\n'
-                s += '  U, V, W in (centideg)^2, X & Y in centideg\n    '
+                s += '  U, V, W in (centideg)^2^, X & Y in centideg\n    '
                 for item in ['U','V','W','X','Y','SH/L']:
                     name = hfx+item
                     sig = self.sigDict.get(name,-0.009)
@@ -361,7 +361,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         sig = self.sigDict.get(name,-0.009)
                         s += G2mth.ValEsd(size[1][i],sig)+', '
                         i = 2    #skip the aniso value                
-                s += '\n  Mustrain model "%s" for %s (10^6)\n  '%(mustrain[0],phasenam)
+                s += '\n  Mustrain model "%s" for %s (10^6^)\n  '%(mustrain[0],phasenam)
                 names = ['Mustrain;i','Mustrain;mx']
                 if 'uniax' in mustrain[0]:
                     names = ['Mustrain;i','Mustrain;a','Mustrain;mx']
@@ -506,26 +506,28 @@ class ExportCIF(G2IO.ExportBaseclass):
                     for j in (2,3,4):
                         var = pfx+varnames[cia+j]+":"+str(i)
                         t += self.parmDict.get(var,at[cia+j])
-                for j in (cx,cx+1,cx+2,cx+3,cia+1):
+                for j in (cx,cx+1,cx+2,cx+3,cia,cia+1):
                     if j in (cx,cx+1,cx+2):
                         dig = 11
                         sigdig = -0.00009
                     else:
                         dig = 10
                         sigdig = -0.009
-                    var = pfx+varnames[j]+":"+str(i)
-                    dvar = pfx+"d"+varnames[j]+":"+str(i)
-                    if dvar not in self.sigDict:
-                        dvar = var
-                    if j == cia+1 and adp == 'Uani ':
-                        val = t/3.
-                        sig = sigdig
+                    if j == cia:
+                        s += adp
                     else:
-                        #print var,(var in self.parmDict),(var in self.sigDict)
-                        val = self.parmDict.get(var,at[j])
-                        sig = self.sigDict.get(dvar,sigdig)
-                    s += PutInCol(G2mth.ValEsd(val,sig),dig)
-                s += adp
+                        var = pfx+varnames[j]+":"+str(i)
+                        dvar = pfx+"d"+varnames[j]+":"+str(i)
+                        if dvar not in self.sigDict:
+                            dvar = var
+                        if j == cia+1 and adp == 'Uani ':
+                            val = t/3.
+                            sig = sigdig
+                        else:
+                            #print var,(var in self.parmDict),(var in self.sigDict)
+                            val = self.parmDict.get(var,at[j])
+                            sig = self.sigDict.get(dvar,sigdig)
+                        s += PutInCol(G2mth.ValEsd(val,sig),dig)
                 s += PutInCol(at[cs+1],3)
                 WriteCIFitem(s)
             if naniso == 0: return
@@ -774,7 +776,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             # generate symmetry operations including centering and center of symmetry
             SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
                 phasedict['General']['SGData'])
-            WriteCIFitem('loop_ _space_group_symop_id _space_group_symop_operation_xyz')
+            WriteCIFitem('loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
             for i,op in enumerate(SymOpList,start=1):
                 WriteCIFitem('   {:3d}  {:}'.format(i,op.lower()))
 
@@ -1052,25 +1054,28 @@ class ExportCIF(G2IO.ExportBaseclass):
             ndecSU = max(0,8-int(np.log10(maxSU))-1) # 8 sig figs should be enough
             lowlim,highlim = histblk['Limits'][1]
 
-            for x,yobs,yw,ycalc,ybkg in zip(histblk['Data'][0],
-                                            histblk['Data'][1],
-                                            histblk['Data'][2],
-                                            histblk['Data'][3],
-                                            histblk['Data'][4]):
-                if lowlim <= x <= highlim:
-                    pass
-                else:
-                    yw = 0.0 # show the point is not in use
-
-                if fixedstep:
-                    s = ""
-                else:
-                    s = PutInCol(G2mth.ValEsd(x-zero,-0.00009),10)
-                s += PutInCol(Yfmt(ndec,yobs),12)
-                s += PutInCol(Yfmt(ndec,ycalc),12)
-                s += PutInCol(Yfmt(ndec,ybkg),11)
-                s += PutInCol(Yfmt(ndecSU,yw),9)
-                WriteCIFitem("  "+s)
+            if DEBUG:
+                print 'DEBUG: skip profile list'
+            else:    
+                for x,yobs,yw,ycalc,ybkg in zip(histblk['Data'][0],
+                                                histblk['Data'][1],
+                                                histblk['Data'][2],
+                                                histblk['Data'][3],
+                                                histblk['Data'][4]):
+                    if lowlim <= x <= highlim:
+                        pass
+                    else:
+                        yw = 0.0 # show the point is not in use
+    
+                    if fixedstep:
+                        s = ""
+                    else:
+                        s = PutInCol(G2mth.ValEsd(x-zero,-0.00009),10)
+                    s += PutInCol(Yfmt(ndec,yobs),12)
+                    s += PutInCol(Yfmt(ndec,ycalc),12)
+                    s += PutInCol(Yfmt(ndec,ybkg),11)
+                    s += PutInCol(Yfmt(ndecSU,yw),9)
+                    WriteCIFitem("  "+s)
 
         def WriteSingleXtalData(histlbl):
             histblk = self.Histograms[histlbl]

@@ -1315,8 +1315,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
-                    
-                print refl[5],ma.count(x[iBeg:iFin]),iFin-iBeg,refl[13],refl[9]
                 yc[iBeg:iFin] += refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)

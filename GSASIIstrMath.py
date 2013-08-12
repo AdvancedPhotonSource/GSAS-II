@@ -1315,7 +1315,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
-                yc[iBeg:iFin] += refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])    #>90% of time spent here
+                    
+                print refl[5],ma.count(x[iBeg:iFin]),iFin-iBeg,refl[13],refl[9]
+                yc[iBeg:iFin] += refl[13]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                     Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6],refl[7],shl)
@@ -1325,7 +1327,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         continue
                     elif not iBeg-iFin:     #peak above high limit - done
                         return yc,yb
-                    yc[iBeg:iFin] += refl[13]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg:iFin])        #and here
+                    yc[iBeg:iFin] += refl[13]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))        #and here
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet
@@ -1433,7 +1435,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                 costh = cosd(pos/2.0)
                 lenBF = iFin-iBeg
                 dMdpk = np.zeros(shape=(6,lenBF))
-                dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,x[iBeg:iFin])
+                dMdipk = G2pwd.getdFCJVoigt3(refl[5],refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))
                 for i in range(5):
                     dMdpk[i] += 100.*cw[iBeg:iFin]*refl[13]*refl[9]*dMdipk[i]
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':np.zeros_like(dMdpk[0])}
@@ -1444,7 +1446,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     if iBeg2-iFin2:
                         lenBF2 = iFin2-iBeg2
                         dMdpk2 = np.zeros(shape=(6,lenBF2))
-                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,x[iBeg2:iFin2])
+                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6],refl[7],shl,ma.getdata(x[iBeg2:iFin2]))
                         for i in range(5):
                             dMdpk2[i] = 100.*cw[iBeg2:iFin2]*refl[13]*refl[9]*kRatio*dMdipk2[i]
                         dMdpk2[5] = 100.*cw[iBeg2:iFin2]*refl[13]*dMdipk2[0]

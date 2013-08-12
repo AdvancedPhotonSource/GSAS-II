@@ -390,13 +390,6 @@ def PlotPatterns(G2frame,newPlot=False):
     plotting available.
     '''
     global HKL
-
-#    def OnKeyBox(event):
-#        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('Powder Patterns'):
-#            event.key = cb.GetValue()[0]
-#            cb.SetValue(' key press')
-#            wx.CallAfter(OnPlotKeyPress,event)
-#                        
     global exclLines
     def OnPlotKeyPress(event):
         newPlot = False
@@ -621,6 +614,8 @@ def PlotPatterns(G2frame,newPlot=False):
                         data[id][id2] = 2*math.pi*Parms['difC'][1]/xpos
                 else:
                     data[id][id2] = xpos
+                if id > 1 and data[id][0] > data[id][1]:
+                        data[id].reverse()
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,data)
@@ -757,7 +752,7 @@ def PlotPatterns(G2frame,newPlot=False):
             difC = Parms['difC'][1]
         ifpicked = False
         LimitId = 0
-        xye = ma.array(Pattern[1])
+        xye = ma.array(ma.getdata(Pattern[1]))
         if PickId:
             ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')

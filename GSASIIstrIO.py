@@ -282,7 +282,7 @@ def GetHistograms(GPXfile,hNames):
                     PWDRdata.update(datum[1][0])        #weight factor
                 except ValueError:
                     PWDRdata['wtFactor'] = 1.0          #patch
-                PWDRdata['Data'] = ma.array(datum[1][1])          #masked powder data arrays
+                PWDRdata['Data'] = ma.array(ma.getdata(datum[1][1]))          #masked powder data arrays/clear previous masks
                 PWDRdata[data[2][0]] = data[2][1]       #Limits & excluded regions (if any)
                 PWDRdata[data[3][0]] = data[3][1]       #Background
                 PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters

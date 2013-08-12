@@ -959,7 +959,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if 'Lam1' in insVal:
                 topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Ka1/Ka2:'),
                         0,wx.ALIGN_CENTER_VERTICAL)
-                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  %8.6f/%8.6f'%(insVal['Lam1'],insVal['Lam2'])),
+                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])),
                         0,wx.ALIGN_CENTER_VERTICAL)
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
                 waveSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Select: '),0,wx.ALIGN_CENTER_VERTICAL)
@@ -980,7 +980,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 instSizer.Add(ratRef,0,wx.ALIGN_CENTER_VERTICAL)
                 
             else:
-                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Lam: (%10.6f)'%(insDef['Lam'])),
+                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,wx.ALIGN_CENTER_VERTICAL)
                 waveVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
                 waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)
@@ -1063,7 +1063,7 @@ def UpdateInstrumentGrid(G2frame,data):
         
     else:                       #single crystal data
         if 'C' in insVal['Type']:               #constant wavelength
-            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Lam: (%10.6f)'%(insDef['Lam'])),
+            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                 0,wx.ALIGN_CENTER_VERTICAL)
             waveVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
             waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)

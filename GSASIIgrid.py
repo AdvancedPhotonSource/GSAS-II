@@ -68,8 +68,8 @@ htmlFirstUse = True
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,
-    wxID_ASSIGNATMS2RB
-] = [wx.NewId() for item in range(12)]
+    wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -1929,7 +1929,9 @@ class DataFrame(wx.Frame):
             text='guess format from file')
         self.ReImportMenuId[item.GetId()] = None # try all readers
 
-        self.AtomCompute.Append(id=wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Distances && Angles',
+        self.AtomCompute.Append(id=wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Show Distances && Angles',
+            help='Compute distances & angles for selected atoms')
+        self.AtomCompute.Append(id=wxID_ATOMSPDISAGL, kind=wx.ITEM_NORMAL,text='Save Distances && Angles',
             help='Compute distances & angles for selected atoms')
         self.PostfillDataMenu()
                  

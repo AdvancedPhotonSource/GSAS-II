@@ -385,19 +385,43 @@ def SeqRefine(GPXfile,dlg):
     print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
     print ' ***** Sequential refinement successful *****'
 
-def DistAngle(DisAglCtls,DisAglData):
-    'Needs a doc string'
+def RetDistAngle(DisAglCtls,DisAglData):
+    '''Compute and return distances and angles
+
+    :param dict DisAglCtls: contains distance/angle radii usually defined using
+       :func:`GSASIIgrid.DisAglDialog`
+    :param dict DisAglData: contains phase data: 
+       Items 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
+       for distance/angle origins and atoms to be used as targets.
+       Item 'SGData' has the space group information (see :ref:`Space Group object<SGData_table>`)
+
+    :returns: AtomLabels,DistArray,AngArray where:
+
+      **AtomLabels** is a dict of atom labels, keys are the atom number
+
+      **DistArray** is a dict keyed by the origin atom number where the value is a list
+      of distance entries. The value for each distance is a list containing:
+      
+        0) the target atom number (int);
+        1) the unit cell offsets added to x,y & z (tuple of int values)
+        2) the symmetry operator number (which may be modified to indicate centering and center of symmetry)
+        3) an interatomic distance in A (float)
+        4) an uncertainty on the distance in A or 0.0 (float)
+
+      **AngArray** is a dict keyed by the origin (central) atom number where
+      the value is a list of
+      angle entries. The value for each angle entry consists of three values:
+
+        0) a distance item reference for one neighbor (int)
+        1) a distance item reference for a second neighbor (int)
+        2) a angle, uncertainty pair; the s.u. may be zero (tuple of two floats)
+
+      The AngArray distance reference items refer directly to the index of the items in the
+      DistArray item for the list of distances for the central atom. 
+    '''
     import numpy.ma as ma
     
-    def ShowBanner(name):
-        print 80*'*'
-        print '   Interatomic Distances and Angles for phase '+name
-        print 80*'*','\n'
-
-    ShowBanner(DisAglCtls['Name'])
     SGData = DisAglData['SGData']
-    SGtext = G2spc.SGPrint(SGData)
-    for line in SGtext: print line
     Cell = DisAglData['Cell']
     
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
@@ -411,21 +435,23 @@ def DistAngle(DisAglCtls,DisAglData):
         cellSig = G2stIO.getCellEsd(pfx,SGData,A,covData)
         names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
         valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
-        line = '\n Unit cell:'
-        for name,vals in zip(names,valEsd):
-            line += name+vals  
-        print line
-    else: 
-        print '\n Unit cell: a = ','%.5f'%(Cell[0]),' b = ','%.5f'%(Cell[1]),' c = ','%.5f'%(Cell[2]), \
-            ' alpha = ','%.3f'%(Cell[3]),' beta = ','%.3f'%(Cell[4]),' gamma = ', \
-            '%.3f'%(Cell[5]),' volume = ','%.3f'%(Cell[6])
+
     Factor = DisAglCtls['Factors']
     Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     origAtoms = DisAglData['OrigAtoms']
     targAtoms = DisAglData['TargAtoms']
+    AtomLabels = {}
     for Oatom in origAtoms:
+        AtomLabels[Oatom[0]] = Oatom[1]
+    for Oatom in targAtoms:
+        AtomLabels[Oatom[0]] = Oatom[1]
+    DistArray = {}
+    AngArray = {}
+    for Oatom in origAtoms:
+        DistArray[Oatom[0]] = []
+        AngArray[Oatom[0]] = []
         OxyzNames = ''
         IndBlist = []
         Dist = []
@@ -453,18 +479,20 @@ def DistAngle(DisAglCtls,DisAglData):
                             if str(dx.T[indb][i]) not in IndBlist:
                                 IndBlist.append(str(dx.T[indb][i]))
                                 unit = Units[indb][i]
-                                tunit = '[%2d%2d%2d]'%(unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
+                                tunit = (unit[0]+Tunit[0],unit[1]+Tunit[1],unit[2]+Tunit[2])
                                 pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
                                 sig = 0.0
                                 if len(Xvcov):
                                     sig = np.sqrt(np.inner(pdpx,np.inner(Xvcov,pdpx)))
-                                Dist.append([Oatom[1],Tatom[1],tunit,Top,ma.getdata(dist[indb])[i],sig])
+                                Dist.append([Oatom[0],Tatom[0],tunit,Top,ma.getdata(dist[indb])[i],sig])
                                 if (Dist[-1][-2]-AsumR) <= 0.:
                                     Vect.append(dx.T[indb][i]/Dist[-1][-2])
                                     VectA.append([OxyzNames,np.array(Oatom[3:6]),TxyzNames,np.array(Tatom[3:6]),unit,Top])
                                 else:
                                     Vect.append([0.,0.,0.])
                                     VectA.append([])
+        for D in Dist:
+            DistArray[Oatom[0]].append(D[1:])
         Vect = np.array(Vect)
         angles = np.zeros((len(Vect),len(Vect)))
         angsig = np.zeros((len(Vect),len(Vect)))
@@ -473,18 +501,79 @@ def DistAngle(DisAglCtls,DisAglData):
                 for j,vecb in enumerate(Vect):
                     if np.any(vecb):
                         angles[i][j],angsig[i][j] = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
+                        if i <= j: continue
+                        AngArray[Oatom[0]].append((i,j,
+                                                   G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
+                                                   ))
+    return AtomLabels,DistArray,AngArray
+
+def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
+    '''Print distances and angles
+
+    :param dict DisAglCtls: contains distance/angle radii usually defined using
+       :func:`GSASIIgrid.DisAglDialog`
+    :param dict DisAglData: contains phase data: 
+       Items 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
+       for distance/angle origins and atoms to be used as targets.
+       Item 'SGData' has the space group information (see :ref:`Space Group object<SGData_table>`)
+    :param file out: file object for output. Defaults to sys.stdout.    
+    '''
+    import numpy.ma as ma
+    def MyPrint(s):
+        out.write(s+'\n')
+        # print(s,file=out) # use in Python 3
+    
+    def ShowBanner(name):
+        MyPrint(80*'*')
+        MyPrint('   Interatomic Distances and Angles for phase '+name)
+        MyPrint((80*'*')+'\n')
+
+    ShowBanner(DisAglCtls['Name'])
+    SGData = DisAglData['SGData']
+    SGtext = G2spc.SGPrint(SGData)
+    for line in SGtext: MyPrint(line)
+    Cell = DisAglData['Cell']
+    
+    Amat,Bmat = G2lat.cell2AB(Cell[:6])
+    covData = {}
+    if 'covData' in DisAglData:   
+        covData = DisAglData['covData']
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        pfx = str(DisAglData['pId'])+'::'
+        A = G2lat.cell2A(Cell[:6])
+        cellSig = G2stIO.getCellEsd(pfx,SGData,A,covData)
+        names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
+        valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
+        line = '\n Unit cell:'
+        for name,vals in zip(names,valEsd):
+            line += name+vals  
+        MyPrint(line)
+    else: 
+        MyPrint('\n Unit cell: a = '+('%.5f'%Cell[0])+' b = '+('%.5f'%Cell[1])+' c = '+('%.5f'%Cell[2])+
+            ' alpha = '+('%.3f'%Cell[3])+' beta = '+('%.3f'%Cell[4])+' gamma = '+
+            ('%.3f'%Cell[5])+' volume = '+('%.3f'%Cell[6]))
+
+    AtomLabels,DistArray,AngArray = RetDistAngle(DisAglCtls,DisAglData)
+    origAtoms = DisAglData['OrigAtoms']
+    targAtoms = DisAglData['TargAtoms']
+    for Oatom in origAtoms:
+        i = Oatom[0]
+        Dist = DistArray[i]
+        nDist = len(Dist)
+        angles = np.zeros((nDist,nDist))
+        angsig = np.zeros((nDist,nDist))
+        for k,j,tup in AngArray[i]:
+            angles[k][j],angsig[k][j] = angles[j][k],angsig[j][k] = tup
         line = ''
         for i,x in enumerate(Oatom[3:6]):
-            if len(Xvcov):
-                line += '%12s'%(G2mth.ValEsd(x,np.sqrt(Xvcov[i][i]),True))
-            else:
-                line += '%12.5f'%(x)
-        print '\n Distances & angles for ',Oatom[1],' at ',line
-        print 80*'*'
+            line += ('%12.5f'%x).rstrip('0')
+        MyPrint('\n Distances & angles for '+Oatom[1]+' at '+line.rstrip())
+        MyPrint(80*'*')
         line = ''
         for dist in Dist[:-1]:
-            line += '%12s'%(dist[1].center(12))
-        print '  To       cell +(sym. op.)      dist.  ',line
+            line += '%12s'%(AtomLabels[dist[0]].center(12))
+        MyPrint('  To       cell +(sym. op.)      dist.  '+line.rstrip())
         for i,dist in enumerate(Dist):
             line = ''
             for j,angle in enumerate(angles[i][0:i]):
@@ -497,11 +586,12 @@ def DistAngle(DisAglCtls,DisAglData):
                         line += '%12s'%(val.center(12))
                 else:
                     line += 12*' '
-            if dist[5]:            #sig exists!
-                val = G2mth.ValEsd(dist[4],dist[5])
+            if dist[4]:            #sig exists!
+                val = G2mth.ValEsd(dist[3],dist[4])
             else:
-                val = '%8.4f'%(dist[4])
-            print '  %8s%10s+(%4d) %12s'%(dist[1].ljust(8),dist[2].ljust(10),dist[3],val.center(12)),line
+                val = '%8.4f'%(dist[3])
+            tunit = '[%2d%2d%2d]'% dist[1]
+            MyPrint(('  %8s%10s+(%4d) %12s'%(AtomLabels[dist[0]].ljust(8),tunit.ljust(10),dist[2],val.center(12)))+line.rstrip())
 
 def DisAglTor(DATData):
     'Needs a doc string'

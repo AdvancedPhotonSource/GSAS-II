@@ -20,6 +20,7 @@ that respond to some tabs in the phase GUI in other modules
 (such as GSASIIddata).
 
 '''
+import os.path
 import wx
 import wx.grid as wg
 import wx.lib.gridmovers as wgmove
@@ -1550,7 +1551,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             else:
                 Atoms.ForceRefresh()
 
-    def OnDistAngle(event):
+    def OnDistAnglePrt(event):
+        fp = file(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile
+                                                   )[0]+'.disagl'),'w')
+        OnDistAngle(event,fp=fp)
+        fp.close()
+    
+    def OnDistAngle(event,fp=None):
         indx = Atoms.GetSelectedRows()
         Oxyz = []
         xyz = []
@@ -1586,7 +1593,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 DisAglData['pId'] = data['pId']
                 DisAglData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
             try:
-                G2stMn.DistAngle(DisAglCtls,DisAglData)
+                if fp:
+                    G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
+                else:    
+                    G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
         else:
@@ -4998,6 +5008,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
             for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
                 G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
             FillAtomsGrid(Atoms)

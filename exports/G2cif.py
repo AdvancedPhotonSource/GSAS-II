@@ -16,6 +16,7 @@ The heavy lifting is done in method export
 
 import datetime as dt
 import os.path
+import sys
 import numpy as np
 import wx
 import GSASIIpath
@@ -34,9 +35,9 @@ import GSASIIspc as G2spc
 import GSASIIphsGUI as G2pg
 #reload(G2pg)
 import GSASIIstrMain as G2stMn
+reload(G2stMn)
 
-DEBUG = False
-#DEBUG = True    #True to skip printing of reflection/powder profile lists
+DEBUG = True    #True to skip printing of reflection/powder profile lists
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -65,10 +66,14 @@ class ExportCIF(G2IO.ExportBaseclass):
         '''
     
         def openCIF(filnam):
-            self.fp = open(filnam,'w')
+            if DEBUG:
+                self.fp = sys.stdout
+            else:
+                self.fp = open(filnam,'w')
 
         def closeCIF():
-            self.fp.close()
+            if not DEBUG:
+                self.fp.close()
             
         def WriteCIFitem(name,value=''):
             if value:
@@ -643,8 +648,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             cfrac = cx+3
             DisAglData = {}
             DisAglCtls = {}
+            # create a list of atoms, but skip atoms with zero occupancy
             xyz = []
+            fpfx = str(phasedict['pId'])+'::Afrac:'        
             for i,atom in enumerate(Atoms):
+                if self.parmDict.get(fpfx+str(i),atom[cfrac]) == 0.0: continue
                 xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
@@ -659,26 +667,25 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg.Destroy()
             DisAglData['OrigAtoms'] = xyz
             DisAglData['TargAtoms'] = xyz
-            DisAglData['SGData'] = generalData['SGData']
             SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
                 generalData['SGData'])
 
-#            print len(SymOpList),len(offsetList),len(symOpList),len(G2oprList)
-#            raise Exception
+            xpandSGdata = generalData['SGData'].copy()
+            xpandSGdata.update({'SGOps':symOpList,
+                                'SGInv':False,
+                                'SGLatt':'P',
+                                'SGCen':np.array([[0, 0, 0]]),})
+            DisAglData['SGData'] = xpandSGdata
 
-            
             DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
             if 'pId' in phasedict:
                 DisAglData['pId'] = phasedict['pId']
                 DisAglData['covData'] = self.OverallParms['Covariance']
             try:
-                G2stMn.DistAngle(DisAglCtls,DisAglData)
+                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
                     
-
-            raise Exception
-        
             # loop over interatomic distances for this phase
             WriteCIFitem('\n# MOLECULAR GEOMETRY')
             WriteCIFitem('loop_' + 
@@ -689,17 +696,22 @@ class ExportCIF(G2IO.ExportBaseclass):
                          '\n\t_geom_bond_site_symmetry_2' + 
                          '\n\t_geom_bond_publ_flag')
 
-            # Note that labels should be read from self.labellist to correspond
-            # to the values reported in the atoms table and zero occupancy atoms
-            # should not be included
-            fpfx = str(phasedict['pId'])+'::Afrac:'        
-            for i,at in enumerate(Atoms):
-                if self.parmDict.get(fpfx+str(i),at[cfrac]) == 0.0: continue
-                lbl = self.labellist[i]
-
+            for i in sorted(AtomLabels.keys()):
+                Dist = DistArray[i]
+                for D in Dist:
+                    line = '  '+PutInCol(AtomLabels[i],6)+PutInCol(AtomLabels[D[0]],6)
+                    sig = D[4]
+                    if sig == 0: sig = -0.00009
+                    line += PutInCol(G2mth.ValEsd(D[3],sig,True),10)
+                    line += "  1_555 "
+                    line += " {:3d}_".format(D[2])
+                    for d in D[1]:
+                        line += "{:1d}".format(d+5)
+                    line += " yes"
+                    WriteCIFitem(line)
 
             # loop over interatomic angles for this phase
-            WriteCIFitem('loop_' + 
+            WriteCIFitem('\nloop_' + 
                          '\n\t_geom_angle_atom_site_label_1' + 
                          '\n\t_geom_angle_atom_site_label_2' + 
                          '\n\t_geom_angle_atom_site_label_3' + 
@@ -709,6 +721,24 @@ class ExportCIF(G2IO.ExportBaseclass):
                          '\n\t_geom_angle_site_symmetry_3' + 
                          '\n\t_geom_angle_publ_flag')
 
+            for i in sorted(AtomLabels.keys()):
+                Dist = DistArray[i]
+                for k,j,tup in AngArray[i]:
+                    Dj = Dist[j]
+                    Dk = Dist[k]
+                    line = '  '+PutInCol(AtomLabels[Dj[0]],6)+PutInCol(AtomLabels[i],6)+PutInCol(AtomLabels[Dk[0]],6)
+                    sig = tup[1]
+                    if sig == 0: sig = -0.009
+                    line += PutInCol(G2mth.ValEsd(tup[0],sig,True),10)
+                    line += " {:3d}_".format(Dj[2])
+                    for d in Dj[1]:
+                        line += "{:1d}".format(d+5)
+                    line += "  1_555 "
+                    line += " {:3d}_".format(Dk[2])
+                    for d in Dk[1]:
+                        line += "{:1d}".format(d+5)
+                    line += " yes"
+                    WriteCIFitem(line)
 
         def WritePhaseInfo(phasenam):
             WriteCIFitem('\n# phase info for '+str(phasenam) + ' follows')

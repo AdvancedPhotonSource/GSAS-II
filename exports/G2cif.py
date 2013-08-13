@@ -146,7 +146,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             if len(self.powderDict) > 1:
                 WriteCIFitem('\n# OVERALL POWDER R-FACTOR')
                 try:
-                    R = str(self.OverallParms['Covariance']['Rvals']['Rwp'])
+                    R = '%.3f'%(self.OverallParms['Covariance']['Rvals']['Rwp'])
                 except:
                     R = '?'
                 WriteCIFitem('_pd_proc_ls_prof_wR_factor',R)
@@ -818,6 +818,19 @@ class ExportCIF(G2IO.ExportBaseclass):
             out = ("{:."+str(ndec)+"f}").format(val)
             out = out.rstrip('0')  # strip zeros to right of decimal
             return out.rstrip('.')  # and decimal place when not needed
+            
+        def WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,nRefSets=1):
+            WriteCIFitem('_reflns_number_total', str(refcount))
+            if hklmin is not None and nRefSets == 1: # hkl range has no meaning with multiple phases
+                WriteCIFitem('_reflns_limit_h_min', str(int(hklmin[0])))
+                WriteCIFitem('_reflns_limit_h_max', str(int(hklmax[0])))
+                WriteCIFitem('_reflns_limit_k_min', str(int(hklmin[1])))
+                WriteCIFitem('_reflns_limit_k_max', str(int(hklmax[1])))
+                WriteCIFitem('_reflns_limit_l_min', str(int(hklmin[2])))
+                WriteCIFitem('_reflns_limit_l_max', str(int(hklmax[2])))
+            if hklmin is not None:
+                WriteCIFitem('_reflns_d_resolution_low', G2mth.ValEsd(dmax,-0.0009))
+                WriteCIFitem('_reflns_d_resolution_high', G2mth.ValEsd(dmin,-0.009))
 
         def WritePowderData(histlbl):
             histblk = self.Histograms[histlbl]
@@ -993,18 +1006,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         s += PutInCol(G2mth.ValEsd(I100,-0.09),6)
                     WriteCIFitem("  "+s)
 
-            WriteCIFitem('_reflns_number_total', str(refcount))
-            if hklmin is not None and len(histblk['Reflection Lists']) == 1: # hkl range has no meaning with multiple phases
-                WriteCIFitem('_reflns_limit_h_min', str(int(hklmin[0])))
-                WriteCIFitem('_reflns_limit_h_max', str(int(hklmax[0])))
-                WriteCIFitem('_reflns_limit_k_min', str(int(hklmin[1])))
-                WriteCIFitem('_reflns_limit_k_max', str(int(hklmax[1])))
-                WriteCIFitem('_reflns_limit_l_min', str(int(hklmin[2])))
-                WriteCIFitem('_reflns_limit_l_max', str(int(hklmax[2])))
-            if hklmin is not None:
-                WriteCIFitem('_reflns_d_resolution_high', G2mth.ValEsd(dmin,-0.009))
-                WriteCIFitem('_reflns_d_resolution_low', G2mth.ValEsd(dmax,-0.0009))
-
+            WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,len(histblk['Reflection Lists']))
             WriteCIFitem('\n# POWDER DATA TABLE')
             # is data fixed step? If the step varies by <0.01% treat as fixed step
             steps = histblk['Data'][0][1:] - histblk['Data'][0][:-1]
@@ -1090,8 +1092,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                          '\n\t' + refprx + 'F_squared_meas' + 
                          '\n\t' + refprx + 'F_squared_sigma' + 
                          '\n\t' + refprx + 'F_squared_calc' + 
-                         '\n\t' + refprx + 'phase_calc' +
-                         '\n\t_pd_refln_d_spacing'
+                         '\n\t' + refprx + 'phase_calc'
                          )
 
             hklmin = None
@@ -1116,18 +1117,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 s += PutInCol(G2mth.ValEsd(ref[10],-0.9),7)
                 dmax = max(dmax,ref[4])
                 dmin = min(dmin,ref[4])
-                s += PutInCol(G2mth.ValEsd(ref[4],-0.009),8)
                 WriteCIFitem(s)
-            WriteCIFitem('_reflns_number_total', str(refcount))
-            if hklmin is not None:
-                WriteCIFitem('_reflns_limit_h_min', str(int(hklmin[0])))
-                WriteCIFitem('_reflns_limit_h_max', str(int(hklmax[0])))
-                WriteCIFitem('_reflns_limit_k_min', str(int(hklmin[1])))
-                WriteCIFitem('_reflns_limit_k_max', str(int(hklmax[1])))
-                WriteCIFitem('_reflns_limit_l_min', str(int(hklmin[2])))
-                WriteCIFitem('_reflns_limit_l_max', str(int(hklmax[2])))
-                WriteCIFitem('_reflns_d_resolution_high', G2mth.ValEsd(dmin,-0.009))
-                WriteCIFitem('_reflns_d_resolution_low', G2mth.ValEsd(dmax,-0.0009))
+            WriteReflStat(refcount,hklmin,hklmax,dmin,dmax)
 
         #============================================================
         # the export process starts here

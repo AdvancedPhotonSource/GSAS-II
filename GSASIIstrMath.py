@@ -1235,9 +1235,9 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                     sumFosq += refl[8]**2
                     sumdF += np.abs(Fo-Fc)
                     sumdFsq += (refl[8]-refl[9])**2
-                Histogram[phfx+'Rf'] = min(100.,(sumdF/sumFo)*100.)
-                Histogram[phfx+'Rf^2'] = min(100.,np.sqrt(sumdFsq/sumFosq)*100.)
-                Histogram[phfx+'Nref'] = len(refList)
+                Histogram['Residuals'][phfx+'Rf'] = min(100.,(sumdF/sumFo)*100.)
+                Histogram['Residuals'][phfx+'Rf^2'] = min(100.,np.sqrt(sumdFsq/sumFosq)*100.)
+                Histogram['Residuals'][phfx+'Nref'] = len(refList)
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     'Needs a doc string'
@@ -1616,7 +1616,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
-            nobs = Histogram['Nobs']
+            nobs = Histogram['Residuals']['Nobs']
             phase = Histogram['Reflection Lists']
             Phase = Phases[phase]
             hId = Histogram['hId']
@@ -1743,7 +1743,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             Dy = dy[xB:xF][np.newaxis,:]
             dMdvh *= Wt
             if dlg:
-                dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
+                dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             if len(Hess):
                 Hess += np.inner(dMdvh,dMdvh)
                 dMdvh *= Wt*Dy
@@ -1754,7 +1754,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 Vec = np.sum(dMdvh,axis=1)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
-            nobs = Histogram['Nobs']
+            nobs = Histogram['Residuals']['Nobs']
             phase = Histogram['Reflection Lists']
             Phase = Phases[phase]
             hId = Histogram['hId']
@@ -1835,7 +1835,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
 
             if dlg:
-                dlg.Update(Histogram['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
+                dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             if len(Hess):
                 Vec += wtFactor*np.sum(dMdvh*wdf,axis=1)
                 Hess += wtFactor*np.inner(dMdvh,dMdvh)
@@ -1877,19 +1877,18 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             yd *= 0.0
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
-            Histogram['Nobs'] = ma.count(x[xB:xF])
-            Nobs += Histogram['Nobs']
-            Histogram['sumwYo'] = ma.sum(W[xB:xF]*y[xB:xF]**2)
-            SumwYo += Histogram['sumwYo']
+            Histogram['Residuals']['Nobs'] = ma.count(x[xB:xF])
+            Nobs += Histogram['Residuals']['Nobs']
+            Histogram['Residuals']['sumwYo'] = ma.sum(W[xB:xF]*y[xB:xF]**2)
+            SumwYo += Histogram['Residuals']['sumwYo']
             yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
-            Histogram['sumwYd'] = ma.sum(np.sqrt(W[xB:xF])*(yd[xB:xF]))
             wdy = -ma.sqrt(W[xB:xF])*(yd[xB:xF])
-            Histogram['wR'] = min(100.,ma.sqrt(ma.sum(wdy**2)/Histogram['sumwYo'])*100.)
+            Histogram['Residuals']['wR'] = min(100.,ma.sqrt(ma.sum(wdy**2)/Histogram['Residuals']['sumwYo'])*100.)
             if dlg:
-                dlg.Update(Histogram['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
+                dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             M = np.concatenate((M,wdy))
 #end of PWDR processing
         elif 'HKLF' in histogram[:4]:
@@ -1950,16 +1949,16 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             nobs += 1
                             df[i] = -w*(Fo-Fc)
                             sumwYo += (w*Fo)**2
-            Histogram['Nobs'] = nobs
-            Histogram['sumwYo'] = sumwYo
+            Histogram['Residuals']['Nobs'] = nobs
+            Histogram['Residuals']['sumwYo'] = sumwYo
             SumwYo += sumwYo
-            Histogram['wR'] = min(100.,np.sqrt(np.sum(df**2)/Histogram['sumwYo'])*100.)
-            Histogram[phfx+'Rf'] = 100.*sumdF/sumFo
-            Histogram[phfx+'Rf^2'] = 100.*sumdF2/sumFo2
-            Histogram[phfx+'Nref'] = nobs
+            Histogram['Residuals']['wR'] = min(100.,np.sqrt(np.sum(df**2)/Histogram['Residuals']['sumwYo'])*100.)
+            Histogram['Residuals'][phfx+'Rf'] = 100.*sumdF/sumFo
+            Histogram['Residuals'][phfx+'Rf^2'] = 100.*sumdF2/sumFo2
+            Histogram['Residuals'][phfx+'Nref'] = nobs
             Nobs += nobs
             if dlg:
-                dlg.Update(Histogram['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['wR'],'%'))[0]
+                dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             M = np.concatenate((M,wtFactor*df))
 # end of HKLF processing
     Histograms['sumwYo'] = SumwYo

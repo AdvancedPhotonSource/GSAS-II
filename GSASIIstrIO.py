@@ -291,6 +291,7 @@ def GetHistograms(GPXfile,hNames):
                     PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
                 except IndexError:
                     PWDRdata['Reflection Lists'] = {}
+                PWDRdata['Residuals'] = {}
     
                 Histograms[hist] = PWDRdata
             elif 'HKLF' in hist[:4]:
@@ -302,6 +303,7 @@ def GetHistograms(GPXfile,hNames):
                 HKLFdata['Data'] = datum[1][1]
                 HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
                 HKLFdata['Reflection Lists'] = None
+                HKLFdata['Residuals'] = {}
                 Histograms[hist] = HKLFdata           
     fl.close()
     return Histograms
@@ -440,6 +442,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]
             data[0][1][1] = list(histogram['Data'])
+            data[0][1][0].update(histogram['Residuals'])
             for datus in data[1:]:
 #                print '    read: ',datus[0]
                 if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
@@ -2067,10 +2070,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                 print >>pFile,130*'-'
                 hapData = HistoPhase[histogram]
                 hId = Histogram['hId']
+                Histogram['Residuals'][str(pId)+'::Name'] = phase
                 pfx = str(pId)+':'+str(hId)+':'
                 if 'PWDR' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
-                        %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
+                        %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])
                 
                     if pfx+'Scale' in PhFrExtPOSig:
                         wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
@@ -2092,7 +2096,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                     
                 elif 'HKLF' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
-                        %(Histogram[pfx+'Rf'],Histogram[pfx+'Rf^2'],Histogram[pfx+'Nref'])
+                        %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])
                     print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
                     if pfx+'Scale' in ScalExtSig:
                         print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale'])
@@ -2317,7 +2321,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             pfx = ':'+str(hId)+':'
-            controlDict[pfx+'wtFactor'] =Histogram['wtFactor']
+            controlDict[pfx+'wtFactor'] = Histogram['wtFactor']
             Inst = Histogram['Instrument Parameters'][0]
             controlDict[pfx+'histType'] = Inst['Type'][0]
             histDict[pfx+'Lam'] = Inst['Lam'][1]
@@ -2505,7 +2509,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
 
             print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
             print >>pFile,135*'-'
-            print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['wR'],Histogram['Nobs'])
+            print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs'])
             print >>pFile,' PWDR histogram weight factor = '+'%.3f'%(Histogram['wtFactor'])
             if Print:
                 print >>pFile,' Instrument type: ',Sample['Type']

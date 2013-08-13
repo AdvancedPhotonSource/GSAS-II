@@ -1013,15 +1013,15 @@ class GSASII(wx.Frame):
         # for now hard-code CIF testing here
         item = menu.Append(
             wx.ID_ANY,
-            help='CIF development',
+            help='full CIF file includes powder/reflection data',
             kind=wx.ITEM_NORMAL,
-            text='full CIF test')
+            text='full CIF file')
         self.Bind(wx.EVT_MENU, self.OnTestCIF, id=item.GetId())
         item = menu.Append(
             wx.ID_ANY,
-            help='CIF development',
+            help='quick CIF file with no data, no distance/angle table',
             kind=wx.ITEM_NORMAL,
-            text='quick CIF test')
+            text='quick CIF file')
         self.Bind(wx.EVT_MENU, self.OnTestCIF, id=item.GetId())
 
     def OnTestCIF(self,event):
@@ -1031,11 +1031,11 @@ class GSASII(wx.Frame):
         menu = self.ExportMenu.FindItemById(event.GetId())
         mode = 'full'
         if menu:
-            if menu.GetLabel().split()[0].lower() == "quick":
+            if 'quick' in menu.GetLabel():
                 mode = 'simple'
         else: # this works on the Mac
             try: 
-                if event.EventObject.GetLabelText(event.Id).split()[0].lower() == "quick":
+                if 'quick' in event.EventObject.GetLabelText(event.Id):
                     mode = 'simple'
             except:
                 pass
@@ -1090,13 +1090,13 @@ class GSASII(wx.Frame):
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnExportPhase, id=item.GetId())
 
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Export CIF...')
-        self.ExportCIF.append(item)
-        item.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=item.GetId())
+#        item = parent.Append(
+#            help='',id=wx.ID_ANY,
+#            kind=wx.ITEM_NORMAL,
+#            text='Export CIF...')
+#        self.ExportCIF.append(item)
+#        item.Enable(False)
+#        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=item.GetId())
                
     def FillMainMenu(self,menubar):
         '''Define contents of the main GSAS-II menu for the (main) data tree window

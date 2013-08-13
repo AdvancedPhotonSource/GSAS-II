@@ -2770,9 +2770,24 @@ def UpdatePWHKPlot(G2frame,kind,item):
     wtval.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
     wtSizer.Add(wtval,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(wtSizer)
+    if 'Nobs' in data[0]:
+        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
+            ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
+        for value in data[0]:
+            if 'Nref' in value:
+                mainSizer.Add((5,5),)
+                pfx = value.split('Nref')[0]
+                name = data[0][pfx.split(':')[0]+'::Name']
+                mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' For phase '+name+':'))
+                mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
+                    ' Unweighted phase residuals RF^2: %.3f%%, RF: %.3f%% on %d reflections  '% \
+                    (data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])))
+    mainSizer.Add((5,5),)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    Size[1] += 10
+    G2frame.dataFrame.setSizePosLeft(Size)
     G2frame.PatternTree.SetItemPyData(item,data)
     if kind == 'PWDR':
         G2plt.PlotPatterns(G2frame,newPlot=True)
@@ -2973,7 +2988,7 @@ def MovePatternTreeToGrid(G2frame,item):
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
-                text = '\nFinal residuals: \nRw = %.3f%% \nchi**2 = %.1f \nGOF = %.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+                text = '\nFinal residuals: \nwR = %.3f%% \nchi**2 = %.1f \nGOF = %.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
                 text += '\nNobs = %d \nNvals = %d'%(Rvals['Nobs'],Nvars)
                 if 'lamMax' in Rvals:
                     text += '\nlog10 MaxLambda = %.1f'%(np.log10(Rvals['lamMax']))

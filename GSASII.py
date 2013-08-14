@@ -186,14 +186,22 @@ class GSASII(wx.Frame):
         
         item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
             text='&Refine')
+        if len(self.Refine): # extend state for new menus to match main (on mac)
+            state = self.Refine[0].IsEnabled()
+        else:
+            state = False
+        item.Enable(state)
         self.Refine.append(item)
-        item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
         
         item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
             text='Sequental refine')
+        if len(self.SeqRefine): # extend state for new menus to match main (on mac)
+            state = self.SeqRefine[0].IsEnabled()
+        else:
+            state = False
+        item.Enable(state)
         self.SeqRefine.append(item)
-        item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
         
     def _init_Imports(self):

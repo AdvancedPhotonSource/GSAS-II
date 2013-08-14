@@ -725,7 +725,7 @@ def PlotPatterns(G2frame,newPlot=False):
         Title = 'log('+Title+')'
     Plot.set_title(Title)
     if G2frame.qPlot:
-        Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
+        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
     else:
         if 'C' in ParmList[0]['Type'][0]:        
             Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
@@ -1333,8 +1333,8 @@ def PlotPeakWidths(G2frame):
     W = []
     if 'C' in Parms['Type'][0]:
         Plot.set_title('Instrument and sample peak widths')
-        Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
-        Plot.set_ylabel(r'$\Delta q/q, \Delta d/d$',fontsize=14)
+        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
+        Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
         try:
             Xmin,Xmax = limits[1]
             X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
@@ -1390,8 +1390,8 @@ def PlotPeakWidths(G2frame):
             G2frame.G2plotNB.Delete('Peak Widths')
     else:
         Plot.set_title('Instrument and sample peak coefficients')
-        Plot.set_xlabel(r'$q, \AA^{-1}$',fontsize=14)
-        Plot.set_ylabel(r'$\alpha, \beta, \Delta q/q, \Delta d/d$',fontsize=14)
+        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
+        Plot.set_ylabel(r'$\alpha, \beta, \Delta Q/Q, \Delta d/d$',fontsize=14)
         Xmin,Xmax = limits[1]
         T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
         Z = np.ones_like(T)

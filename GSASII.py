@@ -1226,7 +1226,7 @@ class GSASII(wx.Frame):
         self.setPoly = False
         arg = sys.argv
         if len(arg) > 1:
-            self.GSASprojectfile = arg[1]
+            self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
             self.dirname = os.path.dirname(arg[1])
             if self.dirname: os.chdir(self.dirname)
             try:

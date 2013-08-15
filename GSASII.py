@@ -2332,14 +2332,10 @@ class GSASII(wx.Frame):
             return {},{}
         Histograms = {}
         Phases = {}
-        pId = 0
-        hId = 0
         for phase in phaseData:
             Phase = phaseData[phase]
             if Phase['Histograms']:
                 if phase not in Phases:
-                    Phase['pId'] = pId
-                    pId += 1
                     Phases[phase] = Phase
                 for hist in Phase['Histograms']:
                     if hist not in Histograms:
@@ -2348,9 +2344,7 @@ class GSASII(wx.Frame):
                             Histograms[hist] = self.GetPWDRdatafromTree(item)
                         elif 'HKLF' in hist[:4]:
                             Histograms[hist] = self.GetHKLFdatafromTree(item)
-                        #future restraint, etc. histograms here            
-                        Histograms[hist]['hId'] = hId
-                        hId += 1
+                        #future restraint, etc. histograms here 
         return Histograms,Phases
         
     class ViewParmDialog(wx.Dialog):

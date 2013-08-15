@@ -37,7 +37,7 @@ import GSASIIphsGUI as G2pg
 import GSASIIstrMain as G2stMn
 reload(G2stMn)
 
-DEBUG = False    #True to skip printing of reflection/powder profile lists
+DEBUG = True    #True to skip printing of reflection/powder profile lists
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -144,7 +144,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             # include an overall profile r-factor, if there is more than one powder histogram
             if len(self.powderDict) > 1:
-                WriteCIFitem('\n# OVERALL POWDER R-FACTOR')
+                WriteCIFitem('\n# OVERALL WEIGHTED R-FACTOR')
                 try:
                     R = '%.3f'%(self.OverallParms['Covariance']['Rvals']['Rwp'])
                 except:
@@ -864,7 +864,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 slam1 = self.sigDict.get('Lam',-0.00009)
                 WriteCIFitem('_diffrn_radiation_wavelength',G2mth.ValEsd(lam1,slam1))
 
-
             if not oneblock:
                 if not phasebyhistDict.get(histlbl):
                     WriteCIFitem('\n# No phases associated with this data set')
@@ -873,7 +872,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem('loop_' +
                                  '\n\t_pd_phase_id' + 
                                  '\n\t_pd_phase_block_id' + 
-                                 '\n\t_pd_phase_mass_%')
+                                 '\n\t_pd_phase_mass_%' +
+                                 '\n\t_refine_ls_R_F_factor' +
+                                 '\n\t_refine_ls_R_Fsqd_factor')
                     wtFrSum = 0.
                     for phasenam in phasebyhistDict.get(histlbl):
                         hapData = self.Phases[phasenam]['Histograms'][histlbl]
@@ -893,14 +894,15 @@ class ExportCIF(G2IO.ExportBaseclass):
                             '  '+
                             str(self.Phases[phasenam]['pId']) +
                             '  '+datablockidDict[phasenam]+
-                            '  '+G2mth.ValEsd(wtFr,sig)
+                            '  '+G2mth.ValEsd(wtFr,sig) +
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf'],-.009)
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf^2'],-.009)
                             )
 
             # TODO: this will need help from Bob
             # WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
-            # WriteCIFitem('_pd_proc_ls_prof_wR_factor','?')
-            # WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
-            # WriteCIFitem('_refine_ls_R_Fsqd_factor','?')
+            WriteCIFitem('_pd_proc_ls_prof_wR_factor','%.3f'%(histblk['wR']))
+            WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
 
             if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
                 WriteCIFitem('_diffrn_radiation_probe','x-ray')

@@ -131,26 +131,23 @@ class ExportCIF(G2IO.ExportBaseclass):
             #     for j in self.OverallParms['Constraints'][i]:
             #         print j
             #WriteCIFitem('_refine_ls_number_restraints',TEXT)
-            
             # other things to consider reporting
             # _refine_ls_number_reflns
             # _refine_ls_goodness_of_fit_obs
-            # _refine_ls_R_factor_all
-            # _refine_ls_R_factor_obs
-            # _refine_ls_wR_factor_all
             # _refine_ls_wR_factor_obs
             # _refine_ls_restrained_S_all
             # _refine_ls_restrained_S_obs
 
             # include an overall profile r-factor, if there is more than one powder histogram
+            R = '%.5f'%(self.OverallParms['Covariance']['Rvals']['Rwp']/100.)
+            WriteCIFitem('\n# OVERALL WEIGHTED R-FACTOR')
             if len(self.powderDict) > 1:
-                WriteCIFitem('\n# OVERALL WEIGHTED R-FACTOR')
-                try:
-                    R = '%.3f'%(self.OverallParms['Covariance']['Rvals']['Rwp'])
-                except:
-                    R = '?'
                 WriteCIFitem('_pd_proc_ls_prof_wR_factor',R)
                 #WriteCIFitem('_pd_proc_ls_prof_R_factor',TEXT(11:20)) # who cares!
+            if len(self.xtalDict) > 1:
+                WriteCIFitem('_refine_ls_wR_factor_all',R)
+                # _refine_ls_R_factor_all
+                # _refine_ls_R_factor_obs                
             WriteCIFitem('_refine_ls_matrix_type','full')
             #WriteCIFitem('_refine_ls_matrix_type','userblocks')
 
@@ -872,9 +869,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem('loop_' +
                                  '\n\t_pd_phase_id' + 
                                  '\n\t_pd_phase_block_id' + 
-                                 '\n\t_pd_phase_mass_%' +
-                                 '\n\t_refine_ls_R_F_factor' +
-                                 '\n\t_refine_ls_R_Fsqd_factor')
+                                 '\n\t_pd_phase_mass_%')
                     wtFrSum = 0.
                     for phasenam in phasebyhistDict.get(histlbl):
                         hapData = self.Phases[phasenam]['Histograms'][histlbl]
@@ -894,15 +889,28 @@ class ExportCIF(G2IO.ExportBaseclass):
                             '  '+
                             str(self.Phases[phasenam]['pId']) +
                             '  '+datablockidDict[phasenam]+
-                            '  '+G2mth.ValEsd(wtFr,sig) +
-                            '  '+G2mth.ValEsd(histblk[pfx+'Rf'],-.009) +
-                            '  '+G2mth.ValEsd(histblk[pfx+'Rf^2'],-.009)
+                            '  '+G2mth.ValEsd(wtFr,sig)
                             )
-
-            # TODO: this will need help from Bob
+                    WriteCIFitem('loop_' +
+                                 '\n\t_pd_phase_id' + 
+                                 '\n\t_refine_ls_R_F_factor' +
+                                 '\n\t_refine_ls_R_Fsqd_factor')
+                    for phasenam in phasebyhistDict.get(histlbl):
+                        pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
+                        WriteCIFitem(
+                            '  '+
+                            str(self.Phases[phasenam]['pId']) +
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf']/100.,-.00009) +
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf^2']/100.,-.00009)
+                            )
+            else:
+                pfx = '0:'+str(hId)+':'
+                WriteCIFitem('_refine_ls_R_F_factor','%.5f'%(histblk[pfx+'Rf']/100.))
+                WriteCIFitem('_refine_ls_R_Fsqd_factor','%.5f'%(histblk[pfx+'Rf^2']/100.))
+                
             # WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
-            WriteCIFitem('_pd_proc_ls_prof_wR_factor','%.3f'%(histblk['wR']))
-            WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
+            WriteCIFitem('_pd_proc_ls_prof_wR_factor','%.5f'%(histblk['wR']/100.))
+            # WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
 
             if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
                 WriteCIFitem('_diffrn_radiation_probe','x-ray')

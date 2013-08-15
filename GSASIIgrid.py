@@ -1937,9 +1937,9 @@ class DataFrame(wx.Frame):
                  
         # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
-        self.PrefillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options',empty=True)
+        self.PrefillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options')
         self.DataDrawOptions.Append(menu=wx.Menu(title=''),title='Select tab')
-        self.PostfillDataMenu(empty=True)
+        self.PostfillDataMenu()
         
         # Phase / Draw Atoms tab 
         self.DrawAtomsMenu = wx.MenuBar()

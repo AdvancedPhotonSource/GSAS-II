@@ -1239,6 +1239,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 Histogram['Residuals'][phfx+'Rf^2'] = min(100.,np.sqrt(sumdFsq/sumFosq)*100.)
                 Histogram['Residuals'][phfx+'Nref'] = len(refList)
                 Histogram['Residuals']['hId'] = hId
+        elif 'HKLF' in histogram[:4]:
+            Histogram['Residuals']['hId'] = Histograms[histogram]['hId']
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     'Needs a doc string'

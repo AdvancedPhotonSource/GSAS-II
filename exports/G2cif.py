@@ -37,7 +37,7 @@ import GSASIIphsGUI as G2pg
 import GSASIIstrMain as G2stMn
 reload(G2stMn)
 
-DEBUG = True    #True to skip printing of reflection/powder profile lists
+DEBUG = False    #True to skip printing of reflection/powder profile lists
 
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
@@ -895,7 +895,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                             str(self.Phases[phasenam]['pId']) +
                             '  '+datablockidDict[phasenam]+
                             '  '+G2mth.ValEsd(wtFr,sig) +
-                            '  '+G2mth.ValEsd(histblk[pfx+'Rf'],-.009)
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf'],-.009) +
                             '  '+G2mth.ValEsd(histblk[pfx+'Rf^2'],-.009)
                             )
 

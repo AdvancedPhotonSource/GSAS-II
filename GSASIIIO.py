@@ -1759,7 +1759,7 @@ class ImportStructFactor(ImportBaseclass):
         if Type is not None:
             self.Parameters[0]['Type'] = [Type,Type]
         if Wave is not None:
-            self.Parameters[0]['Lam'] = [HistWave,HistWave]
+            self.Parameters[0]['Lam'] = [Wave,Wave]
             
     def UpdateControls(self,Type='Fosq',FcalcPresent=False):
         '''Scan through the reflections to update the Controls dictionary

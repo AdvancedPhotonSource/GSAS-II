@@ -845,9 +845,9 @@ def SHPOcal(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',calcControls[phfx+'SHord'],False)
     for item in SHnames:
         L,N = eval(item.strip('C'))
-        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
+        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta)
         odfCor += parmDict[phfx+item]*Lnorm*Kcsl
-    return odfCor
+    return np.squeeze(odfCor)
     
 def SHPOcalDerv(refl,g,phfx,hfx,SGData,calcControls,parmDict):
     'spherical harmonics preferred orientation derivatives (cylindrical symmetry only)'

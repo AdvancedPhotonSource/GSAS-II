@@ -1,11 +1,11 @@
 data_Ib3
-_pd_block_id  2013-08-16T12:28|Ib3|VonDreeleRobert|CAD-4
+_pd_block_id  2013-08-16T14:03|Ib3|VonDreeleRobert|CAD-4
 _audit_creation_method  "created in GSAS-II"
-_audit_creation_date  2013-08-16T12:28
+_audit_creation_date  2013-08-16T14:03
 _audit_author_name  "Von Dreele, Robert"
 _audit_update_record
-   "2013-08-16T12:28  Initial software-generated CIF"
-_pd_proc_info_datetime  2013-08-16T12:28
+   "2013-08-16T14:03  Initial software-generated CIF"
+_pd_proc_info_datetime  2013-08-16T14:03
 _pd_calc_method  "Rietveld Refinement"
 _computing_structure_refinement  "GSAS-II (Toby & Von Dreele, 2013)"
 _refine_ls_number_parameters  10

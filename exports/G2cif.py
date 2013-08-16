@@ -230,9 +230,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += ' Order = '+str(hapData['Pref.Ori.'][4])+'\n'
                     s1 = "    Coefficients:  "
                     for item in hapData['Pref.Ori.'][5]:
-                        print item
                         aname = str(phasedict['pId'])+':'+str(Histogram['hId'])+':'+item
-                        print aname
                         if len(s1) > 60:
                             s += s1 + "\n"
                             s1 = "    "
@@ -793,8 +791,6 @@ class ExportCIF(G2IO.ExportBaseclass):
 
                 if len(histlist) == 0:
                     WriteCIFitem('# Note: phase has no associated data')
-                else:
-                    WriteCIFitem('loop_  _pd_block_diffractogram_id')
 
             # report atom params
             if phasedict['General']['Type'] == 'nuclear':        #this needs macromolecular variant, etc!
@@ -958,7 +954,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             Imax = 0
             for phasenam in histblk['Reflection Lists']:
                 scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
-                Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])
+                Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])[0]
                 FO2 = np.array([refl[8] for refl in histblk['Reflection Lists'][phasenam]])
                 I100 = scale*FO2*Icorr
                 Imax = max(Imax,max(I100))

@@ -141,11 +141,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             # include an overall profile r-factor, if there is more than one powder histogram
             R = '%.5f'%(self.OverallParms['Covariance']['Rvals']['Rwp']/100.)
             WriteCIFitem('\n# OVERALL WEIGHTED R-FACTOR')
-            if len(self.powderDict) > 1:
-                WriteCIFitem('_pd_proc_ls_prof_wR_factor',R)
-                #WriteCIFitem('_pd_proc_ls_prof_R_factor',TEXT(11:20)) # who cares!
-            if len(self.xtalDict) > 1:
-                WriteCIFitem('_refine_ls_wR_factor_all',R)
+            WriteCIFitem('_refine_ls_wR_factor_obs',R)
                 # _refine_ls_R_factor_all
                 # _refine_ls_R_factor_obs                
             WriteCIFitem('_refine_ls_matrix_type','full')
@@ -826,8 +822,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem('_reflns_limit_l_min', str(int(hklmin[2])))
                 WriteCIFitem('_reflns_limit_l_max', str(int(hklmax[2])))
             if hklmin is not None:
-                WriteCIFitem('_reflns_d_resolution_low', G2mth.ValEsd(dmax,-0.0009))
-                WriteCIFitem('_reflns_d_resolution_high', G2mth.ValEsd(dmin,-0.009))
+                WriteCIFitem('_reflns_d_resolution_low  ', G2mth.ValEsd(dmax,-0.009))
+                WriteCIFitem('_reflns_d_resolution_high ', G2mth.ValEsd(dmin,-0.009))
 
         def WritePowderData(histlbl):
             histblk = self.Histograms[histlbl]
@@ -892,25 +888,25 @@ class ExportCIF(G2IO.ExportBaseclass):
                             '  '+G2mth.ValEsd(wtFr,sig)
                             )
                     WriteCIFitem('loop_' +
-                                 '\n\t_pd_phase_id' + 
-                                 '\n\t_refine_ls_R_F_factor' +
-                                 '\n\t_refine_ls_R_Fsqd_factor')
+                                 '\n\t_pd_proc_ls_R_F_factor' +
+                                 '\n\t_pd_proc_ls_R_Fsqd_factor')
                     for phasenam in phasebyhistDict.get(histlbl):
                         pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
                         WriteCIFitem(
                             '  '+
-                            str(self.Phases[phasenam]['pId']) +
                             '  '+G2mth.ValEsd(histblk[pfx+'Rf']/100.,-.00009) +
                             '  '+G2mth.ValEsd(histblk[pfx+'Rf^2']/100.,-.00009)
                             )
             else:
                 pfx = '0:'+str(hId)+':'
-                WriteCIFitem('_refine_ls_R_F_factor','%.5f'%(histblk[pfx+'Rf']/100.))
-                WriteCIFitem('_refine_ls_R_Fsqd_factor','%.5f'%(histblk[pfx+'Rf^2']/100.))
+                WriteCIFitem('_pd_proc_ls_R_F_factor      ','%.5f'%(histblk[pfx+'Rf']/100.))
+                WriteCIFitem('_pd_proc_ls_R_Fsqd_factor   ','%.5f'%(histblk[pfx+'Rf^2']/100.))
                 
-            # WriteCIFitem('_pd_proc_ls_prof_R_factor','?')
-            WriteCIFitem('_pd_proc_ls_prof_wR_factor','%.5f'%(histblk['wR']/100.))
-            # WriteCIFitem('_pd_proc_ls_prof_wR_expected','?')
+            WriteCIFitem('_pd_proc_ls_prof_R_factor   ','%.5f'%(histblk['R']/100.))
+            WriteCIFitem('_pd_proc_ls_prof_wR_factor  ','%.5f'%(histblk['wR']/100.))
+            WriteCIFitem('_pd_proc_ls_prof_R_B_factor ','%.5f'%(histblk['Rb']/100.))
+            WriteCIFitem('_pd_proc_ls_prof_wR_B_factor','%.5f'%(histblk['wRb']/100.))
+            WriteCIFitem('_pd_proc_ls_prof_wR_expected','%.5f'%(histblk['wRmin']/100.))
 
             if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
                 WriteCIFitem('_diffrn_radiation_probe','x-ray')
@@ -1129,6 +1125,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dmin = min(dmin,ref[4])
                 WriteCIFitem(s)
             WriteReflStat(refcount,hklmin,hklmax,dmin,dmax)
+            hId = histblk['hId']
+            pfx = '0:'+str(hId)+':'
+            WriteCIFitem('_reflns_wR_factor_obs    ','%.4f'%(histblk['wR']/100.))
+            WriteCIFitem('_reflns_R_F_factor_obs   ','%.4f'%(histblk[pfx+'Rf']/100.))
+            WriteCIFitem('_reflns_R_Fsqd_factor_obs','%.4f'%(histblk[pfx+'Rf^2']/100.))
 
         #============================================================
         # the export process starts here

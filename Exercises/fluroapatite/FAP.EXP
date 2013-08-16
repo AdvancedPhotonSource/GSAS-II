@@ -3,8 +3,12 @@
     HSTRY  1 EXPEDT  Win32  Jun 23 14:59:14 2011 P PH        LA  O              
     HSTRY  2 POWPREF Win32  Jun 23 14:59:14 2011                                
     HSTRY  3 POWPREF Win32  Jun 27 16:05:04 2013                                
+    HSTRY  4 GENLES  Win32  Jun 27 16:05:09 2013 Sdsq= 0.443E+06 S/E= 0.112E-06 
+    HSTRY  5 POWPREF Win32  Aug 16 09:24:35 2013                                
   DSGL CDAT1  DRAD ARAD NOFO                                                    
+  GNLS  RUN on Aug 16 09:29:06 2013    Total cycles run  12       18463.        
   GNLS CDAT1  MXCY  3                                                           
+  GNLS SHFTS      0.01      0.00                                                
  AFAC  F     3.539210.2825 2.6412 4.2944 1.5170  .2615 1.024326.1476  .2776 RHF 
  AFAC  F_    18.998 .5654       .0096                                           
  AFAC  F_SIZ      1.30      1.10 1.35   67                                      
@@ -37,34 +41,41 @@
  EXPR ATYP 3  F           1      1.30      1.10 1.35   67                       
  EXPR ATYP 4  O           3      1.09      0.89 1.45   96 1.40                  
  EXPR NPHAS     1    0    0    0    0    0    0    0    0                       
+ REFN GDNFT  Reduced CHI**2 =  3.227     for   28 variables                     
+ REFN RPOWD     0.1005    0.0766   5750  18463.        0.0000    0.0000     0   
+ REFN STATS  Cycle  12 There were  5750 observations. Total CHI**2 = 1.8463E+04 
 CRS1    PNAM  fap                                                               
 CRS1   NATOM    7                                                               
-CRS1  ABC     9.372000  9.372000  6.886000    N    0                            
+CRS1  ABC     9.371725  9.371725  6.885868    Y    0                            
 CRS1  ANGLES   90.0000   90.0000  120.0000                                      
-CRS1  AT  1A  CA        0.333333  0.666667  0.001000  1.000000CA1        4 000  
-CRS1  AT  1B  0.005000                                                    I     
-CRS1  AT  2A  CA        0.242000  0.992000  0.250000  1.000000CA2        6 000  
-CRS1  AT  2B  0.005000                                                    I     
-CRS1  AT  3A  P         0.397000  0.367000  0.250000  1.000000P3         6 000  
-CRS1  AT  3B  0.005000                                                    I     
+CRS1  AT  1A  CA        0.333333  0.666667  0.001901  1.000000CA1        4 000  
+CRS1  AT  1B  0.006051                                                    I XU  
+CRS1  AT  2A  CA        0.241949  0.992577  0.250000  1.000000CA2        6 000  
+CRS1  AT  2B  0.004547                                                    I XU  
+CRS1  AT  3A  P         0.397382  0.367691  0.250000  1.000000P3         6 000  
+CRS1  AT  3B  0.003981                                                    I XU  
 CRS1  AT  4A  F         0.000000  0.000000  0.250000  1.000000F4         2 000  
-CRS1  AT  4B  0.010000                                                    I     
-CRS1  AT  5A  O         0.325000  0.485000  0.250000  1.000000O5         6 000  
-CRS1  AT  5B  0.005000                                                    I     
-CRS1  AT  6A  O         0.591000  0.469000  0.250000  1.000000O6         6 000  
-CRS1  AT  6B  0.005000                                                    I     
-CRS1  AT  7A  O         0.340000  0.258000  0.070000  1.000000O7        12 000  
-CRS1  AT  7B  0.005000                                                    I     
-CRS1  CELVOL        523.796                                                     
+CRS1  AT  4B  0.013903                                                    I XU  
+CRS1  AT  5A  O         0.325032  0.484745  0.250000  1.000000O5         6 000  
+CRS1  AT  5B  0.005059                                                    I XU  
+CRS1  AT  6A  O         0.591459  0.469980  0.250000  1.000000O6         6 000  
+CRS1  AT  6B  0.006562                                                    I XU  
+CRS1  AT  7A  O         0.339540  0.258134  0.070661  1.000000O7        12 000  
+CRS1  AT  7B  0.006753                                                    I XU  
+CRS1  CELVOL        523.755          0.005                                      
+CRS1  CHMF 1  CA            5.00                                                
+CRS1  CHMF 2  P             3.00                                                
+CRS1  CHMF 3  F             1.00                                                
+CRS1  CHMF 4  O            12.00                                                
 CRS1  SG SYM  P 63/m                                                            
 CRS1  SPAXIS    0    0    1                                                     
 HAP1 1 ZONE     0    0    0    0                                                
 HAP1 1EXTPOW    0.00000E+00    N    0                                           
 HAP1 1NAXIS     1                                                               
 HAP1 1PHSFR      1.0000        N    0                                           
-HAP1 1PRCF      2   18   0.01000    0NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
-HAP1 1PRCF 1   0.200000E+01  -0.200000E+01   0.500000E+01   0.100000E+01        
-HAP1 1PRCF 2   0.100000E+01   0.000000E+00   0.000000E+00   0.000000E+00        
+HAP1 1PRCF      2   18   0.01000    0NNNYYNNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP1 1PRCF 1   0.200000E+01  -0.200000E+01   0.500000E+01   0.335536E+01        
+HAP1 1PRCF 2   0.247468E+01   0.000000E+00   0.000000E+00   0.490113E+01        
 HAP1 1PRCF 3   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
 HAP1 1PRCF 4   0.000000E+00   0.000000E+00   0.000000E+00   0.000000E+00        
 HAP1 1PRCF 5   0.000000E+00   0.000000E+00                                      
@@ -74,53 +85,52 @@ HST  1  HFIL  c:\gsas\class\data\fap.xra
 HST  1  HNAM   15.000    .020  90.000 PS1286 90MR21 Y286 DOUBLE  T=19X2        1
 HST  1  IFIL  c:\gsas\class\parm\inst_xry.prm                                   
 HST  1 BANK     1                                                               
+HST  1 BIGFO   0.137435E+06                                                     
 HST  1 CHANS         0         1      5750  73092096      5753    0    0        
 HST  1 EPHAS    0    0    0    0    0    0    0    0    0    Y                  
 HST  1 ICONR  1.540500  1.544300       0.0         0       0.5    0             
 HST  1 ICONS  1.540500  1.544300       0.0         0       0.5    0             
 HST  1 IRAD     3                                                               
-HST  1 MAXRF   14                                                               
+HST  1 MAXRF   21                                                               
 HST  1 NEXC     2                                                               
+HST  1 NFOBS  654    0    0    0    0    0    0    0    0                       
 HST  1 NPHAS    1    0    0    0    0    0    0    0    0                       
-HST  1 NREF   652    0.8499    Y    Y                                           
+HST  1 NREF   660    0.8499    Y    Y                                           
+HST  1 R-FAC  654   0.06870   7.435812E+06                                      
+HST  1 RPOWD    0.1005    0.0766   5750  18463.        0.0000    0.0000    0    
 HST  1 TRNGE  15.00000 129.98000                                                
 HST  1 WREXP    0.0561                                                          
 HST  1ABSCOR   0.000000E+00   0.000000E+00    N    0                            
 HST  1BAKGD     5    3    Y    0    Y                                           
-HST  1BAKGD1   0.666448E+02   0.742536E+03  -0.462682E+02                       
+HST  1BAKGD1   0.416526E+02   0.702634E+03   0.343328E+01                       
 HST  1CHI       0.0000                                                          
 HST  1DETAZM    0.0000                                                          
 HST  1EXC  1     0.000     0.000                                                
 HST  1EXC  2   130.000  1000.000                                                
-HST  1HSCALE     47.361        Y    0                                           
+HST  1EXMNMX   1.00000   1.00000                                                
+HST  1HSCALE     96.611        Y    0                                           
 HST  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER                  
 HST  1I ITYP    0    0.0000  180.0000         1                                 
 HST  1MNREF     0    1.0000                                                     
+HST  1ODMNMX   1.00000   1.00000                                                
 HST  1OMEGA     0.0000    Y                                                     
 HST  1PHI       0.0000                                                          
 HST  1PRCF1     2    6      0.01                                                
 HST  1PRCF11   2.000000E+00  -2.000000E+00   5.000000E+00   1.000000E+00        
 HST  1PRCF12   1.000000E+00   0.000000E+00                                      
-ZZZZZZZZZZZZ  Last EXP file record                                              
-    HSTRY  4 GENLES  Win32  Jun 27 16:05:09 2013 Sdsq= 0.443E+06 S/E= 0.112E-06 
-HST  1TRMNMX   1.00000   1.00000                                                
-HST  1EXMNMX   1.00000   1.00000                                                
-HST  1ODMNMX   1.00000   1.00000                                                
-HST  1 BIGFO   0.154218E+06                                                     
-HST  1RSP    0.2012 0.5103 0.5297 0.4337 0.3914 0.3425 0.2708 0.2233 0.1673     
-HST  1RSPW   0.3422 0.6010 0.5929 0.5003 0.4625 0.4065 0.3233 0.2730 0.2016     
-HST  1RSPA   0.4694 0.5608 0.5860 0.4999 0.4472 0.4003 0.3111 0.2624 0.1939     
-HST  1RSPWA  0.6347 0.6513 0.6537 0.5753 0.5306 0.4847 0.3796 0.3270 0.2309     
+HST  1RSP    0.0609 0.0768 0.0812 0.0809 0.0802 0.0736 0.0788 0.0814 0.1039     
+HST  1RSPA   0.0808 0.0718 0.0758 0.0735 0.0670 0.0677 0.0737 0.0774 0.0944     
 HST  1RSPTT  15.00 27.76 40.54 53.32 66.10 78.86 91.64104.42117.20129.98        
-HST  1 RPOWD    0.4926    0.3915   5750 4.43421E+05    0.0000    0.0000    0    
- REFN RPOWD     0.4926    0.3915   5750 4.43421E+05    0.0000    0.0000     0   
- REFN STATS  Cycle   2 There were  5750 observations. Total CHI**2 = 4.4342E+05 
- REFN GDNFT  Reduced CHI**2 =  77.17     for    4 variables                     
-HST  1 NFOBS  650    0    0    0    0    0    0    0    0                       
-HST  1 R-FAC  650   0.44212   3.826640E+07                                      
-  GNLS SHFTS      0.00      0.00                                                
-CRS1  CHMF 1  CA            5.00                                                
-CRS1  CHMF 2  P             3.00                                                
-CRS1  CHMF 3  F             1.00                                                
-CRS1  CHMF 4  O            12.00                                                
-  GNLS  RUN on Jun 27 16:05:09 2013    Total cycles run   2      0.44342E+06    
+HST  1RSPW   0.0793 0.1007 0.1051 0.1034 0.1124 0.0966 0.1010 0.1033 0.1317     
+HST  1RSPWA  0.0994 0.0892 0.0943 0.0869 0.0834 0.0832 0.0901 0.0949 0.1120     
+HST  1TRMNMX   1.00000   1.00000                                                
+ZZZZZZZZZZZZ  Last EXP file record                                              
+    HSTRY  6 GENLES  Win32  Aug 16 09:24:39 2013 Sdsq= 0.443E+06 S/E= 0.112E-06 
+    HSTRY  7 EXPEDT  Win32  Aug 16 09:27:13 2013             L   O              
+    HSTRY  8 GENLES  Win32  Aug 16 09:27:20 2013 Sdsq= 0.108E+06 S/E= 0.117E+04 
+CRS1  ABCSIG  0.000036  0.000036  0.000037                                      
+CRS1  ANGSIG    0.0000    0.0000    0.0000                                      
+    HSTRY  9 POWPREF Win32  Aug 16 09:27:48 2013                                
+    HSTRY 10 GENLES  Win32  Aug 16 09:27:54 2013 Sdsq= 0.188E+05 S/E= 0.618E-02 
+    HSTRY 11 EXPEDT  Win32  Aug 16 09:28:59 2013             LA                 
+    HSTRY 12 GENLES  Win32  Aug 16 09:29:06 2013 Sdsq= 0.185E+05 S/E= 0.629E-03 

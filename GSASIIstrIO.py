@@ -2509,8 +2509,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
 
             print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
             print >>pFile,135*'-'
-            print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs'])
             print >>pFile,' PWDR histogram weight factor = '+'%.3f'%(Histogram['wtFactor'])
+            print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs'])
+            print >>pFile,' Other residuals: R = %.2f%%, Rb = %.2f%%, wRb = %.2f%% wRmin = %.2f%%'% \
+                (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wRb'],Histogram['Residuals']['wRmin'])
             if Print:
                 print >>pFile,' Instrument type: ',Sample['Type']
                 PrintSampleParmsSig(Sample,sampSig)

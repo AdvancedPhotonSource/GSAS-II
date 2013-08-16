@@ -1240,6 +1240,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 Histogram['Residuals'][phfx+'Nref'] = len(refList)
                 Histogram['Residuals']['hId'] = hId
         elif 'HKLF' in histogram[:4]:
+            Histogram = Histograms[histogram]
             Histogram['Residuals']['hId'] = Histograms[histogram]['hId']
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
@@ -1889,7 +1890,15 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             yc[xB:xF] += yb[xB:xF]
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
             wdy = -ma.sqrt(W[xB:xF])*(yd[xB:xF])
+            Histogram['Residuals']['R'] = min(100.,ma.sum(ma.abs(yd[xB:xF]))/ma.sum(y[xB:xF])*100.)
             Histogram['Residuals']['wR'] = min(100.,ma.sqrt(ma.sum(wdy**2)/Histogram['Residuals']['sumwYo'])*100.)
+            sumYmB = ma.sum(ma.where(yc[xB:xF]!=yb[xB:xF],ma.abs(y[xB:xF]-yb[xB:xF]),0.))
+            sumwYmB2 = ma.sum(ma.where(yc[xB:xF]!=yb[xB:xF],W[xB:xF]*(y[xB:xF]-yb[xB:xF])**2,0.))
+            sumYB = ma.sum(ma.where(yc[xB:xF]!=yb[xB:xF],ma.abs(y[xB:xF]-yc[xB:xF])*ma.abs(y[xB:xF]-yb[xB:xF])/y[xB:xF],0.))
+            sumwYB2 = ma.sum(ma.where(yc[xB:xF]!=yb[xB:xF],W[xB:xF]*(ma.abs(y[xB:xF]-yc[xB:xF])*ma.abs(y[xB:xF]-yb[xB:xF])/y[xB:xF])**2,0.))
+            Histogram['Residuals']['Rb'] = min(100.,100.*sumYB/sumYmB)
+            Histogram['Residuals']['wRb'] = min(100.,100.*ma.sqrt(sumwYB2/sumwYmB2))
+            Histogram['Residuals']['wRmin'] = min(100.,100.*ma.sqrt(Histogram['Residuals']['Nobs']/Histogram['Residuals']['sumwYo']))
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             M = np.concatenate((M,wdy))

@@ -1,15 +1,18 @@
 data_Ib3
-_pd_block_id  2013-08-15T12:35|Ib3|VonDreeleRobert|CAD-4
+_pd_block_id  2013-08-16T12:28|Ib3|VonDreeleRobert|CAD-4
 _audit_creation_method  "created in GSAS-II"
-_audit_creation_date  2013-08-15T12:35
+_audit_creation_date  2013-08-16T12:28
 _audit_author_name  "Von Dreele, Robert"
 _audit_update_record
-   "2013-08-15T12:35  Initial software-generated CIF"
-_pd_proc_info_datetime  2013-08-15T12:35
+   "2013-08-16T12:28  Initial software-generated CIF"
+_pd_proc_info_datetime  2013-08-16T12:28
 _pd_calc_method  "Rietveld Refinement"
 _computing_structure_refinement  "GSAS-II (Toby & Von Dreele, 2013)"
 _refine_ls_number_parameters  10
 _refine_ls_goodness_of_fit_all  41.912
+
+# OVERALL WEIGHTED R-FACTOR
+_refine_ls_wR_factor_obs  0.07258
 _refine_ls_matrix_type  full
 
 # phase info for H3OSbF6 follows
@@ -524,6 +527,9 @@ _reflns_limit_k_min  0
 _reflns_limit_k_max  11
 _reflns_limit_l_min  0
 _reflns_limit_l_max  11
-_reflns_d_resolution_low  5.0700
-_reflns_d_resolution_high  0.619
+_reflns_d_resolution_low    5.070
+_reflns_d_resolution_high   0.619
+_reflns_wR_factor_obs      0.0726
+_reflns_R_F_factor_obs     0.0822
+_reflns_R_Fsqd_factor_obs  0.0694
 #--eof--eof--eof--eof--eof--eof--eof--eof--eof--eof--eof--eof--eof--eof--eof--#

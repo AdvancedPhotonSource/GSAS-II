@@ -2291,10 +2291,11 @@ class GSASII(wx.Frame):
 
         '''
         HKLFdata = {}
-        try:
-            HKLFdata.update(self.PatternTree.GetItemPyData(HKLFname)[0])            #wtFactor + ?
-        except ValueError:
-            HKLFdata['wtFactor'] = 1.0
+        HKLFdata.update(self.PatternTree.GetItemPyData(HKLFname)[0])            #wtFactor + ?
+#        try:
+#            HKLFdata.update(self.PatternTree.GetItemPyData(HKLFname)[0])            #wtFactor + ?
+#        except ValueError:
+#            HKLFdata['wtFactor'] = 1.0
         HKLFdata['Data'] = self.PatternTree.GetItemPyData(HKLFname)[1]
         HKLFdata['Instrument Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,HKLFname,'Instrument Parameters'))
         return HKLFdata
@@ -2376,6 +2377,10 @@ class GSASII(wx.Frame):
         '''
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        for phase in Phases:
+            if 'pId' not in Phases[phase]:
+                self.ErrorDialog('View parameter error','You must run least squares at least once')
+                return
         rigidbodyDict = self.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'))
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)

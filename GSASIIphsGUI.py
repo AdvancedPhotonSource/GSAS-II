@@ -3078,7 +3078,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def UpdateHKLFdata(histoName):
         generalData = data['General']
         Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-        reflData = G2frame.PatternTree.GetItemPyData(Id)[1]
+        refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
         SGData = generalData['SGData']
         Cell = generalData['Cell'][1:7]
         G,g = G2lat.cell2Gmat(Cell)
@@ -3086,7 +3086,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             H = ref[:3]
             ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
             iabsnt,ref[3],ref[11],ref[12] = G2spc.GenHKLf(H,SGData)
-        G2frame.PatternTree.SetItemPyData(Id,[histoName,reflData])
+        G2frame.PatternTree.SetItemPyData(Id,[refDict,reflData])
         
     def OnPwdrAdd(event):
         generalData = data['General']

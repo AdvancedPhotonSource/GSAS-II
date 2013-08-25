@@ -278,10 +278,7 @@ def GetHistograms(GPXfile,hNames):
         if hist in hNames:
             if 'PWDR' in hist[:4]:
                 PWDRdata = {}
-                try:
-                    PWDRdata.update(datum[1][0])        #weight factor
-                except ValueError:
-                    PWDRdata['wtFactor'] = 1.0          #patch
+                PWDRdata.update(datum[1][0])        #weight factor
                 PWDRdata['Data'] = ma.array(ma.getdata(datum[1][1]))          #masked powder data arrays/clear previous masks
                 PWDRdata[data[2][0]] = data[2][1]       #Limits & excluded regions (if any)
                 PWDRdata[data[3][0]] = data[3][1]       #Background
@@ -296,10 +293,7 @@ def GetHistograms(GPXfile,hNames):
                 Histograms[hist] = PWDRdata
             elif 'HKLF' in hist[:4]:
                 HKLFdata = {}
-                try:
-                    HKLFdata.update(datum[1][0])        #weight factor
-                except ValueError:
-                    HKLFdata['wtFactor'] = 1.0          #patch
+                HKLFdata.update(datum[1][0])        #weight factor
                 HKLFdata['Data'] = datum[1][1]
                 HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
                 HKLFdata['Reflection Lists'] = None

@@ -1905,6 +1905,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
 #end of PWDR processing
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
+            Histogram['Residuals'] = {}
             phase = Histogram['Reflection Lists']
             Phase = Phases[phase]
             hId = Histogram['hId']

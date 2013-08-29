@@ -1416,7 +1416,7 @@ def FourierMap(data,reflData):
                 phasep = complex(a,b)
                 phasem = complex(a,-b)
                 if 'Fobs' in mapData['MapType']:
-                    F = np.sqrt(Fosq)
+                    F = np.where(Fosq>0.,np.sqrt(Fosq),0.)
                     h,k,l = hkl+Hmax
                     Fhkl[h,k,l] = F*phasep
                     h,k,l = -hkl+Hmax
@@ -1428,13 +1428,13 @@ def FourierMap(data,reflData):
                     h,k,l = -hkl+Hmax
                     Fhkl[h,k,l] = F*phasem
                 elif 'delt-F' in mapData['MapType']:
-                    dF = np.sqrt(Fosq)-np.sqrt(Fcsq)
+                    dF = np.where(Fosq>0.,np.sqrt(Fosq),0.)-np.sqrt(Fcsq)
                     h,k,l = hkl+Hmax
                     Fhkl[h,k,l] = dF*phasep
                     h,k,l = -hkl+Hmax
                     Fhkl[h,k,l] = dF*phasem
                 elif '2*Fo-Fc' in mapData['MapType']:
-                    F = 2.*np.sqrt(Fosq)-np.sqrt(Fcsq)
+                    F = 2.*np.where(Fosq>0.,np.sqrt(Fosq),0.)-np.sqrt(Fcsq)
                     h,k,l = hkl+Hmax
                     Fhkl[h,k,l] = F*phasep
                     h,k,l = -hkl+Hmax

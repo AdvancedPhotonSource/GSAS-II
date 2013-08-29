@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-*GSASIIstrIO: structure I/O routines*
--------------------------------------
-
-'''
 ########### SVN repository information ###################
 # $Date: 2013-05-17 12:13:15 -0500 (Fri, 17 May 2013) $
 # $Author: vondreele $
@@ -11,6 +6,11 @@
 # $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $
 # $Id: GSASIIstrIO.py 920 2013-05-17 17:13:15Z vondreele $
 ########### SVN repository information ###################
+'''
+*GSASIIstrIO: structure I/O routines*
+-------------------------------------
+
+'''
 import sys
 import os
 import os.path as ospath

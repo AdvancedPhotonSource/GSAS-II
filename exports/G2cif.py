@@ -112,6 +112,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('_pd_calc_method', 'Rietveld Refinement')
             #WriteCIFitem('_refine_ls_shift/su_max',DAT1)
             #WriteCIFitem('_refine_ls_shift/su_mean',DAT2)
+            #WriteCIFitem('_refine_diff_density_max',rhomax)    #these need to be defined for each phase!
+            #WriteCIFitem('_refine_diff_density_min',rhomin)
             WriteCIFitem('_computing_structure_refinement','GSAS-II (Toby & Von Dreele, 2013)')
             try:
                 vars = str(len(self.OverallParms['Covariance']['varyList']))

@@ -1598,7 +1598,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 else:    
                     G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
-                print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
+                G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
         else:
                 print "select one or more rows of atoms"
                 G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
@@ -4567,7 +4567,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Refs = data['Pawley ref']
             Histograms = data['Histograms']
         except KeyError:
-            print '**** Error - no histograms defined for this phase ****'
+            G2frame.ErrorDialog('Pawley estimate','No histograms defined for this phase')
             return
         HistoNames = Histograms.keys()
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
@@ -4609,7 +4609,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Refs = data['Pawley ref']
             Histograms = data['Histograms']
         except KeyError:
-            print '**** Error - no histograms defined for this phase ****'
+            G2frame.ErrorDialog('Pawley update','No histograms defined for this phase')
             return
         HistoNames = Histograms.keys()
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
@@ -4774,7 +4774,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # set view point
         indx = MapPeaks.GetSelectedRows()
         if not indx:
-            print '***** ERROR - no peaks selected'
+            G2frame.ErrorDialog('Set viewpoint','No peaks selected')
             return
         mapPeaks = data['Map Peaks']
         drawingData = data['Drawing']
@@ -4785,7 +4785,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # distance to view point
         indx = MapPeaks.GetSelectedRows()
         if not indx:
-            print '***** ERROR - no peaks selected'
+            G2frame.ErrorDialog('Peak distance','No peaks selected')
             return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
@@ -4806,7 +4806,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         #distance, angle 
         indx = MapPeaks.GetSelectedRows()
         if len(indx) not in [2,3]:
-            print '**** ERROR - wrong number of atoms for distance or angle calculation'
+            G2frame.ErrorDialog('Peak distance/angle','Wrong number of atoms for distance or angle calculation')
             return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
@@ -4823,6 +4823,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         mapData = generalData['Map']
         reflName = mapData['RefList']
+        if not reflName:
+            G2frame.ErrorDialog('Fourier map','No reflections defined for Fourier map')
+            return
         phaseName = generalData['Name']
         if 'PWDR' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)

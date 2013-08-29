@@ -602,7 +602,23 @@ class ExportCIF(G2IO.ExportBaseclass):
             # when scattering factors are included in the CIF, this needs to be
             # added to the loop here but only in the one-block case.
             # For multiblock CIFs, scattering factors go in the histogram
-            # blocks  (for all atoms in all appropriate phases)
+            # blocks  (for all atoms in all appropriate phases) - an example?:
+#loop_
+#    _atom_type_symbol
+#    _atom_type_description
+#    _atom_type_scat_dispersion_real
+#    _atom_type_scat_dispersion_imag
+#    _atom_type_scat_source
+#    'C' 'C' 0.0033 0.0016
+#                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+#    'H' 'H' 0.0000 0.0000
+#                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+#    'P' 'P' 0.1023 0.0942
+#                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+#    'Cl' 'Cl' 0.1484 0.1585
+#                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+#    'Cu' 'Cu' 0.3201 1.2651
+#                         'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
 
             #if oneblock: # add scattering factors for current phase here
             WriteCIFitem('\nloop_  _atom_type_symbol _atom_type_number_in_cell')

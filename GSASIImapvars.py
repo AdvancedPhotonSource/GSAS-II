@@ -204,6 +204,8 @@ Note that parameter names in GSAS-II are strings of form ``<ph>:<hst>:<nam>``
 """
 
 import numpy as np
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 # data used for constraints; 
 debug = False # turns on printing as constraint input is processed
 # note that constraints are stored listed by contraint groups, where each constraint

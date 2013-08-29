@@ -16,6 +16,8 @@ which contains arrays for All and specific amino acids
 
 '''
 
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 import numpy as np
 
 ramachandranDist = {'All':np.array([

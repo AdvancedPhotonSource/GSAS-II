@@ -13,6 +13,8 @@ import GSASIIIO as G2IO
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 import CifFile as cif # PyCifRW from James Hester
 import urllib
 

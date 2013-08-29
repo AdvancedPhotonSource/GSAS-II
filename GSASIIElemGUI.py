@@ -17,6 +17,8 @@ to delete an element from a list of selected elements.
    Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 """
 
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import wx
 import os
 import wx.lib.colourselect as wscs

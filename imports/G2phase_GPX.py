@@ -10,6 +10,8 @@
 import cPickle
 import GSASIIIO as G2IO
 import GSASIIstrIO as G2stIO
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 
 class PhaseReaderClass(G2IO.ImportPhase):
     def __init__(self):

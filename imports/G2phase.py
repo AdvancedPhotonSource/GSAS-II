@@ -11,6 +11,8 @@
 import sys
 import traceback
 import GSASIIIO as G2IO
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 
 class PDB_ReaderClass(G2IO.ImportPhase):
     'Routines to import Phase information from a PDB file'

@@ -32,7 +32,8 @@ The "*A* tensor" terms are defined as
 import math
 import numpy as np
 import numpy.linalg as nl
-
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi

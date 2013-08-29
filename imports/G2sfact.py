@@ -11,6 +11,8 @@
 import sys
 import numpy as np
 import GSASIIIO as G2IO
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 
 class HKLF_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F, sig(F) reflections from a HKLF file'

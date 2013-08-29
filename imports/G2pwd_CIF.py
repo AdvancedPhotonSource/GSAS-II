@@ -14,6 +14,8 @@ import os.path
 import GSASIIIO as G2IO
 import CifFile as cif # PyCifRW from James Hester
 import urllib
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 
 class CIFpwdReader(G2IO.ImportPowderData):
     'Routines to import powder data from a CIF file'

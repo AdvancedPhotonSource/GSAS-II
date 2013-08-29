@@ -12,6 +12,8 @@ import sys
 import os.path as ospath
 import numpy as np
 import GSASIIIO as G2IO
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 
 class GSAS_ReaderClass(G2IO.ImportPowderData):
     'Routines to import powder data from a GSAS files'

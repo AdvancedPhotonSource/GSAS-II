@@ -14,6 +14,8 @@ import os.path
 import GSASIIIO as G2IO
 import CifFile as cif # PyCifRW from James Hester
 import urllib
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision: 810 $")
 
 class CIFhklReader(G2IO.ImportStructFactor):
     'Routines to import Phase information from a CIF file'

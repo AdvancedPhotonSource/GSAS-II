@@ -1182,6 +1182,15 @@ class GSASII(wx.Frame):
         
     def __init__(self, parent):
         self._init_ctrls(parent)
+        self.Image = wx.Image(
+            os.path.join(GSASIIpath.path2GSAS2,'gsas2.ico'),
+            wx.BITMAP_TYPE_ICO)
+        if "wxMSW" in wx.PlatformInfo:
+            self.SetIcon(self.Image.Scale(16, 16))
+        elif "wxGTK" in wx.PlatformInfo:
+            self.SetIcon(self.Image.Scale(22, 22))
+        else:
+            self.SetIcon(wx.IconFromBitmap(self.Image.ConvertToBitmap()))
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
         # various defaults
         self.oldFocus = None

@@ -1175,7 +1175,7 @@ class downdate(wx.Dialog):
             wx.StaticText(pnl,  wx.ID_ANY,
                           'Select GSAS-II version to install: '),
             0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        self.spin = wx.SpinCtrl(pnl, wx.ID_ANY)
+        self.spin = wx.SpinCtrl(pnl, wx.ID_ANY,size=(150,-1))
         self.spin.SetRange(1, curver)
         self.spin.SetValue(curver)
         self.Bind(wx.EVT_SPINCTRL, self._onSpin, self.spin)
@@ -1187,8 +1187,17 @@ class downdate(wx.Dialog):
         sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
 
         self.text = wx.StaticText(pnl,  wx.ID_ANY, "")
-        sizer.Add(self.text, 0, wx.ALIGN_LEFT, 5)
+        sizer.Add(self.text, 0, wx.ALIGN_LEFT|wx.EXPAND|wx.ALL, 5)
 
+        line = wx.StaticLine(pnl,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
+        sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+        sizer.Add(
+            wx.StaticText(
+                pnl,  wx.ID_ANY,
+                'If "Install" is pressed, your project will be saved;\n'
+                'GSAS-II will exit; The specified version will be loaded\n'
+                'and GSAS-II will restart. Press "Cancel" to abort.'),
+            0, wx.EXPAND|wx.ALL, 10)
         btnsizer = wx.StdDialogButtonSizer()
         btn = wx.Button(pnl, wx.ID_OK, "Install")
         btn.SetDefault()
@@ -1284,18 +1293,24 @@ class MyHelp(wx.Menu):
         global __version__
         info = wx.AboutDialogInfo()
         info.Name = 'GSAS-II'
-        info.Version = __version__ + ' Revision '+str(GSASIIpath.GetVersionNumber())
-        info.Copyright = '''
-Robert B. Von Dreele & Brian H. Toby
-Argonne National Laboratory(C)
+        ver = GSASIIpath.svnGetRev()
+        if ver: 
+            info.Version = 'Revision '+str(ver)+' (svn), version '+__version__
+        else:
+            info.Version = 'Revision '+str(GSASIIpath.GetVersionNumber())+' (.py files), version '+__version__
+        #info.Developers = ['Robert B. Von Dreele','Brian H. Toby']
+        info.Copyright = ('(c) ' + time.strftime('%Y') +
+''' Argonne National Laboratory
 This product includes software developed
 by the UChicago Argonne, LLC, as 
-Operator of Argonne National Laboratory.        
-Please cite:
+Operator of Argonne National Laboratory.''')
+        info.Description = '''General Structure Analysis System-II (GSAS-II)
+Robert B. Von Dreele and Brian H. Toby
+
+Please cite as:
 B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
-        info.Description = '''
-General Structure Analysis System - GSAS-II
-'''
+
+        info.WebSite = ("https://subversion.xray.aps.anl.gov/trac/pyGSAS","GSAS-II home page")
         wx.AboutBox(info)
 
     def OnCheckUpdates(self,event):
@@ -1343,7 +1358,12 @@ General Structure Analysis System - GSAS-II
                                    ' of GSAS-II installed, but the current version is '+repos+
                                    '. However, '+str(len(mods))+
                                    ' file(s) on your local computer have been modified.'
-                                   ' Updating could cause you to lose your changes, if conflicts arise. Press OK to start an update if this is acceptable:',
+                                   ' Updating will attempt to merge your local changes with '
+                                   'the latest GSAS-II version, but if '
+                                   'conflicts arise, local changes will be '
+                                   'discarded. It is also possible that the '
+                                   'local changes my prevent GSAS-II from running. '
+                                   'Press OK to start an update if this is acceptable:',
                                    'Local GSAS-II Mods',
                                    wx.OK|wx.CANCEL)
             if dlg.ShowModal() != wx.ID_OK: return
@@ -1356,22 +1376,17 @@ General Structure Analysis System - GSAS-II
                                    wx.OK|wx.CANCEL)
             if dlg.ShowModal() != wx.ID_OK: return
         print 'start updates'
-        wx.BeginBusyCursor()
-        moddict = GSASIIpath.svnUpdateDir()
-        wx.EndBusyCursor()
-        if moddict is None: 
-            dlg = wx.MessageDialog(self.frame,
-                                   'Error accessing the GSAS-II server or performing the update. '+
-                                   'Try again later or perform a manual update',
-                                   'Update Error',
-                                   wx.OK)
-            dlg.ShowModal()
+        dlg = wx.MessageDialog(self.frame,
+                               'Your project will now be saved, GSAS-II will exit and an update '
+                               'will be performed and GSAS-II will restart. Press Cancel to '
+                               'abort the update',
+                               'Start update?',
+                               wx.OK|wx.CANCEL)
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
             return
-        msg = 'Update was completed. Changes will take effect when GSAS-II is restarted.\n\nThe following files were affected, ordered by change,'
-        for key in sorted(moddict.keys()):
-            msg += '\n\n' + key + ': '+moddict[key]
-        dlg = wx.MessageDialog(self.frame,msg, 'Update Completed', wx.OK)
-        dlg.ShowModal()
+        self.frame.OnFileSave(event)
+        GSASIIpath.svnUpdateProcess(projectfile=self.frame.GSASprojectfile)
         return
 
     def OnSelectVersion(self,event):
@@ -1395,36 +1410,35 @@ General Structure Analysis System - GSAS-II
         if mods:
             dlg = wx.MessageDialog(self.frame,
                                    'You have version '+local+
-                                   ' of GSAS-II installed. However, '+str(len(mods))+
+                                   ' of GSAS-II installed'
+                                   '. However, '+str(len(mods))+
                                    ' file(s) on your local computer have been modified.'
-                                   ' Downdating is not encouraged as this could cause you to lose these changes. Press OK to continue anyway:',
+                                   ' Downdating will attempt to merge your local changes with '
+                                   'the selected GSAS-II version. '
+                                   'Downdating is not encouraged because '
+                                   'if merging is not possible, your local changes will be '
+                                   'discarded. It is also possible that the '
+                                   'local changes my prevent GSAS-II from running. '
+                                   'Press OK to continue anyway.',
                                    'Local GSAS-II Mods',
                                    wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK: return
+            if dlg.ShowModal() != wx.ID_OK:
+                dlg.Destroy()
+                return
+            dlg.Destroy()
         dlg = downdate(parent=self.frame)
         if dlg.ShowModal() == wx.ID_OK:
             ver = dlg.getVersion()
-            print('start update to '+str(ver))
-            wx.BeginBusyCursor()
-            moddict = GSASIIpath.svnUpdateDir(version=ver)
-            wx.EndBusyCursor()
-            dlg.Destroy()
         else:
             dlg.Destroy()
             return
-        if moddict is None: 
-            dlg = wx.MessageDialog(self.frame,
-                                   'Error accessing the GSAS-II server or performing the update. '+
-                                   'Try again later or perform a manual update',
-                                   'Update Error',
-                                   wx.OK)
-            dlg.ShowModal()
-            return
-        msg = 'Update was completed. Changes will take effect when GSAS-II is restarted.\n\nThe following files were affected, ordered by change,'
-        for key in sorted(moddict.keys()):
-            msg += '\n\n' + key + ': '+moddict[key]
-        dlg = wx.MessageDialog(self.frame,msg, 'Update Completed', wx.OK)
-        dlg.ShowModal()
+        dlg.Destroy()
+        print('start regress to '+str(ver))
+        GSASIIpath.svnUpdateProcess(
+            projectfile=self.frame.GSASprojectfile,
+            version=str(ver)
+            )
+        self.frame.OnFileSave(event)
         return
 
 ################################################################################

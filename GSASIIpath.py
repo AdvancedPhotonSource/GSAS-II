@@ -50,15 +50,12 @@ print 'GSAS-II binary directory: ',os.path.join(loc,bindir)
 if bindir == None:
     raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II fails ****"
 # add the data import and export directory to the search path
-path2GSAS2 = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), # location of this file
-    'imports')
-pathlist = sys.path[:]
-if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
-path2GSAS2 = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), # location of this file
-    'exports')
-if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
+path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file; save before any changes in pwd
+newpath = os.path.join(path2GSAS2,'imports')
+if newpath not in sys.path: sys.path.append(newpath)
+newpath = os.path.join(path2GSAS2,'exports')
+if newpath not in sys.path: sys.path.append(newpath)
+
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):
@@ -210,14 +207,8 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
        cast as a string, but should be an integer or something that corresponds to a
        string representation of an integer value when cast. A value of None (default)
        causes the latest version on the server to be used.
-    :returns: A dictionary with the files that have been changed/added and
-          a code describing how they have been updated (see changetype) or
-          None if there is a subversion error (likely because the path is
-          not a repository or svn is not found)
     '''
     import subprocess
-    changetype = {'A': 'Added', 'D': 'Deleted', 'U': 'Updated',
-                  'C': 'Conflict', 'G': 'Merged', 'E': 'Replaced'}
     svn = whichsvn()
     if not svn: return
     if version:
@@ -232,18 +223,47 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
     out,err = s.communicate()
     print out
     if err:
+        print(60*"=")
+        print ("****** An error was noted, see below *********")
+        print(60*"=")
         print err
-        return
-    l = out.split()
-    updates = {}
-    for i,j in zip(l[::2],l[1::2]):
-        if i == 'Updated': break
-        if i == 'At': break
-        t = changetype.get(i[0])
-        if not t: continue
-        f = os.path.split(j)[1]
-        if updates.get(t):
-            updates[t] += ', '+f
-        else:
-            updates[t] = f
-    return updates
+        sys.exit()
+
+def svnUpdateProcess(version=None,projectfile=None):
+    '''perform an update of GSAS-II in a separate python process'''
+    import subprocess
+    if not projectfile:
+        projectfile = ''
+    else:
+        projectfile = os.path.realpath(projectfile)
+        print 'restart using',projectfile
+    if not version:
+        version = ''
+    else:
+        version = str(version)
+    # start the upgrade in a separate interpreter (avoids loading .pyd files)
+    subprocess.Popen([sys.executable,__file__,projectfile,version])
+    sys.exit()
+
+if __name__ == '__main__':
+    import subprocess
+    import time
+    time.sleep(1) # delay to give the main process a chance to exit
+    # perform an update and restart GSAS-II
+    project,version = sys.argv[1:3]
+    loc = os.path.dirname(__file__)
+    if version:
+        print("Regress to version "+str(version))
+        svnUpdateDir(loc,version=version)
+    else:
+        print("Update to current version")
+        svnUpdateDir(loc)
+    if project:
+        print("Restart GSAS-II with project file "+str(project))
+        subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py'),project])
+    else:
+        print("Restart GSAS-II without a project file ")
+        subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py')])
+    print 'exiting update process'
+    sys.exit()
+    

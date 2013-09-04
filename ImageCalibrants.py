@@ -1,15 +1,17 @@
-'''
+"""
 *ImageCalibrants: Calibration Standards*
 ----------------------------------------
 
 GSASII powder calibrants as a dictionary of substances commonly used for powder
 calibrations for image data.
 
-'''
-#GSASII powder calibrants file; dictionary of substances commonly used for powder
-#calibrations. Each entry consists of:
-# 'name':(Bravais no,(a,b,c,alpha,beta,gamma),no. lines skipped,(dmin,pixLimit,cutOff)
-#Useful Bravais nos.: F-cubic=0,I-cubic=1,P-cubic=2,R3/m(hex)=3, P6=4, P4mmm=6
+Create your own in file UserCalibrants.py following the format shown here; 
+if you use the same names given here your entries will replace the corresponding
+ones given here.
+Each entry consists of:
+ 'name':(Bravais no,(a,b,c,alpha,beta,gamma),no. lines skipped,(dmin,pixLimit,cutOff)
+Useful Bravais nos.: F-cubic=0,I-cubic=1,P-cubic=2,R3/m(hex)=3, P6=4, P4mmm=6
+"""
 Calibrants={
 '':([0,],[(0,0,0,0,0,0),],0,(0,0,0)),
 'LaB6  SRM660a':([2,],[(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10)),

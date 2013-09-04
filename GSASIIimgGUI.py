@@ -44,6 +44,11 @@ def UpdateImageControls(G2frame,data,masks):
     data tree entry
     '''
     import ImageCalibrants as calFile
+    try:
+        import UserCalibrants as userFile
+        calFile.Calibrants.update(userFile.Calibrants)
+    except:
+        pass
 #patch
     if 'GonioAngles' not in data:
         data['GonioAngles'] = [0.,0.,0.]
@@ -917,7 +922,6 @@ def UpdateMasks(G2frame,data):
                     if id == G2frame.Image:
                         Source = name
                         Mask = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks')))
-                        del Mask['Thresholds']
                     else:
                         TextList.append([False,name,id])
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
@@ -935,6 +939,8 @@ def UpdateMasks(G2frame,data):
                         ifcopy,name,id = item
                         if ifcopy:
                             mask = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
+                            Mask['Thresholds'][0] = mask['Thresholds'][0]
+                            Mask['Thresholds'][1][1] = min(mask['Thresholds'][1][1],Mask['Thresholds'][1][1])
                             mask.update(Mask)                                
                             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'),copy.deepcopy(mask))
             finally:
@@ -963,6 +969,7 @@ def UpdateMasks(G2frame,data):
                 filename = dlg.GetPath()
                 File = open(filename,'r')
                 save = {}
+                oldThreshold = data['Thresholds'][0]
                 S = File.readline()
                 while S:
                     if S[0] == '#':
@@ -971,6 +978,9 @@ def UpdateMasks(G2frame,data):
                     [key,val] = S[:-1].split(':')
                     if key in ['Points','Rings','Arcs','Polygons','Thresholds']:
                         save[key] = eval(val)
+                        if key == 'Thresholds':
+                            save[key][0] = oldThreshold
+                            save[key][1][1] = min(oldThreshold[1],save[key][1][1])
                     S = File.readline()
                 data.update(save)
                 UpdateMasks(G2frame,data)

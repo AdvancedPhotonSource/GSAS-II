@@ -743,6 +743,7 @@ def ImageIntegrate(image,data,masks):
     'Needs a doc string'
     import histogram2d as h2d
     print 'Begin image integration'
+    blkSize = 128               #this seems to be optimal
     LUtth = data['IOtth']
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = data['outAzimuths']
@@ -755,8 +756,8 @@ def ImageIntegrate(image,data,masks):
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     imageN = len(image)
     Nx,Ny = data['size']
-    nXBlks = (Nx-1)/1024+1
-    nYBlks = (Ny-1)/1024+1
+    nXBlks = (Nx-1)/blkSize+1
+    nYBlks = (Ny-1)/blkSize+1
     Nup = nXBlks*nYBlks*3+3
     dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
         style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
@@ -765,12 +766,12 @@ def ImageIntegrate(image,data,masks):
         Nup = 0
         dlg.Update(Nup)
         for iBlk in range(nYBlks):
-            iBeg = iBlk*1024
-            iFin = min(iBeg+1024,Ny)
+            iBeg = iBlk*blkSize
+            iFin = min(iBeg+blkSize,Ny)
             for jBlk in range(nXBlks):
-                jBeg = jBlk*1024
-                jFin = min(jBeg+1024,Nx)                
-                print 'Process map block:',iBlk,jBlk,' limits:',iBeg,iFin,jBeg,jFin
+                jBeg = jBlk*blkSize
+                jFin = min(jBeg+blkSize,Nx)                
+#                print 'Process map block:',iBlk,jBlk,' limits:',iBeg,iFin,jBeg,jFin
                 TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
                 
                 Nup += 1
@@ -783,7 +784,7 @@ def ImageIntegrate(image,data,masks):
                 tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
                 tax = np.where(tax < LRazm[0],tax+360.,tax)
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
-                print 'block done'
+#                print 'block done'
                 del tax,tay,taz
                 Nup += 1
                 dlg.Update(Nup)

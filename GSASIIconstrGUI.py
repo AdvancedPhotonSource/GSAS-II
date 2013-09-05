@@ -114,7 +114,12 @@ def UpdateConstraints(G2frame,data):
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
     globalList = rbDict.keys()
     globalList.sort()
-    AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
+    try:
+        AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
+    except KeyError:
+        G2frame.ErrorDialog('Constraint Error','You must run least squares at least once before setting constraints\n'+ \
+            'We suggest you refine scale factor first')
+        return
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []
     for item in phaseDict:

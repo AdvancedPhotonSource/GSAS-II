@@ -4325,7 +4325,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add((5,5),0)
             for model in data['MCSA']['Models']:
                 if model['Type'] == 'MD':
-                    mainSizer.Add(MDSizer(model))
+#                    mainSizer.Add(MDSizer(model))
+                    pass            #MD currently doesn't work
                 elif model['Type'] == 'Atom':
                     mainSizer.Add(atomSizer(model))
                 else:
@@ -4416,6 +4417,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if process == 'single':
                 pgbar.Destroy()
         MCSAdata['Results'] = G2mth.sortArray(MCSAdata['Results'],2,reverse=False)
+        G2frame.dataDisplay.SetFocus()
         Page = G2frame.dataDisplay.FindPage('MC/SA')
         G2frame.dataDisplay.SetSelection(Page)
         G2plt.PlotStructure(G2frame,data)

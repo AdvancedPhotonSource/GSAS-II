@@ -4418,8 +4418,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         MCSAdata['Results'] = G2mth.sortArray(MCSAdata['Results'],2,reverse=False)
         Page = G2frame.dataDisplay.FindPage('MC/SA')
         G2frame.dataDisplay.SetSelection(Page)
-        wx.CallAfter(UpdateMCSA)
         G2plt.PlotStructure(G2frame,data)
+        wx.CallAfter(UpdateMCSA)
 
     def OnMCSAaddAtom(event):
         dlg = G2elemGUI.PickElement(G2frame)

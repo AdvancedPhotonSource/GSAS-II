@@ -3846,7 +3846,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glViewport(0,0,VS[0],VS[1])
-        gluPerspective(20.,aspect,0.1,500.)
+        gluPerspective(20.,aspect,1.,500.)
         gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
             

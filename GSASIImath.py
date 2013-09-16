@@ -428,7 +428,8 @@ def UpdateMCSAxyz(Bmat,MCSA):
         else:
             RBRes = MCSA['rbData'][model['Type']][model['RBId']]
             Pos = np.array(model['Pos'][0])
-            Qori = np.array(model['Ori'][0])
+            Ori = np.array(model['Ori'][0])
+            Qori = AVdeg2Q(Ori[0],Ori[1:])
             if model['Type'] == 'Vector':
                 vecs = RBRes['rbVect']
                 mags = RBRes['VectMag']
@@ -2355,6 +2356,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     fqueue = [100, 300, 500, 700]
     iters = 1
     keepGoing = True
+    bestn = 0
     while keepGoing:
         retval = 0
         for n in xrange(dwell):
@@ -2369,9 +2371,13 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                 if last_state.cost < best_state.cost:
                     best_state.x = last_state.x.copy()
                     best_state.cost = last_state.cost
+                    bestn = n
         if dlg:
-            GoOn = dlg.Update(best_state.cost*100,
-                newmsg='%s%8.5f\n%s%8.4f%s'%('Temperature =',schedule.T,'MC/SA Residual =',best_state.cost*100,'%'))[0]
+            GoOn = dlg.Update(min(100.,best_state.cost*100),
+                newmsg='%s%8.5f, %s%d\n%s%8.4f%s'%('Temperature =',schedule.T, \
+                    'Best trial:',bestn,  \
+                    'MC/SA Residual:',best_state.cost*100,'%', \
+                    ))[0]
             if not GoOn:
                 best_state.x = last_state.x.copy()
                 best_state.cost = last_state.cost
@@ -2492,7 +2498,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         parmDict[mfx+'MolCent'] = item['MolCent']
         parmDict[mfx+'RBId'] = item['RBId']
         pstr = ['Px','Py','Pz']
-        ostr = ['Qa','Qi','Qj','Qk']
+        ostr = ['Qa','Qi','Qj','Qk']    #angle,vector not quaternion
         for i in range(3):
             name = mfx+pstr[i]
             parmDict[name] = item['Pos'][0][i]
@@ -2501,10 +2507,16 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 limits = item['Pos'][2][i]
                 lower.append(limits[0])
                 upper.append(limits[1])
+        AV = item['Ori'][0]
+        A = AV[0]
+        V = AV[1:]
         for i in range(4):
             name = mfx+ostr[i]
-            parmDict[name] = item['Ori'][0][i]
-            if item['Ovar'] == 'AV' and i:
+            if i:
+                parmDict[name] = V[i-1]
+            else:
+                parmDict[name] = A
+            if item['Ovar'] == 'AV':
                 varyList += [name,]
                 limits = item['Ori'][2][i]
                 lower.append(limits[0])
@@ -2571,7 +2583,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                             Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
                 if parmDict[pfx+'MolCent'][1]:
                     Cart -= parmDict[pfx+'MolCent'][0]
-                Qori = normQ(np.array([parmDict[pfx+'Qa'],parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']]))
+                Qori = AVdeg2Q(parmDict[pfx+'Qa'],[parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
                 Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
                 for i,x in enumerate(Cart):
                     X = np.inner(Bmat,prodQVQ(Qori,x))+Pos
@@ -2605,6 +2617,18 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         allX = np.reshape(allX,(-1,3))
         return allX
         
+    def normQuaternions(RBdata,parmDict,varyList,values):
+        for iObj in range(parmDict['nObj']):
+            pfx = str(iObj)+':'
+            if parmDict[pfx+'Type'] in ['Vector','Residue']:
+                Qori = AVdeg2Q(parmDict[pfx+'Qa'],[parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
+                A,V = Q2AVdeg(Qori)
+                for i,name in enumerate(['Qa','Qi','Qj','Qk']):
+                    if i:
+                        parmDict[pfx+name] = V[i-1]
+                    else:
+                        parmDict[pfx+name] = A
+        
     def mcsaCalc(values,refList,rcov,ifInv,allFF,RBdata,varyList,parmDict):
         ''' Compute structure factors for all h,k,l for phase
         input:
@@ -2635,12 +2659,14 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             Bterm = refList[3]*np.sum(allFF*np.sin(HX2pi),axis=0)**2    #imaginary part for all H
             refList[5] = Aterm+Bterm
         sumFcsq = np.sum(refList[5])
-        scale = (parmDict['sumFosq']/sumFcsq)
+        scale = parmDict['sumFosq']/sumFcsq
         refList[5] *= scale
-        Srefs = refList[4]-refList[5]
-        M = np.inner(Srefs,np.inner(rcov,Srefs))
+        refList[6] = refList[4]-refList[5]
+        M = np.inner(refList[6],np.inner(rcov,refList[6]))
         tsum += (time.time()-t0)
-        return M/parmDict['sumFosq']**2
+#        print M,parmDict['sumFosq'],np.sum(refList[6]**2),np.sum(refList[4]**2)
+#        print np.sum(refList[6]**2)/np.sum(refList[4]**2)
+        return M/np.sum(refList[4]**2)
 
     sq8ln2 = np.sqrt(8*np.log(2))
     sq2pi = np.sqrt(2*np.pi)
@@ -2719,7 +2745,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         Rdiag = np.sqrt(np.diag(rcov))
         Rnorm = np.outer(Rdiag,Rdiag)
         rcov /= Rnorm
-    elif 'Pawley' in reflName:
+    elif 'Pawley' in reflName:  #need a bail out if Pawley cov matrix doesn't exist.
         covMatrix = covData['covMatrix']
         vList = covData['varyList']
         for iref,refI in enumerate(reflData):
@@ -2775,6 +2801,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         boltzmann=MCSA['boltzmann'], learn_rate=0.5,  
         quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
         lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',True),dlg=pgbar)
+    M = mcsaCalc(results[0],refs,rcov,ifInv,allFF,RBdata,varyList,parmDict)
+#    for ref in refs.T:
+#        print ' %4d %4d %4d %10.3f %10.3f %10.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[4],ref[5],ref[6])
+#    print np.sqrt((np.sum(refs[6]**2)/np.sum(refs[4]**2)))
     Result = [False,False,results[1],results[2],]+list(results[0])
     Result.append(varyList)
     return Result,tsum
@@ -2861,11 +2891,11 @@ def AV2Q(A,V):
     d = np.sqrt(np.sum(np.array(V)**2))
     if d:
         V /= d
+        p = A/2.
+        Q[0] = np.cos(p)
+        Q[1:4] = V*np.sin(p)
     else:
-        V = np.array([0.,0.,1.])
-    p = A/2.
-    Q[0] = np.cos(p)
-    Q[1:4] = V*np.sin(p)
+        Q[3] = 1.
     return Q
     
 def AVdeg2Q(A,V):
@@ -2876,11 +2906,11 @@ def AVdeg2Q(A,V):
     d = np.sqrt(np.sum(np.array(V)**2))
     if d:
         V /= d
+        p = A/2.
+        Q[0] = cosd(p)
+        Q[1:4] = V*sind(p)
     else:
-        V = np.array([0.,0.,1.])
-    p = A/2.
-    Q[0] = cosd(p)
-    Q[1:4] = V*sind(p)
+        Q[3] = 1.
     return Q
     
 def Q2AVdeg(Q):
@@ -2889,12 +2919,7 @@ def Q2AVdeg(Q):
     '''
     A = 2.*acosd(Q[0])
     V = np.array(Q[1:])
-    d = np.sqrt(np.sum(V**2))
-    if d:
-        V /= d
-    else:
-        A = 0.
-        V = np.array([0.,0.,0.])
+    V /= sind(A/2.)
     return A,V
     
 def Q2AV(Q):
@@ -2903,12 +2928,7 @@ def Q2AV(Q):
     '''
     A = 2.*np.arccos(Q[0])
     V = np.array(Q[1:])
-    d = np.sqrt(np.sum(V**2))
-    if d:
-        V /= d
-    else:
-        A = 0.
-        V = np.array([0.,0.,0.])
+    V /= np.sin(A/2.)
     return A,V
     
 def makeQuat(A,B,C):

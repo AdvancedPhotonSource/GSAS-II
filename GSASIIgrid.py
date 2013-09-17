@@ -180,10 +180,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     :param number max: maximum allowed valid value. If None (default) the
       upper limit is unbounded
 
-    :param wx.Size size: an optional size parameter that dictates the
-      size for the TextCtrl. None (the default) indicates that the
-      default size should be used.
-
     :param function OKcontrol: specifies a function or method that will be
       called when the input is validated. The called function is supplied
       with one argument which is False if the TextCtrl contains an invalid
@@ -208,45 +204,82 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       The default for OnLeave is None, which indicates no function should
       be called.
 
-    :param type typeHint: the value of typeHint is used if the initial value
-      for the dict/list element ``loc[key]`` is None. In this case typeHint
-      must be int or float, which specifies the type for input to the TextCtrl.
-      Defaults as None.
+    :param type typeHint: the value of typeHint is overrides the initial value
+      for the dict/list element ``loc[key]``, if set to 
+      int or float, which specifies the type for input to the TextCtrl.
+      Defaults as None, which is ignored.
+
+    :param bool CIFinput: for str input, indicates that only printable
+      ASCII characters may be entered into the TextCtrl. Forces output
+      to be ASCII rather than Unicode. For float and int input, allows
+      use of a single '?' or '.' character as valid input.
+
+    :param (other): other optional keyword parameters for the
+      wx.TextCtrl widget such as Size or Style may be specified.
 
     '''
     def __init__(self,parent,loc,key,notBlank=True,min=None,max=None,
-                 size=None,OKcontrol=None,OnLeave=None,typeHint=None):
+                 OKcontrol=None,OnLeave=None,typeHint=None,
+                 CIFinput=False, **kw):
         # save passed values needed outside __init__
         self.result = loc
         self.key = key
         self.OKcontrol=OKcontrol
         self.OnLeave = OnLeave
+        self.CIFinput = CIFinput
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
         self.evaluated = False # set to True when the validator recognizes an expression
         val = loc[key]
-        if isinstance(val,int) or (val is None and typeHint is int):
+        if isinstance(val,int) or typeHint is int:
             wx.TextCtrl.__init__(
                 self,parent,wx.ID_ANY,
-                validator=NumberValidator(int,result=loc,key=key,min=min,max=max,
-                                          OKcontrol=OKcontrol)
-                )
+                validator=NumberValidator(int,result=loc,key=key,
+                                          min=min,max=max,
+                                          OKcontrol=OKcontrol,
+                                          CIFinput=CIFinput),
+                **kw)
             if val is not None:
                 self.SetValue(str(val))
-            else:
+                try:
+                    int(val)
+                except:
+                    if CIFinput and (val == '?' or val == '.'):
+                        pass
+                    else:
+                        self.invalid = True
+                        self._IndicateValidity()
+            else: # no default is invalid for a number
                 self.ShowStringValidity()
-        elif isinstance(val,float) or (val is None and typeHint is float):
+
+        elif isinstance(val,float) or typeHint is float:
             wx.TextCtrl.__init__(
                 self,parent,wx.ID_ANY,
-                validator=NumberValidator(float,result=loc,key=key,min=min,max=max,
-                                          OKcontrol=OKcontrol)
-                )
+                validator=NumberValidator(float,result=loc,key=key,
+                                          min=min,max=max,
+                                          OKcontrol=OKcontrol,
+                                          CIFinput=CIFinput),
+                **kw)
             if val is not None:
                 self.SetValue(str(val))
+                try:
+                    float(val)
+                except:
+                    if CIFinput and (val == '?' or val == '.'):
+                        pass
+                    else:
+                        self.invalid = True
+                        self._IndicateValidity()
             else:
                 self.ShowStringValidity()
         elif isinstance(val,str) or isinstance(val,unicode):
-            wx.TextCtrl.__init__(self,parent,wx.ID_ANY,val)
+            if self.CIFinput:
+                wx.TextCtrl.__init__(
+                    self,parent,wx.ID_ANY,val,
+                    validator=ASCIIValidator(result=loc,key=key),
+                    **kw)
+            else:
+                wx.TextCtrl.__init__(self,parent,wx.ID_ANY,val,**kw)
             if notBlank:
                 self.Bind(wx.EVT_CHAR,self._onStringKey)
                 self.ShowStringValidity() # test if valid input
@@ -258,7 +291,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         else:
             raise Exception,("ValidatedTxtCtrl error: Unknown element ("+str(key)+
                              ") type: "+str(type(val)))
-        if size: self.SetSize(size)
+#        if size: self.SetSize(size)
         # When the mouse is moved away or the widget loses focus
         # display the last saved value, if an expression
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLoseFocus)
@@ -270,6 +303,19 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             wx.CallAfter(self.ShowStringValidity,True) # was invalid
         else:
             wx.CallAfter(self.ShowStringValidity,False) # was valid
+
+    def _IndicateValidity(self):
+        'Set the control colors to show invalid input'
+        if self.invalid:
+            self.SetForegroundColour("red")
+            self.SetBackgroundColour("yellow")
+            self.SetFocus()
+            self.Refresh()
+        else: # valid input
+            self.SetBackgroundColour(
+                wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            self.SetForegroundColour("black")
+            self.Refresh()
 
     def ShowStringValidity(self,previousInvalid=None):
         '''Check if input is valid. Anytime the input is
@@ -283,22 +329,17 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         '''
         val = self.GetValue().strip()
         self.invalid = not val
-        'Set the control colors to show invalid input'
+        self._IndicateValidity()
         if self.invalid:
-            self.SetForegroundColour("red")
-            self.SetBackgroundColour("yellow")
-            self.SetFocus()
-            self.Refresh()
             if self.OKcontrol:
                 self.OKcontrol(False)
-        else: # valid input
-            self.SetBackgroundColour(
-                wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
-            self.SetForegroundColour("black")
-            self.Refresh()
-            if self.OKcontrol and previousInvalid:
-                self.OKcontrol(True)
-        self.result[self.key] = val # always store the result
+        elif self.OKcontrol and previousInvalid:
+            self.OKcontrol(True)
+        # always store the result
+        if self.CIFinput:
+            self.result[self.key] = val.encode('ascii','replace') 
+        else:
+            self.result[self.key] = val
 
     def _onLoseFocus(self,event):
         if self.evaluated: self.EvaluateExpression()
@@ -347,9 +388,13 @@ class NumberValidator(wx.PyValidator):
     :param function OKcontrol: function or class method to control
       an OK button for a window. 
       Ignored if None (default)
+
+    :param bool CIFinput: allows use of a single '?' or '.' character
+      as valid input.
+      
     '''
     def __init__(self, typ, positiveonly=False, min=None, max=None,
-                 result=None, key=None, OKcontrol=None):
+                 result=None, key=None, OKcontrol=None, CIFinput=False):
         'Create the validator'
         wx.PyValidator.__init__(self)
         # save passed parameters
@@ -360,7 +405,9 @@ class NumberValidator(wx.PyValidator):
         self.result = result
         self.key = key
         self.OKcontrol = OKcontrol
+        self.CIFinput = CIFinput
         # set allowed keys by data type
+        self.Bind(wx.EVT_CHAR, self.OnChar)
         if self.typ == int and self.positiveonly:
             self.validchars = '0123456789'
         elif self.typ == int:
@@ -371,14 +418,17 @@ class NumberValidator(wx.PyValidator):
             self.validchars = '0123456789.-+eE/cosindcqrtap()*'
         else:
             self.validchars = None
-        self.Bind(wx.EVT_CHAR, self.OnChar)
+            return
+        if self.CIFinput:
+            self.validchars += '?.'
     def Clone(self):
         'Create a copy of the validator, a strange, but required component'
         return NumberValidator(typ=self.typ, 
-                          positiveonly=self.positiveonly,
-                          min=self.min, max=self.max,
-                          result=self.result, key=self.key,
-                          OKcontrol=self.OKcontrol)
+                               positiveonly=self.positiveonly,
+                               min=self.min, max=self.max,
+                               result=self.result, key=self.key,
+                               OKcontrol=self.OKcontrol,
+                               CIFinput=self.CIFinput)
         tc = self.GetWindow()
         tc.invalid = False # make sure the validity flag is defined in parent
     def TransferToWindow(self):
@@ -399,7 +449,12 @@ class NumberValidator(wx.PyValidator):
         :param wx.TextCtrl tc: A reference to the TextCtrl that the validator
           is associated with.
         '''
-        tc.invalid = False # assume invalid
+        tc.invalid = False # assume valid
+        if self.CIFinput:
+            val = tc.GetValue().strip()
+            if val == '?' or val == '.':
+                self.result[self.key] = val
+                return
         try:
             val = self.typ(tc.GetValue())
         except (ValueError, SyntaxError) as e:
@@ -496,13 +551,137 @@ class NumberValidator(wx.PyValidator):
         return  # Returning without calling event.Skip, which eats the keystroke
 
 ################################################################################
+class ASCIIValidator(wx.PyValidator):
+    '''A validator to be used with a TextCtrl to prevent
+    entering characters other than ASCII characters.
+    
+    The value is checked for validity after every keystroke
+      If an invalid number is entered, the box is highlighted.
+      If the number is valid, it is saved in result[key]
+
+    :param dict/list result: List or dict where value should be placed when valid
+
+    :param any key: key to use for result (int for list)
+
+    '''
+    def __init__(self, result=None, key=None):
+        'Create the validator'
+        import string
+        wx.PyValidator.__init__(self)
+        # save passed parameters
+        self.result = result
+        self.key = key
+        self.validchars = string.ascii_letters + string.digits + string.punctuation + string.whitespace
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+    def Clone(self):
+        'Create a copy of the validator, a strange, but required component'
+        return ASCIIValidator(result=self.result, key=self.key)
+        tc = self.GetWindow()
+        tc.invalid = False # make sure the validity flag is defined in parent
+    def TransferToWindow(self):
+        'Needed by validator, strange, but required component'
+        return True # Prevent wxDialog from complaining.
+    def TransferFromWindow(self):
+        'Needed by validator, strange, but required component'
+        return True # Prevent wxDialog from complaining.
+    def TestValid(self,tc):
+        '''Check if the value is valid by casting the input string
+        into ASCII. 
+
+        Save it in the dict/list where the initial value was stored
+
+        :param wx.TextCtrl tc: A reference to the TextCtrl that the validator
+          is associated with.
+        '''
+        self.result[self.key] = tc.GetValue().encode('ascii','replace')
+
+    def OnChar(self, event):
+        '''Called each type a key is pressed
+        ignores keys that are not allowed for int and float types
+        '''
+        key = event.GetKeyCode()
+        tc = self.GetWindow()
+        if key == wx.WXK_RETURN:
+            self.TestValid(tc)
+            return
+        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
+            event.Skip()
+            self.TestValid(tc)
+            return
+        elif chr(key) in self.validchars: # valid char pressed?
+            event.Skip()
+            self.TestValid(tc)
+            return
+        if not wx.Validator_IsSilent():
+            wx.Bell()
+        return  # Returning without calling event.Skip, which eats the keystroke
+################################################################################
+class EnumSelector(wx.ComboBox):
+    '''A customized :class:`wxpython.ComboBox` that selects items from a list
+    of choices, but sets a dict (list) entry to the corresponding
+    entry from the input list of values.
+
+    :param wx.Panel parent: the parent to the :class:`~wxpython.ComboBox` (usually a
+      frame or panel)
+    :param dict dct: a dict (or list) to contain the value set
+      for the :class:`~wxpython.ComboBox`.
+    :param item: the dict key (or list index) where ``dct[item]`` will 
+      be set to the value selected in the :class:`~wxpython.ComboBox`. Also, dct[item]
+      contains the starting value shown in the widget. If the value
+      does not match an entry in :data:`values`, the first value
+      in :data:`choices` is used as the default, but ``dct[item]`` is
+      not changed.    
+    :param list choices: a list of choices to be displayed to the
+      user such as
+      ::
+      
+      ["default","option 1","option 2",]
+
+      Note that these options will correspond to the entries in 
+      :data:`values` (if specified) item by item. 
+    :param list values: a list of values that correspond to
+      the options in :data:`choices`, such as
+      ::
+      
+      [0,1,2]
+      
+      The default for :data:`values` is to use the same list as
+      specified for :data:`choices`.
+    :param (other): additional keyword arguments accepted by
+      :class:`~wxpython.ComboBox` can be specified.
+    '''
+    def __init__(self,parent,dct,item,choices,values=None,**kw):
+        if values is None:
+            values = choices
+        if dct[item] in values:
+            i = values.index(dct[item])
+        else:
+            i = 0
+        startval = choices[i]
+        wx.ComboBox.__init__(self,parent,wx.ID_ANY,startval,
+                             choices = choices,
+                             style=wx.CB_DROPDOWN|wx.CB_READONLY,
+                             **kw)
+        self.choices = choices
+        self.values = values
+        self.dct = dct
+        self.item = item
+        self.Bind(wx.EVT_COMBOBOX, self.onSelection)
+    def onSelection(self,event):
+        # respond to a selection by setting the enum value in the CIF dictionary
+        if self.GetValue() in self.choices: # should always be true!
+            self.dct[self.item] = self.values[self.choices.index(self.GetValue())]
+        else:
+            self.dct[self.item] = self.values[0] # unknown
+
+################################################################################    
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250)):
     '''Shell routine to call a ScrolledMultiEditor dialog. See
     :class:`ScrolledMultiEditor` for parameter definitions.
 
     :returns: True if the OK button is pressed; False if the window is closed
-      with the system menu or the Close button.
+      with the system menu or the Cancel button.
 
     '''
     dlg = ScrolledMultiEditor(parent,dictlst,elemlst,prelbl,postlbl,
@@ -585,7 +764,12 @@ class ScrolledMultiEditor(wx.Dialog):
             self,parent,wx.ID_ANY,title,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        # ad a header if supplied
+        self.orig = []
+        self.dictlst = dictlst
+        self.elemlst = elemlst
+        for d,i in zip(dictlst,elemlst):
+            self.orig.append(d[i])
+        # add a header if supplied
         if header:
             subSizer = wx.BoxSizer(wx.HORIZONTAL)
             subSizer.Add((-1,-1),1,wx.EXPAND)
@@ -621,13 +805,11 @@ class ScrolledMultiEditor(wx.Dialog):
         panel.SetupScrolling()
         mainSizer.Add(panel,1, wx.ALL|wx.EXPAND,1)
 
-        # Sizer for OK/Close buttons. N.B. using Close rather than Cancel because
-        # Cancel would imply that the changes should be discarded. In fact
-        # any valid changes are retained, unless one makes a copy of the
-        # input dicts & lists and restores them.
+        # Sizer for OK/Close buttons. N.B. on Close changes are discarded
+        # by restoring the initial values
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btnsizer.Add(self.OKbtn)
-        btn = wx.Button(self, wx.ID_CLOSE) 
+        btn = wx.Button(self, wx.ID_CLOSE,"Cancel") 
         btn.Bind(wx.EVT_BUTTON,self._onClose)
         btnsizer.Add(btn)
         mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
@@ -637,7 +819,9 @@ class ScrolledMultiEditor(wx.Dialog):
         self.SetMinSize(self.GetSize())
 
     def _onClose(self,event):
-        'Close the window'
+        'Restore original values & close the window'
+        for d,i,v in zip(self.dictlst,self.elemlst,self.orig):
+            d[i] = v
         self.EndModal(wx.ID_CANCEL)
         
     def ControlOKButton(self,setvalue):
@@ -994,7 +1178,8 @@ class SingleStringDialog(wx.Dialog):
     '''
     def __init__(self,parent,title,prompt,value='',size=(200,-1)):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+                           pos=wx.DefaultPosition,
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.value = value
         self.prompt = prompt
         self.CenterOnParent()
@@ -1374,7 +1559,10 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
                                    '. Press OK to start an update:',
                                    'GSAS-II Updates',
                                    wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK: return
+            if dlg.ShowModal() != wx.ID_OK:
+                dlg.Destroy()
+                return
+        dlg.Destroy()
         print 'start updates'
         dlg = wx.MessageDialog(self.frame,
                                'Your project will now be saved, GSAS-II will exit and an update '

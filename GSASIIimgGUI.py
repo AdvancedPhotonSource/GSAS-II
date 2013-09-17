@@ -44,11 +44,6 @@ def UpdateImageControls(G2frame,data,masks):
     data tree entry
     '''
     import ImageCalibrants as calFile
-    try:
-        import UserCalibrants as userFile
-        calFile.Calibrants.update(userFile.Calibrants)
-    except:
-        pass
 #patch
     if 'GonioAngles' not in data:
         data['GonioAngles'] = [0.,0.,0.]

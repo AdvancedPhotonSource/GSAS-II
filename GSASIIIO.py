@@ -26,6 +26,7 @@ import math
 import numpy as np
 import cPickle
 import sys
+import re
 import random as ran
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -52,6 +53,19 @@ def sint(S):
         return int(S)
     else:
         return 0
+
+
+def trim(val):
+    '''Simplify a string containing leading and trailing spaces
+    as well as newlines, tabs, repeated spaces etc. into a shorter and
+    more simple string, by replacing all ranges of whitespace
+    characters with a single space. 
+
+    :param str val: the string to be simplified
+
+    :returns: the (usually) shortened version of the string
+    '''
+    return re.sub('\s+', ' ', val).strip()
 
 def makeInstDict(names,data,codes):
     inst = dict(zip(names,zip(data,data,codes)))

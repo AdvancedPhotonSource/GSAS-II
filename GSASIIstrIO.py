@@ -1761,6 +1761,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 hId = Histogram['hId']
                 hfx = ':%d:'%(hId)
                 for item in inst:
+                    if type(inst) is not list: continue # skip over non-refined items (such as InstName)
                     hapDict[hfx+item] = inst[item][1]
                 pfx = str(pId)+':'+str(hId)+':'
                 hapDict[pfx+'Scale'] = hapData['Scale'][0]

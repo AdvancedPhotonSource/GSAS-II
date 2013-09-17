@@ -24,6 +24,7 @@ GSASIIpath.SetVersionNumber("$Revision: 1006 $")
 import GSASIIIO as G2IO
 #reload(G2IO)
 import GSASIIgrid as G2gd
+reload(G2gd)
 import GSASIIstrIO as G2stIO
 #reload(G2stIO)
 #import GSASIImapvars as G2mv
@@ -35,7 +36,7 @@ import GSASIIspc as G2spc
 import GSASIIphsGUI as G2pg
 #reload(G2pg)
 import GSASIIstrMain as G2stMn
-reload(G2stMn)
+#reload(G2stMn)
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
@@ -65,6 +66,7 @@ class ExportCIF(G2IO.ExportBaseclass):
           "simple" for a simple CIF with only coordinates
         '''
     
+        # ===== define functions for export method =======================================
         def openCIF(filnam):
             if DEBUG:
                 self.fp = sys.stdout
@@ -114,7 +116,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             #WriteCIFitem('_refine_ls_shift/su_mean',DAT2)
             #WriteCIFitem('_refine_diff_density_max',rhomax)    #these need to be defined for each phase!
             #WriteCIFitem('_refine_diff_density_min',rhomin)
-            WriteCIFitem('_computing_structure_refinement','GSAS-II (Toby & Von Dreele, 2013)')
+            WriteCIFitem('_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
             try:
                 vars = str(len(self.OverallParms['Covariance']['varyList']))
             except:
@@ -853,18 +855,16 @@ class ExportCIF(G2IO.ExportBaseclass):
                 lam2 = self.parmDict.get('Lam2',inst['Lam2'][1])
                 slam2 = self.sigDict.get('Lam2',-0.00009)
                 # always assume Ka1 & Ka2 if two wavelengths are present
+                WriteCIFitem('_diffrn_radiation_type','K\\a~1,2~')
                 WriteCIFitem('loop_' + 
                              '\n\t_diffrn_radiation_wavelength' +
                              '\n\t_diffrn_radiation_wavelength_wt' + 
-                             '\n\t_diffrn_radiation_type' + 
                              '\n\t_diffrn_radiation_wavelength_id')
                 WriteCIFitem('  ' + PutInCol(G2mth.ValEsd(lam1,slam1),15)+
                              PutInCol('1.0',15) + 
-                             PutInCol('K\\a~1~',10) + 
                              PutInCol('1',5))
                 WriteCIFitem('  ' + PutInCol(G2mth.ValEsd(lam2,slam2),15)+
                              PutInCol(G2mth.ValEsd(ratio,sratio),15)+
-                             PutInCol('K\\a~2~',10) + 
                              PutInCol('2',5))                
             else:
                 lam1 = self.parmDict.get('Lam',inst['Lam'][1])
@@ -902,24 +902,29 @@ class ExportCIF(G2IO.ExportBaseclass):
                             '  '+G2mth.ValEsd(wtFr,sig)
                             )
                     WriteCIFitem('loop_' +
-                                 '\n\t_pd_proc_ls_R_F_factor' +
-                                 '\n\t_pd_proc_ls_R_Fsqd_factor')
+                                 '\n\t_gsas_proc_phase_R_F_factor' +
+                                 '\n\t_gsas_proc_phase_R_Fsqd_factor' +
+                                 '\n\t_gsas_proc_phase_id' +
+                                 '\n\t_gsas_proc_phase_block_id')
                     for phasenam in phasebyhistDict.get(histlbl):
                         pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
                         WriteCIFitem(
                             '  '+
                             '  '+G2mth.ValEsd(histblk[pfx+'Rf']/100.,-.00009) +
-                            '  '+G2mth.ValEsd(histblk[pfx+'Rf^2']/100.,-.00009)
+                            '  '+G2mth.ValEsd(histblk[pfx+'Rf^2']/100.,-.00009)+
+                            '  '+str(self.Phases[phasenam]['pId'])+
+                            '  '+datablockidDict[phasenam]
                             )
             else:
+                # single phase in this histogram
                 pfx = '0:'+str(hId)+':'
-                WriteCIFitem('_pd_proc_ls_R_F_factor      ','%.5f'%(histblk[pfx+'Rf']/100.))
-                WriteCIFitem('_pd_proc_ls_R_Fsqd_factor   ','%.5f'%(histblk[pfx+'Rf^2']/100.))
+                WriteCIFitem('_refine_ls_R_F_factor      ','%.5f'%(histblk[pfx+'Rf']/100.))
+                WriteCIFitem('_refine_ls_R_Fsqd_factor   ','%.5f'%(histblk[pfx+'Rf^2']/100.))
                 
             WriteCIFitem('_pd_proc_ls_prof_R_factor   ','%.5f'%(histblk['R']/100.))
             WriteCIFitem('_pd_proc_ls_prof_wR_factor  ','%.5f'%(histblk['wR']/100.))
-            WriteCIFitem('_pd_proc_ls_prof_R_B_factor ','%.5f'%(histblk['Rb']/100.))
-            WriteCIFitem('_pd_proc_ls_prof_wR_B_factor','%.5f'%(histblk['wRb']/100.))
+            WriteCIFitem('_gsas_proc_ls_prof_R_B_factor ','%.5f'%(histblk['Rb']/100.))
+            WriteCIFitem('_gsas_proc_ls_prof_wR_B_factor','%.5f'%(histblk['wRb']/100.))
             WriteCIFitem('_pd_proc_ls_prof_wR_expected','%.5f'%(histblk['wRmin']/100.))
 
             if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
@@ -1144,8 +1149,88 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('_reflns_wR_factor_obs    ','%.4f'%(histblk['wR']/100.))
             WriteCIFitem('_reflns_R_F_factor_obs   ','%.4f'%(histblk[pfx+'Rf']/100.))
             WriteCIFitem('_reflns_R_Fsqd_factor_obs','%.4f'%(histblk[pfx+'Rf^2']/100.))
+        def EditAuthor(event=None):
+            'Edit the CIF author name'
+            dlg = G2gd.SingleStringDialog(self.G2frame,
+                                          'Get CIF Author',
+                                          'Provide CIF Author name (Last, First)',
+                                          value=self.author)
+            if not dlg.Show():
+                dlg.Destroy()
+                return False  # cancel was pressed
+            self.author = dlg.GetValue()
+            dlg.Destroy()
+            try:
+                self.OverallParms['Controls']["Author"] = self.author # save for future
+            except KeyError:
+                pass
+            return True
+        def EditInstNames(event=None,msg=''):
+            'Provide a dialog for editing instrument names'
+            dictlist = []
+            keylist = []
+            lbllist = []
+            for hist in self.Histograms:
+                if hist.startswith("PWDR"): 
+                    key2 = "Sample Parameters"
+                    d = self.Histograms[hist][key2]
+                elif hist.startswith("HKLF"): 
+                    key2 = "Instrument Parameters"
+                    d = self.Histograms[hist][key2][0]
+                    
+                lbllist.append(hist)
+                dictlist.append(d)
+                keylist.append('InstrName')
+                instrname = d.get('InstrName')
+                if instrname is None:
+                    d['InstrName'] = ''
+            return G2gd.CallScrolledMultiEditor(
+                self.G2frame,dictlist,keylist,
+                prelbl=range(1,len(dictlist)+1),
+                postlbl=lbllist,
+                title='Instrument names',
+                header="Edit instrument names. Note that a non-blank\nname is required for all histograms"+msg)
+        def EditCIFDefaults(parent):
+            import wx.lib.scrolledpanel as wxscroll
+            cfrm = wx.Dialog(parent,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+            cfrm.SetTitle('child')
+            vbox = wx.BoxSizer(wx.VERTICAL)
+            cpnl = wxscroll.ScrolledPanel(cfrm,size=(300,300))
+            cbox = wx.BoxSizer(wx.VERTICAL)
+            but = wx.Button(cpnl, wx.ID_ANY,'Edit CIF Author')
+            but.Bind(wx.EVT_BUTTON,EditAuthor)
+            cbox.Add(but,0,wx.ALIGN_CENTER,3)
+            but = wx.Button(cpnl, wx.ID_ANY,'Edit Instrument Name(s)')
+            but.Bind(wx.EVT_BUTTON,EditInstNames)
+            cbox.Add(but,0,wx.ALIGN_CENTER,3)
 
-        #============================================================
+            cpnl.SetSizer(cbox)
+            cpnl.SetAutoLayout(1)
+            cpnl.SetupScrolling()
+            #cpnl.Bind(rw.EVT_RW_LAYOUT_NEEDED, self.OnLayoutNeeded)
+            cpnl.Layout()
+
+            vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 0)
+            btnsizer = wx.StdDialogButtonSizer()
+            btn = wx.Button(cfrm, wx.ID_OK, "Create CIF")
+            btn.SetDefault()
+            btnsizer.AddButton(btn)
+            btn = wx.Button(cfrm, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+            btnsizer.Realize()
+            vbox.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+            cfrm.SetSizer(vbox)
+            vbox.Fit(cfrm)
+            if cfrm.ShowModal() == wx.ID_OK:
+                val = True
+            else:
+                val = False
+            cfrm.Destroy()
+            return val            
+
+        # ===== end of functions for export method =======================================
+        #=================================================================================
+
         # the export process starts here
         # load all of the tree into a set of dicts
         self.loadTree()
@@ -1170,21 +1255,23 @@ class ExportCIF(G2IO.ExportBaseclass):
             elif hist.startswith("HKLF"): 
                 self.xtalDict[i] = hist
         # is there anything to export?
-        if len(self.Phases) + len(self.powderDict) + len(self.xtalDict) == 0: 
-            self.G2frame.ErrorDialog(
-                'Empty project',
-                'No data or phases to include in CIF')
-            return
-        # is there a file name defined?
+        if len(self.Phases) == len(self.powderDict) == len(self.xtalDict) == 0:
+           self.G2frame.ErrorDialog(
+               'Empty project',
+               'Project does not contain interconnected data & phase(s)')
+           return
+        # get the project file name
         self.CIFname = os.path.splitext(
             os.path.split(self.G2frame.GSASprojectfile)[1]
             )[0]
         self.CIFname = self.CIFname.replace(' ','')
-        if not self.CIFname:
-            self.G2frame.ErrorDialog(
-                'No GPX name',
-                'Please save the project to provide a name')
-            return
+        if not self.CIFname: # none defined & needed, save as GPX to get one
+            self.G2frame.OnFileSaveas(None)
+            if not self.G2frame.GSASprojectfile: return
+            self.CIFname = os.path.splitext(
+                os.path.split(self.G2frame.GSASprojectfile)[1]
+                )[0]
+            self.CIFname = self.CIFname.replace(' ','')
         # test for quick CIF mode or no data
         self.quickmode = False
         phasenam = phasenum = None # include all phases
@@ -1216,21 +1303,11 @@ class ExportCIF(G2IO.ExportBaseclass):
         except KeyError:
             pass
         while not (self.author or self.quickmode):
-            dlg = G2gd.SingleStringDialog(self.G2frame,'Get CIF Author','Provide CIF Author name (Last, First)')
-            if not dlg.Show(): return # cancel was pressed
-            self.author = dlg.GetValue()
-            dlg.Destroy()
-        try:
-            self.OverallParms['Controls']["Author"] = self.author # save for future
-        except KeyError:
-            pass
+            if not EditAuthor(): return
         self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
 
-        # check the instrument name for every histogram
+        # check there is an instrument name for every histogram
         if not self.quickmode:
-            dictlist = []
-            keylist = []
-            lbllist = []
             invalid = 0
             key3 = 'InstrName'
             for hist in self.Histograms:
@@ -1239,11 +1316,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     d = self.Histograms[hist][key2]
                 elif hist.startswith("HKLF"): 
                     key2 = "Instrument Parameters"
-                    d = self.Histograms[hist][key2][0]
-                    
-                lbllist.append(hist)
-                dictlist.append(d)
-                keylist.append(key3)
+                    d = self.Histograms[hist][key2][0]                    
                 instrname = d.get(key3)
                 if instrname is None:
                     d[key3] = ''
@@ -1257,17 +1330,25 @@ class ExportCIF(G2IO.ExportBaseclass):
                     "one histogram for each instrument and use the\n"
                     "File/Copy option to duplicate the name"
                     )
-                if not G2gd.CallScrolledMultiEditor(
-                    self.G2frame,dictlist,keylist,
-                    prelbl=range(1,len(dictlist)+1),
-                    postlbl=lbllist,
-                    title='Instrument names',
-                    header="Edit instrument names. Note that a non-blank\nname is required for all histograms"+msg,
-                    ): return
+                if not EditInstNames(msg=msg): return
+        # check for a distance-angle range search range for each phase
+        if not self.quickmode:
+            for phasenam in sorted(self.Phases.keys()):
+                i = self.Phases[phasenam]['pId']
+                phasedict = self.Phases[phasenam] # pointer to current phase info            
+                generalData = phasedict['General']
+                if 'DisAglCtls' not in generalData:
+                    dlg = G2gd.DisAglDialog(self.G2frame,{},generalData)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        generalData['DisAglCtls'] = dlg.GetData()
+                    else:
+                        dlg.Destroy()
+                        return
+                    dlg.Destroy()
 
         if oneblock and not self.quickmode:
             # select a dataset to use (there should only be one set in one block,
-            # but take whatever comes 1st
+            # but take whatever comes 1st)
             for hist in self.Histograms:
                 histblk = self.Histograms[hist]
                 if hist.startswith("PWDR"): 
@@ -1281,10 +1362,12 @@ class ExportCIF(G2IO.ExportBaseclass):
         else:
             fil = self.defSaveFile()
         if not fil: return
-        openCIF(fil)
+        if not self.quickmode: # give the user a chance to edit all defaults
+            if not EditCIFDefaults(self.G2frame): return
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================
+        openCIF(fil)
         if oneblock:
             WriteCIFitem('data_'+self.CIFname)
             if phasenam is None: # if not already selected, select the first phase (should be one) 

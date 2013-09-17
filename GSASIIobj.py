@@ -609,6 +609,7 @@ class VarName(object):
     :param int atomnum: The number for the atom
     
     '''
+    import re
     IDdict = {}
     IDdict['phases'] = {}
     IDdict['hists'] = {}

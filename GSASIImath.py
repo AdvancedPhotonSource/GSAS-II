@@ -2178,21 +2178,6 @@ class log_sa(base_schedule):        #OK
         self.k += 1
         self.T = self.T0*self.slope**self.k
         
-class Tremayne_sa(base_schedule):   #needs fixing for two steps
-
-    def init(self,**options):
-        self.__dict__.update(options)
-
-#    def update_guess(self,x0):
-#        x0 = np.asarray(x0)
-#        u = np.squeeze(np.random.uniform(0.,1.,size=self.dims))
-#        xnew = x0+u
-#        return xnew        
-    
-    def update_temp(self):
-        self.k += 1
-        self.T = self.T0*self.slope**k
-    
 class _state(object):
     def __init__(self):
         self.x = None

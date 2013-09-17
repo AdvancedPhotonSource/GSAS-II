@@ -1880,8 +1880,8 @@ class DataFrame(wx.Frame):
             text='Clear map')
         self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing',id=wxID_SINGLEMCSA, kind=wx.ITEM_NORMAL,
             text='MC/SA')
-#        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on multiprocessors',id=wxID_MULTIMCSA, kind=wx.ITEM_NORMAL,
-#            text='Multi MC/SA')            #currently not useful
+        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on multiprocessors',id=wxID_MULTIMCSA, kind=wx.ITEM_NORMAL,
+            text='Multi MC/SA')            #currently not useful
         self.PostfillDataMenu()
         
         # Phase / Data tab

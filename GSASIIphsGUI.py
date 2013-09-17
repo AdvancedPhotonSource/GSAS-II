@@ -751,13 +751,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             Achoice = ['log','fast']                #these work
-#            Achoice = ['log','fast','cauchy','boltzmann','Tremayne']
+#            Achoice = ['log','fast','cauchy','boltzmann']
             line3Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
             Alist = wx.ComboBox(General,-1,value=MCSAdata['Algorithm'],choices=Achoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Alist.Bind(wx.EVT_COMBOBOX,OnAlist)
             line3Sizer.Add(Alist,0,wx.ALIGN_CENTER_VERTICAL)
-            if MCSAdata['Algorithm'] in ['Tremayne','fast','boltzmann','cauchy']:
+            if MCSAdata['Algorithm'] in ['fast','boltzmann','cauchy']:
                 Names = [' A-jump: ',' B-jump: ']
                 parms = 'Jump coeff'
                 if MCSAdata['Algorithm'] in ['boltzmann','cauchy']:
@@ -4051,7 +4051,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnOriVal(event):
                 Obj = event.GetEventObject()
                 model,ix,ObjA,ObjV = Indx[Obj.GetId()]
-                A,V = G2mth.Q2AVdeg(model['Ori'][0])
+                A = model['Ori'][0][0]
+                V = model['Ori'][0][1:]
                 if ix:
                     Anew = A
                     Vec = ObjV.GetValue().split()
@@ -4065,8 +4066,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Anew = float(ObjA.GetValue())
                     except ValueError:
                         Anew = A
-                model['Ori'][0] = G2mth.AVdeg2Q(Anew,Vnew)
-                A,V = G2mth.Q2AVdeg(model['Ori'][0])
+                Q = G2mth.AVdeg2Q(Anew,Vnew)
+                A,V = G2mth.Q2AVdeg(Q)
+                model['Ori'][0][0] = A
+                model['Ori'][0][1:] = V
                 if ix:
                     ObjV.SetValue('%.3f %.3f %.3f'%(V[0],V[1],V[2]))
                 else:
@@ -5001,6 +5004,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)
             UpdateGeneral()
         elif text == 'Data':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)

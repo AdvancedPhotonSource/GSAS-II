@@ -2562,8 +2562,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     RBRes = RBdata['Residue'][parmDict[pfx+'RBId']]
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
-                        tName = pfx+'Tor'+str(itor)
-                        QuatA = AVdeg2Q(parmDict[tName],Cart[seq[0]]-Cart[seq[1]])
+                        QuatA = AVdeg2Q(parmDict[pfx+'Tor'+str(itor)],Cart[seq[0]]-Cart[seq[1]])
                         for ride in seq[3]:
                             Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
                 if parmDict[pfx+'MolCent'][1]:
@@ -2629,9 +2628,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             delt-F*rcov*delt-F/sum(Fo^2)^2
         '''       
         global tsum
-        t0 = time.time()
         parmDict.update(dict(zip(varyList,values)))             #update parameter tables
+        t0 = time.time()
         Xdata = GetAtomTX(RBdata,parmDict)[1]                   #get new atom coords from RB
+        tsum += (time.time()-t0)
         allX = getAllX(Xdata,SGM,SGT)                           #fill unit cell - dups. OK
         MDval = parmDict['0:MDval']                             #get March-Dollase coeff
         MDaxis = parmDict['0:MDaxis']
@@ -2648,7 +2648,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         refList[5] *= scale
         refList[6] = refList[4]-refList[5]
         M = np.inner(refList[6],np.inner(rcov,refList[6]))
-        tsum += (time.time()-t0)
 #        print M,parmDict['sumFosq'],np.sum(refList[6]**2),np.sum(refList[4]**2)
 #        print np.sum(refList[6]**2)/np.sum(refList[4]**2)
         return M/np.sum(refList[4]**2)
@@ -2731,7 +2730,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         Rnorm = np.outer(Rdiag,Rdiag)
         rcov /= Rnorm
     elif 'Pawley' in reflName:  #need a bail out if Pawley cov matrix doesn't exist.
-        covMatrix = covData['covMatrix']
         vList = covData['varyList']
         for iref,refI in enumerate(reflData):
             h,k,l,m,d,v,f,s = refI
@@ -2742,27 +2740,33 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 sumFosq += f*m
         nRef = len(refs)
         pfx = str(data['pId'])+'::PWLref:'
-        rcov = np.zeros((nRef,nRef))        
-        for iref,refI in enumerate(refs):
-            I = refI[5]
-            nameI = pfx+str(I)
-            if nameI in vList:
-                Iindx = vList.index(nameI)
-                rcov[iref][iref] = covMatrix[Iindx][Iindx]
-                for jref,refJ in enumerate(refs[:iref]):
-                    J = refJ[5]
-                    nameJ = pfx+str(J)
-                    try:
-                        rcov[iref][jref] = covMatrix[vList.index(nameI)][vList.index(nameJ)]
-                    except ValueError:
-                        rcov[iref][jref] = rcov[iref][jref-1]
-            else:
-                rcov[iref] = rcov[iref-1]
-                rcov[iref][iref] = rcov[iref-1][iref-1]
-        rcov += (rcov.T-np.diagflat(np.diagonal(rcov)))
-        Rdiag = np.sqrt(np.diag(rcov))
-        Rnorm = np.outer(Rdiag,Rdiag)
-        rcov /= Rnorm
+        if covData['freshCOV'] and generalData['doPawley']:
+            covMatrix = covData['covMatrix']
+            rcov = np.zeros((nRef,nRef))        
+            for iref,refI in enumerate(refs):
+                I = refI[5]
+                nameI = pfx+str(I)
+                if nameI in vList:
+                    Iindx = vList.index(nameI)
+                    rcov[iref][iref] = covMatrix[Iindx][Iindx]
+                    for jref,refJ in enumerate(refs[:iref]):
+                        J = refJ[5]
+                        nameJ = pfx+str(J)
+                        try:
+                            rcov[iref][jref] = covMatrix[vList.index(nameI)][vList.index(nameJ)]
+                        except ValueError:
+                            rcov[iref][jref] = rcov[iref][jref-1]
+                else:
+                    rcov[iref] = rcov[iref-1]
+                    rcov[iref][iref] = rcov[iref-1][iref-1]
+            rcov += (rcov.T-np.diagflat(np.diagonal(rcov)))
+            Rdiag = np.sqrt(np.diag(rcov))
+            Rnorm = np.outer(Rdiag,Rdiag)
+            rcov /= Rnorm
+            MCSA['rcov'] = rcov
+            covData['freshCOV'] = False
+        else:
+            rcov = MCSA['rcov']
     elif 'HKLF' in reflName:
         for ref in reflData:
             [h,k,l,m,d],f = ref[:5],ref[6]

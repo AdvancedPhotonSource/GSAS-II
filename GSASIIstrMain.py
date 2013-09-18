@@ -178,7 +178,7 @@ def Refine(GPXfile,dlg):
     covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                'varyListStart':varyListStart,
                'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
-               'newCellDict':newCellDict}
+               'newCellDict':newCellDict,'freshCOV':True}
     # add the uncertainties into the esd dictionary (sigDict)
     sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
     G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)

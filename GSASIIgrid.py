@@ -227,11 +227,13 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.OKcontrol=OKcontrol
         self.OnLeave = OnLeave
         self.CIFinput = CIFinput
+        self.type = str
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
         self.evaluated = False # set to True when the validator recognizes an expression
         val = loc[key]
         if isinstance(val,int) or typeHint is int:
+            self.type = int
             wx.TextCtrl.__init__(
                 self,parent,wx.ID_ANY,
                 validator=NumberValidator(int,result=loc,key=key,
@@ -240,19 +242,13 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                           CIFinput=CIFinput),
                 **kw)
             if val is not None:
-                self.SetValue(str(val))
-                try:
-                    int(val)
-                except:
-                    if CIFinput and (val == '?' or val == '.'):
-                        pass
-                    else:
-                        self.invalid = True
-                        self._IndicateValidity()
+                self.SetValue(val)
             else: # no default is invalid for a number
-                self.ShowStringValidity()
+                self.invalid = True
+                self._IndicateValidity()
 
         elif isinstance(val,float) or typeHint is float:
+            self.type = float
             wx.TextCtrl.__init__(
                 self,parent,wx.ID_ANY,
                 validator=NumberValidator(float,result=loc,key=key,
@@ -261,17 +257,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                           CIFinput=CIFinput),
                 **kw)
             if val is not None:
-                self.SetValue(str(val))
-                try:
-                    float(val)
-                except:
-                    if CIFinput and (val == '?' or val == '.'):
-                        pass
-                    else:
-                        self.invalid = True
-                        self._IndicateValidity()
+                self.SetValue(val)
             else:
-                self.ShowStringValidity()
+                self.invalid = True
+                self._IndicateValidity()
+
         elif isinstance(val,str) or isinstance(val,unicode):
             if self.CIFinput:
                 wx.TextCtrl.__init__(
@@ -291,12 +281,43 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         else:
             raise Exception,("ValidatedTxtCtrl error: Unknown element ("+str(key)+
                              ") type: "+str(type(val)))
-#        if size: self.SetSize(size)
         # When the mouse is moved away or the widget loses focus
         # display the last saved value, if an expression
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLoseFocus)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
 
+    def SetValue(self,val):
+        self.invalid = False
+        if self.type is int:
+            try:
+                if int(val) != val:
+                    self.invalid = True
+                else:
+                    val = int(val)
+            except:
+                if self.CIFinput and (val == '?' or val == '.'):
+                    pass
+                else:
+                    self.invalid = True
+            wx.TextCtrl.SetValue(self,str(val))
+        elif self.type is float:
+            try:
+                float(val)
+            except:
+                if self.CIFinput and (val == '?' or val == '.'):
+                    pass
+                else:
+                    self.invalid = True
+            wx.TextCtrl.SetValue(self,str(val))
+        else:
+            wx.TextCtrl.SetValue(self,str(val))
+            self.ShowStringValidity() # test if valid input
+            return
+        
+        self._IndicateValidity()
+        if self.OKcontrol:
+            self.OKcontrol(not self.invalid)
+        
     def _onStringKey(self,event):
         event.Skip()
         if self.invalid: # check for validity after processing the keystroke
@@ -336,7 +357,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         elif self.OKcontrol and previousInvalid:
             self.OKcontrol(True)
         # always store the result
-        if self.CIFinput:
+        if self.CIFinput: # for CIF make results ASCII
             self.result[self.key] = val.encode('ascii','replace') 
         else:
             self.result[self.key] = val
@@ -429,8 +450,6 @@ class NumberValidator(wx.PyValidator):
                                result=self.result, key=self.key,
                                OKcontrol=self.OKcontrol,
                                CIFinput=self.CIFinput)
-        tc = self.GetWindow()
-        tc.invalid = False # make sure the validity flag is defined in parent
     def TransferToWindow(self):
         'Needed by validator, strange, but required component'
         return True # Prevent wxDialog from complaining.
@@ -468,10 +487,16 @@ class NumberValidator(wx.PyValidator):
             else: 
                 tc.invalid = True
                 return
-        if self.max != None and self.typ == int:
+        # if self.max != None and self.typ == int:
+        #     if val > self.max:
+        #         tc.invalid = True
+        # if self.min != None and self.typ == int:
+        #     if val < self.min:
+        #         tc.invalid = True  # invalid
+        if self.max != None:
             if val > self.max:
                 tc.invalid = True
-        if self.max != None and self.typ == int:
+        if self.min != None:
             if val < self.min:
                 tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
@@ -512,7 +537,7 @@ class NumberValidator(wx.PyValidator):
         tc = self.GetWindow()
         self.TestValid(tc)
         self.ShowValidity(tc)
-        # if invalid and
+        # if invalid
         if tc.invalid and self.OKcontrol:
             self.OKcontrol(False)
         if not tc.invalid and self.OKcontrol and previousInvalid:
@@ -523,8 +548,8 @@ class NumberValidator(wx.PyValidator):
         ignores keys that are not allowed for int and float types
         '''
         key = event.GetKeyCode()
+        tc = self.GetWindow()
         if key == wx.WXK_RETURN:
-            tc = self.GetWindow()
             if tc.invalid:
                 self.CheckInput(True) 
             else:
@@ -532,7 +557,6 @@ class NumberValidator(wx.PyValidator):
             return
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
             event.Skip()
-            tc = self.GetWindow()
             if tc.invalid:
                 wx.CallAfter(self.CheckInput,True) 
             else:
@@ -540,14 +564,12 @@ class NumberValidator(wx.PyValidator):
             return
         elif chr(key) in self.validchars: # valid char pressed?
             event.Skip()
-            tc = self.GetWindow()
             if tc.invalid:
                 wx.CallAfter(self.CheckInput,True) 
             else:
                 wx.CallAfter(self.CheckInput,False) 
             return
-        if not wx.Validator_IsSilent():
-            wx.Bell()
+        if not wx.Validator_IsSilent(): wx.Bell()
         return  # Returning without calling event.Skip, which eats the keystroke
 
 ################################################################################
@@ -676,7 +698,8 @@ class EnumSelector(wx.ComboBox):
 
 ################################################################################    
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
-                 title='Edit items',header='',size=(300,250)):
+                 title='Edit items',header='',size=(300,250),
+                             CopyButton=False):
     '''Shell routine to call a ScrolledMultiEditor dialog. See
     :class:`ScrolledMultiEditor` for parameter definitions.
 
@@ -685,7 +708,8 @@ def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
 
     '''
     dlg = ScrolledMultiEditor(parent,dictlst,elemlst,prelbl,postlbl,
-                              title,header,size)
+                              title,header,size,
+                              CopyButton)
     if dlg.ShowModal() == wx.ID_OK:
         dlg.Destroy()
         return True
@@ -730,6 +754,9 @@ class ScrolledMultiEditor(wx.Dialog):
       size for the scrolled region of the dialog. The default is
       (300,250). 
 
+    :param bool CopyButton: if True adds a small button that copies the
+      value for the current row to all fields below (default is False)
+      
     :returns: the wx.Dialog created here. Use method .ShowModal() to display it.
     
     *Example for use of ScrolledMultiEditor:*
@@ -757,7 +784,8 @@ class ScrolledMultiEditor(wx.Dialog):
     '''
     
     def __init__(self,parent,dictlst,elemlst,prelbl=[],postlbl=[],
-                 title='Edit items',header='',size=(300,250)):
+                 title='Edit items',header='',size=(300,250),
+                 CopyButton=False):
         if len(dictlst) != len(elemlst):
             raise Exception,"ScrolledMultiEditor error: len(dictlst) != len(elemlst) "+str(len(dictlst))+" != "+str(len(elemlst))
         wx.Dialog.__init__( # create dialog & sizer
@@ -767,6 +795,7 @@ class ScrolledMultiEditor(wx.Dialog):
         self.orig = []
         self.dictlst = dictlst
         self.elemlst = elemlst
+        self.ButtonIndex = {}
         for d,i in zip(dictlst,elemlst):
             self.orig.append(d[i])
         # add a header if supplied
@@ -784,13 +813,25 @@ class ScrolledMultiEditor(wx.Dialog):
             self, wx.ID_ANY,
             size=size,
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        subSizer = wx.FlexGridSizer(rows=len(dictlst),cols=3,hgap=2,vgap=2)
+        cols = 3
+        if CopyButton: cols += 1
+        subSizer = wx.FlexGridSizer(rows=len(dictlst),cols=cols,hgap=2,vgap=2)
         self.ValidatedControlsList = [] # make list of TextCtrls
         for i,(d,k) in enumerate(zip(dictlst,elemlst)):
             if i >= len(prelbl): # label before TextCtrl, or put in a blank
                 subSizer.Add((-1,-1)) 
             else:
                 subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(prelbl[i])))
+            if CopyButton:
+                import wx.lib.colourselect as wscs
+                but = wscs.ColourSelect(label=u'\u2193', parent=panel,
+                                        colour=(255,255,200),
+                                        size=wx.Size(30,23),
+                                        style=wx.RAISED_BORDER)
+                but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
+                but.SetToolTipString('Press to copy adjacent value to all rows below')
+                self.ButtonIndex[but] = i
+                subSizer.Add(but)
             # create the validated TextCrtl, store it and add it to the sizer
             ctrl = ValidatedTxtCtrl(panel,d,k,OKcontrol=self.ControlOKButton)
             self.ValidatedControlsList.append(ctrl)
@@ -817,6 +858,19 @@ class ScrolledMultiEditor(wx.Dialog):
         self.SetSizer(mainSizer)
         mainSizer.Fit(self)
         self.SetMinSize(self.GetSize())
+
+    def _OnCopyButton(self,event):
+        'Implements the copy down functionality'
+        but = event.GetEventObject()
+        n = self.ButtonIndex.get(but)
+        if n is None: return
+        for i,(d,k,ctrl) in enumerate(zip(self.dictlst,self.elemlst,self.ValidatedControlsList)):
+            if i < n: continue
+            if i == n:
+                val = d[k]
+                continue
+            d[k] = val
+            ctrl.SetValue(val)
 
     def _onClose(self,event):
         'Restore original values & close the window'
@@ -3416,15 +3470,15 @@ if __name__ == '__main__':
     dictlst = len(elemlst)*[Data1,]
 
     Data2 = list(range(100))
-    elemlst += range(2,60)
-    postlbl += range(2,60)
-    dictlst += len(range(2,60))*[Data2,]
+    elemlst += range(2,6)
+    postlbl += range(2,6)
+    dictlst += len(range(2,6))*[Data2,]
 
     prelbl = range(len(elemlst))
     postlbl[1] = "a very long label for the 2nd item to force a horiz. scrollbar"
     header="""This is a longer\nmultiline and perhaps silly header"""
     dlg = ScrolledMultiEditor(frm,dictlst,elemlst,prelbl,postlbl,
-                              header=header)
+                              header=header,CopyButton=True)
     print Data1
     if dlg.ShowModal() == wx.ID_OK:
         for d,k in zip(dictlst,elemlst):

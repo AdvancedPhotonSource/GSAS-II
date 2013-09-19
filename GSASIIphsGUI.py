@@ -664,6 +664,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 dmin.SetValue("%.3f"%(MCSAdata['dmin']))          #reset in case of error
+                MCSAdata['newDmin'] = True
 
             def OnCycles(event):
                 MCSAdata['Cycles'] = int(cycles.GetValue())

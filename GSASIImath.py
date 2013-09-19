@@ -401,8 +401,9 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         Cart = np.array(RBRes['rbXYZ'])
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
-            for ride in seq[3]:
-                Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+            Cart[seq[3]] = prodQVQ(Quata,(Cart[seq[3]]-Cart[seq[1]]).T).T+Cart[seq[1]]
+#            for ride in seq[3]:
+#                Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
         X = prodQVQ(RBObj['Orient'][0],xyz)
@@ -2563,6 +2564,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
                         QuatA = AVdeg2Q(parmDict[pfx+'Tor'+str(itor)],Cart[seq[0]]-Cart[seq[1]])
+#                        Cart[seq[3]] = prodQVQ(QuatA,Cart[seq[3]]-Cart[seq[1]])+Cart[seq[1]]
                         for ride in seq[3]:
                             Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
                 if parmDict[pfx+'MolCent'][1]:
@@ -2740,7 +2742,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 sumFosq += f*m
         nRef = len(refs)
         pfx = str(data['pId'])+'::PWLref:'
-        if covData['freshCOV'] and generalData['doPawley']:
+        if covData['freshCOV'] and generalData['doPawley'] and MCSA.get('newDmin',True):
             covMatrix = covData['covMatrix']
             rcov = np.zeros((nRef,nRef))        
             for iref,refI in enumerate(refs):
@@ -2765,6 +2767,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             rcov /= Rnorm
             MCSA['rcov'] = rcov
             covData['freshCOV'] = False
+            MCSA['newDmin'] = False
         else:
             rcov = MCSA['rcov']
     elif 'HKLF' in reflName:
@@ -2837,7 +2840,6 @@ def prodQVQ(Q,V):
     compute the quaternion vector rotation qvq-1 = v'
     q=r+ai+bj+ck
     """
-    VP = np.zeros(3)
     T2 = Q[0]*Q[1]
     T3 = Q[0]*Q[2]
     T4 = Q[0]*Q[3]
@@ -2847,10 +2849,9 @@ def prodQVQ(Q,V):
     T8 = -Q[2]*Q[2]
     T9 = Q[2]*Q[3]
     T10 = -Q[3]*Q[3]
-    VP[0] = 2.*((T8+T10)*V[0]+(T6-T4)*V[1]+(T3+T7)*V[2])+V[0]
-    VP[1] = 2.*((T4+T6)*V[0]+(T5+T10)*V[1]+(T9-T2)*V[2])+V[1]
-    VP[2] = 2.*((T7-T3)*V[0]+(T2+T9)*V[1]+(T5+T8)*V[2])+V[2] 
-    return VP   
+    M = np.array([[T8+T10,T6-T4,T3+T7],[T4+T6,T5+T10,T9-T2],[T7-T3,T2+T9,T5+T8]])
+    VP = 2.*np.inner(M,V)
+    return VP+V 
     
 def Q2Mat(Q):
     ''' make rotation matrix from quaternion
@@ -2877,7 +2878,7 @@ def AV2Q(A,V):
         q=r+ai+bj+ck
     '''
     Q = np.zeros(4)
-    d = np.sqrt(np.sum(np.array(V)**2))
+    d = nl.norm(np.array(V))
     if d:
         V /= d
         p = A/2.
@@ -2892,7 +2893,7 @@ def AVdeg2Q(A,V):
         q=r+ai+bj+ck
     '''
     Q = np.zeros(4)
-    d = np.sqrt(np.sum(np.array(V)**2))
+    d = nl.norm(np.array(V))
     if d:
         V /= d
         p = A/2.
@@ -2919,6 +2920,25 @@ def Q2AV(Q):
     V = np.array(Q[1:])
     V /= np.sin(A/2.)
     return A,V
+    
+def randomQ(r0,r1,r2,r3):
+    ''' create random quaternion from 4 random numbers in range (-1,1)
+    '''
+    sum = 0
+    Q = np.array(4)
+    Q[0] = r0
+    sum += Q[0]**2
+    Q[1] = np.sqrt(1.-sum)*r1
+    sum += Q[1]**2
+    Q[2] = np.sqrt(1.-sum)*r2
+    sum += Q[2]**2
+    Q[3] = np.sqrt(1.-sum)*np.where(r3<0.,-1.,1.)
+    return Q
+    
+def randomAVdeg(r0,r1,r2,r3):
+    ''' create random angle (deg),vector from 4 random number in range (-1,1)
+    '''
+    return Q2AVdeg(randomQ(r0,r1,r2,r3))
     
 def makeQuat(A,B,C):
     ''' Make quaternion from rotation of A vector to B vector about C axis

@@ -2694,12 +2694,6 @@ def PlotStructure(G2frame,data):
                 mcsaXYZ.append(item[0]) 
                 mcsaTypes.append(atyp)
         mcsaBonds = FindPeaksBonds(mcsaXYZ)        
-#            mcsaXYZ,atTypes = G2mth.UpdateMCSAxyz(Bmat,MCSA)
-#            XYZeq = []
-#            for xyz in mcsaXYZ:
-#                XYZeq += G2spc.GenAtom(xyz,SGData)[0][1:]       #skip self xyz
-#            
-#            mcsaBonds = FindPeaksBonds(mcsaXYZ)        
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
     flipData = {}

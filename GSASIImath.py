@@ -401,9 +401,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         Cart = np.array(RBRes['rbXYZ'])
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
-            Cart[seq[3]] = prodQVQ(Quata,(Cart[seq[3]]-Cart[seq[1]]).T).T+Cart[seq[1]]
-#            for ride in seq[3]:
-#                Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+            Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
         X = prodQVQ(RBObj['Orient'][0],xyz)
@@ -441,8 +439,7 @@ def UpdateMCSAxyz(Bmat,MCSA):
                 Cart = np.array(RBRes['rbXYZ'])
                 for itor,seq in enumerate(RBRes['rbSeq']):
                     QuatA = AVdeg2Q(model['Tor'][0][itor],Cart[seq[0]]-Cart[seq[1]])
-                    for ride in seq[3]:
-                        Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+                    Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
             if model['MolCent'][1]:
                 Cart -= model['MolCent'][0]
             for i,x in enumerate(Cart):
@@ -2564,17 +2561,13 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
                         QuatA = AVdeg2Q(parmDict[pfx+'Tor'+str(itor)],Cart[seq[0]]-Cart[seq[1]])
-#                        Cart[seq[3]] = prodQVQ(QuatA,Cart[seq[3]]-Cart[seq[1]])+Cart[seq[1]]
-                        for ride in seq[3]:
-                            Cart[ride] = prodQVQ(QuatA,Cart[ride]-Cart[seq[1]])+Cart[seq[1]]
+                        Cart[seq[3]] = prodQVQ(QuatA,Cart[seq[3]]-Cart[seq[1]])+Cart[seq[1]]
                 if parmDict[pfx+'MolCent'][1]:
                     Cart -= parmDict[pfx+'MolCent'][0]
                 Qori = AVdeg2Q(parmDict[pfx+'Qa'],[parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
                 Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
-                for i,x in enumerate(Cart):
-                    X = np.inner(Bmat,prodQVQ(Qori,x))+Pos
-                    for j in range(3):
-                        Xdata[j][iatm] = X[j]
+                Xdata.T[iatm:iatm+len(Cart)] = np.inner(prodQVQ(Qori,Cart),Bmat)+Pos
+                for i in range(len(Cart)):
                     Tdata[iatm] = aTypes.index(RBRes['rbTypes'][i])
                     iatm += 1
             elif parmDict[pfx+'Type'] == 'Atom':
@@ -2850,7 +2843,7 @@ def prodQVQ(Q,V):
     T9 = Q[2]*Q[3]
     T10 = -Q[3]*Q[3]
     M = np.array([[T8+T10,T6-T4,T3+T7],[T4+T6,T5+T10,T9-T2],[T7-T3,T2+T9,T5+T8]])
-    VP = 2.*np.inner(M,V)
+    VP = 2.*np.inner(V,M)
     return VP+V 
     
 def Q2Mat(Q):

@@ -2529,22 +2529,50 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             Mdata.append(float(len(G2spc.GenAtom(xyz,SGData))))
         return np.array(Mdata)
         
-    def GetAtomTX(RBdata,parmDict):
+    def GetAtomT(RBdata,parmDict):
+        'Needs a doc string'
+        atNo = parmDict['atNo']
+        nfixAt = parmDict['nfixAt']
+        Tdata = atNo*[' ',]
+        for iatm in range(nfixAt):
+            parm = ':'+str(iatm)+':Atype'
+            if parm in parmDict:
+                Tdata[iatm] = aTypes.index(parmDict[parm])
+        iatm = nfixAt
+        for iObj in range(parmDict['nObj']):
+            pfx = str(iObj)+':'
+            if parmDict[pfx+'Type'] in ['Vector','Residue']:
+                if parmDict[pfx+'Type'] == 'Vector':
+                    RBRes = RBdata['Vector'][parmDict[pfx+'RBId']]
+                    nAtm = len(RBRes['rbVect'][0])
+                else:       #Residue
+                    RBRes = RBdata['Residue'][parmDict[pfx+'RBId']]
+                    nAtm = len(RBRes['rbXYZ'])
+                for i in range(nAtm):
+                    Tdata[iatm] = aTypes.index(RBRes['rbTypes'][i])
+                    iatm += 1
+            elif parmDict[pfx+'Type'] == 'Atom':
+                atNo = parmDict[pfx+'atNo']
+                parm = pfx+'Atype'              #remove extra ':'
+                if parm in parmDict:
+                    Tdata[atNo] = aTypes.index(parmDict[parm])
+                iatm += 1
+            else:
+                continue        #skips March Dollase
+        return Tdata
+        
+    def GetAtomX(RBdata,parmDict):
         'Needs a doc string'
         Bmat = parmDict['Bmat']
         atNo = parmDict['atNo']
         nfixAt = parmDict['nfixAt']
-        Tdata = atNo*[' ',]
         Xdata = np.zeros((3,atNo))
-        keys = {':Atype':Tdata,':Ax':Xdata[0],':Ay':Xdata[1],':Az':Xdata[2]}
+        keys = {':Ax':Xdata[0],':Ay':Xdata[1],':Az':Xdata[2]}
         for iatm in range(nfixAt):
             for key in keys:
                 parm = ':'+str(iatm)+key
                 if parm in parmDict:
-                    if key == ':Atype':
-                        keys[key][iatm] = aTypes.index(parmDict[parm])
-                    else:
-                        keys[key][iatm] = parmDict[parm]
+                    keys[key][iatm] = parmDict[parm]
         iatm = nfixAt
         for iObj in range(parmDict['nObj']):
             pfx = str(iObj)+':'
@@ -2566,23 +2594,18 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     Cart -= parmDict[pfx+'MolCent'][0]
                 Qori = AVdeg2Q(parmDict[pfx+'Qa'],[parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
                 Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
-                Xdata.T[iatm:iatm+len(Cart)] = np.inner(prodQVQ(Qori,Cart),Bmat)+Pos
-                for i in range(len(Cart)):
-                    Tdata[iatm] = aTypes.index(RBRes['rbTypes'][i])
-                    iatm += 1
+                Xdata.T[iatm:iatm+len(Cart)] = np.inner(Bmat.T,prodQVQ(Qori,Cart)).T+Pos
+                iatm += len(Cart)
             elif parmDict[pfx+'Type'] == 'Atom':
                 atNo = parmDict[pfx+'atNo']
                 for key in keys:
                     parm = pfx+key[1:]              #remove extra ':'
                     if parm in parmDict:
-                        if key == ':Atype':
-                            keys[key][atNo] = aTypes.index(parmDict[parm])
-                        else:
-                            keys[key][atNo] = parmDict[parm]
+                        keys[key][atNo] = parmDict[parm]
                 iatm += 1
             else:
                 continue        #skips March Dollase
-        return Tdata,Xdata.T
+        return Xdata.T
         
     def getAllTX(Tdata,Mdata,Xdata,SGM,SGT):
         allX = np.inner(Xdata,SGM)+SGT
@@ -2625,7 +2648,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         global tsum
         parmDict.update(dict(zip(varyList,values)))             #update parameter tables
         t0 = time.time()
-        Xdata = GetAtomTX(RBdata,parmDict)[1]                   #get new atom coords from RB
+        Xdata = GetAtomX(RBdata,parmDict)                   #get new atom coords from RB
         tsum += (time.time()-t0)
         allX = getAllX(Xdata,SGM,SGT)                           #fill unit cell - dups. OK
         MDval = parmDict['0:MDval']                             #get March-Dollase coeff
@@ -2643,8 +2666,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         refList[5] *= scale
         refList[6] = refList[4]-refList[5]
         M = np.inner(refList[6],np.inner(rcov,refList[6]))
-#        print M,parmDict['sumFosq'],np.sum(refList[6]**2),np.sum(refList[4]**2)
-#        print np.sum(refList[6]**2)/np.sum(refList[4]**2)
         return M/np.sum(refList[4]**2)
 
     sq8ln2 = np.sqrt(8*np.log(2))
@@ -2693,7 +2714,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     parmDict['atNo'] = atNo                 #total no. of atoms
     parmDict['nObj'] = len(MCSAObjs)
     aTypes = list(aTypes)
-    Tdata,Xdata = GetAtomTX(RBdata,parmDict)
+    Tdata = GetAtomT(RBdata,parmDict)
+    Xdata = GetAtomX(RBdata,parmDict)
     Mdata = GetAtomM(Xdata,SGData)
     allT,allM = getAllTX(Tdata,Mdata,Xdata,SGM,SGT)[:2]
     FFtables = G2el.GetFFtable(aTypes)

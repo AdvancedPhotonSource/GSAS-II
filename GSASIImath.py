@@ -2169,8 +2169,8 @@ class log_sa(base_schedule):        #OK
     def init(self,**options):
         self.__dict__.update(options)
         
-#    def update_guess(self,x0):
-#        return np.squeeze(np.random.uniform(0.,1.,size=self.dims))*(self.upper-self.lower)+self.lower
+    def update_guess(self,x0):     #same as default
+        return np.squeeze(np.random.uniform(0.,1.,size=self.dims))*(self.upper-self.lower)+self.lower
         
     def update_temp(self):
         self.k += 1
@@ -2646,10 +2646,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             delt-F*rcov*delt-F/sum(Fo^2)^2
         '''       
         global tsum
-        parmDict.update(dict(zip(varyList,values)))             #update parameter tables
         t0 = time.time()
+        parmDict.update(dict(zip(varyList,values)))             #update parameter tables
         Xdata = GetAtomX(RBdata,parmDict)                   #get new atom coords from RB
-        tsum += (time.time()-t0)
         allX = getAllX(Xdata,SGM,SGT)                           #fill unit cell - dups. OK
         MDval = parmDict['0:MDval']                             #get March-Dollase coeff
         MDaxis = parmDict['0:MDaxis']
@@ -2666,6 +2665,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         refList[5] *= scale
         refList[6] = refList[4]-refList[5]
         M = np.inner(refList[6],np.inner(rcov,refList[6]))
+        tsum += (time.time()-t0)
         return M/np.sum(refList[4]**2)
 
     sq8ln2 = np.sqrt(8*np.log(2))

@@ -2594,7 +2594,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     Cart -= parmDict[pfx+'MolCent'][0]
                 Qori = AVdeg2Q(parmDict[pfx+'Qa'],[parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
                 Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
-                Xdata.T[iatm:iatm+len(Cart)] = np.inner(Bmat.T,prodQVQ(Qori,Cart)).T+Pos
+                Xdata.T[iatm:iatm+len(Cart)] = np.inner(Bmat,prodQVQ(Qori,Cart)).T+Pos
                 iatm += len(Cart)
             elif parmDict[pfx+'Type'] == 'Atom':
                 atNo = parmDict[pfx+'atNo']

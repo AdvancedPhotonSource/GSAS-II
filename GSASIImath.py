@@ -2086,6 +2086,11 @@ class base_schedule(object):
 
         self.T0 = (fmax-fmin)*1.5
         return best_state.x
+        
+    def set_range(self,x0,frac):
+        delrange = frac*(self.upper-self.lower)
+        self.upper = x0+delrange
+        self.lower = x0-delrange
 
     def accept_test(self, dE):
         T = self.T
@@ -2191,7 +2196,8 @@ class _state(object):
 def anneal(func, x0, args=(), schedule='fast', full_output=0,
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
            boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
-           lower=-100, upper=100, dwell=50, slope=0.9,ranStart=True,dlg=None):
+           lower=-100, upper=100, dwell=50, slope=0.9,ranStart=False,
+           ranRange=0.10,autoRan=False,dlg=None):
     """Minimize a function using simulated annealing.
 
     Schedule is a schedule class implementing the annealing schedule.
@@ -2234,8 +2240,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         The number of times to search the space at each temperature.
     :param float slope: 
         Parameter for log schedule
-    :param bool ranStart=True:
-        False for fixed point start
+    :param bool ranStart=False:
+        True for set 10% of ranges about x 
 
     :returns: (xmin, Jmin, T, feval, iters, accept, retval) where
 
@@ -2320,11 +2326,12 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                   m=m, n=n, quench=quench, dwell=dwell, slope=slope)
 
     current_state, last_state, best_state = _state(), _state(), _state()
+    if ranStart:
+        schedule.set_range(x0,ranRange)
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-        if ranStart:
-            x0 = random.uniform(size=len(x0))*(upper-lower) + lower #comment to avoid random start
+        x0 = random.uniform(size=len(x0))*(upper-lower) + lower
         best_state.x = None
         best_state.cost = numpy.Inf
 
@@ -2355,6 +2362,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                     best_state.x = last_state.x.copy()
                     best_state.cost = last_state.cost
                     bestn = n
+                    if best_state.cost < 1.0 and autoRan:
+                        schedule.set_range(x0,best_state.cost/2.)                        
         if dlg:
             GoOn = dlg.Update(min(100.,best_state.cost*100),
                 newmsg='%s%8.5f, %s%d\n%s%8.4f%s'%('Temperature =',schedule.T, \
@@ -2807,7 +2816,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
         boltzmann=MCSA['boltzmann'], learn_rate=0.5,  
         quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
-        lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',True),dlg=pgbar)
+        lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
+        ranRange=MCSA.get('ranRange',0.10),autoRan=MCSA.get('autoRan',False),dlg=pgbar)
     M = mcsaCalc(results[0],refs,rcov,ifInv,allFF,RBdata,varyList,parmDict)
 #    for ref in refs.T:
 #        print ' %4d %4d %4d %10.3f %10.3f %10.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[4],ref[5],ref[6])
@@ -2896,6 +2906,8 @@ def AV2Q(A,V):
     d = nl.norm(np.array(V))
     if d:
         V /= d
+        if not A:       #==0.
+            A = 2.*np.pi
         p = A/2.
         Q[0] = np.cos(p)
         Q[1:4] = V*np.sin(p)
@@ -2909,6 +2921,8 @@ def AVdeg2Q(A,V):
     '''
     Q = np.zeros(4)
     d = nl.norm(np.array(V))
+    if not A:       #== 0.!
+        A = 360.
     if d:
         V /= d
         p = A/2.

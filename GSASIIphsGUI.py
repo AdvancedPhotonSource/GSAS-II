@@ -695,6 +695,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
             def OnRanStart(event):
                 MCSAdata['ranStart'] = ranStart.GetValue()
+                
+            def OnAutoRan(event):
+                MCSAdata['autoRan'] = autoRan.GetValue()
+                
+            def OnRanRange(event):
+                try:
+                    val = float(ranRange.GetValue())/100
+                    if 0.01 <= val <= 0.99:
+                        MCSAdata['ranRange'] = val
+                except ValueError:
+                    pass
+                ranRange.SetValue('%.1f'%(MCSAdata['ranRange']*100.))
             
             def OnAnneal(event):
                 Obj = event.GetEventObject()
@@ -744,10 +756,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        
             line2Sizer.Add(cycles,0,wx.ALIGN_CENTER_VERTICAL)
             line2Sizer.Add((5,0),)
-            ranStart = wx.CheckBox(General,-1,label=' Random start? (ignored if Start temp = None)')
+            ranStart = wx.CheckBox(General,-1,label=' MC/SA Refine at ')
             ranStart.Bind(wx.EVT_CHECKBOX, OnRanStart)
-            ranStart.SetValue(MCSAdata.get('ranStart',True))
-            line2Sizer.Add(ranStart,0,wx.ALIGN_CENTER_VERTICAL)            
+            ranStart.SetValue(MCSAdata.get('ranStart',False))
+            line2Sizer.Add(ranStart,0,wx.ALIGN_CENTER_VERTICAL)
+            ranRange = wx.TextCtrl(General,-1,value='%.1f'%(MCSAdata.get('ranRange',0.10)*100),style=wx.TE_PROCESS_ENTER)
+            ranRange.Bind(wx.EVT_TEXT_ENTER,OnRanRange)        
+            ranRange.Bind(wx.EVT_KILL_FOCUS,OnRanRange)
+            line2Sizer.Add(ranRange,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(General,label='% of ranges. '),0,wx.ALIGN_CENTER_VERTICAL)
+#            autoRan = wx.CheckBox(General,-1,label=' Do auto range reduction? ')
+#            autoRan.Bind(wx.EVT_CHECKBOX, OnAutoRan)
+#            autoRan.SetValue(MCSAdata.get('autoRan',False))
+#            line2Sizer.Add(autoRan,0,wx.ALIGN_CENTER_VERTICAL)
             mcsaSizer.Add(line2Sizer)
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4065,6 +4086,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Vnew = V
                     try:
                         Anew = float(ObjA.GetValue())
+                        if not Anew:    #==0.0!
+                            Anew = 360.
                     except ValueError:
                         Anew = A
                 Q = G2mth.AVdeg2Q(Anew,Vnew)
@@ -4075,8 +4098,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     ObjV.SetValue('%.3f %.3f %.3f'%(V[0],V[1],V[2]))
                 else:
                     ObjA.SetValue('%.5f'%(A))
+                    ObjV.SetValue('%.3f %.3f %.3f'%(V[0],V[1],V[2]))
                 G2plt.PlotStructure(G2frame,data)
-                UpdateMCSA()
+#                UpdateMCSA()
 
             def OnMolCent(event):
                 Obj = event.GetEventObject()

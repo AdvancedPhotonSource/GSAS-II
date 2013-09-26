@@ -4336,13 +4336,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA models:'),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add((5,5),0)
             for model in data['MCSA']['Models']:
+                Xsize = 500
                 if model['Type'] == 'MD':
 #                    mainSizer.Add(MDSizer(model))
                     pass            #MD currently doesn't work
                 elif model['Type'] == 'Atom':
-                    mainSizer.Add(atomSizer(model))
+                    Asizer = atomSizer(model)
+                    mainSizer.Add(Asizer)
+                    Xsize = max(Asizer.GetMinSize()[0],Xsize)
                 else:
-                    mainSizer.Add(rbSizer(model))
+                    Rsizer = rbSizer(model)
+                    mainSizer.Add(Rsizer)
+                    Xsize = max(Rsizer.GetMinSize()[0],Xsize)
                 G2gd.HorizontalLine(mainSizer,MCSA)
                 
         if not data['MCSA']['Results']:
@@ -4358,6 +4363,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         mainSizer.Layout()
         SetPhaseWindow(G2frame.dataFrame,MCSA,mainSizer)
+        Size = MCSA.GetSize()
+        Size[0] = Xsize+40
+        G2frame.dataFrame.SetSize(Size)
         MCSA.Scroll(0,Scroll)
         
     def SetSolution(result,Models):

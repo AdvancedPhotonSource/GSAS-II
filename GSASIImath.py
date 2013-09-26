@@ -376,8 +376,7 @@ def RotateRBXYZ(Bmat,Cart,oriQ):
     '''
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
-        X = prodQVQ(oriQ,xyz)
-        XYZ[i] = np.inner(Bmat,X)
+        XYZ[i] = np.inner(Bmat,prodQVQ(oriQ,xyz))
     return XYZ
 
 def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
@@ -404,8 +403,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
             Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
-        X = prodQVQ(RBObj['Orient'][0],xyz)
-        XYZ[i] = np.inner(Bmat,X)+RBObj['Orig'][0]
+        XYZ[i] = np.inner(Bmat,prodQVQ(RBObj['Orient'][0],xyz))+RBObj['Orig'][0]
     return XYZ,Cart
 
 def UpdateMCSAxyz(Bmat,MCSA):
@@ -2756,37 +2754,24 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         Rnorm = np.outer(Rdiag,Rdiag)
         rcov /= Rnorm
     elif 'Pawley' in reflName:  #need a bail out if Pawley cov matrix doesn't exist.
-        vList = covData['varyList']
-        for iref,refI in enumerate(reflData):
+        vNames = []
+        pfx = str(data['pId'])+'::PWLref:'
+        for iref,refI in enumerate(reflData):           #Pawley reflection set
             h,k,l,m,d,v,f,s = refI
             if d >= MCSA['dmin'] and v:       #skip unrefined ones
+                vNames.append(pfx+str(iref))
                 SQ = 0.25/d**2
                 allFF.append(allM*[G2el.getFFvalues(FFtables,SQ,True)[i] for i in allT]/np.max(allM))
                 refs.append([h,k,l,m,f*m,iref,0.])
                 sumFosq += f*m
         nRef = len(refs)
-        pfx = str(data['pId'])+'::PWLref:'
         if covData['freshCOV'] and generalData['doPawley'] and MCSA.get('newDmin',True):
+            vList = covData['varyList']
             covMatrix = covData['covMatrix']
-            rcov = np.zeros((nRef,nRef))        
-            for iref,refI in enumerate(refs):
-                I = refI[5]
-                nameI = pfx+str(I)
-                if nameI in vList:
-                    Iindx = vList.index(nameI)
-                    rcov[iref][iref] = covMatrix[Iindx][Iindx]
-                    for jref,refJ in enumerate(refs[:iref]):
-                        J = refJ[5]
-                        nameJ = pfx+str(J)
-                        try:
-                            rcov[iref][jref] = covMatrix[vList.index(nameI)][vList.index(nameJ)]
-                        except ValueError:
-                            rcov[iref][jref] = rcov[iref][jref-1]
-                else:
-                    rcov[iref] = rcov[iref-1]
-                    rcov[iref][iref] = rcov[iref-1][iref-1]
+            rcov = getVCov(vNames,vList,covMatrix)
             rcov += (rcov.T-np.diagflat(np.diagonal(rcov)))
             Rdiag = np.sqrt(np.diag(rcov))
+            Rdiag = np.where(Rdiag,Rdiag,1.0)
             Rnorm = np.outer(Rdiag,Rdiag)
             rcov /= Rnorm
             MCSA['rcov'] = rcov

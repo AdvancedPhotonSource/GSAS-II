@@ -12,13 +12,17 @@
 The heavy lifting is done in method export
 '''
 
-# TODO: need a mechanism for editing of instrument names, bond pub flags, templates,...
+# TODO: set def names for phase/hist save & load, bond pub flags,...
 
 import datetime as dt
 import os.path
 import sys
 import numpy as np
+import cPickle
+import copy
 import wx
+import wx.lib.scrolledpanel as wxscroll
+import wx.lib.resizewidget as rw
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1006 $")
 import GSASIIIO as G2IO
@@ -40,6 +44,8 @@ import GSASIIstrMain as G2stMn
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
+CIFdic = None
+
 def getCallerDocString(): # for development
     "Return the calling function's doc string"
     import inspect as ins
@@ -48,6 +54,548 @@ def getCallerDocString(): # for development
             return item
     else:
         return '?'
+
+#===============================================================================
+# misc CIF utilities
+#===============================================================================
+def PickleCIFdict(fil):
+    '''Loads a CIF dictionary, cherry picks out the items needed
+    by local code and sticks them into a python dict and writes
+    that dict out as a cPickle file for later reuse.
+    If the write fails a warning message is printed,
+    but no exception occurs.
+
+    :param str fil: file name of CIF dictionary, will usually end
+      in .dic
+    :returns: the dict with the definitions  
+    '''
+    import CifFile as cif # PyCifRW from James Hester
+    cifdic = {}
+    dictobj = cif.CifDic(fil)
+    if DEBUG: print('loaded '+str(fil))
+    for item in dictobj.keys():
+        cifdic[item] = {}
+        for j in (
+            '_definition','_type',
+            '_enumeration',
+            '_enumeration_detail',
+            '_enumeration_range'):
+            if dictobj[item].get(j):
+                cifdic[item][j] = dictobj[item][j]
+    try:
+        fil = os.path.splitext(fil)[0]+'.cpickle'
+        fp = open(fil,'w')
+        cPickle.dump(cifdic,fp)
+        fp.close()
+        if DEBUG: print('wrote '+str(fil))
+    except:
+        print ('Unable to write '+str(fil))
+    return cifdic
+
+def LoadCIFdic():
+    '''Create a composite core+powder CIF lookup dict containing
+    information about all items in the CIF dictionaries, loading
+    pickled files if possible. The routine looks for files
+    named cif_core.cpickle and cif_pd.cpickle in every
+    directory in the path and if they are not found, files
+    cif_core.dic and/or cif_pd.dic are read.
+
+    :returns: the dict with the definitions  
+    '''
+    cifdic = {}
+    for ftyp in "cif_core","cif_pd":
+        for loc in sys.path:
+            fil = os.path.join(loc,ftyp+".cpickle")
+            if not os.path.exists(fil): continue
+            fp = open(fil,'r')
+            try:
+                cifdic.update(cPickle.load(fp))
+                if DEBUG: print('reloaded '+str(fil))
+                break
+            finally:
+                fp.close()
+        else:
+            for loc in sys.path:
+                fil = os.path.join(loc,ftyp+".dic")
+                if not os.path.exists(fil): continue
+                #try:
+                if True:
+                    cifdic.update(PickleCIFdict(fil))
+                    break
+                #except:
+                #    pass
+            else:
+                print('Could not load '+ftyp+' dictionary')
+    return cifdic
+
+class CIFdefHelp(wx.Button):
+    '''Create a help button that displays help information on
+    the current data item
+
+    :param parent: the panel which will be the parent of the button
+    :param str msg: the help text to be displayed
+    :param wx.Dialog helpwin: Frame for CIF editing dialog
+    :param wx.TextCtrl helptxt: TextCtrl where help text is placed
+    '''
+    def __init__(self,parent,msg,helpwin,helptxt):
+        wx.Button.__init__(self,parent,wx.ID_HELP)
+        self.Bind(wx.EVT_BUTTON,self._onPress)
+        self.msg=msg
+        self.parent = parent
+        #self.helpwin = self.parent.helpwin
+        self.helpwin = helpwin
+        self.helptxt = helptxt
+    def _onPress(self,event):
+        'Respond to a button press by displaying the requested text'
+        try:
+            #helptxt = self.helptxt
+            ow,oh = self.helptxt.GetSize()
+            self.helptxt.SetLabel(self.msg)
+            w,h = self.helptxt.GetSize()
+            if h > oh:
+                self.helpwin.GetSizer().Fit(self.helpwin)
+        except: # error posting help, ignore
+            return
+
+def CIF2dict(cf):
+    '''copy the contents of a CIF out from a PyCifRW block object
+    into a dict
+
+    :returns: cifblk, loopstructure where cifblk is a dict with
+      CIF items and loopstructure is a list of lists that defines
+      which items are in which loops. 
+    '''
+    blk = cf.keys()[0] # assume templates are a single CIF block, use the 1st
+    loopstructure = cf[blk].loopnames()[:] # copy over the list of loop contents
+    dblk = {}
+    for item in cf[blk].keys(): # make a copy of all the items in the block
+        dblk[item] = cf[blk][item]
+    return dblk,loopstructure
+
+def dict2CIF(dblk,loopstructure,blockname='Template'):
+    '''Create a PyCifRW CIF object containing a single CIF
+    block object from a dict and loop structure list.
+
+    :param dblk: a dict containing values for each CIF item
+    :param list loopstructure: a list of lists containing the contents of
+      each loop, as an example::
+
+         [ ["_a","_b"], ["_c"], ["_d_1","_d_2","_d_3"]]
+
+      this describes a CIF with this type of structure::
+
+        loop_ _a _b <a1> <b1> <a2> ...
+        loop_ _c <c1> <c2>...
+        loop _d_1 _d_2 _d_3 ...
+
+      Note that the values for each looped CIF item, such as _a,
+      are contained in a list, for example as cifblk["_a"]
+
+    :param str blockname: an optional name for the CIF block.
+      Defaults to 'Template'
+
+    :returns: the newly created PyCifRW CIF object 
+    '''
+
+    import CifFile as cif # PyCifRW from James Hester
+    # compile a 'list' of items in loops
+    loopnames = set()
+    for i in loopstructure:
+        loopnames |= set(i)
+    # create a new block
+    newblk = cif.CifBlock()
+    # add the looped items
+    for keys in loopstructure:
+        vals = []
+        for key in keys:
+            vals.append(dblk[key])
+        newblk.AddCifItem(([keys],[vals]))
+    # add the non-looped items
+    for item in dblk:
+        if item in loopnames: continue
+        newblk[item] = dblk[item]
+    # create a CIF and add the block
+    newcf = cif.CifFile()
+    newcf[blockname] = newblk    
+    return newcf
+
+
+class EditCIFtemplate(wx.Dialog):
+    '''Create a dialog for editing a CIF template
+    
+    :param wx.Frame parent: parent frame or None
+    :param cifblk: dict or PyCifRW block containing values for each CIF item
+    :param list loopstructure: a list of lists containing the contents of
+      each loop, as an example::
+
+         [ ["_a","_b"], ["_c"], ["_d_1","_d_2","_d_3"]]
+
+      this describes a CIF with this type of structure::
+
+        loop_ _a _b <a1> <b1> <a2> ...
+        loop_ _c <c1> <c2>...
+        loop _d_1 _d_2 _d_3 ...
+
+      Note that the values for each looped CIF item, such as _a,
+      are contained in a list, for example as cifblk["_a"]
+    '''
+    def __init__(self,parent,cifblk,loopstructure):
+        OKbuttons = []
+        self.cifblk = cifblk
+        self.loopstructure = loopstructure
+        self.newfile = None
+        global CIFdic  # once this is loaded, keep it around
+        if CIFdic is None:
+            CIFdic = LoadCIFdic()
+        wx.Dialog.__init__(self,parent,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+
+        # define widgets that will be needed during panel creation
+        self.helptxt = wx.StaticText(self,wx.ID_ANY,"")
+        savebtn = wx.Button(self, wx.ID_CLOSE, "Save as template")
+        OKbuttons.append(savebtn)
+        savebtn.Bind(wx.EVT_BUTTON,self._onClose)
+        OKbtn = wx.Button(self, wx.ID_OK, "Use")
+        OKbtn.SetDefault()
+        OKbuttons.append(OKbtn)
+
+        self.SetTitle('Edit items in CIF template')
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        cpnl = EditCIFpanel(self,cifblk,loopstructure,CIFdic,OKbuttons,size=(300,300))
+        vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 0)
+        G2gd.HorizontalLine(vbox,self)
+        vbox.Add(self.helptxt, 0, wx.EXPAND|wx.ALL, 5)
+        G2gd.HorizontalLine(vbox,self)
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.Add(btn,0,wx.ALIGN_CENTER|wx.ALL)
+        btnsizer.Add(savebtn,0,wx.ALIGN_CENTER|wx.ALL)
+        btnsizer.Add(OKbtn,0,wx.ALIGN_CENTER|wx.ALL)
+        vbox.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        self.SetSizer(vbox)
+        vbox.Fit(self)
+    def Post(self):
+        '''Display the dialog
+        
+        :returns: True, unless Cancel has been pressed.
+        '''
+        return (self.ShowModal() == wx.ID_OK)
+    def _onClose(self,event):
+        'Save CIF entries in a template file'
+        dlg = wx.FileDialog(
+            self, message="Save as CIF template",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="CIF (*.cif)|*.cif",
+            style=wx.SAVE | wx.CHANGE_DIR
+            )
+        val = (dlg.ShowModal() == wx.ID_OK)
+        fil = dlg.GetPath()
+        dlg.Destroy()
+        if val: # ignore a Cancel button
+            fil = os.path.splitext(fil)[0]+'.cif' # force extension
+            fp = open(fil,'w')
+            newcf = dict2CIF(self.cifblk,self.loopstructure)
+            fp.write(newcf.WriteOut())
+            fp.close()
+            self.newfile = fil
+            self.EndModal(wx.ID_OK)
+
+class EditCIFpanel(wxscroll.ScrolledPanel):
+    '''Creates a scrolled panel for editing CIF template items
+
+    :param wx.Frame parent: parent frame where panel will be placed
+    :param cifblk: dict or PyCifRW block containing values for each CIF item
+    :param list loopstructure: a list of lists containing the contents of
+      each loop, as an example::
+
+         [ ["_a","_b"], ["_c"], ["_d_1","_d_2","_d_3"]]
+
+      this describes a CIF with this type of structure::
+
+        loop_ _a _b <a1> <b1> <a2> ...
+        loop_ _c <c1> <c2>...
+        loop _d_1 _d_2 _d_3 ...
+
+      Note that the values for each looped CIF item, such as _a,
+      are contained in a list, for example as cifblk["_a"]
+
+    :param dict cifdic: optional CIF dictionary definitions
+    :param (other): optional keyword parameters for wx.ScrolledPanel
+    '''
+    def __init__(self, parent, cifblk, loopstructure, cifdic={}, OKbuttons=[], **kw):
+        self.parent = parent
+        wxscroll.ScrolledPanel.__init__(self, parent, wx.ID_ANY, **kw)
+        self.vbox = None
+        self.AddDict = None
+        self.cifdic = cifdic
+        self.cifblk = cifblk
+        self.loops = loopstructure
+        self.parent = parent
+        self.LayoutCalled = False
+        self.parentOKbuttons = OKbuttons
+        self.ValidatedControlsList = []
+        self._fill()
+    def _fill(self):
+        'Fill the scrolled panel with widgets for each CIF item'
+        wx.BeginBusyCursor()
+        self.AddDict = {}
+        self.ValidatedControlsList = []
+        # delete any only contents
+        if self.vbox:
+            self.vbox.DeleteWindows()
+            self.vbox = None
+            self.Update()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.vbox = vbox
+        # compile a 'list' of items in loops
+        loopnames = set()
+        for i in self.loops:
+            loopnames |= set(i)
+        # post the looped CIF items
+        for lnum,lp in enumerate(self.loops):
+            hbox = wx.BoxSizer(wx.HORIZONTAL)
+            hbox.Add(wx.StaticText(self,wx.ID_ANY,'Loop '+str(lnum+1)))
+            vbox.Add(hbox)
+            but = wx.Button(self,wx.ID_ANY,"Add row")
+            self.AddDict[but]=lnum
+            
+            hbox.Add(but)            
+            but.Bind(wx.EVT_BUTTON,self.OnAddRow)
+            fbox = wx.GridBagSizer(0, 0)
+            vbox.Add(fbox)
+            rows = 0
+            for i,item in enumerate(lp):
+                txt = wx.StaticText(self,wx.ID_ANY,item+"  ")
+                fbox.Add(txt,(0,i+1))
+                if self.cifdic.get(item):
+                    df = self.cifdic[item].get('_definition')
+                    if df:
+                        txt.SetToolTipString(G2IO.trim(df))
+                        but = CIFdefHelp(self,
+                                         "Definition for "+item+":\n\n"+G2IO.trim(df),
+                                         self.parent,
+                                         self.parent.helptxt)
+                        fbox.Add(but,(1,i+1),flag=wx.ALIGN_CENTER)
+                for j,val in enumerate(self.cifblk[item]):
+                    ent = self.CIFEntryWidget(self.cifblk[item],j,item)
+                    fbox.Add(ent,(j+2,i+1),flag=wx.EXPAND|wx.ALL)
+                rows = max(rows,len(self.cifblk[item]))
+            for i in range(rows):
+                txt = wx.StaticText(self,wx.ID_ANY,str(i+1))
+                fbox.Add(txt,(i+2,0))
+            line = wx.StaticLine(self,wx.ID_ANY, size=(-1,3), style=wx.LI_HORIZONTAL)
+            vbox.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+                
+        # post the non-looped CIF items
+        for item in sorted(self.cifblk.keys()):
+            if item not in loopnames:
+                hbox = wx.BoxSizer(wx.HORIZONTAL)
+                vbox.Add(hbox)
+                txt = wx.StaticText(self,wx.ID_ANY,item)
+                hbox.Add(txt)
+                if self.cifdic.get(item):
+                    df = self.cifdic[item].get('_definition')
+                    if df:
+                        txt.SetToolTipString(G2IO.trim(df))
+                        but = CIFdefHelp(self,
+                                         "Definition for "+item+":\n\n"+G2IO.trim(df),
+                                         self.parent,
+                                         self.parent.helptxt)
+                        hbox.Add(but,0,wx.ALL,2)
+                ent = self.CIFEntryWidget(self.cifblk,item,item)
+                hbox.Add(ent)
+        self.SetSizer(vbox)
+        #vbox.Fit(self.parent)
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
+        self.Bind(rw.EVT_RW_LAYOUT_NEEDED, self.OnLayoutNeeded)
+        self.Layout()
+        wx.EndBusyCursor()
+    def OnLayoutNeeded(self,event):
+        '''Called when an update of the panel layout is needed. Calls
+        self.DoLayout after the current operations are complete using
+        CallAfter. This is called only once, according to flag
+        self.LayoutCalled, which is cleared in self.DoLayout. 
+        '''
+        if self.LayoutCalled: return # call already queued
+        wx.CallAfter(self.DoLayout) # queue a call
+        self.LayoutCalled = True
+    def DoLayout(self):
+        '''Update the Layout and scroll bars for the Panel. Clears
+        self.LayoutCalled so that next change to panel can
+        request a new update
+        '''
+        wx.BeginBusyCursor()
+        self.Layout()
+        self.SetupScrolling()
+        wx.EndBusyCursor()
+        self.LayoutCalled = False
+    def OnAddRow(self,event):
+        'add a row to a loop'
+        lnum = self.AddDict.get(event.GetEventObject())
+        if lnum is None: return
+        for item in self.loops[lnum]:
+            self.cifblk[item].append('?')
+        self._fill()
+
+    def ControlOKButton(self,setvalue):
+        '''Enable or Disable the OK button(s) for the dialog. Note that this is
+        passed into the ValidatedTxtCtrl for use by validators.
+
+        :param bool setvalue: if True, all entries in the dialog are
+          checked for validity. The first invalid control triggers
+          disabling of buttons.
+          If False then the OK button(s) are disabled with no checking
+          of the invalid flag for each control.
+        '''
+        if setvalue: # turn button on, do only if all controls show as valid
+            for ctrl in self.ValidatedControlsList:
+                if ctrl.invalid:
+                    for btn in self.parentOKbuttons:
+                        btn.Disable()
+                    return
+            else:
+                for btn in self.parentOKbuttons:
+                    btn.Enable()
+        else:
+            for btn in self.parentOKbuttons:
+                btn.Disable()
+        
+    def CIFEntryWidget(self,dct,item,dataname):
+        '''Create an entry widget for a CIF item. Use a validated entry for numb values
+        where int is required when limits are integers and floats otherwise.
+        At present this does not allow entry of the special CIF values of "." and "?" for
+        numerical values and highlights them as invalid.
+        Use a selection widget when there are specific enumerated values for a string.        
+        '''
+        if self.cifdic.get(dataname):
+            if self.cifdic[dataname].get('_enumeration'):
+                values = ['?']+self.cifdic[dataname]['_enumeration']
+                choices = ['undefined']
+                for i in self.cifdic[dataname].get('_enumeration_detail',values):
+                    choices.append(G2IO.trim(i))
+                ent = G2gd.EnumSelector(self, dct, item, choices, values, size=(200, -1))
+                return ent
+            if self.cifdic[dataname].get('_type') == 'numb':
+                mn = None
+                mx = None
+                hint = int
+                if self.cifdic[dataname].get('_enumeration_range'):
+                    rng = self.cifdic[dataname]['_enumeration_range'].split(':')
+                    if '.' in rng[0] or '.' in rng[1]: hint = float
+                    if rng[0]: mn = hint(rng[0])
+                    if rng[1]: mx = hint(rng[1])
+                    ent = G2gd.ValidatedTxtCtrl(
+                        self,dct,item,typeHint=hint,min=mn,max=mx,
+                        CIFinput=True,
+                        OKcontrol=self.ControlOKButton)
+                    self.ValidatedControlsList.append(ent)
+                    return ent
+        rw1 = rw.ResizeWidget(self)
+        #print item
+        #print dct[item]
+        ent = G2gd.ValidatedTxtCtrl(
+            rw1,dct,item,size=(100, 20),
+            style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER,
+            CIFinput=True,
+            OKcontrol=self.ControlOKButton)
+        self.ValidatedControlsList.append(ent)
+        return rw1
+
+class CIFtemplateSelect(wx.BoxSizer):
+    '''Create a set of buttons to show, select and edit a CIF template
+
+    :param str tmplate: one of 'publ', 'phase', or 'instrument' to determine
+      the type of template
+    '''
+    def __init__(self,frame,panel,tmplate,G2dict, repaint, title):
+        wx.BoxSizer.__init__(self,wx.VERTICAL)
+        self.cifdefs = frame
+        self.dict = G2dict
+        self.repaint = repaint
+        self.fil = 'template_'+tmplate+'.cif'
+        self.CIF = G2dict.get("CIF_template")
+        txt = wx.StaticText(panel,wx.ID_ANY,title)
+        self.Add(txt,0,wx.ALIGN_CENTER)
+        # change font on title
+        txtfnt = txt.GetFont()
+        txtfnt.SetWeight(wx.BOLD)
+        txtfnt.SetPointSize(2+txtfnt.GetPointSize())
+        txt.SetFont(txtfnt)
+        self.Add((-1,3))
+
+        if not self.CIF: # empty or None
+            for pth in sys.path:
+                if os.path.exists(os.path.join(pth,self.fil)):
+                    self.CIF = os.path.join(pth,self.fil)
+                    CIFtxt = "Template: "+self.fil
+                    break
+            else:
+                print CIF+' not found in path!'
+                self.CIF = None
+                CIFtxt = "none! (No template found)"
+        elif type(self.CIF) is not list and type(self.CIF) is not tuple:
+            if not os.path.exists(self.CIF):
+                print("Error: template file has disappeared:"+self.CIF)
+                self.CIF = None
+                CIFtxt = "none! (file not found)"
+            else:
+                if len(self.CIF) < 40:
+                    CIFtxt = "File: "+self.CIF
+                else:
+                    CIFtxt = "File: ..."+self.CIF[-40:]
+        else:
+            CIFtxt = "Template is customized"
+        # show template source
+        self.Add(wx.StaticText(panel,wx.ID_ANY,CIFtxt))
+        # show str, button to select file; button to edit (if CIF defined)
+        but = wx.Button(panel,wx.ID_ANY,"Select Template File")
+        but.Bind(wx.EVT_BUTTON,self.onGetTemplateFile)
+        hbox =  wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(but,0,0,2)
+        but = wx.Button(panel,wx.ID_ANY,"Edit Template")
+        but.Bind(wx.EVT_BUTTON,self.onEditTemplateContents)
+        hbox.Add(but,0,0,2)
+        #self.Add(hbox,0,wx.ALIGN_CENTER)
+        self.Add(hbox)
+    def onGetTemplateFile(self,event):
+        dlg = wx.FileDialog(
+            self.cifdefs, message="Save as CIF template",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="CIF (*.cif)|*.cif",
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+        if dlg.ShowModal() == wx.ID_OK:
+            self.dict["CIF_template"] = dlg.GetPath()
+            dlg.Destroy()            
+            self.repaint() #EditCIFDefaults()
+        else:
+            dlg.Destroy()
+
+    def onEditTemplateContents(self,event):
+        import CifFile as cif # PyCifRW from James Hester
+        if type(self.CIF) is list or  type(self.CIF) is tuple:
+            dblk,loopstructure = copy.deepcopy(self.CIF) # don't modify original
+        else:
+            dblk,loopstructure = CIF2dict(cif.ReadCif(self.CIF))
+        dlg = EditCIFtemplate(self.cifdefs,dblk,loopstructure)
+        val = dlg.Post()
+        if val:
+            if dlg.newfile: # results saved in file
+                self.dict["CIF_template"] = dlg.newfile
+                print 'saved'
+            else:
+                self.dict["CIF_template"] = [dlg.cifblk,dlg.loopstructure]
+                print 'edited'
+            self.repaint() #EditCIFDefaults() # note that this does a dlg.Destroy()
+        else:
+            print 'cancelled'
+            dlg.Destroy()        
+
+#===============================================================================
+# end of misc CIF utilities
+#===============================================================================
 
 class ExportCIF(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
@@ -66,7 +614,7 @@ class ExportCIF(G2IO.ExportBaseclass):
           "simple" for a simple CIF with only coordinates
         '''
     
-        # ===== define functions for export method =======================================
+# ===== define functions for export method =======================================
         def openCIF(filnam):
             if DEBUG:
                 self.fp = sys.stdout
@@ -1165,7 +1713,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             except KeyError:
                 pass
             return True
-        def EditInstNames(event=None,msg=''):
+        def EditInstNames(event=None):
             'Provide a dialog for editing instrument names'
             dictlist = []
             keylist = []
@@ -1189,13 +1737,24 @@ class ExportCIF(G2IO.ExportBaseclass):
                 prelbl=range(1,len(dictlist)+1),
                 postlbl=lbllist,
                 title='Instrument names',
-                header="Edit instrument names. Note that a non-blank\nname is required for all histograms"+msg)
-        def EditCIFDefaults(parent):
+                header="Edit instrument names. Note that a non-blank\nname is required for all histograms",
+                CopyButton=True)
+            
+        def EditRanges(event):
+            but = event.GetEventObject()
+            phasedict = but.phasedict
+            dlg = G2gd.DisAglDialog(self.G2frame,{},phasedict['General'])
+            if dlg.ShowModal() == wx.ID_OK:
+                phasedict['General']['DisAglCtls'] = dlg.GetData()
+            dlg.Destroy()
+            
+        def EditCIFDefaults():
+            'Fills the CIF Defaults window'
             import wx.lib.scrolledpanel as wxscroll
-            cfrm = wx.Dialog(parent,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-            cfrm.SetTitle('child')
+            self.cifdefs.DestroyChildren()
+            self.cifdefs.SetTitle('Edit CIF settings')
             vbox = wx.BoxSizer(wx.VERTICAL)
-            cpnl = wxscroll.ScrolledPanel(cfrm,size=(300,300))
+            cpnl = wxscroll.ScrolledPanel(self.cifdefs,size=(300,300))
             cbox = wx.BoxSizer(wx.VERTICAL)
             but = wx.Button(cpnl, wx.ID_ANY,'Edit CIF Author')
             but.Bind(wx.EVT_BUTTON,EditAuthor)
@@ -1203,33 +1762,76 @@ class ExportCIF(G2IO.ExportBaseclass):
             but = wx.Button(cpnl, wx.ID_ANY,'Edit Instrument Name(s)')
             but.Bind(wx.EVT_BUTTON,EditInstNames)
             cbox.Add(but,0,wx.ALIGN_CENTER,3)
+            G2gd.HorizontalLine(cbox,cpnl)          
+            cbox.Add(
+                CIFtemplateSelect(self.cifdefs,
+                                  cpnl,'publ',self.OverallParms['Controls'],
+                                  EditCIFDefaults,
+                                  "Publication (overall) template",
+                                  ),
+                0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
+            for phasenam in sorted(self.Phases.keys()):
+                G2gd.HorizontalLine(cbox,cpnl)          
+                title = 'Phase '+phasenam
+                phasedict = self.Phases[phasenam] # pointer to current phase info            
+                cbox.Add(
+                    CIFtemplateSelect(self.cifdefs,
+                                      cpnl,'phase',phasedict['General'],
+                                      EditCIFDefaults,
+                                      title),
+                    0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
+                cpnl.SetSizer(cbox)
+                but = wx.Button(cpnl, wx.ID_ANY,'Edit distance/angle ranges')
+                #cbox.Add(but,0,wx.ALIGN_CENTER,3)
+                cbox.Add((-1,2))
+                cbox.Add(but,0,wx.ALIGN_LEFT,0)
+                but.phasedict = self.Phases[phasenam]  # set a pointer to current phase info     
+                but.Bind(wx.EVT_BUTTON,EditRanges)     # phase bond/angle ranges
+            for i in sorted(self.powderDict.keys()):
+                G2gd.HorizontalLine(cbox,cpnl)          
+                hist = self.powderDict[i]
+                histblk = self.Histograms[hist]
+                title = 'Powder dataset '+hist[5:]
+                cbox.Add(
+                    CIFtemplateSelect(self.cifdefs,
+                                      cpnl,'powder',histblk["Sample Parameters"],
+                                      EditCIFDefaults,
+                                      title),
+                    0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
+                cpnl.SetSizer(cbox)
+            for i in sorted(self.xtalDict.keys()):
+                G2gd.HorizontalLine(cbox,cpnl)          
+                hist = self.xtalDict[i]
+                histblk = self.Histograms[hist]
+                title = 'Single Xtal dataset '+hist[5:]
+                cbox.Add(
+                    CIFtemplateSelect(self.cifdefs,
+                                      cpnl,'single',histblk["Instrument Parameters"][0],
+                                      EditCIFDefaults,
+                                      title),
+                    0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
+                cpnl.SetSizer(cbox)
 
-            cpnl.SetSizer(cbox)
             cpnl.SetAutoLayout(1)
             cpnl.SetupScrolling()
-            #cpnl.Bind(rw.EVT_RW_LAYOUT_NEEDED, self.OnLayoutNeeded)
+            #cpnl.Bind(rw.EVT_RW_LAYOUT_NEEDED, self.OnLayoutNeeded) # needed if sizes change
             cpnl.Layout()
 
             vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 0)
             btnsizer = wx.StdDialogButtonSizer()
-            btn = wx.Button(cfrm, wx.ID_OK, "Create CIF")
+            btn = wx.Button(self.cifdefs, wx.ID_OK, "Create CIF")
             btn.SetDefault()
             btnsizer.AddButton(btn)
-            btn = wx.Button(cfrm, wx.ID_CANCEL)
+            btn = wx.Button(self.cifdefs, wx.ID_CANCEL)
             btnsizer.AddButton(btn)
             btnsizer.Realize()
             vbox.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-            cfrm.SetSizer(vbox)
-            vbox.Fit(cfrm)
-            if cfrm.ShowModal() == wx.ID_OK:
-                val = True
-            else:
-                val = False
-            cfrm.Destroy()
-            return val            
+            self.cifdefs.SetSizer(vbox)
+            vbox.Fit(self.cifdefs)
+            self.cifdefs.Layout()
 
-        # ===== end of functions for export method =======================================
-        #=================================================================================
+# ===== end of functions for export method =======================================
+#=================================================================================
 
         # the export process starts here
         # load all of the tree into a set of dicts
@@ -1330,17 +1932,16 @@ class ExportCIF(G2IO.ExportBaseclass):
                     "one histogram for each instrument and use the\n"
                     "File/Copy option to duplicate the name"
                     )
-                if not EditInstNames(msg=msg): return
+                if not EditInstNames(): return
         # check for a distance-angle range search range for each phase
         if not self.quickmode:
             for phasenam in sorted(self.Phases.keys()):
-                i = self.Phases[phasenam]['pId']
+                #i = self.Phases[phasenam]['pId']
                 phasedict = self.Phases[phasenam] # pointer to current phase info            
-                generalData = phasedict['General']
-                if 'DisAglCtls' not in generalData:
-                    dlg = G2gd.DisAglDialog(self.G2frame,{},generalData)
+                if 'DisAglCtls' not in phasedict['General']:
+                    dlg = G2gd.DisAglDialog(self.G2frame,{},phasedict['General'])
                     if dlg.ShowModal() == wx.ID_OK:
-                        generalData['DisAglCtls'] = dlg.GetData()
+                        phasedict['General']['DisAglCtls'] = dlg.GetData()
                     else:
                         dlg.Destroy()
                         return
@@ -1363,7 +1964,13 @@ class ExportCIF(G2IO.ExportBaseclass):
             fil = self.defSaveFile()
         if not fil: return
         if not self.quickmode: # give the user a chance to edit all defaults
-            if not EditCIFDefaults(self.G2frame): return
+            self.cifdefs = wx.Dialog(
+                self.G2frame,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+            EditCIFDefaults()
+            val = self.cifdefs.ShowModal()
+            self.cifdefs.Destroy()
+            if val != wx.ID_OK:
+                return
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================

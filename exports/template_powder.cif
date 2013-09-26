@@ -1,0 +1,93 @@
+# GSAS-II powder instrument template file
+
+data_Instrument_Template
+#==============================================================================
+# 9. INSTRUMENT CHARACTERIZATION
+
+_exptl_special_details
+; ?
+;
+
+# if regions of the data are excluded, the reason(s) are supplied here:
+_pd_proc_info_excluded_regions
+; ?
+;
+
+# The following item is used to identify the equipment used to record 
+# the powder pattern when the diffractogram was measured at a laboratory 
+# other than the authors' home institution, e.g. when neutron or synchrotron
+# radiation is used.
+
+_pd_instr_location
+; ?
+;
+_pd_calibration_special_details           # description of the method used
+                                          # to calibrate the instrument
+; ?
+;
+
+_diffrn_ambient_temperature       ?       
+_diffrn_source                    ?       
+_diffrn_source_target             ?
+_diffrn_source_type               ?
+_diffrn_measurement_device_type   ?       
+_diffrn_detector                  ?       
+_diffrn_detector_type             ?       # make or model of detector
+
+_pd_meas_scan_method              ?       # options are 'step', 'cont',
+                                          # 'tof', 'fixed' or
+                                          # 'disp' (= dispersive)
+_pd_meas_special_details
+;  ?
+;
+
+# The following two items identify the program(s) used (if appropriate).
+_computing_data_collection        ?        
+_computing_data_reduction         ?                   
+
+# Describe any processing performed on the data, prior to refinement.
+# For example: a manual Lp correction or a precomputed absorption correction
+_pd_proc_info_data_reduction      ?
+
+# The following item is used for angular dispersive measurements only.
+
+_diffrn_radiation_monochromator   ?        
+
+# The following items are used to define the size of the instrument.
+# Not all distances are appropriate for all instrument types.
+
+_pd_instr_dist_src/mono           ?
+_pd_instr_dist_mono/spec          ?
+_pd_instr_dist_src/spec           ?
+_pd_instr_dist_spec/anal          ?
+_pd_instr_dist_anal/detc          ?
+_pd_instr_dist_spec/detc          ?
+
+# 10. Specimen size and mounting information
+
+# The next three fields give the specimen dimensions in mm.  The equatorial 
+# plane contains the incident and diffracted beam.
+
+_pd_spec_size_axial               ?       # perpendicular to 
+                                          # equatorial plane
+
+_pd_spec_size_equat               ?       # parallel to 
+                                          # scattering vector 
+                                          # in transmission
+
+_pd_spec_size_thick               ?       # parallel to 
+                                          # scattering vector 
+                                          # in reflection
+
+_pd_spec_mounting                         # This field should be
+                                          # used to give details of the 
+                                          # container.
+; ?
+;
+
+_pd_spec_mount_mode               ?       # options are 'reflection' 
+                                          # or 'transmission'
+    
+_pd_spec_shape                    ?       # options are 'cylinder' 
+                                          # 'flat_sheet' or 'irregular'
+

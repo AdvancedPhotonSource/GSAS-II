@@ -1,0 +1,24 @@
+# GSAS-II single-crystal instrument template file
+
+data_Instrument_Template
+#==============================================================================
+# 9. INSTRUMENT CHARACTERIZATION
+
+_exptl_special_details
+; ?
+;
+
+_diffrn_ambient_temperature       ?       
+_diffrn_source                    ?       
+_diffrn_source_target             ?
+_diffrn_source_type               ?
+_diffrn_measurement_device_type   ?       
+_diffrn_detector                  ?       
+_diffrn_detector_type             ?       # make or model of detector
+
+# The following two items identify the data collection program(s) used 
+_computing_data_collection        ?        
+_computing_data_reduction         ?                   
+
+_diffrn_radiation_monochromator   ?        
+

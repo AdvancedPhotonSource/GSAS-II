@@ -338,7 +338,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetForegroundColour("black")
             self.Refresh()
 
-    def ShowStringValidity(self,previousInvalid=None):
+    def ShowStringValidity(self,previousInvalid=True):
         '''Check if input is valid. Anytime the input is
         invalid, call self.OKcontrol (if defined) because it is fast.
         If valid, check for any other invalid entries only when

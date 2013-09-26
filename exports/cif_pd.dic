@@ -1,0 +1,2614 @@
+##############################################################################
+#                                                                            #
+#                        Powder CIF Dictionary                               #
+#                        ---------------------                               #
+#                                                                            #
+#  CIF data definitions specifically for powder diffraction applications.    #
+#  These are in addition to those defined in the Core CIF Dictionary 1996.   #
+#                                                                            #
+#  The DDL commands used in this dictionary are defined in "ddl_core.dic".   #
+#                                                                            #
+##############################################################################
+
+data_on_this_dictionary
+
+    _dictionary_name            cif_pd.dic
+    _dictionary_version         1.0.1
+    _dictionary_update          2005-06-14
+    _dictionary_history
+;
+  1991-08-28  Initial definitions                                  B.H. Toby
+  1991-09-15  More definitions added                               B.H. Toby
+  1991-09-21  Still More definitions                               B.H. Toby
+  1991-09-24  Some updates from down under  |:-)                   S.R. Hall
+  1991-10-07  Unable to leave well enough alone...                 B.H. Toby
+  1991-10-10  Some additional fine tuning   (-:|                   S.R. Hall
+  1991-10-14  Minor touchups                                       B.H. Toby
+  1991-12-08  Back to Work...                                      B.H. Toby
+  1992-01-07  Add _pd_refln_ to allow for mixtures                 B.H. Toby
+  1992-02-07  Some redefinitions                                   S.R. Hall
+  1992-02-25  Defining standards is a fiddly business              S.R. Hall
+  1992-03-18  And still more...                                    B.H. Toby
+  1992-05-22  Minor cleanup                                        B.H. Toby
+  1992-05-23  Quasar says that all is OK now...                    S.R. Hall
+  1992-05-30  Changes from comments @ APD-II                       B.H. Toby
+  1992-08-18  Add calculated pattern definitions                   B.H. Toby
+  1992-08-28  Change 'powder' to 'pw'                              B.H. Toby
+  1992-08-31  Major overhaul of some definitions                   B.H. Toby
+  1992-09-01  Small adjustments                                    S.R. Hall
+  1992-10-01  Change 'pw' to 'pd'                                  B.H. Toby
+  1993-04-16  Change usage for multiple detectors                  B.H. Toby
+  1993-04-19  Change *_raw_ to *_meas_; *_sample_ to *_samp_
+              Install new DDL commands; new *_phase_ group         S.R. Hall
+  1993-05-22  Fix _pd_calib_ defs; Minor editing                   B.H. Toby
+  1993-05-31  Still more minor editing                             B.H. Toby
+  1993-06-02  Application of new DDL commands                      S.R. Hall
+  1993-08-13  Last stop before Beijing, more descriptive entries &
+              more descriptive text added; support for film data.  B.H. Toby
+  1993-10-27  My two cents worth                                   I.D. Brown
+  1994-01-23  Change two to 2.5; sample to specimen.               B.H. Toby
+  1994-03-13  Change date/time usage
+              Be more careful about pd_proc usage: separate data
+              & processing conditions                              B.H. Toby
+  1994-04-11  Start work on categories: move all diffractogram
+              items (that might ever be in a single loop) into
+              pd_data.                                             B.H. Toby
+  1994-05-11  Start revisions based on I.D. Brown's comments       B.H. Toby
+  1994-06-25  Complete revisions prior to ACA                      B.H. Toby
+  1994-10-27  Working draft                                        B.H. Toby
+  1995-10-23  Implemented _units and _units_detail                 B. McMahon
+  1995-10-24  Transferred _pd_instr_radiation_probe to the core
+              as _diffrn_radiation_probe                           B. McMahon
+  1997-01-30  Final cleanup: removed _nm units; add units to
+              definitions; add _pd_block_diffractogram_id;
+              change _pd_meas_distance_value to _pd_meas_position;
+              remove _pd_proc_wavelength_nm, _pd_proc_d_spacing_nm;
+              _pd_proc_recip_len_Q_nm, and _pd_peak_d_spacing_nm
+                                                                   B.H. Toby
+  1997-01-31  Changed dictionary_definition to category_overview;
+              removed data_include_dependent_dictionaries and global_
+              blocks; some typos fixed                             B. McMahon
+  1997-02-12  Some typos fixed                                     B. McMahon
+  1997-02-18  References to e.s.d. changed to s.u. etc.
+              Notation for Bragg and expected R factors changed to
+              R~B~ and R~exp~
+                                                                   B. McMahon
+  1997-03-10  Category of _pd_refln_ things changed to 'refln'; category of`
+              _pd_proc_number_of_points changed to 'pd_proc_info'; some
+              rewording of descriptions involving s.u.s according to BT;
+              changed 'samp' to 'spec' in many datanames relating distances
+              to specimen; changed style of these and similar to *_src/spec
+              etc; _pd_calc_method no longer has '_list yes'; _list_uniqueness
+              deleted from _pd_refln_peak_id; use of '.' instead of '?'
+              recommended in a couple of places; addition of example to
+              _pd_calib_conversion_eqn; '_pd_proc_intensity_calc_bkg' and
+              '_fix_bkg' changed to '_pd_proc_intensity_bkg_calc' and '_fix'
+                                                                   B. McMahon
+  1997-03-12  Category of _pd_calib_ things changed to 'pd_calib';
+              _pd_calib_conversion_eqn and *_special_details renamed as
+              _pd_calibration_* and assigned to category 'pd_calibration'
+              Alphabetised entries within category.
+                                                                   B. McMahon
+  1997-03-17  Copyediting changes to punctuation and spelling.     B. McMahon
+  1997-10-29  Changed _pd_calib_std_external_id to
+              _pd_calib_std_external_block_id. Moved _pd_proc_2theta_range_ to
+              category pd_proc_info (because not looped with other pd_data
+              items).
+                                                                   B. McMahon
+  1997-10-29  Release version 1.0                                  B. McMahon
+  2005-01-07  NJA: minor corrections to hyphenation, spelling and punctuation
+                   pd_data_[pd]: Example 3, second loop _pd_calc_2theta_scan 
+                   changed to _pd_proc_2theta_corrected
+                   _pd_instr_cons_illum_len: definition rephrased
+                   _pd_phase_[pd]: first sentence of definition rephrased
+                   _pd_proc_ls_background_function: second paragraph of
+                   definition rephrased
+;
+
+#......................... Block/Data set names
+
+data_pd_block_[pd]
+    _name                       '_pd_block_[pd]'
+    _category                     category_overview
+    _type                         null
+    _definition
+;              _pd_block_id is used to assign a unique ID code to a data block.
+               This code is then used for references between different blocks
+               (see _pd_block_diffractogram_id, _pd_calib_std_external_block_id
+               and _pd_phase_block_id).
+
+               Note that a data block may contain only a single diffraction
+               data set or information about a single crystalline phase. 
+               However, a single diffraction measurement may yield structural 
+               information on more than one phase, or a single structure 
+               determination may use more than one data set. Alternatively, 
+               results from a single data set, such as calibration parameters 
+               from measurements of a standard, may be used for many subsequent 
+               analyses. Through use of the ID code, a reference made between 
+               data sets may be preserved when the file is exported from the 
+               laboratory from which the CIF originated.
+
+               The ID code assigned to each data block should be unique with
+               respect to an ID code assigned for any other data block in the
+               world. The naming scheme chosen for the block-ID format is
+               designed to ensure uniqueness.
+
+               It is the responsibility of a data archive site or local
+               laboratory to create a catalogue of block ID's if that site
+               wishes to resolve these references.
+;
+
+data_pd_block_diffractogram_id
+    _name                      '_pd_block_diffractogram_id'
+    _category                    pd_proc
+    _type                        char
+    _list                        yes
+    _definition
+;              A block ID code (see _pd_block_id) that identifies
+               diffraction data contained in a data block other
+               than the current block. This will occur most frequently
+               when more than one set of diffraction data
+               is used for a structure determination. The data
+               block containing the diffraction data will contain
+               a _pd_block_id code matching the code in
+               _pd_block_diffractogram_id.
+;
+
+data_pd_block_id
+    _name                      '_pd_block_id'
+    _category                    pd_block
+    _type                        char
+    _list                        both
+    loop_ _example
+                         1991-15-09T16:54|Si-std|B.Toby|D500#1234-987
+                         1991-15-09T16:54|SEPD7234|B.Toby|SEPD.IPNS.ANL.GOV
+    _definition
+;              Used to assign a unique character string to a block.
+               Note that this code is not intended to be parsed; the
+               concatenation of several strings is used in order to
+               generate a string that can reasonably be expected to
+               be unique.
+
+               This code is assigned by the originator of the data set and
+               is used for references between different CIF blocks.
+               The ID will normally be created when the block is first
+               created. It is possible to loop more than one ID for a
+               block: if changes or additions are made to the
+               block later, a new ID may be assigned, but the original name
+               should be retained.
+
+               The format for the ID code is:
+                 <date-time>|<block_name>|<creator_name>|<instr_name>
+
+                <date-time>    is the date and time the CIF was created
+                               or modified.
+
+                <block_name>   is an arbitrary name assigned by the
+                               originator of the data set. It will
+                               usually match the name of the phase
+                               and possibly the name of the current CIF
+                               data block (i.e. the string xxxx in a
+                               data_xxxx identifier). It may be a sample name.
+
+                <creator_name> is the name of the person who measured the
+                               diffractogram, or prepared or modified the CIF.
+
+                <instr_name>  is a unique name (as far as possible) for
+                               the data-collection instrument, preferably
+                               containing the instrument serial number for
+                               commercial instruments. It is also possible to
+                               use the Internet name or address for the
+                               instrument computer as a unique name.
+
+               As blocks are created in a CIF, the original sample identifier
+               (i.e. <block_name>) should be retained, but the <creator_name>
+               may be changed and the <date-time> will always change.
+               The <date-time> will usually match either the
+               _pd_meas_datetime_initiated or the _pd_proc_info_datetime
+               entry.
+
+               Within each section of the code, the following characters
+               may be used:
+                             A-Z a-z 0-9 # & * . : , - _ + / ( ) \ [ ]
+
+               The sections are separated with vertical rules '|' which are
+               not allowed within the sections. Blank spaces may also
+               not be used.  Capitalization may be used within the ID code
+               but should not be considered significant - searches for
+               data-set ID names should be case-insensitive.
+
+               Date-time entries are in the standard CIF format
+               'yyyy-mm-ddThh:mm:ss+zz' Use of seconds and a time zone
+               is optional, but use of hours and minutes is strongly
+               encouraged as this will help ensure that the ID code is unique.
+
+               An archive site that wishes to make CIFs available via
+               the web may substitute the URL for the file containing the
+               appropriate block for the final two sections of the ID
+               (<creator_name> and <instr_name>). Note that this should
+               not be done unless the archive site is prepared to keep the
+               file available online indefinitely.
+;
+
+#......................... Measured Diffractogram Information
+
+data_pd_meas_[pd]
+    _name                     '_pd_meas_[pd]'
+    _category                   category_overview
+    _type                       null
+    loop_
+        _example
+        _example_detail
+#----------------------------------------------------------------------------
+;
+    _pd_meas_info_author_name        'Cranswick, Lachlan'
+    _pd_meas_info_author_email       lachlan@dmp.csiro.au
+    _pd_meas_info_author_address     ?
+    _pd_meas_datetime_initiated      1992-03-23T17:20
+
+    _pd_meas_scan_method             step
+    _pd_meas_2theta_range_min        6.0
+    _pd_meas_2theta_range_max        164.0
+    _pd_meas_2theta_range_inc        0.025
+    _pd_meas_step_count_time         2.0
+;
+;
+    Example 1.
+;
+#----------------------------------------------------------------------------
+    _definition
+;              This section contains the measured diffractogram and information
+               about the conditions used for the measurement of the diffraction 
+               data set, prior to processing and application of correction
+               terms. While additional information may be added to the CIF
+               as data are processed and transported between laboratories
+               (possibly with the addition of a new _pd_block_id entry), the
+               information in this section of the CIF will rarely be changed
+               once data collection is complete.
+
+               Where possible, measurements in this section should have no
+               post-collection processing applied (normalizations, corrections,
+               smoothing, zero-offset corrections etc.). Such corrected
+               measurements should be recorded in the _pd_proc_ section.
+
+               Data sets that are measured as counts, where a standard
+               uncertainty can be considered equivalent to the standard
+               deviation and where the standard deviation can be estimated
+               as the square root of the number of counts recorded, should
+               use the _pd_meas_counts_ fields. All other intensity values
+               should be recorded using _pd_meas_intensity_.
+;
+
+data_pd_meas_2theta_fixed
+    _name                      '_pd_meas_2theta_fixed'
+    _category                    pd_meas_method
+    _type                        numb
+    _type_conditions             esd
+    _enumeration_range           -180.0:360.0
+    _definition
+;              The 2\q diffraction angle in degrees for measurements
+               in a white-beam fixed-angle experiment. For measurements
+               where 2\q is scanned, see _pd_meas_2theta_scan or
+               _pd_meas_2theta_range_.
+;
+
+data_pd_meas_2theta_range_
+    loop_ _name                '_pd_meas_2theta_range_min'
+                               '_pd_meas_2theta_range_max'
+                               '_pd_meas_2theta_range_inc'
+    _category                    pd_meas_method
+    _type                        numb
+    _enumeration_range           -180.0:360.0
+    _definition
+;              The range of 2\q diffraction angles in degrees for the
+               measurement of intensities. These may be used in place of the
+               _pd_meas_2theta_scan values for data sets measured with a
+               constant step size.
+;
+
+data_pd_meas_2theta_scan
+    _name                      '_pd_meas_2theta_scan'
+    _category                    pd_data
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _enumeration_range           -180.0:360.0
+    _definition
+;              2\q diffraction angle (in degrees) for intensity
+               points measured in a scanning method. The scan method used
+               (e.g. continuous or step scan) should be specified in
+               the item _pd_meas_scan_method. For fixed 2\q (white-beam)
+               experiments, use _pd_meas_2theta_fixed. In the case of
+               continuous-scan data sets, the 2\q value should be the
+               value at the midpoint of the counting period. Associated
+               with each _pd_meas_2theta_scan value will be
+               _pd_meas_counts_ items. The 2\q values should
+               not be corrected for nonlinearity,
+               zero offset etc. Corrected values may be specified
+               using _pd_proc_2theta_corrected.
+
+               Note that for data sets collected with constant step size,
+               _pd_meas_2theta_range_ (*_min, *_max and *_inc) may be
+               used instead of _pd_meas_2theta_scan.
+;
+
+data_pd_meas_angle_
+    loop_ _name                '_pd_meas_angle_chi'
+                               '_pd_meas_angle_omega'
+                               '_pd_meas_angle_phi'
+                               '_pd_meas_angle_2theta'
+    _category                    pd_data
+    _type                        numb
+    _list                        both
+    _enumeration_range           -180.0:360.0
+    _definition
+;              The diffractometer angles in degrees for an instrument with a
+               Euler circle. The definitions for these angles follow the
+               convention of International Tables for X-ray Crystallography
+               (1974), Vol. IV, p. 276.
+;
+
+data_pd_meas_counts_
+    loop_ _name                '_pd_meas_counts_total'
+                               '_pd_meas_counts_background'
+                               '_pd_meas_counts_container'
+                               '_pd_meas_counts_monitor'
+    _category                    pd_data
+    _type                        numb
+    _list                        yes
+    _enumeration_range           0:
+    _definition
+;              Counts measured at the measurement point as a function of
+               angle, time, channel or some other variable (see
+               _pd_meas_2theta_ etc.).
+
+               The defined fields are:
+                 _pd_meas_counts_total, scattering from the specimen
+                   (with background, specimen mounting or container
+                   scattering included);
+                 _pd_meas_counts_background, scattering measured
+                   without a specimen, specimen mounting etc., often
+                   referred to as the instrument background;
+                 _pd_meas_counts_container, the specimen container or
+                   mounting without a specimen, includes background;
+                 _pd_meas_counts_monitor, counts measured by an 
+                   incident-beam monitor to calibrate the flux on the 
+                   specimen.
+
+               Corrections for background, detector dead time etc.
+               should not have been made to these values. Instead use
+               _pd_proc_intensity_ for corrected diffractograms.
+
+               Note that counts-per-second values should be converted to
+               total counts. If the counting time varies for different
+               points, it may be included in the loop using
+               _pd_meas_step_count_time.
+
+               Standard uncertainties should not be quoted for these values.
+               If the standard uncertainties differ from the square root of
+               the number of counts, _pd_meas_intensity_ should be used.
+;
+
+data_pd_meas_datetime_initiated
+    _name                      '_pd_meas_datetime_initiated'
+    _category                    pd_meas_method
+    _type                        char
+    _example                     1990-07-13T14:40
+    _definition
+;              The date and time of the data-set measurement. Entries follow
+               the standard CIF format 'yyyy-mm-ddThh:mm:ss+zz'. Use
+               of seconds and a time zone is optional, but use of hours
+               and minutes is strongly encouraged. Where possible, give the
+               time when the measurement was started rather than when
+               it was completed.
+;
+
+data_pd_meas_detector_id
+    _name                      '_pd_meas_detector_id'
+    _category                    pd_data
+    _type                        char
+    _list                        yes
+    _list_link_parent          '_pd_calib_detector_id'
+    _definition
+;              A code or number which identifies the measuring detector or
+               channel number in a position-sensitive, energy-dispersive
+               or other multiple-detector instrument.
+
+               Calibration information, such as angle offsets or
+               a calibration function to convert channel numbers
+               to Q, energy, wavelength, angle etc. should
+               be described with _pd_calib_ values. If
+               _pd_calibration_conversion_eqn is used, the detector ID's
+               should be the number to be used in the equation.
+;
+
+data_pd_meas_info_author_address
+    _name                      '_pd_meas_info_author_address'
+    _category                    pd_meas_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_meas_info_author_name'
+    _definition
+;              The address of the person who measured the data set. If there
+               is more than one person, this will be looped with
+               _pd_meas_info_author_name.
+;
+
+data_pd_meas_info_author_email
+    _name                      '_pd_meas_info_author_email'
+    _category                    pd_meas_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_meas_info_author_name'
+    _definition
+;              The e-mail address of the person who measured the data set. If
+               there is more than one person, this will be looped with
+               _pd_meas_info_author_name.
+;
+
+data_pd_meas_info_author_fax
+    _name                      '_pd_meas_info_author_fax'
+    _category                    pd_meas_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_meas_info_author_name'
+    _definition
+;              The fax number of the person who measured the data set. If
+               there is more than one person, this will be looped with
+               _pd_meas_info_author_name. The recommended style is
+               the international dialing prefix, followed by the area code in
+               parentheses, followed by the local number with no spaces.
+;
+
+data_pd_meas_info_author_name
+    _name                      '_pd_meas_info_author_name'
+    _category                    pd_meas_info
+    _type                        char
+    _list                        both
+    _definition
+;              The name of the person who measured the data set. The family
+               name(s), followed by a comma and including any dynastic
+               components, precedes the first name(s) or initial(s).
+               For more than one person use a loop to specify multiple values.
+;
+
+data_pd_meas_info_author_phone
+    _name                      '_pd_meas_info_author_phone'
+    _category                    pd_meas_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_meas_info_author_name'
+    _definition
+;              The telephone number of the person who measured the data set.
+               If there is more than one person, this will be looped with
+               _pd_meas_info_author_name. The recommended style is
+               the international dialing prefix, followed by the area code in
+               parentheses, followed by the local number with no spaces.
+;
+
+data_pd_meas_intensity_
+    loop_ _name                '_pd_meas_intensity_total'
+                               '_pd_meas_intensity_background'
+                               '_pd_meas_intensity_container'
+                               '_pd_meas_intensity_monitor'
+    _category                    pd_data
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _definition
+;              Intensity measurements at the measurement point (see
+               the definition of _pd_meas_2theta_).
+
+               The defined fields are:
+                 _pd_meas_intensity_total, scattering from the specimen
+                   (with background, specimen mounting or container
+                   scattering included);
+                 _pd_meas_intensity_background, scattering measured
+                   without a specimen, specimen mounting etc., often
+                   referred to as the instrument background;
+                 _pd_meas_intensity_container, the specimen container or
+                   mounting without a specimen, includes background;
+                 _pd_meas_intensity_monitor, intensity measured by an
+                   incident-beam monitor to calibrate the flux on the specimen.
+
+               Use these entries for measurements where intensity
+               values are not counts (use _pd_meas_counts_ for event-counting
+               measurements where the standard uncertainty is
+               estimated as the square root of the number of counts).
+
+               Corrections for background, detector dead time etc.,
+               should not have been made to these values. Instead use
+               _pd_proc_intensity_ for corrected diffractograms.
+
+               _pd_meas_units_of_intensity should be used to specify
+               the units of the intensity measurements.
+;
+
+data_pd_meas_number_of_points
+    _name                      '_pd_meas_number_of_points'
+    _category                    pd_meas_method
+    _type                        numb
+    _enumeration_range           1:
+    _definition
+;              The total number of points in the measured
+               diffractogram.
+;
+
+data_pd_meas_position
+    _name                      '_pd_meas_position'
+    _category                    pd_data
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _units                       mm
+    _units_detail               'millimetres'
+    _definition
+;              A linear distance in millimetres corresponding to the
+               location where an intensity measurement is made.
+               Used for detectors where a distance measurement is made
+               as a direct observable, such as from a microdensitometer
+               trace from film or a strip chart recorder. This is an
+               alternative to _pd_meas_2theta_scan, which should only be
+               used for instruments that record intensities directly
+               against 2\q. For instruments where the position scale
+               is nonlinear, the data item _pd_meas_detector_id should
+               be used to record positions.
+
+               Calibration information, such as angle offsets or a
+               function to convert this distance to a 2\q angle
+               or d-space, should be supplied with the _pd_calib_ values.
+
+               Do not confuse this with the instrument geometry
+               descriptions given by _pd_instr_dist_.
+;
+
+data_pd_meas_rocking_angle
+    _name                      '_pd_meas_rocking_angle'
+    _category                    pd_data
+    _type                        numb
+    _list                        both
+    _units                       deg
+    _units_detail               'degrees'
+    _enumeration_range           0:360.0
+    _definition
+;              The angular range in degrees through which a sample is rotated
+               or oscillated during a measurement step
+               (see _pd_meas_rocking_axis).
+;
+
+data_pd_meas_rocking_axis
+    _name                      '_pd_meas_rocking_axis'
+    _category                    pd_meas_method
+    _type                        char
+    loop_ _enumeration           chi
+                                 omega
+                                 phi
+    _definition
+;              Description of the axis (or axes) used to rotate or rock the
+               specimen for better randomization of crystallites
+               (see _pd_meas_rocking_angle).
+;
+
+data_pd_meas_scan_method
+    _name                      '_pd_meas_scan_method'
+    _category                    pd_meas_method
+    _type                        char
+    loop_ _enumeration
+          _enumeration_detail    step    'step scan'
+                                 cont    'continuous scan'
+                                 tof     'time of flight'
+                                 disp    'energy dispersive'
+                                 fixed   'stationary detector'
+    _definition
+;              Code identifying the method for scanning reciprocal space.
+               The designation `fixed' should be used for measurements where
+               film, a stationary position-sensitive or area detector
+               or other non-moving detection mechanism is used to
+               measure diffraction intensities.
+;
+
+data_pd_meas_special_details
+    _name                      '_pd_meas_special_details'
+    _category                    pd_meas_method
+    _type                        char
+    _definition
+;              Special details of the diffraction measurement process.
+               Include information about source instability, degradation etc.
+               However, this item should not be used to record information
+               that can be specified in other _pd_meas_ entries.
+;
+
+data_pd_meas_step_count_time
+    _name                      '_pd_meas_step_count_time'
+    _category                    pd_data
+    _type                        numb
+    _type_conditions             esd
+    _list                        both
+    _units                       s
+    _units_detail               'seconds'
+    _enumeration_range           0.0:
+    _definition
+;              The count time in seconds for each intensity measurement.
+               If this value varies for different intensity measurements,
+               then this item will be placed in the loop with the
+               diffraction measurements. If a single fixed value is used,
+               it may be recorded outside the loop.
+;
+
+data_pd_meas_time_of_flight
+    _name                      '_pd_meas_time_of_flight'
+    _category                    pd_data
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _units                       \ms
+    _units_detail               'microseconds'
+    _enumeration_range           0:
+    _definition
+;              Measured time in microseconds for time-of-flight neutron
+               measurements. Note that the flight distance may be
+               specified using _pd_instr_dist_ values.
+;
+
+data_pd_meas_units_of_intensity
+    _name                      '_pd_meas_units_of_intensity'
+    _category                    pd_meas_method
+    _type                        char
+    loop_ _example        'estimated from strip chart'
+                          'arbitrary, from film density'
+                          'counts, with automatic dead-time correction applied'
+    _definition
+;              Units for intensity measurements when _pd_meas_intensity_
+               is used. Note that use of 'counts' or 'counts per second'
+               here is strongly discouraged: convert the intensity
+               measurements to counts and use _pd_meas_counts_ and
+               _pd_meas_step_count_time instead of _pd_meas_intensity_.
+;
+
+#........................... Calibration Information
+
+data_pd_calib_[pd]
+    _name                       '_pd_calib_[pd]'
+    _category                     category_overview
+    _type                         null
+    loop_
+        _example
+        _example_detail
+#----------------------------------------------------------------------------
+;
+   _pd_calib_std_external_block_id
+               QuartzPlate|D500#1234-987|B.Toby|91-15-09|14:02
+   _pd_calib_std_external_name
+               'Arkansas Stone quartz plate'
+;
+;
+    Example 1.
+;
+;
+    _pd_calibration_conversion_eqn
+    ; 2\q~actual~ = 2\q~setting~ + arctan(
+      cos(P~1~)/{1/[P~0~ (CC - CH~0~ - P~2~ CC^2^)] - sin(P~1~)})
+    ;
+;
+;
+    Example 2 - 
+                2\q~actual~ = 2\q~setting~ + arctan( cos(P~1~) / {1/[P~0~
+                  (CC - CH~0~ - P~2~ CC^2^)] - sin(P~1~)} ).
+
+                This allows for the calibration of 2\q for a linear
+                position-sensitive detector (PSD) where the PSD has been
+                set so that the 'centre channel' (CH~0~) is located at
+                2\q~setting~ as a function of the channel number (CC). In
+                addition to CH~0~, variables P~0~, P~1~ and P~2~ are
+                calibration constants, where P~0~ is the width of a PSD
+                channel in degrees, P~1~ is the angle of the PSD with respect
+                to the perpendicular and P~2~ is a quadratic term for
+                nonlinearities in the detector.
+;
+#----------------------------------------------------------------------------
+    _definition
+;              This section defines the parameters used for the calibration 
+               of the instrument that are used directly or indirectly in the 
+               interpretation of this data set. The information in this 
+               section of the CIF should generally be written when the 
+               intensities are first measured, but from then on should remain 
+               unchanged. Loops may be used for calibration information that 
+               differs by detector channel. The _pd_calibration_ items, 
+               however, are never looped.
+;
+
+data_pd_calib_2theta_
+    loop_ _name                '_pd_calib_2theta_offset'
+                               '_pd_calib_2theta_off_point'
+                               '_pd_calib_2theta_off_min'
+                               '_pd_calib_2theta_off_max'
+    _category                    pd_calib
+    _type                        numb
+    _list                        both
+    _list_reference            '_pd_calib_detector_id'
+    _units                       deg
+    _units_detail               'degrees'
+    _enumeration_range           -180.0:180.0
+    _definition
+;              _pd_calib_2theta_offset defines an offset angle (in degrees)
+               used to calibrate 2\q (as defined in _pd_meas_2theta_).
+               Calibration is done by adding the offset:
+
+                    2\q~calibrated~ = 2\q~measured~ + 2\q~offset~
+
+               For cases where the _pd_calib_2theta_offset value is
+               not a constant, but rather varies with 2\q, a set
+               of offset values can be supplied in a loop. In this case,
+               the value where the offset has been determined can be
+               specified as _pd_calib_2theta_off_point. Alternatively, a
+               range where the offset is applicable can be specified using
+               _pd_calib_2theta_off_min and _pd_calib_2theta_off_max.
+;
+
+data_pd_calib_detector_id
+    _name                      '_pd_calib_detector_id'
+    _category                    pd_calib
+    _type                        char
+    _list                        yes
+    _list_mandatory              yes
+    _list_link_child           '_pd_meas_detector_id'
+    _definition
+;              A code which identifies the detector or channel number in a
+               position-sensitive, energy-dispersive or other multiple-detector
+               instrument. Note that this code should match the code name used
+               for _pd_meas_detector_id.
+;
+
+data_pd_calib_detector_response
+    _name                      '_pd_calib_detector_response'
+    _category                    pd_calib
+    _type                        numb
+    _list                        yes
+    _list_reference            '_pd_calib_detector_id'
+    _enumeration_range           0.0:
+    _definition
+;              A value that indicates the relative sensitivity of each
+               detector. This can compensate for differences in electronics,
+               size and collimation. Usually, one detector or the mean for
+               all detectors will be assigned the value of 1.
+;
+
+data_pd_calib_std_external_
+    loop_ _name                '_pd_calib_std_external_block_id'
+                               '_pd_calib_std_external_name'
+    _category                    pd_calib
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_calib_detector_id'
+    _definition
+;              Identifies the data set used as an external standard for
+               the diffraction angle or the intensity calibrations.
+               *_name specifies the name of the material and
+               *_id the _pd_block_id for the CIF containing calibration
+               measurements. If more than one data set is used for
+               calibration, these fields may be looped.
+;
+
+data_pd_calib_std_internal_mass_%
+    _name                      '_pd_calib_std_internal_mass_%'
+    _category                    pd_calib
+    _type                        numb
+    _type_conditions             esd
+    _list                        both
+    _list_reference            '_pd_calib_detector_id'
+    _enumeration_range           0.0:100.0
+    _definition
+;              Per cent presence of the internal standard specified by the
+               data item _pd_calib_std_internal_name expressed as 100 times
+               the ratio of the amount of standard added to the original
+               sample mass.
+;
+
+data_pd_calib_std_internal_name
+    _name                      '_pd_calib_std_internal_name'
+    _category                    pd_calib
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_calib_detector_id'
+    loop_ _example              'NIST 640a Silicon standard'
+                                'Al2O3'
+    _definition
+;              Identity of material(s) used as an internal intensity standard.
+;
+
+data_pd_calibration_conversion_eqn
+    _name                      '_pd_calibration_conversion_eqn'
+    _category                    pd_calibration
+    _type                        char
+    _example
+; 2\q~actual~ = 2\q~setting~ + arctan(
+             cos(P~1~) / {1/[P~0~ (CC - CH~0~ - P~2~ CC^2^)] - sin(P~1~)} )
+;
+    _definition
+;              The calibration function for converting a channel number
+               supplied in _pd_meas_detector_id for a position-sensitive
+               or energy-dispersive detector or the distance supplied in
+               _pd_meas_position to Q, energy, angle etc.
+               Use _pd_calib_std_external_ to define a pointer
+               to the file or data block containing the information used
+               to define this function.
+;
+
+data_pd_calibration_special_details
+    _name                      '_pd_calibration_special_details'
+    _category                    pd_calibration
+    _type                        char
+    _definition
+;              Description of how the instrument was
+               calibrated, particularly for instruments where
+               calibration information is used to make hardware
+               settings that would otherwise be invisible once data
+               collection is completed. Do not use this item to specify
+               information that can be specified using other _pd_calib_
+               items.
+;
+
+#............................ Specimen parameters
+
+data_pd_spec_[pd]
+    _name                       '_pd_spec_[pd]'
+    _category                     category_overview
+    _type                         null
+    loop_
+        _example
+        _example_detail
+#----------------------------------------------------------------------------
+;
+    _pd_spec_mounting               ?
+    _pd_spec_mount_mode             transmission
+    _pd_spec_orientation            horizontal
+    _pd_spec_preparation            ?
+;
+;
+    Example 1.
+;
+#----------------------------------------------------------------------------
+    _definition
+;              This section contains information about the specimen used
+               for measurement of the diffraction data set. Note that 
+               information about the sample (the batch of material from which 
+               the specimen was obtained) is specified in _pd_prep_.
+;
+
+data_pd_spec_description
+     _name                     '_pd_spec_description'
+     _category                   pd_spec
+     _type                       char
+     _definition
+;               A description of the specimen, such as the source of the
+                specimen, identification of standards, mixtures etc.
+;
+
+data_pd_spec_mount_mode
+    _name                      '_pd_spec_mount_mode'
+    _category                    pd_spec
+    _type                        char
+    loop_ _enumeration           reflection
+                                 transmission
+    _definition
+;              A code describing the beam path through the specimen.
+;
+
+data_pd_spec_mounting
+    _name                      '_pd_spec_mounting'
+    _category                    pd_spec
+    _type                        char
+    loop_ _example               'vanadium can with He exchange gas'
+                                 'quartz capillary'
+                                 'packed powder pellet'
+                                 'drifted powder on off-cut Si'
+                                 'drifted powder on Kapton film'
+    _definition
+;              A description of how the specimen is mounted.
+;
+
+data_pd_spec_orientation
+    _name                      '_pd_spec_orientation'
+    _category                    pd_spec
+    _type                        char
+    loop_ _enumeration           horizontal
+                                 vertical
+                                 both
+    _definition
+;              The orientation of the \w (\q) and 2\q axis.
+               Note that this axis is parallel to the specimen axial axis
+               and perpendicular to the plane containing the incident and
+               scattered beams.
+
+               Thus for a horizontal orientation, scattering
+               measurements are made in a plane perpendicular to the
+               ground (the 2\q axis is parallel to the ground);
+               for vertical orientation, scattering measurements are
+               made in a plane parallel with the ground (the 2\q axis
+               is perpendicular to the ground). `Both' is appropriate for
+               experiments where measurements are made in both planes,
+               for example using two-dimensional detectors.
+;
+
+data_pd_spec_preparation
+    _name                      '_pd_spec_preparation'
+    _category                    pd_spec
+    _type                        char
+    loop_ _example               'wet grinding in acetone'
+                              'sieved through a 44 micron (325 mesh/inch) sieve'
+                                 'spray dried in water with 1% clay'
+    _definition
+;              A description of the preparation steps for producing the
+               diffraction specimen from the sample. Include any procedures
+               related to grinding, sieving, spray drying etc. For
+               information relevant to how the sample is synthesized, use
+               the _pd_prep_ entries.
+;
+
+data_pd_spec_shape
+    _name                      '_pd_spec_shape'
+    _category                    pd_spec
+    _type                        char
+    loop_ _enumeration           cylinder
+                                 flat_sheet
+                                 irregular
+    _definition
+;              A code describing the specimen shape.
+;
+
+data_pd_spec_size_
+    loop_ _name                '_pd_spec_size_axial'
+                               '_pd_spec_size_equat'
+                               '_pd_spec_size_thick'
+    _category                    pd_spec
+    _type                        numb
+    _units                       mm
+    _units_detail               'millimetres'
+    _enumeration_range           0.0:
+    _definition
+;              The size of the specimen in three mutually perpendicular
+               directions in millimetres.
+               The perpendicular to the plane containing the incident
+               and scattered beam is the *_axial direction.
+               In transmission geometry, the scattering vector is parallel
+               to *_equat and in reflection geometry the scattering vector is
+               parallel to *_thick.
+
+;
+
+data_pd_spec_special_details
+    _name                      '_pd_spec_special_details'
+    _category                   pd_spec
+    _type                       char
+    _definition
+;              Descriptive information about the specimen that cannot be
+               included in other data items.
+;
+
+#............................ Instrument parameters
+
+data_pd_instr_[pd]
+    _name                       '_pd_instr_[pd]'
+    _category                     category_overview
+    _type                         null
+    loop_
+        _example
+        _example_detail
+#----------------------------------------------------------------------------
+;
+    _pd_instr_slit_eq_src/spec       1.
+    _pd_instr_slit_eq_anal/detc      0.2
+
+    _pd_instr_geometry              Bragg-Brentano
+    _pd_instr_monochr_post_spec     'graphite (0001)'
+    _pd_instr_cons_illum_flag       no
+;
+;
+    Example 1.
+;
+#----------------------------------------------------------------------------
+    _definition
+;              This section contains information relevant to the instrument
+               used for the diffraction measurement. For most laboratories,
+               very little of this information will change, so a standard file
+               may be prepared and included with each data set.
+
+               Note that several definitions in the core CIF dictionary
+               are relevant here. For example, use:
+                 _diffrn_radiation_wavelength for the source wavelength,
+                 _diffrn_radiation_type for the X-ray wavelength type,
+                 _diffrn_source for the radiation source,
+                 _diffrn_radiation_polarisn_ratio for the source polarization,
+                 _diffrn_radiation_probe for the radiation type.
+               For data sets measured with partially monochromatized radiation,
+               for example, where both K\a~1~ and K\a~2~ are present, it is
+               important that all wavelengths present are included in a
+               loop_ using _diffrn_radiation_wavelength to define the 
+               wavelength and _diffrn_radiation_wavelength_wt to define the 
+               relative intensity of that wavelength. It is required that 
+               _diffrn_radiation_wavelength_id also be present in the 
+               wavelength loop. It may also be useful to
+               create a "dummy" ID to use for labelling
+               peaks/reflections where the K\a~1~ and K\a~2~ wavelengths are
+               not resolved. Set _diffrn_radiation_wavelength_wt to be 0 for
+               such a dummy ID.
+
+               In the _pd_instr_ definitions, the term monochromator refers
+               to a primary beam (pre-specimen) monochromator and the term
+               analyser refers to post-diffraction (post-specimen)
+               monochromator.  The analyser may be fixed for specific
+               wavelength or may be capable of being scanned.
+
+               For multiple-detector instruments it may be necessary to loop the
+               *_anal/detc or *_spec/detc values (for  _pd_instr_dist_,
+               _pd_instr_divg_, _pd_instr_slit_ and  _pd_instr_soller_) with
+               the detector ID's (_pd_calib_detector_id).
+
+               It is strongly recommended that the core dictionary term
+               _diffrn_radiation_probe (specifying the nature of the radiation
+               used) is employed for all data sets.
+;
+
+data_pd_instr_2theta_monochr_
+    loop_ _name                 '_pd_instr_2theta_monochr_pre'
+                                '_pd_instr_2theta_monochr_post'
+    _category                    pd_instr
+    _type                        numb
+    _list                        both
+    _units                       deg
+    _units_detail               'degrees'
+    _enumeration_range           -180.0:180.0
+    _definition
+;              The 2\q angle for a pre-specimen or post-specimen
+               monochromator (see _pd_instr_monochr_pre_spec and
+               _pd_instr_monochr_post_spec).
+;
+
+data_pd_instr_beam_size_
+    loop_ _name                '_pd_instr_beam_size_ax'
+                               '_pd_instr_beam_size_eq'
+    _category                    pd_data
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       mm
+    _units_detail               'millimetres'
+    _definition
+;              Axial and equatorial dimensions of the radiation beam
+               at the specimen position (in millimetres).
+               The perpendicular to the plane containing the incident
+               and scattered beam is the axial (*_ax) direction.
+;
+
+data_pd_instr_cons_illum_flag
+    _name                      '_pd_instr_cons_illum_flag'
+    _category                    pd_instr
+    _type                        char
+    loop_ _enumeration           yes  no
+    _definition
+;              Use 'yes' for instruments where the divergence slit is
+               \q-compensated to yield a constant illumination length
+               (also see _pd_instr_cons_illum_len).
+
+               For other flat-plate instruments, where the illumination
+               length changes with 2\q, specify 'no'. Note that
+               if the length is known, it may be specified using
+               _pd_instr_var_illum_len.
+;
+
+data_pd_instr_cons_illum_len
+    _name                      '_pd_instr_cons_illum_len'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       mm
+    _units_detail               'millimetres'
+    _definition
+;              Length of the specimen that is illuminated by the radiation
+               source (in millimetres).
+
+               Use _pd_instr_cons_illum_len for instruments where
+               the illumination length does not vary with 2\q, by
+               adjustment of the divergence slits (sometimes known
+               as \q-compensated slits).
+               Use _pd_instr_var_illum_len for instruments where
+               the illuminated length of the specimen has been 
+               characterized as a function of 2\q, most commonly true
+               with a fixed divergence slit.
+;
+
+data_pd_instr_dist_
+    loop_ _name                '_pd_instr_dist_src/mono'
+                               '_pd_instr_dist_mono/spec'
+                               '_pd_instr_dist_src/spec'
+                               '_pd_instr_dist_spec/anal'
+                               '_pd_instr_dist_anal/detc'
+                               '_pd_instr_dist_spec/detc'
+    _category                    pd_instr
+    _type                        numb
+    _units                       mm
+    _units_detail               'millimetres'
+    _enumeration_range           0.0:
+    _list                        both
+    _definition
+;              Specifies distances in millimetres for the instrument geometry:
+                 *_src/mono, the distance from the radiation source
+                     to the monochromator;
+                 *_mono/spec, the distance from the monochromator to
+                     the specimen;
+                 *_src/spec, the distance from the radiation source
+                     to the specimen;
+                 *_spec/anal, the distance from the specimen to the
+                     analyser;
+                 *_anal/detc, the distance from the analyser to the
+                     detector;
+                 *_spec/detc, the distance from the specimen to the
+                     detector.
+
+               Note that *_src/spec is used in place of *_src/mono and 
+               *_mono/spec if there is no monochromator in use, and 
+               *_spec/detc is used in place of *_spec/anal and *_anal/detc 
+               if there is no analyser in use.
+;
+
+data_pd_instr_divg_ax_
+    loop_ _name                '_pd_instr_divg_ax_src/mono'
+                               '_pd_instr_divg_ax_mono/spec'
+                               '_pd_instr_divg_ax_src/spec'
+                               '_pd_instr_divg_ax_spec/anal'
+                               '_pd_instr_divg_ax_anal/detc'
+                               '_pd_instr_divg_ax_spec/detc'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       deg
+    _units_detail               'degrees'
+    _list                        both
+    _definition
+;              Describes collimation in the axial direction
+               (perpendicular to the plane containing the incident
+               and diffracted beams) for the instrument.
+               Values are the maximum divergence angles in
+               degrees, as limited by slits or beamline optics
+               other than Soller slits (see _pd_instr_soller_ax_):
+                 *_src/mono, collimation between the radiation source
+                     and the monochromator;
+                 *_mono/spec, collimation between the monochromator and
+                     the specimen;
+                 *_src/spec, collimation between the radiation source
+                     and the specimen;
+                 *_spec/anal, collimation between the specimen and the
+                     analyser;
+                 *_anal/detc, collimation between the analyser and the
+                     detector;
+                 *_spec/detc, collimation between the specimen and the
+                     detector.
+
+               Note that *_src/spec is used in place of *_src/mono and 
+               *_mono/spec if there is no monochromator in use, and 
+               *_spec/detc is used in place of *_spec/anal and *_anal/detc 
+               if there is no analyser in use.
+;
+
+data_pd_instr_divg_eq_
+    loop_ _name                '_pd_instr_divg_eq_src/mono'
+                               '_pd_instr_divg_eq_mono/spec'
+                               '_pd_instr_divg_eq_src/spec'
+                               '_pd_instr_divg_eq_spec/anal'
+                               '_pd_instr_divg_eq_anal/detc'
+                               '_pd_instr_divg_eq_spec/detc'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       deg
+    _units_detail               'degrees'
+    _list                        both
+    _definition
+;              Describes collimation in the equatorial plane (the plane
+               containing the incident and diffracted beams) for
+               the instrument. Values are the maximum divergence angles in
+               degrees, as limited by slits or beamline optics
+               other than Soller slits (see _pd_instr_soller_eq_):
+                 *_src/mono, collimation between the radiation source
+                     and the monochromator;
+                 *_mono/spec, collimation between the monochromator and
+                     the specimen;
+                 *_src/spec, collimation between the radiation source
+                     and the specimen;
+                 *_spec/anal, collimation between the specimen and the
+                     analyser;
+                 *_anal/detc, collimation between the analyser and the
+                     detector;
+                 *_spec/detc, collimation between the specimen and the
+                     detector.
+
+               Note that *_src/spec is used in place of *_src/mono and 
+               *_mono/spec if there is no monochromator in use, and 
+               *_spec/detc is used in place of *_spec/anal and *_anal/detc 
+               if there is no analyser in use.
+;
+
+data_pd_instr_geometry
+    _name                      '_pd_instr_geometry'
+    _category                    pd_instr
+    _type                        char
+    loop_ _example        Bragg-Brentano
+                          Guinier
+;                         Parallel-beam non-focusing optics with
+                          channel-cut monochromator and linear
+                          position-sensitive detector
+;
+    _definition
+;              A description of the diffractometer type or geometry.
+;
+
+data_pd_instr_location
+    _name                      '_pd_instr_location'
+    _category                    pd_instr
+    _type                        char
+    _example         'SEPD diffractometer, IPNS, Argonne National Lab (USA)'
+    _definition
+;              The name and location of the instrument where measurements
+               were made. This is used primarily to identify data sets
+               measured away from the author's home facility, at shared
+               resources such as a reactor or spallation source.
+;
+
+data_pd_instr_monochr_
+    loop_ _name                 '_pd_instr_monochr_pre_spec'
+                                '_pd_instr_monochr_post_spec'
+    _category                    pd_instr
+    _type                        char
+    _list                        both
+    loop_ _example              'Zr filter'   'Ge 220'   'none'
+                                'equatorial mounted graphite (0001)'
+                                'Si (111), antiparallel'
+    _definition
+;              Indicates the method used to obtain monochromatic radiation.
+               Use _pd_instr_monochr_pre_spec to describe the primary beam
+               monochromator (pre-specimen monochromation). Use
+               _pd_instr_monochr_post_spec to specify the
+               post-diffraction analyser (post-specimen monochromation).
+
+               When a monochromator crystal is used, the material and the
+               indices of the Bragg reflection are specified.
+
+               Note that monochromators may have either 'parallel' or
+               'antiparallel' orientation. It is assumed that the
+               geometry is parallel unless specified otherwise.
+               In a parallel geometry, the position of the monochromator
+               allows the incident beam and the final post-specimen
+               and post-monochromator beam to be as close to parallel
+               as possible. In a parallel geometry, the diffracting
+               planes in the specimen and monochromator will be parallel
+               when 2\q~monochromator~ is equal to 2\q~specimen~.
+               For further discussion see R. Jenkins & R. Snyder (1996).
+               Introduction to X-ray Powder Diffraction, 
+               pp. 164-165. New York: Wiley.
+;
+
+data_pd_instr_slit_ax_
+    loop_ _name                '_pd_instr_slit_ax_src/mono'
+                               '_pd_instr_slit_ax_mono/spec'
+                               '_pd_instr_slit_ax_src/spec'
+                               '_pd_instr_slit_ax_spec/anal'
+                               '_pd_instr_slit_ax_anal/detc'
+                               '_pd_instr_slit_ax_spec/detc'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       mm
+    _units_detail               'millimetres'
+    _list                        both
+    _definition
+;              Describes collimation in the axial direction
+               (perpendicular to the plane containing the incident
+               and diffracted beams) for the instrument as a slit width
+               (as opposed to a divergence angle).
+               Values are the width of the slit (in millimetres) defining:
+                 *_src/mono, collimation between the radiation source
+                     and the monochromator;
+                 *_mono/spec, collimation between the monochromator and
+                     the specimen;
+                 *_src/spec, collimation between the radiation source
+                     and the specimen;
+                 *_spec/anal, collimation between the specimen and the
+                     analyser;
+                 *_anal/detc, collimation between the analyser and the
+                     detector;
+                 *_spec/detc, collimation between the specimen and the
+                     detector.
+
+               Note that *_src/spec is used in place of *_src/mono and 
+               *_mono/spec if there is no monochromator in use, and 
+               *_spec/detc is used in place of *_spec/anal and *_anal/detc 
+               if there is no analyser in use.
+;
+
+data_pd_instr_slit_eq_
+    loop_ _name                '_pd_instr_slit_eq_src/mono'
+                               '_pd_instr_slit_eq_mono/spec'
+                               '_pd_instr_slit_eq_src/spec'
+                               '_pd_instr_slit_eq_spec/anal'
+                               '_pd_instr_slit_eq_anal/detc'
+                               '_pd_instr_slit_eq_spec/detc'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       mm
+    _units_detail               'millimetres'
+    _list                        both
+    _definition
+;              Describes collimation in the equatorial plane (the plane
+               containing the incident and diffracted beams) for the
+               instrument as a slit width (as opposed to a divergence angle).
+               Values are the width of the slit (in millimetres) defining:
+                 *_src/mono, collimation between the radiation source
+                     and the monochromator;
+                 *_mono/spec, collimation between the monochromator and
+                     the specimen;
+                 *_src/spec, collimation between the radiation source
+                     and the specimen;
+                 *_spec/anal, collimation between the specimen and the
+                     analyser;
+                 *_anal/detc, collimation between the analyser and the
+                     detector;
+                 *_spec/detc, collimation between the specimen and the
+                     detector.
+
+               Note that *_src/spec is used in place of *_src/mono and 
+               *_mono/spec if there is no monochromator in use, and 
+               *_spec/detc is used in place of *_spec/anal and 
+               *_anal/detc if there is no analyser in use.
+;
+
+data_pd_instr_soller_ax_
+    loop_ _name                '_pd_instr_soller_ax_src/mono'
+                               '_pd_instr_soller_ax_mono/spec'
+                               '_pd_instr_soller_ax_src/spec'
+                               '_pd_instr_soller_ax_spec/anal'
+                               '_pd_instr_soller_ax_anal/detc'
+                               '_pd_instr_soller_ax_spec/detc'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       deg
+    _units_detail               'degrees'
+    _list                        both
+    _definition
+;              Describes collimation in the axial direction
+               (perpendicular to the plane containing the incident
+               and diffracted beams) for the instrument.
+               Values are the maximum divergence angles in
+               degrees, as limited by Soller slits located thus:
+                 *_src/mono, collimation between the radiation source
+                     and the monochromator;
+                 *_mono/spec, collimation between the monochromator and
+                     the specimen;
+                 *_src/spec, collimation between the radiation source
+                     and the specimen;
+                 *_spec/anal, collimation between the specimen and the
+                     analyser;
+                 *_anal/detc, collimation between the analyser and the
+                     detector;
+                 *_spec/detc, collimation between the specimen and the
+                     detector.
+
+               Note that *_src/spec is used in place of *_src/mono and 
+               *_mono/spec if there is no monochromator in use, and 
+               *_spec/detc is used in place of *_spec/anal and 
+               *_anal/detc if there is no analyser in use.
+;
+
+data_pd_instr_soller_eq_
+    loop_ _name                '_pd_instr_soller_eq_src/mono'
+                               '_pd_instr_soller_eq_mono/spec'
+                               '_pd_instr_soller_eq_src/spec'
+                               '_pd_instr_soller_eq_spec/anal'
+                               '_pd_instr_soller_eq_anal/detc'
+                               '_pd_instr_soller_eq_spec/detc'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       deg
+    _units_detail               'degrees'
+    _list                        both
+    _definition
+;              Describes collimation in the equatorial plane (the plane
+               containing the incident and diffracted beams) for
+               the instrument. Values are the maximum divergence angles in
+               degrees, as limited by Soller slits located thus:
+                 *_src/mono, collimation between the radiation source
+                     and the monochromator;
+                 *_mono/spec, collimation between the monochromator and
+                     the specimen;
+                 *_src/spec, collimation between the radiation source
+                     and the specimen;
+                 *_spec/anal, collimation between the specimen and the
+                     analyser;
+                 *_anal/detc, collimation between the analyser and the
+                     detector;
+                 *_spec/detc, collimation between the specimen and the
+                     detector.
+
+               Note that *_src/spec is used in place of *_src/mono and 
+               *_mono/spec if there is no monochromator in use, and 
+               *_spec/detc is used in place of *_spec/anal and 
+               *_anal/detc if there is no analyser in use.
+;
+
+data_pd_instr_source_size_
+    loop_ _name                '_pd_instr_source_size_ax'
+                               '_pd_instr_source_size_eq'
+    _category                    pd_instr
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       mm
+    _units_detail               'millimetres'
+    _definition
+;              Axial and equatorial intrinsic dimensions
+               of the radiation source (in millimetres).
+               The perpendicular to the plane containing the incident
+               and scattered beam is the axial (*_ax) direction.
+;
+
+data_pd_instr_special_details
+    _name                      '_pd_instr_special_details'
+    _category                    pd_instr
+    _type                        char
+    _definition
+;              A brief description of the instrument giving
+               details that cannot be given in other
+               _pd_instr_ entries.
+;
+
+data_pd_instr_var_illum_len
+    _name                      '_pd_instr_var_illum_len'
+    _category                    pd_data
+    _list                        yes
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       mm
+    _units_detail               'millimetres'
+    _definition
+;              Length of the specimen that is illuminated by the radiation
+               source (in millimetres) for instruments where
+               the illumination length varies with 2\q (fixed
+               divergence slits). The _pd_instr_var_illum_len
+               values should be included in the same loop as the
+               intensity measurements (_pd_meas_).
+
+               See _pd_instr_cons_illum_len for instruments where
+               the divergence slit is \q-compensated to yield a
+               constant illumination length.
+;
+
+#............................. Processed Diffractogram
+
+data_pd_proc_[pd]
+    _name                       '_pd_proc_[pd]'
+    _category                     category_overview
+    _type                         null
+    _definition
+;              This section contains the diffraction data set after processing
+               and application of correction terms. If the data set is
+               reprocessed, this section may be replaced (with the addition of
+               a new _pd_block_id entry).
+;
+
+data_pd_proc_2theta_corrected
+    _name                      '_pd_proc_2theta_corrected'
+    _category                    pd_data
+    _type                        numb
+    _list                        yes
+    _units                       deg
+    _units_detail               'degrees'
+    _enumeration_range           -180.0:180.0
+    _definition
+;              The 2\q diffraction angle in degrees of an intensity
+               measurement where 2\q is not constant. Used if
+               corrections such as for nonlinearity, zero offset etc.
+               have been applied to the _pd_meas_2theta_ values or if
+               2\q values are computed. If the 2\q values
+               are evenly spaced, _pd_proc_2theta_range_min,
+               _pd_proc_2theta_range_max and _pd_proc_2theta_range_inc
+               may be used to specify the 2\q values.
+;
+
+data_pd_proc_2theta_range_
+    loop_ _name                '_pd_proc_2theta_range_min'
+                               '_pd_proc_2theta_range_max'
+                               '_pd_proc_2theta_range_inc'
+    _category                    pd_proc_info
+    _type                        numb
+    _units                       deg
+    _units_detail               'degrees'
+    _enumeration_range           -180.0:180.0
+    _definition
+;              The range of 2\q diffraction angles in degrees for the
+               measurement of intensities. These may be used in place of the
+               _pd_proc_2theta_corrected values, or in the case of white-beam
+               experiments it will define the fixed 2\q value.
+;
+
+data_pd_proc_d_spacing
+    _name                      '_pd_proc_d_spacing'
+    _category                    pd_data
+    _type                        numb
+    _list                        yes
+    _enumeration_range           0.0:
+    _units                       A
+    _units_detail               'angstroms'
+    _definition
+;              d-spacing corresponding to an intensity point
+               from Bragg's law, d = \l/(2 sin\q), in units of angstroms.
+;
+
+data_pd_proc_energy_
+    loop_ _name                '_pd_proc_energy_incident'
+                               '_pd_proc_energy_detection'
+    _category                    pd_data
+    _type                        numb
+    _list                        both
+    _units                       eV
+    _units_detail               'electron volts'
+    _enumeration_range           0.0:
+    _definition
+;              Incident energy in electronvolts of the source computed
+               from secondary calibration information (time-of-flight
+               and synchrotron data).
+               Detection energy in electronvolts selected by the analyser,
+               if not the same as the incident energy (triple-axis or 
+               energy-dispersive data). This may be a single value or may 
+               vary for each data point (triple-axis and time-of-flight data).
+;
+
+data_pd_proc_info_author_address
+    _name                      '_pd_proc_info_author_address'
+    _category                    pd_proc_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_proc_info_author_name'
+    _definition
+;               The address of the person who processed the data.
+                If there is more than one person, this will be looped with
+                _pd_proc_info_author_name.
+;
+
+data_pd_proc_info_author_email
+    _name                      '_pd_proc_info_author_email'
+    _category                    pd_proc_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_proc_info_author_name'
+    _definition
+;               The e-mail address of the person who processed the
+                data.  If there is more than one person, this will be looped
+                with _pd_proc_info_author_name.
+;
+
+data_pd_proc_info_author_fax
+    _name                      '_pd_proc_info_author_fax'
+    _category                    pd_proc_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_proc_info_author_name'
+    _definition
+;               The fax number of the person who processed the data.
+                If there is more than one person, this will be looped with
+                _pd_proc_info_author_name. The recommended style is
+                the international dialing prefix, followed by the area code in
+                parentheses, followed by the local number with no spaces.
+;
+
+data_pd_proc_info_author_name
+    _name                      '_pd_proc_info_author_name'
+    _category                    pd_proc_info
+    _type                        char
+    _list                        both
+    _definition
+;               The name of the person who processed the data, if different
+                from the person(s) who measured the data set. The family
+                name(s), followed by a comma and including any dynastic
+                components, precedes the first name(s) or initial(s). For
+                more than one person use a loop to specify multiple values.
+;
+
+data_pd_proc_info_author_phone
+    _name                      '_pd_proc_info_author_phone'
+    _category                    pd_proc_info
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_proc_info_author_name'
+    _definition
+;               The telephone number of the person who processed the data.
+                If there is more than one person, this will be looped
+                with _pd_proc_info_author_name. The recommended style is
+                the international dialing prefix, followed by the area code in
+                parentheses, followed by the local number with no spaces.
+;
+
+data_pd_proc_info_data_reduction
+    _name                      '_pd_proc_info_data_reduction'
+    _category                    pd_proc_info
+    _type                        char
+    _definition
+;              Description of the processing steps applied in the data-reduction
+               process (background subtraction, \a-2 stripping, smoothing
+               etc.). Include details of the program(s) used etc.
+;
+
+data_pd_proc_info_datetime
+    _name                      '_pd_proc_info_datetime'
+    _category                    pd_proc_info
+    _type                        char
+    _list                        both
+    _example                     1990-07-13T14:40
+    _definition
+;              Date(s) and time(s) when the data set was processed.
+               May be looped if multiple processing steps were used.
+
+               Dates and times should be specified in the standard CIF
+               format 'yyyy-mm-ddThh:mm:ss+zz'. Use of seconds and a
+               time zone is optional, but use of hours and minutes is
+               strongly encouraged.
+;
+
+data_pd_proc_info_excluded_regions
+    _name                      '_pd_proc_info_excluded_regions'
+    _category                    pd_proc_info
+    _type                        char
+    _example                    '20 to 21 degrees unreliable due to beam dump'
+    _definition
+;              Description of regions in the diffractogram excluded
+               from processing along with a justification of why the
+               data points were not used.
+;
+
+data_pd_proc_info_special_details
+    _name                      '_pd_proc_info_special_details'
+    _category                    pd_proc_info
+    _type                        char
+    _definition
+;              Detailed description of any non-routine processing steps
+               applied due to any irregularities in this particular data set.
+;
+
+data_pd_proc_intensity_
+    loop_ _name                '_pd_proc_intensity_net'
+                               '_pd_proc_intensity_total'
+                               '_pd_proc_intensity_bkg_calc'
+                               '_pd_proc_intensity_bkg_fix'
+                               '_pd_proc_intensity_incident'
+                               '_pd_proc_intensity_norm'
+    _category                    pd_data
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _enumeration_range           0.0:
+    _definition
+;              _pd_proc_intensity_net contains intensity values for the
+               processed diffractogram for each data point (see
+               _pd_proc_2theta_, _pd_proc_wavelength etc.) after
+               correction and normalization factors have been applied
+               (in contrast to _pd_meas_counts_ values, which are
+               uncorrected).
+
+               _pd_proc_intensity_total contains intensity values for the
+               processed diffractogram for each data point where
+               background, normalization and other corrections have not
+               been applied.
+
+               Inclusion of s.u.'s for these values is strongly recommended.
+
+               _pd_proc_intensity_bkg_calc is intended to contain the
+               background intensity for every data point where the
+               background function has been fitted or estimated (for example, in
+               all Rietveld and profile fits).
+
+               If the background is estimated for a limited number of points
+               and the calculated background is then extrapolated from
+               these fixed points, indicate the background values for
+               these points with _pd_proc_intensity_bkg_fix. Use a value
+               of '.' for data points where a fixed background has not
+               been defined. The extrapolated background at every point
+               may be specified using _pd_proc_intensity_bkg_calc.
+
+               Background values should be on the same scale as the
+               _pd_proc_intensity_net values. Thus normalization and
+               correction factors should be applied before
+               background subtraction (or should be applied to the
+               background values equally).
+
+               If the intensities have been corrected for a variation of the
+               incident intensity as a function of a data-collection
+               variable (examples: source fluctuations in synchrotrons,
+               \q-compensated slits in conventional diffractometers,
+               spectral corrections for white-beam experiments), the
+               correction function should be specified as
+               _pd_proc_intensity_incident. The normalization should be
+               specified in _pd_proc_intensity_incident as a value to be
+               used to divide the measured intensities to obtained the
+               normalized diffractogram. Thus, the
+               _pd_proc_intensity_incident values should increase as the
+               incident flux is increased.
+
+               The other normalization factors applied to the data set (for
+               example, Lp corrections, compensation for variation in
+               counting time) may be specified in _pd_proc_intensity_norm.
+               The function should be specified as the one used to divide the
+               measured intensities.
+;
+
+data_pd_proc_number_of_points
+    _name                      '_pd_proc_number_of_points'
+    _category                    pd_proc_info
+    _type                        numb
+    _enumeration_range           1:
+    _definition
+;              The total number of data points in the processed diffractogram.
+;
+
+data_pd_proc_recip_len_Q
+    _name                      '_pd_proc_recip_len_Q'
+    _category                    pd_data
+    _type                        numb
+    _list                        yes
+    _enumeration_range           0.0:
+    _units                       A^-1^
+    _units_detail               'reciprocal angstroms'
+    _definition
+;              Length in reciprocal space (|Q|= 2\p/d) corresponding to
+               an intensity point. Units are inverse angstroms.
+;
+
+data_pd_proc_wavelength
+    _name                      '_pd_proc_wavelength'
+    _category                    pd_data
+    _type                        numb
+    _list                        both
+    _enumeration_range           0.0:
+    _units                       A
+    _units_detail               'Angstroms'
+    _definition
+;              Wavelength in angstroms for the incident radiation as
+               computed from secondary calibration information. This will
+               be most appropriate for time-of-flight and synchrotron
+               measurements. This will be a single value for
+               continuous-wavelength methods or may vary for each data point
+               and be looped with the intensity values for energy-dispersive
+               measurements.
+;
+
+#......................... Least-squares (Profile/Rietveld fit) parameters
+
+data_pd_proc_ls_[pd]
+    _name                       '_pd_proc_ls_[pd]'
+    _category                     category_overview
+    _type                         null
+
+    _definition
+;              This section is used to define parameters relevant to a
+               least-squares fit to a powder diffractogram, using a Rietveld
+               or other full-profile (e.g. Pawley or Le Bail methods) fit.
+
+               Note that values in this section refer to full-pattern fitting.
+               Use the appropriate items for single-crystal analyses from the
+               core CIF dictionary for structure refinements using diffraction
+               intensities estimated from a powder diffractogram by 
+               pattern-decomposition methods. Also note that many entries in 
+               the core _refine_ls_ entries may also be useful (for example
+               _refine_ls_shift/su_*).
+;
+
+data_pd_proc_ls_background_function
+    _name                      '_pd_proc_ls_background_function'
+    _category                    pd_proc_ls
+    _type                        char
+    _definition
+;              Description of the background treatment mechanism used to
+               fit the data set.
+
+               For refinements where the background is computed as a
+               function that is fitted to minimize the difference between 
+               the observed and calculated patterns, it is
+               recommended that in addition to a description of the
+               function (e.g. Chebychev polynomial), the actual equation(s)
+               used are included in TeX, or a programming language such
+               as Fortran or C. Include also the values used for the
+               coefficients used in the background function with their
+               s.u.'s. The background values for each data point
+               computed from the function should be specified in
+               _pd_proc_intensity_bkg_calc.
+
+               If background correction is performed using extrapolation
+               from a set of points at fixed locations, these points
+               should be defined using _pd_proc_intensity_bkg_fix, and
+               _pd_proc_ls_background_function should indicate the
+               extrapolation method (linear extrapolation, spline etc.).
+               _pd_proc_ls_background_function should also indicate how the
+               points were determined (automatically, by visual estimation
+               etc.) and whether the values were refined to improve the
+               agreement. The extrapolated background intensity value for
+               each data point should be specified in
+               _pd_proc_intensity_bkg_calc.
+;
+
+data_pd_proc_ls_peak_cutoff
+    _name                      '_pd_proc_ls_peak_cutoff'
+    _category                    pd_proc_ls
+    _type                        numb
+    _definition
+;              Describes where peak-intensity computation is
+               discontinued as a fraction of the intensity of the
+               peak at maximum. Thus for a value of 0.005, the
+               tails of a diffraction peak are neglected
+               after the intensity has dropped below 0.5% of the
+               diffraction intensity at the maximum.
+;
+
+data_pd_proc_ls_pref_orient_corr
+    _name                      '_pd_proc_ls_pref_orient_corr'
+    _category                    pd_proc_ls
+    _type                        char
+    _definition
+;              Description of the preferred-orientation correction if
+               such a correction is used. Omitting this entry
+               implies that no preferred-orientation correction
+               has been used. If a function form is used, it is
+               recommended that the actual equation in TeX, or a
+               programming language, is used to specify the function as
+               well as a giving a description. Include the value(s) used 
+               for the correction with s.u.'s.
+;
+
+data_pd_proc_ls_prof_
+    loop_ _name                 '_pd_proc_ls_prof_R_factor'
+                                '_pd_proc_ls_prof_wR_factor'
+                                '_pd_proc_ls_prof_wR_expected'
+    _category                    pd_proc_ls
+    _type                        numb
+    _enumeration_range           0.0:
+    _definition
+;              Rietveld/profile fit R factors.
+
+               Note that the R factor computed for Rietveld refinements
+               using the extracted reflection intensity values (often
+               called the Rietveld or Bragg R factor, R~B~) is not properly
+               a profile R factor. This R factor may be specified using
+               _refine_ls_R_I_factor. (Some authors report
+               _refine_ls_R_Fsqd_factor or _refine_ls_R_factor_all
+               as the Rietveld or Bragg R factor. While it is appropriate
+               to compute and report any or all of these R factors,
+               the names "Rietveld or Bragg R factor" refer strictly to
+               _refine_ls_R_I_factor.)
+
+              _pd_proc_ls_prof_R_factor, often called R~p~, is an
+                unweighted fitness metric for the agreement between the
+                observed and computed diffraction patterns.
+                   R~p~ = sum~i~ | I~obs~(i) - I~calc~(i) |
+                          / sum~i~ ( I~obs~(i) )
+              _pd_proc_ls_prof_wR_factor, often called R~wp~, is a
+                weighted fitness metric for the agreement between the
+                observed and computed diffraction patterns.
+                  R~wp~ = SQRT {
+                           sum~i~ ( w(i) [ I~obs~(i) - I~calc~(i) ]^2^ )
+                           / sum~i~ ( w(i) [I~obs~(i)]^2^ ) }
+
+              _pd_proc_ls_prof_wR_expected, sometimes called the
+                theoretical R~wp~ or R~exp~, is a weighted fitness metric for
+                the statistical precision of the data set. For an idealized fit,
+                where all deviations between the observed intensities and
+                those computed from the model are due to statistical
+                fluctuations, the observed R~wp~ should match the expected
+                R factor. In reality, R~wp~ will always be higher than
+                R~exp~.
+                  R~exp~ = SQRT {
+                                 (n - p)  / sum~i~ ( w(i) [I~obs~(i)]^2^ ) }
+
+                Note that in the above equations,
+                   w(i) is the weight for the ith data point (see
+                        _pd_proc_ls_weight).
+                   I~obs~(i) is the observed intensity for the ith data
+                        point, sometimes referred to as y~i~(obs) or
+                        y~oi~. (See _pd_meas_counts_total,
+                        _pd_meas_intensity_total or _pd_proc_intensity_total.)
+                   I~calc~(i) is the computed intensity for the ith data
+                        point with background and other corrections
+                        applied to match the scale of the observed data set,
+                        sometimes referred to as y~i~(calc) or
+                        y~ci~. (See _pd_calc_intensity_total.)
+                   n is the total number of data points (see
+                        _pd_proc_number_of_points) less the number of
+                        data points excluded from the refinement.
+                   p is the total number of refined parameters.
+;
+
+data_pd_proc_ls_profile_function
+    _name                      '_pd_proc_ls_profile_function'
+    _category                    pd_proc_ls
+    _type                        char
+    _definition
+;              Description of the profile function used to
+               fit the data set. If a function form is used, it is
+               recommended that the actual equation in TeX, or a
+               programming language, is used to specify the function as
+               well as giving a description. Include the values used 
+               for the profile-function coefficients and their s.u.'s.
+;
+
+data_pd_proc_ls_special_details
+    _name                      '_pd_proc_ls_special_details'
+    _category                    pd_proc_ls
+    _type                        char
+    _definition
+;              Additional characterization information relevant to
+               non-routine steps used for refinement of a structural model
+               that cannot be specified elsewhere.
+;
+
+data_pd_proc_ls_weight
+    _name                      '_pd_proc_ls_weight'
+    _category                    pd_data
+    _type                        numb
+    _list                        yes
+    _enumeration_range           0:
+    _definition
+;              Weight applied to each profile point. These values
+               may be omitted if the weights are 1/u^2^, where
+               u is the s.u. for the _pd_proc_intensity_net values.
+
+               A weight value of zero is used to indicate a data
+               point not used for refinement (see
+               _pd_proc_info_excluded_regions).
+;
+
+#............................. Calculated Diffractogram
+
+data_pd_calc_[pd]
+    _name                       '_pd_calc_[pd]'
+    _category                     category_overview
+    _type                         null
+
+    _definition
+;              This section is used for storing a computed diffractogram trace.
+               This may be a simulated powder pattern for a material from a
+               program such as LAZY/PULVERIX or the computed intensities from a
+               Rietveld refinement.
+;
+
+
+data_pd_calc_intensity_
+    loop_ _name                 '_pd_calc_intensity_net'
+                                '_pd_calc_intensity_total'
+    _category                    pd_data
+    _type                        numb
+    _list                        yes
+    _enumeration_range           0.0:
+    _definition
+;              Intensity values for a computed diffractogram at
+               each angle setting. Values should be computed at the
+               same locations as the processed diffractogram, and thus
+               the numbers of points will be defined by
+               _pd_proc_number_of_points and point positions may
+               be defined using _pd_proc_2theta_range_ or
+               _pd_proc_2theta_corrected.
+
+               Use _pd_calc_intensity_net if the computed diffractogram
+               does not contain background or normalization corrections
+               and thus is specified on the same scale as the
+               _pd_proc_intensity_net values.
+
+               Use _pd_calc_intensity_total if the computed diffraction
+               pattern includes background or normalization corrections
+               (or both) and thus is specified on the same scale as the
+               observed intensities (_pd_meas_counts_ or _pd_meas_intensity_).
+
+               If an observed pattern is included, _pd_calc_intensity_
+               should be looped with either _pd_proc_intensity_net,
+               _pd_meas_counts_ or _pd_meas_intensity_.
+;
+
+data_pd_calc_method
+    _name                      '_pd_calc_method'
+    _category                    pd_calc
+    _type                        char
+    _definition
+;              A description of the method used for the calculation of
+               the intensities in _pd_calc_intensity_. If the pattern was
+               calculated from crystal structure data, the atom coordinates
+               and other crystallographic information should be included
+               using the core CIF _atom_site_ and _cell_ data items.
+;
+
+
+#......................... Peak Table
+
+data_pd_peak_[pd]
+    _name                       '_pd_peak_[pd]'
+    _category                     category_overview
+    _type                         null
+    _definition
+;              This section contains peak information extracted from the
+               measured or, if present, the processed diffractogram. Each
+               peak in this table will have a unique label (see _pd_peak_id).
+               The reflections and phases associated with each peak will be
+               specified in other sections (see the _pd_refln_ and
+               _pd_phase_ sections).
+
+               Note that peak positions are customarily determined from the
+               processed diffractogram and thus corrections for position
+               and intensity will have been previously applied.
+;
+
+data_pd_peak_2theta_
+    loop_ _name                  '_pd_peak_2theta_centroid'
+                                 '_pd_peak_2theta_maximum'
+    _category                    pd_peak
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _list_reference            '_pd_peak_id'
+    _units                       deg
+    _units_detail               'degrees'
+    _enumeration_range           0.0:180.0
+    _definition
+;              Position of the centroid and maximum of a peak as a
+               2\q angle in degrees.
+;
+
+data_pd_peak_d_spacing
+    _name                      '_pd_peak_d_spacing'
+    _category                    pd_peak
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _list_reference            '_pd_peak_id'
+    _enumeration_range           0.0:
+    _units                       A
+    _units_detail               'angstroms'
+    _definition
+;              Peak position as a d-spacing in angstroms.
+;
+
+data_pd_peak_id
+    _name                      '_pd_peak_id'
+    _category                    pd_peak
+    _type                        char
+    _list                        yes
+    _list_mandatory              yes
+    _list_uniqueness           '_pd_peak_id'
+    _list_link_child           '_pd_refln_peak_id'
+    _definition
+;              An arbitrary code is assigned to each peak. Used to link with
+               _pd_refln_peak_id so that multiple hkl and/or phase
+               identifications can be assigned to a single peak.
+               Each peak will have a unique code. In cases
+               where two peaks are severely overlapped, it may be
+               desirable to list them as a single peak.
+
+               A peak ID must be included for every peak.
+;
+
+data_pd_peak_intensity
+    _name                      '_pd_peak_intensity'
+    _category                    pd_peak
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _list_reference            '_pd_peak_id'
+    _enumeration_range           0.0:
+    _definition
+;              Integrated area for the peak, with the same scaling as
+               the _pd_proc_intensity_ values. It is good practice to
+               include s.u.'s for these values.
+;
+
+data_pd_peak_pk_height
+    _name                      '_pd_peak_pk_height'
+    _category                    pd_peak
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _list_reference            '_pd_peak_id'
+    _enumeration_range           0.0:
+    _definition
+;              The maximum intensity of the peak, either extrapolated
+               or the highest observed intensity value. The same
+               scaling is used for the _pd_proc_intensity_ values.
+               It is good practice to include s.u.'s for these values.
+;
+
+data_pd_peak_special_details
+    _name                      '_pd_peak_special_details'
+    _category                    pd_peak_method
+    _type                        char
+    _definition
+;              Detailed description of any non-routine processing steps
+               used for peak determination or other comments
+               related to the peak table that cannot be given elsewhere.
+;
+
+data_pd_peak_wavelength_id
+    _name                      '_pd_peak_wavelength_id'
+    _category                    pd_peak
+    _type                        char
+    _list                        yes
+    _list_reference            '_pd_peak_id'
+    _list_link_parent          '_diffrn_radiation_wavelength_id'
+    _definition
+;              Code identifying the wavelength appropriate for this peak
+               from the wavelengths in the _diffrn_radiation_ list.
+               (See _diffrn_radiation_wavelength_id.) Most commonly used
+               to distinguish K\a~1~ peaks from K\a~2~ or to designate
+               where K\a~1~ and K\a~2~ peaks cannot be resolved. For
+               complex peak tables with multiple superimposed peaks,
+               specify wavelengths in the reflection table using
+               _pd_refln_wavelength_id rather than identifying peaks by
+               wavelength.
+;
+
+data_pd_peak_width_2theta
+    _name                      '_pd_peak_width_2theta'
+    _category                    pd_peak
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _list_reference            '_pd_peak_id'
+    _enumeration_range           0.0:180.0
+    _units                       deg
+    _units_detail                degrees
+    _definition
+;              Peak width as full-width at half-maximum expressed as
+               a 2\q value in degrees.
+;
+
+data_pd_peak_width_d_spacing
+    _name                      '_pd_peak_width_d_spacing'
+    _category                    pd_peak
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _list_reference            '_pd_peak_id'
+    _enumeration_range           0.0:
+    _units                       A
+    _units_detail               'angstroms'
+    _definition
+;              Peak width as full-width at half-maximum expressed as
+               a d-spacing in angstroms.
+;
+
+#............................ Crystalline Phase Assignments
+
+data_pd_phase_[pd]
+    _name                       '_pd_phase_[pd]'
+    _category                     category_overview
+    _type                         null
+
+    _definition
+;              This section contains a description of the crystalline phases
+               contributing to the powder diffraction data set. Note that if
+               multiple-phase Rietveld or other structural analysis is
+               performed, the structural results will be placed in different
+               data blocks, using CIF entries from the core CIF dictionary.
+
+               The _pd_phase_block_id entry points to the CIF block with
+               structural parameters for each crystalline phase. The
+               _pd_phase_id serves to link to _pd_refln_phase_id, which is
+               used to label peaks by phase.
+;
+
+data_pd_phase_block_id
+    _name                      '_pd_phase_block_id'
+    _category                    pd_phase
+    _type                        char
+    _list                        yes
+    _list_reference            '_pd_phase_id'
+    _definition
+;              A block ID code identifying the phase contributing to
+               the diffraction peak. The data block containing the
+               crystallographic information for this phase will be
+               identified with a _pd_block_id code matching the
+               code in _pd_phase_block_id.
+;
+
+data_pd_phase_id
+    _name                      '_pd_phase_id'
+    _category                    pd_phase
+    _type                        char
+    _list                        yes
+    _list_mandatory              yes
+    _list_link_child           '_pd_refln_phase_id'
+    _list_uniqueness           '_pd_phase_id'
+    _definition
+;              A code for each crystal phase used to link with
+               _pd_refln_phase_id.
+;
+
+data_pd_phase_mass_%
+    _name                      '_pd_phase_mass_%'
+    _category                    pd_phase
+    _type                        numb
+    _type_conditions             esd
+    _list                        yes
+    _list_reference            '_pd_phase_id'
+    _enumeration_range           0.0:100.0
+    _definition
+;              Per cent composition of the specified crystal phase
+               expressed as the total mass of the component
+               with respect to the total mass of the specimen.
+;
+
+data_pd_phase_name
+    _name                      '_pd_phase_name'
+    _category                    pd_phase
+    _type                        char
+    _list                        both
+    _list_reference            '_pd_phase_id'
+    _definition
+;              The name of the crystal phase identified by _pd_phase_id.
+               It may be designated as unknown or by a structure type etc.
+;
+
+#............................ Peak Reflection Identification
+
+data_pd_refln_[pd]
+    _name                       '_pd_refln_[pd]'
+    _category                     category_overview
+    _type                         null
+    _definition
+;              This section provides a mechanism to identify each peak in the
+               peak-table section (_pd_peak_) with the phase(s) (_pd_phase_id)
+               and the reflection indices (_refln_index_) associated with the
+               peak.  There are no restrictions on the number of phases or
+               reflections associated with an observed peak. Reflections may
+               also be included that are not observed; use '.' for the
+               _pd_refln_peak_id.
+;
+
+data_pd_refln_peak_id
+    _name                      '_pd_refln_peak_id'
+    _category                    refln
+    _type                        char
+    _list                        yes
+    loop_ _list_reference      '_refln_index_h'
+                               '_refln_index_k'
+                               '_refln_index_l'
+    _list_link_parent          '_pd_peak_id'
+    _definition
+;              Code which identifies the powder diffraction peak that
+               contains the current reflection. This code must match a
+               _pd_peak_id code.
+;
+
+data_pd_refln_phase_id
+    _name                      '_pd_refln_phase_id'
+    _category                    refln
+    _type                        char
+    _list                        yes
+    loop_ _list_reference      '_refln_index_h'
+                               '_refln_index_k'
+                               '_refln_index_l'
+    _list_link_parent          '_pd_phase_id'
+    _definition
+;              Code which identifies the crystal phase associated with this
+               reflection. This code must match a _pd_phase_id code.
+;
+
+data_pd_refln_wavelength_id
+    _name                      '_pd_refln_wavelength_id'
+    _category                    refln
+    _type                        char
+    _list                        yes
+    loop_ _list_reference      '_refln_index_h'
+                               '_refln_index_k'
+                               '_refln_index_l'
+    _list_link_parent          '_diffrn_radiation_wavelength_id'
+    _definition
+;              Code which identifies the wavelength associated with the
+               reflection and the peak pointed to by _pd_refln_peak_id.
+               This code must match a _diffrn_radiation_wavelength_id code.
+;
+
+#............................. Sample Preparation Information
+
+data_pd_prep_[pd]
+    _name                       '_pd_prep_[pd]'
+    _category                     category_overview
+    _type                         null
+    _definition
+;              This section contains descriptive information about how the
+               sample was prepared.
+;
+
+data_pd_prep_conditions
+    _name                      '_pd_prep_conditions'
+    _category                    pd_prep
+    _type                        char
+    _definition
+;              A description of how the material was prepared
+               (reaction conditions etc.)
+;
+
+data_pd_prep_cool_rate
+    _name                      '_pd_prep_cool_rate'
+    _category                    pd_prep
+    _type                        numb
+    _type_conditions             esd
+    _enumeration_range           0.0:
+    _units                       Kmin^-1^
+    _units_detail               'kelvins/minute'
+    _definition
+;              Cooling rate in kelvins per minute for samples prepared
+               at high temperatures. If the cooling rate is not linear
+               or is unknown (e.g. quenched samples), it should be
+               described in _pd_prep_conditions instead.
+;
+
+data_pd_prep_pressure
+    _name                      '_pd_prep_pressure'
+    _category                    pd_prep
+    _type                        numb
+    _type_conditions             esd
+    _enumeration_range           0.0:
+    _units                       kPa
+    _units_detail               'kilopascals'
+    _definition
+;              Preparation pressure of the sample in kilopascals. This
+               is particularly important for materials which are metastable
+               at the measurement pressure, _diffrn_ambient_pressure.
+;
+
+data_pd_prep_temperature
+    _name                      '_pd_prep_temperature'
+    _category                    pd_prep
+    _type                        numb
+    _type_conditions             esd
+    _enumeration_range           0.0:
+    _units                       K
+    _units_detail               'kelvin'
+    _definition
+;              Preparation temperature of the sample in kelvins. This is
+               particularly important for materials which are metastable
+               at the measurement temperature, _diffrn_ambient_temperature.
+;
+
+#............................. Characterisation Information
+
+data_pd_char_[pd]
+    _name                       '_pd_char_[pd]'
+    _category                     category_overview
+    _type                         null
+    _definition
+;   This section contains experimental (non-diffraction) information
+    relevant to the chemical and physical nature of the material.
+;
+
+data_pd_char_atten_coef_mu_
+    loop_ _name                '_pd_char_atten_coef_mu_obs'
+                               '_pd_char_atten_coef_mu_calc'
+    _category                    pd_char
+    _type                        numb
+    _enumeration_range           0.0:
+    _units                       mm^-1^
+    _units_detail                'reciprocal millimetres'
+    _definition
+;              The observed and calculated linear attenuation coefficient,
+               \m, in units of inverse millimetres. Note that this quantity
+               is sometimes referred to as the mass absorption coefficient;
+               however, this term accounts for other potentially significant
+               losses of incident radiation, for example incoherent
+               scattering of neutrons.
+
+               The calculated \m will be obtained from the atomic content of
+               the cell, the average density (allowing for specimen packing)
+               and the radiation wavelength. The observed \m will be
+               determined by a transmission measurement.
+               Note that _pd_char_atten_coef_mu_calc will differ from
+               _exptl_absorpt_coefficient_mu if the packing density is
+               not unity.
+;
+
+data_pd_char_colour
+    _name                      '_pd_char_colour'
+    _category                    pd_char
+    _type                        char
+    loop_ _example               dark_green
+                                 orange_red
+                                 brownish_red
+                                 yellow_metallic
+    _definition
+;              The colour of the material used for the measurement.
+               To facilitate more standardized use of names, the
+               following guidelines for colour naming developed by
+               Peter Bayliss for the International Centre for 
+               Diffraction Data (ICDD) should be followed. Note that
+               combinations of descriptors are separated by an
+               underscore.
+
+               Allowed colours are:
+                 colourless, white, black, gray, brown, red, pink,
+                 orange, yellow, green, blue, violet.
+
+               Colours may be modified using prefixes of:
+                 light, dark, whitish, blackish, grayish, brownish,
+                 reddish, pinkish, orangish, yellowish, greenish, bluish.
+
+               Intermediate hues may be indicated with two colours:
+               e.g. blue_green or bluish_green.
+
+               For metallic materials, the term metallic may be added:
+               e.g. reddish_orange_metallic for copper.
+
+               The ICDD standard allows commas to be used for minerals
+               that occur with ranges of colours; however this usage is
+               not appropriate for the description of a single sample.
+;
+
+data_pd_char_particle_morphology
+    _name                      '_pd_char_particle_morphology'
+    _category                    pd_char
+    _type                        char
+    _definition
+;              A description of the sample morphology and estimates for
+               particle sizes (before grinding/sieving, if noted by
+               _pd_spec_preparation). Include the method used for
+               these estimates (SEM, visual estimate etc.).
+;
+
+data_pd_char_special_details
+    _name                      '_pd_char_special_details'
+    _category                    pd_char
+    _type                        char
+    _definition
+;              Additional characterization information relevant to the sample
+               or documentation of non-routine processing steps used
+               for characterization.
+;
+
+#............................. Data Tabulation and Book-keeping Across Tables
+
+data_pd_data_[pd]
+    _name                       '_pd_data_[pd]'
+    _category                     category_overview
+    _type                         null
+    loop_ _example
+          _example_detail
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+;
+    loop_
+      _pd_data_point_id
+      _pd_meas_intensity_total
+      _pd_proc_ls_weight
+      _pd_proc_intensity_bkg_calc
+      _pd_calc_intensity_total
+    1    240(15)       0.00417     214.5   214.5 
+    2    219(15)       0.00457     214.3   214.2 
+    3    206(14)       0.00485     214.0   214.0 
+    4    212(15)       0.00472     213.8   213.7 
+    5    190(14)       0.00526     213.5   213.5 
+    6    203(14)       0.00493     213.2   213.2 
+     # - - - - data truncated for brevity - - - -
+;
+;   Example 1 - data set collected for a two-phase sample (Al~2~O~3~/Si)
+                by B. H. Toby, '1997-01-29T16:37|POWSET_01|B.Toby|..NIST-D5000'.
+;
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+;
+     loop_
+      _pd_meas_point_id
+      _pd_meas_intensity_total
+    1  240(15) 2  219(15) 3  206(14) 4  212(15) 5  190(14) 6  203(14)
+
+     loop_
+      _pd_proc_point_id
+      _pd_proc_ls_weight
+      _pd_proc_intensity_bkg_calc
+    1  0.00417  214.5      2  0.00457  214.3
+    3  0.00485  214.0      4  0.00472  213.8
+    5  0.00526  213.5      6  0.00493  213.2
+
+     loop_
+      _pd_calc_point_id
+      _pd_calc_intensity_total
+    1   214.5 2   214.2 3   214.0 4   213.7 5   213.5 6   213.2 
+
+;
+;   Example 2 - the data of Example 1 split into three separate tables.
+;
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+;
+   loop_ 
+     _pd_meas_point_id
+     _pd_meas_2theta_scan
+     _pd_meas_intensity_total
+            1  21.0   24
+            2  21.2   32
+            3  21.4   67
+            4  21.6   98
+
+   loop_ 
+     _pd_calc_point_id
+     _pd_proc_2theta_corrected
+     _pd_calc_intensity_total
+            1   21.0  26
+            1a  21.3  56
+            4   21.6  76
+            4a  21.9  90
+
+;
+;   Example 3 - hypothetical example where the measured and calculated
+                points are not in one-to-one correspondence.
+;
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    _definition
+;              The PD_DATA category contains raw, processed and calculated
+               data points in a diffraction data set. In many cases, it is
+               convenient to tabulate calculated values against the
+               raw and processed measurements, and so the various
+               _pd_meas_, _pd_proc_ and _pd_calc_ data items belonging
+               to this category may be looped together. In some instances,
+               however, it makes more sense to maintain separate tables of
+               the data contributing to the measured and processed
+               diffractograms (for example, a profile may be calculated
+               at 2theta values different from those of the measured
+               data points). To facilitate the identification of equivalent
+               points in these separate tables, separate identifiers are
+               defined.
+;
+
+data_pd_calc_point_id
+    _name                      '_pd_calc_point_id'
+    _category                    pd_data
+    _type                        char
+    _related_item              '_pd_data_point_id'
+    _related_function            alternate
+    _definition
+;              Arbitrary label identifying a calculated data point. Used to
+               identify a specific entry in a list of values forming the
+               calculated diffractogram. The role of this identifier may
+               be adopted by _pd_data_point_id if measured, processed and
+               calculated intensity values are combined in a single list.
+;
+
+data_pd_data_point_id
+    _name                      '_pd_data_point_id'
+    _category                    pd_data
+    _type                        char
+    _definition
+;              Arbitrary label identifying an entry in the table of
+               diffractogram intensity values.
+;
+
+data_pd_meas_point_id
+    _name                      '_pd_meas_point_id'
+    _category                    pd_data
+    _type                        char
+    _related_item              '_pd_data_point_id'
+    _related_function            alternate
+    _definition
+;              Arbitrary label identifying a measured data point. Used to
+               identify a specific entry in a list of measured intensities.
+               The role of this identifier may be adopted by
+               _pd_data_point_id if measured, processed and calculated
+               intensity values are combined in a single list.
+;
+
+data_pd_proc_point_id
+    _name                      '_pd_proc_point_id'
+    _category                    pd_data
+    _type                        char
+    loop_ _related_item
+          _related_function
+                               '_pd_data_point_id'            alternate
+                               '_pd_meas_point_id'            alternate
+    _definition
+;              Arbitrary label identifying a processed data point. Used to
+               identify a specific entry in a list of processed intensities.
+               The role of this identifier may be adopted by
+               _pd_data_point_id if measured, processed and calculated
+               intensity values are combined in a single list, or by
+               _pd_meas_point_id if measured and processed lists are
+               combined.
+;
+
+#eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof-eof

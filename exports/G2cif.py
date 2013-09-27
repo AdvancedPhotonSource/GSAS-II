@@ -12,7 +12,7 @@
 The heavy lifting is done in method export
 '''
 
-# TODO: set def names for phase/hist save & load, bond pub flags,...
+# TODO: set bond pub flags?
 
 import datetime as dt
 import os.path
@@ -20,6 +20,7 @@ import sys
 import numpy as np
 import cPickle
 import copy
+import re
 import wx
 import wx.lib.scrolledpanel as wxscroll
 import wx.lib.resizewidget as rw
@@ -221,7 +222,9 @@ def dict2CIF(dblk,loopstructure,blockname='Template'):
 
 
 class EditCIFtemplate(wx.Dialog):
-    '''Create a dialog for editing a CIF template
+    '''Create a dialog for editing a CIF template. The edited information is
+    placed in cifblk. If the CIF is saved as a file, the name of that file
+    is saved as ``self.newfile``.
     
     :param wx.Frame parent: parent frame or None
     :param cifblk: dict or PyCifRW block containing values for each CIF item
@@ -238,12 +241,16 @@ class EditCIFtemplate(wx.Dialog):
 
       Note that the values for each looped CIF item, such as _a,
       are contained in a list, for example as cifblk["_a"]
+      
+    :param str defaultname: specifies the default file name to be used for 
+      saving the CIF.
     '''
-    def __init__(self,parent,cifblk,loopstructure):
+    def __init__(self,parent,cifblk,loopstructure,defaultname):
         OKbuttons = []
         self.cifblk = cifblk
         self.loopstructure = loopstructure
         self.newfile = None
+        self.defaultname = defaultname        
         global CIFdic  # once this is loaded, keep it around
         if CIFdic is None:
             CIFdic = LoadCIFdic()
@@ -253,7 +260,7 @@ class EditCIFtemplate(wx.Dialog):
         self.helptxt = wx.StaticText(self,wx.ID_ANY,"")
         savebtn = wx.Button(self, wx.ID_CLOSE, "Save as template")
         OKbuttons.append(savebtn)
-        savebtn.Bind(wx.EVT_BUTTON,self._onClose)
+        savebtn.Bind(wx.EVT_BUTTON,self._onSave)
         OKbtn = wx.Button(self, wx.ID_OK, "Use")
         OKbtn.SetDefault()
         OKbuttons.append(OKbtn)
@@ -276,15 +283,15 @@ class EditCIFtemplate(wx.Dialog):
     def Post(self):
         '''Display the dialog
         
-        :returns: True, unless Cancel has been pressed.
+        :returns: True unless Cancel has been pressed.
         '''
         return (self.ShowModal() == wx.ID_OK)
-    def _onClose(self,event):
+    def _onSave(self,event):
         'Save CIF entries in a template file'
         dlg = wx.FileDialog(
             self, message="Save as CIF template",
             defaultDir=os.getcwd(),
-            defaultFile="",
+            defaultFile=self.defaultname,
             wildcard="CIF (*.cif)|*.cif",
             style=wx.SAVE | wx.CHANGE_DIR
             )
@@ -320,6 +327,8 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
       are contained in a list, for example as cifblk["_a"]
 
     :param dict cifdic: optional CIF dictionary definitions
+    :param list OKbuttons: A list of wx.Button objects that should
+      be disabled when information in the CIF is invalid
     :param (other): optional keyword parameters for wx.ScrolledPanel
     '''
     def __init__(self, parent, cifblk, loopstructure, cifdic={}, OKbuttons=[], **kw):
@@ -492,8 +501,6 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     self.ValidatedControlsList.append(ent)
                     return ent
         rw1 = rw.ResizeWidget(self)
-        #print item
-        #print dct[item]
         ent = G2gd.ValidatedTxtCtrl(
             rw1,dct,item,size=(100, 20),
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER,
@@ -504,17 +511,35 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
 
 class CIFtemplateSelect(wx.BoxSizer):
     '''Create a set of buttons to show, select and edit a CIF template
-
+    
+    :param frame: wx.Frame object of parent
+    :param panel: wx.Panel object where widgets should be placed
     :param str tmplate: one of 'publ', 'phase', or 'instrument' to determine
       the type of template
+    :param dict G2dict: GSAS-II dict where CIF should be placed. The key
+      "CIF_template" will be used to store either a list or a string.
+      If a list, it will contain a dict and a list defining loops. If
+      an str, it will contain a file name.    
+    :param function repaint: reference to a routine to be called to repaint
+      the frame after a change has been made
+    :param str title: A line of text to show at the top of the window
+    :param str defaultname: specifies the default file name to be used for 
+      saving the CIF.
     '''
-    def __init__(self,frame,panel,tmplate,G2dict, repaint, title):
+    def __init__(self,frame,panel,tmplate,G2dict, repaint, title, defaultname=''):
         wx.BoxSizer.__init__(self,wx.VERTICAL)
         self.cifdefs = frame
         self.dict = G2dict
         self.repaint = repaint
-        self.fil = 'template_'+tmplate+'.cif'
+        templateDefName = 'template_'+tmplate+'.cif'
         self.CIF = G2dict.get("CIF_template")
+        if defaultname:
+            self.defaultname = defaultname.encode('ascii','replace').strip().replace(' ','_')
+            self.defaultname = re.sub(r'[^a-zA-Z0-9_-]','',self.defaultname)
+            self.defaultname = tmplate + "_" + self.defaultname + ".cif"
+        else:
+            self.defaultname = ''
+            
         txt = wx.StaticText(panel,wx.ID_ANY,title)
         self.Add(txt,0,wx.ALIGN_CENTER)
         # change font on title
@@ -525,15 +550,23 @@ class CIFtemplateSelect(wx.BoxSizer):
         self.Add((-1,3))
 
         if not self.CIF: # empty or None
-            for pth in sys.path:
-                if os.path.exists(os.path.join(pth,self.fil)):
-                    self.CIF = os.path.join(pth,self.fil)
-                    CIFtxt = "Template: "+self.fil
+            for pth in [os.getcwd()]+sys.path:
+                fil = os.path.join(pth,self.defaultname)
+                if os.path.exists(fil) and self.defaultname:
+                    self.CIF = fil
+                    CIFtxt = "Template: "+self.defaultname
                     break
             else:
-                print CIF+' not found in path!'
-                self.CIF = None
-                CIFtxt = "none! (No template found)"
+                for pth in sys.path:
+                    fil = os.path.join(pth,templateDefName)
+                    if os.path.exists(fil):
+                        self.CIF = fil
+                        CIFtxt = "Template: "+templateDefName
+                        break
+                else:
+                    print(self.CIF+' not found in path!')
+                    self.CIF = None
+                    CIFtxt = "none! (No template found)"
         elif type(self.CIF) is not list and type(self.CIF) is not tuple:
             if not os.path.exists(self.CIF):
                 print("Error: template file has disappeared:"+self.CIF)
@@ -550,47 +583,60 @@ class CIFtemplateSelect(wx.BoxSizer):
         self.Add(wx.StaticText(panel,wx.ID_ANY,CIFtxt))
         # show str, button to select file; button to edit (if CIF defined)
         but = wx.Button(panel,wx.ID_ANY,"Select Template File")
-        but.Bind(wx.EVT_BUTTON,self.onGetTemplateFile)
+        but.Bind(wx.EVT_BUTTON,self._onGetTemplateFile)
         hbox =  wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(but,0,0,2)
         but = wx.Button(panel,wx.ID_ANY,"Edit Template")
-        but.Bind(wx.EVT_BUTTON,self.onEditTemplateContents)
+        but.Bind(wx.EVT_BUTTON,self._onEditTemplateContents)
         hbox.Add(but,0,0,2)
         #self.Add(hbox,0,wx.ALIGN_CENTER)
         self.Add(hbox)
-    def onGetTemplateFile(self,event):
+    def _onGetTemplateFile(self,event):
         dlg = wx.FileDialog(
-            self.cifdefs, message="Save as CIF template",
+            self.cifdefs, message="Read CIF template file",
             defaultDir=os.getcwd(),
-            defaultFile="",
+            defaultFile=self.defaultname,
             wildcard="CIF (*.cif)|*.cif",
             style=wx.OPEN | wx.CHANGE_DIR
             )
-        if dlg.ShowModal() == wx.ID_OK:
-            self.dict["CIF_template"] = dlg.GetPath()
-            dlg.Destroy()            
+        ret = dlg.ShowModal()
+        fil = dlg.GetPath()
+        dlg.Destroy()
+        if ret == wx.ID_OK:
+            import CifFile as cif # PyCifRW from James Hester
+            try:
+                cf = cif.ReadCif(fil)
+                if len(cf.keys()) == 0: raise Exception,"No CIF data_ blocks found"
+                if len(cf.keys()) != 1:
+                    print('\nWarning: CIF has more than one block, '+fil)
+                self.dict["CIF_template"] = fil
+            except Exception as err:
+                print('\nError reading CIF: '+fil)
+                dlg = wx.MessageDialog(self.cifdefs,
+                                   'Error reading CIF '+fil,
+                                   'Error in CIF file',
+                                   wx.OK)
+                dlg.ShowModal()
+                dlg.Destroy()
+                print(err.message)
+                return
             self.repaint() #EditCIFDefaults()
-        else:
-            dlg.Destroy()
 
-    def onEditTemplateContents(self,event):
+    def _onEditTemplateContents(self,event):
         import CifFile as cif # PyCifRW from James Hester
         if type(self.CIF) is list or  type(self.CIF) is tuple:
             dblk,loopstructure = copy.deepcopy(self.CIF) # don't modify original
         else:
             dblk,loopstructure = CIF2dict(cif.ReadCif(self.CIF))
-        dlg = EditCIFtemplate(self.cifdefs,dblk,loopstructure)
+        dlg = EditCIFtemplate(self.cifdefs,dblk,loopstructure,self.defaultname)
         val = dlg.Post()
         if val:
             if dlg.newfile: # results saved in file
                 self.dict["CIF_template"] = dlg.newfile
-                print 'saved'
             else:
                 self.dict["CIF_template"] = [dlg.cifblk,dlg.loopstructure]
-                print 'edited'
             self.repaint() #EditCIFDefaults() # note that this does a dlg.Destroy()
         else:
-            print 'cancelled'
             dlg.Destroy()        
 
 #===============================================================================
@@ -598,6 +644,8 @@ class CIFtemplateSelect(wx.BoxSizer):
 #===============================================================================
 
 class ExportCIF(G2IO.ExportBaseclass):
+    '''Used to create a CIF of an entire project
+    '''
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
@@ -699,29 +747,71 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('_refine_ls_matrix_type','full')
             #WriteCIFitem('_refine_ls_matrix_type','userblocks')
 
-        def WritePubTemplate():
-            '''TODO: insert the publication template ``template_publ.cif`` or some modified
-            version for this project. Store this in the GPX file?
-            '''
-            print getCallerDocString()
+        def GetCIF(G2dict,tmplate,defaultname=''):
+            CIFobj = G2dict.get("CIF_template")
+            if defaultname:
+                defaultname = defaultname.encode('ascii','replace').strip().replace(' ','_')
+                defaultname = re.sub(r'[^a-zA-Z0-9_-]','',defaultname)
+                defaultname = tmplate + "_" + defaultname + ".cif"
+            else:
+                defaultname = ''
+            templateDefName = 'template_'+tmplate+'.cif'
+            if not CIFobj: # copying a template
+                for pth in [os.getcwd()]+sys.path:
+                    fil = os.path.join(pth,defaultname)
+                    if os.path.exists(fil) and defaultname: break
+                else:
+                    for pth in sys.path:
+                        fil = os.path.join(pth,templateDefName)
+                        if os.path.exists(fil): break
+                    else:
+                        print(CIFobj+' not found in path!')
+                        return
+                fp = open(fil,'r')
+                txt = fp.read()
+                fp.close()
+            elif type(CIFobj) is not list and type(CIFobj) is not tuple:
+                if not os.path.exists(CIFobj):
+                    print("Error: template file has disappeared:"+CIFobj)
+                    return
+                fp = open(CIFobj,'r')
+                txt = fp.read()
+                fp.close()
+            else:
+                txt = dict2CIF(CIFobj[0],CIFobj[1]).WriteOut()
+            # remove the PyCifRW header, if present
+            #if txt.find('PyCifRW') > -1 and txt.find('data_') > -1:
+            txt = "# GSAS-II edited template follows "+txt[txt.index("data_")+5:]
+            #txt = txt.replace('data_','#')
+            print '***** Template ********'
+            print txt
+            WriteCIFitem(txt)
 
-        def WritePhaseTemplate():
-            '''TODO: insert the phase template ``template_phase.cif`` or some modified
+        def WritePubTemplate():
+            '''insert the publication template ``template_publ.cif`` or a modified
+            version 
+            '''
+            GetCIF(self.OverallParms['Controls'],'publ')
+
+        def WritePhaseTemplate(phasenam):
+            '''insert the phase template ``template_phase.cif`` or a modified
             version for this project
             '''
-            print getCallerDocString()
+            GetCIF(self.Phases[phasenam]['General'],'phase',phasenam)
 
-        def WritePowderTemplate():
+        def WritePowderTemplate(hist):
             '''TODO: insert the phase template ``template_instrument.cif`` or some modified
             version for this project
             '''
-            print getCallerDocString()
+            histblk = self.Histograms[hist]["Sample Parameters"]
+            GetCIF(histblk,'powder',histblk['InstrName'])
 
-        def WriteSnglXtalTemplate():
+        def WriteSnglXtalTemplate(hist):
             '''TODO: insert the single-crystal histogram template 
             for this project
             '''
-            print getCallerDocString()
+            histblk = self.Histograms[hist]["Instrument Parameters"][0]
+            GetCIF(histblk,'single',histblk['InstrName'])
 
         def FormatSH(phasenam):
             'Format a full spherical harmonics texture description as a string'
@@ -1134,8 +1224,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 fval = self.parmDict.get(fvar,at[cfrac])
                 mult = at[cmult]
                 if not massDict.get(at[ct]):
-                    print 'No mass found for atom type '+at[ct]
-                    print 'Will not compute cell contents for phase '+phasenam
+                    print('Error: No mass found for atom type '+at[ct])
+                    print('Will not compute cell contents for phase '+phasenam)
                     return
                 cellmass += massDict[at[ct]]*mult*fval
                 compDict[atype] = compDict.get(atype,0.0) + mult*fval
@@ -1245,7 +1335,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             try:
                 AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
-                print '**** ERROR - try again but do "Reset" to fill in missing atom types ****'
+                print('**** ERROR - try again but do "Reset" to fill in missing atom types ****')
                     
             # loop over interatomic distances for this phase
             WriteCIFitem('\n# MOLECULAR GEOMETRY')
@@ -1351,8 +1441,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                             phasebyhistDict[hist] = [phasenam,]
                         blockid = datablockidDict.get(hist)
                         if not blockid:
-                            print "Internal error: no block for data. Phase "+str(
-                                phasenam)+" histogram "+str(hist)
+                            print("Internal error: no block for data. Phase "+str(
+                                phasenam)+" histogram "+str(hist))
                             histlist = []
                             break
                         histlist.append(blockid)
@@ -1554,7 +1644,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 refcount += len(histblk['Reflection Lists'][phasenam])
                 for ref in histblk['Reflection Lists'][phasenam]:
                     if DEBUG:
-                        print 'DEBUG: skip reflection list'
+                        print('DEBUG: skipping reflection list')
                         break
                     if hklmin is None:
                         hklmin = ref[0:3]
@@ -1630,7 +1720,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             lowlim,highlim = histblk['Limits'][1]
 
             if DEBUG:
-                print 'DEBUG: skip profile list'
+                print('DEBUG: skipping profile list')
             else:    
                 for x,yobs,yw,ycalc,ybkg in zip(histblk['Data'][0],
                                                 histblk['Data'][1],
@@ -1754,14 +1844,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.cifdefs.DestroyChildren()
             self.cifdefs.SetTitle('Edit CIF settings')
             vbox = wx.BoxSizer(wx.VERTICAL)
+            but = wx.Button(self.cifdefs, wx.ID_ANY,'Edit CIF Author')
+            but.Bind(wx.EVT_BUTTON,EditAuthor)
+            vbox.Add(but,0,wx.ALIGN_CENTER,3)
+            but = wx.Button(self.cifdefs, wx.ID_ANY,'Edit Instrument Name(s)')
+            but.Bind(wx.EVT_BUTTON,EditInstNames)
+            vbox.Add(but,0,wx.ALIGN_CENTER,3)
             cpnl = wxscroll.ScrolledPanel(self.cifdefs,size=(300,300))
             cbox = wx.BoxSizer(wx.VERTICAL)
-            but = wx.Button(cpnl, wx.ID_ANY,'Edit CIF Author')
-            but.Bind(wx.EVT_BUTTON,EditAuthor)
-            cbox.Add(but,0,wx.ALIGN_CENTER,3)
-            but = wx.Button(cpnl, wx.ID_ANY,'Edit Instrument Name(s)')
-            but.Bind(wx.EVT_BUTTON,EditInstNames)
-            cbox.Add(but,0,wx.ALIGN_CENTER,3)
             G2gd.HorizontalLine(cbox,cpnl)          
             cbox.Add(
                 CIFtemplateSelect(self.cifdefs,
@@ -1778,7 +1868,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     CIFtemplateSelect(self.cifdefs,
                                       cpnl,'phase',phasedict['General'],
                                       EditCIFDefaults,
-                                      title),
+                                      title,
+                                      phasenam),
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
                 cpnl.SetSizer(cbox)
                 but = wx.Button(cpnl, wx.ID_ANY,'Edit distance/angle ranges')
@@ -1796,7 +1887,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     CIFtemplateSelect(self.cifdefs,
                                       cpnl,'powder',histblk["Sample Parameters"],
                                       EditCIFDefaults,
-                                      title),
+                                      title,
+                                      histblk["Sample Parameters"]['InstrName']),
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
                 cpnl.SetSizer(cbox)
             for i in sorted(self.xtalDict.keys()):
@@ -1808,7 +1900,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     CIFtemplateSelect(self.cifdefs,
                                       cpnl,'single',histblk["Instrument Parameters"][0],
                                       EditCIFDefaults,
-                                      title),
+                                      title,
+                                      histblk["Instrument Parameters"][0]['InstrName']),
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
                 cpnl.SetSizer(cbox)
 
@@ -1989,7 +2082,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteAudit()
                 WritePubTemplate()
                 WriteOverall()
-                WritePhaseTemplate()
+                WritePhaseTemplate(phasenam)
             # report the phase info
             WritePhaseInfo(phasenam)
             if hist.startswith("PWDR") and not self.quickmode:
@@ -2006,10 +2099,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem('_pd_proc_ls_profile_function',
                     FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
                     +'\n'+FormatPhaseProfile(phasenam))
-                WritePowderTemplate()
+                WritePowderTemplate(hist)
                 WritePowderData(hist)
             elif hist.startswith("HKLF") and not self.quickmode:
-                WriteSnglXtalTemplate()
+                WriteSnglXtalTemplate(hist)
                 WriteSingleXtalData(hist)
         else:
         #======================================================================
@@ -2072,11 +2165,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             for j,phasenam in enumerate(sorted(self.Phases.keys())):
                 i = self.Phases[phasenam]['pId']
                 WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
-                print "debug, processing ",phasenam
                 WriteCIFitem('# Information for phase '+str(i))
                 WriteCIFitem('_pd_block_id',datablockidDict[phasenam])
                 # report the phase
-                WritePhaseTemplate()
+                WritePhaseTemplate(phasenam)
                 WritePhaseInfo(phasenam)
                 # preferred orientation
                 SH = FormatSH(phasenam)
@@ -2105,7 +2197,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
                     WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
                     WriteCIFitem('_pd_block_id',datablockidDict[hist])
-                    WritePowderTemplate()
+                    WritePowderTemplate(hist)
                     WritePowderData(hist)
             for i in sorted(self.xtalDict.keys()):
                 hist = self.xtalDict[i]
@@ -2115,7 +2207,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     #instnam = histblk["Instrument Parameters"][0]['InstrName']
                     WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
                     WriteCIFitem('_pd_block_id',datablockidDict[hist])
-                    WriteSnglXtalTemplate()
+                    WriteSnglXtalTemplate(hist)
                     WriteSingleXtalData(hist)
 
         WriteCIFitem('#--' + 15*'eof--' + '#')

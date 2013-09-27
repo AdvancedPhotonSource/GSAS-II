@@ -1,4 +1,4 @@
-# GSAS publication template file
+# GSAS-II publication template file
 
 data_Publication_Template
 #=============================================================================

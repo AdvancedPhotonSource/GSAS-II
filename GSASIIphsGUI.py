@@ -4274,11 +4274,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for row in range(resultsGrid.GetNumberRows()):
                         resultsTable.SetValue(row,c,False)
                         Results[row][0] = False
-                    Results[r][0] = True
                     result = Results[r]
                     Models = data['MCSA']['Models']
                     SetSolution(result,Models)
-                    wx.CallAfter(UpdateMCSA,MCSA.GetScrollPos(wx.VERTICAL))
+                    UpdateMCSA,MCSA.GetScrollPos(wx.VERTICAL)
+                    Results[r][0] = True
+                    resultsTable.SetValue(r,0,True)
+                    resultsGrid.ForceRefresh()
                     G2plt.PlotStructure(G2frame,data)
                 elif c == 1:
                     if Results[r][1]:
@@ -4313,7 +4315,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         resultsGrid.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             resultsSizer.Add(resultsGrid)
             return resultsSizer
-            
         
         # UpdateMCSA executable code starts here
         MCSA.DestroyChildren()

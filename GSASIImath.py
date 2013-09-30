@@ -2655,7 +2655,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         global tsum
         t0 = time.time()
         parmDict.update(dict(zip(varyList,values)))             #update parameter tables
-        Xdata = GetAtomX(RBdata,parmDict)                   #get new atom coords from RB
+        Xdata = GetAtomX(RBdata,parmDict)                       #get new atom coords from RB
         allX = getAllX(Xdata,SGM,SGT)                           #fill unit cell - dups. OK
         MDval = parmDict['0:MDval']                             #get March-Dollase coeff
         MDaxis = parmDict['0:MDaxis']
@@ -2667,6 +2667,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         else:
             Bterm = refList[3]*np.sum(allFF*np.sin(HX2pi),axis=0)**2    #imaginary part for all H
             refList[5] = Aterm+Bterm
+        #apply MD correction here
         sumFcsq = np.sum(refList[5])
         scale = parmDict['sumFosq']/sumFcsq
         refList[5] *= scale

@@ -824,7 +824,9 @@ class ScrolledMultiEditor(wx.Dialog):
                 subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(prelbl[i])))
             if CopyButton:
                 import wx.lib.colourselect as wscs
-                but = wscs.ColourSelect(label=u'\u2193', parent=panel,
+                but = wscs.ColourSelect(label='v', # would like to use u'\u2193' or u'\u25BC' but not in WinXP
+                                        # is there a way to test? 
+                                        parent=panel,
                                         colour=(255,255,200),
                                         size=wx.Size(30,23),
                                         style=wx.RAISED_BORDER)
@@ -1561,6 +1563,7 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
                                    'was not found.'
                                    ,wx.OK)
             dlg.ShowModal()
+            dlg.Destroy()
             return
         wx.BeginBusyCursor()
         local = GSASIIpath.svnGetRev()
@@ -1571,6 +1574,7 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
                                    'Subversion error',
                                    wx.OK)
             dlg.ShowModal()
+            dlg.Destroy()
             return
         print 'Installed GSAS-II version: '+local
         repos = GSASIIpath.svnGetRev(local=False)
@@ -1581,6 +1585,7 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
                                    'Server unavailable',
                                    wx.OK)
             dlg.ShowModal()
+            dlg.Destroy()
             return
         print 'GSAS-II version on server: '+repos
         if local == repos:
@@ -1589,6 +1594,7 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
                                    'GSAS-II Up-to-date',
                                    wx.OK)
             dlg.ShowModal()
+            dlg.Destroy()
             return
         mods = GSASIIpath.svnFindLocalChanges()
         if mods:
@@ -1605,7 +1611,11 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
                                    'Press OK to start an update if this is acceptable:',
                                    'Local GSAS-II Mods',
                                    wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK: return
+            if dlg.ShowModal() != wx.ID_OK:
+                dlg.Destroy()
+                return
+            else:
+                dlg.Destroy()
         else:
             dlg = wx.MessageDialog(self.frame,
                                    'You have version '+local+
@@ -1616,7 +1626,7 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
             if dlg.ShowModal() != wx.ID_OK:
                 dlg.Destroy()
                 return
-        dlg.Destroy()
+            dlg.Destroy()
         print 'start updates'
         dlg = wx.MessageDialog(self.frame,
                                'Your project will now be saved, GSAS-II will exit and an update '
@@ -1627,6 +1637,7 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
         if dlg.ShowModal() != wx.ID_OK:
             dlg.Destroy()
             return
+        dlg.Destroy()
         self.frame.OnFileSave(event)
         GSASIIpath.svnUpdateProcess(projectfile=self.frame.GSASprojectfile)
         return

@@ -100,7 +100,10 @@ class CIFpwdReader(G2IO.ImportPowderData):
             if cf is None:
                 self.ShowBusy() # this can take a while
                 ciffile = 'file:'+urllib.pathname2url(filename)
-                cf = cif.ReadCif(ciffile)
+                #cf = cif.ReadCif(ciffile)
+                fp = open(ciffile,'r')             # patch: open file to avoid windows bug
+                cf = cif.ReadCif(fp)
+                fp.close()
                 self.DoneBusy()
         except Exception as detail:
             print self.formatName+' read error:'+str(detail) # for testing

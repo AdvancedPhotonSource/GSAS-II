@@ -72,7 +72,10 @@ def PickleCIFdict(fil):
     '''
     import CifFile as cif # PyCifRW from James Hester
     cifdic = {}
-    dictobj = cif.CifDic(fil)
+    #dictobj = cif.CifDic(fil)
+    fp = open(fil,'r')             # patch: open file to avoid windows bug
+    dictobj = cif.CifDic(fp)
+    fp.close()
     if DEBUG: print('loaded '+str(fil))
     for item in dictobj.keys():
         cifdic[item] = {}
@@ -376,6 +379,19 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
             for i,item in enumerate(lp):
                 txt = wx.StaticText(self,wx.ID_ANY,item+"  ")
                 fbox.Add(txt,(0,i+1))
+                # if self.cifdic.get(item):
+                #     df = self.cifdic[item].get('_definition')
+                #     if df:
+                #         txt.SetToolTipString(G2IO.trim(df))
+                #         but = CIFdefHelp(self,
+                #                          "Definition for "+item+":\n\n"+G2IO.trim(df),
+                #                          self.parent,
+                #                          self.parent.helptxt)
+                #         fbox.Add(but,(1,i+1),flag=wx.ALIGN_CENTER)
+                for j,val in enumerate(self.cifblk[item]):
+                    ent = self.CIFEntryWidget(self.cifblk[item],j,item)
+                    #fbox.Add(ent,(j+2,i+1),flag=wx.EXPAND|wx.ALL)
+                    fbox.Add(ent,(j+1,i+1),flag=wx.EXPAND|wx.ALL)
                 if self.cifdic.get(item):
                     df = self.cifdic[item].get('_definition')
                     if df:
@@ -384,10 +400,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                                          "Definition for "+item+":\n\n"+G2IO.trim(df),
                                          self.parent,
                                          self.parent.helptxt)
-                        fbox.Add(but,(1,i+1),flag=wx.ALIGN_CENTER)
-                for j,val in enumerate(self.cifblk[item]):
-                    ent = self.CIFEntryWidget(self.cifblk[item],j,item)
-                    fbox.Add(ent,(j+2,i+1),flag=wx.EXPAND|wx.ALL)
+                        fbox.Add(but,(j+2,i+1),flag=wx.ALIGN_CENTER)
                 rows = max(rows,len(self.cifblk[item]))
             for i in range(rows):
                 txt = wx.StaticText(self,wx.ID_ANY,str(i+1))
@@ -402,6 +415,8 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 vbox.Add(hbox)
                 txt = wx.StaticText(self,wx.ID_ANY,item)
                 hbox.Add(txt)
+                ent = self.CIFEntryWidget(self.cifblk,item,item)
+                hbox.Add(ent)
                 if self.cifdic.get(item):
                     df = self.cifdic[item].get('_definition')
                     if df:
@@ -411,8 +426,6 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                                          self.parent,
                                          self.parent.helptxt)
                         hbox.Add(but,0,wx.ALL,2)
-                ent = self.CIFEntryWidget(self.cifblk,item,item)
-                hbox.Add(ent)
         self.SetSizer(vbox)
         #vbox.Fit(self.parent)
         self.SetAutoLayout(1)
@@ -564,19 +577,19 @@ class CIFtemplateSelect(wx.BoxSizer):
                         CIFtxt = "Template: "+templateDefName
                         break
                 else:
-                    print(self.CIF+' not found in path!')
+                    print("Default CIF template "+self.defaultname+' not found in path!')
                     self.CIF = None
                     CIFtxt = "none! (No template found)"
         elif type(self.CIF) is not list and type(self.CIF) is not tuple:
             if not os.path.exists(self.CIF):
-                print("Error: template file has disappeared:"+self.CIF)
+                print("Error: template file has disappeared: "+self.CIF)
                 self.CIF = None
                 CIFtxt = "none! (file not found)"
             else:
-                if len(self.CIF) < 40:
+                if len(self.CIF) < 50:
                     CIFtxt = "File: "+self.CIF
                 else:
-                    CIFtxt = "File: ..."+self.CIF[-40:]
+                    CIFtxt = "File: ..."+self.CIF[-50:]
         else:
             CIFtxt = "Template is customized"
         # show template source
@@ -588,8 +601,8 @@ class CIFtemplateSelect(wx.BoxSizer):
         hbox.Add(but,0,0,2)
         but = wx.Button(panel,wx.ID_ANY,"Edit Template")
         but.Bind(wx.EVT_BUTTON,self._onEditTemplateContents)
+        if self.CIF is None: but.Disable() # nothing to edit!
         hbox.Add(but,0,0,2)
-        #self.Add(hbox,0,wx.ALIGN_CENTER)
         self.Add(hbox)
     def _onGetTemplateFile(self,event):
         dlg = wx.FileDialog(
@@ -605,7 +618,10 @@ class CIFtemplateSelect(wx.BoxSizer):
         if ret == wx.ID_OK:
             import CifFile as cif # PyCifRW from James Hester
             try:
-                cf = cif.ReadCif(fil)
+                #cf = cif.ReadCif(fil)
+                fp = open(fil,'r')             # patch: open file to avoid windows bug
+                cf = cif.ReadCif(fp)
+                fp.close()
                 if len(cf.keys()) == 0: raise Exception,"No CIF data_ blocks found"
                 if len(cf.keys()) != 1:
                     print('\nWarning: CIF has more than one block, '+fil)
@@ -627,7 +643,10 @@ class CIFtemplateSelect(wx.BoxSizer):
         if type(self.CIF) is list or  type(self.CIF) is tuple:
             dblk,loopstructure = copy.deepcopy(self.CIF) # don't modify original
         else:
-            dblk,loopstructure = CIF2dict(cif.ReadCif(self.CIF))
+            #dblk,loopstructure = CIF2dict(cif.ReadCif(self.CIF))
+            fp = open(self.CIF,'r')             # patch: open file to avoid windows bug
+            dblk,loopstructure = CIF2dict(cif.ReadCif(fp))
+            fp.close()
         dlg = EditCIFtemplate(self.cifdefs,dblk,loopstructure,self.defaultname)
         val = dlg.Post()
         if val:
@@ -772,7 +791,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 fp.close()
             elif type(CIFobj) is not list and type(CIFobj) is not tuple:
                 if not os.path.exists(CIFobj):
-                    print("Error: template file has disappeared:"+CIFobj)
+                    print("Error: requested template file has disappeared: "+CIFobj)
                     return
                 fp = open(CIFobj,'r')
                 txt = fp.read()
@@ -783,8 +802,6 @@ class ExportCIF(G2IO.ExportBaseclass):
             #if txt.find('PyCifRW') > -1 and txt.find('data_') > -1:
             txt = "# GSAS-II edited template follows "+txt[txt.index("data_")+5:]
             #txt = txt.replace('data_','#')
-            print '***** Template ********'
-            print txt
             WriteCIFitem(txt)
 
         def WritePubTemplate():
@@ -800,14 +817,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             GetCIF(self.Phases[phasenam]['General'],'phase',phasenam)
 
         def WritePowderTemplate(hist):
-            '''TODO: insert the phase template ``template_instrument.cif`` or some modified
-            version for this project
+            '''insert the powder histogram phase template 
+            for this project
             '''
             histblk = self.Histograms[hist]["Sample Parameters"]
             GetCIF(histblk,'powder',histblk['InstrName'])
 
         def WriteSnglXtalTemplate(hist):
-            '''TODO: insert the single-crystal histogram template 
+            '''insert the single-crystal histogram template 
             for this project
             '''
             histblk = self.Histograms[hist]["Instrument Parameters"][0]
@@ -2067,6 +2084,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================
+        print('Writing CIF output to file '+fil+"...")
         openCIF(fil)
         if oneblock:
             WriteCIFitem('data_'+self.CIFname)
@@ -2212,3 +2230,4 @@ class ExportCIF(G2IO.ExportBaseclass):
 
         WriteCIFitem('#--' + 15*'eof--' + '#')
         closeCIF()
+        print("...export complete")

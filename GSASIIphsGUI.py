@@ -3556,7 +3556,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     id = np.argmin(dist)
                     Ids.append(atomData[id][-1])
                     atomData[id][cx:cx+3] = xyz
-                if dmax > 0.5:
+                if dmax > 1.0:
                     print '**** WARNING - some atoms not found or misidentified ****'
                     print '****           check torsion angles & try again      ****'
                     OkBtn.SetLabel('Not Ready')

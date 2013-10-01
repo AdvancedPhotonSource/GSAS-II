@@ -493,10 +493,11 @@ def getBackground(pfx,parmDict,bakType,xdata):
         else:
             break
     if bakType in ['chebyschev','cosine']:
-        for iBak in range(nBak):    
+        dt = xdata[-1]-xdata[0]    
+        for iBak in range(nBak):
             key = pfx+'Back:'+str(iBak)
             if bakType == 'chebyschev':
-                yb += parmDict[key]*(xdata-xdata[0])**iBak
+                yb += parmDict[key]*(2.*(xdata-xdata[0])/dt-1.)**iBak
             elif bakType == 'cosine':
                 yb += parmDict[key]*npcosd(xdata*iBak)
     elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:
@@ -578,9 +579,10 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
     cw = np.append(cw,cw[-1])
 
     if bakType in ['chebyschev','cosine']:
+        dt = xdata[-1]-xdata[0]    
         for iBak in range(nBak):    
             if bakType == 'chebyschev':
-                dydb[iBak] = (xdata-xdata[0])**iBak
+                dydb[iBak] = (2.*(xdata-xdata[0])/dt-1.)**iBak
             elif bakType == 'cosine':
                 dydb[iBak] = npcosd(xdata*iBak)
     elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:

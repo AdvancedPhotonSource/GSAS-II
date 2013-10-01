@@ -1014,8 +1014,8 @@ class DisAglDialog(wx.Dialog):
             self.data['Name'] = default['Name']
             self.data['Factors'] = [0.85,0.85]
             self.data['AtomTypes'] = default['AtomTypes']
-            self.data['BondRadii'] = default['BondRadii']
-            self.data['AngleRadii'] = default['AngleRadii']
+            self.data['BondRadii'] = default['BondRadii'][:]
+            self.data['AngleRadii'] = default['AngleRadii'][:]
         
     def __init__(self,parent,data,default):
         wx.Dialog.__init__(self,parent,-1,'Distance Angle Controls', 

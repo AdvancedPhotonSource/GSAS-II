@@ -304,6 +304,21 @@ def Uij2Ueqv(Uij,GS,Amat):
     E,R = nl.eigh(U)
     return np.sum(E)/3.
         
+def CosAngle(U,V,G):
+    """ calculate cos of angle between U & V in generalized coordinates 
+    defined by metric tensor G
+
+    :param U: 3-vectors assume numpy arrays, can be multiple reflections as (N,3) array
+    :param V: 3-vectors assume numpy arrays, only as (3) vector
+    :param G: metric tensor for U & V defined space assume numpy array
+    :returns:
+        cos(phi)
+    """
+    u = (U.T/np.sqrt(np.sum(np.inner(U,G)*U,axis=1))).T
+    v = V/np.sqrt(np.inner(V,np.inner(G,V)))
+    cosP = np.inner(u,np.inner(G,v))
+    return cosP
+    
 def CosSinAngle(U,V,G):
     """ calculate sin & cos of angle between U & V in generalized coordinates 
     defined by metric tensor G

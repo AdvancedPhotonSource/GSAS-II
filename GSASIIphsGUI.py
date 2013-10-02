@@ -248,7 +248,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for line in text:
                     Text += line+'\n'
                 wx.MessageBox(Text,caption=msg,style=Style)
-#                General.DestroyChildren()           #needed to clear away bad cellSizer, etc.
                 wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4277,10 +4276,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     result = Results[r]
                     Models = data['MCSA']['Models']
                     SetSolution(result,Models)
-                    UpdateMCSA,MCSA.GetScrollPos(wx.VERTICAL)
                     Results[r][0] = True
                     resultsTable.SetValue(r,0,True)
                     resultsGrid.ForceRefresh()
+                    wx.CallAfter(UpdateMCSA)
                     G2plt.PlotStructure(G2frame,data)
                 elif c == 1:
                     if Results[r][1]:
@@ -4339,8 +4338,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for model in data['MCSA']['Models']:
                 Xsize = 500
                 if model['Type'] == 'MD':
-#                    mainSizer.Add(MDSizer(model))
-                    pass            #MD currently doesn't work
+                    mainSizer.Add(MDSizer(model))
                 elif model['Type'] == 'Atom':
                     Asizer = atomSizer(model)
                     mainSizer.Add(Asizer)

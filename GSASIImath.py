@@ -2638,7 +2638,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                     else:
                         parmDict[pfx+name] = A
         
-    def mcsaCalc(values,refList,rcov,ifInv,allFF,RBdata,varyList,parmDict):
+    def mcsaCalc(values,refList,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict):
         ''' Compute structure factors for all h,k,l for phase
         input:
             refList: [ref] where each ref = h,k,l,m,d,...
@@ -2658,8 +2658,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         Xdata = GetAtomX(RBdata,parmDict)                       #get new atom coords from RB
         allX = getAllX(Xdata,SGM,SGT)                           #fill unit cell - dups. OK
         MDval = parmDict['0:MDval']                             #get March-Dollase coeff
-        MDaxis = parmDict['0:MDaxis']
-        Gmat = parmDict['Gmat']
         HX2pi = 2.*np.pi*np.inner(allX,refList[:3].T)           #form 2piHX for every H,X pair
         Aterm = refList[3]*np.sum(allFF*np.cos(HX2pi),axis=0)**2    #compute real part for all H
         if ifInv:
@@ -2667,7 +2665,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         else:
             Bterm = refList[3]*np.sum(allFF*np.sin(HX2pi),axis=0)**2    #imaginary part for all H
             refList[5] = Aterm+Bterm
-        #apply MD correction here
+        if len(cosTable):        #apply MD correction
+            refList[5] *= np.sum(np.sqrt((MDval/(cosTable*(MDval**3-1.)+1.))**3),axis=1)/cosTable.shape[1]
         sumFcsq = np.sum(refList[5])
         scale = parmDict['sumFosq']/sumFcsq
         refList[5] *= scale
@@ -2681,10 +2680,11 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     sq4pi = np.sqrt(4*np.pi)
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-    Gmat = G2lat.cell2Gmat(generalData['Cell'][1:7])[0]
+    Gmat,gmat = G2lat.cell2Gmat(generalData['Cell'][1:7])
     SGData = generalData['SGData']
-    SGM = [SGData['SGOps'][i][0] for i in range(len(SGData['SGOps']))]
-    SGT = [SGData['SGOps'][i][1] for i in range(len(SGData['SGOps']))]
+    SGM = np.array([SGData['SGOps'][i][0] for i in range(len(SGData['SGOps']))])
+    SGMT = np.array([SGData['SGOps'][i][0].T for i in range(len(SGData['SGOps']))])
+    SGT = np.array([SGData['SGOps'][i][1] for i in range(len(SGData['SGOps']))])
     fixAtoms = data['Atoms']                       #if any
     cx,ct,cs = generalData['AtomPtrs'][:3]
     aTypes = set([])
@@ -2708,11 +2708,13 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
     lower = []
+    MDvec = np.zeros(3)
     for i,item in enumerate(MCSAObjs):
         mfx = str(i)+':'
         parmDict[mfx+'Type'] = item['Type']
         if item['Type'] == 'MD':
             getMDparms(item,mfx,parmDict,varyList)
+            MDvec = np.array(item['axis'])
         elif item['Type'] == 'Atom':
             getAtomparms(item,mfx,aTypes,SGData,parmDict,varyList)
             parmDict[mfx+'atNo'] = atNo
@@ -2729,6 +2731,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     FFtables = G2el.GetFFtable(aTypes)
     refs = []
     allFF = []
+    cosTable = []
     sumFosq = 0
     if 'PWDR' in reflName:
         for ref in reflData:
@@ -2739,7 +2742,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 allFF.append(allM*[G2el.getFFvalues(FFtables,SQ,True)[i] for i in allT]/np.max(allM))
                 refs.append([h,k,l,m,f*m,pos,sig])
                 sumFosq += f*m
+                Heqv = np.inner(np.array([h,k,l]),SGMT)
+                cosTable.append(G2lat.CosAngle(Heqv,MDvec,Gmat))
         nRef = len(refs)
+        cosTable = np.array(cosTable)**2
         rcov = np.zeros((nRef,nRef))
         for iref,refI in enumerate(refs):
             rcov[iref][iref] = 1./(sq4pi*refI[6])
@@ -2765,6 +2771,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 allFF.append(allM*[G2el.getFFvalues(FFtables,SQ,True)[i] for i in allT]/np.max(allM))
                 refs.append([h,k,l,m,f*m,iref,0.])
                 sumFosq += f*m
+                Heqv = np.inner(np.array([h,k,l]),SGMT)
+                cosTable.append(G2lat.CosAngle(Heqv,MDvec,Gmat))
+        cosTable = np.array(cosTable)**2
         nRef = len(refs)
         if covData['freshCOV'] and generalData['doPawley'] and MCSA.get('newDmin',True):
             vList = covData['varyList']
@@ -2797,14 +2806,14 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
-    results = anneal(mcsaCalc,x0,args=(refs,rcov,ifInv,allFF,RBdata,varyList,parmDict),
+    results = anneal(mcsaCalc,x0,args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
         schedule=MCSA['Algorithm'], full_output=True,
         T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
         boltzmann=MCSA['boltzmann'], learn_rate=0.5,  
         quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
         lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
         ranRange=MCSA.get('ranRange',0.10),autoRan=MCSA.get('autoRan',False),dlg=pgbar)
-    M = mcsaCalc(results[0],refs,rcov,ifInv,allFF,RBdata,varyList,parmDict)
+    M = mcsaCalc(results[0],refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)
 #    for ref in refs.T:
 #        print ' %4d %4d %4d %10.3f %10.3f %10.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[4],ref[5],ref[6])
 #    print np.sqrt((np.sum(refs[6]**2)/np.sum(refs[4]**2)))

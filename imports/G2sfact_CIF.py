@@ -12,10 +12,9 @@ import sys
 import numpy as np
 import os.path
 import GSASIIIO as G2IO
-import CifFile as cif # PyCifRW from James Hester
-import urllib
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 810 $")
+import CifFile as cif # PyCifRW from James Hester
 
 class CIFhklReader(G2IO.ImportStructFactor):
     'Routines to import Phase information from a CIF file'
@@ -62,11 +61,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 print 'Reuse previously parsed CIF'
             if cf is None:
                 self.ShowBusy() # this can take a while
-                ciffile = 'file:'+urllib.pathname2url(filename)
-                #cf = cif.ReadCif(ciffile)
-                fp = open(ciffile,'r')             # patch: open file to avoid windows bug
-                cf = cif.ReadCif(fp)
-                fp.close()
+                cf = G2IO.ReadCIF(filename)
                 self.DoneBusy()
             # scan blocks for reflections
             blklist = []

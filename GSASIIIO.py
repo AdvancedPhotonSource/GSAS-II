@@ -1899,6 +1899,32 @@ class ImportPowderData(ImportBaseclass):
                            # where instrument parameters are from
         self.numbanks = 1
         self.instdict = {} # place items here that will be transferred to the instrument parameters
+######################################################################
+def ReadCIF(URLorFile):
+    '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW
+    (from James Hester).
+    The open routine gets confused with DOS names that begin with a letter and colon
+    "C:\dir\" so this routine will try to open the passed name as a file and if that
+    fails, try it as a URL
+
+    :param str URLorFile: string containing a URL or a file name. Code will try first
+      to open it as a file and then as a URL.
+
+    :returns: a PyCifRW CIF object.
+    '''
+    import CifFile as cif # PyCifRW from James Hester
+
+    # alternate approach:
+    #import urllib
+    #ciffile = 'file:'+urllib.pathname2url(filename)
+   
+    try:
+        fp = open(URLorFile,'r')
+        cf = cif.ReadCif(fp)
+        fp.close()
+        return cf
+    except IOError:
+        return cif.ReadCif(URLorFile)
 
 if __name__ == '__main__':
     app = wx.PySimpleApp()

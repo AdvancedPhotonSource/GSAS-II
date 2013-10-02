@@ -16,7 +16,6 @@ import GSASIIlattice as G2lat
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 810 $")
 import CifFile as cif # PyCifRW from James Hester
-import urllib
 
 class CIFPhaseReader(G2IO.ImportPhase):
     def __init__(self):
@@ -73,11 +72,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
 #### 
 #### end development code
             self.ShowBusy() # this can take a while
-            ciffile = 'file:'+urllib.pathname2url(filename)
-            #cf = cif.ReadCif(ciffile)
-            fp = open(ciffile,'r')             # patch: open file to avoid windows bug
-            cf = cif.ReadCif(fp)
-            fp.close()
+            cf = G2IO.ReadCIF(filename)
             self.DoneBusy()
             #print cf
             # scan blocks for structural info

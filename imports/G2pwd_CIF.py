@@ -13,7 +13,6 @@ import numpy as np
 import os.path
 import GSASIIIO as G2IO
 import CifFile as cif # PyCifRW from James Hester
-import urllib
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 810 $")
 
@@ -99,11 +98,7 @@ class CIFpwdReader(G2IO.ImportPowderData):
         try:
             if cf is None:
                 self.ShowBusy() # this can take a while
-                ciffile = 'file:'+urllib.pathname2url(filename)
-                #cf = cif.ReadCif(ciffile)
-                fp = open(ciffile,'r')             # patch: open file to avoid windows bug
-                cf = cif.ReadCif(fp)
-                fp.close()
+                cf = G2IO.ReadCIF(filename)
                 self.DoneBusy()
         except Exception as detail:
             print self.formatName+' read error:'+str(detail) # for testing

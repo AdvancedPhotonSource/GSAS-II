@@ -133,7 +133,10 @@ class G2PlotNoteBook(wx.Panel):
         Assume that the page associated with the currently displayed tab
         has a child, .canvas; give that child the focus and pass it the event.
         '''
-        Page = self.nb.GetPage(self.nb.GetSelection())
+        try:
+            Page = self.nb.GetPage(self.nb.GetSelection())
+        except ValueError: # occurs with no plot tabs
+            return
         try:
             Page.canvas.SetFocus()
             wx.PostEvent(Page.canvas,event)

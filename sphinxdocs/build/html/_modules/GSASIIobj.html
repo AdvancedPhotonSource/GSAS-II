@@ -176,7 +176,7 @@
 <span class="sd">covMatrix      \                The (NxN) covVariance matrix (np.array)</span>
 <span class="sd">=============  ===============  ====================================================</span>
 
-<span class="sd">Phase Tree Item</span>
+<span class="sd">Phase Tree Items</span>
 <span class="sd">----------------</span>
 
 <span class="sd">.. _Phase_table:</span>
@@ -194,7 +194,8 @@
 <span class="sd">  key         sub-key        explanation</span>
 <span class="sd">==========  ===============  ====================================================</span>
 <span class="sd">General         \            Overall information for the phase (dict)</span>
-<span class="sd">  \         AtomPtrs         ? (list)</span>
+<span class="sd">  \         AtomPtrs         list of four locations to use to pull info</span>
+<span class="sd">                             from the atom records (list)</span>
 <span class="sd">  \         F000X            x-ray F(000) intensity (float)</span>
 <span class="sd">  \         F000N            neutron F(000) intensity (float)</span>
 <span class="sd">  \         Mydir            directory of current .gpx file (str)</span>
@@ -210,8 +211,8 @@
 <span class="sd">  \         Isotopes         dict of scattering lengths for each isotope</span>
 <span class="sd">                             combination for each element in phase  </span>
 <span class="sd">  \         Name             phase name (str)</span>
-<span class="sd">  \         SGData           Space group details, </span>
-<span class="sd">                             as defined in :mod:`GSASIIspc` as  :ref:`SGData definition &lt;SGData_table&gt;`</span>
+<span class="sd">  \         SGData           Space group details as a :ref:`space group (SGData) object &lt;SGData_table&gt;`</span>
+<span class="sd">                             as defined in :func:`GSASIIspc.SpcGroup`.</span>
 <span class="sd">  \         Pawley neg wt    Restraint value for negative Pawley intensities</span>
 <span class="sd">                             (float)</span>
 <span class="sd">  \         Flip             Charge flip controls dict?</span>
@@ -232,15 +233,11 @@
 <span class="sd">  \         AngleRadii       Radius for each atom used to compute </span>
 <span class="sd">                             interatomic angles (list of floats)</span>
 <span class="sd">ranId           \            unique random number Id for phase (int)</span>
-<span class="sd">pId             \            ? (int)</span>
+<span class="sd">pId             \            Phase Id number for current project (int).</span>
 <span class="sd">Atoms           \            Atoms in phase as a list of lists. The outer list</span>
-<span class="sd">                             is for each atom, the inner list contains 18</span>
-<span class="sd">                             items:</span>
-<span class="sd">                             0) atom label, 1) the atom type,</span>
-<span class="sd">                             2) the refinement flags, 3-6) x, y, z, frac</span>
-<span class="sd">                             7) site symmetry, 8) site multiplicity,</span>
-<span class="sd">                             9) &#39;I&#39; or &#39;A&#39; for iso/anisotropic,</span>
-<span class="sd">                             10) Uiso, 10-16) Uij, 16) unique Id #.</span>
+<span class="sd">                             is for each atom, the inner list contains varying</span>
+<span class="sd">                             items depending on the type of phase, see</span>
+<span class="sd">                             the :ref:`Atom Records &lt;Atoms_table&gt;` description.</span>
 <span class="sd">                             (list of lists)</span>
 <span class="sd">Drawing         \            Display parameters (dict)</span>
 <span class="sd">\           ballScale        Size of spheres in ball-and-stick display (float)</span>
@@ -325,7 +322,8 @@
 <span class="sd">            and :math:`T_n` is a length 3 np.array.</span>
 <span class="sd">            Atom coordinates are transformed where the</span>
 <span class="sd">            Asymmetric unit coordinates [X is (x,y,z)]</span>
-<span class="sd">            are transformed using :math:`X\prime = M*X+T`</span>
+<span class="sd">            are transformed using</span>
+<span class="sd">            :math:`X^\prime = M_n*X+T_n`</span>
 <span class="sd">SGSys       symmetry unit cell: type one of</span>
 <span class="sd">            &#39;triclinic&#39;, &#39;monoclinic&#39;, &#39;orthorhombic&#39;,</span>
 <span class="sd">            &#39;tetragonal&#39;, &#39;rhombohedral&#39;, &#39;trigonal&#39;,</span>
@@ -336,7 +334,299 @@
 <span class="sd">            &#39;111&#39; is used (P 1, and ?).</span>
 <span class="sd">==========  ====================================================</span>
 
+<span class="sd">Atom Records</span>
+<span class="sd">------------</span>
+
+<span class="sd">.. _Atoms_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Atoms record description</span>
+<span class="sd">   single: Data object descriptions; Atoms record</span>
+
+
+<span class="sd">If ``phasedict`` points to the phase information in the data tree, then</span>
+<span class="sd">atoms are contained in a list of atom records (list) in</span>
+<span class="sd">``phasedict[&#39;Atoms&#39;]``. Also needed to read atom information </span>
+<span class="sd">are four pointers, ``cx,ct,cs,cia = phasedict[&#39;General&#39;][&#39;AtomPtrs&#39;]``,</span>
+<span class="sd">which define locations in the atom record, as shown below. </span>
+
+<span class="sd">.. tabularcolumns:: |l|p{4.5in}|</span>
+
+<span class="sd">==============   ====================================================</span>
+<span class="sd">location         explanation</span>
+<span class="sd">==============   ====================================================</span>
+<span class="sd">cx,cx+1,cx+2      the x,y and z coordinates</span>
+<span class="sd">cx+3              fractional occupancy (also cs-1)</span>
+<span class="sd">ct-1              atom label</span>
+<span class="sd">ct                atom type</span>
+<span class="sd">ct+1              refinement flags</span>
+<span class="sd">cs                site symmetry string</span>
+<span class="sd">cs+1              site multiplicity</span>
+<span class="sd">cia               ADP flag: Isotropic (&#39;I&#39;) or Anisotropic (&#39;A&#39;)</span>
+<span class="sd">cia+1             Uiso</span>
+<span class="sd">cia+2...cia+6     U11, U22, U33, U12, U13, U23</span>
+<span class="sd">==============   ====================================================</span>
+
+<span class="sd">Powder Diffraction Tree Items</span>
+<span class="sd">-----------------------------</span>
+
+<span class="sd">.. _Powder_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Powder data object description</span>
+<span class="sd">   single: Data object descriptions; Powder Data</span>
+
+<span class="sd">Every powder diffraction histogram is stored in the GSAS-II data tree</span>
+<span class="sd">with a top-level entry named beginning with the string &quot;PWDR &quot;. The</span>
+<span class="sd">diffraction data for that information are directly associated with</span>
+<span class="sd">that tree item and there are a series of children to that item. The</span>
+<span class="sd">routine :func:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree` will</span>
+<span class="sd">load this information into a dictionary where the child tree name is</span>
+<span class="sd">used as a key, and the information in the main entry is assigned</span>
+<span class="sd">a key of ``Data``, as outlined below.</span>
+
+<span class="sd">.. tabularcolumns:: |l|l|p{4in}|</span>
+
+<span class="sd">======================  ===============  ====================================================</span>
+<span class="sd">  key                      sub-key        explanation</span>
+<span class="sd">======================  ===============  ====================================================</span>
+<span class="sd">Limits                       \            A list of two two element lists, as [[Ld,Hd],[L,H]]</span>
+<span class="sd">                                          where L and Ld are the current and default lowest</span>
+<span class="sd">                                          two-theta value to be used and </span>
+<span class="sd">                                          where H and Hd are the current and default highest</span>
+<span class="sd">                                          two-theta value to be used.</span>
+<span class="sd">Reflection Lists              \           A dict with an entry for each phase in the</span>
+<span class="sd">                                          histogram. The contents of each dict item</span>
+<span class="sd">                                          is a list of reflections as described in the</span>
+<span class="sd">                                          :ref:`Powder Reflections &lt;PowderRefl_table&gt;`</span>
+<span class="sd">                                          description.</span>
+<span class="sd">Instrument Parameters         \           A list containing two dicts where the possible</span>
+<span class="sd">                                          keys in each dict are listed below. The value</span>
+<span class="sd">                                          for each item is a list containing three values:</span>
+<span class="sd">                                          the initial value, the current value and a</span>
+<span class="sd">                                          refinement flag which can have a value of</span>
+<span class="sd">                                          True, False or 0 where 0 indicates a value that</span>
+<span class="sd">                                          cannot be refined. The first and second</span>
+<span class="sd">                                          values are floats unless otherwise noted.</span>
+<span class="sd">                                          Items in the first dict are noted as [1]</span>
+<span class="sd">\                         Lam             Specifies a wavelength in Angstroms [1]</span>
+<span class="sd">\                         Lam1            Specifies the primary wavelength in</span>
+<span class="sd">                                          Angstrom, when an alpha1, alpha2</span>
+<span class="sd">                                          source is used [1]</span>
+<span class="sd">\                         Lam2            Specifies the secondary wavelength in</span>
+<span class="sd">                                          Angstrom, when an alpha1, alpha2</span>
+<span class="sd">                                          source is used [1]</span>
+<span class="sd">                          I(L2)/I(L1)     Ratio of Lam2 to Lam1 [1]           </span>
+<span class="sd">\                         Type            Histogram type (str) [1]: </span>
+<span class="sd">                                           * &#39;PXC&#39; for constant wavelength x-ray</span>
+<span class="sd">                                           * &#39;PNC&#39; for constant wavelength neutron</span>
+<span class="sd">                                           * &#39;PNT&#39; for time of flight neutron</span>
+<span class="sd">\                         Zero            Two-theta zero correction in *degrees* [1]</span>
+<span class="sd">\                         Azimuth         Azimuthal setting angle for data recorded</span>
+<span class="sd">                                          with differing setting angles [1]</span>
+<span class="sd">\                         U, V, W         Cagliotti profile coefficients</span>
+<span class="sd">                                          for Gaussian instrumental broadening, where the</span>
+<span class="sd">                                          FWHM goes as</span>
+<span class="sd">                                          :math:`U \\tan^2\\theta + V \\tan\\theta + W` [1]</span>
+<span class="sd">\                         X, Y            Cauchy (Lorentzian) instrumental broadening</span>
+<span class="sd">                                          coefficients [1]</span>
+<span class="sd">\                         SH/L            Variant of the Finger-Cox-Jephcoat asymmetric</span>
+<span class="sd">                                          peak broadening ratio. Note that this is the</span>
+<span class="sd">                                          average between S/L and H/L where S is</span>
+<span class="sd">                                          sample height, H is the slit height and</span>
+<span class="sd">                                          L is the goniometer diameter. [1]</span>
+<span class="sd">\                         Polariz.        Polarization coefficient. [1]</span>
+<span class="sd">wtFactor                      \           A weighting factor to increase or decrease</span>
+<span class="sd">                                          the leverage of data in the histogram (float).</span>
+<span class="sd">                                          A value of 1.0 weights the data with their</span>
+<span class="sd">                                          standard uncertainties and a larger value</span>
+<span class="sd">                                          increases the weighting of the data (equivalent</span>
+<span class="sd">                                          to decreasing the uncertainties).</span>
+<span class="sd">Sample Parameters             \           Specifies a dict with parameters that describe how</span>
+<span class="sd">                                          the data were collected, as listed</span>
+<span class="sd">                                          below. Refinable parameters are a list containing</span>
+<span class="sd">                                          a float and a bool, where the second value</span>
+<span class="sd">                                          specifies if the value is refined, otherwise</span>
+<span class="sd">                                          the value is a float unless otherwise noted.</span>
+<span class="sd">\                         Scale           The histogram scale factor (refinable) </span>
+<span class="sd">\                         Absorption      The sample absorption coefficient as</span>
+<span class="sd">                                          :math:`\\mu r` where r is the radius</span>
+<span class="sd">                                          (refinable).</span>
+<span class="sd">\                         DisplaceX,      Sample displacement from goniometer center</span>
+<span class="sd">                          DisplaceY       where Y is along the beam direction and</span>
+<span class="sd">                                          X is perpendicular. Units are :math:`\\mu m`</span>
+<span class="sd">                                          (refinable).</span>
+<span class="sd">\                         Phi, Chi,       Goniometer sample setting angles, in degrees.</span>
+<span class="sd">                          Omega</span>
+<span class="sd">\                         Gonio. radius   Radius of the diffractometer in mm</span>
+<span class="sd">\                         InstrName       A name for the instrument, used in preparing</span>
+<span class="sd">                                          a CIF (str).</span>
+<span class="sd">\                         Force,          Variables that describe how the measurement</span>
+<span class="sd">                          Temperature,    was performed. Not used directly in </span>
+<span class="sd">                          Humidity,       any computations. </span>
+<span class="sd">                          Pressure,</span>
+<span class="sd">                          Voltage</span>
+<span class="sd">\                         ranId           The random-number Id for the histogram</span>
+<span class="sd">                                          (same value as where top-level key is ranId)</span>
+<span class="sd">\                         Type            Type of diffraction data, may be &#39;Debye-Scherrer&#39;</span>
+<span class="sd">                                          or &#39;Bragg-Brentano&#39; (str).</span>
+<span class="sd">\                         Diffuse         not in use?</span>
+<span class="sd">hId                           \           The number assigned to the histogram when</span>
+<span class="sd">                                          the project is loaded or edited (can change)</span>
+<span class="sd">ranId                         \           A random number id for the histogram</span>
+<span class="sd">                                          that does not change</span>
+<span class="sd">Background                    \           The background is stored as a list with where</span>
+<span class="sd">                                          the first item in the list is list and the second</span>
+<span class="sd">                                          item is a dict. The list contains the background</span>
+<span class="sd">                                          function and its coefficients; the dict contains</span>
+<span class="sd">                                          Debye diffuse terms and background peaks.</span>
+<span class="sd">                                          (TODO: this needs to be expanded.)</span>
+<span class="sd">Data                          \           The data consist of a list of 6 np.arrays </span>
+<span class="sd">                                          containing in order:</span>
+
+<span class="sd">                                           1. the x-postions (two-theta in degrees),</span>
+<span class="sd">                                           2. the intensity values (Yobs),</span>
+<span class="sd">                                           3. the weights for each Yobs value</span>
+<span class="sd">                                           4. the computed intensity values (Ycalc)</span>
+<span class="sd">                                           5. the background values</span>
+<span class="sd">                                           6. Yobs-Ycalc</span>
+<span class="sd">======================  ===============  ====================================================</span>
+
+<span class="sd">Powder Reflection Data Structure</span>
+<span class="sd">--------------------------------</span>
+
+<span class="sd">.. _PowderRefl_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Powder reflection object description</span>
+<span class="sd">   single: Data object descriptions; Powder Reflections</span>
+<span class="sd">   </span>
+<span class="sd">For every phase in a histogram, the ``Reflection Lists`` value is a list of</span>
+<span class="sd">reflections. The items in that list are documented below.</span>
+
+<span class="sd">==========  ====================================================</span>
+<span class="sd">  index         explanation</span>
+<span class="sd">==========  ====================================================</span>
+<span class="sd"> 0,1,2       h,k,l (float)</span>
+<span class="sd"> 3           multiplicity</span>
+<span class="sd"> 4           d-space, Angstrom</span>
+<span class="sd"> 5           pos, two-theta</span>
+<span class="sd"> 6           sig, Gaussian width</span>
+<span class="sd"> 7           gam, Lorenzian width</span>
+<span class="sd"> 8           :math:`F_{obs}^2`</span>
+<span class="sd"> 9           :math:`F_{calc}^2`</span>
+<span class="sd"> 10          reflection phase, in degrees</span>
+<span class="sd"> 11          the equivalent reflections as a (m x 3) </span>
+<span class="sd">             np.array, where m is 0.5 * multiplicity. Note</span>
+<span class="sd">             that Freidel pairs, (-h,-k-,l), are not</span>
+<span class="sd">             included. </span>
+<span class="sd"> 12          phase shift for each of the equivalent</span>
+<span class="sd">             reflections as a length (m) array</span>
+<span class="sd"> 13          intensity correction for reflection, this times</span>
+<span class="sd">             :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc </span>
+<span class="sd"> 14          dict with the form factor (f or b) by atom type</span>
+<span class="sd">             symbol at the reflection position.</span>
+<span class="sd">==========  ====================================================</span>
+
+<span class="sd">Single Crystal Tree Items</span>
+<span class="sd">-------------------------</span>
+
+<span class="sd">.. _Xtal_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Single Crytsal data object description</span>
+<span class="sd">   single: Data object descriptions; Single crystal data</span>
+
+<span class="sd">Every single crystal diffraction histogram is stored in the GSAS-II data tree</span>
+<span class="sd">with a top-level entry named beginning with the string &quot;HKLF &quot;. The</span>
+<span class="sd">diffraction data for that information are directly associated with</span>
+<span class="sd">that tree item and there are a series of children to that item. The</span>
+<span class="sd">routine :func:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree` will</span>
+<span class="sd">load this information into a dictionary where the child tree name is</span>
+<span class="sd">used as a key, and the information in the main entry is assigned</span>
+<span class="sd">a key of ``Data``, as outlined below.</span>
+
+<span class="sd">.. tabularcolumns:: |l|l|p{4in}|</span>
+
+<span class="sd">======================  ===============  ====================================================</span>
+<span class="sd">  key                      sub-key        explanation</span>
+<span class="sd">======================  ===============  ====================================================</span>
+<span class="sd">Data</span>
+<span class="sd">                                          A list of lists, where each inner item</span>
+<span class="sd">                                          is an individual reflection</span>
+<span class="sd">                                          as described in the</span>
+<span class="sd">                                          :ref:`Single Crystal Reflections</span>
+<span class="sd">                                          &lt;XtalRefl_table&gt;`</span>
+<span class="sd">                                          description.</span>
+
+<span class="sd">Instrument Parameters         \           A list containing two dicts where the possible</span>
+<span class="sd">                                          keys in each dict are listed below. The value</span>
+<span class="sd">                                          for most items is a list containing two values:</span>
+<span class="sd">                                          the initial value, the current value.</span>
+<span class="sd">                                          The first and second</span>
+<span class="sd">                                          values are floats unless otherwise noted.</span>
+<span class="sd">\                         Lam             Specifies a wavelength in Angstroms (two floats)</span>
+<span class="sd">\                         Type            Histogram type (two str values): </span>
+<span class="sd">                                           * &#39;SXC&#39; for constant wavelength x-ray</span>
+<span class="sd">                                           * &#39;SNC&#39; for constant wavelength neutron</span>
+<span class="sd">                                           * &#39;SNT&#39; for time of flight neutron</span>
+<span class="sd">\                         InstrName       A name for the instrument, used in preparing</span>
+<span class="sd">                                          a CIF (str).</span>
+
+<span class="sd">wtFactor                      \           A weighting factor to increase or decrease</span>
+<span class="sd">                                          the leverage of data in the histogram (float).</span>
+<span class="sd">                                          A value of 1.0 weights the data with their</span>
+<span class="sd">                                          standard uncertainties and a larger value</span>
+<span class="sd">                                          increases the weighting of the data (equivalent</span>
+<span class="sd">                                          to decreasing the uncertainties).</span>
+
+<span class="sd">hId                           \           The number assigned to the histogram when</span>
+<span class="sd">                                          the project is loaded or edited (can change)</span>
+<span class="sd">======================  ===============  ====================================================</span>
+
+<span class="sd">Single Crystal Reflection Data Structure</span>
+<span class="sd">----------------------------------------</span>
+
+<span class="sd">.. _XtalRefl_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Single Crystal reflection object description</span>
+<span class="sd">   single: Data object descriptions; Single Crystal Reflections</span>
+<span class="sd">   </span>
+<span class="sd">For every phase in a histogram, the ``Reflection Lists`` value is a list of</span>
+<span class="sd">reflections. The items in that list are documented below.</span>
+
+<span class="sd">==========  ====================================================</span>
+<span class="sd">  index         explanation</span>
+<span class="sd">==========  ====================================================</span>
+<span class="sd"> 0,1,2       h,k,l (float)</span>
+<span class="sd"> 3           multiplicity</span>
+<span class="sd"> 4           d-space, Angstrom</span>
+<span class="sd"> 5           :math:`F_{obs}^2`</span>
+<span class="sd"> 6           :math:`\sigma(F_{obs}^2)`</span>
+<span class="sd"> 7           :math:`F_{calc}^2`</span>
+<span class="sd"> 8           :math:`F_{obs}^2T`</span>
+<span class="sd"> 9           :math:`F_{calc}^2T`</span>
+<span class="sd"> 10          reflection phase, in degrees</span>
+<span class="sd"> 11          the equivalent reflections as a (m x 3) </span>
+<span class="sd">             np.array.</span>
+<span class="sd"> 12          phase shift for each of the equivalent</span>
+<span class="sd">             reflections as a length (m) array</span>
+<span class="sd"> 13          intensity correction for reflection, this times</span>
+<span class="sd">             :math:`F_{obs}^2` or :math:`F_{calc}^2`</span>
+<span class="sd">             gives Iobs or Icalc</span>
+<span class="sd">             (not used in single crystals?)</span>
+<span class="sd"> 14          dict with the form factor (f or b) by atom type</span>
+<span class="sd">             symbol at the reflection position.</span>
+<span class="sd">==========  ====================================================</span>
+
+
+<span class="sd">*Classes and routines*</span>
+<span class="sd">----------------------</span>
+
 <span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 810 $&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LoadHistogramIDs"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LoadHistogramIDs">[docs]</a><span class="k">def</span> <span class="nf">LoadHistogramIDs</span><span class="p">(</span><span class="n">histList</span><span class="p">,</span><span class="n">idList</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Save the Id values for a series of histograms&#39;&#39;&#39;</span>
@@ -371,6 +661,7 @@
 <span class="sd">    :param int atomnum: The number for the atom</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
     <span class="n">IDdict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;phases&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>

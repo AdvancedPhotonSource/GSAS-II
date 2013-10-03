@@ -55,18 +55,37 @@
 <span class="sd">*GSASIIlattice: Unit cells*</span>
 <span class="sd">---------------------------</span>
 
-<span class="sd">Perform lattice-related computations&#39;&#39;&#39;</span>
+<span class="sd">Perform lattice-related computations</span>
+
+<span class="sd">Note that *g* is the reciprocal lattice tensor, and *G* is its inverse,</span>
+<span class="sd">:math:`G = g^{-1}`, where </span>
+
+<span class="sd">  .. math::</span>
+
+<span class="sd">   G = \\left( \\begin{matrix}</span>
+<span class="sd">   a^2 &amp; a b\\cos\gamma &amp; a c\\cos\\beta \\\\</span>
+<span class="sd">   a b\\cos\\gamma &amp; b^2 &amp; b c \cos\\alpha \\\\</span>
+<span class="sd">   a c\\cos\\beta &amp;  b c \\cos\\alpha &amp; c^2</span>
+<span class="sd">   \\end{matrix}\\right)</span>
+
+<span class="sd">The &quot;*A* tensor&quot; terms are defined as</span>
+<span class="sd">:math:`A = (\\begin{matrix} G_{11} &amp; G_{22} &amp; G_{33} &amp; 2G_{12} &amp; 2G_{13} &amp; 2G_{23}\\end{matrix})` and *A* can be used in this fashion:</span>
+<span class="sd">:math:`d^* = \sqrt {A_1 h^2 + A_2 k^2 + A_3 l^2 + A_4 hk + A_5 hl + A_6 kl}`, where</span>
+<span class="sd">*d* is the d-spacing, and :math:`d^*` is the reciprocal lattice spacing, </span>
+<span class="sd">:math:`Q = 2 \\pi d^* = 2 \\pi / d`</span>
+<span class="sd">&#39;&#39;&#39;</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-06-02 23:07:35 -0500 (Sun, 02 Jun 2013) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 939 $</span>
+<span class="c"># $Date: 2013-10-02 15:42:53 -0500 (Wed, 02 Oct 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1075 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIlattice.py $</span>
-<span class="c"># $Id: GSASIIlattice.py 939 2013-06-03 04:07:35Z toby $</span>
+<span class="c"># $Id: GSASIIlattice.py 1075 2013-10-02 20:42:53Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="kn">as</span> <span class="nn">nl</span>
-
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1075 $&quot;</span><span class="p">)</span>
 <span class="c"># trig functions in degrees</span>
 <span class="n">sind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
 <span class="n">asind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">180.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
@@ -141,10 +160,10 @@
     <span class="k">return</span> <span class="n">G</span><span class="p">,</span><span class="n">g</span>
 </div>
 <div class="viewcode-block" id="A2Gmat"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.A2Gmat">[docs]</a><span class="k">def</span> <span class="nf">A2Gmat</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">inverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Fill real &amp; reciprocal metric tensor (G) from A</span>
+    <span class="sd">&quot;&quot;&quot;Fill real &amp; reciprocal metric tensor (G) from A.</span>
 
 <span class="sd">    :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]</span>
-<span class="sd">    :param bool inverse: if True return bot G and g; else just G</span>
+<span class="sd">    :param bool inverse: if True return both G and g; else just G</span>
 <span class="sd">    :return: reciprocal (G) &amp; real (g) metric tensors (list of two numpy 3x3 arrays)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -321,8 +340,39 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
     </div>
+<div class="viewcode-block" id="cell2GS"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.cell2GS">[docs]</a><span class="k">def</span> <span class="nf">cell2GS</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; returns Uij to betaij conversion matrix&#39;&#39;&#39;</span>
+    <span class="n">G</span><span class="p">,</span><span class="n">g</span> <span class="o">=</span> <span class="n">cell2Gmat</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+    <span class="n">GS</span> <span class="o">=</span> <span class="n">G</span>
+    <span class="n">GS</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">GS</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">GS</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">GS</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">GS</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">GS</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">GS</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">GS</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">GS</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">GS</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">GS</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">GS</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">GS</span>    
+    </div>
+<div class="viewcode-block" id="Uij2Ueqv"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.Uij2Ueqv">[docs]</a><span class="k">def</span> <span class="nf">Uij2Ueqv</span><span class="p">(</span><span class="n">Uij</span><span class="p">,</span><span class="n">GS</span><span class="p">,</span><span class="n">Amat</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; returns 1/3 trace of diagonalized U matrix&#39;&#39;&#39;</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">U6toUij</span><span class="p">(</span><span class="n">Uij</span><span class="p">),</span><span class="n">GS</span><span class="p">)</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">Amat</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="n">Amat</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">E</span><span class="p">,</span><span class="n">R</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span>
+        </div>
+<div class="viewcode-block" id="CosAngle"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.CosAngle">[docs]</a><span class="k">def</span> <span class="nf">CosAngle</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="n">V</span><span class="p">,</span><span class="n">G</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; calculate cos of angle between U &amp; V in generalized coordinates </span>
+<span class="sd">    defined by metric tensor G</span>
+
+<span class="sd">    :param U: 3-vectors assume numpy arrays, can be multiple reflections as (N,3) array</span>
+<span class="sd">    :param V: 3-vectors assume numpy arrays, only as (3) vector</span>
+<span class="sd">    :param G: metric tensor for U &amp; V defined space assume numpy array</span>
+<span class="sd">    :returns:</span>
+<span class="sd">        cos(phi)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">T</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="n">G</span><span class="p">)</span><span class="o">*</span><span class="n">U</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">V</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="n">V</span><span class="p">)))</span>
+    <span class="n">cosP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="n">v</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">cosP</span>
+    </div>
 <div class="viewcode-block" id="CosSinAngle"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.CosSinAngle">[docs]</a><span class="k">def</span> <span class="nf">CosSinAngle</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="n">V</span><span class="p">,</span><span class="n">G</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; calculate sin &amp; cos of angle betwee U &amp; V in generalized coordinates </span>
+    <span class="sd">&quot;&quot;&quot; calculate sin &amp; cos of angle between U &amp; V in generalized coordinates </span>
 <span class="sd">    defined by metric tensor G</span>
 
 <span class="sd">    :param U: 3-vectors assume numpy arrays</span>

@@ -60,11 +60,11 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-06-11 11:08:43 -0400 (Tue, 11 Jun 2013) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 946 $</span>
+<span class="c"># $Date: 2013-06-28 14:28:13 -0500 (Fri, 28 Jun 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 973 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIspc.py $</span>
-<span class="c"># $Id: GSASIIspc.py 946 2013-06-11 15:08:43Z toby $</span>
+<span class="c"># $Id: GSASIIspc.py 973 2013-06-28 19:28:13Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="kn">as</span> <span class="nn">ma</span>
@@ -74,7 +74,7 @@
 <span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">ospath</span>
 
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 946 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 973 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">pyspg</span>
 
 <div class="viewcode-block" id="SpcGroup"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.SpcGroup">[docs]</a><span class="k">def</span> <span class="nf">SpcGroup</span><span class="p">(</span><span class="n">SGSymbol</span><span class="p">):</span>
@@ -250,6 +250,56 @@
             <span class="n">col</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">SGText</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>        
     <span class="k">return</span> <span class="n">SGText</span>
+</div>
+<div class="viewcode-block" id="AllOps"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.AllOps">[docs]</a><span class="k">def</span> <span class="nf">AllOps</span><span class="p">(</span><span class="n">SGData</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Returns a list of all operators for a space group, including those for</span>
+<span class="sd">    centering and a center of symmetry</span>
+<span class="sd">    </span>
+<span class="sd">    :param SGData: from :func:`SpcGroup`</span>
+<span class="sd">    :returns: (SGTextList,offsetList,symOpList,G2oprList) where</span>
+
+<span class="sd">      * SGTextList: a list of strings with formatted and normalized</span>
+<span class="sd">        symmetry operators.</span>
+<span class="sd">      * offsetList: a tuple of (dx,dy,dz) offsets that relate the GSAS-II</span>
+<span class="sd">        symmetry operation to the operator in SGTextList and symOpList.</span>
+<span class="sd">        these dx (etc.) values are added to the GSAS-II generated</span>
+<span class="sd">        positions to provide the positions that are generated</span>
+<span class="sd">        by the normalized symmetry operators.        </span>
+<span class="sd">      * symOpList: a list of tuples with the normalized symmetry</span>
+<span class="sd">        operations as (M,T) values</span>
+<span class="sd">        (see ``SGOps`` in the :ref:`Space Group object&lt;SGData_table&gt;`)</span>
+<span class="sd">      * G2oprList: The GSAS-II operations for each symmetry operation as</span>
+<span class="sd">        a tuple with (center,mult,opnum), where center is (0,0,0), (0.5,0,0),</span>
+<span class="sd">        (0.5,0.5,0.5),...; where mult is 1 or -1 for the center of symmetry</span>
+<span class="sd">        and opnum is the number for the symmetry operation, in ``SGOps``</span>
+<span class="sd">        (starting with 0).</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">SGTextList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">offsetList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">symOpList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">G2oprList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">onebar</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">SGData</span><span class="p">[</span><span class="s">&#39;SGInv&#39;</span><span class="p">]:</span>
+        <span class="n">onebar</span> <span class="o">+=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span>
+    <span class="k">for</span> <span class="n">cen</span> <span class="ow">in</span> <span class="n">SGData</span><span class="p">[</span><span class="s">&#39;SGCen&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">mult</span> <span class="ow">in</span> <span class="n">onebar</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,(</span><span class="n">M</span><span class="p">,</span><span class="n">T</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">SGData</span><span class="p">[</span><span class="s">&#39;SGOps&#39;</span><span class="p">]):</span>
+                <span class="n">offset</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">Tprime</span> <span class="o">=</span> <span class="p">(</span><span class="n">mult</span><span class="o">*</span><span class="n">T</span><span class="p">)</span><span class="o">+</span><span class="n">cen</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">while</span> <span class="n">Tprime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">Tprime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">offset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">while</span> <span class="n">Tprime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">Tprime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">1</span>
+                        <span class="n">offset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">OPtxt</span> <span class="o">=</span> <span class="n">MT2text</span><span class="p">(</span><span class="n">mult</span><span class="o">*</span><span class="n">M</span><span class="p">,</span><span class="n">Tprime</span><span class="p">)</span>
+                <span class="n">SGTextList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OPtxt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">))</span>
+                <span class="n">offsetList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">offset</span><span class="p">))</span>
+                <span class="n">symOpList</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">mult</span><span class="o">*</span><span class="n">M</span><span class="p">,</span><span class="n">Tprime</span><span class="p">))</span>
+                <span class="n">G2oprList</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">cen</span><span class="p">,</span><span class="n">mult</span><span class="p">,</span><span class="n">j</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">SGTextList</span><span class="p">,</span><span class="n">offsetList</span><span class="p">,</span><span class="n">symOpList</span><span class="p">,</span><span class="n">G2oprList</span>
     </div>
 <div class="viewcode-block" id="MT2text"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIspc.MT2text">[docs]</a><span class="k">def</span> <span class="nf">MT2text</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">T</span><span class="p">):</span>
     <span class="s">&quot;From space group matrix/translation operator returns text version&quot;</span>
@@ -385,7 +435,7 @@
 <span class="sd">    :param SGData: space group data obtained from SpcGroup</span>
 <span class="sd">    :returns: iabsnt,mulp,Uniq,phi</span>
 
-<span class="sd">     *   iabsnt = True is reflection is forbidden by symmetry</span>
+<span class="sd">     *   iabsnt = True if reflection is forbidden by symmetry</span>
 <span class="sd">     *   mulp = reflection multiplicity including Friedel pairs</span>
 <span class="sd">     *   Uniq = numpy array of equivalent hkl in descending order of h,k,l</span>
 

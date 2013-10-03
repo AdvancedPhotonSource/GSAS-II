@@ -574,7 +574,7 @@ reflections. The items in that list are documented below.
 
 '''
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 
 def LoadHistogramIDs(histList,idList):
     '''Save the Id values for a series of histograms'''

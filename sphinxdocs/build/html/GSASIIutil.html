@@ -83,8 +83,30 @@ H. H. M. Balyuzi, <em>Acta Cryst.</em> <strong>(1975).</strong> A31, 600.</p>
 </div>
 <span class="target" id="module-ImageCalibrants"></span><div class="section" id="imagecalibrants-calibration-standards">
 <h2><em>ImageCalibrants: Calibration Standards</em><a class="headerlink" href="#imagecalibrants-calibration-standards" title="Permalink to this headline">¶</a></h2>
-<p>GSASII powder calibrants as a dictionary of substances commonly used for powder
-calibrations for image data.</p>
+<p>GSASII powder calibrants as a dictionary <tt class="docutils literal"><span class="pre">ImageCalibrants.Calibrants</span></tt> with substances
+commonly used for powder calibrations for image data.</p>
+<p>Each entry in <tt class="docutils literal"><span class="pre">ImageCalibrants</span></tt> consists of:</p>
+<div class="highlight-python"><pre>'key':([Bravais num,],[(a,b,c,alpha,beta,gamma),],no. lines skipped,(dmin,pixLimit,cutOff))</pre>
+</div>
+<p>as an example:</p>
+<div class="highlight-python"><pre>'LaB6  SRM660a':([2,],[(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10)),</pre>
+</div>
+<p>or where &#8220;Bravais num&#8221; and &#8220;(a,b,...)&#8221; are repeated in the case of mixtures:</p>
+<div class="highlight-python"><pre>'LaB6 &amp; CeO2':([2,0], [(4.1569,4.1569,4.1569,90,90,90),(5.4117,5.4117,5.4117,90,90,90)], 0, (1.0,2,1)),</pre>
+</div>
+<p>To expand this list with locally needed additions, do not modify this file,
+because you may lose these changes during a software update. Instead
+duplicate the format of this file in a file named <cite>UserCalibrants.py</cite>
+and there define the material(s) you want:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Calibrants</span><span class="o">=</span><span class="p">{</span>
+  <span class="s">&#39;LaB6 skip 2 lines&#39;</span><span class="p">:([</span><span class="mi">2</span><span class="p">,],[(</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">),],</span><span class="mi">2</span><span class="p">,(</span><span class="mf">1.0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>New key values will be added to the list of options.
+If a key is duplicated, the information in  <cite>UserCalibrants.py</cite> will
+override the information in this file.</p>
+<p>Note, some useful Bravais numbers are: F-cubic=0, I-cubic=1, P-cubic=2, R3/m (hex)=3, P6=4, P4mmm=6</p>
 </div>
 <span class="target" id="module-GSASIIpath"></span><div class="section" id="gsasiipath-locations-updates">
 <h2><em>GSASIIpath: locations &amp; updates</em><a class="headerlink" href="#gsasiipath-locations-updates" title="Permalink to this headline">¶</a></h2>
@@ -109,12 +131,12 @@ found.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 989 $&#8221;
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 1047 $&#8221;
 that is set by subversion when the file is retrieved from subversion.</td>
 </tr>
 </tbody>
 </table>
-<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">989</span> <span class="pre">$&quot;)</span></tt> in every python
+<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">1047</span> <span class="pre">$&quot;)</span></tt> in every python
 file.</p>
 </dd></dl>
 
@@ -139,7 +161,7 @@ not a repository or svn is not found)</td>
 
 <dl class="function">
 <dt id="GSASIIpath.svnGetLog">
-<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetLog</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>version=None</em><big>)</big><a class="headerlink" href="#GSASIIpath.svnGetLog" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetLog</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>version=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnGetLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnGetLog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the revision log information for a specific version of the</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -195,7 +217,7 @@ not a repository or svn is not found)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>fpath</strong> (<em>str</em>) &#8211; path to repository dictionary, defaults to directory where
 the current file is located</li>
 <li><strong>version</strong> &#8211; the number of the version to be loaded. Used only
@@ -205,14 +227,14 @@ causes the latest version on the server to be used.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A dictionary with the files that have been changed/added and
-a code describing how they have been updated (see changetype) or
-None if there is a subversion error (likely because the path is
-not a repository or svn is not found)</p>
-</td>
-</tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpath.svnUpdateProcess">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnUpdateProcess</tt><big>(</big><em>version=None</em>, <em>projectfile=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnUpdateProcess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnUpdateProcess" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform an update of GSAS-II in a separate python process</p>
 </dd></dl>
 
 <dl class="function">
@@ -565,6 +587,29 @@ currently only works for nCells = 0 or 1 (not &gt;1)</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIlattice.CosAngle">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CosAngle</tt><big>(</big><em>U</em>, <em>V</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CosAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CosAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculate cos of angle between U &amp; V in generalized coordinates 
+defined by metric tensor G</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>U</strong> &#8211; 3-vectors assume numpy arrays, can be multiple reflections as (N,3) array</li>
+<li><strong>V</strong> &#8211; 3-vectors assume numpy arrays, only as (3) vector</li>
+<li><strong>G</strong> &#8211; metric tensor for U &amp; V defined space assume numpy array</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">cos(phi)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIlattice.CosSinAngle">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">CosSinAngle</tt><big>(</big><em>U</em>, <em>V</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#CosSinAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.CosSinAngle" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculate sin &amp; cos of angle between U &amp; V in generalized coordinates 
@@ -843,7 +888,7 @@ NB: there is a non numpy version in GSASIIspc: U2Uij</p>
 
 <dl class="function">
 <dt id="GSASIIlattice.Uij2Ueqv">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Uij2Ueqv</tt><big>(</big><em>Uij</em>, <em>GS</em>, <em>Amat</em><big>)</big><a class="headerlink" href="#GSASIIlattice.Uij2Ueqv" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Uij2Ueqv</tt><big>(</big><em>Uij</em>, <em>GS</em>, <em>Amat</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Uij2Ueqv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Uij2Ueqv" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns 1/3 trace of diagonalized U matrix</p>
 </dd></dl>
 
@@ -947,7 +992,7 @@ B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) =
 
 <dl class="function">
 <dt id="GSASIIlattice.cell2GS">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">cell2GS</tt><big>(</big><em>cell</em><big>)</big><a class="headerlink" href="#GSASIIlattice.cell2GS" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">cell2GS</tt><big>(</big><em>cell</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#cell2GS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.cell2GS" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns Uij to betaij conversion matrix</p>
 </dd></dl>
 
@@ -1102,7 +1147,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x279ea70&gt;, &lt;function test1 at 0x279eab0&gt;, &lt;function test2 at 0x279eaf0&gt;, &lt;function test3 at 0x279eb30&gt;, &lt;function test4 at 0x279eb70&gt;, &lt;function test5 at 0x279ebb0&gt;, &lt;function test6 at 0x279ebf0&gt;, &lt;function test7 at 0x279ec30&gt;, &lt;function test8 at 0x279ec70&gt;, &lt;function test9 at 0x279ecb0&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x1d7abf0&gt;, &lt;function test1 at 0x1d7a870&gt;, &lt;function test2 at 0x1d7a970&gt;, &lt;function test3 at 0x1d7aab0&gt;, &lt;function test4 at 0x1d7a570&gt;, &lt;function test5 at 0x1d7ad30&gt;, &lt;function test6 at 0x1d7afb0&gt;, &lt;function test7 at 0x1d7a1b0&gt;, &lt;function test8 at 0x1d7a1f0&gt;, &lt;function test9 at 0x1d7a430&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1198,7 +1243,7 @@ unit cell constants</p>
 stored in a <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em>Space Group (SGData)</em></a> object.</p>
 <dl class="function">
 <dt id="GSASIIspc.AllOps">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">AllOps</tt><big>(</big><em>SGData</em><big>)</big><a class="headerlink" href="#GSASIIspc.AllOps" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">AllOps</tt><big>(</big><em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#AllOps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.AllOps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of all operators for a space group, including those for
 centering and a center of symmetry</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1550,7 +1595,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x27b6630&gt;, &lt;function test1 at 0x27b6670&gt;, &lt;function test2 at 0x27b66b0&gt;, &lt;function test3 at 0x27b66f0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x180522b0&gt;, &lt;function test1 at 0x180522f0&gt;, &lt;function test2 at 0x18052330&gt;, &lt;function test3 at 0x18052370&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 

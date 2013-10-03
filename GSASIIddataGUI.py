@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 ########### SVN repository information ###################
-# $Date: 2013-02-01 15:23:56 -0600 (Fri, 01 Feb 2013) $
-# $Author: vondreele $
-# $Revision: 844 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIddataGUI.py $
-# $Id: GSASIIddataGUI.py 844 2013-02-01 21:23:56Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIddataGUI: Phase Diffraction Data GUI*
@@ -22,7 +22,7 @@ import copy
 import time
 import sys
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 844 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

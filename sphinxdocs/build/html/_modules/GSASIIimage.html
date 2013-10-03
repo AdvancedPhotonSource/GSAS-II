@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII image calculations: ellipse fitting &amp; image integration        </span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-06-02 23:07:35 -0500 (Sun, 02 Jun 2013) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 939 $</span>
+<span class="c"># $Date: 2013-09-04 10:19:20 -0500 (Wed, 04 Sep 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1049 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIimage.py $</span>
-<span class="c"># $Id: GSASIIimage.py 939 2013-06-03 04:07:35Z toby $</span>
+<span class="c"># $Id: GSASIIimage.py 1049 2013-09-04 15:19:20Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIimage: Image calc module*</span>
@@ -76,7 +76,7 @@
 <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">leastsq</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 939 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1049 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIplot</span> <span class="kn">as</span> <span class="nn">G2plt</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIpwd</span> <span class="kn">as</span> <span class="nn">G2pwd</span>
@@ -795,6 +795,7 @@
     <span class="s">&#39;Needs a doc string&#39;</span>
     <span class="kn">import</span> <span class="nn">histogram2d</span> <span class="kn">as</span> <span class="nn">h2d</span>
     <span class="k">print</span> <span class="s">&#39;Begin image integration&#39;</span>
+    <span class="n">blkSize</span> <span class="o">=</span> <span class="mi">128</span>               <span class="c">#this seems to be optimal</span>
     <span class="n">LUtth</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;IOtth&#39;</span><span class="p">]</span>
     <span class="n">LRazm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;LRazimuth&#39;</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">numAzms</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;outAzimuths&#39;</span><span class="p">]</span>
@@ -807,8 +808,8 @@
     <span class="n">H0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">numAzms</span><span class="p">,</span><span class="n">numChans</span><span class="p">),</span><span class="n">order</span><span class="o">=</span><span class="s">&#39;F&#39;</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">imageN</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
     <span class="n">Nx</span><span class="p">,</span><span class="n">Ny</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span>
-    <span class="n">nXBlks</span> <span class="o">=</span> <span class="p">(</span><span class="n">Nx</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">1024</span><span class="o">+</span><span class="mi">1</span>
-    <span class="n">nYBlks</span> <span class="o">=</span> <span class="p">(</span><span class="n">Ny</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">1024</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">nXBlks</span> <span class="o">=</span> <span class="p">(</span><span class="n">Nx</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">blkSize</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">nYBlks</span> <span class="o">=</span> <span class="p">(</span><span class="n">Ny</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">blkSize</span><span class="o">+</span><span class="mi">1</span>
     <span class="n">Nup</span> <span class="o">=</span> <span class="n">nXBlks</span><span class="o">*</span><span class="n">nYBlks</span><span class="o">*</span><span class="mi">3</span><span class="o">+</span><span class="mi">3</span>
     <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ProgressDialog</span><span class="p">(</span><span class="s">&quot;Elapsed time&quot;</span><span class="p">,</span><span class="s">&quot;2D image integration&quot;</span><span class="p">,</span><span class="n">Nup</span><span class="p">,</span>
         <span class="n">style</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">PD_ELAPSED_TIME</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">PD_AUTO_HIDE</span><span class="p">)</span>
@@ -817,12 +818,12 @@
         <span class="n">Nup</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">dlg</span><span class="o">.</span><span class="n">Update</span><span class="p">(</span><span class="n">Nup</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">iBlk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nYBlks</span><span class="p">):</span>
-            <span class="n">iBeg</span> <span class="o">=</span> <span class="n">iBlk</span><span class="o">*</span><span class="mi">1024</span>
-            <span class="n">iFin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">iBeg</span><span class="o">+</span><span class="mi">1024</span><span class="p">,</span><span class="n">Ny</span><span class="p">)</span>
+            <span class="n">iBeg</span> <span class="o">=</span> <span class="n">iBlk</span><span class="o">*</span><span class="n">blkSize</span>
+            <span class="n">iFin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">iBeg</span><span class="o">+</span><span class="n">blkSize</span><span class="p">,</span><span class="n">Ny</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">jBlk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nXBlks</span><span class="p">):</span>
-                <span class="n">jBeg</span> <span class="o">=</span> <span class="n">jBlk</span><span class="o">*</span><span class="mi">1024</span>
-                <span class="n">jFin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">jBeg</span><span class="o">+</span><span class="mi">1024</span><span class="p">,</span><span class="n">Nx</span><span class="p">)</span>                
-                <span class="k">print</span> <span class="s">&#39;Process map block:&#39;</span><span class="p">,</span><span class="n">iBlk</span><span class="p">,</span><span class="n">jBlk</span><span class="p">,</span><span class="s">&#39; limits:&#39;</span><span class="p">,</span><span class="n">iBeg</span><span class="p">,</span><span class="n">iFin</span><span class="p">,</span><span class="n">jBeg</span><span class="p">,</span><span class="n">jFin</span>
+                <span class="n">jBeg</span> <span class="o">=</span> <span class="n">jBlk</span><span class="o">*</span><span class="n">blkSize</span>
+                <span class="n">jFin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">jBeg</span><span class="o">+</span><span class="n">blkSize</span><span class="p">,</span><span class="n">Nx</span><span class="p">)</span>                
+<span class="c">#                print &#39;Process map block:&#39;,iBlk,jBlk,&#39; limits:&#39;,iBeg,iFin,jBeg,jFin</span>
                 <span class="n">TA</span><span class="p">,</span><span class="n">tam</span> <span class="o">=</span> <span class="n">Make2ThetaAzimuthMap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">masks</span><span class="p">,(</span><span class="n">iBeg</span><span class="p">,</span><span class="n">iFin</span><span class="p">),(</span><span class="n">jBeg</span><span class="p">,</span><span class="n">jFin</span><span class="p">))</span>           <span class="c">#2-theta &amp; azimuth arrays &amp; create position mask</span>
                 
                 <span class="n">Nup</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -835,7 +836,7 @@
                 <span class="n">tax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tax</span> <span class="o">&gt;</span> <span class="n">LRazm</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">tax</span><span class="o">-</span><span class="mf">360.</span><span class="p">,</span><span class="n">tax</span><span class="p">)</span>                 <span class="c">#put azm inside limits if possible</span>
                 <span class="n">tax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tax</span> <span class="o">&lt;</span> <span class="n">LRazm</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">tax</span><span class="o">+</span><span class="mf">360.</span><span class="p">,</span><span class="n">tax</span><span class="p">)</span>
                 <span class="n">NST</span><span class="p">,</span><span class="n">H0</span> <span class="o">=</span> <span class="n">h2d</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tax</span><span class="p">),</span><span class="n">tax</span><span class="p">,</span><span class="n">tay</span><span class="p">,</span><span class="n">taz</span><span class="p">,</span><span class="n">numAzms</span><span class="p">,</span><span class="n">numChans</span><span class="p">,</span><span class="n">LRazm</span><span class="p">,</span><span class="n">LUtth</span><span class="p">,</span><span class="n">Dazm</span><span class="p">,</span><span class="n">Dtth</span><span class="p">,</span><span class="n">NST</span><span class="p">,</span><span class="n">H0</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s">&#39;block done&#39;</span>
+<span class="c">#                print &#39;block done&#39;</span>
                 <span class="k">del</span> <span class="n">tax</span><span class="p">,</span><span class="n">tay</span><span class="p">,</span><span class="n">taz</span>
                 <span class="n">Nup</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">dlg</span><span class="o">.</span><span class="n">Update</span><span class="p">(</span><span class="n">Nup</span><span class="p">)</span>

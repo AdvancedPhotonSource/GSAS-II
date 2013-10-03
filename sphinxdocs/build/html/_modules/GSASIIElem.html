@@ -58,17 +58,17 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="c"># Copyright: 2008, Robert B. Von Dreele &amp; Brian H. Toby (Argonne National Laboratory)</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-06-05 09:26:36 -0500 (Wed, 05 Jun 2013) $</span>
+<span class="c"># $Date: 2013-06-24 12:21:37 -0500 (Mon, 24 Jun 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 942 $</span>
+<span class="c"># $Revision: 967 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIElem.py $</span>
-<span class="c"># $Id: GSASIIElem.py 942 2013-06-05 14:26:36Z vondreele $</span>
+<span class="c"># $Id: GSASIIElem.py 967 2013-06-24 17:21:37Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 942 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 967 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <div class="viewcode-block" id="GetFormFactorCoeff"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIElem.GetFormFactorCoeff">[docs]</a><span class="k">def</span> <span class="nf">GetFormFactorCoeff</span><span class="p">(</span><span class="n">El</span><span class="p">):</span>
@@ -139,11 +139,16 @@
         <span class="n">BLtable</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">isotope</span><span class="p">[</span><span class="n">El</span><span class="p">],</span><span class="n">isotopes</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="n">isotope</span><span class="p">[</span><span class="n">El</span><span class="p">]]]</span>
     <span class="k">return</span> <span class="n">BLtable</span>
         </div>
-<div class="viewcode-block" id="getFFvalues"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIElem.getFFvalues">[docs]</a><span class="k">def</span> <span class="nf">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">):</span>
+<div class="viewcode-block" id="getFFvalues"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIElem.getFFvalues">[docs]</a><span class="k">def</span> <span class="nf">getFFvalues</span><span class="p">(</span><span class="n">FFtables</span><span class="p">,</span><span class="n">SQ</span><span class="p">,</span><span class="n">ifList</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="s">&#39;Needs a doc string&#39;</span>
-    <span class="n">FFvals</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">FFtables</span><span class="p">:</span>
-        <span class="n">FFvals</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">ScatFac</span><span class="p">(</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">],</span><span class="n">SQ</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ifList</span><span class="p">:</span>
+        <span class="n">FFvals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">FFtables</span><span class="p">:</span>
+            <span class="n">FFvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ScatFac</span><span class="p">(</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">],</span><span class="n">SQ</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">FFvals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">FFtables</span><span class="p">:</span>
+            <span class="n">FFvals</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">ScatFac</span><span class="p">(</span><span class="n">FFtables</span><span class="p">[</span><span class="n">El</span><span class="p">],</span><span class="n">SQ</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">FFvals</span>
     </div>
 <div class="viewcode-block" id="getBLvalues"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIElem.getBLvalues">[docs]</a><span class="k">def</span> <span class="nf">getBLvalues</span><span class="p">(</span><span class="n">BLtables</span><span class="p">):</span>

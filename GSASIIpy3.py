@@ -9,7 +9,7 @@ code that will break with __future__ options.
 from __future__ import division
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 # de
 sind = sin = s = lambda x: np.sin(x*np.pi/180.)
 cosd = cos = c = lambda x: np.cos(x*np.pi/180.)

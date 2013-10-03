@@ -1559,9 +1559,9 @@ B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
         and perform that update if requested.
         '''
         if not GSASIIpath.whichsvn():
-            dlg = wx.MessageDialog(self,'No Subversion','Cannot update GSAS-II because subversion (svn) '+
-                                   'was not found.'
-                                   ,wx.OK)
+            dlg = wx.MessageDialog(self.frame,
+                                   'No Subversion','Cannot update GSAS-II because subversion (svn) was not found.',
+                                   wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
             return

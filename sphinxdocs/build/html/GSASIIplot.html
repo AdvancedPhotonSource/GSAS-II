@@ -80,6 +80,16 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIplot.G2PlotNoteBook.OnNotebookKey">
+<tt class="descname">OnNotebookKey</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#G2PlotNoteBook.OnNotebookKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.G2PlotNoteBook.OnNotebookKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a keystroke event gets picked up by the notebook window
+rather the child. This is not expected, but somehow it does sometimes
+on the Mac and perhaps Linux.</p>
+<p>Assume that the page associated with the currently displayed tab
+has a child, .canvas; give that child the focus and pass it the event.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIplot.G2PlotNoteBook.OnPageChanged">
 <tt class="descname">OnPageChanged</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#G2PlotNoteBook.OnPageChanged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.G2PlotNoteBook.OnPageChanged" title="Permalink to this definition">¶</a></dt>
 <dd><p>respond to someone pressing a tab on the plot window</p>

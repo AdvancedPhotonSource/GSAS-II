@@ -117,7 +117,7 @@ in the mac, used also for the data item windows as well.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>HKLFname</strong> (<em>str</em>) &#8211; a single crystal histogram name as obtained
 from
-<tt class="xref py py-mod docutils literal"><span class="pre">GSASIIstruct.GetHistogramNames</span></tt></td>
+<tt class="xref py py-meth docutils literal"><span class="pre">GSASIIstruct.GetHistogramNames()</span></tt></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">HKLFdata = single crystal data list of reflections</td>
 </tr>
@@ -134,7 +134,7 @@ from
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>PWDRname</strong> (<em>str</em>) &#8211; a powder histogram name as obtained from
-<tt class="xref py py-mod docutils literal"><span class="pre">GSASIIstruct.GetHistogramNames</span></tt></td>
+<tt class="xref py py-meth docutils literal"><span class="pre">GSASIIstruct.GetHistogramNames()</span></tt></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">PWDRdata = powder data dictionary with
 Powder data arrays, Limits, Instrument Parameters,
@@ -148,7 +148,7 @@ Sample Parameters</td>
 <dt id="GSASII.GSASII.GetPhaseData">
 <tt class="descclassname">GSASII.</tt><tt class="descname">GetPhaseData</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPhaseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPhaseData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of defined phases. Used only in GSASIIgrid
-Note routine <tt class="xref py py-mod docutils literal"><span class="pre">GSASIIstruct.GetPhaseData</span></tt> also exists.</p>
+Note routine <tt class="xref py py-meth docutils literal"><span class="pre">GSASIIstruct.GetPhaseData()</span></tt> also exists.</p>
 </dd></dl>
 
 <dl class="method">
@@ -467,7 +467,7 @@ sets rd.instbank.</li>
 <dt id="GSASII.GSASII.ViewParmDialog">
 <em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">ViewParmDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ViewParmDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ViewParmDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Window to show all parameters in the refinement.
-Called from <tt class="xref py py-mod docutils literal"><span class="pre">OnViewLSParms</span></tt></p>
+Called from <tt class="xref py py-meth docutils literal"><span class="pre">OnViewLSParms()</span></tt></p>
 </dd></dl>
 
 </dd></dl>
@@ -480,7 +480,7 @@ Called from <tt class="xref py py-mod docutils literal"><span class="pre">OnView
 data tree.</p>
 <dl class="method">
 <dt id="GSASII.GSASIImain.MacOpenFile">
-<tt class="descname">MacOpenFile</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#GSASII.GSASIImain.MacOpenFile" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">MacOpenFile</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASIImain.MacOpenFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASIImain.MacOpenFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called on Mac every time a file is dropped on the app when it is running,
 treat this like a File/Open project menu action.
 Should be ignored on other platforms</p>

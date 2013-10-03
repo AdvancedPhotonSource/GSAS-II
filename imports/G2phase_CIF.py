@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2012-02-13 11:33:35 -0600 (Mon, 13 Feb 2012) $
-# $Author: vondreele & toby $
-# $Revision: 482 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/G2importphase_CIF.py $
-# $Id: G2importphase_CIF.py 482 2012-02-13 17:33:35Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 # Routines to import Phase information from CIF files
 import sys
@@ -14,7 +14,7 @@ import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIlattice as G2lat
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import CifFile as cif # PyCifRW from James Hester
 
 class CIFPhaseReader(G2IO.ImportPhase):

@@ -72,15 +72,82 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIstrMain.DistAngle">
-<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">DistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#DistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.DistAngle" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dt id="GSASIIstrMain.PrintDistAngle">
+<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">PrintDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em>, <em>out=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x240078&gt;</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#PrintDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.PrintDistAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print distances and angles</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>DisAglCtls</strong> (<em>dict</em>) &#8211; contains distance/angle radii usually defined using
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIgrid.DisAglDialog" title="GSASIIgrid.DisAglDialog"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIgrid.DisAglDialog()</span></tt></a></li>
+<li><strong>DisAglData</strong> (<em>dict</em>) &#8211; contains phase data: 
+Items &#8216;OrigAtoms&#8217; and &#8216;TargAtoms&#8217; contain the atoms to be used
+for distance/angle origins and atoms to be used as targets.
+Item &#8216;SGData&#8217; has the space group information (see <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em>Space Group object</em></a>)</li>
+<li><strong>out</strong> (<em>file</em>) &#8211; file object for output. Defaults to sys.stdout.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIstrMain.Refine">
 <tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">Refine</tt><big>(</big><em>GPXfile</em>, <em>dlg</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#Refine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.Refine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIstrMain.RetDistAngle">
+<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">RetDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#RetDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.RetDistAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute and return distances and angles</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>DisAglCtls</strong> (<em>dict</em>) &#8211; contains distance/angle radii usually defined using
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIgrid.DisAglDialog" title="GSASIIgrid.DisAglDialog"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIgrid.DisAglDialog()</span></tt></a></li>
+<li><strong>DisAglData</strong> (<em>dict</em>) &#8211; contains phase data: 
+Items &#8216;OrigAtoms&#8217; and &#8216;TargAtoms&#8217; contain the atoms to be used
+for distance/angle origins and atoms to be used as targets.
+Item &#8216;SGData&#8217; has the space group information (see <a class="reference internal" href="GSASIIobj.html#sgdata-table"><em>Space Group object</em></a>)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>AtomLabels,DistArray,AngArray where:</p>
+<p><strong>AtomLabels</strong> is a dict of atom labels, keys are the atom number</p>
+<p><strong>DistArray</strong> is a dict keyed by the origin atom number where the value is a list
+of distance entries. The value for each distance is a list containing:</p>
+<blockquote>
+<div><ol class="arabic simple" start="0">
+<li>the target atom number (int);</li>
+<li>the unit cell offsets added to x,y &amp; z (tuple of int values)</li>
+<li>the symmetry operator number (which may be modified to indicate centering and center of symmetry)</li>
+<li>an interatomic distance in A (float)</li>
+<li>an uncertainty on the distance in A or 0.0 (float)</li>
+</ol>
+</div></blockquote>
+<p><strong>AngArray</strong> is a dict keyed by the origin (central) atom number where
+the value is a list of
+angle entries. The value for each angle entry consists of three values:</p>
+<blockquote>
+<div><ol class="arabic simple" start="0">
+<li>a distance item reference for one neighbor (int)</li>
+<li>a distance item reference for a second neighbor (int)</li>
+<li>a angle, uncertainty pair; the s.u. may be zero (tuple of two floats)</li>
+</ol>
+</div></blockquote>
+<p>The AngArray distance reference items refer directly to the index of the items in the
+DistArray item for the list of distances for the central atom.</p>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">

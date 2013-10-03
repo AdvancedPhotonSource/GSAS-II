@@ -88,7 +88,7 @@
         <span class="n">bindir</span> <span class="o">=</span> <span class="s">&#39;binlinux64-</span><span class="si">%d</span><span class="s">.</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">bindir</span> <span class="o">=</span> <span class="s">&#39;binlinux</span><span class="si">%d</span><span class="s">.</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
-<span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">__file__</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+<span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">__file__</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
     <span class="k">if</span> <span class="n">bindir</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="n">bindir</span><span class="p">))</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="n">bindir</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span> 
             <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="n">bindir</span><span class="p">))</span>
@@ -101,16 +101,22 @@
 <span class="k">print</span> <span class="s">&#39;GSAS-II binary directory: &#39;</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="n">bindir</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">bindir</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;**** ERROR GSAS-II binary libraries not found, GSAS-II fails ****&quot;</span>
+<span class="c"># add the data import and export directory to the search path</span>
+<span class="n">path2GSAS2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span> <span class="c"># location of this file; save before any changes in pwd</span>
+<span class="n">newpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path2GSAS2</span><span class="p">,</span><span class="s">&#39;imports&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">newpath</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newpath</span><span class="p">)</span>
+<span class="n">newpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path2GSAS2</span><span class="p">,</span><span class="s">&#39;exports&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">newpath</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newpath</span><span class="p">)</span>
 
 <span class="c"># routines for looking a version numbers in files</span>
 <span class="n">version</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 <div class="viewcode-block" id="SetVersionNumber"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIpath.SetVersionNumber">[docs]</a><span class="k">def</span> <span class="nf">SetVersionNumber</span><span class="p">(</span><span class="n">RevString</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Set the subversion version number</span>
 
-<span class="sd">    :param str RevString: something like &quot;$Revision: 939 $&quot;</span>
+<span class="sd">    :param str RevString: something like &quot;$Revision: 1047 $&quot;</span>
 <span class="sd">      that is set by subversion when the file is retrieved from subversion.</span>
 
-<span class="sd">    Place ``GSASIIpath.SetVersionNumber(&quot;$Revision: 939 $&quot;)`` in every python</span>
+<span class="sd">    Place ``GSASIIpath.SetVersionNumber(&quot;$Revision: 1047 $&quot;)`` in every python</span>
 <span class="sd">    file.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">try</span><span class="p">:</span>
@@ -131,7 +137,8 @@
 <span class="sd">    Searches the current path as well as subdirectory &quot;svn&quot; and</span>
 <span class="sd">    &quot;svn/bin&quot; in the location of the GSASII source files.</span>
 
-<span class="sd">    :returns: None if svn is not found.</span>
+<span class="sd">    :returns: None if svn is not found or an absolute path to the subversion</span>
+<span class="sd">      executable file.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">is_exe</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">)</span>
@@ -143,15 +150,52 @@
     <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">pathlist</span><span class="p">:</span>
         <span class="n">exe_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">svnprog</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">is_exe</span><span class="p">(</span><span class="n">exe_file</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">exe_file</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">exe_file</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="svnGetLog"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIpath.svnGetLog">[docs]</a><span class="k">def</span> <span class="nf">svnGetLog</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">__file__</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span><span class="n">version</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Get the revision log information for a specific version of the </span>
+
+<span class="sd">    :param str fpath: path to repository dictionary, defaults to directory where</span>
+<span class="sd">       the current file is located.</span>
+<span class="sd">    :param int version: the version number to be looked up or None (default)</span>
+<span class="sd">       for the latest version.</span>
+
+<span class="sd">    :returns: a dictionary with keys (one hopes) &#39;author&#39;, &#39;date&#39;, &#39;msg&#39;, and &#39;revision&#39;</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">as</span> <span class="nn">ET</span>
+    <span class="n">svn</span> <span class="o">=</span> <span class="n">whichsvn</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">svn</span><span class="p">:</span> <span class="k">return</span>
+    <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">vstr</span> <span class="o">=</span> <span class="s">&#39;-r&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vstr</span> <span class="o">=</span> <span class="s">&#39;-rHEAD&#39;</span>
+
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="n">svn</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">,</span><span class="n">fpath</span><span class="p">,</span><span class="s">&#39;--xml&#39;</span><span class="p">,</span><span class="n">vstr</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span>
+                         <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span><span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">,</span><span class="n">err</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;out=&#39;</span><span class="p">,</span><span class="n">out</span>
+        <span class="k">print</span> <span class="s">&#39;err=&#39;</span><span class="p">,</span><span class="n">err</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">iter</span><span class="p">(</span><span class="s">&#39;logentry&#39;</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;revision&#39;</span><span class="p">:</span><span class="n">i</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;revision&#39;</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)}</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">j</span><span class="o">.</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">break</span> <span class="c"># only need the first</span>
+    <span class="k">return</span> <span class="n">d</span>
 </div>
 <div class="viewcode-block" id="svnGetRev"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIpath.svnGetRev">[docs]</a><span class="k">def</span> <span class="nf">svnGetRev</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">__file__</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span><span class="n">local</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;This obtains the version number for the either the latest local last update</span>
+    <span class="sd">&#39;&#39;&#39;Obtain the version number for the either the last update of the local version</span>
 <span class="sd">    or contacts the subversion server to get the latest update version (# of Head).</span>
 
-<span class="sd">    :param fpath: path to repository dictionary, defaults to directory where</span>
+<span class="sd">    :param str fpath: path to repository dictionary, defaults to directory where</span>
 <span class="sd">       the current file is located</span>
-<span class="sd">    :param local: determines the type of version number, where</span>
+<span class="sd">    :param bool local: determines the type of version number, where</span>
 <span class="sd">       True (default): returns the latest installed update </span>
 <span class="sd">       False: returns the version number of Head on the server</span>
 
@@ -206,39 +250,75 @@
             <span class="n">changed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;path&#39;</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">changed</span>
 </div>
-<div class="viewcode-block" id="svnUpdateDir"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIpath.svnUpdateDir">[docs]</a><span class="k">def</span> <span class="nf">svnUpdateDir</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">__file__</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+<div class="viewcode-block" id="svnUpdateDir"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIpath.svnUpdateDir">[docs]</a><span class="k">def</span> <span class="nf">svnUpdateDir</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">__file__</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span><span class="n">version</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;This performs an update of the files in a local directory from a server. </span>
 
-<span class="sd">    :param fpath: path to repository dictionary, defaults to directory where</span>
+<span class="sd">    :param str fpath: path to repository dictionary, defaults to directory where</span>
 <span class="sd">       the current file is located</span>
-
-<span class="sd">    :returns: A dictionary with the files that have been changed/added and</span>
-<span class="sd">          a code describing how they have been updated (see changetype) ro </span>
-<span class="sd">          None if there is a subversion error (likely because the path is</span>
-<span class="sd">          not a repository or svn is not found)</span>
-
+<span class="sd">    :param version: the number of the version to be loaded. Used only</span>
+<span class="sd">       cast as a string, but should be an integer or something that corresponds to a</span>
+<span class="sd">       string representation of an integer value when cast. A value of None (default)</span>
+<span class="sd">       causes the latest version on the server to be used.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="kn">import</span> <span class="nn">subprocess</span>
-    <span class="n">changetype</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="s">&#39;Added&#39;</span><span class="p">,</span> <span class="s">&#39;D&#39;</span><span class="p">:</span> <span class="s">&#39;Deleted&#39;</span><span class="p">,</span> <span class="s">&#39;U&#39;</span><span class="p">:</span> <span class="s">&#39;Updated&#39;</span><span class="p">,</span>
-                  <span class="s">&#39;C&#39;</span><span class="p">:</span> <span class="s">&#39;Conflict&#39;</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="s">&#39;Merged&#39;</span><span class="p">,</span> <span class="s">&#39;E&#39;</span><span class="p">:</span> <span class="s">&#39;Replaced&#39;</span><span class="p">}</span>
     <span class="n">svn</span> <span class="o">=</span> <span class="n">whichsvn</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">svn</span><span class="p">:</span> <span class="k">return</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="n">svn</span><span class="p">,</span><span class="s">&#39;update&#39;</span><span class="p">,</span><span class="n">fpath</span><span class="p">,</span><span class="s">&#39;-rHEAD&#39;</span><span class="p">,</span>
+    <span class="k">if</span> <span class="n">version</span><span class="p">:</span>
+        <span class="n">verstr</span> <span class="o">=</span> <span class="s">&#39;-r&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">verstr</span> <span class="o">=</span> <span class="s">&#39;-rHEAD&#39;</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="n">svn</span><span class="p">,</span><span class="s">&#39;update&#39;</span><span class="p">,</span><span class="n">fpath</span><span class="p">,</span><span class="n">verstr</span><span class="p">,</span>
            <span class="s">&#39;--non-interactive&#39;</span><span class="p">,</span>
            <span class="s">&#39;--accept&#39;</span><span class="p">,</span><span class="s">&#39;theirs-conflict&#39;</span><span class="p">,</span><span class="s">&#39;--force&#39;</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> 
                          <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span><span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
     <span class="n">out</span><span class="p">,</span><span class="n">err</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">err</span><span class="p">:</span> <span class="k">return</span>
-    <span class="n">l</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-    <span class="n">updates</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">l</span><span class="p">[::</span><span class="mi">2</span><span class="p">],</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]):</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s">&#39;Updated&#39;</span><span class="p">:</span> <span class="k">break</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s">&#39;At&#39;</span><span class="p">:</span> <span class="k">break</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">changetype</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">t</span><span class="p">:</span> <span class="k">continue</span>
-        <span class="n">updates</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
-    <span class="k">return</span> <span class="n">updates</span></div>
+    <span class="k">print</span> <span class="n">out</span>
+    <span class="k">if</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="mi">60</span><span class="o">*</span><span class="s">&quot;=&quot;</span><span class="p">)</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">&quot;****** An error was noted, see below *********&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="mi">60</span><span class="o">*</span><span class="s">&quot;=&quot;</span><span class="p">)</span>
+        <span class="k">print</span> <span class="n">err</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="svnUpdateProcess"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIpath.svnUpdateProcess">[docs]</a><span class="k">def</span> <span class="nf">svnUpdateProcess</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">projectfile</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;perform an update of GSAS-II in a separate python process&#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">projectfile</span><span class="p">:</span>
+        <span class="n">projectfile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">projectfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">projectfile</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&#39;restart using&#39;</span><span class="p">,</span><span class="n">projectfile</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">version</span><span class="p">:</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+    <span class="c"># start the upgrade in a separate interpreter (avoids loading .pyd files)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span><span class="n">__file__</span><span class="p">,</span><span class="n">projectfile</span><span class="p">,</span><span class="n">version</span><span class="p">])</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c"># delay to give the main process a chance to exit</span>
+    <span class="c"># perform an update and restart GSAS-II</span>
+    <span class="n">project</span><span class="p">,</span><span class="n">version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">version</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Regress to version &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">version</span><span class="p">))</span>
+        <span class="n">svnUpdateDir</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Update to current version&quot;</span><span class="p">)</span>
+        <span class="n">svnUpdateDir</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">project</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Restart GSAS-II with project file &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">project</span><span class="p">))</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="s">&#39;GSASII.py&#39;</span><span class="p">),</span><span class="n">project</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Restart GSAS-II without a project file &quot;</span><span class="p">)</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="s">&#39;GSASII.py&#39;</span><span class="p">)])</span>
+    <span class="k">print</span> <span class="s">&#39;exiting update process&#39;</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+    
 </pre></div>
 
           </div>

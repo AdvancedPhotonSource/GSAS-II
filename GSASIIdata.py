@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASII reference data sets
 ########### SVN repository information ###################
-# $Date: 2012-12-05 13:12:19 -0600 (Wed, 05 Dec 2012) $
-# $Author: vondreele $
-# $Revision: 809 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIdata.py $
-# $Id: GSASIIdata.py 809 2012-12-05 19:12:19Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIdata: Data for computations*
@@ -17,7 +17,7 @@ which contains arrays for All and specific amino acids
 '''
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import numpy as np
 
 ramachandranDist = {'All':np.array([

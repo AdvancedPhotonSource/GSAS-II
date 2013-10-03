@@ -2,21 +2,20 @@
 # -*- coding: utf-8 -*-
 #G2cif
 ########### SVN repository information ###################
-# $Date: 2013-07-22 20:57:37 -0500 (Mon, 22 Jul 2013) $
-# $Author: toby $
-# $Revision: 1006 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2cif.py $
-# $Id: G2cif.py 1006 2013-07-23 01:57:37Z toby $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
-'''Code to export a GSAS-II project as a CIF
-This builds on the data extraction done in method export in the base class
+'''Code to export a GSAS-II project as a CIF. Variable `self.mode`
+determines the type of CIF that is created:
 
-TODO: set bond pub flags?
-TODO: progress bar
-TODO: cleanup routine import
+ * `self.mode="simple"` creates a simple CIF with only coordinates
+   for at most a single phase (:class:`ExportSimpleCIF`), while 
 
+ * `self.mode="full"` creates a complete CIF of project (:class:`ExportCIF`).
 '''
-
 
 import datetime as dt
 import os.path
@@ -29,23 +28,15 @@ import wx
 import wx.lib.scrolledpanel as wxscroll
 import wx.lib.resizewidget as rw
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1006 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-#reload(G2IO)
 import GSASIIgrid as G2gd
-reload(G2gd)
 import GSASIIstrIO as G2stIO
-#reload(G2stIO)
-#import GSASIImapvars as G2mv
 import GSASIImath as G2mth
-#reload(G2mth)
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
-#reload(G2spc)
 import GSASIIphsGUI as G2pg
-#reload(G2pg)
 import GSASIIstrMain as G2stMn
-#reload(G2stMn)
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
@@ -53,6 +44,8 @@ CIFdic = None
 
 class ExportCIF(G2IO.ExportBaseclass):
     '''Used to create a CIF of an entire project
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
@@ -62,12 +55,13 @@ class ExportCIF(G2IO.ExportBaseclass):
             longFormatName = 'Export project as CIF'
             )
         self.author = ''
+        self.mode = 'full'
+        self.exporttype = 'project'
 
-    def export(self,mode='full'):
-        '''Export a CIF
-
-        :param str mode: "full" (default) to create a complete CIF of project,
-          "simple" for a simple CIF with only coordinates
+    def export(self):
+        '''Export a CIF. Export can be full or simple (as set by self.mode).
+        "simple" skips data, distances & angles, etc. and can only include
+        a single phase while "full" is intended for for publication submission.
         '''
     
 # ===== define functions for export method =======================================
@@ -684,6 +678,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             Atoms = phasedict['Atoms']
             generalData = phasedict['General']
+            # create a dict for storing Pub flag for bonds/angles, if needed
+            if phasedict['General'].get("DisAglHideFlag") is None:
+                phasedict['General']["DisAglHideFlag"] = {}
+            DisAngSel = phasedict['General']["DisAglHideFlag"]
             cx,ct,cs,cia = phasedict['General']['AtomPtrs']
             cn = ct-1
             fpfx = str(phasedict['pId'])+'::Afrac:'        
@@ -750,7 +748,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                     line += " {:3d}_".format(D[2])
                     for d in D[1]:
                         line += "{:1d}".format(d+5)
-                    line += " yes"
+                    if DisAngSel.get((i,tuple(D[0:3]))):
+                        line += " no"
+                    else:
+                        line += " yes"
                     WriteCIFitem(line)
 
             # loop over interatomic angles for this phase
@@ -780,7 +781,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                     line += " {:3d}_".format(Dk[2])
                     for d in Dk[1]:
                         line += "{:1d}".format(d+5)
-                    line += " yes"
+                    key = (tuple(Dk[0:3]),i,tuple(Dj[0:3]))
+                    if DisAngSel.get(key):
+                        line += " no"
+                    else:
+                        line += " yes"
                     WriteCIFitem(line)
 
         def WritePhaseInfo(phasenam):
@@ -1250,7 +1255,6 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''Fills the CIF Defaults window with controls for editing various CIF export
             parameters (mostly related to templates).
             '''
-            import wx.lib.scrolledpanel as wxscroll
             self.cifdefs.DestroyChildren()
             self.cifdefs.SetTitle('Edit CIF settings')
             vbox = wx.BoxSizer(wx.VERTICAL)
@@ -1288,6 +1292,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                 cbox.Add(but,0,wx.ALIGN_LEFT,0)
                 but.phasedict = self.Phases[phasenam]  # set a pointer to current phase info     
                 but.Bind(wx.EVT_BUTTON,EditRanges)     # phase bond/angle ranges
+                but = wx.Button(cpnl, wx.ID_ANY,'Set distance/angle publication flags')
+                but.phase = phasenam  # set a pointer to current phase info     
+                but.Bind(wx.EVT_BUTTON,SelectDisAglFlags)     # phase bond/angle ranges
+                cbox.Add((-1,2))
+                cbox.Add(but,0,wx.ALIGN_LEFT,0)
             for i in sorted(self.powderDict.keys()):
                 G2gd.HorizontalLine(cbox,cpnl)          
                 hist = self.powderDict[i]
@@ -1300,7 +1309,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                                       title,
                                       histblk["Sample Parameters"]['InstrName']),
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
-                cpnl.SetSizer(cbox)
             for i in sorted(self.xtalDict.keys()):
                 G2gd.HorizontalLine(cbox,cpnl)          
                 hist = self.xtalDict[i]
@@ -1313,8 +1321,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                                       title,
                                       histblk["Instrument Parameters"][0]['InstrName']),
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
-                cpnl.SetSizer(cbox)
-
+            cpnl.SetSizer(cbox)
             cpnl.SetAutoLayout(1)
             cpnl.SetupScrolling()
             #cpnl.Bind(rw.EVT_RW_LAYOUT_NEEDED, self.OnLayoutNeeded) # needed if sizes change
@@ -1332,7 +1339,174 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.cifdefs.SetSizer(vbox)
             vbox.Fit(self.cifdefs)
             self.cifdefs.Layout()
+            
+        def OnToggleButton(event):
+            'Respond to press of ToggleButton in SelectDisAglFlags'
+            but = event.GetEventObject()
+            if but.GetValue():                    
+                but.DisAglSel[but.key] = True
+            else:
+                try:
+                    del but.DisAglSel[but.key]
+                except KeyError:
+                    pass
+        def keepTrue(event):
+            event.GetEventObject().SetValue(True)
+        def keepFalse(event):
+            event.GetEventObject().SetValue(False)
+                
+        def SelectDisAglFlags(event):
+            'Select Distance/Angle use flags for the selected phase'
+            phasenam = event.GetEventObject().phase
+            phasedict = self.Phases[phasenam]
+            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(phasedict['General']['SGData'])
+            generalData = phasedict['General']
+            # create a dict for storing Pub flag for bonds/angles, if needed
+            if phasedict['General'].get("DisAglHideFlag") is None:
+                phasedict['General']["DisAglHideFlag"] = {}
+            DisAngSel = phasedict['General']["DisAglHideFlag"]
 
+            cx,ct,cs,cia = phasedict['General']['AtomPtrs']
+            cn = ct-1
+            cfrac = cx+3
+            DisAglData = {}
+            DisAglCtls = {}
+            # create a list of atoms, but skip atoms with zero occupancy
+            xyz = []
+            fpfx = str(phasedict['pId'])+'::Afrac:'        
+            for i,atom in enumerate(phasedict['Atoms']):
+                if self.parmDict.get(fpfx+str(i),atom[cfrac]) == 0.0: continue
+                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+            if 'DisAglCtls' in generalData:
+                DisAglCtls = generalData['DisAglCtls']
+            else: # should not happen, since DisAglDialog should be called for all
+                # phases before getting here
+                dlg = G2gd.DisAglDialog(self.cifdefs,DisAglCtls,generalData)
+                if dlg.ShowModal() == wx.ID_OK:
+                    DisAglCtls = dlg.GetData()
+                    generalData['DisAglCtls'] = DisAglCtls
+                else:
+                    dlg.Destroy()
+                    return
+                dlg.Destroy()
+            dlg = wx.Dialog(
+                self.G2frame,
+                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+            vbox = wx.BoxSizer(wx.VERTICAL)
+            txt = wx.StaticText(dlg,wx.ID_ANY,'Searching distances for phase '+phasenam
+                                +'\nPlease wait...')
+            vbox.Add(txt,0,wx.ALL|wx.EXPAND)
+            dlg.SetSizer(vbox)
+            dlg.CenterOnParent()
+            dlg.Show() # post "please wait"
+            wx.BeginBusyCursor() # and change cursor
+
+            DisAglData['OrigAtoms'] = xyz
+            DisAglData['TargAtoms'] = xyz
+            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
+                generalData['SGData'])
+
+            xpandSGdata = generalData['SGData'].copy()
+            xpandSGdata.update({'SGOps':symOpList,
+                                'SGInv':False,
+                                'SGLatt':'P',
+                                'SGCen':np.array([[0, 0, 0]]),})
+            DisAglData['SGData'] = xpandSGdata
+
+            DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
+            if 'pId' in phasedict:
+                DisAglData['pId'] = phasedict['pId']
+                DisAglData['covData'] = self.OverallParms['Covariance']
+            try:
+                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
+            except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
+                print('**** ERROR - try again but do "Reset" to fill in missing atom types ****')
+            wx.EndBusyCursor()
+            txt.SetLabel('Set publication flags for distances and angles in\nphase '+phasenam)
+            vbox.Add((5,5)) 
+            vbox.Add(wx.StaticText(dlg,wx.ID_ANY,
+                                   'The default is to flag all distances and angles as to be'+
+                                   '\npublished. Change this by pressing appropriate buttons.'),
+                     0,wx.ALL|wx.EXPAND)
+            hbox = wx.BoxSizer(wx.HORIZONTAL)
+            vbox.Add(hbox)
+            hbox.Add(wx.StaticText(dlg,wx.ID_ANY,'Button appearance: '))
+            but = wx.ToggleButton(dlg,wx.ID_ANY,'Publish')
+            but.Bind(wx.EVT_TOGGLEBUTTON,keepFalse)
+            hbox.Add(but)
+            but = wx.ToggleButton(dlg,wx.ID_ANY,"Don't publish")
+            but.Bind(wx.EVT_TOGGLEBUTTON,keepTrue)
+            hbox.Add(but)
+            but.SetValue(True)
+            G2gd.HorizontalLine(vbox,dlg)          
+            
+            cpnl = wxscroll.ScrolledPanel(dlg,size=(400,300))
+            cbox = wx.BoxSizer(wx.VERTICAL)
+            for c in sorted(DistArray):
+                karr = []
+                UsedCols = {}
+                cbox.Add(wx.StaticText(cpnl,wx.ID_ANY,
+                                   'distances to/angles around atom '+AtomLabels[c]))
+                #dbox = wx.GridBagSizer(hgap=5)
+                dbox = wx.GridBagSizer()
+                for i,D in enumerate(DistArray[c]):
+                    karr.append(tuple(D[0:3]))
+                    val = "{:.2f}".format(D[3])
+                    sym = " [{:d} {:d} {:d}]".format(*D[1]) + " #{:d}".format(D[2])
+                    dbox.Add(wx.StaticText(cpnl,wx.ID_ANY,AtomLabels[D[0]]),
+                             (i+1,0)
+                             )                    
+                    dbox.Add(wx.StaticText(cpnl,wx.ID_ANY,sym),
+                             (i+1,1)
+                             )
+                    but = wx.ToggleButton(cpnl,wx.ID_ANY,val)
+                    but.key = (c,karr[-1])
+                    but.DisAglSel = DisAngSel
+                    if DisAngSel.get(but.key): but.SetValue(True)
+                    but.Bind(wx.EVT_TOGGLEBUTTON,OnToggleButton)
+                    dbox.Add(but,(i+1,2),border=1)
+                for i,D in enumerate(AngArray[c]):
+                    val = "{:.1f}".format(D[2][0])
+                    but = wx.ToggleButton(cpnl,wx.ID_ANY,val)
+                    but.key = (karr[D[0]],c,karr[D[1]])
+                    but.DisAglSel = DisAngSel
+                    if DisAngSel.get(but.key): but.SetValue(True)
+                    but.Bind(wx.EVT_TOGGLEBUTTON,OnToggleButton)
+                    dbox.Add(but,(D[0]+1,D[1]+3),border=1)
+                    UsedCols[D[1]+3] = True
+                for i,D in enumerate(DistArray[c][:-1]): # label columns that are used
+                    if UsedCols.get(i+3):
+                        dbox.Add(wx.StaticText(cpnl,wx.ID_ANY,AtomLabels[D[0]]),
+                                 (0,i+3),
+                                 flag=wx.ALIGN_CENTER
+                                 )
+                dbox.Add(wx.StaticText(cpnl,wx.ID_ANY,'distance'),
+                                 (0,2),
+                                 flag=wx.ALIGN_CENTER
+                                 )
+                cbox.Add(dbox)
+                G2gd.HorizontalLine(cbox,cpnl)          
+            cpnl.SetSizer(cbox)
+            cpnl.SetAutoLayout(1)
+            cpnl.SetupScrolling()
+            #cpnl.Bind(rw.EVT_RW_LAYOUT_NEEDED, self.OnLayoutNeeded) # needed if sizes change
+            cpnl.Layout()
+
+            vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 0)
+
+            btnsizer = wx.StdDialogButtonSizer()
+            btn = wx.Button(dlg, wx.ID_OK, "Done")
+            btn.SetDefault()
+            btnsizer.AddButton(btn)
+            btnsizer.Realize()
+            vbox.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+            dlg.SetSizer(vbox)
+            vbox.Fit(dlg)
+            dlg.Layout()
+            
+            dlg.CenterOnParent()
+            dlg.ShowModal()
+            
 # ===== end of functions for export method =======================================
 #=================================================================================
 
@@ -1380,7 +1554,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         # test for quick CIF mode or no data
         self.quickmode = False
         phasenam = phasenum = None # include all phases
-        if mode != "full" or len(self.powderDict) + len(self.xtalDict) == 0:
+        if self.mode != "full" or len(self.powderDict) + len(self.xtalDict) == 0:
             self.quickmode = True
             oneblock = True
             if len(self.Phases) == 0:
@@ -1468,8 +1642,10 @@ class ExportCIF(G2IO.ExportBaseclass):
         if not fil: return
         if not self.quickmode: # give the user a chance to edit all defaults
             self.cifdefs = wx.Dialog(
-                self.G2frame,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+                self.G2frame,
+                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
             EditCIFDefaults()
+            self.cifdefs.CenterOnParent()
             val = self.cifdefs.ShowModal()
             self.cifdefs.Destroy()
             if val != wx.ID_OK:
@@ -1521,115 +1697,157 @@ class ExportCIF(G2IO.ExportBaseclass):
         #======================================================================
         # Start writing the CIF - multiblock
         #======================================================================
-            # publication info
-            WriteCIFitem('\ndata_'+self.CIFname+'_publ')
-            WriteAudit()
-            WriteCIFitem('_pd_block_id',
-                         str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                         str(self.shortauthorname) + "|Overall")
-            writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
-            # ``template_publ.cif`` or a modified version
-            # overall info
-            WriteCIFitem('data_'+str(self.CIFname)+'_overall')
-            WriteOverall()
-            #============================================================
-            WriteCIFitem('# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
-            datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
-            # loop over phase blocks
-            if len(self.Phases) > 1:
-                loopprefix = ''
-                WriteCIFitem('loop_   _pd_phase_block_id')
-            else:
-                loopprefix = '_pd_phase_block_id'
-            
-            for phasenam in sorted(self.Phases.keys()):
-                i = self.Phases[phasenam]['pId']
-                datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                             'phase_'+ str(i) + '|' + str(self.shortauthorname))
-                WriteCIFitem(loopprefix,datablockidDict[phasenam])
-            # loop over data blocks
-            if len(self.powderDict) + len(self.xtalDict) > 1:
-                loopprefix = ''
-                WriteCIFitem('loop_   _pd_block_diffractogram_id')
-            else:
-                loopprefix = '_pd_block_diffractogram_id'
-            for i in sorted(self.powderDict.keys()):
-                hist = self.powderDict[i]
-                histblk = self.Histograms[hist]
-                instnam = histblk["Sample Parameters"]['InstrName']
-                instnam = instnam.replace(' ','')
-                i = histblk['hId']
-                datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                         str(self.shortauthorname) + "|" +
-                                         instnam + "_hist_"+str(i))
-                WriteCIFitem(loopprefix,datablockidDict[hist])
-            for i in sorted(self.xtalDict.keys()):
-                hist = self.xtalDict[i]
-                histblk = self.Histograms[hist]
-                instnam = histblk["Instrument Parameters"][0]['InstrName']
-                instnam = instnam.replace(' ','')
-                i = histblk['hId']
-                datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                         str(self.shortauthorname) + "|" +
-                                         instnam + "_hist_"+str(i))
-                WriteCIFitem(loopprefix,datablockidDict[hist])
-            #============================================================
-            # loop over phases, exporting them
-            phasebyhistDict = {} # create a cross-reference to phases by histogram
-            for j,phasenam in enumerate(sorted(self.Phases.keys())):
-                i = self.Phases[phasenam]['pId']
-                WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
-                WriteCIFitem('# Information for phase '+str(i))
-                WriteCIFitem('_pd_block_id',datablockidDict[phasenam])
-                # report the phase
-                writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
-                WritePhaseInfo(phasenam)
-                # preferred orientation
-                SH = FormatSH(phasenam)
-                MD = FormatHAPpo(phasenam)
-                if SH and MD:
-                    WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
-                elif SH or MD:
-                    WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
+            nsteps = 1 + len(self.Phases) + len(self.powderDict) + len(self.xtalDict)
+            try:
+                dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)
+                Size = dlg.GetSize()
+                Size = (int(Size[0]*3),Size[1]) # increase size along x
+                dlg.SetSize(Size)
+                dlg.CenterOnParent()
+
+                # publication info
+                step = 1
+                dlg.Update(step,"Exporting overall section")
+                WriteCIFitem('\ndata_'+self.CIFname+'_publ')
+                WriteAudit()
+                WriteCIFitem('_pd_block_id',
+                             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                             str(self.shortauthorname) + "|Overall")
+                writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
+                # ``template_publ.cif`` or a modified version
+                # overall info
+                WriteCIFitem('data_'+str(self.CIFname)+'_overall')
+                WriteOverall()
+                #============================================================
+                WriteCIFitem('# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
+                datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
+                # loop over phase blocks
+                if len(self.Phases) > 1:
+                    loopprefix = ''
+                    WriteCIFitem('loop_   _pd_phase_block_id')
                 else:
-                    WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
-                # report sample profile terms
-                PP = FormatPhaseProfile(phasenam)
-                if PP:
-                    WriteCIFitem('_pd_proc_ls_profile_function',PP)
-                    
-            #============================================================
-            # loop over histograms, exporting them
-            for i in sorted(self.powderDict.keys()):
-                hist = self.powderDict[i]
-                histblk = self.Histograms[hist]
-                if hist.startswith("PWDR"): 
-                    WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
-                    #instnam = histblk["Sample Parameters"]['InstrName']
-                    # report instrumental profile terms
-                    WriteCIFitem('_pd_proc_ls_profile_function',
-                        FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
-                    WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
-                    WriteCIFitem('_pd_block_id',datablockidDict[hist])
-                    histprm = self.Histograms[hist]["Sample Parameters"]
-                    writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
-                    WritePowderData(hist)
-            for i in sorted(self.xtalDict.keys()):
-                hist = self.xtalDict[i]
-                histblk = self.Histograms[hist]
-                if hist.startswith("HKLF"): 
-                    WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
-                    #instnam = histblk["Instrument Parameters"][0]['InstrName']
-                    WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
-                    WriteCIFitem('_pd_block_id',datablockidDict[hist])
-                    histprm = self.Histograms[hist]["Instrument Parameters"][0]
-                    writeCIFtemplate(histprm,'single',histprm['InstrName']) # single crystal template
-                    WriteSingleXtalData(hist)
+                    loopprefix = '_pd_phase_block_id'
+
+                for phasenam in sorted(self.Phases.keys()):
+                    i = self.Phases[phasenam]['pId']
+                    datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                                 'phase_'+ str(i) + '|' + str(self.shortauthorname))
+                    WriteCIFitem(loopprefix,datablockidDict[phasenam])
+                # loop over data blocks
+                if len(self.powderDict) + len(self.xtalDict) > 1:
+                    loopprefix = ''
+                    WriteCIFitem('loop_   _pd_block_diffractogram_id')
+                else:
+                    loopprefix = '_pd_block_diffractogram_id'
+                for i in sorted(self.powderDict.keys()):
+                    hist = self.powderDict[i]
+                    histblk = self.Histograms[hist]
+                    instnam = histblk["Sample Parameters"]['InstrName']
+                    instnam = instnam.replace(' ','')
+                    i = histblk['hId']
+                    datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                                             str(self.shortauthorname) + "|" +
+                                             instnam + "_hist_"+str(i))
+                    WriteCIFitem(loopprefix,datablockidDict[hist])
+                for i in sorted(self.xtalDict.keys()):
+                    hist = self.xtalDict[i]
+                    histblk = self.Histograms[hist]
+                    instnam = histblk["Instrument Parameters"][0]['InstrName']
+                    instnam = instnam.replace(' ','')
+                    i = histblk['hId']
+                    datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                                             str(self.shortauthorname) + "|" +
+                                             instnam + "_hist_"+str(i))
+                    WriteCIFitem(loopprefix,datablockidDict[hist])
+                #============================================================
+                # loop over phases, exporting them
+                phasebyhistDict = {} # create a cross-reference to phases by histogram
+                for j,phasenam in enumerate(sorted(self.Phases.keys())):
+                    step += 1
+                    dlg.Update(step,"Exporting phase "+phasenam+' (#'+str(j+1)+')')
+                    i = self.Phases[phasenam]['pId']
+                    WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
+                    WriteCIFitem('# Information for phase '+str(i))
+                    WriteCIFitem('_pd_block_id',datablockidDict[phasenam])
+                    # report the phase
+                    writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
+                    WritePhaseInfo(phasenam)
+                    # preferred orientation
+                    SH = FormatSH(phasenam)
+                    MD = FormatHAPpo(phasenam)
+                    if SH and MD:
+                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
+                    elif SH or MD:
+                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
+                    else:
+                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
+                    # report sample profile terms
+                    PP = FormatPhaseProfile(phasenam)
+                    if PP:
+                        WriteCIFitem('_pd_proc_ls_profile_function',PP)
+
+                #============================================================
+                # loop over histograms, exporting them
+                for i in sorted(self.powderDict.keys()):
+                    hist = self.powderDict[i]
+                    histblk = self.Histograms[hist]
+                    if hist.startswith("PWDR"): 
+                        step += 1
+                        dlg.Update(step,"Exporting "+hist.strip())
+                        WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
+                        #instnam = histblk["Sample Parameters"]['InstrName']
+                        # report instrumental profile terms
+                        WriteCIFitem('_pd_proc_ls_profile_function',
+                            FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
+                        WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
+                        WriteCIFitem('_pd_block_id',datablockidDict[hist])
+                        histprm = self.Histograms[hist]["Sample Parameters"]
+                        writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
+                        WritePowderData(hist)
+                for i in sorted(self.xtalDict.keys()):
+                    hist = self.xtalDict[i]
+                    histblk = self.Histograms[hist]
+                    if hist.startswith("HKLF"): 
+                        step += 1
+                        dlg.Update(step,"Exporting "+hist.strip())
+                        WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
+                        #instnam = histblk["Instrument Parameters"][0]['InstrName']
+                        WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
+                        WriteCIFitem('_pd_block_id',datablockidDict[hist])
+                        histprm = self.Histograms[hist]["Instrument Parameters"][0]
+                        writeCIFtemplate(histprm,'single',histprm['InstrName']) # single crystal template
+                        WriteSingleXtalData(hist)
+
+            except Exception:
+                import traceback
+                print(traceback.format_exc())
+                self.G2frame.ErrorDialog('Exception',
+                                         'Error occurred in CIF creation. '+
+                                         'See full error message in console output ')
+            finally:
+                dlg.Destroy()
 
         WriteCIFitem('#--' + 15*'eof--' + '#')
         closeCIF()
-        print("...export complete")
-# end of CIF export
+        print("...export completed")
+        # end of CIF export
+
+class ExportSimpleCIF(ExportCIF):
+    '''Used to create a simple CIF of at most one phase. Uses exact same code as
+    :class:`ExportCIF` except that `self.mode` is set to simple.
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        G2IO.ExportBaseclass.__init__(self,
+            G2frame=G2frame,
+            formatName = 'full CIF',
+            extension='.cif',
+            longFormatName = 'Export project as CIF'
+            )
+        self.author = ''
+        self.mode = 'simple'
+        self.exporttype = 'phase'
 
 #===============================================================================
 # misc CIF utilities
@@ -2196,7 +2414,8 @@ class CIFtemplateSelect(wx.BoxSizer):
         if ret == wx.ID_OK:
             try:
                 cf = G2IO.ReadCIF(fil)
-                if len(cf.keys()) == 0: raise Exception,"No CIF data_ blocks found"
+                if len(cf.keys()) == 0:
+                    raise Exception,"No CIF data_ blocks found"
                 if len(cf.keys()) != 1:
                     raise Exception, 'Error, CIF Template has more than one block: '+fil
                 self.dict["CIF_template"] = fil

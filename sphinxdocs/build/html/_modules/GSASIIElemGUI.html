@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIElemGUI</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-17 16:25:32 -0500 (Fri, 17 May 2013) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 923 $</span>
+<span class="c"># $Date: 2013-08-29 14:47:35 -0500 (Thu, 29 Aug 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1046 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIElemGUI.py $</span>
-<span class="c"># $Id: GSASIIElemGUI.py 923 2013-05-17 21:25:32Z toby $</span>
+<span class="c"># $Id: GSASIIElemGUI.py 1046 2013-08-29 19:47:35Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIElemGUI: GUI to select and delete element lists*</span>
@@ -69,6 +69,8 @@
 <span class="sd">   Copyright: 2008, Robert B. Von Dreele &amp; Brian H. Toby (Argonne National Laboratory)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1046 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">wx</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">wx.lib.colourselect</span> <span class="kn">as</span> <span class="nn">wscs</span>

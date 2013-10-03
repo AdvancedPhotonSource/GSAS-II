@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2012-02-13 11:33:35 -0600 (Mon, 13 Feb 2012) $
-# $Author: vondreele & toby $
-# $Revision: 482 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/G2importphase_GPX.py $
-# $Id: G2importphase_GPX.py 482 2012-02-13 17:33:35Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 # Routines to import Phase information from GSAS-II .gpx files
 import cPickle
 import GSASIIIO as G2IO
 import GSASIIstrIO as G2stIO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 
 class PhaseReaderClass(G2IO.ImportPhase):
     def __init__(self):

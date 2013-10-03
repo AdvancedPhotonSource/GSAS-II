@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2012-02-13 11:33:35 -0600 (Mon, 13 Feb 2012) $
-# $Author: vondreele & toby $
-# $Revision: 482 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/G2importphase.py $
-# $Id: G2importphase.py 482 2012-02-13 17:33:35Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 # a routine to read in powder data from a GSAS-compatible files
 # 
@@ -13,7 +13,7 @@ import os.path as ospath
 import numpy as np
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 
 class GSAS_ReaderClass(G2IO.ImportPowderData):
     'Routines to import powder data from a GSAS files'

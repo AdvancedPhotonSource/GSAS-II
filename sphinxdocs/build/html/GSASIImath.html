@@ -483,7 +483,7 @@ q=r+ai+bj+ck</p>
 
 <dl class="function">
 <dt id="GSASIImath.RotateRBXYZ">
-<tt class="descclassname">GSASIImath.</tt><tt class="descname">RotateRBXYZ</tt><big>(</big><em>Bmat</em>, <em>Cart</em>, <em>oriQ</em><big>)</big><a class="headerlink" href="#GSASIImath.RotateRBXYZ" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">RotateRBXYZ</tt><big>(</big><em>Bmat</em>, <em>Cart</em>, <em>oriQ</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#RotateRBXYZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.RotateRBXYZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>rotate &amp; transform cartesian coordinates to crystallographic ones
 no translation applied. To be used for numerical derivatives</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -662,7 +662,7 @@ precision to be shown e.g. esd=-0.01 gives 2 places beyond decimal</li>
 
 <dl class="function">
 <dt id="GSASIImath.anneal">
-<tt class="descclassname">GSASIImath.</tt><tt class="descname">anneal</tt><big>(</big><em>func</em>, <em>x0</em>, <em>args=()</em>, <em>schedule='fast'</em>, <em>full_output=0</em>, <em>T0=None</em>, <em>Tf=1e-12</em>, <em>maxeval=None</em>, <em>maxaccept=None</em>, <em>maxiter=400</em>, <em>boltzmann=1.0</em>, <em>learn_rate=0.5</em>, <em>feps=1e-06</em>, <em>quench=1.0</em>, <em>m=1.0</em>, <em>n=1.0</em>, <em>lower=-100</em>, <em>upper=100</em>, <em>dwell=50</em>, <em>slope=0.9</em>, <em>dlg=None</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#anneal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.anneal" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">anneal</tt><big>(</big><em>func</em>, <em>x0</em>, <em>args=()</em>, <em>schedule='fast'</em>, <em>full_output=0</em>, <em>T0=None</em>, <em>Tf=1e-12</em>, <em>maxeval=None</em>, <em>maxaccept=None</em>, <em>maxiter=400</em>, <em>boltzmann=1.0</em>, <em>learn_rate=0.5</em>, <em>feps=1e-06</em>, <em>quench=1.0</em>, <em>m=1.0</em>, <em>n=1.0</em>, <em>lower=-100</em>, <em>upper=100</em>, <em>dwell=50</em>, <em>slope=0.9</em>, <em>ranStart=False</em>, <em>ranRange=0.1</em>, <em>autoRan=False</em>, <em>dlg=None</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#anneal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.anneal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Minimize a function using simulated annealing.</p>
 <p>Schedule is a schedule class implementing the annealing schedule.
 Available ones are &#8216;fast&#8217;, &#8216;cauchy&#8217;, &#8216;boltzmann&#8217;</p>
@@ -692,6 +692,7 @@ last four coolings.</li>
 <li><strong>lower,upper</strong> (<em>float/ndarray</em>) &#8211; Lower and upper bounds on <cite>x</cite>.</li>
 <li><strong>dwell</strong> (<em>int</em>) &#8211; The number of times to search the space at each temperature.</li>
 <li><strong>slope</strong> (<em>float</em>) &#8211; Parameter for log schedule</li>
+<li><strong>ranStart=False</strong> (<em>bool</em>) &#8211; True for set 10% of ranges about x</li>
 </ul>
 </td>
 </tr>
@@ -1425,6 +1426,18 @@ QA,QB quaternions; q=r+ai+bj+ck</p>
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">prodQVQ</tt><big>(</big><em>Q</em>, <em>V</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#prodQVQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.prodQVQ" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute the quaternion vector rotation qvq-1 = v&#8217;
 q=r+ai+bj+ck</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImath.randomAVdeg">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">randomAVdeg</tt><big>(</big><em>r0</em>, <em>r1</em>, <em>r2</em>, <em>r3</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#randomAVdeg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.randomAVdeg" title="Permalink to this definition">¶</a></dt>
+<dd><p>create random angle (deg),vector from 4 random number in range (-1,1)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImath.randomQ">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">randomQ</tt><big>(</big><em>r0</em>, <em>r1</em>, <em>r2</em>, <em>r3</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#randomQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.randomQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>create random quaternion from 4 random numbers in range (-1,1)</p>
 </dd></dl>
 
 <dl class="function">

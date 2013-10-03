@@ -60,6 +60,72 @@
 <div class="section" id="gsasiigrid-basic-gui-routines">
 <h2><em>GSASIIgrid: Basic GUI routines</em><a class="headerlink" href="#gsasiigrid-basic-gui-routines" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
+<dt id="GSASIIgrid.ASCIIValidator">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ASCIIValidator</tt><big>(</big><em>result=None</em>, <em>key=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ASCIIValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ASCIIValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>A validator to be used with a TextCtrl to prevent
+entering characters other than ASCII characters.</p>
+<dl class="docutils">
+<dt>The value is checked for validity after every keystroke</dt>
+<dd>If an invalid number is entered, the box is highlighted.
+If the number is valid, it is saved in result[key]</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>result</strong> (<em>dict/list</em>) &#8211; List or dict where value should be placed when valid</li>
+<li><strong>key</strong> (<em>any</em>) &#8211; key to use for result (int for list)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIgrid.ASCIIValidator.Clone">
+<tt class="descname">Clone</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ASCIIValidator.Clone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ASCIIValidator.Clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a copy of the validator, a strange, but required component</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.ASCIIValidator.OnChar">
+<tt class="descname">OnChar</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ASCIIValidator.OnChar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ASCIIValidator.OnChar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called each type a key is pressed
+ignores keys that are not allowed for int and float types</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.ASCIIValidator.TestValid">
+<tt class="descname">TestValid</tt><big>(</big><em>tc</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ASCIIValidator.TestValid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ASCIIValidator.TestValid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the value is valid by casting the input string
+into ASCII.</p>
+<p>Save it in the dict/list where the initial value was stored</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tc</strong> (<em>wx.TextCtrl</em>) &#8211; A reference to the TextCtrl that the validator
+is associated with.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.ASCIIValidator.TransferFromWindow">
+<tt class="descname">TransferFromWindow</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ASCIIValidator.TransferFromWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ASCIIValidator.TransferFromWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needed by validator, strange, but required component</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.ASCIIValidator.TransferToWindow">
+<tt class="descname">TransferToWindow</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ASCIIValidator.TransferToWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ASCIIValidator.TransferToWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needed by validator, strange, but required component</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="GSASIIgrid.AddHelp">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">AddHelp</tt><big>(</big><em>frame</em>, <em>helpType</em>, <em>helpLbl=None</em>, <em>title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#AddHelp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.AddHelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>For the Mac: creates an entry to the help menu of type 
@@ -78,7 +144,7 @@ a web page for documentation.</p>
 
 <dl class="function">
 <dt id="GSASIIgrid.CallScrolledMultiEditor">
-<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">CallScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#CallScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.CallScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">CallScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#CallScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.CallScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shell routine to call a ScrolledMultiEditor dialog. See
 <a class="reference internal" href="#GSASIIgrid.ScrolledMultiEditor" title="GSASIIgrid.ScrolledMultiEditor"><tt class="xref py py-class docutils literal"><span class="pre">ScrolledMultiEditor</span></tt></a> for parameter definitions.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -86,7 +152,7 @@ a web page for documentation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the OK button is pressed; False if the window is closed
-with the system menu or the Close button.</td>
+with the system menu or the Cancel button.</td>
 </tr>
 </tbody>
 </table>
@@ -134,6 +200,52 @@ tree menu, but adds an extra help command for the data item and a separator.</p>
 <dt id="GSASIIgrid.DisAglDialog">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">DisAglDialog</tt><big>(</big><em>parent</em>, <em>data</em>, <em>default</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DisAglDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DisAglDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Distance Angle Controls dialog</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.EnumSelector">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">EnumSelector</tt><big>(</big><em>parent</em>, <em>dct</em>, <em>item</em>, <em>choices</em>, <em>values=None</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#EnumSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.EnumSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>A customized <tt class="xref py py-class docutils literal"><span class="pre">wxpython.ComboBox</span></tt> that selects items from a list
+of choices, but sets a dict (list) entry to the corresponding
+entry from the input list of values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parent</strong> (<em>wx.Panel</em>) &#8211; the parent to the <tt class="xref py py-class docutils literal"><span class="pre">ComboBox</span></tt> (usually a
+frame or panel)</li>
+<li><strong>dct</strong> (<em>dict</em>) &#8211; a dict (or list) to contain the value set
+for the <tt class="xref py py-class docutils literal"><span class="pre">ComboBox</span></tt>.</li>
+<li><strong>item</strong> &#8211; the dict key (or list index) where <tt class="docutils literal"><span class="pre">dct[item]</span></tt> will 
+be set to the value selected in the <tt class="xref py py-class docutils literal"><span class="pre">ComboBox</span></tt>. Also, dct[item]
+contains the starting value shown in the widget. If the value
+does not match an entry in <tt class="xref py py-data docutils literal"><span class="pre">values</span></tt>, the first value
+in <tt class="xref py py-data docutils literal"><span class="pre">choices</span></tt> is used as the default, but <tt class="docutils literal"><span class="pre">dct[item]</span></tt> is
+not changed.</li>
+<li><strong>choices</strong> (<em>list</em>) &#8211; <p>a list of choices to be displayed to the
+user such as</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="s">&quot;default&quot;</span><span class="p">,</span><span class="s">&quot;option 1&quot;</span><span class="p">,</span><span class="s">&quot;option 2&quot;</span><span class="p">,]</span>
+</pre></div>
+</div>
+<p>Note that these options will correspond to the entries in 
+<tt class="xref py py-data docutils literal"><span class="pre">values</span></tt> (if specified) item by item.</p>
+</li>
+<li><strong>values</strong> (<em>list</em>) &#8211; <p>a list of values that correspond to
+the options in <tt class="xref py py-data docutils literal"><span class="pre">choices</span></tt>, such as</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The default for <tt class="xref py py-data docutils literal"><span class="pre">values</span></tt> is to use the same list as
+specified for <tt class="xref py py-data docutils literal"><span class="pre">choices</span></tt>.</p>
+</li>
+<li><strong>(other)</strong> &#8211; additional keyword arguments accepted by
+<tt class="xref py py-class docutils literal"><span class="pre">ComboBox</span></tt> can be specified.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="class">
@@ -249,7 +361,7 @@ a web page for documentation.</p>
 
 <dl class="method">
 <dt id="GSASIIgrid.MyHelp.OnSelectVersion">
-<tt class="descname">OnSelectVersion</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#GSASIIgrid.MyHelp.OnSelectVersion" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">OnSelectVersion</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHelp.OnSelectVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHelp.OnSelectVersion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allow the user to select a specific version of GSAS-II</p>
 </dd></dl>
 
@@ -264,7 +376,7 @@ displaying help information in a web browser.</p>
 
 <dl class="class">
 <dt id="GSASIIgrid.NumberValidator">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">NumberValidator</tt><big>(</big><em>typ</em>, <em>positiveonly=False</em>, <em>min=None</em>, <em>max=None</em>, <em>result=None</em>, <em>key=None</em>, <em>OKcontrol=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#NumberValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.NumberValidator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">NumberValidator</tt><big>(</big><em>typ</em>, <em>positiveonly=False</em>, <em>min=None</em>, <em>max=None</em>, <em>result=None</em>, <em>key=None</em>, <em>OKcontrol=None</em>, <em>CIFinput=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#NumberValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.NumberValidator" title="Permalink to this definition">¶</a></dt>
 <dd><p>A validator to be used with a TextCtrl to prevent
 entering characters other than digits, signs, and for float
 input, a period and exponents.</p>
@@ -291,6 +403,8 @@ upper limit is unbounded</li>
 <li><strong>OKcontrol</strong> (<em>function</em>) &#8211; function or class method to control
 an OK button for a window. 
 Ignored if None (default)</li>
+<li><strong>CIFinput</strong> (<em>bool</em>) &#8211; allows use of a single &#8216;?&#8217; or &#8216;.&#8217; character
+as valid input.</li>
 </ul>
 </td>
 </tr>
@@ -385,7 +499,7 @@ is associated with.</td>
 
 <dl class="class">
 <dt id="GSASIIgrid.ScrolledMultiEditor">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a window for editing a potentially large number of dict- or
 list-contained values with validation for each item. Edited values are
 automatically placed in their source location. If invalid entries
@@ -416,6 +530,8 @@ new line characters.</li>
 <li><strong>size</strong> (<em>wx.Size</em>) &#8211; a size parameter that dictates the
 size for the scrolled region of the dialog. The default is
 (300,250).</li>
+<li><strong>CopyButton</strong> (<em>bool</em>) &#8211; if True adds a small button that copies the
+value for the current row to all fields below (default is False)</li>
 </ul>
 </td>
 </tr>
@@ -587,7 +703,7 @@ to show results from a sequential refinement.</p>
 
 <dl class="class">
 <dt id="GSASIIgrid.ValidatedTxtCtrl">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ValidatedTxtCtrl</tt><big>(</big><em>parent</em>, <em>loc</em>, <em>key</em>, <em>notBlank=True</em>, <em>min=None</em>, <em>max=None</em>, <em>size=None</em>, <em>OKcontrol=None</em>, <em>OnLeave=None</em>, <em>typeHint=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ValidatedTxtCtrl</tt><big>(</big><em>parent</em>, <em>loc</em>, <em>key</em>, <em>notBlank=True</em>, <em>min=None</em>, <em>max=None</em>, <em>OKcontrol=None</em>, <em>OnLeave=None</em>, <em>typeHint=None</em>, <em>CIFinput=False</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a TextCtrl widget that uses a validator to prevent the
 entry of inappropriate characters and changes color to highlight
 when invalid input is supplied. As valid values are typed,
@@ -623,9 +739,6 @@ for str inputs.</li>
 lower limit is unbounded.</li>
 <li><strong>max</strong> (<em>number</em>) &#8211; maximum allowed valid value. If None (default) the
 upper limit is unbounded</li>
-<li><strong>size</strong> (<em>wx.Size</em>) &#8211; an optional size parameter that dictates the
-size for the TextCtrl. None (the default) indicates that the
-default size should be used.</li>
 <li><strong>OKcontrol</strong> (<em>function</em>) &#8211; specifies a function or method that will be
 called when the input is validated. The called function is supplied
 with one argument which is False if the TextCtrl contains an invalid
@@ -650,10 +763,16 @@ continue to run without errors</p>
 <p>The default for OnLeave is None, which indicates no function should
 be called.</p>
 </li>
-<li><strong>typeHint</strong> (<em>type</em>) &#8211; the value of typeHint is used if the initial value
-for the dict/list element <tt class="docutils literal"><span class="pre">loc[key]</span></tt> is None. In this case typeHint
-must be int or float, which specifies the type for input to the TextCtrl.
-Defaults as None.</li>
+<li><strong>typeHint</strong> (<em>type</em>) &#8211; the value of typeHint is overrides the initial value
+for the dict/list element <tt class="docutils literal"><span class="pre">loc[key]</span></tt>, if set to 
+int or float, which specifies the type for input to the TextCtrl.
+Defaults as None, which is ignored.</li>
+<li><strong>CIFinput</strong> (<em>bool</em>) &#8211; for str input, indicates that only printable
+ASCII characters may be entered into the TextCtrl. Forces output
+to be ASCII rather than Unicode. For float and int input, allows
+use of a single &#8216;?&#8217; or &#8216;.&#8217; character as valid input.</li>
+<li><strong>(other)</strong> &#8211; other optional keyword parameters for the
+wx.TextCtrl widget such as Size or Style may be specified.</li>
 </ul>
 </td>
 </tr>
@@ -670,7 +789,7 @@ Called on loss of focus.</p>
 
 <dl class="method">
 <dt id="GSASIIgrid.ValidatedTxtCtrl.ShowStringValidity">
-<tt class="descname">ShowStringValidity</tt><big>(</big><em>previousInvalid=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl.ShowStringValidity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl.ShowStringValidity" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ShowStringValidity</tt><big>(</big><em>previousInvalid=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl.ShowStringValidity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl.ShowStringValidity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if input is valid. Anytime the input is
 invalid, call self.OKcontrol (if defined) because it is fast.
 If valid, check for any other invalid entries only when
@@ -690,11 +809,11 @@ invalid prior to the current change.</td>
 
 <dl class="class">
 <dt id="GSASIIgrid.downdate">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">downdate</tt><big>(</big><em>parent=None</em><big>)</big><a class="headerlink" href="#GSASIIgrid.downdate" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">downdate</tt><big>(</big><em>parent=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#downdate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.downdate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dialog to allow a user to select a version of GSAS-II to install</p>
 <dl class="method">
 <dt id="GSASIIgrid.downdate.getVersion">
-<tt class="descname">getVersion</tt><big>(</big><big>)</big><a class="headerlink" href="#GSASIIgrid.downdate.getVersion" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getVersion</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#downdate.getVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.downdate.getVersion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the version number in the dialog</p>
 </dd></dl>
 
@@ -732,8 +851,22 @@ that does exist or False if the user presses Cancel</p>
 
 <dl class="class">
 <dt id="GSASIIIO.ExportBaseclass">
-<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ExportBaseclass</tt><big>(</big><em>G2frame</em>, <em>formatName</em>, <em>longFormatName=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ExportBaseclass</tt><big>(</big><em>G2frame</em>, <em>formatName</em>, <em>extension</em>, <em>longFormatName=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the exporting of GSAS-II results</p>
+<dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.askSaveFile">
+<tt class="descname">askSaveFile</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.askSaveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.askSaveFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask the user to supply a file name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a file name (str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.dumpTree">
 <tt class="descname">dumpTree</tt><big>(</big><em>mode='type'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.dumpTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.dumpTree" title="Permalink to this definition">¶</a></dt>
@@ -742,7 +875,7 @@ that does exist or False if the user presses Cancel</p>
 
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.loadParmDict">
-<tt class="descname">loadParmDict</tt><big>(</big><big>)</big><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadParmDict" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">loadParmDict</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.loadParmDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadParmDict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
 refined values to those from the last cycle and set the uncertainties for the
 refined parameters in another dict (self.sigDict).</p>
@@ -976,10 +1109,36 @@ np.array(yd), # obs-calc profiles</p>
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportStructFactor</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with tables
 of structure factors</p>
+<p>Note that the default controls are stored in self.Controls and the
+default instrument parameters are stored in self.Parameters.
+These can be changed, but any changes will be the defaults for all
+subsequent uses of the <a class="reference internal" href="#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">ImportStructFactor</span></tt></a> derived classes
+until <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitControls" title="GSASIIIO.ImportStructFactor.InitControls"><tt class="xref py py-meth docutils literal"><span class="pre">InitControls()</span></tt></a> and <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitParameters" title="GSASIIIO.ImportStructFactor.InitParameters"><tt class="xref py py-meth docutils literal"><span class="pre">InitParameters()</span></tt></a> are
+called. Probably better to use <a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="GSASIIIO.ImportStructFactor.UpdateControls"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateControls()</span></tt></a> and
+<a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="GSASIIIO.ImportStructFactor.UpdateControls"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateControls()</span></tt></a> (adding new args if needed) to change
+values.</p>
+<dl class="method">
+<dt id="GSASIIIO.ImportStructFactor.InitControls">
+<tt class="descname">InitControls</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.InitControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.InitControls" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialize the controls structure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportStructFactor.InitParameters">
+<tt class="descname">InitParameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.InitParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.InitParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialize the instrument parameters structure</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="GSASIIIO.ImportStructFactor.UpdateControls">
 <tt class="descname">UpdateControls</tt><big>(</big><em>Type='Fosq'</em>, <em>FcalcPresent=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.UpdateControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="Permalink to this definition">¶</a></dt>
 <dd><p>Scan through the reflections to update the Controls dictionary</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportStructFactor.UpdateParameters">
+<tt class="descname">UpdateParameters</tt><big>(</big><em>Type=None</em>, <em>Wave=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.UpdateParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.UpdateParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Revise the instrument parameters</p>
 </dd></dl>
 
 </dd></dl>
@@ -1033,6 +1192,27 @@ typical input:</p>
 <dt id="GSASIIIO.PutG2Image">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">PutG2Image</tt><big>(</big><em>filename</em>, <em>Comments</em>, <em>Data</em>, <em>Npix</em>, <em>image</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#PutG2Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.PutG2Image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write an image as a python pickle</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.ReadCIF">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ReadCIF</tt><big>(</big><em>URLorFile</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ReadCIF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ReadCIF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a CIF, which may be specified as a file name or as a URL using PyCifRW
+(from James Hester).
+The open routine gets confused with DOS names that begin with a letter and colon
+&#8220;C:dir&#8221; so this routine will try to open the passed name as a file and if that
+fails, try it as a URL</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>URLorFile</strong> (<em>str</em>) &#8211; string containing a URL or a file name. Code will try first
+to open it as a file and then as a URL.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a PyCifRW CIF object.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -1098,6 +1278,25 @@ defaults to data for P 1</li>
 <dt id="GSASIIIO.sint">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">sint</tt><big>(</big><em>S</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#sint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.sint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a string to int. An empty field is treated as zero</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.trim">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">trim</tt><big>(</big><em>val</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#trim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.trim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simplify a string containing leading and trailing spaces
+as well as newlines, tabs, repeated spaces etc. into a shorter and
+more simple string, by replacing all ranges of whitespace
+characters with a single space.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>val</strong> (<em>str</em>) &#8211; the string to be simplified</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the (usually) shortened version of the string</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

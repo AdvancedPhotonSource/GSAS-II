@@ -666,7 +666,7 @@ two-theta value to be used.</td>
 <td></td>
 <td>A dict with an entry for each phase in the
 histogram. The contents of each dict item
-is a list or reflections as described in the
+is a list of reflections as described in the
 <a class="reference internal" href="#powderrefl-table"><em>Powder Reflections</em></a>
 description.</td>
 </tr>
@@ -865,8 +865,8 @@ containing in order:</p>
 reflections. The items in that list are documented below.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="16%" />
-<col width="84%" />
+<col width="14%" />
+<col width="86%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">index</th>
@@ -893,10 +893,10 @@ reflections. The items in that list are documented below.</p>
 <td>gam, Lorenzian width</td>
 </tr>
 <tr class="row-even"><td>8</td>
-<td>Fobs**2</td>
+<td><span class="math">\(F_{obs}^2\)</span></td>
 </tr>
 <tr class="row-odd"><td>9</td>
-<td>Fcalc**2</td>
+<td><span class="math">\(F_{calc}^2\)</span></td>
 </tr>
 <tr class="row-even"><td>10</td>
 <td>reflection phase, in degrees</td>
@@ -913,7 +913,149 @@ reflections as a length (m) array</td>
 </tr>
 <tr class="row-odd"><td>13</td>
 <td>intensity correction for reflection, this times
-Fobs**2 or Fcalc**2 gives Iobs or Icalc</td>
+<span class="math">\(F_{obs}^2\)</span> or <span class="math">\(F_{calc}^2\)</span> gives Iobs or Icalc</td>
+</tr>
+<tr class="row-even"><td>14</td>
+<td>dict with the form factor (f or b) by atom type
+symbol at the reflection position.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="single-crystal-tree-items">
+<h2>Single Crystal Tree Items<a class="headerlink" href="#single-crystal-tree-items" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="xtal-table"></span><p id="index-8">Every single crystal diffraction histogram is stored in the GSAS-II data tree
+with a top-level entry named beginning with the string &#8220;HKLF &#8221;. The
+diffraction data for that information are directly associated with
+that tree item and there are a series of children to that item. The
+routine <a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-func docutils literal"><span class="pre">GetUsedHistogramsAndPhasesfromTree()</span></tt></a> will
+load this information into a dictionary where the child tree name is
+used as a key, and the information in the main entry is assigned
+a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as outlined below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="17%" />
+<col width="58%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">sub-key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Data</td>
+<td>&nbsp;</td>
+<td>A list of lists, where each inner item
+is an individual reflection
+as described in the
+<a class="reference internal" href="#xtalrefl-table"><em>Single Crystal Reflections</em></a>
+description.</td>
+</tr>
+<tr class="row-odd"><td>Instrument Parameters</td>
+<td></td>
+<td>A list containing two dicts where the possible
+keys in each dict are listed below. The value
+for most items is a list containing two values:
+the initial value, the current value.
+The first and second
+values are floats unless otherwise noted.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Lam</td>
+<td>Specifies a wavelength in Angstroms (two floats)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Type</td>
+<td><dl class="first last docutils">
+<dt>Histogram type (two str values):</dt>
+<dd><ul class="first last simple">
+<li>&#8216;SXC&#8217; for constant wavelength x-ray</li>
+<li>&#8216;SNC&#8217; for constant wavelength neutron</li>
+<li>&#8216;SNT&#8217; for time of flight neutron</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>InstrName</td>
+<td>A name for the instrument, used in preparing
+a CIF (str).</td>
+</tr>
+<tr class="row-odd"><td>wtFactor</td>
+<td></td>
+<td>A weighting factor to increase or decrease
+the leverage of data in the histogram (float).
+A value of 1.0 weights the data with their
+standard uncertainties and a larger value
+increases the weighting of the data (equivalent
+to decreasing the uncertainties).</td>
+</tr>
+<tr class="row-even"><td>hId</td>
+<td></td>
+<td>The number assigned to the histogram when
+the project is loaded or edited (can change)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="single-crystal-reflection-data-structure">
+<h2>Single Crystal Reflection Data Structure<a class="headerlink" href="#single-crystal-reflection-data-structure" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="xtalrefl-table"></span><p id="index-9">For every phase in a histogram, the <tt class="docutils literal"><span class="pre">Reflection</span> <span class="pre">Lists</span></tt> value is a list of
+reflections. The items in that list are documented below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">index</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0,1,2</td>
+<td>h,k,l (float)</td>
+</tr>
+<tr class="row-odd"><td>3</td>
+<td>multiplicity</td>
+</tr>
+<tr class="row-even"><td>4</td>
+<td>d-space, Angstrom</td>
+</tr>
+<tr class="row-odd"><td>5</td>
+<td><span class="math">\(F_{obs}^2\)</span></td>
+</tr>
+<tr class="row-even"><td>6</td>
+<td><span class="math">\(\sigma(F_{obs}^2)\)</span></td>
+</tr>
+<tr class="row-odd"><td>7</td>
+<td><span class="math">\(F_{calc}^2\)</span></td>
+</tr>
+<tr class="row-even"><td>8</td>
+<td><span class="math">\(F_{obs}^2T\)</span></td>
+</tr>
+<tr class="row-odd"><td>9</td>
+<td><span class="math">\(F_{calc}^2T\)</span></td>
+</tr>
+<tr class="row-even"><td>10</td>
+<td>reflection phase, in degrees</td>
+</tr>
+<tr class="row-odd"><td>11</td>
+<td>the equivalent reflections as a (m x 3)
+np.array.</td>
+</tr>
+<tr class="row-even"><td>12</td>
+<td>phase shift for each of the equivalent
+reflections as a length (m) array</td>
+</tr>
+<tr class="row-odd"><td>13</td>
+<td>intensity correction for reflection, this times
+<span class="math">\(F_{obs}^2\)</span> or <span class="math">\(F_{calc}^2\)</span>
+gives Iobs or Icalc
+(not used in single crystals?)</td>
 </tr>
 <tr class="row-even"><td>14</td>
 <td>dict with the form factor (f or b) by atom type
@@ -1013,6 +1155,11 @@ before creating or later using the VarName object.</p>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="GSASIIobj.VarName.re">
+<tt class="descname">re</tt><em class="property"> = &lt;module 're' from '/Library/Frameworks/Python.framework/Versions/7.1/lib/python2.7/re.pyc'&gt;</em><a class="headerlink" href="#GSASIIobj.VarName.re" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1037,6 +1184,8 @@ before creating or later using the VarName object.</p>
 <li><a class="reference internal" href="#atom-records">Atom Records</a></li>
 <li><a class="reference internal" href="#powder-diffraction-tree-items">Powder Diffraction Tree Items</a></li>
 <li><a class="reference internal" href="#powder-reflection-data-structure">Powder Reflection Data Structure</a></li>
+<li><a class="reference internal" href="#single-crystal-tree-items">Single Crystal Tree Items</a></li>
+<li><a class="reference internal" href="#single-crystal-reflection-data-structure">Single Crystal Reflection Data Structure</a></li>
 <li><a class="reference internal" href="#classes-and-routines"><em>Classes and routines</em></a></li>
 </ul>
 </li>

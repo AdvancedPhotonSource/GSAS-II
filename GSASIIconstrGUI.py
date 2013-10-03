@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIconstrGUI - constraint GUI routines
 ########### SVN repository information ###################
-# $Date: 2012-12-05 15:38:26 -0600 (Wed, 05 Dec 2012) $
-# $Author: vondreele $
-# $Revision: 810 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIconstrGUI.py $
-# $Id: GSASIIconstrGUI.py 810 2012-12-05 21:38:26Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIconstrGUI: Constraint GUI routines*
@@ -23,7 +23,7 @@ import numpy as np
 import numpy.ma as ma
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIstrIO as G2stIO

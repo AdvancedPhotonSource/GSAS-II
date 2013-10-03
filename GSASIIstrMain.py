@@ -5,11 +5,11 @@
 
 '''
 ########### SVN repository information ###################
-# $Date: 2013-05-17 12:13:15 -0500 (Fri, 17 May 2013) $
-# $Author: vondreele $
-# $Revision: 920 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIstrMain.py $
-# $Id: GSASIIstrMain.py 920 2013-05-17 17:13:15Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 import sys
 import os
@@ -24,7 +24,7 @@ import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.optimize as so
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 920 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIImapvars as G2mv

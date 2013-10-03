@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2012-02-13 11:33:35 -0600 (Mon, 13 Feb 2012) $
-# $Author: vondreele & toby $
-# $Revision: 482 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/G2importphase.py $
-# $Id: G2importphase.py 482 2012-02-13 17:33:35Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 # a set of short routines to read in phases from various file formats
 # 
@@ -12,7 +12,7 @@ import sys
 import traceback
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 810 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 
 class PDB_ReaderClass(G2IO.ImportPhase):
     'Routines to import Phase information from a PDB file'

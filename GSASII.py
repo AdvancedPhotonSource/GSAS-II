@@ -1055,7 +1055,11 @@ class GSASII(wx.Frame):
         import G2cif
         reload(G2cif)
         exp = G2cif.ExportCIF(self)
-        exp.export(mode)
+        sexp = G2cif.ExportSimpleCIF(self)
+        if mode == 'full':
+            exp.export()
+        else:
+            sexp.export()
 
     def _Add_ExportMenuItems(self,parent):
         item = parent.Append(

@@ -92,7 +92,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     if 'RBModels' not in data:
         data['RBModels'] = {}
     if 'MCSA' not in data:
-        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.3,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
+        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
     if isinstance(data['MCSA']['Results'],dict):
         data['MCSA']['Results'] = []
 #end patch    
@@ -4278,9 +4278,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     SetSolution(result,Models)
                     Results[r][0] = True
                     resultsTable.SetValue(r,0,True)
-                    resultsGrid.ForceRefresh()
-                    wx.CallAfter(UpdateMCSA)
                     G2plt.PlotStructure(G2frame,data)
+                    wx.CallAfter(UpdateMCSA,MCSA.GetScrollPos(wx.VERTICAL))
+                    resultsGrid.ForceRefresh()
                 elif c == 1:
                     if Results[r][1]:
                         Results[r][1] = False
@@ -4360,7 +4360,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Results = data['MCSA']['Results']
             mainSizer.Add(ResultsSizer(Results))
             
-        mainSizer.Layout()
         SetPhaseWindow(G2frame.dataFrame,MCSA,mainSizer)
         Size = MCSA.GetSize()
         Size[0] = Xsize+40
@@ -4514,7 +4513,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         UpdateMCSA()
         
     def OnMCSAclear(event):
-        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[0.,3.],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
+        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
         G2plt.PlotStructure(G2frame,data)
         UpdateMCSA()
         

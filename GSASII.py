@@ -557,7 +557,7 @@ class GSASII(wx.Frame):
             print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
             Id = self.PatternTree.AppendItem(parent=self.root,
                                              text='HKLF '+HistName)
-            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.RefList])
+            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},rd.RefList])
             Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
             self.PatternTree.SetItemPyData(Sub,rd.Parameters)
             self.PatternTree.SetItemPyData(
@@ -976,7 +976,7 @@ class GSASII(wx.Frame):
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
             Tmin = min(rd.powderdata[0])
             Tmax = max(rd.powderdata[0])
-            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},rd.powderdata])
+            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},rd.powderdata])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Comments'),
                 rd.comments)
@@ -1711,7 +1711,7 @@ class GSASII(wx.Frame):
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = G2pdG.SetDefaultSample()
-                        self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0},[np.array(Xsum),np.array(Ysum),np.array(Wsum),
+                        self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},[np.array(Xsum),np.array(Ysum),np.array(Wsum),
                             np.array(YCsum),np.array(YBsum),np.array(YDsum)]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
@@ -1725,7 +1725,6 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Reflection Lists'),{})             
                         self.PatternTree.SelectItem(Id)
                         self.PatternTree.Expand(Id)
-                    
             finally:
                 dlg.Destroy()
 

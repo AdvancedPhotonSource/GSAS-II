@@ -508,7 +508,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             # loop over all atoms
             naniso = 0
             for i,at in enumerate(Atoms):
-                s = PutInCol(MakeUniqueLabel(at[ct-1],self.labellist),6) # label
+                if phasedict['General']['Type'] == 'macromolecular':
+                    label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
+                else:
+                    label = at[ct-1]
+                s = PutInCol(MakeUniqueLabel(label,self.labellist),6) # label
                 fval = self.parmDict.get(fpfx+str(i),at[cfrac])
                 if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
                 s += PutInCol(FmtAtomType(at[ct]),4) # type
@@ -849,13 +853,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem('# Note: phase has no associated data')
 
             # report atom params
-            if phasedict['General']['Type'] == 'nuclear':        #this needs macromolecular variant, etc!
+            if phasedict['General']['Type'] in ['nuclear','macromolecular']:        #this needs macromolecular variant, etc!
                 WriteAtomsNuclear(phasenam)
             else:
                 raise Exception,"no export for mm coordinates implemented"
             # report cell contents
             WriteComposition(phasenam)
-            if not self.quickmode:      # report distances and angles
+            if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
                 WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList)
                 
         def Yfmt(ndec,val):

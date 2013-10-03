@@ -306,7 +306,7 @@ def GetHistogramNames(GPXfile,hType):
     """ Returns a list of histogram names found in GSASII gpx file
 
     :param str GPXfile: full .gpx file name
-    :param str hNames: list of histogram names
+    :param str hType: list of histogram types
     :return: list of histogram names (types = PWDR & HKLF)
 
     """

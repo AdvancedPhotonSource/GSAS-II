@@ -540,7 +540,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
-    if 'N' in parmDict[hfx+'Type']:
+    if 'N' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
@@ -554,7 +554,7 @@ def StructureFactor(refList,G,hfx,pfx,SGData,calcControls,parmDict):
         SQfactor = 4.0*SQ*twopisq
         Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
         if not len(refl[-1]):                #no form factors
-            if 'N' in parmDict[hfx+'Type']:
+            if 'N' in calcControls[hfx+'histType']:
                 refl[-1] = G2el.getBLvalues(BLtables)
             else:       #'X'
                 refl[-1] = G2el.getFFvalues(FFtables,SQ)
@@ -592,7 +592,7 @@ def StructureFactorDerv(refList,G,hfx,pfx,SGData,calcControls,parmDict):
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
-    if 'N' in parmDict[hfx+'Type']:
+    if 'N' in calcControls[hfx+'histType']:
         FP = 0.
         FPP = 0.
     else:

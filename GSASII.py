@@ -585,7 +585,11 @@ class GSASII(wx.Frame):
             help='Import powder data, use file to try to determine format',
             kind=wx.ITEM_NORMAL,text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
-            
+        item = submenu.Append(wx.ID_ANY,
+            help='Create a powder data set entry that will be simulated',
+            kind=wx.ITEM_NORMAL,text='Simulate a dataset')
+        self.Bind(wx.EVT_MENU, self.OnDummyPowder, id=item.GetId())
+           
     def ReadPowderInstprm(self,instfile):       #fix the write routine for [inst1,inst2] style
         '''Read a GSAS-II (new) instrument parameter file
 
@@ -1010,6 +1014,115 @@ class GSASII(wx.Frame):
         self.PatternTree.SelectItem(Id)
         return # success
 
+    def OnDummyPowder(self,event):
+        '''Called in response to an Import/Powder Data/... menu item
+        to read a powder diffraction data set. 
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+
+        Also reads an instrument parameter file for each dataset.
+        '''
+        print 'Start Dummy'
+        rd = G2IO.ImportPowderData(
+            extensionlist=tuple(),
+            strictExtension=False,
+            formatName = 'Simulate dataset',
+            longFormatName = 'Compute a simulated pattern')
+        # rd.powderdata = [
+        #     np.array(x), # x-axis values
+        #     np.array(y), # powder pattern intensities
+        #     np.array(w), # 1/sig(intensity)^2 values (weights)
+        #     np.zeros(N), # calc. intensities (zero)
+        #     np.zeros(N), # calc. background (zero)
+        #     np.zeros(N), # obs-calc profiles
+        #     ]
+        # rd.powderentry[0] = filename
+        # #self.powderentry[1] = pos # bank offset (N/A here)
+        # rd.powderentry[2] = 1 # xye file only has one bank
+        # rd.idstring = ospath.basename(filename)
+        return
+        self.CheckNotebook()
+        Iparm = None
+        lastIparmfile = ''
+        lastdatafile = ''
+        # get instrument parameters for 
+        Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+
+        for rd in rdlist:
+            if rd.repeat_instparm: 
+                lastIparmfile = rd.instfile
+            lastdatafile = rd.powderentry[0]
+            print 'Read powder data '+str(rd.idstring)+ \
+                ' from file '+str(self.lastimport) + \
+                ' with parameters from '+str(rd.instmsg)
+            # data are read, now store them in the tree
+            Id = self.PatternTree.AppendItem(parent=self.root,
+                text='PWDR '+rd.idstring)
+            if 'T' in Iparm1['Type'][0]:
+                if not rd.clockWd and rd.GSAS:
+                    rd.powderdata[0] *= 100.        #put back the CW centideg correction
+                cw = np.diff(rd.powderdata[0])
+                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
+                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
+                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
+                if 'Itype' in Iparm2:
+                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
+                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
+                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
+                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
+                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
+                    var = 1./rd.powderdata[2][Ibeg:Ifin]
+                    var += WYI*rd.powderdata[1]**2
+                    var /= YI**2
+                    rd.powderdata[2] = 1./var
+                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
+                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
+                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
+            Tmin = min(rd.powderdata[0])
+            Tmax = max(rd.powderdata[0])
+            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':True},rd.powderdata])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Comments'),
+                rd.comments)
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Limits'),
+                [(Tmin,Tmax),[Tmin,Tmax]])
+            self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Background'),
+                [['chebyschev',True,3,1.0,0.0,0.0],
+                 {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
+                [Iparm1,Iparm2])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Sample Parameters'),
+                rd.Sample)
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Peak List')
+                ,[])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Index Peak List'),
+                [])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Unit Cells List'),
+                [])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Reflection Lists'),
+                {})
+            self.PatternTree.Expand(Id)
+        self.PatternTree.SelectItem(Id)
+        return # success
+
+    def OnDummyPowder(self,event):
+        import testit
+        reload(testit)
+        testit.OnDummyPowder(self,event)
+        return
+
+
     def _init_Exports(self,menu):
         '''Find exporter routines and add them into menus
         '''
@@ -1092,6 +1205,18 @@ class GSASII(wx.Frame):
                     text=obj.formatName)
                 self.Bind(wx.EVT_MENU, obj.Exporter, id=item.GetId())
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
+        #code to debug an Exporter. much is hard-coded below, but code is reloaded before
+        # each use allowing faster development
+        def DebugExporter(event):
+            reload(G2IO)
+            import G2export_example
+            reload(G2export_example)
+            G2export_example.ExportPhaseShelx(self).Exporter(event)            
+        item = menu.Append(
+            wx.ID_ANY,kind=wx.ITEM_NORMAL,
+            help="reload and test ExportPhaseShelx",text="test ExportPhaseShelx")
+        self.Bind(wx.EVT_MENU, DebugExporter, id=item.GetId())
+        self.ExportLookup[item.GetId()] = 'phase'
             
     def _Add_ExportMenuItems(self,parent):
         item = parent.Append(
@@ -1126,22 +1251,6 @@ class GSASII(wx.Frame):
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnExportPDF, id=item.GetId())
 
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Export Phase...')
-        self.ExportPhase.append(item)
-        item.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnExportPhase, id=item.GetId())
-
-#        item = parent.Append(
-#            help='',id=wx.ID_ANY,
-#            kind=wx.ITEM_NORMAL,
-#            text='Export CIF...')
-#        self.ExportCIF.append(item)
-#        item.Enable(False)
-#        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=item.GetId())
-               
     def FillMainMenu(self,menubar):
         '''Define contents of the main GSAS-II menu for the (main) data tree window
         in the mac, used also for the data item windows as well.
@@ -2253,12 +2362,6 @@ class GSASII(wx.Frame):
         if exports:
             G2IO.PDFSave(self,exports)
         
-    def OnExportPhase(self,event):
-        event.Skip()
-        
-    def OnExportCIF(self,event):
-        event.Skip()
-
     def OnMakePDFs(self,event):
         '''Calculates PDFs
         '''

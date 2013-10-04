@@ -1408,7 +1408,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
 ######################################################################
 E,SGData = G2spc.SpcGroup('P 1') # data structure for default space group
 class ImportBaseclass(object):
-    '''Defines a base class for the importing of data files (diffraction
+    '''Defines a base class for the reading of input files (diffraction
     data, coordinates,...
     '''
     def __init__(self,
@@ -1558,6 +1558,182 @@ class ImportPhase(ImportBaseclass):
         return self.BlockSelector(ChoiceList,ParentFrame,title,
             size,header)
 
+class ImportStructFactor(ImportBaseclass):
+    '''Defines a base class for the reading of files with tables
+    of structure factors
+
+    Note that the default controls are stored in self.Controls and the
+    default instrument parameters are stored in self.Parameters.
+    These can be changed, but any changes will be the defaults for all
+    subsequent uses of the :class:`ImportStructFactor` derived classes
+    until :meth:`InitControls` and :meth:`InitParameters` are
+    called. Probably better to use :meth:`UpdateControls` and
+    :meth:`UpdateControls` (adding new args if needed) to change
+    values.
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
+
+        # define contents of Structure Factor entry
+        self.InitParameters()
+        self.InitControls()
+        self.RefList = []
+        
+    def InitControls(self):
+        'initialize the controls structure'
+        self.Controls = { # dictionary with plotting controls
+            'Type' : 'Fosq',
+            'ifFc' : False,    # 
+            'HKLmax' : [None,None,None],
+            'HKLmin' : [None,None,None],
+            'FoMax' : None,   # maximum observed structure factor as Fo
+            'Zone' : '001',
+            'Layer' : 0,
+            'Scale' : 1.0,
+            'log-lin' : 'lin',
+            }
+
+    def InitParameters(self):
+        'initialize the instrument parameters structure'
+        Lambda = 0.70926
+        HistType = 'SXC'
+        self.Parameters = [{'Type':[HistType,HistType], # create the structure
+                            'Lam':[Lambda,Lambda]
+                            }, {}]
+
+    def UpdateParameters(self,Type=None,Wave=None):
+        'Revise the instrument parameters'
+        if Type is not None:
+            self.Parameters[0]['Type'] = [Type,Type]
+        if Wave is not None:
+            self.Parameters[0]['Lam'] = [Wave,Wave]
+            
+    def UpdateControls(self,Type='Fosq',FcalcPresent=False):
+        '''Scan through the reflections to update the Controls dictionary
+        '''
+        self.Controls['Type'] = Type
+        self.Controls['ifFc'] = FcalcPresent
+        HKLmax = [None,None,None]
+        HKLmin = [None,None,None]
+        Fo2max = None
+        for refl in self.RefList:
+            HKL = refl[:3]
+            if Fo2max is None:
+                Fo2max = refl[8]
+            else:
+                Fo2max = max(Fo2max,refl[8])
+            for i,hkl in enumerate(HKL):
+                if HKLmax[i] is None:
+                    HKLmax[i] = hkl
+                    HKLmin[i] = hkl
+                else:
+                    HKLmax[i] = max(HKLmax[i],hkl)
+                    HKLmin[i] = min(HKLmin[i],hkl)
+        self.Controls['HKLmax'] = HKLmax
+        self.Controls['HKLmin'] = HKLmin
+        if Type ==  'Fosq':
+            self.Controls['FoMax'] = np.sqrt(Fo2max)
+        elif Type ==  'Fo':
+            self.Controls['FoMax'] = Fo2max
+        else:
+            print "Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
+            raise Exception,"Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
+
+######################################################################
+class ImportPowderData(ImportBaseclass):
+    '''Defines a base class for the reading of files with powder data
+    '''
+    # define some default instrument parameter files
+    # just like GSAS, sigh
+    defaultIparm_lbl = []
+    defaultIparms = []
+    defaultIparm_lbl.append('CuKa lab data')
+    defaultIparms.append({
+        'INS   HTYPE ':'PXC ',
+        'INS  1 ICONS':'  1.540500  1.544300       0.0         0       0.7    0       0.5   ',
+        'INS  1PRCF1 ':'    3    8      0.01                                                ',
+        'INS  1PRCF11':'   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        ',
+        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        ',
+        })
+    defaultIparm_lbl.append('0.6A synch')
+    defaultIparms.append({
+        'INS   HTYPE ':'PXC ',
+        'INS  1 ICONS':'  0.600000  0.000000       0.0         0      0.99    0       0.5   ',
+        'INS  1PRCF1 ':'    3    8      0.01                                                ',
+        'INS  1PRCF11':'   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        ',
+        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        ',
+        })
+    defaultIparm_lbl.append('1.5A CW neutron data')
+    defaultIparms.append({
+        'INS   HTYPE ':'PNC',
+        'INS  1 ICONS':'   1.54020   0.00000   0.04000         0',
+        'INS  1PRCF1 ':'    3    8     0.005',
+        'INS  1PRCF11':'   0.239700E+03  -0.298200E+03   0.180800E+03   0.000000E+00',
+        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.400000E-01   0.300000E-01',
+        })
+    defaultIparm_lbl.append('10m TOF backscattering bank')
+    defaultIparms.append({
+        'INS   HTYPE ':'PNT',
+        'INS  1 ICONS':'   5000.00      0.00      0.00',
+        'INS  1BNKPAR':'    1.0000   150.000',       
+        'INS  1PRCF1 ':'    1    8   0.01000',
+        'INS  1PRCF11':'   0.000000E+00   5.000000E+00   3.000000E-02   1.000000E-03',
+        'INS  1PRCF12':'   0.000000E+00   4.000000E+01   0.000000E+00   0.000000E+00',        
+        })
+    defaultIparm_lbl.append('10m TOF 90deg bank')
+    defaultIparms.append({
+        'INS   HTYPE ':'PNT',
+        'INS  1 ICONS':'   3500.00      0.00      0.00',
+        'INS  1BNKPAR':'    1.0000    90.000',       
+        'INS  1PRCF1 ':'    1    8   0.01000',
+        'INS  1PRCF11':'   0.000000E+00   5.000000E+00   3.000000E-02   4.000000E-03',
+        'INS  1PRCF12':'   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00',        
+        })
+    defaultIparm_lbl.append('63m POWGEN 90deg bank')
+    defaultIparms.append({
+        'INS   HTYPE ':'PNT',
+        'INS  1 ICONS':'  22585.80      0.00      0.00',
+        'INS  1BNKPAR':'    1.0000    90.000',       
+        'INS  1PRCF1 ':'    1    8   0.01000',
+        'INS  1PRCF11':'   0.000000E+00   1.000000E+00   3.000000E-02   4.000000E-03',
+        'INS  1PRCF12':'   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00',        
+        })
+    def __init__(self,
+                 formatName,
+                 longFormatName=None,
+                 extensionlist=[],
+                 strictExtension=False,
+                 ):
+        ImportBaseclass.__init__(self,formatName,
+                                            longFormatName,
+                                            extensionlist,
+                                            strictExtension)
+        self.powderentry = ['',None,None] #  (filename,Pos,Bank)
+        self.powderdata = [] # Powder dataset
+        '''A powder data set is a list with items [x,y,w,yc,yb,yd]:
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.array(yc), # calc. intensities (zero)
+                np.array(yb), # calc. background (zero)
+                np.array(yd), # obs-calc profiles
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.Sample = G2pdG.SetDefaultSample()
+        self.GSAS = None     # used in TOF
+        self.clockWd = None  # used in TOF
+        self.repeat_instparm = True # Should a parm file be
+        #                             used for multiple histograms? 
+        self.instparm = None # name hint 
+        self.instfile = '' # full path name to instrument parameter file
+        self.instbank = '' # inst parm bank number
+        self.instmsg = ''  # a label that gets printed to show
+                           # where instrument parameters are from
+        self.numbanks = 1
+        self.instdict = {} # place items here that will be transferred to the instrument parameters
 ######################################################################
 class ExportBaseclass(object):
     '''Defines a base class for the exporting of GSAS-II results
@@ -1826,186 +2002,24 @@ class ExportBaseclass(object):
         finally:
             dlg.Destroy()
         return filename
-        
-                    
-######################################################################
-class ImportStructFactor(ImportBaseclass):
-    '''Defines a base class for the reading of files with tables
-    of structure factors
 
-    Note that the default controls are stored in self.Controls and the
-    default instrument parameters are stored in self.Parameters.
-    These can be changed, but any changes will be the defaults for all
-    subsequent uses of the :class:`ImportStructFactor` derived classes
-    until :meth:`InitControls` and :meth:`InitParameters` are
-    called. Probably better to use :meth:`UpdateControls` and
-    :meth:`UpdateControls` (adding new args if needed) to change
-    values.
-    '''
-    def __init__(self,formatName,longFormatName=None,extensionlist=[],
-        strictExtension=False,):
-        ImportBaseclass.__init__(self,formatName,longFormatName,
-            extensionlist,strictExtension)
-
-        # define contents of Structure Factor entry
-        self.InitParameters()
-        self.InitControls()
-        self.RefList = []
-        
-    def InitControls(self):
-        'initialize the controls structure'
-        self.Controls = { # dictionary with plotting controls
-            'Type' : 'Fosq',
-            'ifFc' : False,    # 
-            'HKLmax' : [None,None,None],
-            'HKLmin' : [None,None,None],
-            'FoMax' : None,   # maximum observed structure factor as Fo
-            'Zone' : '001',
-            'Layer' : 0,
-            'Scale' : 1.0,
-            'log-lin' : 'lin',
-            }
-
-    def InitParameters(self):
-        'initialize the instrument parameters structure'
-        Lambda = 0.70926
-        HistType = 'SXC'
-        self.Parameters = [{'Type':[HistType,HistType], # create the structure
-                            'Lam':[Lambda,Lambda]
-                            }, {}]
-
-    def UpdateParameters(self,Type=None,Wave=None):
-        'Revise the instrument parameters'
-        if Type is not None:
-            self.Parameters[0]['Type'] = [Type,Type]
-        if Wave is not None:
-            self.Parameters[0]['Lam'] = [Wave,Wave]
-            
-    def UpdateControls(self,Type='Fosq',FcalcPresent=False):
-        '''Scan through the reflections to update the Controls dictionary
+    def OpenFile(self,fil=None):
+        '''Open the output file
         '''
-        self.Controls['Type'] = Type
-        self.Controls['ifFc'] = FcalcPresent
-        HKLmax = [None,None,None]
-        HKLmin = [None,None,None]
-        Fo2max = None
-        for refl in self.RefList:
-            HKL = refl[:3]
-            if Fo2max is None:
-                Fo2max = refl[8]
-            else:
-                Fo2max = max(Fo2max,refl[8])
-            for i,hkl in enumerate(HKL):
-                if HKLmax[i] is None:
-                    HKLmax[i] = hkl
-                    HKLmin[i] = hkl
-                else:
-                    HKLmax[i] = max(HKLmax[i],hkl)
-                    HKLmin[i] = min(HKLmin[i],hkl)
-        self.Controls['HKLmax'] = HKLmax
-        self.Controls['HKLmin'] = HKLmin
-        if Type ==  'Fosq':
-            self.Controls['FoMax'] = np.sqrt(Fo2max)
-        elif Type ==  'Fo':
-            self.Controls['FoMax'] = Fo2max
-        else:
-            print "Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
-            raise Exception,"Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
+        if not fil:
+            fil = self.filename
+        self.fp = open(fil,'w')
+        return self.fp
+    def Write(self,line):
+        self.fp.write(line+'\n')
+    def CloseFile(self,fp=None):
+        if fp is None:
+            fp = self.fp
+            self.fp = None
+        fp.close()
+    
+######################################################################
 
-######################################################################
-class ImportPowderData(ImportBaseclass):
-    '''Defines a base class for the reading of files with powder data
-    '''
-    # define some default instrument parameter files
-    # just like GSAS, sigh
-    defaultIparm_lbl = []
-    defaultIparms = []
-    defaultIparm_lbl.append('CuKa lab data')
-    defaultIparms.append({
-        'INS   HTYPE ':'PXC ',
-        'INS  1 ICONS':'  1.540500  1.544300       0.0         0       0.7    0       0.5   ',
-        'INS  1PRCF1 ':'    3    8      0.01                                                ',
-        'INS  1PRCF11':'   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        ',
-        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        ',
-        })
-    defaultIparm_lbl.append('0.6A synch')
-    defaultIparms.append({
-        'INS   HTYPE ':'PXC ',
-        'INS  1 ICONS':'  0.600000  0.000000       0.0         0      0.99    0       0.5   ',
-        'INS  1PRCF1 ':'    3    8      0.01                                                ',
-        'INS  1PRCF11':'   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        ',
-        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        ',
-        })
-    defaultIparm_lbl.append('1.5A CW neutron data')
-    defaultIparms.append({
-        'INS   HTYPE ':'PNC',
-        'INS  1 ICONS':'   1.54020   0.00000   0.04000         0',
-        'INS  1PRCF1 ':'    3    8     0.005',
-        'INS  1PRCF11':'   0.239700E+03  -0.298200E+03   0.180800E+03   0.000000E+00',
-        'INS  1PRCF12':'   0.000000E+00   0.000000E+00   0.400000E-01   0.300000E-01',
-        })
-    defaultIparm_lbl.append('10m TOF backscattering bank')
-    defaultIparms.append({
-        'INS   HTYPE ':'PNT',
-        'INS  1 ICONS':'   5000.00      0.00      0.00',
-        'INS  1BNKPAR':'    1.0000   150.000',       
-        'INS  1PRCF1 ':'    1    8   0.01000',
-        'INS  1PRCF11':'   0.000000E+00   5.000000E+00   3.000000E-02   1.000000E-03',
-        'INS  1PRCF12':'   0.000000E+00   4.000000E+01   0.000000E+00   0.000000E+00',        
-        })
-    defaultIparm_lbl.append('10m TOF 90deg bank')
-    defaultIparms.append({
-        'INS   HTYPE ':'PNT',
-        'INS  1 ICONS':'   3500.00      0.00      0.00',
-        'INS  1BNKPAR':'    1.0000    90.000',       
-        'INS  1PRCF1 ':'    1    8   0.01000',
-        'INS  1PRCF11':'   0.000000E+00   5.000000E+00   3.000000E-02   4.000000E-03',
-        'INS  1PRCF12':'   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00',        
-        })
-    defaultIparm_lbl.append('63m POWGEN 90deg bank')
-    defaultIparms.append({
-        'INS   HTYPE ':'PNT',
-        'INS  1 ICONS':'  22585.80      0.00      0.00',
-        'INS  1BNKPAR':'    1.0000    90.000',       
-        'INS  1PRCF1 ':'    1    8   0.01000',
-        'INS  1PRCF11':'   0.000000E+00   1.000000E+00   3.000000E-02   4.000000E-03',
-        'INS  1PRCF12':'   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00',        
-        })
-    def __init__(self,
-                 formatName,
-                 longFormatName=None,
-                 extensionlist=[],
-                 strictExtension=False,
-                 ):
-        ImportBaseclass.__init__(self,formatName,
-                                            longFormatName,
-                                            extensionlist,
-                                            strictExtension)
-        self.powderentry = ['',None,None] #  (filename,Pos,Bank)
-        self.powderdata = [] # Powder dataset
-        '''A powder data set is a list with items [x,y,w,yc,yb,yd]:
-                np.array(x), # x-axis values
-                np.array(y), # powder pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.array(yc), # calc. intensities (zero)
-                np.array(yb), # calc. background (zero)
-                np.array(yd), # obs-calc profiles
-        '''                            
-        self.comments = []
-        self.idstring = ''
-        self.Sample = G2pdG.SetDefaultSample()
-        self.GSAS = None     # used in TOF
-        self.clockWd = None  # used in TOF
-        self.repeat_instparm = True # Should a parm file be
-        #                             used for multiple histograms? 
-        self.instparm = None # name hint 
-        self.instfile = '' # full path name to instrument parameter file
-        self.instbank = '' # inst parm bank number
-        self.instmsg = ''  # a label that gets printed to show
-                           # where instrument parameters are from
-        self.numbanks = 1
-        self.instdict = {} # place items here that will be transferred to the instrument parameters
-######################################################################
 def ReadCIF(URLorFile):
     '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW
     (from James Hester).

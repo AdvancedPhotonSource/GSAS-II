@@ -708,7 +708,6 @@ def PlotPatterns(G2frame,newPlot=False):
                 ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
                     item,'Instrument Parameters'))[0])
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
-    Ymax = 1.0
     lenX = 0
     if PickId:
         if G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
@@ -720,9 +719,13 @@ def PlotPatterns(G2frame,newPlot=False):
                 HKL = np.array(HKL)
         else:
             HKL = np.array(G2frame.HKL)
+    Ymax = None
     for Pattern in PlotList:
         xye = Pattern[1]
+        if xye is None: continue
+        if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
+    if Ymax is None: return # nothing to plot
     offset = G2frame.Offset[0]*Ymax/100.0
     if G2frame.logPlot:
         Title = 'log('+Title+')'
@@ -755,6 +758,7 @@ def PlotPatterns(G2frame,newPlot=False):
             difC = Parms['difC'][1]
         ifpicked = False
         LimitId = 0
+        if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = ma.array(ma.getdata(Pattern[1]))
         if PickId:
             ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)

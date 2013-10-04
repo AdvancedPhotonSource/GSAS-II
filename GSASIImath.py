@@ -2421,7 +2421,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q):
     outlist = []
     for n in range(iCyc):
-        result = mcsaSearch(data,copy.copy(RBdata),reflType,reflData,covData,None)
+        result = mcsaSearch(data,RBdata,reflType,reflData,covData,None)
         outlist.append(result[0])
         print ' MC/SA residual: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1])
     out_q.put(outlist)

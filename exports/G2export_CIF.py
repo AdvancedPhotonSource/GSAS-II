@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#G2cif
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -50,21 +49,21 @@ class ExportCIF(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'full CIF',
+            formatName = 'Full CIF',
             extension='.cif',
             longFormatName = 'Export project as CIF'
             )
+        self.exporttype = ['project']
         self.author = ''
         self.mode = 'full'
-        self.exporttype = 'project'
 
-    def export(self):
+    def Exporter(self,event=None):
         '''Export a CIF. Export can be full or simple (as set by self.mode).
         "simple" skips data, distances & angles, etc. and can only include
         a single phase while "full" is intended for for publication submission.
         '''
-    
-# ===== define functions for export method =======================================
+
+#***** define functions for export method =======================================
         def openCIF(filnam):
             'opens the output file'
             if DEBUG:
@@ -510,9 +509,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             for i,at in enumerate(Atoms):
                 if phasedict['General']['Type'] == 'macromolecular':
                     label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
+                    s = PutInCol(MakeUniqueLabel(label,self.labellist),15) # label
                 else:
-                    label = at[ct-1]
-                s = PutInCol(MakeUniqueLabel(label,self.labellist),6) # label
+                    s = PutInCol(MakeUniqueLabel(at[ct-1],self.labellist),6) # label
                 fval = self.parmDict.get(fpfx+str(i),at[cfrac])
                 if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
                 s += PutInCol(FmtAtomType(at[ct]),4) # type
@@ -856,7 +855,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             if phasedict['General']['Type'] in ['nuclear','macromolecular']:        #this needs macromolecular variant, etc!
                 WriteAtomsNuclear(phasenam)
             else:
-                raise Exception,"no export for mm coordinates implemented"
+                raise Exception,"no export for "+str(phasedict['General']['Type'])+" coordinates implemented"
             # report cell contents
             WriteComposition(phasenam)
             if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
@@ -1262,6 +1261,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.cifdefs.DestroyChildren()
             self.cifdefs.SetTitle('Edit CIF settings')
             vbox = wx.BoxSizer(wx.VERTICAL)
+            vbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,'Creating file '+str(self.filename)))
             but = wx.Button(self.cifdefs, wx.ID_ANY,'Edit CIF Author')
             but.Bind(wx.EVT_BUTTON,EditAuthor)
             vbox.Add(but,0,wx.ALIGN_CENTER,3)
@@ -1290,17 +1290,17 @@ class ExportCIF(G2IO.ExportBaseclass):
                                       phasenam),
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
                 cpnl.SetSizer(cbox)
-                but = wx.Button(cpnl, wx.ID_ANY,'Edit distance/angle ranges')
-                #cbox.Add(but,0,wx.ALIGN_CENTER,3)
+                if phasedict['General']['Type'] == 'nuclear':  
+                    but = wx.Button(cpnl, wx.ID_ANY,'Edit distance/angle ranges')
+                    cbox.Add(but,0,wx.ALIGN_LEFT,0)
+                    cbox.Add((-1,2))
+                    but.phasedict = self.Phases[phasenam]  # set a pointer to current phase info
+                    but.Bind(wx.EVT_BUTTON,EditRanges)     # phase bond/angle ranges
+                    but = wx.Button(cpnl, wx.ID_ANY,'Set distance/angle publication flags')
+                    but.phase = phasenam  # set a pointer to current phase info     
+                    but.Bind(wx.EVT_BUTTON,SelectDisAglFlags)     # phase bond/angle ranges
+                    cbox.Add(but,0,wx.ALIGN_LEFT,0)
                 cbox.Add((-1,2))
-                cbox.Add(but,0,wx.ALIGN_LEFT,0)
-                but.phasedict = self.Phases[phasenam]  # set a pointer to current phase info     
-                but.Bind(wx.EVT_BUTTON,EditRanges)     # phase bond/angle ranges
-                but = wx.Button(cpnl, wx.ID_ANY,'Set distance/angle publication flags')
-                but.phase = phasenam  # set a pointer to current phase info     
-                but.Bind(wx.EVT_BUTTON,SelectDisAglFlags)     # phase bond/angle ranges
-                cbox.Add((-1,2))
-                cbox.Add(but,0,wx.ALIGN_LEFT,0)
             for i in sorted(self.powderDict.keys()):
                 G2gd.HorizontalLine(cbox,cpnl)          
                 hist = self.powderDict[i]
@@ -1511,7 +1511,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             dlg.CenterOnParent()
             dlg.ShowModal()
             
-# ===== end of functions for export method =======================================
+#***** end of functions for export method =======================================
 #=================================================================================
 
         # the export process starts here
@@ -1519,6 +1519,9 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
+        if self.SetupExport(event,                         # set export parameters
+                            AskFile=(self.mode=='simple')
+                            ): return 
 
         # Someday: get restraint & constraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
@@ -1528,20 +1531,11 @@ class ExportCIF(G2IO.ExportBaseclass):
         #        print j
 
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
-        # index powder and single crystal histograms
-        self.powderDict = {}
-        self.xtalDict = {}
-        for hist in self.Histograms:
-            i = self.Histograms[hist]['hId']
-            if hist.startswith("PWDR"): 
-                self.powderDict[i] = hist
-            elif hist.startswith("HKLF"): 
-                self.xtalDict[i] = hist
         # is there anything to export?
         if len(self.Phases) == len(self.powderDict) == len(self.xtalDict) == 0:
            self.G2frame.ErrorDialog(
                'Empty project',
-               'Project does not contain interconnected data & phase(s)')
+               'Project does not contain any data or phases. Are they interconnected?')
            return
         # get the project file name
         self.CIFname = os.path.splitext(
@@ -1639,11 +1633,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 elif hist.startswith("HKLF"): 
                     instnam = histblk["Instrument Parameters"][0]['InstrName']
                     break # ignore all but 1st data histogram
-        if self.quickmode:
-            fil = self.askSaveFile()
-        else:
-            fil = self.defSaveFile()
-        if not fil: return
         if not self.quickmode: # give the user a chance to edit all defaults
             self.cifdefs = wx.Dialog(
                 self.G2frame,
@@ -1657,9 +1646,19 @@ class ExportCIF(G2IO.ExportBaseclass):
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================
-        print('Writing CIF output to file '+fil+"...")
-        openCIF(fil)
-        if oneblock:
+        print('Writing CIF output to file '+str(self.filename)+"...")
+        openCIF(self.filename)
+        if self.currentExportType == 'single' or self.currentExportType == 'powder':
+            hist = self.histnam
+            self.CIFname = self.histnam[5:40].replace(' ','')
+            WriteCIFitem('data_'+self.CIFname)
+            if hist.startswith("PWDR"):
+                WritePowderData(hist)
+            elif hist.startswith("HKLF"):
+                WriteSingleXtalData(hist)
+            else:
+                print "should not happen"
+        elif oneblock:
             WriteCIFitem('data_'+self.CIFname)
             if phasenam is None: # if not already selected, select the first phase (should be one) 
                 phasenam = self.Phases.keys()[0]
@@ -1748,10 +1747,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                     histblk = self.Histograms[hist]
                     instnam = histblk["Sample Parameters"]['InstrName']
                     instnam = instnam.replace(' ','')
-                    i = histblk['hId']
+                    j = histblk['hId']
                     datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
                                              str(self.shortauthorname) + "|" +
-                                             instnam + "_hist_"+str(i))
+                                             instnam + "_hist_"+str(j))
                     WriteCIFitem(loopprefix,datablockidDict[hist])
                 for i in sorted(self.xtalDict.keys()):
                     hist = self.xtalDict[i]
@@ -1836,22 +1835,43 @@ class ExportCIF(G2IO.ExportBaseclass):
         print("...export completed")
         # end of CIF export
 
-class ExportSimpleCIF(ExportCIF):
+class ExportPhaseCIF(ExportCIF):
     '''Used to create a simple CIF of at most one phase. Uses exact same code as
-    :class:`ExportCIF` except that `self.mode` is set to simple.
+    :class:`ExportCIF` except that `self.mode` is set to "simple". Shows up in menu as
+    Quick CIF
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
         G2IO.ExportBaseclass.__init__(self,
             G2frame=G2frame,
-            formatName = 'full CIF',
+            formatName = 'Quick CIF',
             extension='.cif',
-            longFormatName = 'Export project as CIF'
+            longFormatName = 'Export one phase in CIF'
             )
+        self.exporttype = ['phase']
+        # CIF-specific items
         self.author = ''
         self.mode = 'simple'
-        self.exporttype = 'phase'
+
+class ExportDataCIF(ExportCIF):
+    '''Used to create a simple CIF containing diffraction data only. Uses exact same code as
+    :class:`ExportCIF` except that `self.mode` is set to "simple" and `self.currentExportType`
+    is set to "single" or "powder" in `self.SetupExport`. Shows up in menus as Data-only CIF.
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        G2IO.ExportBaseclass.__init__(self,
+            G2frame=G2frame,
+            formatName = 'Data-only CIF',
+            extension='.cif',
+            longFormatName = 'Export data as CIF'
+            )
+        self.exporttype = ['single','powder']
+        # CIF-specific items
+        self.author = ''
+        self.mode = 'simple'
 
 #===============================================================================
 # misc CIF utilities

@@ -1578,7 +1578,103 @@ class ExportBaseclass(object):
         self.OverallParms = {}
         self.Phases = {}
         self.Histograms = {}
+        self.powderDict = {}
+        self.xtalDict = {}
+        # updated in SetupExport, when used
+        self.currentExportType = None # type of export that has been requested
+        self.phasenam = None # name of selected phase or a list of phases
+        self.histnam = None # name of selected histogram or a list of histograms
+        self.filename = None # name of file to be written
+        
+        # items that should be defined in a subclass of this class
+        self.exporttype = []  # defines the type(s) of exports that the class can handle.
+        # The following types are defined: 'project', "phase", "powder", "single"
+        self.multiple = False # set as True if the class can export multiple phase or histograms
+        # ignored for "project" exports
 
+    def SetupExport(self,event,AskFile=True):
+        '''Determines the type of menu that called the Exporter. Selects histograms
+        or phases when needed. 
+
+        :param bool AskFile: if AskFile is True (default)
+        '''
+        if event:
+            self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
+        if AskFile:
+            self.filename = self.askSaveFile()
+        else:
+            self.filename = self.defaultSaveFile()
+        if not self.filename: return True
+        
+        if self.currentExportType == 'phase':
+            if len(self.Phases) == 0:
+                self.G2frame.ErrorDialog(
+                    'Empty project',
+                    'Project does not contain any data or phases or they are not interconnected.')
+                return True
+            elif self.multiple: 
+                if len(self.Phases) == 1:
+                    self.phasenam = self.Phases.keys()
+                else:
+                    choices = sorted(self.Phases.keys())
+                    phasenum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                    if phasenum is None: return True
+                    self.phasenam = [choices[i] for i in phasenum]
+            else:
+                if len(self.Phases) == 1:
+                    self.phasenam = self.Phases.keys()[0]
+                else:
+                    choices = sorted(self.Phases.keys())
+                    phasenum = G2gd.ItemSelector(choices,self.G2frame)
+                    if phasenum is None: return True
+                    self.phasenam = choices[phasenum]
+        elif self.currentExportType == 'single':
+            if len(self.xtalDict) == 0:
+                self.G2frame.ErrorDialog(
+                    'Empty project',
+                    'Project does not contain any single crystal data or data is not connected to a phase.')
+                return True
+            elif self.multiple:
+                if len(self.xtalDict) == 1:
+                    self.histnam = self.xtalDict.values()
+                else:
+                    choices = sorted(self.xtalDict.values())
+                    hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                    if hnum is None: return True
+                    self.histnam = [choices[i] for i in hnum]
+            else:
+                if len(self.xtalDict) == 1:
+                    self.histnam = self.xtalDict.values()[0]
+                else:
+                    choices = sorted(self.xtalDict.values())
+                    hnum = G2gd.ItemSelector(choices,self.G2frame)
+                    if hnum is None: return True
+                    self.histnam = choices[hnum]
+        elif self.currentExportType == 'powder':
+            if len(self.powderDict) == 0:
+                self.G2frame.ErrorDialog(
+                    'Empty project',
+                    'Project does not contain any powder data or data is not connected to a phase.')
+                return True
+            elif self.multiple:
+                if len(self.powderDict) == 1:
+                    self.histnam = self.powderDict.values()
+                else:
+                    choices = sorted(self.powderDict.values())
+                    hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                    if hnum is None: return True
+                    self.histnam = [choices[i] for i in hnum]
+            else:
+                if len(self.powderDict) == 1:
+                    self.histnam = self.powderDict.values()[0]
+                else:
+                    choices = sorted(self.powderDict.values())
+                    hnum = G2gd.ItemSelector(choices,self.G2frame)
+                    if hnum is None: return True
+                    self.histnam = choices[hnum]
+            print 'selected histograms = ',self.histnam
+            print 'selected histograms = ',self.histnam
+            return True
     def loadParmDict(self):
         '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
         refined values to those from the last cycle and set the uncertainties for the
@@ -1655,7 +1751,8 @@ class ExportBaseclass(object):
 
     def loadTree(self):
         '''Load the contents of the data tree into a set of dicts
-        (self.OverallParms, self.Phases and self.Histogram)
+        (self.OverallParms, self.Phases and self.Histogram as well as self.powderDict
+        & self.xtalDict)
         
         * The childrenless data tree items are overall parameters/controls for the
           entire project and are placed in self.OverallParms
@@ -1673,6 +1770,15 @@ class ExportBaseclass(object):
             if not item2: 
                 self.OverallParms[name] = self.G2frame.PatternTree.GetItemPyData(item)
             item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
+        # index powder and single crystal histograms
+        self.powderDict = {}
+        self.xtalDict = {}
+        for hist in self.Histograms:
+            i = self.Histograms[hist]['hId']
+            if hist.startswith("PWDR"): 
+                self.powderDict[i] = hist
+            elif hist.startswith("HKLF"): 
+                self.xtalDict[i] = hist
 
     def dumpTree(self,mode='type'):
         '''Print out information on the data tree dicts loaded in loadTree
@@ -1693,7 +1799,7 @@ class ExportBaseclass(object):
             for key2 in self.Histograms[key1]:
                 print '      ',key2,Show(self.Histograms[key1][key2])
 
-    def defSaveFile(self):
+    def defaultSaveFile(self):
         return os.path.abspath(
             os.path.splitext(self.G2frame.GSASprojectfile
                              )[0]+self.extension)

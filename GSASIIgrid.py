@@ -1276,7 +1276,7 @@ class SingleStringDialog(wx.Dialog):
 def ItemSelector(ChoiceList, ParentFrame=None,
                  title='Select an item',
                  size=None, header='Item Selector',
-                 useCancel=True):
+                 useCancel=True,multiple=False):
         ''' Provide a wx dialog to select a single item from list of choices
 
         :param list ChoiceList: a list of choices where one will be selected
@@ -1285,20 +1285,33 @@ def ItemSelector(ChoiceList, ParentFrame=None,
         :param wx.Size size: Size for dialog to be created (default None -- size as needed)
         :param str header: Title to place on window frame (default 'Item Selector')
         :param bool useCancel: If True (default) both the OK and Cancel buttons are offered
+        :param bool multiple: If True then multiple items can be selected (default False)
 
-        :returns: the selection index or None
+        :returns: the selection index or None or a selection list if multiple is true
         '''
-        if useCancel:
-            dlg = wx.SingleChoiceDialog(
-                ParentFrame,title, header, ChoiceList)
+        if multiple:
+            if useCancel:
+                dlg = wx.MultiChoiceDialog(
+                    ParentFrame,title, header, ChoiceList)
+            else:
+                dlg = wx.MultiChoiceDialog(
+                    ParentFrame,title, header, ChoiceList,
+                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+            pass
         else:
-            dlg = wx.SingleChoiceDialog(
-                ParentFrame,title, header,ChoiceList,
-                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+            if useCancel:
+                dlg = wx.SingleChoiceDialog(
+                    ParentFrame,title, header, ChoiceList)
+            else:
+                dlg = wx.SingleChoiceDialog(
+                    ParentFrame,title, header,ChoiceList,
+                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
         if size: dlg.SetSize(size)
         if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            return sel
+            if multiple:
+                return dlg.GetSelections()
+            else:
+                return dlg.GetSelection()
         else:
             return None
         dlg.Destroy()

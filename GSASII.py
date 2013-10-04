@@ -1011,56 +1011,88 @@ class GSASII(wx.Frame):
         return # success
 
     def _init_Exports(self,menu):
-        '''This is a place holder for when exports are handled in a manner similar to imports
+        '''Find exporter routines and add them into menus
         '''
-#        submenu = wx.Menu()
-#        item = menu.AppendMenu(
-#            wx.ID_ANY, 'entire project',
-#            submenu, help='Export entire project')
+        # set up the top-level menus
+        projectmenu = wx.Menu()
+        item = menu.AppendMenu(
+            wx.ID_ANY, 'Entire project as',
+            projectmenu, help='Export entire project')
 
-        # for now hard-code CIF testing here
-        item = menu.Append(
-            wx.ID_ANY,
-            help='full CIF file includes powder/reflection data',
-            kind=wx.ITEM_NORMAL,
-            text='full CIF file')
-        self.Bind(wx.EVT_MENU, self.OnTestCIF, id=item.GetId())
-        item = menu.Append(
-            wx.ID_ANY,
-            help='quick CIF file with no data, no distance/angle table',
-            kind=wx.ITEM_NORMAL,
-            text='quick CIF file')
-        self.Bind(wx.EVT_MENU, self.OnTestCIF, id=item.GetId())
+        phasemenu = wx.Menu()
+        item = menu.AppendMenu(
+            wx.ID_ANY, 'Phase as',
+            phasemenu, help='Export phase or sometimes phases')
 
-    def OnTestCIF(self,event):
-        # hard-code CIF testing here
-        
-        # get the menu command on Windows and Linux
-        menu = self.ExportMenu.FindItemById(event.GetId())
-        mode = 'full'
-        if menu:
-            if 'quick' in menu.GetLabel():
-                mode = 'simple'
-        else: # this works on the Mac
-            try: 
-                if 'quick' in event.EventObject.GetLabelText(event.Id):
-                    mode = 'simple'
-            except:
+        powdermenu = wx.Menu()
+        item = menu.AppendMenu(
+            wx.ID_ANY, 'Powder data as',
+            powdermenu, help='Export powder diffraction histogram(s)')
+
+        singlemenu = wx.Menu()
+        item = menu.AppendMenu(
+            wx.ID_ANY, 'Single crystal data as',
+            singlemenu, help='Export single crystal histogram(s)')
+
+        # find all the exporter files
+        pathlist = sys.path
+        filelist = []
+        for path in pathlist:
+            for filename in glob.iglob(os.path.join(
+                path,
+                "G2export*.py")):
+                filelist.append(filename)    
+        filelist = sorted(list(set(filelist))) # remove duplicates
+        exporterlist = []
+        # go through the routines and import them, saving objects that
+        # have export routines (method Exporter)
+        for filename in filelist:
+            path,rootname = os.path.split(filename)
+            pkg = os.path.splitext(rootname)[0]
+            try:
+                fp = None
+                fp, fppath,desc = imp.find_module(pkg,[path,])
+                pkg = imp.load_module(pkg,fp,fppath,desc)
+                for clss in inspect.getmembers(pkg): # find classes defined in package
+                    if clss[0].startswith('_'): continue
+                    if inspect.isclass(clss[1]):
+                        # check if we have the required methods
+                        for m in 'Exporter','loadParmDict':
+                            if not hasattr(clss[1],m): break
+                            if not callable(getattr(clss[1],m)): break
+                        else:
+                            exporter = clss[1](self) # create an export instance
+                            exporterlist.append(exporter)
+            except AttributeError:
+                print 'Import_'+errprefix+': Attribute Error'+str(filename)
                 pass
-        #path2GSAS2 = os.path.join(
-        #    os.path.dirname(os.path.realpath(__file__)), # location of this file
-        #    'exports')
-        #if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)
-        #reload(G2IO)
-        import G2cif
-        reload(G2cif)
-        exp = G2cif.ExportCIF(self)
-        sexp = G2cif.ExportSimpleCIF(self)
-        if mode == 'full':
-            exp.export()
-        else:
-            sexp.export()
-
+            except ImportError:
+                print 'Import_'+errprefix+': Error importing file'+str(filename)
+                pass
+            if fp: fp.close()
+        # Add submenu item(s) for each Exporter by its self-declared type (can be more than one)
+        for obj in exporterlist:
+            #print 'exporter',obj
+            for typ in obj.exporttype:
+                if typ == "project":
+                    submenu = projectmenu
+                elif typ == "phase":
+                    submenu = phasemenu
+                elif typ == "powder":
+                    submenu = powdermenu
+                elif typ == "single":
+                    submenu = singlemenu
+                else:
+                    print("Error, unknown type in "+str(obj))
+                    break
+                item = submenu.Append(
+                    wx.ID_ANY,
+                    help=obj.longFormatName,
+                    kind=wx.ITEM_NORMAL,
+                    text=obj.formatName)
+                self.Bind(wx.EVT_MENU, obj.Exporter, id=item.GetId())
+                self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
+            
     def _Add_ExportMenuItems(self,parent):
         item = parent.Append(
             help='Select PWDR item to enable',id=wx.ID_ANY,
@@ -1185,6 +1217,7 @@ class GSASII(wx.Frame):
         self.dataDisplay = None
         
     def __init__(self, parent):
+        self.ExportLookup = {}
         self._init_ctrls(parent)
         self.Image = wx.Image(
             os.path.join(GSASIIpath.path2GSAS2,'gsas2.ico'),

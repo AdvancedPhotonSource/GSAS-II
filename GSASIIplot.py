@@ -722,7 +722,7 @@ def PlotPatterns(G2frame,newPlot=False):
     Ymax = None
     for Pattern in PlotList:
         xye = Pattern[1]
-        if xye is None: continue
+        if xye[1] is None: continue
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
     if Ymax is None: return # nothing to plot

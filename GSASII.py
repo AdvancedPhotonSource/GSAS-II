@@ -585,6 +585,7 @@ class GSASII(wx.Frame):
             help='Import powder data, use file to try to determine format',
             kind=wx.ITEM_NORMAL,text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
+        submenu.AppendSeparator()
         item = submenu.Append(wx.ID_ANY,
             help='Create a powder data set entry that will be simulated',
             kind=wx.ITEM_NORMAL,text='Simulate a dataset')
@@ -1015,113 +1016,118 @@ class GSASII(wx.Frame):
         return # success
 
     def OnDummyPowder(self,event):
-        '''Called in response to an Import/Powder Data/... menu item
-        to read a powder diffraction data set. 
-        dict self.ImportMenuId is used to look up the specific
-        reader item associated with the menu item, which will be
-        None for the last menu item, which is the "guess" option
-        where all appropriate formats will be tried.
+        '''Called in response to Import/Powder Data/Simulate menu item
+        to create a Dummy powder diffraction data set. 
 
-        Also reads an instrument parameter file for each dataset.
+        Reads an instrument parameter file and then gets input from the user
         '''
-        print 'Start Dummy'
         rd = G2IO.ImportPowderData(
             extensionlist=tuple(),
             strictExtension=False,
             formatName = 'Simulate dataset',
             longFormatName = 'Compute a simulated pattern')
-        # rd.powderdata = [
-        #     np.array(x), # x-axis values
-        #     np.array(y), # powder pattern intensities
-        #     np.array(w), # 1/sig(intensity)^2 values (weights)
-        #     np.zeros(N), # calc. intensities (zero)
-        #     np.zeros(N), # calc. background (zero)
-        #     np.zeros(N), # obs-calc profiles
-        #     ]
-        # rd.powderentry[0] = filename
+        rd.powderentry[0] = '' # no filename
         # #self.powderentry[1] = pos # bank offset (N/A here)
-        # rd.powderentry[2] = 1 # xye file only has one bank
-        # rd.idstring = ospath.basename(filename)
-        return
+        rd.powderentry[2] = 1 # only one bank
+        rd.comments.append('This is a dummy dataset for powder pattern simulation')
         self.CheckNotebook()
         Iparm = None
         lastIparmfile = ''
         lastdatafile = ''
+        self.zipfile = None
         # get instrument parameters for 
         Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
-
-        for rd in rdlist:
-            if rd.repeat_instparm: 
-                lastIparmfile = rd.instfile
-            lastdatafile = rd.powderentry[0]
-            print 'Read powder data '+str(rd.idstring)+ \
-                ' from file '+str(self.lastimport) + \
-                ' with parameters from '+str(rd.instmsg)
-            # data are read, now store them in the tree
-            Id = self.PatternTree.AppendItem(parent=self.root,
-                text='PWDR '+rd.idstring)
-            if 'T' in Iparm1['Type'][0]:
-                if not rd.clockWd and rd.GSAS:
-                    rd.powderdata[0] *= 100.        #put back the CW centideg correction
-                cw = np.diff(rd.powderdata[0])
-                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
-                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
-                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
-                if 'Itype' in Iparm2:
-                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
-                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
-                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
-                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
-                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
-                    var = 1./rd.powderdata[2][Ibeg:Ifin]
-                    var += WYI*rd.powderdata[1]**2
-                    var /= YI**2
-                    rd.powderdata[2] = 1./var
-                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
-                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
-                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
-            Tmin = min(rd.powderdata[0])
-            Tmax = max(rd.powderdata[0])
-            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':True},rd.powderdata])
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Comments'),
-                rd.comments)
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Limits'),
-                [(Tmin,Tmax),[Tmin,Tmax]])
-            self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Background'),
-                [['chebyschev',True,3,1.0,0.0,0.0],
-                 {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
-                [Iparm1,Iparm2])
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Sample Parameters'),
-                rd.Sample)
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Peak List')
-                ,[])
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Index Peak List'),
-                [])
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Unit Cells List'),
-                [])
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Reflection Lists'),
-                {})
-            self.PatternTree.Expand(Id)
+        if 'T' in Iparm1['Type'][0]:
+            print('TOF simulation not supported yet')
+            return False
+        else:
+            # need to get name, 2theta start, end, step
+            rd.idstring = ' CW'
+            if 'X' in Iparm1['Type'][0]:
+                rd.idstring = 'CW x-ray simulation'
+            else:
+                rd.idstring = 'CW neutron simulation'
+            # base initial range on wavelength
+            wave = Iparm1.get('Lam')
+            if wave:
+                wave = wave[0]
+            else:
+                wave = Iparm1.get('Lam1')
+                if wave:
+                    wave = wave[0]
+        N = 0
+        while (N < 3): # insist on a dataset with a few points
+            names = ('dataset name', 'start angle', 'end angle', 'step size')
+            if not wave or wave < 1.0:
+                inp = [rd.idstring, 10.,40.,0.005] # see names for what's what
+            else:
+                inp = [rd.idstring, 10.,80.,0.01] # see names for what's what
+            dlg = G2gd.ScrolledMultiEditor(
+                self,[inp] * len(inp),range(len(inp)),names,
+                header='Enter simulation name and range',
+                minvals=(None,0.001,0.001,0.0001),
+                maxvals=(None,180.,180.,.1),
+                sizevals=((225,-1),)
+                )
+            dlg.CenterOnParent()
+            if dlg.ShowModal() == wx.ID_OK:
+                if inp[1] > inp[2]:
+                    end,start,step = inp[1:]
+                else:                
+                    start,end,step = inp[1:]
+                step = abs(step)
+            else:
+                return False
+            x = np.arange(start,end+step,step)
+            N = len(x)
+        rd.powderdata = [
+            np.array(x), # x-axis values
+            None, # powder pattern intensities
+            None, # 1/sig(intensity)^2 values (weights)
+            np.zeros(N), # calc. intensities (zero)
+            np.zeros(N), # calc. background (zero)
+            np.zeros(N), # obs-calc profiles
+            ]
+        Tmin = min(rd.powderdata[0])
+        Tmax = max(rd.powderdata[0])
+        # data are read, now store them in the tree
+        Id = self.PatternTree.AppendItem(parent=self.root,
+                                         text='PWDR '+rd.idstring)            
+        self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':True},rd.powderdata])
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Comments'),
+            rd.comments)
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Limits'),
+            [(Tmin,Tmax),[Tmin,Tmax]])
+        self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Background'),
+            [['chebyschev',True,3,1.0,0.0,0.0],
+             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
+            [Iparm1,Iparm2])
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Sample Parameters'),
+            rd.Sample)
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Peak List')
+            ,[])
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Index Peak List'),
+            [])
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Unit Cells List'),
+            [])
+        self.PatternTree.SetItemPyData(
+            self.PatternTree.AppendItem(Id,text='Reflection Lists'),
+            {})
+        self.PatternTree.Expand(Id)
         self.PatternTree.SelectItem(Id)
+        print('Added simulation powder data '+str(rd.idstring)+ 
+              ' with parameters from '+str(rd.instmsg))
         return # success
-
-    def OnDummyPowder(self,event):
-        import testit
-        reload(testit)
-        testit.OnDummyPowder(self,event)
-        return
-
 
     def _init_Exports(self,menu):
         '''Find exporter routines and add them into menus

@@ -757,6 +757,12 @@ class ScrolledMultiEditor(wx.Dialog):
     :param bool CopyButton: if True adds a small button that copies the
       value for the current row to all fields below (default is False)
       
+    :param list minvals: optional list of minimum values for validation
+      of float or int values. Ignored if value is None.
+    :param list maxvals: optional list of maximum values for validation
+      of float or int values. Ignored if value is None.
+    :param list sizevals: optional list of wx.Size values for each input
+      widget. Ignored if value is None.
     :returns: the wx.Dialog created here. Use method .ShowModal() to display it.
     
     *Example for use of ScrolledMultiEditor:*
@@ -785,7 +791,8 @@ class ScrolledMultiEditor(wx.Dialog):
     
     def __init__(self,parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
-                 CopyButton=False):
+                 CopyButton=False,
+                 minvals=[],maxvals=[],sizevals=[]):
         if len(dictlst) != len(elemlst):
             raise Exception,"ScrolledMultiEditor error: len(dictlst) != len(elemlst) "+str(len(dictlst))+" != "+str(len(elemlst))
         wx.Dialog.__init__( # create dialog & sizer
@@ -822,6 +829,13 @@ class ScrolledMultiEditor(wx.Dialog):
                 subSizer.Add((-1,-1)) 
             else:
                 subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(prelbl[i])))
+            kargs = {}
+            if i < len(minvals):
+                if minvals[i] is not None: kargs['min']=minvals[i]
+            if i < len(maxvals):
+                if maxvals[i] is not None: kargs['max']=maxvals[i]
+            if i < len(sizevals):
+                if sizevals[i]: kargs['size']=sizevals[i]
             if CopyButton:
                 import wx.lib.colourselect as wscs
                 but = wscs.ColourSelect(label='v', # would like to use u'\u2193' or u'\u25BC' but not in WinXP
@@ -835,7 +849,8 @@ class ScrolledMultiEditor(wx.Dialog):
                 self.ButtonIndex[but] = i
                 subSizer.Add(but)
             # create the validated TextCrtl, store it and add it to the sizer
-            ctrl = ValidatedTxtCtrl(panel,d,k,OKcontrol=self.ControlOKButton)
+            ctrl = ValidatedTxtCtrl(panel,d,k,OKcontrol=self.ControlOKButton,
+                                    **kargs)
             self.ValidatedControlsList.append(ctrl)
             subSizer.Add(ctrl)
             if i >= len(postlbl): # label after TextCtrl, or put in a blank
@@ -3018,8 +3033,43 @@ def UpdateSeqResults(G2frame,data):
 ################################################################################           
        
 def UpdatePWHKPlot(G2frame,kind,item):
-    '''Needs a doc string
+    '''Called when the histogram main tree entry is called. Displays the
+    histogram weight factor, refinement statistics for the histogram
+    and the range of data for a simulation.
+
+    Also invokes a plot of the histogram.
     '''
+    def onEditSimRange(event):
+        'Edit simulation range'
+        inp = [
+            min(data[1][0]),
+            max(data[1][0]),
+            None
+            ]
+        inp[2] = (inp[1] - inp[0])/(len(data[1][0])-1.)
+        names = ('start angle', 'end angle', 'step size')
+        dictlst = [inp] * len(inp)
+        elemlst = range(len(inp))
+        dlg = ScrolledMultiEditor(
+            G2frame,[inp] * len(inp), range(len(inp)), names,
+            header='Edit simulation range',
+            minvals=(0.001,0.001,0.0001),
+            maxvals=(180.,180.,.1),
+            )
+        dlg.CenterOnParent()
+        val = dlg.ShowModal()
+        dlg.Destroy()
+        if val != wx.ID_OK: return
+        if inp[0] > inp[1]:
+            end,start,step = inp
+        else:                
+            start,end,step = inp
+        step = abs(step)
+        newdata = np.arange(start,end+step,step)
+        if len(newdata) < 2: return # too small a range - reject
+        data[1][0] = newdata
+        data[1][1] = data[1][2] = None
+        UpdatePWHKPlot(G2frame,kind,item) # redisplay data screen
 
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)
@@ -3050,6 +3100,22 @@ def UpdatePWHKPlot(G2frame,kind,item):
     wtval.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
     wtSizer.Add(wtval,0,wx.ALIGN_CENTER_VERTICAL)
     mainSizer.Add(wtSizer)
+    if data[0].get('Dummy'):
+        simSizer = wx.BoxSizer(wx.HORIZONTAL)
+        Tmin = min(data[1][0])
+        Tmax = max(data[1][0])
+        num = len(data[1][0])
+        step = (Tmax - Tmin)/(num-1)
+        t = u'2\u03b8' # 2theta
+        lbl =  u'Simulation range: {:.2f} to {:.2f} {:s}\nwith {:.4f} steps ({:d} points)'
+        lbl += u'\n(Edit range resets observed intensities).'
+        lbl = lbl.format(Tmin,Tmax,t,step,num)
+        simSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,lbl),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+        but = wx.Button(G2frame.dataDisplay,wx.ID_ANY,"Edit range")
+        but.Bind(wx.EVT_BUTTON,onEditSimRange)
+        simSizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(simSizer)
     if 'Nobs' in data[0]:
         mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))

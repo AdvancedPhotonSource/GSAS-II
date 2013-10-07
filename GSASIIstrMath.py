@@ -1887,6 +1887,9 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             if not np.any(y):                   #fill dummy data
                 rv = st.poisson(yc[xB:xF])
                 y[xB:xF] = rv.rvs()
+                Z = np.ones_like(yc[xB:xF])
+                Z[1::2] *= -1
+                y[xB:xF] = yc[xB:xF]+np.abs(y[xB:xF]-yc[xB:xF])*Z
                 w[xB:xF] = np.where(y[xB:xF]>0.,1./y[xB:xF],1.0)
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
             W = wtFactor*w

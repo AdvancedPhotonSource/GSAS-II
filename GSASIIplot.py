@@ -776,7 +776,7 @@ def PlotPatterns(G2frame,newPlot=False):
         else:
             X = xye[0]-Parms['Zero'][1]
         if not lenX:
-            lenX = len(X)           
+            lenX = len(X)
         Y = xye[1]+offset*N
         if LimitId:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))

@@ -1078,18 +1078,19 @@ class GSASII(wx.Frame):
                 step = abs(step)
             else:
                 return False
-            x = np.arange(start,end+step,step)
+            N = int((end-start)/step)+1
+            x = np.linspace(start,end,N,True)
             N = len(x)
         rd.powderdata = [
             np.array(x), # x-axis values
-            None, # powder pattern intensities
-            None, # 1/sig(intensity)^2 values (weights)
-            np.zeros(N), # calc. intensities (zero)
-            np.zeros(N), # calc. background (zero)
-            np.zeros(N), # obs-calc profiles
+            np.zeros_like(x), # powder pattern intensities
+            np.ones_like(x), # 1/sig(intensity)^2 values (weights)
+            np.zeros_like(x), # calc. intensities (zero)
+            np.zeros_like(x), # calc. background (zero)
+            np.zeros_like(x), # obs-calc profiles
             ]
-        Tmin = min(rd.powderdata[0])
-        Tmax = max(rd.powderdata[0])
+        Tmin = rd.powderdata[0][0]
+        Tmax = rd.powderdata[0][-1]
         # data are read, now store them in the tree
         Id = self.PatternTree.AppendItem(parent=self.root,
                                          text='PWDR '+rd.idstring)            

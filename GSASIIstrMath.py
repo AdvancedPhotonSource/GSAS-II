@@ -17,6 +17,7 @@ import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.optimize as so
+import scipy.stats as st
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
@@ -1875,21 +1876,25 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             wtFactor = calcControls[hfx+'wtFactor']
             Limits = calcControls[hfx+'Limits']
             x,y,w,yc,yb,yd = Histogram['Data']
-            W = wtFactor*w
             yc *= 0.0                           #zero full calcd profiles
             yb *= 0.0
             yd *= 0.0
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
+            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
+                varylist,Histogram,Phases,calcControls,pawleyLookup)
+            yc[xB:xF] += yb[xB:xF]
+            if not np.any(y):                   #fill dummy data
+                rv = st.poisson(yc[xB:xF])
+                y[xB:xF] = rv.rvs()
+                w[xB:xF] = np.where(y[xB:xF]>0.,1./y[xB:xF],1.0)
+            yd[xB:xF] = y[xB:xF]-yc[xB:xF]
+            W = wtFactor*w
+            wdy = -ma.sqrt(W[xB:xF])*(yd[xB:xF])
             Histogram['Residuals']['Nobs'] = ma.count(x[xB:xF])
             Nobs += Histogram['Residuals']['Nobs']
             Histogram['Residuals']['sumwYo'] = ma.sum(W[xB:xF]*y[xB:xF]**2)
             SumwYo += Histogram['Residuals']['sumwYo']
-            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
-                varylist,Histogram,Phases,calcControls,pawleyLookup)
-            yc[xB:xF] += yb[xB:xF]
-            yd[xB:xF] = y[xB:xF]-yc[xB:xF]
-            wdy = -ma.sqrt(W[xB:xF])*(yd[xB:xF])
             Histogram['Residuals']['R'] = min(100.,ma.sum(ma.abs(yd[xB:xF]))/ma.sum(y[xB:xF])*100.)
             Histogram['Residuals']['wR'] = min(100.,ma.sqrt(ma.sum(wdy**2)/Histogram['Residuals']['sumwYo'])*100.)
             sumYmB = ma.sum(ma.where(yc[xB:xF]!=yb[xB:xF],ma.abs(y[xB:xF]-yb[xB:xF]),0.))

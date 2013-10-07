@@ -3065,10 +3065,19 @@ def UpdatePWHKPlot(G2frame,kind,item):
         else:                
             start,end,step = inp
         step = abs(step)
-        newdata = np.arange(start,end+step,step)
+        N = int((end-start)/step)+1
+        newdata = np.linspace(start,end,N,True)
         if len(newdata) < 2: return # too small a range - reject
         data[1][0] = newdata
-        data[1][1] = data[1][2] = None
+        data[1][1] = np.zeros_like(newdata)
+        data[1][2] = np.ones_like(newdata)
+        data[1][3] = np.zeros_like(newdata)
+        data[1][4] = np.zeros_like(newdata)
+        data[1][5] = np.zeros_like(newdata)
+        Tmin = newdata[0]
+        Tmax = newdata[-1]
+        G2frame.PatternTree.SetItemPyData(GetPatternTreeItemId(G2frame,item,'Limits'),
+            [(Tmin,Tmax),[Tmin,Tmax]])
         UpdatePWHKPlot(G2frame,kind,item) # redisplay data screen
 
     def OnErrorAnalysis(event):

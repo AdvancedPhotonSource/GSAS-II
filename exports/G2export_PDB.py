@@ -9,6 +9,7 @@
 ########### SVN repository information ###################
 '''Code to demonstrate how export routines are created
 '''
+import numpy as np
 import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: -1 $")
@@ -39,6 +40,80 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
     def Exporter(self,event=None):
         '''Export as a PDB file
         '''
+        
+        def PDBheader():
+            self.Write("HEADER phase "+str(phasenam)+" from "+str(self.G2frame.GSASprojectfile))
+            self.Write("TITLE")
+            self.Write("COMPND")
+            self.Write("SOURCE")
+            self.Write("KEYWDS")
+            self.Write("EXPDTA    X-RAY POWDER DIFFRACTION")
+            self.Write("REVDAT")
+            self.Write("JRNL")
+            self.Write("REMARK   1")
+            self.Write("REMARK   2")                                                                      
+            self.Write("REMARK   2 RESOLUTION. 2.66 ANGSTROMS.")                                          
+            self.Write("REMARK   2 POWDER DIFFRACTION MINIMUM D-SPACING.")
+            
+        def PDBremark250():                                
+            self.Write('REMARK 250')                                                                      
+            self.Write('REMARK 250 REFINEMENT.')                                                          
+            self.Write('REMARK 250   PROGRAM     : GSAS-II')                                                 
+            self.Write('REMARK 250   AUTHORS     : TOBY & VON DREELE')
+            self.Write('REMARK 250   REFRENCE    : J. APPL. CRYST. 46, 544-549(2013)')                              
+            self.Write('REMARK 250')
+            self.Write('REMARK 250  DATA USED IN REFINEMENT')                                             
+            self.Write('REMARK 250   RESOLUTION RANGE HIGH (ANGSTROMS) :  x.xx')                          
+            self.Write('REMARK 250   RESOLUTION RANGE LOW  (ANGSTROMS) : xx.xx')                          
+            self.Write('REMARK 250   POWDER DIFFRACTION DATA.')                                           
+            self.Write('REMARK 250')
+            self.Write('REMARK 250  FIT TO DATA USED IN REFINEMENT')                                      
+            self.Write('REMARK 250   NUMBER OF POWDER PATTERNS         :     x')                          
+            self.Write('REMARK 250   PROFILE R VALUES              (%) :  x.xx')                          
+            self.Write('REMARK 250   WEIGHTED PROFILE R VALUES     (%) :  x.xx')                         
+            self.Write('REMARK 250   F**2 R VALUES                 (%) : xx.xx')                          
+            self.Write('REMARK 250   NUMBERS OF POWDER PATTERN POINTS  :  xxxx')                          
+            self.Write('REMARK 250   NUMBERS OF REFLECTIONS            :  xxxx')                          
+            self.Write('REMARK 250   TOTAL NUMBER OF POWDER POINTS     :  xxxx')                          
+            self.Write('REMARK 250')
+            self.Write('REMARK 250  NUMBER OF NON-HYDROGEN ATOMS USED IN REFINEMENT.')                    
+            self.Write('REMARK 250   PROTEIN ATOMS       :      xxxx')                                              
+            self.Write('REMARK 250   NUCLEIC ACID ATOMS  :      xxxx')                                              
+            self.Write('REMARK 250   HETEROGEN ATOMS     :      xxxx')                                              
+            self.Write('REMARK 250   SOLVENT ATOMS       :      xxxx')                                             
+            self.Write('REMARK 250')
+            self.Write('REMARK 250  MODEL REFINEMENT.')                                                   
+            self.Write('REMARK 250   NUMBER OF LEAST-SQUARES PARAMETERS :  xxxx')                         
+            self.Write('REMARK 250   NUMBER OF RESTRAINTS               :  xxxx')                         
+            self.Write('REMARK 250')
+            self.Write('REMARK 250  RMS DEVIATIONS FROM RESTRAINT TARGET VALUES. NUMBER.')                
+            self.Write('REMARK 250   BOND ANGLES                      (DEG) : x.xx   xxx')                
+#            self.Write('REMARK 250   ANTI-BUMPING DISTANCE RESTRAINTS   (A) :x.xxx   xxx')                
+#            self.Write('REMARK 250   HYDROGEN BOND DISTANCE RESTRAINTS  (A) :x.xxx   xxx')                
+            self.Write('REMARK 250   INTERATOMIC DISTANCES              (A) :x.xxx   xxx')               
+            self.Write('REMARK 250   DISTANCES FROM RESTRAINT PLANES    (A) :x.xxx   xxx')                
+            self.Write('REMARK 250   TORSION PSEUDOPOTENTIAL RESTRAINTS (E) : x.xx   xxx')               
+            self.Write('REMARK 250   TORSION ANGLE RESTRAINTS           (E) : x.xx   xxx')                
+            self.Write('REMARK 250')
+            self.Write('REMARK 200')                                                                      
+            self.Write('DBREF')
+            
+        def PDBseqres(seqList):
+            chains = seqList.keys()
+            chains.sort()
+            nSeq = 0
+            for chain in chains:
+                nres = len(seqList[chain])
+                nrec = (nres-1)/13+1
+                iB = 0
+                for irec in range(nrec):
+                    iF = min(iB+13,nres)
+                    text = 'SEQRES {:3d}{:2s}{:5d}  '+(iF-iB)*'{:4s}'
+                    self.Write(text.format(irec+1,chain,nres,*seqList[chain][iB:iF]))
+                    nSeq += 1
+                    iB += 13
+            return nSeq
+            
         # the export process starts here
         # load all of the tree into a set of dicts
         self.loadTree()
@@ -53,8 +128,6 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             if General['Type'] != 'macromolecular':
                 print 'not macromolecular phase'
                 return
-            print phasedict.keys()
-            print General['SGData'].keys()           
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 nam,ext = os.path.splitext(self.filename)
@@ -62,24 +135,62 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             else:
                 fil = self.filename
             fp = self.OpenFile(fil)
-            self.Write("HEADER phase "+str(phasenam)+" from "+str(self.G2frame.GSASprojectfile))
-            # get cell parameters 
-            pfx = str(phasedict['pId'])+'::'
-            A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-            line = "CRYST1 {:8.3f} {:8.3f} {:8.3f} {:6.2f} {:6.2f} {:6.2f} ".format(*G2lat.A2cell(A))
+            Atoms = phasedict['Atoms']
+            cx,ct,cs,cia = General['AtomPtrs']
+            seqList = {}
+            AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+                'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
+            seq = 0
+            for atom in Atoms:
+                if atom[ct-3] in AA3letter and int(atom[ct-4]) != seq:
+                    if atom[ct-2] not in seqList:
+                        seqList[atom[ct-2]] = []
+                    seqList[atom[ct-2]].append(atom[ct-3])
+                    seq = int(atom[ct-4])
+            PDBheader()
+            PDBremark250()
+            nSeq = PDBseqres(seqList)
+            
+            # get cell parameters
+            Cell = General['Cell'][1:7]
+            line = "CRYST1 {:8.3f} {:8.3f} {:8.3f} {:6.2f} {:6.2f} {:6.2f} ".format(*Cell)
             line += General['SGData']['SpGrp'].ljust(13)
             line += '%2d'%(len(General['SGData']['SGOps'])*len(General['SGData']['SGCen']))
             self.Write(line)
             self.Write('ORIGX1      1.000000  0.000000  0.000000        0.00000')
             self.Write('ORIGX2      0.000000  1.000000  0.000000        0.00000')
             self.Write('ORIGX3      0.000000  0.000000  1.000000        0.00000')
-            G = G2lat.A2Gmat(A)[0]
-            A,B = G2lat.Gmat2AB(G)
+            A,B = G2lat.cell2AB(Cell)
             self.Write('SCALE1     {:9.6f} {:9.6f} {:9.6f}        0.00000'.format(*B[0]))
             self.Write('SCALE2     {:9.6f} {:9.6f} {:9.6f}        0.00000'.format(*B[1]))
             self.Write('SCALE3     {:9.6f} {:9.6f} {:9.6f}        0.00000'.format(*B[2]))
-            Atoms = phasedict['Atoms']
-           
-
+            iatom = 1
+            nHet = 0
+            nTer = 0
+            for atom in Atoms:
+                if atom[cia] == 'I':
+                    Biso = atom[cia+1]*8.*np.pi**2
+                xyz = np.inner(A,np.array(atom[cx:cx+3]))
+                if atom[ct-3] in AA3letter:
+                    fmt = 'ATOM{:7d}  {:4s}{:3s}{:2s}{:4s}    '+3*'{:8.3f}'+2*'{:6.2f}'+'{:s}'
+                    self.Write(fmt.format(iatom,atom[ct-1],atom[ct-3],    \
+                        atom[ct-2],atom[ct-4],xyz[0],xyz[1],xyz[2],atom[cx+3],Biso,atom[ct].rjust(12)))
+                    if atom[ct-1] == 'OXT':
+                        iatom += 1
+                        self.Write('TER {:7d}  {:4s}{:3s}'.format(iatom,atom[ct-1],atom[ct-3]))
+                        nTer += 1
+                else:
+                    nHet += 1
+                    fmt = 'HETATM{:5d} {:5s}{:3s}{:2s}{:4s}    '+3*'{:8.3f}'+2*'{:6.2f}'+'{:s}'
+                    self.Write(fmt.format(iatom,atom[ct-1].ljust(5),atom[ct-3],    \
+                        atom[ct-2],atom[ct-4],xyz[0],xyz[1],xyz[2],atom[cx+3],Biso,atom[ct].rjust(12)))
+                iatom += 1
+            
+            vals = [3,0,nHet,0,0,0,6,len(Atoms),nTer,0,nSeq]
+            fmt = 'MASTER'+11*'{:5d}'
+            self.Write(fmt.format(*vals))
+            self.Write('END')
             self.CloseFile()
             print('Phase '+str(phasenam)+' written to file '+str(fil))
+
+    

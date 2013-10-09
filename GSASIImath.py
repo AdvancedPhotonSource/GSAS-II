@@ -2418,8 +2418,9 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     else:
         return best_state.x, retval
 
-def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q):
+def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q,nprocess=-1):
     outlist = []
+    if nprocess>0: random.random(100*nprocess) # compute some extra numbers to change the state
     for n in range(iCyc):
         result = mcsaSearch(data,RBdata,reflType,reflData,covData,None)
         outlist.append(result[0])
@@ -2436,7 +2437,7 @@ def MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData):
     for i in range(nCyc):
         iCyc[i%nprocs] += 1
     for i in range(nprocs):
-        p = mp.Process(target=worker,args=(int(iCyc[i]),data,RBdata,reflType,reflData,covData,out_q))
+        p = mp.Process(target=worker,args=(int(iCyc[i]),data,RBdata,reflType,reflData,covData,out_q,i))
         procs.append(p)
         p.start()
     resultlist = []

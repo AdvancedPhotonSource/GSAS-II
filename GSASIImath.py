@@ -2420,7 +2420,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
 def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q,nprocess=-1):
     outlist = []
-    if nprocess>0: random.random(100*nprocess) # compute some extra numbers to change the state
+    random.seed(int(time.time())%10+nprocess)   #make sure each process has a different random start
     for n in range(iCyc):
         result = mcsaSearch(data,RBdata,reflType,reflData,covData,None)
         outlist.append(result[0])

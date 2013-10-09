@@ -306,6 +306,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
     pVals = []
     pWt = []
     negWt = {}
+    pWsum = {}
     for phase in Phases:
         pId = Phases[phase]['pId']
         negWt[pId] = Phases[phase]['General']['Pawley neg wt']
@@ -322,6 +323,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
             ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
             ['ChemComp','Sites'],['Texture','HKLs']]
         for name,rest in names:
+            pWsum[name] = 0.
             itemRest = phaseRest[name]
             if itemRest[rest] and itemRest['Use']:
                 wt = itemRest['wtFactor']
@@ -340,6 +342,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                             calc = G2mth.getRestChiral(XYZ,Amat)
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)
+                        pWsum[name] += wt*((obs-calc)/esd)**2
                 elif name in ['Torsion','Rama']:
                     coeffDict = itemRest['Coeff']
                     for i,[indx,ops,cofName,esd] in enumerate(itemRest[rest]):
@@ -354,6 +357,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                             restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)
+                        pWsum[name] += wt*((obs-calc)/esd)**2
                 elif name == 'ChemComp':
                     for i,[indx,factors,obs,esd] in enumerate(itemRest[rest]):
                         pNames.append(str(pId)+':'+name+':'+str(i))
@@ -362,6 +366,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                         calc = np.sum(mul*frac*factors)
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)                    
+                        pWsum[name] += wt*((obs-calc)/esd)**2
                 elif name == 'Texture':
                     SHkeys = textureData['SH Coeff'][1].keys()
                     SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
@@ -378,12 +383,14 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                             pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
                             pVals.append(Z1[ind[0]][ind[1]])
                             pWt.append(wt/esd1**2)
+                            pWsum[name] += wt*((obs-calc)/esd)**2
                         if ifesd2:
                             Z2 = 1.-Z
                             for ind in np.ndindex(grid,grid):
                                 pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
                                 pVals.append(Z1[ind[0]][ind[1]])
                                 pWt.append(wt/esd2**2)
+                                pWsum[name] += wt*((obs-calc)/esd)**2
          
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
@@ -392,9 +399,10 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                 pNames.append(item)
                 pVals.append(-parmDict[item])
                 pWt.append(negWt[pId])
+                pWsum[name] += negWt[pId]*(-parmDict[item])**2
     pVals = np.array(pVals)
     pWt = np.array(pWt)         #should this be np.sqrt?
-    return pNames,pVals,pWt
+    return pNames,pVals,pWt,pWsum
     
 def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
     'Needs a doc string'
@@ -1703,7 +1711,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         else:
             dMdv = np.sqrt(wtFactor)*dMdvh
             
-    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
+    pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,parmDict,varylist)
     if np.any(pVals):
         dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmDict,varylist)
         dMdv = np.concatenate((dMdv.T,(np.sqrt(pWt)*dpdv).T)).T
@@ -1721,7 +1729,6 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 
     :returns: Vec,Hess where Vec is the least-squares vector and Hess is the Hessian
     '''
-    'Needs a doc string'
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
@@ -1849,7 +1856,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 Hess = wtFactor*np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
-    pNames,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
+    pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,parmDict,varylist)
     if np.any(pVals):
         dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmDict,varylist)
         Vec += np.sum(dpdv*pWt*pVals,axis=1)
@@ -1991,10 +1998,12 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             parmDict['saved values'] = values
             dlg.Destroy()
             raise Exception         #Abort!!
-    pDict,pVals,pWt = penaltyFxn(HistoPhases,parmDict,varylist)
+    pDict,pVals,pWt,pWsum = penaltyFxn(HistoPhases,parmDict,varylist)
     if np.any(pVals):
         pSum = np.sum(pWt*pVals**2)
-        print 'Penalty function: %.3f on %d terms'%(pSum,len(pVals))
+        for name in pWsum:
+            print '  Penalty function for %s = %.3f'%(name,pWsum[name])
+        print 'Total penalty function: %.3f on %d terms'%(pSum,len(pVals))
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))
     return M

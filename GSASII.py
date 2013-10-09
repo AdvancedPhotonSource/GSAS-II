@@ -72,7 +72,6 @@ import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
-import GSASIIsolve as G2sol
 
 #wx inspector - use as needed
 wxInspector = False

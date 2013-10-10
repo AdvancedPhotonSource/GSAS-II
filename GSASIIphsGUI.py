@@ -1638,7 +1638,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             # rd contains all info for a phase
             PhaseName = rd.Phase['General']['Name']
             print 'Read phase '+str(PhaseName)+' from file '+str(G2frame.lastimport)
-            print rd.Phase['Atoms']
+            atomData = data['Atoms']
+            for atom in rd.Phase['Atoms'][:5]:
+                print atom
+            for atom in atomData[:5]:
+                print atom
+            
             return
                         
 ################################################################################

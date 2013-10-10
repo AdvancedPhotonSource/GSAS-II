@@ -751,12 +751,12 @@ def getTorsionDeriv(XYZ,Amat,Coeff):
         for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
             XYZ[j] -= x
             tor = getRestTorsion(XYZ,Amat)
-            p,d1 = calcTorsionEnergy(tor,Coeff)
+            p1,d1 = calcTorsionEnergy(tor,Coeff)
             XYZ[j] += 2*x
             tor = getRestTorsion(XYZ,Amat)
-            p,d2 = calcTorsionEnergy(tor,Coeff)            
+            p2,d2 = calcTorsionEnergy(tor,Coeff)            
             XYZ[j] -= x
-            deriv[j][i] = (d2-d1)/(2*dx)
+            deriv[j][i] = (p2-p1)/(2*dx)
     return deriv.flatten()
 
 def getRestRama(XYZ,Amat):
@@ -823,12 +823,12 @@ def getRamaDeriv(XYZ,Amat,Coeff):
         for i,x in enumerate(np.array([[dx,0,0],[0,dx,0],[0,0,dx]])):
             XYZ[j] -= x
             phi,psi = getRestRama(XYZ,Amat)
-            p,d1 = calcRamaEnergy(phi,psi,Coeff)
+            p1,d1 = calcRamaEnergy(phi,psi,Coeff)
             XYZ[j] += 2*x
             phi,psi = getRestRama(XYZ,Amat)
-            p,d2 = calcRamaEnergy(phi,psi,Coeff)
+            p2,d2 = calcRamaEnergy(phi,psi,Coeff)
             XYZ[j] -= x
-            deriv[j][i] = (d2-d1)/(2*dx)
+            deriv[j][i] = (p2-p1)/(2*dx)
     return deriv.flatten()
 
 def getRestPolefig(ODFln,SamSym,Grid):

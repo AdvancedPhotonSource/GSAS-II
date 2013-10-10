@@ -355,9 +355,9 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                         else:
                             phi,psi = G2mth.getRestRama(XYZ,Amat)
                             restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
-                        pVals.append(obs-calc)
+                        pVals.append(restr)
                         pWt.append(wt/esd**2)
-                        pWsum[name] += wt*((obs-calc)/esd)**2
+                        pWsum[name] += wt*(restr/esd)**2
                 elif name == 'ChemComp':
                     for i,[indx,factors,obs,esd] in enumerate(itemRest[rest]):
                         pNames.append(str(pId)+':'+name+':'+str(i))
@@ -2002,7 +2002,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     if np.any(pVals):
         pSum = np.sum(pWt*pVals**2)
         for name in pWsum:
-            print '  Penalty function for %s = %.3f'%(name,pWsum[name])
+            print '  Penalty function for %8s = %.3f'%(name,pWsum[name])
         print 'Total penalty function: %.3f on %d terms'%(pSum,len(pVals))
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))

@@ -764,7 +764,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
         wtBox.Add(wx.StaticText(wind,-1,'Restraint weight factor:'),0,wx.ALIGN_CENTER_VERTICAL)
-        wtfactor = wx.TextCtrl(wind,-1,value='%.2f'%(restData['wtFactor']),style=wx.TE_PROCESS_ENTER)
+        wtfactor = wx.TextCtrl(wind,-1,value='%.2f'%(restData['wtFactor']),style=wx.TE_PROCESS_ENTER,size=(50,20))
         wtfactor.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
         wtfactor.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
         wtBox.Add(wtfactor,0,wx.ALIGN_CENTER_VERTICAL)
@@ -774,7 +774,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         wtBox.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
         if 'Bonds' in restData or 'Angles' in restData:
             wtBox.Add(wx.StaticText(wind,-1,'Search range:'),0,wx.ALIGN_CENTER_VERTICAL)
-            sRange = wx.TextCtrl(wind,-1,value='%.2f'%(restData['Range']),style=wx.TE_PROCESS_ENTER)
+            sRange = wx.TextCtrl(wind,-1,value='%.2f'%(restData['Range']),style=wx.TE_PROCESS_ENTER,size=(50,20))
             sRange.Bind(wx.EVT_TEXT_ENTER,OnRange)
             sRange.Bind(wx.EVT_KILL_FOCUS,OnRange)
             wtBox.Add(sRange,0,wx.ALIGN_CENTER_VERTICAL)
@@ -874,6 +874,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             table = []
             rowLabels = []
             bad = []
+            chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,3',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A - (res) B','calc','obs','esd','delt/sig']
@@ -885,6 +886,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                             name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         calc = G2mth.getRestDist(XYZ,Amat)
+                        chisq += bondRestData['wtFactor']*((obs-calc)/esd)**2
                         table.append([name[:-3],calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))                
                     except KeyError:
@@ -898,6 +900,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
                         calc = G2mth.getRestDist(XYZ,Amat)
+                        chisq += bondRestData['wtFactor']*((obs-calc)/esd)**2
                         table.append([names[0]+'+('+ops[0]+') - '+names[1]+'+('+ops[1]+')',calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
@@ -920,6 +923,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+            mainSizer.Add(wx.StaticText(BondRestr,-1,
+                'Bond restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(bondList))),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(Bonds,0,)
         else:
             mainSizer.Add(wx.StaticText(BondRestr,-1,'No bond distance restraints for this phase'),0,)
@@ -995,6 +1001,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             table = []
             rowLabels = []
             bad = []
+            chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A - (res) B - (res) C','calc','obs','esd','delt/sig']
@@ -1006,6 +1013,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                             name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' - '
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         calc = G2mth.getRestAngle(XYZ,Amat)
+                        chisq += angleRestData['wtFactor']*((obs-calc)/esd)**2
                         table.append([name[:-3],calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))                                
                     except KeyError:
@@ -1021,6 +1029,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
                         calc = G2mth.getRestAngle(XYZ,Amat)
+                        chisq += angleRestData['wtFactor']*((obs-calc)/esd)**2
                         table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
@@ -1043,6 +1052,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+            mainSizer.Add(wx.StaticText(AngleRestr,-1,
+                'Angle restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(angleList))),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(Angles,0,)
         else:
             mainSizer.Add(wx.StaticText(AngleRestr,-1,'No bond angle restraints for this phase'),0,)
@@ -1109,6 +1121,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             table = []
             rowLabels = []
             bad = []
+            chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) atom','calc','obs','esd']
@@ -1122,6 +1135,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 name += '\n'
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         calc = G2mth.getRestPlane(XYZ,Amat)
+                        chisq += planeRestData['wtFactor']*((calc)/esd)**2
                         table.append([name[:-3],calc,obs,esd])
                         rowLabels.append(str(i))
                     except KeyError:
@@ -1135,6 +1149,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
                         calc = G2mth.getRestPlane(XYZ,Amat)
+                        chisq += planeRestData['wtFactor']*((calc)/esd)**2
                         name = ''
                         for a,atom in enumerate(atoms):
                             name += atom+'+ ('+ops[a]+'),'
@@ -1162,6 +1177,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+            mainSizer.Add(wx.StaticText(PlaneRestr,-1,
+                'Plane restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(planeList))),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(Planes,0,)
         else:
             mainSizer.Add(wx.StaticText(PlaneRestr,-1,'No plane restraints for this phase'),0,)
@@ -1238,6 +1256,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             table = []
             rowLabels = []
             bad = []
+            chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) O (res) A (res) B (res) C','calc','obs','esd','delt/sig']
@@ -1249,6 +1268,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                             name += '('+atom[1]+atom[0].strip()+atom[2]+') '+atom[3]+' '
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         calc = G2mth.getRestChiral(XYZ,Amat)
+                        chisq += chiralRestData['wtFactor']*((obs-calc)/esd)**2
                         table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
@@ -1264,6 +1284,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         XYZ = G2mth.getSyXYZ(XYZ,ops,SGData)
                         calc = G2mth.getRestChiral(XYZ,Amat)
+                        chisq += chiralRestData['wtFactor']*((obs-calc)/esd)**2
                         table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
@@ -1286,6 +1307,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+            mainSizer.Add(wx.StaticText(ChiralRestr,-1,
+                'Chiral volume restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(volumeList))),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(Volumes,0,)
         else:
             mainSizer.Add(wx.StaticText(ChiralRestr,-1,'No chiral volume restraints for this phase'),0,)
@@ -1320,7 +1344,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             rows.reverse()
             for row in rows:
                 torsionList.remove(torsionList[row])
-            UpdateTorsionRestr(torsionRestData)                
+            wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
             
         def OnChangeEsd(event):
             rows = Torsions.GetSelectedRows()
@@ -1334,7 +1358,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for r in rows:
                     torsionRestData['Torsions'][r][4] = parm
             dlg.Destroy()
-            UpdateTorsionRestr(torsionRestData)                
+            wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
                                             
         TorsionRestr.DestroyChildren()
         dataDisplay = wx.Panel(TorsionRestr)
@@ -1344,11 +1368,11 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         
         coeffDict = torsionRestData['Coeff']
         torsionList = torsionRestData['Torsions']
-        mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion restraints:'),0,wx.ALIGN_CENTER_VERTICAL)
         if len(torsionList):
             table = []
             rowLabels = []
             bad = []
+            chisq = 0.
             Types = 2*[wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A  B  C  D','coef name','torsion','obs E','restr','esd']
@@ -1361,6 +1385,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         tor = G2mth.getRestTorsion(XYZ,Amat)
                         restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
+                        chisq += torsionRestData['wtFactor']*(restr/esd)**2
                         table.append([name,cofName,tor,calc,restr,esd])
                         rowLabels.append(str(i))
                     except KeyError:
@@ -1382,6 +1407,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+            mainSizer.Add(wx.StaticText(TorsionRestr,-1,
+                'Torsion restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(torsionList))),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(Torsions,0,)
             
             mainSizer.Add((5,5))
@@ -1464,6 +1492,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             table = []
             rowLabels = []
             bad = []
+            chisq = 0.
             Types = 2*[wg.GRID_VALUE_STRING,]+5*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
                 colLabels = ['(res) A  B  C  D  E','coef name','phi','psi','obs E','restr','esd']
@@ -1476,6 +1505,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         XYZ = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cx,3))
                         phi,psi = G2mth.getRestRama(XYZ,Amat)
                         restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])
+                        chisq += ramaRestData['wtFactor']*(restr/esd)**2
                         table.append([name,cofName,phi,psi,calc,restr,esd])
                         rowLabels.append(str(i))
                     except KeyError:
@@ -1497,6 +1527,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+            mainSizer.Add(wx.StaticText(RamaRestr,-1,
+                'Ramachandran restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(ramaList))),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(Ramas,0,)
         else:
             mainSizer.Add(wx.StaticText(RamaRestr,-1,'No Ramachandran restraints for this phase'),0,)
@@ -1595,6 +1628,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             table = []
             rowLabels = []
             bad = []
+            chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+5*[wg.GRID_VALUE_FLOAT+':10,2',]
             colLabels = ['Atoms','mul*frac','factor','calc','obs','esd']
             for i,[indx,factors,obs,esd] in enumerate(chemcompList):
@@ -1604,6 +1638,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs-1))
                     mulfrac = mul*frac
                     calcs = mul*frac*factors
+                    chisq += chiralRestData['wtFactor']*((obs-np.sum(calcs))/esd)**2
                     for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
                         table.append([atom,mf,fr,clc,'',''])
                         rowLabels.append('term:'+str(i)+':'+str(iatm))
@@ -1641,6 +1676,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
+            mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
+                'Chemical composition restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(chemcompList))),0,wx.ALIGN_CENTER_VERTICAL)
             mainSizer.Add(ChemComps,0,)
         else:
             mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)

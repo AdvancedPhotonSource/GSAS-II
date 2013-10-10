@@ -1858,7 +1858,18 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
         ind = event.ind[0]
         msg = 'atoms:'+names[ind]
         Page.canvas.SetToolTipString(msg)
-    
+        try:
+            page = G2frame.dataDisplay.GetSelection()
+        except:
+            return
+        if G2frame.dataDisplay.GetPageText(page) == 'Torsion restraints':
+            torGrid = G2frame.dataDisplay.GetPage(page).Torsions
+            torGrid.ClearSelection()
+            for row in range(torGrid.GetNumberRows()):
+                if names[ind] in torGrid.GetCellValue(row,0):
+                    torGrid.SelectRow(row)
+            torGrid.ForceRefresh()
+                
     def OnMotion(event):
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = event.xdata
@@ -1930,6 +1941,17 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
         ind = event.ind[0]
         msg = 'atoms:'+names[ind]
         Page.canvas.SetToolTipString(msg)
+        try:
+            page = G2frame.dataDisplay.GetSelection()
+        except:
+            return
+        if G2frame.dataDisplay.GetPageText(page) == 'Ramachandran restraints':
+            ramaGrid = G2frame.dataDisplay.GetPage(page).Ramas
+            ramaGrid.ClearSelection()
+            for row in range(ramaGrid.GetNumberRows()):
+                if names[ind] in ramaGrid.GetCellValue(row,0):
+                    ramaGrid.SelectRow(row)
+            ramaGrid.ForceRefresh()
 
     def OnMotion(event):
         if event.xdata and event.ydata:                 #avoid out of frame errors

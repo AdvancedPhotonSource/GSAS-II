@@ -1625,26 +1625,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
                         
     def OnReImport(event):
-        print 'reimport atoms from file to be developed'
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
         reqrdr = G2frame.dataFrame.ReImportMenuId.get(event.GetId())
         rdlist = G2frame.OnImportGeneric(reqrdr,
-                                         G2frame.ImportPhaseReaderlist,
-                                         'phase')
+            G2frame.ImportPhaseReaderlist,'phase')
         if len(rdlist) == 0: return
-        # for now rdlist is only expected to have one element
-        # for now always use the first phase for when multiple phases are ever implemented
-        # but it would be better to loop until we find a phase that matches the one in data
-        for rd in rdlist:
-            # rd contains all info for a phase
-            PhaseName = rd.Phase['General']['Name']
-            print 'Read phase '+str(PhaseName)+' from file '+str(G2frame.lastimport)
-            atomData = data['Atoms']
-            for atom in rd.Phase['Atoms'][:5]:
-                print atom
-            for atom in atomData[:5]:
-                print atom
-            
-            return
+        # rdlist is only expected to have one element
+        rd = rdlist[0]
+        G2frame.OnFileSave(event)
+        # rd contains all info for a phase
+        PhaseName = rd.Phase['General']['Name']
+        print 'Read phase '+str(PhaseName)+' from file '+str(G2frame.lastimport)
+        atomData = data['Atoms']
+        atomNames = []
+        for atom in atomData:
+            atomNames.append(atom[:ct+1])
+        for atom in rd.Phase['Atoms']:
+            try:
+                idx = atomNames.index(atom[:ct+1])
+                atomData[idx][:-1] = atom[:-1]
+            except ValueError:
+                print atom[:ct+1], 'not in Atom array; not updated'
+        wx.CallAfter(FillAtomsGrid,Atoms)
+         
                         
 ################################################################################
 #Structure drawing GUI stuff                

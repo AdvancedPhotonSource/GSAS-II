@@ -1083,7 +1083,7 @@ def ReadEXPPhase(G2frame,filename):
                     S = EXPphase[key]
                 elif key[11:] == 'B':
                     S += EXPphase[key]
-                    Atom = [S[50:58].strip(),S[:10].strip(),'',
+                    Atom = [S[50:58].strip(),S[:10].strip().capitalize(),'',
                         float(S[10:20]),float(S[20:30]),float(S[30:40]),
                         float(S[40:50]),'',int(S[60:62]),S[130:131]]
                     if Atom[9] == 'I':
@@ -1101,7 +1101,7 @@ def ReadEXPPhase(G2frame,filename):
             if 'AT' in key[6:8]:
                 S = EXPphase[key]
                 Atom = [S[56:60],S[50:54].strip().upper(),S[54:56],
-                    S[46:51].strip(),S[:8].strip(),'',
+                    S[46:51].strip(),S[:8].strip().capitalize(),'',
                     float(S[16:24]),float(S[24:32]),float(S[32:40]),
                     float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]
                 XYZ = Atom[6:9]
@@ -1187,11 +1187,11 @@ def ReadPDBPhase(filename):
             XYZ = np.where(abs(XYZ)<0.00001,0,XYZ)
             SytSym,Mult = G2spc.SytSym(XYZ,SGData)
             Uiso = float(S[61:67])/EightPiSq
-            Type = S[12:14].upper()
+            Type = S[12:14].lower()
             if Type[0] in '123456789':
                 Type = Type[1:]
             Atom = [S[22:27].strip(),S[17:20].upper(),S[20:22],
-                S[12:17].strip(),Type.strip(),'',XYZ[0],XYZ[1],XYZ[2],
+                S[12:17].strip(),Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
                 float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]
             S = file.readline()
             if 'ANISOU' in S[:6]:

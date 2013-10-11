@@ -119,9 +119,8 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.SetupExport(event,                         # set export parameters
-                            AskFile=True
-                            ): return 
+        if self.SetupExport(event,AskFile=True):                         # set export parameters
+            return 
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info
             General = phasedict['General']
@@ -167,23 +166,24 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             iatom = 1
             nHet = 0
             nTer = 0
+            fmt = '{:6s}{:5d}  {:4s}{:3s} {:1s}{:4s}    '+3*'{:8.3f}'+2*'{:6.2f}'+'{:s}'
             for atom in Atoms:
-                if atom[cia] == 'I':
+                if atom[cia] == 'I':    #need to deal with aniso thermals for proteins = "ANISOU" records
                     Biso = atom[cia+1]*8.*np.pi**2
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
                 if atom[ct-3] in AA3letter:
-                    fmt = 'ATOM{:7d}  {:4s}{:3s}{:2s}{:4s}    '+3*'{:8.3f}'+2*'{:6.2f}'+'{:s}'
-                    self.Write(fmt.format(iatom,atom[ct-1],atom[ct-3],    \
-                        atom[ct-2],atom[ct-4],xyz[0],xyz[1],xyz[2],atom[cx+3],Biso,atom[ct].rjust(12)))
+                    self.Write(fmt.format('ATOM  ',iatom,atom[ct-1],atom[ct-3].strip(),    \
+                        atom[ct-2].strip(),atom[ct-4].rjust(4),xyz[0],xyz[1],xyz[2],atom[cx+3], \
+                        Biso,atom[ct].rjust(12)))
                     if atom[ct-1] == 'OXT':
                         iatom += 1
-                        self.Write('TER {:7d}  {:4s}{:3s}'.format(iatom,atom[ct-1],atom[ct-3]))
+                        self.Write('{:6s}{:5d}  {:4s}{:3s}'.format('TER   ',iatom,atom[ct-1],atom[ct-3].strip()))
                         nTer += 1
                 else:
                     nHet += 1
-                    fmt = 'HETATM{:5d} {:5s}{:3s}{:2s}{:4s}    '+3*'{:8.3f}'+2*'{:6.2f}'+'{:s}'
-                    self.Write(fmt.format(iatom,atom[ct-1].ljust(5),atom[ct-3],    \
-                        atom[ct-2],atom[ct-4],xyz[0],xyz[1],xyz[2],atom[cx+3],Biso,atom[ct].rjust(12)))
+                    self.Write(fmt.format('HETATM',iatom,atom[ct-1],atom[ct-3].strip(),    \
+                        atom[ct-2].strip(),atom[ct-4].rjust(4),xyz[0],xyz[1],xyz[2],atom[cx+3], \
+                        Biso,atom[ct].rjust(12)))
                 iatom += 1
             
             vals = [3,0,nHet,0,0,0,6,len(Atoms),nTer,0,nSeq]
@@ -193,4 +193,54 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             self.CloseFile()
             print('Phase '+str(phasenam)+' written to file '+str(fil))
 
+class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
+    '''Used to create a Cartesian XYZ file for a phase
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
+            G2frame=G2frame,
+            formatName = 'Cart XYZ',
+            extension='.XYZ',
+            longFormatName = 'Export phase as .XYZ file'
+            )
+        self.exporttype = ['phase']
+        self.multiple = True
+
+    def Exporter(self,event=None):
+        '''Export as a XYZ file
+        '''
+        # the export process starts here
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        if self.SetupExport(event,AskFile=True):                       # set export parameters
+            return 
+        for phasenam in self.phasenam:
+            phasedict = self.Phases[phasenam] # pointer to current phase info
+            General = phasedict['General']
+            i = self.Phases[phasenam]['pId']
+            if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
+                nam,ext = os.path.splitext(self.filename)
+                fil = nam+"_"+str(i)+ext
+            else:
+                fil = self.filename
+            fp = self.OpenFile(fil)
+            Atoms = phasedict['Atoms']
+            if not len(Atoms):
+                print('**** ERROR - Phase '+str(phasenam)+' has no atoms! ****')
+                return
+            cx,ct,cs,cia = General['AtomPtrs']
+            Cell = General['Cell'][1:7]
+            A,B = G2lat.cell2AB(Cell)
+            fmt = '{:4s}'+3*'{:12.4f}'
+            self.Write('{:6d}'.format(len(Atoms)))
+            self.Write(' ')
+            for atom in Atoms:
+                xyz = np.inner(A,np.array(atom[cx:cx+3]))
+                self.Write(fmt.format(atom[ct],*xyz))
+            self.CloseFile()
+            print('Phase '+str(phasenam)+' written to file '+str(fil))
     

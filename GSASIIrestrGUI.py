@@ -591,18 +591,21 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                     except ValueError:
                                         continue
                         else:
-                            for res,name,id in Chains[chain][residue]:
-                                try:
-                                    ipos = Atms.index(name)
-                                    ids[ipos] = id
-                                except ValueError:
-                                    continue
-                            for res,name,id in Chains[chain][residue+1]:
-                                try:
-                                    ipos = pAtms.index(name)
-                                    ids[ipos] = id
-                                except ValueError:
-                                    continue
+                            try:
+                                for res,name,id in Chains[chain][residue]:
+                                    try:
+                                        ipos = Atms.index(name)
+                                        ids[ipos] = id
+                                    except ValueError:
+                                        continue
+                                for res,name,id in Chains[chain][residue+1]:
+                                    try:
+                                        ipos = pAtms.index(name)
+                                        ids[ipos] = id
+                                    except ValueError:
+                                        continue
+                            except KeyError:
+                                continue
                         if np.all(ids):
                             torsion = [list(ids),['1','1','1','1'],Name,Esd]
                             if torsion not in torsionRestData['Torsions']:
@@ -666,30 +669,33 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 ids = np.array([0,0,0,0,0])
                     else:
                         for residue in residues[1:-1]:
-                            for res,name,id in Chains[chain][residue-1]:
-                                try:
-                                    ipos = mAtms.index(name)
-                                    ids[ipos] = id
-                                except ValueError:
-                                    continue
-                            for res,name,id in Chains[chain][residue+1]:
-                                try:
-                                    ipos = pAtms.index(name)
-                                    ids[ipos] = id
-                                except ValueError:
-                                    continue
-                            for res,name,id in Chains[chain][residue]:
-                                if Res == res:
+                            try:
+                                for res,name,id in Chains[chain][residue-1]:
                                     try:
-                                        ipos = Atms.index(name)
+                                        ipos = mAtms.index(name)
                                         ids[ipos] = id
                                     except ValueError:
                                         continue
-                            if np.all(ids):
-                                rama = [list(ids),['1','1','1','1','1'],Name,Esd]
-                                if rama not in ramaRestData['Ramas']:
-                                    ramaRestData['Ramas'].append(rama)
-                                ids = np.array([0,0,0,0,0])
+                                for res,name,id in Chains[chain][residue+1]:
+                                    try:
+                                        ipos = pAtms.index(name)
+                                        ids[ipos] = id
+                                    except ValueError:
+                                        continue
+                                for res,name,id in Chains[chain][residue]:
+                                    if Res == res:
+                                        try:
+                                            ipos = Atms.index(name)
+                                            ids[ipos] = id
+                                        except ValueError:
+                                            continue
+                                if np.all(ids):
+                                    rama = [list(ids),['1','1','1','1','1'],Name,Esd]
+                                    if rama not in ramaRestData['Ramas']:
+                                        ramaRestData['Ramas'].append(rama)
+                                    ids = np.array([0,0,0,0,0])
+                            except KeyError:
+                                continue
             macStr = macro.readline()
         macro.close()
         UpdateRamaRestr(ramaRestData)
@@ -1812,7 +1818,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_AARESTRAINTPLOT,True)
             ramaRestData = restrData['Rama']
             UpdateRamaRestr(ramaRestData)
-            G2plt.PlotRama(G2frame,phaseName,rama,ramaName)
+            wx.CallAfter(G2plt.PlotRama,G2frame,phaseName,rama,ramaName)
         elif text == 'Chem. comp. restraints':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)

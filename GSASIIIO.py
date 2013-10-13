@@ -54,7 +54,6 @@ def sint(S):
     else:
         return 0
 
-
 def trim(val):
     '''Simplify a string containing leading and trailing spaces
     as well as newlines, tabs, repeated spaces etc. into a shorter and
@@ -1452,6 +1451,7 @@ class ImportBaseclass(object):
                 ParentFrame,title, header,ChoiceList,
                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
         if size: dlg.SetSize(size)
+        dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             return sel
@@ -1469,6 +1469,7 @@ class ImportBaseclass(object):
         '''
         dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
             wx.CHOICEDLG_STYLE)
+        dlg.CenterOnParent()
         if size: dlg.SetSize(size)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
@@ -1496,6 +1497,7 @@ class ImportBaseclass(object):
         result = None
         dlg = MultipleChoicesDialog(choicelist,headinglist,
             parent=ParentFrame, **kwargs)          
+        dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             result = dlg.chosen
         dlg.Destroy()
@@ -1758,21 +1760,23 @@ class ExportBaseclass(object):
         self.xtalDict = {}
         # updated in SetupExport, when used
         self.currentExportType = None # type of export that has been requested
-        self.phasenam = None # name of selected phase or a list of phases
-        self.histnam = None # name of selected histogram or a list of histograms
+        self.phasenam = None # a list of selected phases
+        self.histnam = None # a list of selected histograms
         self.filename = None # name of file to be written
         
         # items that should be defined in a subclass of this class
         self.exporttype = []  # defines the type(s) of exports that the class can handle.
         # The following types are defined: 'project', "phase", "powder", "single"
-        self.multiple = False # set as True if the class can export multiple phase or histograms
+        self.multiple = False # set as True if the class can export multiple phases or histograms
         # ignored for "project" exports
 
     def SetupExport(self,event,AskFile=True):
         '''Determines the type of menu that called the Exporter. Selects histograms
         or phases when needed. 
 
-        :param bool AskFile: if AskFile is True (default)
+        :param bool AskFile: if AskFile is True (default) get the name of the file
+          in a dialog
+        :returns: True in case of an error
         '''
         if event:
             self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
@@ -1798,12 +1802,12 @@ class ExportBaseclass(object):
                     self.phasenam = [choices[i] for i in phasenum]
             else:
                 if len(self.Phases) == 1:
-                    self.phasenam = self.Phases.keys()[0]
+                    self.phasenam = self.Phases.keys()
                 else:
                     choices = sorted(self.Phases.keys())
                     phasenum = G2gd.ItemSelector(choices,self.G2frame)
                     if phasenum is None: return True
-                    self.phasenam = choices[phasenum]
+                    self.phasenam = [choices[phasenum]]
         elif self.currentExportType == 'single':
             if len(self.xtalDict) == 0:
                 self.G2frame.ErrorDialog(
@@ -1820,12 +1824,12 @@ class ExportBaseclass(object):
                     self.histnam = [choices[i] for i in hnum]
             else:
                 if len(self.xtalDict) == 1:
-                    self.histnam = self.xtalDict.values()[0]
+                    self.histnam = self.xtalDict.values()
                 else:
                     choices = sorted(self.xtalDict.values())
                     hnum = G2gd.ItemSelector(choices,self.G2frame)
                     if hnum is None: return True
-                    self.histnam = choices[hnum]
+                    self.histnam = [choices[hnum]]
         elif self.currentExportType == 'powder':
             if len(self.powderDict) == 0:
                 self.G2frame.ErrorDialog(
@@ -1842,15 +1846,12 @@ class ExportBaseclass(object):
                     self.histnam = [choices[i] for i in hnum]
             else:
                 if len(self.powderDict) == 1:
-                    self.histnam = self.powderDict.values()[0]
+                    self.histnam = self.powderDict.values()
                 else:
                     choices = sorted(self.powderDict.values())
                     hnum = G2gd.ItemSelector(choices,self.G2frame)
                     if hnum is None: return True
-                    self.histnam = choices[hnum]
-            print 'selected histograms = ',self.histnam
-            print 'selected histograms = ',self.histnam
-            return True
+                    self.histnam = [choices[hnum]]
     def loadParmDict(self):
         '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
         refined values to those from the last cycle and set the uncertainties for the
@@ -1992,6 +1993,7 @@ class ExportBaseclass(object):
             self.G2frame, 'Input name for file to write', '.', defnam,
             self.longFormatName+' (*'+self.extension+')|*'+self.extension,
             wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        dlg.CenterOnParent()
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -2003,21 +2005,106 @@ class ExportBaseclass(object):
             dlg.Destroy()
         return filename
 
+    # Tools for file writing. 
     def OpenFile(self,fil=None):
         '''Open the output file
+
+        :param str fil: The name of the file to open. If None (default)
+          the name defaults to self.filename.
+        :returns: the file object opened by the routine which is also
+          saved as self.fp
         '''
         if not fil:
             fil = self.filename
         self.fp = open(fil,'w')
         return self.fp
     def Write(self,line):
+        '''write a line of output, attaching a line-end character
+
+        :param str line: the text to be written. 
+        '''
         self.fp.write(line+'\n')
     def CloseFile(self,fp=None):
+        '''Close a file opened in OpenFile
+
+        :param file fp: the file object to be closed. If None (default)
+          file object self.fp is closed. 
+        '''
         if fp is None:
             fp = self.fp
             self.fp = None
         fp.close()
+    # Tools to pull information out of the data arrays
+    def GetCell(self,phasenam):
+        """Gets the unit cell parameters and their s.u.'s for a selected phase
+
+        :param str phasenam: the name for the selected phase
+        :returns: `cellList,cellSig` where each is a 7 element list corresponding
+          to a, b, c, alpha, beta, gamma, volume where `cellList` has the
+          cell values and `cellSig` has their uncertainties.
+        """
+        phasedict = self.Phases[phasenam] # pointer to current phase info            
+        pfx = str(phasedict['pId'])+'::'
+        A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
+        cellSig = G2stIO.getCellEsd(pfx,
+                                    phasedict['General']['SGData'],A,
+                                    self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
+        cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
+        return cellList,cellSig
     
+    def GetAtoms(self,phasenam):
+        """Gets the atoms associated with a phase. Can be used with standard
+        or macromolecular phases
+
+        :param str phasenam: the name for the selected phase
+        :returns: a list of items for eac atom where each item is a list containing:
+          label, typ, mult, xyz, and td, where
+
+          * label and typ are the atom label and the scattering factor type (str)
+          * mult is the site multiplicity (int)
+          * xyz is contains a list with four pairs of numbers:
+            x, y, z and fractional occupancy and
+            their standard uncertainty (or a negative value)
+          * td is contains a list with either one or six pairs of numbers:
+            if one number it is U\ :sub:`iso` and with six it is
+            U\ :sub:`11`, U\ :sub:`22`, U\ :sub:`33`, U\ :sub:`12`, U\ :sub:`13` & U\ :sub:`23`
+            paired with their standard uncertainty (or a negative value)
+        """
+        phasedict = self.Phases[phasenam] # pointer to current phase info            
+        cx,ct,cs,cia = phasedict['General']['AtomPtrs']
+        cfrac = cx+3
+        fpfx = str(phasedict['pId'])+'::Afrac:'        
+        atomslist = []
+        for i,at in enumerate(phasedict['Atoms']):
+            if phasedict['General']['Type'] == 'macromolecular':
+                label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
+            else:
+                label = at[ct-1]
+            fval = self.parmDict.get(fpfx+str(i),at[cfrac])
+            fsig = self.sigDict.get(fpfx+str(i),-0.009)
+            mult = at[cs+1]
+            typ = at[ct]
+            xyz = []
+            for j,v in enumerate(('x','y','z')):
+                val = at[cx+j]
+                pfx = str(phasedict['pId'])+'::dA'+v+':'+str(i)
+                sig = self.sigDict.get(pfx,-0.000009)
+                xyz.append((val,sig))
+            xyz.append((fval,fsig))
+            td = []
+            if at[cia] == 'I':
+                pfx = str(phasedict['pId'])+'::AUiso:'+str(i)
+                val = self.parmDict.get(pfx,at[cia+1])
+                sig = self.sigDict.get(pfx,-0.0009)
+                td.append((val,sig))
+            else:
+                for i,var in enumerate(('AU11','AU22','AU33','AU12','AU13','AU23')):
+                    pfx = str(phasedict['pId'])+'::'+var+':'+str(i)
+                    val = self.parmDict.get(pfx,at[cia+2+i])
+                    sig = self.sigDict.get(pfx,-0.0009)
+                    td.append((val,sig))
+            atomslist.append((label,typ,mult,xyz,td))
+        return atomslist
 ######################################################################
 
 def ReadCIF(URLorFile):

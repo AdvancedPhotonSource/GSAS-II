@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: $
-# $Author: $
-# $Revision: -1 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $
-# $Id: G2export_CIF.py -1   $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''Code to demonstrate how export routines are created
 '''
 import numpy as np
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: -1 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 #import GSASIIgrid as G2gd
 import GSASIIstrIO as G2stIO
@@ -201,9 +201,9 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'Cart XYZ',
+            formatName = 'Cartesian XYZ',
             extension='.XYZ',
-            longFormatName = 'Export phase as .XYZ file'
+            longFormatName = 'Export phase with Cartesian coordinates as .XYZ file'
             )
         self.exporttype = ['phase']
         self.multiple = True

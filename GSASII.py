@@ -1213,16 +1213,16 @@ class GSASII(wx.Frame):
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
         #code to debug an Exporter. much is hard-coded below, but code is reloaded before
         # each use allowing faster development
-        def DebugExporter(event):
-            reload(G2IO)
-            import G2export_example
-            reload(G2export_example)
-            G2export_example.ExportPhaseShelx(self).Exporter(event)            
-        item = menu.Append(
-            wx.ID_ANY,kind=wx.ITEM_NORMAL,
-            help="reload and test ExportPhaseShelx",text="test ExportPhaseShelx")
-        self.Bind(wx.EVT_MENU, DebugExporter, id=item.GetId())
-        self.ExportLookup[item.GetId()] = 'phase'
+        # def DebugText(event):
+        #     reload(G2IO)
+        #     import dev_export_example
+        #     reload(dev_export_example)
+        #     dev_export_example.ExportSingleText(self).Exporter(event)
+        # item = menu.Append(
+        #     wx.ID_ANY,kind=wx.ITEM_NORMAL,
+        #     help="debug text",text="test Export")
+        # self.Bind(wx.EVT_MENU, DebugText, id=item.GetId())
+        # self.ExportLookup[item.GetId()] = 'single'
             
     def _Add_ExportMenuItems(self,parent):
         item = parent.Append(

@@ -1522,7 +1522,6 @@ class ExportCIF(G2IO.ExportBaseclass):
         if self.SetupExport(event,                         # set export parameters
                             AskFile=(self.mode=='simple')
                             ): return 
-
         # Someday: get restraint & constraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
         #for i in  self.OverallParms['Constraints']:
@@ -1551,7 +1550,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.CIFname = self.CIFname.replace(' ','')
         # test for quick CIF mode or no data
         self.quickmode = False
-        phasenam = phasenum = None # include all phases
+        phasenam = None # include all phases
         if self.mode != "full" or len(self.powderDict) + len(self.xtalDict) == 0:
             self.quickmode = True
             oneblock = True
@@ -1560,11 +1559,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     'No phase present',
                     'Cannot create a coordinates CIF with no phases')
                 return
-            elif len(self.Phases) > 1: # quick mode: choose one phase
-                choices = sorted(self.Phases.keys())
-                phasenum = G2gd.ItemSelector(choices,self.G2frame)
-                if phasenum is None: return
-                phasenam = choices[phasenum]
+            elif len(self.Phases) > 1: # quick mode: get selected phase
+                phasenam = self.phasenam[0]
         # will this require a multiblock CIF?
         elif len(self.Phases) > 1:
             oneblock = False
@@ -1649,8 +1645,9 @@ class ExportCIF(G2IO.ExportBaseclass):
         print('Writing CIF output to file '+str(self.filename)+"...")
         openCIF(self.filename)
         if self.currentExportType == 'single' or self.currentExportType == 'powder':
-            hist = self.histnam
-            self.CIFname = self.histnam[5:40].replace(' ','')
+            #======Data only CIF (powder/xtal) ====================================
+            hist = self.histnam[0]
+            self.CIFname = hist[5:40].replace(' ','')
             WriteCIFitem('data_'+self.CIFname)
             if hist.startswith("PWDR"):
                 WritePowderData(hist)
@@ -1658,24 +1655,33 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteSingleXtalData(hist)
             else:
                 print "should not happen"
-        elif oneblock:
+        elif self.quickmode:
+            #====Phase only CIF ====================================================
             WriteCIFitem('data_'+self.CIFname)
             if phasenam is None: # if not already selected, select the first phase (should be one) 
                 phasenam = self.Phases.keys()[0]
             #print 'phasenam',phasenam
             phaseblk = self.Phases[phasenam] # pointer to current phase info
-            if not self.quickmode:
-                instnam = instnam.replace(' ','')
-                WriteCIFitem('_pd_block_id',
-                             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                             str(self.shortauthorname) + "|" + instnam)
-                WriteAudit()
-                writeCIFtemplate(self.OverallParms['Controls'],'publ') # overall (publication) template
-                WriteOverall()
-                writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
             # report the phase info
             WritePhaseInfo(phasenam)
-            if hist.startswith("PWDR") and not self.quickmode:
+        elif oneblock:
+            #====Single block, data & phase CIF ===================================
+            WriteCIFitem('data_'+self.CIFname)
+            if phasenam is None: # if not already selected, select the first phase (should be one) 
+                phasenam = self.Phases.keys()[0]
+            #print 'phasenam',phasenam
+            phaseblk = self.Phases[phasenam] # pointer to current phase info
+            instnam = instnam.replace(' ','')
+            WriteCIFitem('_pd_block_id',
+                         str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                         str(self.shortauthorname) + "|" + instnam)
+            WriteAudit()
+            writeCIFtemplate(self.OverallParms['Controls'],'publ') # overall (publication) template
+            WriteOverall()
+            writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
+            # report the phase info
+            WritePhaseInfo(phasenam)
+            if hist.startswith("PWDR"):
                 # preferred orientation
                 SH = FormatSH(phasenam)
                 MD = FormatHAPpo(phasenam)
@@ -1692,14 +1698,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                 histblk = self.Histograms[hist]["Sample Parameters"]
                 writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
                 WritePowderData(hist)
-            elif hist.startswith("HKLF") and not self.quickmode:
+            elif hist.startswith("HKLF"):
                 histprm = self.Histograms[hist]["Instrument Parameters"][0]
                 writeCIFtemplate(histprm,'single',histprm['InstrName']) # single crystal template
                 WriteSingleXtalData(hist)
         else:
-        #======================================================================
-        # Start writing the CIF - multiblock
-        #======================================================================
+            #=== multiblock: multiple phases and/or histograms ====================
             nsteps = 1 + len(self.Phases) + len(self.powderDict) + len(self.xtalDict)
             try:
                 dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)

@@ -311,10 +311,10 @@ class CIFpwdReader(G2IO.ImportPowderData):
         self.idstring = os.path.basename(filename) + ': ' + blk
         if cf[blk].get('_diffrn_radiation_probe'):
             if cf[blk]['_diffrn_radiation_probe'] == 'neutron':
-                self.instdict['type'] = 'SNC'
-                #if cf[blk].get('_pd_meas_time_of_flight'): self.instdict['type'] = 'SNT' # not supported yet
+                self.instdict['type'] = 'PNC'
+                #if cf[blk].get('_pd_meas_time_of_flight'): self.instdict['type'] = 'PNT' # not supported yet
             else:
-                self.instdict['type'] = 'SXC'
+                self.instdict['type'] = 'PXC'
         if cf[blk].get('_diffrn_radiation_wavelength'):
             val = cf[blk]['_diffrn_radiation_wavelength']
             wl = []

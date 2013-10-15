@@ -2034,7 +2034,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if Imax:
             I100 *= 100.0/Imax
         refs = np.vstack((refList.T[:11],I100)).T
-    for i in range(len(refList)): rowLabels.append(str(i))
+    for i in range(len(refs)): rowLabels.append(str(i))
     if HKLF:
         colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase',]
     else:

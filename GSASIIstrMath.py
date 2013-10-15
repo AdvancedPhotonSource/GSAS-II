@@ -592,6 +592,71 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         refl[9] = np.sum(fasq)+np.sum(fbsq)
         refl[10] = atan2d(fbs[0],fas[0])
     
+def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
+    ''' Compute structure factors for all h,k,l for phase
+    puts the result, F^2, in each ref[8] in refList
+    input:
+    
+    :param dict refDict: where
+        'RefList' list where each ref = h,k,l,m,d,...
+        'Uniq' list of [equiv h,k,l]
+        'Phi' list of phase[equiv]
+        'FF' dict of form factors - filed in below
+    :param np.array G:      reciprocal metric tensor
+    :param str pfx:    phase id string
+    :param dict SGData: space group info. dictionary output from SpcGroup
+    :param dict calcControls:
+    :param dict ParmDict:
+
+    '''        
+    twopi = 2.0*np.pi
+    twopisq = 2.0*np.pi**2
+    phfx = pfx.split(':')[0]+hfx
+    ast = np.sqrt(np.diag(G))
+    Mast = twopisq*np.multiply.outer(ast,ast)
+    FFtables = calcControls['FFtables']
+    BLtables = calcControls['BLtables']
+    Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+    FF = np.zeros(len(Tdata))
+    if 'N' in calcControls[hfx+'histType']:
+        FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
+    else:
+        FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
+        FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+    Uij = np.array(G2lat.U6toUij(Uijdata))
+    bij = Mast*Uij.T
+    for iref,refl in enumerate(refDict['RefList']):
+        fbs = np.array([0,0])
+        H = refl[:3]
+        SQ = 1./(2.*refl[4])**2
+        SQfactor = 4.0*SQ*twopisq
+        Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
+        if not len(refDict['FF'][iref]):                #no form factors
+            if 'N' in calcControls[hfx+'histType']:
+                refDict['FF'][iref] = G2el.getBLvalues(BLtables)
+            else:       #'X'
+                refDict['FF'][iref] = G2el.getFFvalues(FFtables,SQ)
+        for i,El in enumerate(Tdata):
+            FF[i] = refDict['FF'][iref][El]           
+        phase = twopi*(np.inner(refDict['Uniq'][iref],(dXdata.T+Xdata.T))+refDict['Phi'][iref][:,np.newaxis])
+        sinp = np.sin(phase)
+        cosp = np.cos(phase)
+        occ = Mdata*Fdata/len(refDict['Uniq'][iref])
+        biso = -SQfactor*Uisodata
+        Tiso = np.where(biso<1.,np.exp(biso),1.0)
+        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in refDict['Uniq'][iref]])
+        Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
+        Tcorr = Tiso*Tuij
+        fa = np.array([(FF+FP-Bab)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
+        fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
+        if not SGData['SGInv']:
+            fb = np.array([(FF+FP-Bab)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
+            fbs = np.sum(np.sum(fb,axis=1),axis=1)
+        fasq = fas**2
+        fbsq = fbs**2        #imaginary
+        refl[9] = np.sum(fasq)+np.sum(fbsq)
+        refl[10] = atan2d(fbs[0],fas[0])
+    
 def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     'Needs a doc string'
     twopi = 2.0*np.pi

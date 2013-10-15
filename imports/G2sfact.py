@@ -54,6 +54,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
                 self.RefDict['Uniq'].append([])
                 self.RefDict['Phi'].append([])
                 self.RefDict['FF'].append({})
+            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
             return True
@@ -103,6 +104,7 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
                 self.RefDict['Uniq'].append([])
                 self.RefDict['Phi'].append([])
                 self.RefDict['FF'].append({})
+            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
             return True

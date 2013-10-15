@@ -882,7 +882,7 @@ def PlotPatterns(G2frame,newPlot=False):
                     peaks = Phases[phase]['RefList']
                 except TypeError:
                     peaks = Phases[phase]
-                if not peaks:
+                if not len(peaks):
                     continue
                 peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = G2frame.refOffset-pId*Ymax*G2frame.refDelt*np.ones_like(peak)

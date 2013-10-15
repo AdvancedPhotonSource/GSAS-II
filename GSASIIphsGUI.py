@@ -3113,7 +3113,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Cell = generalData['Cell'][1:7]
         G,g = G2lat.cell2Gmat(Cell)
         for iref,ref in enumerate(reflData['RefList']):
-            H = ref[:3]
+            H = list(ref[:3])
             ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
             iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
             reflData['Uniq'][iref] = Uniq
@@ -4890,14 +4890,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             reflData = reflSets[phaseName]
-            if isinstance(reflDict,list):       #patch for old reflection data
+            if isinstance(reflData,list):       #patch for old reflection data
                 RefData = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
-                for ref in reflDict:
+                for ref in reflData:
                     RefData['RefList'].append(ref[:11]+[ref[13],])
                     RefData['Uniq'].append(ref[11])
                     RefData['Phi'].append(ref[12])
                     RefData['FF'].append(ref[14])
-                reflDict = RefData
+                RefData['RefList'] = np.array(RefData['RefList'])
+                reflData = RefData
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
@@ -4990,6 +4991,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     RefData['Uniq'].append(ref[11])
                     RefData['Phi'].append(ref[12])
                     RefData['FF'].append(ref[14])
+                RefData['RefList'] = np.array(RefData['RefList'])
                 reflDict = RefData
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)

@@ -302,6 +302,7 @@ def GetHistograms(GPXfile,hNames):
                         RefData['Uniq'].append(ref[11])
                         RefData['Phi'].append(ref[12])
                         RefData['FF'].append(ref[14])
+                    RefData['RefList'] = np.array(RefData['RefList'])
                     datum[1][1] = RefData
 #end patch
                 HKLFdata['Data'] = datum[1][1]
@@ -1771,13 +1772,14 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 FF.append({})
                         else:
                             raise ValueError 
-                    Histogram['Reflection Lists'][phase] = {'RefList':refList,'Uniq':Uniq,'Phi':Phi,'FF':FF}
+                    Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),
+                        'Uniq':Uniq,'Phi':Phi,'FF':FF}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
                 hId = Histogram['hId']
                 hfx = ':%d:'%(hId)
                 for item in inst:
-                    if type(inst) is not list: continue # skip over non-refined items (such as InstName)
+                    if type(inst) is not list and item != 'Type': continue # skip over non-refined items (such as InstName)
                     hapDict[hfx+item] = inst[item][1]
                 pfx = str(pId)+':'+str(hId)+':'
                 hapDict[pfx+'Scale'] = hapData['Scale'][0]

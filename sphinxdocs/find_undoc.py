@@ -10,14 +10,19 @@ documented = [os.path.splitext(os.path.split(fil)[1])[0] for
               fil in glob.iglob(os.path.join(loc,'build/html/_modules/','*.html'))]
                       
 # loop over python files in subversion
-#for fil in glob.iglob(os.path.join(loc,'..','GSAS*.py')):
 proc = sp.Popen(["svn","list",os.path.join(loc,'..')],stdout=sp.PIPE)
+undoc = []
 for fil in proc.stdout.readlines():
+    fil = fil.strip()
+    print fil+'...',
     if os.path.splitext(fil.strip())[1] != ".py": continue
     if os.path.splitext(os.path.split(fil)[1])[0] in documented:
-        #print 'doc'
+        print 'doc'
         continue
     else:
-        print ".. automodule:: "+os.path.splitext(os.path.split(fil)[1])[0]
-        print "    :members: "
-        print ""
+        print '\n'+fil+' undocumented'
+        undoc.append(fil)
+for fil in undoc:
+    print ".. automodule:: "+os.path.splitext(os.path.split(fil)[1])[0]
+    print "    :members: "
+    print ""

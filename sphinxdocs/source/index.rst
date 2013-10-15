@@ -1,6 +1,5 @@
-.. Manually coded file based on a sphinx-quickstart example
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. This lists all the sections of the documentation. Some of the below
+.. reference a single file. Others reference multiple files. 
 
 GSAS-II Developer's Documentation
 =================================
@@ -19,7 +18,6 @@ GSAS-II Developer's Documentation
   GSASIIindex.rst
   GSASIIplot.rst
   GSASIIpwd.rst
-  GSASIIsolve.rst
 
 Note that this program requires the Python wxPython, NumPy, SciPy,
 matplotlib packages, plus the PyOpenGL package (which is installed by

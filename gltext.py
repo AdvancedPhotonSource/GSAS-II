@@ -1,3 +1,13 @@
+'''
+*gltext: draw OpenGL text*
+==========================
+
+Routines that render text on OpenGL without use of GLUT.
+
+Code written by Christian Brugger & Stefan Hacker and
+distributed under GNU General Public License.
+'''
+
 #!/usr/bin/env python
 # -*- coding: utf-8
 #

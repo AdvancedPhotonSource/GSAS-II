@@ -40,7 +40,7 @@ help:
 
 clean:
 	#-rm -rf $(BUILDDIR)/*
-	rm $(BUILDDIR)/doctrees/* $(BUILDDIR)/html/*.html $(BUILDDIR)/html/*/*.html
+	rm $(BUILDDIR)/doctrees/* $(BUILDDIR)/html/*.html $(BUILDDIR)/html/*.js $(BUILDDIR)/html/*/*.html 
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

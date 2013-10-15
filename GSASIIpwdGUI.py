@@ -2015,7 +2015,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     rowLabels = []
     if HKLF:
         G2gd.SetDataMenuBar(G2frame)
-        refList = [refl[:11] for refl in data[1]]
+        refs = data[1]['RefList']
     else:        
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
         if not G2frame.dataFrame.GetStatusBar():
@@ -2024,13 +2024,16 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.dataFrame.SelectPhase.Enable(False)
         if len(data) > 1:
             G2frame.dataFrame.SelectPhase.Enable(True)
-        refList = np.array([refl[:11] for refl in data[G2frame.RefList]])
-        Icorr = np.array([refl[13] for refl in data[G2frame.RefList]])
-        I100 = refList.T[8]*Icorr
+        try:            #patch for old reflection lists
+            refList = np.array(data[G2frame.RefList]['RefList'])
+            I100 = refList.T[8]*refList.T[11]
+        except TypeError:
+            refList = np.array([refl[:11] for refl in data[G2frame.RefList]])
+            I100 = refList.T[8]*np.array([refl[13] for refl in data[G2frame.RefList]])
         Imax = np.max(I100)
         if Imax:
             I100 *= 100.0/Imax
-        refList = np.vstack((refList.T,I100)).T
+        refs = np.vstack((refList.T[:11],I100)).T
     for i in range(len(refList)): rowLabels.append(str(i))
     if HKLF:
         colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase',]
@@ -2039,7 +2042,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
         2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
         [wg.GRID_VALUE_FLOAT+':10,2',]
-    G2frame.PeakTable = G2gd.Table(refList,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.PeakTable = G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
     G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)

@@ -556,7 +556,7 @@ class GSASII(wx.Frame):
             print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
             Id = self.PatternTree.AppendItem(parent=self.root,
                                              text='HKLF '+HistName)
-            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},rd.RefList])
+            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},rd.RefDict])
             Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
             self.PatternTree.SetItemPyData(Sub,rd.Parameters)
             self.PatternTree.SetItemPyData(
@@ -2182,7 +2182,7 @@ class GSASII(wx.Frame):
                 if data:
                     for item in self.Refine: item.Enable(True)
                     for item in self.SeqRefine: item.Enable(True)
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         if Id:
             self.PatternTree.SelectItem(Id)
         self.CheckNotebook()

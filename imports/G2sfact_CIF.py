@@ -154,6 +154,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         HKL.append('.')
                 #h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 ref = HKL+[0,0,0,0,0,0,0,0,[],[],0,{}] 
+#                ref = HKL+[0,0,0,0,0,0,0,0,0] 
                 if '_refln_f_squared_meas' in itemkeys:
                     try:
                         Fsq = float(item[itemkeys['_refln_f_squared_meas']])
@@ -211,7 +212,10 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         ref[10] = float(item[itemkeys['_refln_phase_calc']])
                     except:
                         pass                                
-                self.RefList.append(ref)
+                self.RefDict['RefList'].append(ref)
+                self.RefDict['Uniq'].append([])
+                self.RefDict['Phi'].append([])
+                self.RefDict['FF'].append({})
             self.UpdateControls(Type='Fosq',FcalcPresent=FcalcPresent) # set Fobs type & if Fcalc values are loaded
             if blk.get('_diffrn_radiation_probe'):
                 if blk['_diffrn_radiation_probe'] == 'neutron':

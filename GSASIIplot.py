@@ -298,7 +298,7 @@ def PlotSngl(self,newPlot=False):
     Page.SetFocus()
     
     Plot.set_aspect(aspect='equal')
-    HKLref = self.PatternTree.GetItemPyData(self.Sngl)[1]
+    HKLref = self.PatternTree.GetItemPyData(self.Sngl)[1]['RefList']
     Data = self.PatternTree.GetItemPyData( 
         G2gd.GetPatternTreeItemId(self,self.Sngl, 'HKL Plot Controls'))
     Type = Data['Type']            
@@ -714,8 +714,12 @@ def PlotPatterns(G2frame,newPlot=False):
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             HKL = []
             if Phases:
-                for peak in Phases[G2frame.RefList]:
-                    HKL.append(peak[:6])
+                try:
+                    for peak in Phases[G2frame.RefList]['RefList']:
+                        HKL.append(peak[:6])
+                except TypeError:
+                    for peak in Phases[G2frame.RefList]:
+                        HKL.append(peak[:6])                    
                 HKL = np.array(HKL)
         else:
             HKL = np.array(G2frame.HKL)
@@ -874,7 +878,10 @@ def PlotPatterns(G2frame,newPlot=False):
             refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
-                peaks = Phases[phase]
+                try:    #patch for old style reflection lists
+                    peaks = Phases[phase]['RefList']
+                except TypeError:
+                    peaks = Phases[phase]
                 if not peaks:
                     continue
                 peak = np.array([[peak[4],peak[5]] for peak in peaks])

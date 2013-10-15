@@ -3068,12 +3068,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         N = int((end-start)/step)+1
         newdata = np.linspace(start,end,N,True)
         if len(newdata) < 2: return # too small a range - reject
-        data[1][0] = newdata
-        data[1][1] = np.zeros_like(newdata)
-        data[1][2] = np.ones_like(newdata)
-        data[1][3] = np.zeros_like(newdata)
-        data[1][4] = np.zeros_like(newdata)
-        data[1][5] = np.zeros_like(newdata)
+        data[1] = [newdata,np.zeros_like(newdata),np.ones_like(newdata),
+            np.zeros_like(newdata),np.zeros_like(newdata),np.zeros_like(newdata)]
         Tmin = newdata[0]
         Tmax = newdata[-1]
         G2frame.PatternTree.SetItemPyData(GetPatternTreeItemId(G2frame,item,'Limits'),
@@ -3092,8 +3088,19 @@ def UpdatePWHKPlot(G2frame,kind,item):
         wtval.SetValue('%.3f'%(val))
            
     data = G2frame.PatternTree.GetItemPyData(item)
+#patches
     if 'wtFactor' not in data[0]:
         data[0] = {'wtFactor':1.0}
+    if isinstance(data[1],list) and kind == 'HKLF':
+        RefData = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
+        for ref in data[1]:
+            RefData['RefList'].append(ref[:11]+[ref[13],])
+            RefData['Uniq'].append(ref[11])
+            RefData['Phi'].append(ref[12])
+            RefData['FF'].append(ref[14])
+        data[1] = RefData
+        G2frame.PatternTree.SetItemPyData(item,data)
+#end patches
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     SetDataMenuBar(G2frame,G2frame.dataFrame.ErrorMenu)

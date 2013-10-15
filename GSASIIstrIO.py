@@ -294,6 +294,16 @@ def GetHistograms(GPXfile,hNames):
             elif 'HKLF' in hist[:4]:
                 HKLFdata = {}
                 HKLFdata.update(datum[1][0])        #weight factor
+#patch
+                if isinstance(datum[1][1],list):
+                    RefData = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
+                    for ref in datum[1][1]:
+                        RefData['RefList'].append(ref[:11]+[ref[13],])
+                        RefData['Uniq'].append(ref[11])
+                        RefData['Phi'].append(ref[12])
+                        RefData['FF'].append(ref[14])
+                    datum[1][1] = RefData
+#end patch
                 HKLFdata['Data'] = datum[1][1]
                 HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
                 HKLFdata['Reflection Lists'] = None
@@ -435,7 +445,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
         try:
             histogram = Histograms[datum[0]]
 #            print 'found ',datum[0]
-            data[0][1][1] = list(histogram['Data'])
+            data[0][1][1] = histogram['Data']
             data[0][1][0].update(histogram['Residuals'])
             for datus in data[1:]:
 #                print '    read: ',datus[0]
@@ -1742,20 +1752,26 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])
                 HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
-                refList = []
-                for h,k,l,d in HKLd:
-                    ext,mul,Uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
-                    mul *= 2      # for powder overlap of Friedel pairs
-                    if ext:
-                        continue
-                    if 'C' in inst['Type'][0]:
-                        pos = 2.0*asind(wave/(2.0*d))+Zero
-                        if limits[0] < pos < limits[1]:
-                            refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,Uniq,phi,0.0,{}])
-                            #last item should contain form factor values by atom type
-                    else:
-                        raise ValueError 
-                if resetRefList: Histogram['Reflection Lists'][phase] = refList
+                if resetRefList:
+                    refList = []
+                    Uniq = []
+                    Phi = []
+                    FF = []
+                    for h,k,l,d in HKLd:
+                        ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
+                        mul *= 2      # for powder overlap of Friedel pairs
+                        if ext:
+                            continue
+                        if 'C' in inst['Type'][0]:
+                            pos = 2.0*asind(wave/(2.0*d))+Zero
+                            if limits[0] < pos < limits[1]:
+                                refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,0.0])
+                                Uniq.append(uniq)
+                                Phi.append(phi)
+                                FF.append({})
+                        else:
+                            raise ValueError 
+                    Histogram['Reflection Lists'][phase] = {'RefList':refList,'Uniq':Uniq,'Phi':Phi,'FF':FF}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
                 hId = Histogram['hId']

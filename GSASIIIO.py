@@ -1581,7 +1581,7 @@ class ImportStructFactor(ImportBaseclass):
         # define contents of Structure Factor entry
         self.InitParameters()
         self.InitControls()
-        self.RefList = []
+        self.RefDict = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
         
     def InitControls(self):
         'initialize the controls structure'
@@ -1620,7 +1620,7 @@ class ImportStructFactor(ImportBaseclass):
         HKLmax = [None,None,None]
         HKLmin = [None,None,None]
         Fo2max = None
-        for refl in self.RefList:
+        for refl in self.RefDict['RefList']:
             HKL = refl[:3]
             if Fo2max is None:
                 Fo2max = refl[8]
@@ -1852,6 +1852,7 @@ class ExportBaseclass(object):
                     hnum = G2gd.ItemSelector(choices,self.G2frame)
                     if hnum is None: return True
                     self.histnam = [choices[hnum]]
+                    
     def loadParmDict(self):
         '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
         refined values to those from the last cycle and set the uncertainties for the

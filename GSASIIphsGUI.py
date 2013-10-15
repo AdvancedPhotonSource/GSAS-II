@@ -3112,10 +3112,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SGData = generalData['SGData']
         Cell = generalData['Cell'][1:7]
         G,g = G2lat.cell2Gmat(Cell)
-        for ref in reflData:
+        for iref,ref in enumerate(reflData['RefList']):
             H = ref[:3]
             ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-            iabsnt,ref[3],ref[11],ref[12] = G2spc.GenHKLf(H,SGData)
+            iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+            reflData['Uniq'][iref] = Uniq
+            reflData['Phi'][iref] = phi
         G2frame.PatternTree.SetItemPyData(Id,[refDict,reflData])
         
     def OnPwdrAdd(event):
@@ -4415,11 +4417,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'PWDR' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            reflData = reflSets[phaseName]
+            try:        #patch for old reflection data
+                reflData = reflSets[phaseName]['RefList']
+            except TypeError:
+                reflData = reflSets[phaseName]
             reflType = 'PWDR'
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+            try:
+                reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]['RefList']
+            except TypeError:
+                reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
             reflType = 'HKLF'
         elif reflName == 'Pawley reflections':
             reflData = data['Pawley ref']
@@ -4882,6 +4890,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             reflData = reflSets[phaseName]
+            if isinstance(reflDict,list):       #patch for old reflection data
+                RefData = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
+                for ref in reflDict:
+                    RefData['RefList'].append(ref[:11]+[ref[13],])
+                    RefData['Uniq'].append(ref[11])
+                    RefData['Phi'].append(ref[12])
+                    RefData['FF'].append(ref[14])
+                reflDict = RefData
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
@@ -4966,10 +4982,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'PWDR' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            reflData = reflSets[phaseName]
+            reflDict = reflSets[phaseName]
+            if isinstance(reflDict,list):       #patch for old reflection data
+                RefData = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
+                for ref in reflDict:
+                    RefData['RefList'].append(ref[:11]+[ref[13],])
+                    RefData['Uniq'].append(ref[11])
+                    RefData['Phi'].append(ref[12])
+                    RefData['FF'].append(ref[14])
+                reflDict = RefData
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+            reflDict = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         else:
             print '**** ERROR - No data defined for charge flipping'
             return
@@ -4981,7 +5005,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         pgbar.SetSize(Size)
         try:
-            mapData.update(G2mth.ChargeFlip(data,reflData,pgbar))
+            mapData.update(G2mth.ChargeFlip(data,reflDict,pgbar))
         finally:
             pgbar.Destroy()
         mapData['Flip'] = True        

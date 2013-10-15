@@ -103,6 +103,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
     nfev = 0
     if Print:
         print ' Hessian refinement on %d variables:'%(n)
+    Lam = np.zeros((n,n))
     while icycle < maxcyc:
         time0 = time.time()
         M = func(x0,*args)
@@ -144,10 +145,14 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
         if (chisq0-chisq1)/chisq0 < ftol:
             break
         icycle += 1
-    M = func(x0,*args)
-    nfev += 1
-    Yvec,Amat = Hess(x0,*args)
-    Amatlam = Amat*(One+Lam)/Anorm              #scale Amat to Marquardt array
+    else:       #after last cycle or if zero cycles
+        M = func(x0,*args)
+        nfev += 1
+        Yvec,Amat = Hess(x0,*args)
+        Adiag = np.sqrt(np.diag(Amat))
+        Anorm = np.outer(Adiag,Adiag)
+        Amat /= Anorm
+        Amatlam = Amat*(One+Lam)/Anorm              #scale Amat to Marquardt array        
     try:
         Bmat = nl.inv(Amatlam)*(One+Lam)/Anorm      #rescale Bmat to Marquardt array
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[]}]
@@ -1336,7 +1341,7 @@ def adjHKLmax(SGData,Hmax):
         Hmax[1] = ((Hmax[1]+2)/4)*4
         Hmax[2] = ((Hmax[2]+1)/4)*4
 
-def OmitMap(data,reflData):
+def OmitMap(data,reflDict):
     '''default doc string
     
     :param type name: description
@@ -1357,12 +1362,12 @@ def OmitMap(data,reflData):
     adjHKLmax(SGData,Hmax)
     Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
     time0 = time.time()
-    for ref in reflData:
+    for iref,ref in enumerate(reflDict['RefList']):
         if ref[4] >= dmin:
             Fosq,Fcsq,ph = ref[8:11]
-            for i,hkl in enumerate(ref[11]):
+            for i,hkl in enumerate(reflDict['Uniq']):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
-                dp = 360.*ref[12][i]
+                dp = 360.*reflDict['Phi'][i]                #and phi
                 a = cosd(ph+dp)
                 b = sind(ph+dp)
                 phasep = complex(a,b)
@@ -1380,7 +1385,7 @@ def OmitMap(data,reflData):
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData
 
-def FourierMap(data,reflData):
+def FourierMap(data,reflDict):
     '''default doc string
     
     :param type name: description
@@ -1402,12 +1407,12 @@ def FourierMap(data,reflData):
     Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
 #    Fhkl[0,0,0] = generalData['F000X']
     time0 = time.time()
-    for ref in reflData:
+    for iref,ref in enumerate(reflDict['RefList']):
         if ref[4] >= dmin:
             Fosq,Fcsq,ph = ref[8:11]
-            for i,hkl in enumerate(ref[11]):
+            for i,hkl in enumerate(reflDict['Uniq'][iref]):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
-                dp = 360.*ref[12][i]
+                dp = 360.*reflDict['Phi'][iref][i]                #and phi
                 a = cosd(ph+dp)
                 b = sind(ph+dp)
                 phasep = complex(a,b)
@@ -1544,7 +1549,7 @@ def findOffset(SGData,A,Fhkl):
 #    print (np.dot(DX,DH.T)+.5)%1.-Dphi
     return DX
     
-def ChargeFlip(data,reflData,pgbar):
+def ChargeFlip(data,reflDict,pgbar):
     '''default doc string
     
     :param type name: description
@@ -1571,7 +1576,7 @@ def ChargeFlip(data,reflData,pgbar):
     adjHKLmax(SGData,Hmax)
     Ehkl = np.zeros(shape=2*Hmax,dtype='c16')       #2X64bits per complex no.
     time0 = time.time()
-    for ref in reflData:
+    for iref,ref in enumerate(reflDict['RefList']):
         dsp = ref[4]
         if dsp >= dmin:
             ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
@@ -1584,9 +1589,9 @@ def ChargeFlip(data,reflData,pgbar):
                 E = 0.
             ph = ref[10]
             ph = rn.uniform(0.,360.)
-            for i,hkl in enumerate(ref[11]):
+            for i,hkl in enumerate(reflDict['Uniq'][iref]):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
-                dp = 360.*ref[12][i]
+                dp = 360.*reflDict['Phi'][iref][i]                #and phi
                 a = cosd(ph+dp)
                 b = sind(ph+dp)
                 phasep = complex(a,b)

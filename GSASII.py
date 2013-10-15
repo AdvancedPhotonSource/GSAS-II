@@ -1092,7 +1092,7 @@ class GSASII(wx.Frame):
         Tmax = rd.powderdata[0][-1]
         # data are read, now store them in the tree
         Id = self.PatternTree.AppendItem(parent=self.root,
-                                         text='PWDR '+rd.idstring)            
+                                         text='PWDR '+inp[0])
         self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':True},rd.powderdata])
         self.PatternTree.SetItemPyData(
             self.PatternTree.AppendItem(Id,text='Comments'),

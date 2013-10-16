@@ -3092,11 +3092,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
     if 'wtFactor' not in data[0]:
         data[0] = {'wtFactor':1.0}
     if isinstance(data[1],list) and kind == 'HKLF':
-        RefData = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
+        RefData = {'RefList':[],'FF':[]}
         for ref in data[1]:
             RefData['RefList'].append(ref[:11]+[ref[13],])
-            RefData['Uniq'].append(ref[11])
-            RefData['Phi'].append(ref[12])
             RefData['FF'].append(ref[14])
         data[1] = RefData
         G2frame.PatternTree.SetItemPyData(item,data)

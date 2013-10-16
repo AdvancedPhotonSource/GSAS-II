@@ -1356,6 +1356,8 @@ def OmitMap(data,reflDict):
     mapData = generalData['Map']
     dmin = mapData['Resolution']
     SGData = generalData['SGData']
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
@@ -1365,9 +1367,11 @@ def OmitMap(data,reflDict):
     for iref,ref in enumerate(reflDict['RefList']):
         if ref[4] >= dmin:
             Fosq,Fcsq,ph = ref[8:11]
-            for i,hkl in enumerate(reflDict['Uniq']):        #uses uniq
+            Uniq = np.inner(ref[:3],SGMT)
+            Phi = np.inner(ref[:3],SGT)
+            for i,hkl in enumerate(Uniq):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
-                dp = 360.*reflDict['Phi'][i]                #and phi
+                dp = 360.*Phi[i]                #and phi
                 a = cosd(ph+dp)
                 b = sind(ph+dp)
                 phasep = complex(a,b)
@@ -1400,6 +1404,8 @@ def FourierMap(data,reflDict):
     mapData = generalData['Map']
     dmin = mapData['Resolution']
     SGData = generalData['SGData']
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
@@ -1410,9 +1416,11 @@ def FourierMap(data,reflDict):
     for iref,ref in enumerate(reflDict['RefList']):
         if ref[4] >= dmin:
             Fosq,Fcsq,ph = ref[8:11]
-            for i,hkl in enumerate(reflDict['Uniq'][iref]):        #uses uniq
+            Uniq = np.inner(ref[:3],SGMT)
+            Phi = np.inner(ref[:3],SGT)
+            for i,hkl in enumerate(Uniq):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
-                dp = 360.*reflDict['Phi'][iref][i]                #and phi
+                dp = 360.*Phi[i]                #and phi
                 a = cosd(ph+dp)
                 b = sind(ph+dp)
                 phasep = complex(a,b)
@@ -1569,6 +1577,8 @@ def ChargeFlip(data,reflDict,pgbar):
                 FFtable.update(ff)
     dmin = flipData['Resolution']
     SGData = generalData['SGData']
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
@@ -1589,9 +1599,11 @@ def ChargeFlip(data,reflDict,pgbar):
                 E = 0.
             ph = ref[10]
             ph = rn.uniform(0.,360.)
-            for i,hkl in enumerate(reflDict['Uniq'][iref]):        #uses uniq
+            Uniq = np.inner(ref[:3],SGMT)
+            Phi = np.inner(ref[:3],SGT)
+            for i,hkl in enumerate(Uniq):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
-                dp = 360.*reflDict['Phi'][iref][i]                #and phi
+                dp = 360.*Phi[i]                #and phi
                 a = cosd(ph+dp)
                 b = sind(ph+dp)
                 phasep = complex(a,b)
@@ -1796,7 +1808,6 @@ def PeaksEquiv(data,Ind):
     for ind in Ind:
         xyz = np.array(mapPeaks[ind][1:4])
         xyzs = np.array([equiv[0] for equiv in G2spc.GenAtom(xyz,SGData,Move=True)])
-#        for x in xyzs: print x 
         for jnd,xyz in enumerate(XYZ):       
             Indx[jnd] = Duplicate(xyz,xyzs,Amat)
     Ind = []

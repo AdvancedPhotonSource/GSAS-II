@@ -51,8 +51,6 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,0,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,0])
-                self.RefDict['Uniq'].append([])
-                self.RefDict['Phi'].append([])
                 self.RefDict['FF'].append({})
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
@@ -101,8 +99,6 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
-                self.RefDict['Uniq'].append([])
-                self.RefDict['Phi'].append([])
                 self.RefDict['FF'].append({})
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded

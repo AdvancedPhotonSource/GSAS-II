@@ -534,8 +534,6 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     
     :param dict refDict: where
         'RefList' list where each ref = h,k,l,m,d,...
-        'Uniq' list of [equiv h,k,l]
-        'Phi' list of phase[equiv]
         'FF' dict of form factors - filed in below
     :param np.array G:      reciprocal metric tensor
     :param str pfx:    phase id string
@@ -549,6 +547,8 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
@@ -573,78 +573,15 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 refDict['FF'][iref] = G2el.getFFvalues(FFtables,SQ)
         for i,El in enumerate(Tdata):
             FF[i] = refDict['FF'][iref][El]           
-        phase = twopi*(np.inner(refDict['Uniq'][iref],(dXdata.T+Xdata.T))+refDict['Phi'][iref][:,np.newaxis])
+        Uniq = np.inner(H,SGMT)
+        Phi = np.inner(H,SGT)
+        phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
-        occ = Mdata*Fdata/len(refDict['Uniq'][iref])
+        occ = Mdata*Fdata/len(Uniq)
         biso = -SQfactor*Uisodata
         Tiso = np.where(biso<1.,np.exp(biso),1.0)
-        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in refDict['Uniq'][iref]])
-        Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
-        Tcorr = Tiso*Tuij
-        fa = np.array([(FF+FP-Bab)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
-        fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
-        if not SGData['SGInv']:
-            fb = np.array([(FF+FP-Bab)*occ*sinp*Tcorr,FPP*occ*cosp*Tcorr])
-            fbs = np.sum(np.sum(fb,axis=1),axis=1)
-        fasq = fas**2
-        fbsq = fbs**2        #imaginary
-        refl[9] = np.sum(fasq)+np.sum(fbsq)
-        refl[10] = atan2d(fbs[0],fas[0])
-    
-def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
-    ''' Compute structure factors for all h,k,l for phase
-    puts the result, F^2, in each ref[8] in refList
-    input:
-    
-    :param dict refDict: where
-        'RefList' list where each ref = h,k,l,m,d,...
-        'Uniq' list of [equiv h,k,l]
-        'Phi' list of phase[equiv]
-        'FF' dict of form factors - filed in below
-    :param np.array G:      reciprocal metric tensor
-    :param str pfx:    phase id string
-    :param dict SGData: space group info. dictionary output from SpcGroup
-    :param dict calcControls:
-    :param dict ParmDict:
-
-    '''        
-    twopi = 2.0*np.pi
-    twopisq = 2.0*np.pi**2
-    phfx = pfx.split(':')[0]+hfx
-    ast = np.sqrt(np.diag(G))
-    Mast = twopisq*np.multiply.outer(ast,ast)
-    FFtables = calcControls['FFtables']
-    BLtables = calcControls['BLtables']
-    Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
-    FF = np.zeros(len(Tdata))
-    if 'N' in calcControls[hfx+'histType']:
-        FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
-    else:
-        FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
-        FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-    Uij = np.array(G2lat.U6toUij(Uijdata))
-    bij = Mast*Uij.T
-    for iref,refl in enumerate(refDict['RefList']):
-        fbs = np.array([0,0])
-        H = refl[:3]
-        SQ = 1./(2.*refl[4])**2
-        SQfactor = 4.0*SQ*twopisq
-        Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
-        if not len(refDict['FF'][iref]):                #no form factors
-            if 'N' in calcControls[hfx+'histType']:
-                refDict['FF'][iref] = G2el.getBLvalues(BLtables)
-            else:       #'X'
-                refDict['FF'][iref] = G2el.getFFvalues(FFtables,SQ)
-        for i,El in enumerate(Tdata):
-            FF[i] = refDict['FF'][iref][El]           
-        phase = twopi*(np.inner(refDict['Uniq'][iref],(dXdata.T+Xdata.T))+refDict['Phi'][iref][:,np.newaxis])
-        sinp = np.sin(phase)
-        cosp = np.cos(phase)
-        occ = Mdata*Fdata/len(refDict['Uniq'][iref])
-        biso = -SQfactor*Uisodata
-        Tiso = np.where(biso<1.,np.exp(biso),1.0)
-        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in refDict['Uniq'][iref]])
+        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij
         fa = np.array([(FF+FP-Bab)*occ*cosp*Tcorr,-FPP*occ*sinp*Tcorr])
@@ -664,6 +601,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
@@ -690,14 +629,16 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Bab = parmDict[phfx+'BabA']*dBabdA
         for i,El in enumerate(Tdata):            
             FF[i] = refDict['FF'][iref][El]           
-        phase = twopi*(np.inner((dXdata.T+Xdata.T),refDict['Uniq'][iref])+refDict['Phi'][iref][np.newaxis,:])
+        Uniq = np.inner(H,SGMT)
+        Phi = np.inner(H,SGT)
+        phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+Phi[np.newaxis,:])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
-        occ = Mdata*Fdata/len(refDict['Uniq'][iref])
+        occ = Mdata*Fdata/len(Uniq)
         biso = -SQfactor*Uisodata
         Tiso = np.where(biso<1.,np.exp(biso),1.0)
         HbH = -np.inner(H,np.inner(bij,H))
-        Hij = np.array([Mast*np.multiply.outer(U,U) for U in refDict['Uniq'][iref]])
+        Hij = np.array([Mast*np.multiply.outer(U,U) for U in Uniq])
         Hij = np.array([G2lat.UijtoU6(Uij) for Uij in Hij])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij
@@ -712,23 +653,23 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fot[:,np.newaxis]*cosp,-fot[:,np.newaxis]*cosp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ[:,np.newaxis],axis=2)
-        dfadx = np.sum(twopi*refDict['Uniq'][iref]*fax[:,:,:,np.newaxis],axis=2)
+        dfadx = np.sum(twopi*Uniq*fax[:,:,:,np.newaxis],axis=2)
         dfadui = np.sum(-SQfactor*fa,axis=2)
         dfadua = np.sum(-Hij*fa[:,:,:,np.newaxis],axis=2)
         dfadba = np.sum(-cosp*(occ*Tcorr)[:,np.newaxis],axis=1)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for      
-        dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(refDict['Uniq'][iref])
+        dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)
         dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])
         dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
         dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
         dFdbab[iref] = np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #problem here if occ=0 for some atom
-            dfbdx = np.sum(twopi*refDict['Uniq'][iref]*fbx[:,:,:,np.newaxis],axis=2)          
+            dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)          
             dfbdui = np.sum(-SQfactor*fb,axis=2)
             dfbdua = np.sum(-Hij*fb[:,:,:,np.newaxis],axis=2)
             dfbdba = np.sum(-sinp*(occ*Tcorr)[:,np.newaxis],axis=1)
-            dFdfr[iref] += 2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(refDict['Uniq'][iref])
+            dFdfr[iref] += 2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(Uniq)
             dFdx[iref] += 2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
             dFdui[iref] += 2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
             dFdua[iref] += 2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
@@ -1360,6 +1301,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         phfx = '%d:%d:'%(pId,hId)
         hfx = ':%d:'%(hId)
         SGData = Phase['General']['SGData']
+        SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
         A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
@@ -1369,15 +1311,15 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
             print 'sf calc time: %.3fs'%(time.time()-time0)
         time0 = time.time()
-        Uniq = refDict['Uniq']
         for iref,refl in enumerate(refDict['RefList']):
             if 'C' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
+                Uniq = np.inner(refl[:3],SGMT)
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
                 refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict)    #peak sig & gam
-                GetIntensityCorr(refl,Uniq[iref],G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)    #puts corrections in refl[11]
+                GetIntensityCorr(refl,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)    #puts corrections in refl[11]
                 refl[11] *= Vst*Lorenz
                 if Phase['General'].get('doPawley'):
                     try:
@@ -1483,6 +1425,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         refDict = Histogram['Reflection Lists'][phase]
         Phase = Phases[phase]
         SGData = Phase['General']['SGData']
+        SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
@@ -1495,11 +1438,11 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             print 'sf-derv time %.3fs'%(time.time()-time0)
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
         time0 = time.time()
-        Uniq = refDict['Uniq']
         for iref,refl in enumerate(refDict['RefList']):
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 h,k,l = refl[:3]
-                dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb = GetIntensityDerv(refl,Uniq[iref],G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
+                Uniq = np.inner(refl[:3],SGMT)
+                dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb = GetIntensityDerv(refl,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5],refl[6],refl[7],shl)
                 iBeg = np.searchsorted(x,refl[5]-fmin)
                 iFin = np.searchsorted(x,refl[5]+fmax)

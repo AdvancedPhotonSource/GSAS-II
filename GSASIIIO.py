@@ -1581,7 +1581,7 @@ class ImportStructFactor(ImportBaseclass):
         # define contents of Structure Factor entry
         self.InitParameters()
         self.InitControls()
-        self.RefDict = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
+        self.RefDict = {'RefList':[],'FF':[]}
         
     def InitControls(self):
         'initialize the controls structure'

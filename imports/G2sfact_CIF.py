@@ -212,8 +212,6 @@ class CIFhklReader(G2IO.ImportStructFactor):
                     except:
                         pass                                
                 self.RefDict['RefList'].append(ref)
-                self.RefDict['Uniq'].append([])
-                self.RefDict['Phi'].append([])
                 self.RefDict['FF'].append({})
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=FcalcPresent) # set Fobs type & if Fcalc values are loaded

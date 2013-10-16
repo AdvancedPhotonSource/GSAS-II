@@ -296,11 +296,9 @@ def GetHistograms(GPXfile,hNames):
                 HKLFdata.update(datum[1][0])        #weight factor
 #patch
                 if isinstance(datum[1][1],list):
-                    RefData = {'RefList':[],'Uniq':[],'Phi':[],'FF':[]}
+                    RefData = {'RefList':[],'FF':[]}
                     for ref in datum[1][1]:
                         RefData['RefList'].append(ref[:11]+[ref[13],])
-                        RefData['Uniq'].append(ref[11])
-                        RefData['Phi'].append(ref[12])
                         RefData['FF'].append(ref[14])
                     RefData['RefList'] = np.array(RefData['RefList'])
                     datum[1][1] = RefData
@@ -1772,8 +1770,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 FF.append({})
                         else:
                             raise ValueError 
-                    Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),
-                        'Uniq':Uniq,'Phi':Phi,'FF':FF}
+                    Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':FF}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
                 hId = Histogram['hId']

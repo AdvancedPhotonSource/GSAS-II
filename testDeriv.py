@@ -1,4 +1,14 @@
-#testGSASIIstruct.py
+# -*- coding: utf-8 -*-
+#testDeriv.py
+'''
+Use this to check derivatives used in structure least squares refinement. To use set DEBUG=True
+in GSASIIstrMain.py (line 22 as of version 1110), run the least squares - one cycle is sufficient.
+Do the "Save Results"; this will write the file testDeriv.dat in the local directory7.
+Run this program to see plots of derivatives for all parameters refined in the last least squares.
+Shown will be numerical derivatives generated over all observations (including penalty terms) and the 
+corresponding analytical ones produced in the least squares. They should match.
+-----------------------------------------
+'''
 
 import os
 import os.path as ospath
@@ -125,7 +135,6 @@ class testDeriv(wx.Frame):
         Size[0] += 40
         Size[1] = max(Size[1],290) + 35
         self.testDerivPanel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        print Size
         self.testDerivPanel.SetSize(Size)
 
     def OnMakePlots(self,event):

@@ -571,8 +571,7 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 refDict['FF'][iref] = G2el.getBLvalues(BLtables)
             else:       #'X'
                 refDict['FF'][iref] = G2el.getFFvalues(FFtables,SQ)
-        for i,El in enumerate(Tdata):
-            FF[i] = refDict['FF'][iref][El]           
+        FF = [refDict['FF'][iref][El] for El in Tdata]          
         Uniq = np.inner(H,SGMT)
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
@@ -627,8 +626,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         SQfactor = 8.0*SQ*np.pi**2
         dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
         Bab = parmDict[phfx+'BabA']*dBabdA
-        for i,El in enumerate(Tdata):            
-            FF[i] = refDict['FF'][iref][El]           
+        FF = [refDict['FF'][iref][El] for El in Tdata]          
         Uniq = np.inner(H,SGMT)
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+Phi[np.newaxis,:])

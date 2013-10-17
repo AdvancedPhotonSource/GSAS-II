@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII - phase data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-03 12:52:28 -0500 (Thu, 03 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-16 11:52:06 -0500 (Wed, 16 Oct 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1076 $</span>
+<span class="c"># $Revision: 1110 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIphsGUI.py $</span>
-<span class="c"># $Id: GSASIIphsGUI.py 1076 2013-10-03 17:52:28Z vondreele $</span>
+<span class="c"># $Id: GSASIIphsGUI.py 1110 2013-10-16 16:52:06Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIphsGUI: Phase GUI*</span>
@@ -85,7 +85,7 @@
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1076 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1110 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2elem</span>
@@ -1677,21 +1677,30 @@
                 <span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span><span class="s">&#39;Select atom&#39;</span><span class="p">,</span><span class="s">&quot;select one or more rows of atoms then redo&quot;</span><span class="p">)</span>
                         
     <span class="k">def</span> <span class="nf">OnReImport</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-        <span class="k">print</span> <span class="s">&#39;reimport atoms from file to be developed&#39;</span>
+        <span class="n">generalData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
+        <span class="n">cx</span><span class="p">,</span><span class="n">ct</span><span class="p">,</span><span class="n">cs</span><span class="p">,</span><span class="n">cia</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span>
         <span class="n">reqrdr</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">ReImportMenuId</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
         <span class="n">rdlist</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">OnImportGeneric</span><span class="p">(</span><span class="n">reqrdr</span><span class="p">,</span>
-                                         <span class="n">G2frame</span><span class="o">.</span><span class="n">ImportPhaseReaderlist</span><span class="p">,</span>
-                                         <span class="s">&#39;phase&#39;</span><span class="p">)</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">ImportPhaseReaderlist</span><span class="p">,</span><span class="s">&#39;phase&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rdlist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span>
-        <span class="c"># for now rdlist is only expected to have one element</span>
-        <span class="c"># for now always use the first phase for when multiple phases are ever implemented</span>
-        <span class="c"># but it would be better to loop until we find a phase that matches the one in data</span>
-        <span class="k">for</span> <span class="n">rd</span> <span class="ow">in</span> <span class="n">rdlist</span><span class="p">:</span>
-            <span class="c"># rd contains all info for a phase</span>
-            <span class="n">PhaseName</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Name&#39;</span><span class="p">]</span>
-            <span class="k">print</span> <span class="s">&#39;Read phase &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">PhaseName</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; from file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">lastimport</span><span class="p">)</span>
-            <span class="k">print</span> <span class="n">rd</span><span class="o">.</span><span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span>
-            <span class="k">return</span>
+        <span class="c"># rdlist is only expected to have one element</span>
+        <span class="n">rd</span> <span class="o">=</span> <span class="n">rdlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">OnFileSave</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># rd contains all info for a phase</span>
+        <span class="n">PhaseName</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Name&#39;</span><span class="p">]</span>
+        <span class="k">print</span> <span class="s">&#39;Read phase &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">PhaseName</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; from file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">lastimport</span><span class="p">)</span>
+        <span class="n">atomData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span>
+        <span class="n">atomNames</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">atomData</span><span class="p">:</span>
+            <span class="n">atomNames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atom</span><span class="p">[:</span><span class="n">ct</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">rd</span><span class="o">.</span><span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">atomNames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atom</span><span class="p">[:</span><span class="n">ct</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">atomData</span><span class="p">[</span><span class="n">idx</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="n">atom</span><span class="p">[:</span><span class="n">ct</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="s">&#39;not in Atom array; not updated&#39;</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="n">FillAtomsGrid</span><span class="p">,</span><span class="n">Atoms</span><span class="p">)</span>
+         
                         
 <span class="c">################################################################################</span>
 <span class="c">#Structure drawing GUI stuff                </span>
@@ -3155,10 +3164,10 @@
         <span class="n">SGData</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;SGData&#39;</span><span class="p">]</span>
         <span class="n">Cell</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Cell&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span>
         <span class="n">G</span><span class="p">,</span><span class="n">g</span> <span class="o">=</span> <span class="n">G2lat</span><span class="o">.</span><span class="n">cell2Gmat</span><span class="p">(</span><span class="n">Cell</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">reflData</span><span class="p">:</span>
-            <span class="n">H</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">iref</span><span class="p">,</span><span class="n">ref</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">reflData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]):</span>
+            <span class="n">H</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ref</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
             <span class="n">ref</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">G2lat</span><span class="o">.</span><span class="n">calc_rDsq2</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">G</span><span class="p">))</span>
-            <span class="n">iabsnt</span><span class="p">,</span><span class="n">ref</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">ref</span><span class="p">[</span><span class="mi">11</span><span class="p">],</span><span class="n">ref</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">SGData</span><span class="p">)</span>
+            <span class="n">iabsnt</span><span class="p">,</span><span class="n">ref</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">SGData</span><span class="p">)</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,[</span><span class="n">refDict</span><span class="p">,</span><span class="n">reflData</span><span class="p">])</span>
         
     <span class="k">def</span> <span class="nf">OnPwdrAdd</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
@@ -4458,11 +4467,17 @@
         <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
             <span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">reflName</span><span class="p">)</span>
             <span class="n">reflSets</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">PatternId</span><span class="p">,</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">))</span>
-            <span class="n">reflData</span> <span class="o">=</span> <span class="n">reflSets</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>        <span class="c">#patch for old reflection data</span>
+                <span class="n">reflData</span> <span class="o">=</span> <span class="n">reflSets</span><span class="p">[</span><span class="n">phaseName</span><span class="p">][</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="n">reflData</span> <span class="o">=</span> <span class="n">reflSets</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span>
             <span class="n">reflType</span> <span class="o">=</span> <span class="s">&#39;PWDR&#39;</span>
         <span class="k">elif</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
             <span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">reflName</span><span class="p">)</span>
-            <span class="n">reflData</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">PatternId</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">reflData</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">PatternId</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="n">reflData</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">PatternId</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">reflType</span> <span class="o">=</span> <span class="s">&#39;HKLF&#39;</span>
         <span class="k">elif</span> <span class="n">reflName</span> <span class="o">==</span> <span class="s">&#39;Pawley reflections&#39;</span><span class="p">:</span>
             <span class="n">reflData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;Pawley ref&#39;</span><span class="p">]</span>
@@ -4925,6 +4940,13 @@
             <span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">reflName</span><span class="p">)</span>
             <span class="n">reflSets</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">PatternId</span><span class="p">,</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">))</span>
             <span class="n">reflData</span> <span class="o">=</span> <span class="n">reflSets</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reflData</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>       <span class="c">#patch for old reflection data</span>
+                <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+                <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">reflData</span><span class="p">:</span>
+                    <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[:</span><span class="mi">11</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">ref</span><span class="p">[</span><span class="mi">13</span><span class="p">],])</span>
+                    <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;FF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span>
+                <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
+                <span class="n">reflData</span> <span class="o">=</span> <span class="n">RefData</span>
         <span class="k">elif</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
             <span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">reflName</span><span class="p">)</span>
             <span class="n">reflData</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">PatternId</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
@@ -5009,10 +5031,17 @@
         <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
             <span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">reflName</span><span class="p">)</span>
             <span class="n">reflSets</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">PatternId</span><span class="p">,</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">))</span>
-            <span class="n">reflData</span> <span class="o">=</span> <span class="n">reflSets</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span>
+            <span class="n">reflDict</span> <span class="o">=</span> <span class="n">reflSets</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reflDict</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>       <span class="c">#patch for old reflection data</span>
+                <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+                <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">reflDict</span><span class="p">:</span>
+                    <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[:</span><span class="mi">11</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">ref</span><span class="p">[</span><span class="mi">13</span><span class="p">],])</span>
+                    <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;FF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span>
+                <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
+                <span class="n">reflDict</span> <span class="o">=</span> <span class="n">RefData</span>
         <span class="k">elif</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">reflName</span><span class="p">:</span>
             <span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">reflName</span><span class="p">)</span>
-            <span class="n">reflData</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">PatternId</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">reflDict</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">PatternId</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;**** ERROR - No data defined for charge flipping&#39;</span>
             <span class="k">return</span>
@@ -5024,7 +5053,7 @@
         <span class="n">pgbar</span><span class="o">.</span><span class="n">SetPosition</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">screenSize</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">Size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">305</span><span class="p">,</span><span class="n">screenSize</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">5</span><span class="p">))</span>
         <span class="n">pgbar</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">Size</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">mapData</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">G2mth</span><span class="o">.</span><span class="n">ChargeFlip</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">reflData</span><span class="p">,</span><span class="n">pgbar</span><span class="p">))</span>
+            <span class="n">mapData</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">G2mth</span><span class="o">.</span><span class="n">ChargeFlip</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">reflDict</span><span class="p">,</span><span class="n">pgbar</span><span class="p">))</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">pgbar</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         <span class="n">mapData</span><span class="p">[</span><span class="s">&#39;Flip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>        

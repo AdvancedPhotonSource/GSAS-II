@@ -28,9 +28,3 @@
 .. automodule:: gltext
     :members: 
 
-.. automodule:: makeMacApp
-    :members: 
-
-.. automodule:: unit_tests
-    :members: 
-

@@ -1,5 +1,14 @@
 #scanCCD data processing
+'''
+*scanCCD: reduce data from scanning CCD*
+========================================
 
+Quickly prototyped routine for reduction of data from detector described in
+B.H. Toby, T.J. Madden, M.R. Suchomel, J.D. Baldwin, and R.B. Von Dreele,
+"A Scanning CCD Detector for Powder Diffraction Measurements".
+Journal of Applied Crystallography. 46(4): p. 1058-63 (2013).
+
+'''
 import os
 import os.path as ospath
 import sys
@@ -685,6 +694,7 @@ class scanCCDmain(wx.App):
         return True
 
 def main():
+    'starts main application to merge data from scanning CCD'
     application = scanCCDmain(0)
     application.MainLoop()
     

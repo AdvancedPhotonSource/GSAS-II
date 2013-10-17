@@ -1147,7 +1147,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x1d7abf0&gt;, &lt;function test1 at 0x1d7a870&gt;, &lt;function test2 at 0x1d7a970&gt;, &lt;function test3 at 0x1d7aab0&gt;, &lt;function test4 at 0x1d7a570&gt;, &lt;function test5 at 0x1d7ad30&gt;, &lt;function test6 at 0x1d7afb0&gt;, &lt;function test7 at 0x1d7a1b0&gt;, &lt;function test8 at 0x1d7a1f0&gt;, &lt;function test9 at 0x1d7a430&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x209e930&gt;, &lt;function test1 at 0x209e970&gt;, &lt;function test2 at 0x209e9b0&gt;, &lt;function test3 at 0x209e9f0&gt;, &lt;function test4 at 0x209ea30&gt;, &lt;function test5 at 0x209ea70&gt;, &lt;function test6 at 0x209eab0&gt;, &lt;function test7 at 0x209eaf0&gt;, &lt;function test8 at 0x209eb30&gt;, &lt;function test9 at 0x209eb70&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1595,7 +1595,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x180522b0&gt;, &lt;function test1 at 0x180522f0&gt;, &lt;function test2 at 0x18052330&gt;, &lt;function test3 at 0x18052370&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5bda4f0&gt;, &lt;function test1 at 0x5bda530&gt;, &lt;function test2 at 0x5bda570&gt;, &lt;function test3 at 0x5bda5b0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1625,22 +1625,232 @@ for selected space groups against info in IT Volume A</p>
 </dd></dl>
 
 </div>
-<span class="target" id="module-unit_tests"></span><div class="section" id="unit-tests-self-test-module">
-<h2><em>unit_tests: Self-test Module</em><a class="headerlink" href="#unit-tests-self-test-module" title="Permalink to this headline">¶</a></h2>
-<p>A script that can be run to test a series of self-tests in GSAS-II. At present,
-only modules <tt class="docutils literal"><span class="pre">GSASIIspc</span></tt> and <tt class="docutils literal"><span class="pre">GSASIIlattice</span></tt> have self-tests.</p>
-<dl class="function">
-<dt id="unit_tests.test_GSASIIlattice">
-<tt class="descclassname">unit_tests.</tt><tt class="descname">test_GSASIIlattice</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/unit_tests.html#test_GSASIIlattice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#unit_tests.test_GSASIIlattice" title="Permalink to this definition">¶</a></dt>
-<dd><p>Test registered self-tests in <tt class="docutils literal"><span class="pre">GSASIIlattice</span></tt>.
-Takes no input and returns nothing. Throws an Exception if a test fails.</p>
+<span class="target" id="module-gltext"></span><div class="section" id="gltext-draw-opengl-text">
+<h2><em>gltext: draw OpenGL text</em><a class="headerlink" href="#gltext-draw-opengl-text" title="Permalink to this headline">¶</a></h2>
+<p>Routines that render text on OpenGL without use of GLUT.</p>
+<p>Code written by Christian Brugger &amp; Stefan Hacker and
+distributed under GNU General Public License.</p>
+<dl class="class">
+<dt id="gltext.Text">
+<em class="property">class </em><tt class="descclassname">gltext.</tt><tt class="descname">Text</tt><big>(</big><em>text='Text'</em>, <em>font=None</em>, <em>font_size=8</em>, <em>foreground=wx.Colour()</em>, <em>centered=False</em><big>)</big><a class="reference internal" href="_modules/gltext.html#Text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simple class for using System Fonts to display text in
+an OpenGL scene. The Text adds a global Cache of already
+created text elements to TextElement&#8217;s base functionality
+so you can save some memory and increase speed</p>
+<dl class="attribute">
+<dt id="gltext.Text.centered">
+<tt class="descname">centered</tt><a class="headerlink" href="#gltext.Text.centered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the text centered</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="unit_tests.test_GSASIIspc">
-<tt class="descclassname">unit_tests.</tt><tt class="descname">test_GSASIIspc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/unit_tests.html#test_GSASIIspc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#unit_tests.test_GSASIIspc" title="Permalink to this definition">¶</a></dt>
-<dd><p>Test registered self-tests in <tt class="docutils literal"><span class="pre">GSASIIspc</span></tt>.
-Takes no input and returns nothing. Throws an Exception if a test fails.</p>
+<dl class="method">
+<dt id="gltext.Text.draw_text">
+<tt class="descname">draw_text</tt><big>(</big><em>position=wx.Point(0</em>, <em>0)</em>, <em>scale=1.0</em>, <em>rotation=0</em><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.draw_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.draw_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>position (wx.Point)    - x/y Position to draw in scene
+scale    (float)       - Scale
+rotation (int)         - Rotation in degree</p>
+<p>Draws the text to the scene</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.Text.font">
+<tt class="descname">font</tt><a class="headerlink" href="#gltext.Text.font" title="Permalink to this definition">¶</a></dt>
+<dd><p>Font of the object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.Text.font_size">
+<tt class="descname">font_size</tt><a class="headerlink" href="#gltext.Text.font_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Font size</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.Text.foreground">
+<tt class="descname">foreground</tt><a class="headerlink" href="#gltext.Text.foreground" title="Permalink to this definition">¶</a></dt>
+<dd><p>Color/Overlay bitmap of the text</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.getTextElement">
+<tt class="descname">getTextElement</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.getTextElement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.getTextElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the text element bound to the Text class</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.getTexture">
+<tt class="descname">getTexture</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.getTexture"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.getTexture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the texture of the bound TextElement</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.getTexture_size">
+<tt class="descname">getTexture_size</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.getTexture_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.getTexture_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a texture size tuple</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.setCentered">
+<tt class="descname">setCentered</tt><big>(</big><em>value</em>, <em>reinit=True</em><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.setCentered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.setCentered" title="Permalink to this definition">¶</a></dt>
+<dd><p>value (bool)    - New centered value
+reinit (bool)   - Create a new texture</p>
+<p>Sets a new value for &#8216;centered&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.setFont">
+<tt class="descname">setFont</tt><big>(</big><em>value</em>, <em>reinit=True</em><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.setFont"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.setFont" title="Permalink to this definition">¶</a></dt>
+<dd><p>value (bool)    - New Font
+reinit (bool)   - Create a new texture</p>
+<p>Sets a new font</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.setFont_size">
+<tt class="descname">setFont_size</tt><big>(</big><em>value</em>, <em>reinit=True</em><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.setFont_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.setFont_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>value (bool)    - New font size
+reinit (bool)   - Create a new texture</p>
+<p>Sets a new font size</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.setForeground">
+<tt class="descname">setForeground</tt><big>(</big><em>value</em>, <em>reinit=True</em><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.setForeground"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.setForeground" title="Permalink to this definition">¶</a></dt>
+<dd><p>value (bool)    - New centered value
+reinit (bool)   - Create a new texture</p>
+<p>Sets a new value for &#8216;centered&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.Text.setText">
+<tt class="descname">setText</tt><big>(</big><em>value</em>, <em>reinit=True</em><big>)</big><a class="reference internal" href="_modules/gltext.html#Text.setText"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.Text.setText" title="Permalink to this definition">¶</a></dt>
+<dd><p>value (bool)    - New Text
+reinit (bool)   - Create a new texture</p>
+<p>Sets a new text</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.Text.text">
+<tt class="descname">text</tt><a class="headerlink" href="#gltext.Text.text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Text of the object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.Text.text_element">
+<tt class="descname">text_element</tt><a class="headerlink" href="#gltext.Text.text_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>TextElement bound to this class</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.Text.texture">
+<tt class="descname">texture</tt><a class="headerlink" href="#gltext.Text.texture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Texture of bound TextElement</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.Text.texture_size">
+<tt class="descname">texture_size</tt><a class="headerlink" href="#gltext.Text.texture_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size of the used texture</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gltext.TextElement">
+<em class="property">class </em><tt class="descclassname">gltext.</tt><tt class="descname">TextElement</tt><big>(</big><em>text=''</em>, <em>font=None</em>, <em>foreground=wx.Colour()</em>, <em>centered=False</em><big>)</big><a class="reference internal" href="_modules/gltext.html#TextElement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.TextElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simple class for using system Fonts to display
+text in an OpenGL scene</p>
+<dl class="method">
+<dt id="gltext.TextElement.bind">
+<tt class="descname">bind</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#TextElement.bind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.TextElement.bind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increase refcount</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.TextElement.centered">
+<tt class="descname">centered</tt><a class="headerlink" href="#gltext.TextElement.centered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Is text centered</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.TextElement.createTexture">
+<tt class="descname">createTexture</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#TextElement.createTexture"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.TextElement.createTexture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a texture from the settings saved in TextElement, to be able to use normal
+system fonts conviently a wx.MemoryDC is used to draw on a wx.Bitmap. As wxwidgets 
+device contexts don&#8217;t support alpha at all it is necessary to apply a little hack
+to preserve antialiasing without sticking to a fixed background color:</p>
+<p>We draw the bmp in b/w mode so we can use its data as a alpha channel for a solid
+color bitmap which after GL_ALPHA_TEST and GL_BLEND will show a nicely antialiased
+text on any surface.</p>
+<p>To access the raw pixel data the bmp gets converted to a wx.Image. Now we just have
+to merge our foreground color with the alpha data we just created and push it all
+into a OpenGL texture and we are DONE <em>inhalesdelpy</em></p>
+<p>DRAWBACK of the whole conversion thing is a really long time for creating the
+texture. If you see any optimizations that could save time PLEASE CREATE A PATCH!!!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.TextElement.deleteTexture">
+<tt class="descname">deleteTexture</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#TextElement.deleteTexture"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.TextElement.deleteTexture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the OpenGL texture object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.TextElement.draw_text">
+<tt class="descname">draw_text</tt><big>(</big><em>position=wx.Point(0</em>, <em>0)</em>, <em>scale=1.0</em>, <em>rotation=0</em><big>)</big><a class="reference internal" href="_modules/gltext.html#TextElement.draw_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.TextElement.draw_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>position (wx.Point)    - x/y Position to draw in scene
+scale    (float)       - Scale
+rotation (int)         - Rotation in degree</p>
+<p>Draws the text to the scene</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.TextElement.font">
+<tt class="descname">font</tt><a class="headerlink" href="#gltext.TextElement.font" title="Permalink to this definition">¶</a></dt>
+<dd><p>Font of the object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.TextElement.foreground">
+<tt class="descname">foreground</tt><a class="headerlink" href="#gltext.TextElement.foreground" title="Permalink to this definition">¶</a></dt>
+<dd><p>Color of the text</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.TextElement.isBound">
+<tt class="descname">isBound</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#TextElement.isBound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.TextElement.isBound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return refcount</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.TextElement.owner_cnt">
+<tt class="descname">owner_cnt</tt><a class="headerlink" href="#gltext.TextElement.owner_cnt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Owner count</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gltext.TextElement.release">
+<tt class="descname">release</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gltext.html#TextElement.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gltext.TextElement.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrease refcount</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.TextElement.text">
+<tt class="descname">text</tt><a class="headerlink" href="#gltext.TextElement.text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Text of the object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.TextElement.texture">
+<tt class="descname">texture</tt><a class="headerlink" href="#gltext.TextElement.texture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used texture</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gltext.TextElement.texture_size">
+<tt class="descname">texture_size</tt><a class="headerlink" href="#gltext.TextElement.texture_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size of the used texture</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1666,7 +1876,7 @@ Takes no input and returns nothing. Throws an Exception if a test fails.</p>
 <li><a class="reference internal" href="#gsasiielem-functions-for-element-types"><em>GSASIIElem: functions for element types</em></a></li>
 <li><a class="reference internal" href="#gsasiilattice-unit-cells"><em>GSASIIlattice: Unit cells</em></a></li>
 <li><a class="reference internal" href="#gsasiispc-space-group-module"><em>GSASIIspc: Space group module</em></a></li>
-<li><a class="reference internal" href="#unit-tests-self-test-module"><em>unit_tests: Self-test Module</em></a></li>
+<li><a class="reference internal" href="#gltext-draw-opengl-text"><em>gltext: draw OpenGL text</em></a></li>
 </ul>
 </li>
 </ul>

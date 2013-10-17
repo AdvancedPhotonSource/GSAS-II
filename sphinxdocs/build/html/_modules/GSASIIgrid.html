@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIgrid - data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-01 13:41:31 -0500 (Tue, 01 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-16 11:52:06 -0500 (Wed, 16 Oct 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1072 $</span>
+<span class="c"># $Revision: 1110 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIgrid.py $</span>
-<span class="c"># $Id: GSASIIgrid.py 1072 2013-10-01 18:41:31Z vondreele $</span>
+<span class="c"># $Id: GSASIIgrid.py 1110 2013-10-16 16:52:06Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIgrid: Basic GUI routines*</span>
@@ -78,7 +78,7 @@
 <span class="kn">import</span> <span class="nn">wx.html</span>        <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">webbrowser</span>     <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1072 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1110 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -809,6 +809,12 @@
 <span class="sd">    :param bool CopyButton: if True adds a small button that copies the</span>
 <span class="sd">      value for the current row to all fields below (default is False)</span>
 <span class="sd">      </span>
+<span class="sd">    :param list minvals: optional list of minimum values for validation</span>
+<span class="sd">      of float or int values. Ignored if value is None.</span>
+<span class="sd">    :param list maxvals: optional list of maximum values for validation</span>
+<span class="sd">      of float or int values. Ignored if value is None.</span>
+<span class="sd">    :param list sizevals: optional list of wx.Size values for each input</span>
+<span class="sd">      widget. Ignored if value is None.</span>
 <span class="sd">    :returns: the wx.Dialog created here. Use method .ShowModal() to display it.</span>
 <span class="sd">    </span>
 <span class="sd">    *Example for use of ScrolledMultiEditor:*</span>
@@ -837,7 +843,8 @@
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">dictlst</span><span class="p">,</span><span class="n">elemlst</span><span class="p">,</span><span class="n">prelbl</span><span class="o">=</span><span class="p">[],</span><span class="n">postlbl</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">title</span><span class="o">=</span><span class="s">&#39;Edit items&#39;</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">250</span><span class="p">),</span>
-                 <span class="n">CopyButton</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+                 <span class="n">CopyButton</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">minvals</span><span class="o">=</span><span class="p">[],</span><span class="n">maxvals</span><span class="o">=</span><span class="p">[],</span><span class="n">sizevals</span><span class="o">=</span><span class="p">[]):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dictlst</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemlst</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;ScrolledMultiEditor error: len(dictlst) != len(elemlst) &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dictlst</span><span class="p">))</span><span class="o">+</span><span class="s">&quot; != &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">elemlst</span><span class="p">))</span>
         <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># create dialog &amp; sizer</span>
@@ -874,6 +881,13 @@
                 <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> 
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">prelbl</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span>
+            <span class="n">kargs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">minvals</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">minvals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="n">kargs</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">minvals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">maxvals</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">maxvals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="n">kargs</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">maxvals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">sizevals</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">sizevals</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">kargs</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">sizevals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">CopyButton</span><span class="p">:</span>
                 <span class="kn">import</span> <span class="nn">wx.lib.colourselect</span> <span class="kn">as</span> <span class="nn">wscs</span>
                 <span class="n">but</span> <span class="o">=</span> <span class="n">wscs</span><span class="o">.</span><span class="n">ColourSelect</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;v&#39;</span><span class="p">,</span> <span class="c"># would like to use u&#39;\u2193&#39; or u&#39;\u25BC&#39; but not in WinXP</span>
@@ -887,7 +901,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">ButtonIndex</span><span class="p">[</span><span class="n">but</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
                 <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">but</span><span class="p">)</span>
             <span class="c"># create the validated TextCrtl, store it and add it to the sizer</span>
-            <span class="n">ctrl</span> <span class="o">=</span> <span class="n">ValidatedTxtCtrl</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">OKcontrol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ControlOKButton</span><span class="p">)</span>
+            <span class="n">ctrl</span> <span class="o">=</span> <span class="n">ValidatedTxtCtrl</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">OKcontrol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ControlOKButton</span><span class="p">,</span>
+                                    <span class="o">**</span><span class="n">kargs</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ValidatedControlsList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
             <span class="n">subSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ctrl</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">postlbl</span><span class="p">):</span> <span class="c"># label after TextCtrl, or put in a blank</span>
@@ -1328,7 +1343,7 @@
 <div class="viewcode-block" id="ItemSelector"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.ItemSelector">[docs]</a><span class="k">def</span> <span class="nf">ItemSelector</span><span class="p">(</span><span class="n">ChoiceList</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                  <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select an item&#39;</span><span class="p">,</span>
                  <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="s">&#39;Item Selector&#39;</span><span class="p">,</span>
-                 <span class="n">useCancel</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+                 <span class="n">useCancel</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Provide a wx dialog to select a single item from list of choices</span>
 
 <span class="sd">        :param list ChoiceList: a list of choices where one will be selected</span>
@@ -1337,20 +1352,33 @@
 <span class="sd">        :param wx.Size size: Size for dialog to be created (default None -- size as needed)</span>
 <span class="sd">        :param str header: Title to place on window frame (default &#39;Item Selector&#39;)</span>
 <span class="sd">        :param bool useCancel: If True (default) both the OK and Cancel buttons are offered</span>
+<span class="sd">        :param bool multiple: If True then multiple items can be selected (default False)</span>
 
-<span class="sd">        :returns: the selection index or None</span>
+<span class="sd">        :returns: the selection index or None or a selection list if multiple is true</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
-            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
-                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">multiple</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
+                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MultiChoiceDialog</span><span class="p">(</span>
+                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MultiChoiceDialog</span><span class="p">(</span>
+                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">,</span>
+                    <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
+            <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
-                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span><span class="n">ChoiceList</span><span class="p">,</span>
-                <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
+                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
+                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
+                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span><span class="n">ChoiceList</span><span class="p">,</span>
+                    <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">size</span><span class="p">:</span> <span class="n">dlg</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-            <span class="n">sel</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">sel</span>
+            <span class="k">if</span> <span class="n">multiple</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelections</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
@@ -3057,8 +3085,48 @@
 <span class="c">################################################################################           </span>
        </div>
 <div class="viewcode-block" id="UpdatePWHKPlot"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.UpdatePWHKPlot">[docs]</a><span class="k">def</span> <span class="nf">UpdatePWHKPlot</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">kind</span><span class="p">,</span><span class="n">item</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Needs a doc string</span>
+    <span class="sd">&#39;&#39;&#39;Called when the histogram main tree entry is called. Displays the</span>
+<span class="sd">    histogram weight factor, refinement statistics for the histogram</span>
+<span class="sd">    and the range of data for a simulation.</span>
+
+<span class="sd">    Also invokes a plot of the histogram.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">onEditSimRange</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="s">&#39;Edit simulation range&#39;</span>
+        <span class="n">inp</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="bp">None</span>
+            <span class="p">]</span>
+        <span class="n">inp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">inp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">inp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;start angle&#39;</span><span class="p">,</span> <span class="s">&#39;end angle&#39;</span><span class="p">,</span> <span class="s">&#39;step size&#39;</span><span class="p">)</span>
+        <span class="n">dictlst</span> <span class="o">=</span> <span class="p">[</span><span class="n">inp</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+        <span class="n">elemlst</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inp</span><span class="p">))</span>
+        <span class="n">dlg</span> <span class="o">=</span> <span class="n">ScrolledMultiEditor</span><span class="p">(</span>
+            <span class="n">G2frame</span><span class="p">,[</span><span class="n">inp</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">inp</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inp</span><span class="p">)),</span> <span class="n">names</span><span class="p">,</span>
+            <span class="n">header</span><span class="o">=</span><span class="s">&#39;Edit simulation range&#39;</span><span class="p">,</span>
+            <span class="n">minvals</span><span class="o">=</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span><span class="mf">0.001</span><span class="p">,</span><span class="mf">0.0001</span><span class="p">),</span>
+            <span class="n">maxvals</span><span class="o">=</span><span class="p">(</span><span class="mf">180.</span><span class="p">,</span><span class="mf">180.</span><span class="p">,</span><span class="o">.</span><span class="mi">1</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">CenterOnParent</span><span class="p">()</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">!=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span> <span class="k">return</span>
+        <span class="k">if</span> <span class="n">inp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">inp</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">end</span><span class="p">,</span><span class="n">start</span><span class="p">,</span><span class="n">step</span> <span class="o">=</span> <span class="n">inp</span>
+        <span class="k">else</span><span class="p">:</span>                
+            <span class="n">start</span><span class="p">,</span><span class="n">end</span><span class="p">,</span><span class="n">step</span> <span class="o">=</span> <span class="n">inp</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span><span class="o">/</span><span class="n">step</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+        <span class="n">newdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="n">end</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newdata</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="c"># too small a range - reject</span>
+        <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">newdata</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">newdata</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">newdata</span><span class="p">),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">newdata</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">newdata</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">newdata</span><span class="p">)]</span>
+        <span class="n">Tmin</span> <span class="o">=</span> <span class="n">newdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Tmax</span> <span class="o">=</span> <span class="n">newdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">item</span><span class="p">,</span><span class="s">&#39;Limits&#39;</span><span class="p">),</span>
+            <span class="p">[(</span><span class="n">Tmin</span><span class="p">,</span><span class="n">Tmax</span><span class="p">),[</span><span class="n">Tmin</span><span class="p">,</span><span class="n">Tmax</span><span class="p">]])</span>
+        <span class="n">UpdatePWHKPlot</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">kind</span><span class="p">,</span><span class="n">item</span><span class="p">)</span> <span class="c"># redisplay data screen</span>
 
     <span class="k">def</span> <span class="nf">OnErrorAnalysis</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
         <span class="n">G2plt</span><span class="o">.</span><span class="n">PlotDeltSig</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">kind</span><span class="p">)</span>
@@ -3072,8 +3140,17 @@
         <span class="n">wtval</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%.3f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
            
     <span class="n">data</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<span class="c">#patches</span>
     <span class="k">if</span> <span class="s">&#39;wtFactor&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;wtFactor&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
+        <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[:</span><span class="mi">11</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">ref</span><span class="p">[</span><span class="mi">13</span><span class="p">],])</span>
+            <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;FF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span>
+        <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">RefData</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">data</span><span class="p">)</span>
+<span class="c">#end patches</span>
     <span class="k">if</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">:</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
     <span class="n">SetDataMenuBar</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">ErrorMenu</span><span class="p">)</span>
@@ -3089,6 +3166,22 @@
     <span class="n">wtval</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_KILL_FOCUS</span><span class="p">,</span><span class="n">OnWtFactor</span><span class="p">)</span>
     <span class="n">wtSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wtval</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
     <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wtSizer</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Dummy&#39;</span><span class="p">):</span>
+        <span class="n">simSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="n">Tmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">Tmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="p">(</span><span class="n">Tmax</span> <span class="o">-</span> <span class="n">Tmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">num</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="s">u&#39;2</span><span class="se">\u03b8</span><span class="s">&#39;</span> <span class="c"># 2theta</span>
+        <span class="n">lbl</span> <span class="o">=</span>  <span class="s">u&#39;Simulation range: {:.2f} to {:.2f} {:s}</span><span class="se">\n</span><span class="s">with {:.4f} steps ({:d} points)&#39;</span>
+        <span class="n">lbl</span> <span class="o">+=</span> <span class="s">u&#39;</span><span class="se">\n</span><span class="s">(Edit range resets observed intensities).&#39;</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="n">lbl</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Tmin</span><span class="p">,</span><span class="n">Tmax</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">step</span><span class="p">,</span><span class="n">num</span><span class="p">)</span>
+        <span class="n">simSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">lbl</span><span class="p">),</span>
+                    <span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
+        <span class="n">but</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="s">&quot;Edit range&quot;</span><span class="p">)</span>
+        <span class="n">but</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_BUTTON</span><span class="p">,</span><span class="n">onEditSimRange</span><span class="p">)</span>
+        <span class="n">simSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">but</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
+        <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">simSizer</span><span class="p">)</span>
     <span class="k">if</span> <span class="s">&#39;Nobs&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">mainSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
             <span class="s">&#39; Data residual wR: </span><span class="si">%.3f%%</span><span class="s"> on </span><span class="si">%d</span><span class="s"> observations&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;wR&#39;</span><span class="p">],</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Nobs&#39;</span><span class="p">])))</span>

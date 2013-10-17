@@ -1,13 +1,22 @@
 # -*- coding: utf-8 -*-
 #testDeriv.py
 '''
-Use this to check derivatives used in structure least squares refinement. To use set DEBUG=True
-in GSASIIstrMain.py (line 22 as of version 1110), run the least squares - one cycle is sufficient.
-Do the "Save Results"; this will write the file testDeriv.dat in the local directory7.
-Run this program to see plots of derivatives for all parameters refined in the last least squares.
-Shown will be numerical derivatives generated over all observations (including penalty terms) and the 
-corresponding analytical ones produced in the least squares. They should match.
------------------------------------------
+*testDeriv: Check derivative computation*
+=========================================
+
+Use this to check derivatives used in structure least squares
+refinement against numerical values computed in this script.
+
+To use set ``DEBUG=True`` in GSASIIstrMain.py (line 22, as of version
+1110); run the least squares - one cycle is sufficient.  Do the "Save
+Results"; this will write the file testDeriv.dat in the local
+directory.
+
+Then run this program to see plots of derivatives for all
+parameters refined in the last least squares.  Shown will be numerical
+derivatives generated over all observations (including penalty terms)
+and the corresponding analytical ones produced in the least
+squares. They should match.
 '''
 
 import os
@@ -182,6 +191,7 @@ class testDerivmain(wx.App):
         return True
 
 def main():
+    'Starts main application to compute and plot derivatives'
     application = testDerivmain(0)
     application.MainLoop()
     

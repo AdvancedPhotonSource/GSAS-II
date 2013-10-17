@@ -78,7 +78,7 @@
 <li class="toctree-l2"><a class="reference internal" href="GSASIIutil.html#gsasiielem-functions-for-element-types"><em>GSASIIElem: functions for element types</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="GSASIIutil.html#gsasiilattice-unit-cells"><em>GSASIIlattice: Unit cells</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="GSASIIutil.html#gsasiispc-space-group-module"><em>GSASIIspc: Space group module</em></a></li>
-<li class="toctree-l2"><a class="reference internal" href="GSASIIutil.html#unit-tests-self-test-module"><em>unit_tests: Self-test Module</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="GSASIIutil.html#gltext-draw-opengl-text"><em>gltext: draw OpenGL text</em></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="GSASIIGUIr.html"><em>GSAS-II GUI Routines</em></a><ul>
@@ -115,12 +115,33 @@
 <li class="toctree-l1"><a class="reference internal" href="GSASIIindex.html"><em>GSASIIindex: Cell Indexing Module</em></a></li>
 <li class="toctree-l1"><a class="reference internal" href="GSASIIplot.html"><em>GSASIIplot: plotting routines</em></a></li>
 <li class="toctree-l1"><a class="reference internal" href="GSASIIpwd.html"><em>GSASII powder calculation module</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="GSASIIsolve.html"><em>GSASIIsolve - structure solving routines</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="GSASIIscripts.html"><em>GSAS-II Scripts</em></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="GSASIIscripts.html#testderiv-check-derivative-computation"><em>testDeriv: Check derivative computation</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="GSASIIscripts.html#gsasiitestplot-plotting-for-testderiv"><em>GSASIItestplot: Plotting for testDeriv</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="GSASIIscripts.html#scanccd-reduce-data-from-scanning-ccd"><em>scanCCD: reduce data from scanning CCD</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="GSASIIscripts.html#makemacapp-create-mac-applet"><em>makeMacApp: Create Mac Applet</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="GSASIIscripts.html#unit-tests-self-test-module"><em>unit_tests: Self-test Module</em></a></li>
+</ul>
+</li>
 </ul>
 </div>
-<p>Note that this program requires the Python wxPython, NumPy, SciPy,
-matplotlib packages, plus the PyOpenGL package (which is installed by
-GSAS-II if not found).</p>
+<div class="section" id="required-packages">
+<h2><em>Required packages</em><a class="headerlink" href="#required-packages" title="Permalink to this headline">¶</a></h2>
+<p>Note that GSAS-II requires the Python extension packages</p>
+<ul class="simple">
+<li>wxPython (<a class="reference external" href="http://wxpython.org/docs/api/">http://wxpython.org/docs/api/</a>),</li>
+<li>NumPy (<a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/">http://docs.scipy.org/doc/numpy/reference/</a>),</li>
+<li>SciPy (<a class="reference external" href="http://docs.scipy.org/doc/scipy/reference/">http://docs.scipy.org/doc/scipy/reference/</a>),</li>
+<li>matplotlib (<a class="reference external" href="http://matplotlib.org/contents.html">http://matplotlib.org/contents.html</a>) and</li>
+<li>PyOpenGL (<a class="reference external" href="http://pyopengl.sourceforge.net/documentation">http://pyopengl.sourceforge.net/documentation</a>)</li>
+</ul>
+<p>These are not distributed
+as part of the Python standard library and must be obtained separately
+(or in a bundled Python package such as the Enthought Python
+Distribution/Canopy).
+The PyOpenGL package is installed into Python by GSAS-II if not found,
+so it does not need to be included in the Python bundle.</p>
+</div>
 </div>
 
 
@@ -132,6 +153,14 @@ GSAS-II if not found).</p>
             <p class="logo"><a href="#">
               <img class="logo" src="_static/G2_html_logo.png" alt="Logo"/>
             </a></p>
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">GSAS-II Developer&#8217;s Documentation</a><ul>
+<li><a class="reference internal" href="#required-packages"><em>Required packages</em></a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Next topic</h4>
   <p class="topless"><a href="GSASII.html"
                         title="next chapter"><em>GSAS-II Main Module</em></a></p>

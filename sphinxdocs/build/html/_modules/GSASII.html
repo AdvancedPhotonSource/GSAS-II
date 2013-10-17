@@ -54,11 +54,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-03 12:52:28 -0500 (Thu, 03 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-15 12:25:24 -0500 (Tue, 15 Oct 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1076 $</span>
+<span class="c"># $Revision: 1106 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASII.py $</span>
-<span class="c"># $Id: GSASII.py 1076 2013-10-03 17:52:28Z vondreele $</span>
+<span class="c"># $Id: GSASII.py 1106 2013-10-15 17:25:24Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSAS-II Main Module*</span>
@@ -114,7 +114,7 @@
 
 <span class="c"># load the GSAS routines</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1076 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1106 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIplot</span> <span class="kn">as</span> <span class="nn">G2plt</span>
@@ -124,7 +124,6 @@
 <span class="kn">import</span> <span class="nn">GSASIIstrMain</span> <span class="kn">as</span> <span class="nn">G2stMn</span>
 <span class="kn">import</span> <span class="nn">GSASIIstrIO</span> <span class="kn">as</span> <span class="nn">G2stIO</span>
 <span class="kn">import</span> <span class="nn">GSASIImapvars</span> <span class="kn">as</span> <span class="nn">G2mv</span>
-<span class="kn">import</span> <span class="nn">GSASIIsolve</span> <span class="kn">as</span> <span class="nn">G2sol</span>
 
 <span class="c">#wx inspector - use as needed</span>
 <span class="n">wxInspector</span> <span class="o">=</span> <span class="bp">False</span>
@@ -609,7 +608,7 @@
             <span class="k">print</span> <span class="s">&#39;Read structure factor table &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">HistName</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; from file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastimport</span><span class="p">)</span>
             <span class="n">Id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
                                              <span class="n">text</span><span class="o">=</span><span class="s">&#39;HKLF &#39;</span><span class="o">+</span><span class="n">HistName</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,[{</span><span class="s">&#39;wtFactor&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s">&#39;Dummy&#39;</span><span class="p">:</span><span class="bp">False</span><span class="p">},</span><span class="n">rd</span><span class="o">.</span><span class="n">RefList</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,[{</span><span class="s">&#39;wtFactor&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s">&#39;Dummy&#39;</span><span class="p">:</span><span class="bp">False</span><span class="p">},</span><span class="n">rd</span><span class="o">.</span><span class="n">RefDict</span><span class="p">])</span>
             <span class="n">Sub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Instrument Parameters&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Sub</span><span class="p">,</span><span class="n">rd</span><span class="o">.</span><span class="n">Parameters</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
@@ -637,7 +636,12 @@
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Import powder data, use file to try to determine format&#39;</span><span class="p">,</span>
             <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;guess format from file&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnImportPowder</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
-            
+        <span class="n">submenu</span><span class="o">.</span><span class="n">AppendSeparator</span><span class="p">()</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">submenu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Create a powder data set entry that will be simulated&#39;</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Simulate a dataset&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnDummyPowder</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+           
 <div class="viewcode-block" id="GSASII.ReadPowderInstprm"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASII.ReadPowderInstprm">[docs]</a>    <span class="k">def</span> <span class="nf">ReadPowderInstprm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">instfile</span><span class="p">):</span>       <span class="c">#fix the write routine for [inst1,inst2] style</span>
         <span class="sd">&#39;&#39;&#39;Read a GSAS-II (new) instrument parameter file</span>
 
@@ -1062,57 +1066,216 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
         <span class="k">return</span> <span class="c"># success</span>
 </div>
-    <span class="k">def</span> <span class="nf">_init_Exports</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">menu</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;This is a place holder for when exports are handled in a manner similar to imports</span>
+<div class="viewcode-block" id="GSASII.OnDummyPowder"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASII.OnDummyPowder">[docs]</a>    <span class="k">def</span> <span class="nf">OnDummyPowder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Called in response to Import/Powder Data/Simulate menu item</span>
+<span class="sd">        to create a Dummy powder diffraction data set. </span>
+
+<span class="sd">        Reads an instrument parameter file and then gets input from the user</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-<span class="c">#        submenu = wx.Menu()</span>
-<span class="c">#        item = menu.AppendMenu(</span>
-<span class="c">#            wx.ID_ANY, &#39;entire project&#39;,</span>
-<span class="c">#            submenu, help=&#39;Export entire project&#39;)</span>
-
-        <span class="c"># for now hard-code CIF testing here</span>
-        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
-            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s">&#39;full CIF file includes powder/reflection data&#39;</span><span class="p">,</span>
-            <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
-            <span class="n">text</span><span class="o">=</span><span class="s">&#39;full CIF file&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnTestCIF</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
-        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
-            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s">&#39;quick CIF file with no data, no distance/angle table&#39;</span><span class="p">,</span>
-            <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
-            <span class="n">text</span><span class="o">=</span><span class="s">&#39;quick CIF file&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnTestCIF</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
-
-    <span class="k">def</span> <span class="nf">OnTestCIF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
-        <span class="c"># hard-code CIF testing here</span>
-        
-        <span class="c"># get the menu command on Windows and Linux</span>
-        <span class="n">menu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportMenu</span><span class="o">.</span><span class="n">FindItemById</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;full&#39;</span>
-        <span class="k">if</span> <span class="n">menu</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s">&#39;quick&#39;</span> <span class="ow">in</span> <span class="n">menu</span><span class="o">.</span><span class="n">GetLabel</span><span class="p">():</span>
-                <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;simple&#39;</span>
-        <span class="k">else</span><span class="p">:</span> <span class="c"># this works on the Mac</span>
-            <span class="k">try</span><span class="p">:</span> 
-                <span class="k">if</span> <span class="s">&#39;quick&#39;</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">EventObject</span><span class="o">.</span><span class="n">GetLabelText</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">Id</span><span class="p">):</span>
-                    <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;simple&#39;</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="k">pass</span>
-        <span class="c">#path2GSAS2 = os.path.join(</span>
-        <span class="c">#    os.path.dirname(os.path.realpath(__file__)), # location of this file</span>
-        <span class="c">#    &#39;exports&#39;)</span>
-        <span class="c">#if path2GSAS2 not in sys.path: sys.path.append(path2GSAS2)</span>
-        <span class="c">#reload(G2IO)</span>
-        <span class="kn">import</span> <span class="nn">G2cif</span>
-        <span class="nb">reload</span><span class="p">(</span><span class="n">G2cif</span><span class="p">)</span>
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">G2cif</span><span class="o">.</span><span class="n">ExportCIF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">sexp</span> <span class="o">=</span> <span class="n">G2cif</span><span class="o">.</span><span class="n">ExportSimpleCIF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;full&#39;</span><span class="p">:</span>
-            <span class="n">exp</span><span class="o">.</span><span class="n">export</span><span class="p">()</span>
+        <span class="n">rd</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPowderData</span><span class="p">(</span>
+            <span class="n">extensionlist</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span>
+            <span class="n">strictExtension</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;Simulate dataset&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Compute a simulated pattern&#39;</span><span class="p">)</span>
+        <span class="n">rd</span><span class="o">.</span><span class="n">powderentry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span> <span class="c"># no filename</span>
+        <span class="c"># #self.powderentry[1] = pos # bank offset (N/A here)</span>
+        <span class="n">rd</span><span class="o">.</span><span class="n">powderentry</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="c"># only one bank</span>
+        <span class="n">rd</span><span class="o">.</span><span class="n">comments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;This is a dummy dataset for powder pattern simulation&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CheckNotebook</span><span class="p">()</span>
+        <span class="n">Iparm</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">lastIparmfile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">lastdatafile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zipfile</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c"># get instrument parameters for </span>
+        <span class="n">Iparm1</span><span class="p">,</span><span class="n">Iparm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetPowderIparm</span><span class="p">(</span><span class="n">rd</span><span class="p">,</span> <span class="n">Iparm</span><span class="p">,</span> <span class="n">lastIparmfile</span><span class="p">,</span> <span class="n">lastdatafile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;T&#39;</span> <span class="ow">in</span> <span class="n">Iparm1</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;TOF simulation not supported yet&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">sexp</span><span class="o">.</span><span class="n">export</span><span class="p">()</span>
+            <span class="c"># need to get name, 2theta start, end, step</span>
+            <span class="n">rd</span><span class="o">.</span><span class="n">idstring</span> <span class="o">=</span> <span class="s">&#39; CW&#39;</span>
+            <span class="k">if</span> <span class="s">&#39;X&#39;</span> <span class="ow">in</span> <span class="n">Iparm1</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">rd</span><span class="o">.</span><span class="n">idstring</span> <span class="o">=</span> <span class="s">&#39;CW x-ray simulation&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rd</span><span class="o">.</span><span class="n">idstring</span> <span class="o">=</span> <span class="s">&#39;CW neutron simulation&#39;</span>
+            <span class="c"># base initial range on wavelength</span>
+            <span class="n">wave</span> <span class="o">=</span> <span class="n">Iparm1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Lam&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wave</span><span class="p">:</span>
+                <span class="n">wave</span> <span class="o">=</span> <span class="n">wave</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wave</span> <span class="o">=</span> <span class="n">Iparm1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Lam1&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">wave</span><span class="p">:</span>
+                    <span class="n">wave</span> <span class="o">=</span> <span class="n">wave</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">N</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">):</span> <span class="c"># insist on a dataset with a few points</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;dataset name&#39;</span><span class="p">,</span> <span class="s">&#39;start angle&#39;</span><span class="p">,</span> <span class="s">&#39;end angle&#39;</span><span class="p">,</span> <span class="s">&#39;step size&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">wave</span> <span class="ow">or</span> <span class="n">wave</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">inp</span> <span class="o">=</span> <span class="p">[</span><span class="n">rd</span><span class="o">.</span><span class="n">idstring</span><span class="p">,</span> <span class="mf">10.</span><span class="p">,</span><span class="mf">40.</span><span class="p">,</span><span class="mf">0.005</span><span class="p">]</span> <span class="c"># see names for what&#39;s what</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">inp</span> <span class="o">=</span> <span class="p">[</span><span class="n">rd</span><span class="o">.</span><span class="n">idstring</span><span class="p">,</span> <span class="mf">10.</span><span class="p">,</span><span class="mf">80.</span><span class="p">,</span><span class="mf">0.01</span><span class="p">]</span> <span class="c"># see names for what&#39;s what</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ScrolledMultiEditor</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,[</span><span class="n">inp</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">inp</span><span class="p">),</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inp</span><span class="p">)),</span><span class="n">names</span><span class="p">,</span>
+                <span class="n">header</span><span class="o">=</span><span class="s">&#39;Enter simulation name and range&#39;</span><span class="p">,</span>
+                <span class="n">minvals</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span><span class="mf">0.001</span><span class="p">,</span><span class="mf">0.001</span><span class="p">,</span><span class="mf">0.0001</span><span class="p">),</span>
+                <span class="n">maxvals</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span><span class="mf">180.</span><span class="p">,</span><span class="mf">180.</span><span class="p">,</span><span class="o">.</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">sizevals</span><span class="o">=</span><span class="p">((</span><span class="mi">225</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),)</span>
+                <span class="p">)</span>
+            <span class="n">dlg</span><span class="o">.</span><span class="n">CenterOnParent</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">inp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">inp</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="n">end</span><span class="p">,</span><span class="n">start</span><span class="p">,</span><span class="n">step</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">else</span><span class="p">:</span>                
+                    <span class="n">start</span><span class="p">,</span><span class="n">end</span><span class="p">,</span><span class="n">step</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span><span class="o">/</span><span class="n">step</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="n">end</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">rd</span><span class="o">.</span><span class="n">powderdata</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="c"># x-axis values</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="c"># powder pattern intensities</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="c"># 1/sig(intensity)^2 values (weights)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="c"># calc. intensities (zero)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="c"># calc. background (zero)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="c"># obs-calc profiles</span>
+            <span class="p">]</span>
+        <span class="n">Tmin</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">powderdata</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Tmax</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">powderdata</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c"># data are read, now store them in the tree</span>
+        <span class="n">Id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+                                         <span class="n">text</span><span class="o">=</span><span class="s">&#39;PWDR &#39;</span><span class="o">+</span><span class="n">inp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,[{</span><span class="s">&#39;wtFactor&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s">&#39;Dummy&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">},</span><span class="n">rd</span><span class="o">.</span><span class="n">powderdata</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Comments&#39;</span><span class="p">),</span>
+            <span class="n">rd</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Limits&#39;</span><span class="p">),</span>
+            <span class="p">[(</span><span class="n">Tmin</span><span class="p">,</span><span class="n">Tmax</span><span class="p">),[</span><span class="n">Tmin</span><span class="p">,</span><span class="n">Tmax</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Id</span><span class="p">,</span><span class="s">&#39;Limits&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Background&#39;</span><span class="p">),</span>
+            <span class="p">[[</span><span class="s">&#39;chebyschev&#39;</span><span class="p">,</span><span class="bp">True</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span>
+             <span class="p">{</span><span class="s">&#39;nDebye&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;debyeTerms&#39;</span><span class="p">:[],</span><span class="s">&#39;nPeaks&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;peaksList&#39;</span><span class="p">:[]}])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Instrument Parameters&#39;</span><span class="p">),</span>
+            <span class="p">[</span><span class="n">Iparm1</span><span class="p">,</span><span class="n">Iparm2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Sample Parameters&#39;</span><span class="p">),</span>
+            <span class="n">rd</span><span class="o">.</span><span class="n">Sample</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Peak List&#39;</span><span class="p">)</span>
+            <span class="p">,[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Index Peak List&#39;</span><span class="p">),</span>
+            <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Unit Cells List&#39;</span><span class="p">),</span>
+            <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">),</span>
+            <span class="p">{})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;Added simulation powder data &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">rd</span><span class="o">.</span><span class="n">idstring</span><span class="p">)</span><span class="o">+</span> 
+              <span class="s">&#39; with parameters from &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">rd</span><span class="o">.</span><span class="n">instmsg</span><span class="p">))</span>
+        <span class="k">return</span> <span class="c"># success</span>
+</div>
+    <span class="k">def</span> <span class="nf">_init_Exports</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">menu</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Find exporter routines and add them into menus</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># set up the top-level menus</span>
+        <span class="n">projectmenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">()</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">AppendMenu</span><span class="p">(</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;Entire project as&#39;</span><span class="p">,</span>
+            <span class="n">projectmenu</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&#39;Export entire project&#39;</span><span class="p">)</span>
 
+        <span class="n">phasemenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">()</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">AppendMenu</span><span class="p">(</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;Phase as&#39;</span><span class="p">,</span>
+            <span class="n">phasemenu</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&#39;Export phase or sometimes phases&#39;</span><span class="p">)</span>
+
+        <span class="n">powdermenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">()</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">AppendMenu</span><span class="p">(</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;Powder data as&#39;</span><span class="p">,</span>
+            <span class="n">powdermenu</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&#39;Export powder diffraction histogram(s)&#39;</span><span class="p">)</span>
+
+        <span class="n">singlemenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">()</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">AppendMenu</span><span class="p">(</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;Single crystal data as&#39;</span><span class="p">,</span>
+            <span class="n">singlemenu</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&#39;Export single crystal histogram(s)&#39;</span><span class="p">)</span>
+
+        <span class="c"># find all the exporter files</span>
+        <span class="n">pathlist</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">pathlist</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">path</span><span class="p">,</span>
+                <span class="s">&quot;G2export*.py&quot;</span><span class="p">)):</span>
+                <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>    
+        <span class="n">filelist</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">filelist</span><span class="p">)))</span> <span class="c"># remove duplicates</span>
+        <span class="n">exporterlist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c"># go through the routines and import them, saving objects that</span>
+        <span class="c"># have export routines (method Exporter)</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filelist</span><span class="p">:</span>
+            <span class="n">path</span><span class="p">,</span><span class="n">rootname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">pkg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">rootname</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fp</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fppath</span><span class="p">,</span><span class="n">desc</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">find_module</span><span class="p">(</span><span class="n">pkg</span><span class="p">,[</span><span class="n">path</span><span class="p">,])</span>
+                <span class="n">pkg</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">load_module</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span><span class="n">fp</span><span class="p">,</span><span class="n">fppath</span><span class="p">,</span><span class="n">desc</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">clss</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">pkg</span><span class="p">):</span> <span class="c"># find classes defined in package</span>
+                    <span class="k">if</span> <span class="n">clss</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span> <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">clss</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                        <span class="c"># check if we have the required methods</span>
+                        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="s">&#39;Exporter&#39;</span><span class="p">,</span><span class="s">&#39;loadParmDict&#39;</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">clss</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">m</span><span class="p">):</span> <span class="k">break</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">clss</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">m</span><span class="p">)):</span> <span class="k">break</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">exporter</span> <span class="o">=</span> <span class="n">clss</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="bp">self</span><span class="p">)</span> <span class="c"># create an export instance</span>
+                            <span class="n">exporterlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exporter</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;Import_&#39;</span><span class="o">+</span><span class="n">errprefix</span><span class="o">+</span><span class="s">&#39;: Attribute Error&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                <span class="k">pass</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;Import_&#39;</span><span class="o">+</span><span class="n">errprefix</span><span class="o">+</span><span class="s">&#39;: Error importing file&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                <span class="k">pass</span>
+            <span class="k">if</span> <span class="n">fp</span><span class="p">:</span> <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c"># Add submenu item(s) for each Exporter by its self-declared type (can be more than one)</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">exporterlist</span><span class="p">:</span>
+            <span class="c">#print &#39;exporter&#39;,obj</span>
+            <span class="k">for</span> <span class="n">typ</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">exporttype</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">typ</span> <span class="o">==</span> <span class="s">&quot;project&quot;</span><span class="p">:</span>
+                    <span class="n">submenu</span> <span class="o">=</span> <span class="n">projectmenu</span>
+                <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="s">&quot;phase&quot;</span><span class="p">:</span>
+                    <span class="n">submenu</span> <span class="o">=</span> <span class="n">phasemenu</span>
+                <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="s">&quot;powder&quot;</span><span class="p">:</span>
+                    <span class="n">submenu</span> <span class="o">=</span> <span class="n">powdermenu</span>
+                <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="s">&quot;single&quot;</span><span class="p">:</span>
+                    <span class="n">submenu</span> <span class="o">=</span> <span class="n">singlemenu</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error, unknown type in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
+                    <span class="k">break</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">submenu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+                    <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">longFormatName</span><span class="p">,</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">formatName</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">Exporter</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ExportLookup</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">typ</span> <span class="c"># lookup table for submenu item</span>
+        <span class="c">#code to debug an Exporter. much is hard-coded below, but code is reloaded before</span>
+        <span class="c"># each use allowing faster development</span>
+        <span class="k">def</span> <span class="nf">DebugExport</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+            <span class="nb">reload</span><span class="p">(</span><span class="n">G2IO</span><span class="p">)</span>
+            <span class="kn">import</span> <span class="nn">dev_export</span> <span class="kn">as</span> <span class="nn">dev</span>
+            <span class="nb">reload</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span>
+            <span class="n">dev</span><span class="o">.</span><span class="n">ExportTest</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">Exporter</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s">&quot;debug exporter&quot;</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&quot;test Export&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">DebugExport</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ExportLookup</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="s">&#39;image&#39;</span>
+            
     <span class="k">def</span> <span class="nf">_Add_ExportMenuItems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">):</span>
         <span class="n">item</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select PWDR item to enable&#39;</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
@@ -1146,22 +1309,6 @@
         <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnExportPDF</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
 
-        <span class="n">item</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
-            <span class="n">help</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
-            <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
-            <span class="n">text</span><span class="o">=</span><span class="s">&#39;Export Phase...&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ExportPhase</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-        <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnExportPhase</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
-
-<span class="c">#        item = parent.Append(</span>
-<span class="c">#            help=&#39;&#39;,id=wx.ID_ANY,</span>
-<span class="c">#            kind=wx.ITEM_NORMAL,</span>
-<span class="c">#            text=&#39;Export CIF...&#39;)</span>
-<span class="c">#        self.ExportCIF.append(item)</span>
-<span class="c">#        item.Enable(False)</span>
-<span class="c">#        self.Bind(wx.EVT_MENU, self.OnExportCIF, id=item.GetId())</span>
-               
 <div class="viewcode-block" id="GSASII.FillMainMenu"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASII.FillMainMenu">[docs]</a>    <span class="k">def</span> <span class="nf">FillMainMenu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">menubar</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Define contents of the main GSAS-II menu for the (main) data tree window</span>
 <span class="sd">        in the mac, used also for the data item windows as well.</span>
@@ -1237,6 +1384,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dataDisplay</span> <span class="o">=</span> <span class="bp">None</span>
         
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ExportLookup</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_ctrls</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Image</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span>
             <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GSASIIpath</span><span class="o">.</span><span class="n">path2GSAS2</span><span class="p">,</span><span class="s">&#39;gsas2.ico&#39;</span><span class="p">),</span>
@@ -2086,7 +2234,7 @@
                 <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Refine</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
                     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
-            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>                
+            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">Id</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">CheckNotebook</span><span class="p">()</span>
@@ -2272,12 +2420,6 @@
         <span class="k">if</span> <span class="n">exports</span><span class="p">:</span>
             <span class="n">G2IO</span><span class="o">.</span><span class="n">PDFSave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exports</span><span class="p">)</span>
         
-    <span class="k">def</span> <span class="nf">OnExportPhase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
-        <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
-        
-    <span class="k">def</span> <span class="nf">OnExportCIF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
-        <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
-
 <div class="viewcode-block" id="GSASII.OnMakePDFs"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASII.OnMakePDFs">[docs]</a>    <span class="k">def</span> <span class="nf">OnMakePDFs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Calculates PDFs</span>
 <span class="sd">        &#39;&#39;&#39;</span>

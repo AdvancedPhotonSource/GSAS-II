@@ -1,0 +1,207 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSAS-II Scripts &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="prev" title="GSASII powder calculation module" href="GSASIIpwd.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIpwd.html" title="GSASII powder calculation module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-testDeriv">
+<span id="gsas-ii-scripts"></span><h1><em>GSAS-II Scripts</em><a class="headerlink" href="#module-testDeriv" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="testderiv-check-derivative-computation">
+<h2><em>testDeriv: Check derivative computation</em><a class="headerlink" href="#testderiv-check-derivative-computation" title="Permalink to this headline">¶</a></h2>
+<p>Use this to check derivatives used in structure least squares
+refinement against numerical values computed in this script.</p>
+<p>To use set <tt class="docutils literal"><span class="pre">DEBUG=True</span></tt> in GSASIIstrMain.py (line 22, as of version
+1110); run the least squares - one cycle is sufficient.  Do the &#8220;Save
+Results&#8221;; this will write the file testDeriv.dat in the local
+directory.</p>
+<p>Then run this program to see plots of derivatives for all
+parameters refined in the last least squares.  Shown will be numerical
+derivatives generated over all observations (including penalty terms)
+and the corresponding analytical ones produced in the least
+squares. They should match.</p>
+<dl class="function">
+<dt id="testDeriv.main">
+<tt class="descclassname">testDeriv.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/testDeriv.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#testDeriv.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts main application to compute and plot derivatives</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIItestplot"></span><div class="section" id="gsasiitestplot-plotting-for-testderiv">
+<h2><em>GSASIItestplot: Plotting for testDeriv</em><a class="headerlink" href="#gsasiitestplot-plotting-for-testderiv" title="Permalink to this headline">¶</a></h2>
+<p>Plotting module used for script testDeriv.</p>
+<dl class="class">
+<dt id="GSASIItestplot.Plot">
+<em class="property">class </em><tt class="descclassname">GSASIItestplot.</tt><tt class="descname">Plot</tt><big>(</big><em>parent</em>, <em>id=-1</em>, <em>dpi=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIItestplot.html#Plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIItestplot.Plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a plotting window</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIItestplot.PlotNotebook">
+<em class="property">class </em><tt class="descclassname">GSASIItestplot.</tt><tt class="descname">PlotNotebook</tt><big>(</big><em>id=-1</em><big>)</big><a class="reference internal" href="_modules/GSASIItestplot.html#PlotNotebook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIItestplot.PlotNotebook" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a Wx application and a plotting notebook</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-scanCCD"></span><div class="section" id="scanccd-reduce-data-from-scanning-ccd">
+<h2><em>scanCCD: reduce data from scanning CCD</em><a class="headerlink" href="#scanccd-reduce-data-from-scanning-ccd" title="Permalink to this headline">¶</a></h2>
+<p>Quickly prototyped routine for reduction of data from detector described in
+B.H. Toby, T.J. Madden, M.R. Suchomel, J.D. Baldwin, and R.B. Von Dreele,
+&#8220;A Scanning CCD Detector for Powder Diffraction Measurements&#8221;.
+Journal of Applied Crystallography. 46(4): p. 1058-63 (2013).</p>
+<dl class="function">
+<dt id="scanCCD.main">
+<tt class="descclassname">scanCCD.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/scanCCD.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scanCCD.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>starts main application to merge data from scanning CCD</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-makeMacApp"></span><div class="section" id="makemacapp-create-mac-applet">
+<h2><em>makeMacApp: Create Mac Applet</em><a class="headerlink" href="#makemacapp-create-mac-applet" title="Permalink to this headline">¶</a></h2>
+<p>This script creates an AppleScript app to launch GSAS-II. The app is
+created in the directory where the GSAS-II script is located.
+A softlink to Python is created, but is named GSAS-II, so that 
+GSAS-II shows up as the name of the app rather than Python in the
+menu bar, etc. Note that this requires finding an app version of Python
+(expected name .../Resources/Python.app/Contents/MacOS/Python in
+directory tree of the calling python interpreter).</p>
+<p>Run this script with one optional argument, the path to the GSASII.py
+The script path may be specified relative to the current path or given
+an absolute path, but will be accessed via an absolute path. 
+If no arguments are supplied, the GSASII.py script is assumed to be in the
+same directory as this file.</p>
+</div>
+<span class="target" id="module-unit_tests"></span><div class="section" id="unit-tests-self-test-module">
+<h2><em>unit_tests: Self-test Module</em><a class="headerlink" href="#unit-tests-self-test-module" title="Permalink to this headline">¶</a></h2>
+<p>A script that can be run to test a series of self-tests in GSAS-II. At present,
+only modules <tt class="docutils literal"><span class="pre">GSASIIspc</span></tt> and <tt class="docutils literal"><span class="pre">GSASIIlattice</span></tt> have self-tests.</p>
+<dl class="function">
+<dt id="unit_tests.test_GSASIIlattice">
+<tt class="descclassname">unit_tests.</tt><tt class="descname">test_GSASIIlattice</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/unit_tests.html#test_GSASIIlattice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#unit_tests.test_GSASIIlattice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test registered self-tests in <tt class="docutils literal"><span class="pre">GSASIIlattice</span></tt>.
+Takes no input and returns nothing. Throws an Exception if a test fails.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="unit_tests.test_GSASIIspc">
+<tt class="descclassname">unit_tests.</tt><tt class="descname">test_GSASIIspc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/unit_tests.html#test_GSASIIspc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#unit_tests.test_GSASIIspc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test registered self-tests in <tt class="docutils literal"><span class="pre">GSASIIspc</span></tt>.
+Takes no input and returns nothing. Throws an Exception if a test fails.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><em>GSAS-II Scripts</em></a><ul>
+<li><a class="reference internal" href="#testderiv-check-derivative-computation"><em>testDeriv: Check derivative computation</em></a></li>
+<li><a class="reference internal" href="#gsasiitestplot-plotting-for-testderiv"><em>GSASIItestplot: Plotting for testDeriv</em></a></li>
+<li><a class="reference internal" href="#scanccd-reduce-data-from-scanning-ccd"><em>scanCCD: reduce data from scanning CCD</em></a></li>
+<li><a class="reference internal" href="#makemacapp-create-mac-applet"><em>makeMacApp: Create Mac Applet</em></a></li>
+<li><a class="reference internal" href="#unit-tests-self-test-module"><em>unit_tests: Self-test Module</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="GSASIIpwd.html"
+                        title="previous chapter"><em>GSASII powder calculation module</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/GSASIIscripts.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="GSASIIpwd.html" title="GSASII powder calculation module"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -294,7 +294,7 @@ This shows up on the Mac as a very thin line, no matter what I do</p>
 
 <dl class="function">
 <dt id="GSASIIgrid.ItemSelector">
-<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ItemSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select an item'</em>, <em>size=None</em>, <em>header='Item Selector'</em>, <em>useCancel=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ItemSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ItemSelector" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ItemSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select an item'</em>, <em>size=None</em>, <em>header='Item Selector'</em>, <em>useCancel=True</em>, <em>multiple=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ItemSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ItemSelector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide a wx dialog to select a single item from list of choices</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -307,10 +307,11 @@ This shows up on the Mac as a very thin line, no matter what I do</p>
 <li><strong>size</strong> (<em>wx.Size</em>) &#8211; Size for dialog to be created (default None &#8211; size as needed)</li>
 <li><strong>header</strong> (<em>str</em>) &#8211; Title to place on window frame (default &#8216;Item Selector&#8217;)</li>
 <li><strong>useCancel</strong> (<em>bool</em>) &#8211; If True (default) both the OK and Cancel buttons are offered</li>
+<li><strong>multiple</strong> (<em>bool</em>) &#8211; If True then multiple items can be selected (default False)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the selection index or None</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the selection index or None or a selection list if multiple is true</p>
 </td>
 </tr>
 </tbody>
@@ -499,7 +500,7 @@ is associated with.</td>
 
 <dl class="class">
 <dt id="GSASIIgrid.ScrolledMultiEditor">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em>, <em>minvals=</em><span class="optional">[</span><span class="optional">]</span>, <em>maxvals=</em><span class="optional">[</span><span class="optional">]</span>, <em>sizevals=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a window for editing a potentially large number of dict- or
 list-contained values with validation for each item. Edited values are
 automatically placed in their source location. If invalid entries
@@ -532,6 +533,12 @@ size for the scrolled region of the dialog. The default is
 (300,250).</li>
 <li><strong>CopyButton</strong> (<em>bool</em>) &#8211; if True adds a small button that copies the
 value for the current row to all fields below (default is False)</li>
+<li><strong>minvals</strong> (<em>list</em>) &#8211; optional list of minimum values for validation
+of float or int values. Ignored if value is None.</li>
+<li><strong>maxvals</strong> (<em>list</em>) &#8211; optional list of maximum values for validation
+of float or int values. Ignored if value is None.</li>
+<li><strong>sizevals</strong> (<em>list</em>) &#8211; optional list of wx.Size values for each input
+widget. Ignored if value is None.</li>
 </ul>
 </td>
 </tr>
@@ -664,7 +671,10 @@ editing of the text in that tree entry</p>
 <dl class="function">
 <dt id="GSASIIgrid.UpdatePWHKPlot">
 <tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdatePWHKPlot</tt><big>(</big><em>G2frame</em>, <em>kind</em>, <em>item</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdatePWHKPlot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdatePWHKPlot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Called when the histogram main tree entry is called. Displays the
+histogram weight factor, refinement statistics for the histogram
+and the range of data for a simulation.</p>
+<p>Also invokes a plot of the histogram.</p>
 </dd></dl>
 
 <dl class="function">
@@ -854,6 +864,118 @@ that does exist or False if the user presses Cancel</p>
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ExportBaseclass</tt><big>(</big><em>G2frame</em>, <em>formatName</em>, <em>extension</em>, <em>longFormatName=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the exporting of GSAS-II results</p>
 <dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.CloseFile">
+<tt class="descname">CloseFile</tt><big>(</big><em>fp=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.CloseFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.CloseFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close a file opened in OpenFile</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fp</strong> (<em>file</em>) &#8211; the file object to be closed. If None (default)
+file object self.fp is closed.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.GetAtoms">
+<tt class="descname">GetAtoms</tt><big>(</big><em>phasenam</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.GetAtoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.GetAtoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the atoms associated with a phase. Can be used with standard
+or macromolecular phases</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>phasenam</strong> (<em>str</em>) &#8211; the name for the selected phase</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a list of items for eac atom where each item is a list containing:
+label, typ, mult, xyz, and td, where<ul class="simple">
+<li>label and typ are the atom label and the scattering factor type (str)</li>
+<li>mult is the site multiplicity (int)</li>
+<li>xyz is contains a list with four pairs of numbers:
+x, y, z and fractional occupancy and
+their standard uncertainty (or a negative value)</li>
+<li>td is contains a list with either one or six pairs of numbers:
+if one number it is U<sub>iso</sub> and with six it is
+U<sub>11</sub>, U<sub>22</sub>, U<sub>33</sub>, U<sub>12</sub>, U<sub>13</sub> &amp; U<sub>23</sub>
+paired with their standard uncertainty (or a negative value)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.GetCell">
+<tt class="descname">GetCell</tt><big>(</big><em>phasenam</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.GetCell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.GetCell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the unit cell parameters and their s.u.&#8217;s for a selected phase</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>phasenam</strong> (<em>str</em>) &#8211; the name for the selected phase</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><cite>cellList,cellSig</cite> where each is a 7 element list corresponding
+to a, b, c, alpha, beta, gamma, volume where <cite>cellList</cite> has the
+cell values and <cite>cellSig</cite> has their uncertainties.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.OpenFile">
+<tt class="descname">OpenFile</tt><big>(</big><em>fil=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.OpenFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.OpenFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open the output file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fil</strong> (<em>str</em>) &#8211; The name of the file to open. If None (default)
+the name defaults to self.filename.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the file object opened by the routine which is also
+saved as self.fp</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.SetupExport">
+<tt class="descname">SetupExport</tt><big>(</big><em>event</em>, <em>AskFile=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.SetupExport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.SetupExport" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the type of menu that called the Exporter. Selects histograms
+or phases when needed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>AskFile</strong> (<em>bool</em>) &#8211; if AskFile is True (default) get the name of the file
+in a dialog</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True in case of an error</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.Write">
+<tt class="descname">Write</tt><big>(</big><em>line</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.Write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.Write" title="Permalink to this definition">¶</a></dt>
+<dd><p>write a line of output, attaching a line-end character</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>line</strong> (<em>str</em>) &#8211; the text to be written.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.askSaveFile">
 <tt class="descname">askSaveFile</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.askSaveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.askSaveFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ask the user to supply a file name</p>
@@ -884,9 +1006,10 @@ refined parameters in another dict (self.sigDict).</p>
 
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.loadTree">
-<tt class="descname">loadTree</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.loadTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadTree" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">loadTree</tt><big>(</big><em>histType=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.loadTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadTree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the contents of the data tree into a set of dicts
-(self.OverallParms, self.Phases and self.Histogram)</p>
+(self.OverallParms, self.Phases and self.Histogram as well as self.powderDict
+&amp; self.xtalDict)</p>
 <ul class="simple">
 <li>The childrenless data tree items are overall parameters/controls for the
 entire project and are placed in self.OverallParms</li>
@@ -1010,7 +1133,7 @@ incorrectly in some way.</p>
 <dl class="class">
 <dt id="GSASIIIO.ImportBaseclass">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportBaseclass</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines a base class for the importing of data files (diffraction
+<dd><p>Defines a base class for the reading of input files (diffraction
 data, coordinates,...</p>
 <dl class="method">
 <dt id="GSASIIIO.ImportBaseclass.BlockSelector">

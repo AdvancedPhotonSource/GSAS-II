@@ -2,9 +2,11 @@
 xmlns:o="urn:schemas-microsoft-com:office:office"
 xmlns:w="urn:schemas-microsoft-com:office:word"
 xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
-xmlns="http://www.w3.org/TR/REC-html40">
+xmlns:mv="http://macVmlSchemaUri" xmlns="http://www.w3.org/TR/REC-html40">
 
 <head>
+<meta name=Title content="">
+<meta name=Keywords content="">
 <meta http-equiv=Content-Type content="text/html; charset=windows-1252">
 <meta name=ProgId content=Word.Document>
 <meta name=Generator content="Microsoft Word 14">
@@ -23,28 +25,26 @@ w\:* {behavior:url(#default#VML);}
 <![endif]--><!--[if gte mso 9]><xml>
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
-  <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>14</o:Revision>
-  <o:TotalTime>137</o:TotalTime>
+  <o:LastAuthor>B Toby</o:LastAuthor>
+  <o:Revision>15</o:Revision>
+  <o:TotalTime>143</o:TotalTime>
   <o:Created>2012-05-04T19:00:00Z</o:Created>
-  <o:LastSaved>2013-04-30T17:13:00Z</o:LastSaved>
+  <o:LastSaved>2013-10-17T14:38:00Z</o:LastSaved>
   <o:Pages>4</o:Pages>
-  <o:Words>695</o:Words>
-  <o:Characters>3966</o:Characters>
+  <o:Words>728</o:Words>
+  <o:Characters>4155</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>33</o:Lines>
+  <o:Lines>34</o:Lines>
   <o:Paragraphs>9</o:Paragraphs>
-  <o:CharactersWithSpaces>4652</o:CharactersWithSpaces>
-  <o:Version>14.00</o:Version>
+  <o:CharactersWithSpaces>4874</o:CharactersWithSpaces>
+  <o:Version>14.0</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
   <o:AllowPNG/>
  </o:OfficeDocumentSettings>
 </xml><![endif]-->
 <link rel=themeData
-href="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/themedata.thmx">
-<link rel=colorSchemeMapping
-href="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/colorschememapping.xml">
+href="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/themedata.xml">
 <!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:Zoom>156</w:Zoom>
@@ -72,7 +72,6 @@ href="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/colorschememappi
    <w:DontFlipMirrorIndents/>
    <w:OverrideTableStyleHps/>
   </w:Compatibility>
-  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
   <m:mathPr>
    <m:mathFont m:val="Cambria Math"/>
    <m:brkBin m:val="before"/>
@@ -85,11 +84,12 @@ href="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/colorschememappi
    <m:wrapIndent m:val="1440"/>
    <m:intLim m:val="subSup"/>
    <m:naryLim m:val="undOvr"/>
-  </m:mathPr></w:WordDocument>
+  </m:mathPr>  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <w:LatentStyles DefLockedState="false" DefUnhideWhenUsed="true"
   DefSemiHidden="true" DefQFormat="false" DefPriority="99"
-  LatentStyleCount="267">
+  LatentStyleCount="276">
   <w:LsdException Locked="false" Priority="0" SemiHidden="false"
    UnhideWhenUsed="false" QFormat="true" Name="Normal"/>
   <w:LsdException Locked="false" Priority="9" SemiHidden="false"
@@ -346,29 +346,41 @@ href="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/colorschememappi
 <style>
 <!--
  /* Font Definitions */
- @font-face
-	{font-family:"Cambria Math";
+@font-face
+	{font-family:"Courier New";
+	panose-1:2 7 3 9 2 2 5 2 4 4;
+	mso-font-charset:0;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-536859905 -1073711037 9 0 511 0;}
+@font-face
+	{font-family:"MS Mincho";
+	mso-font-charset:78;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1791491579 18 0 131231 0;}
+@font-face
+	{font-family:"MS Mincho";
+	mso-font-charset:78;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1791491579 18 0 131231 0;}
+@font-face
+	{font-family:Cambria;
 	panose-1:2 4 5 3 5 4 6 3 2 4;
 	mso-font-charset:0;
-	mso-generic-font-family:roman;
+	mso-generic-font-family:auto;
 	mso-font-pitch:variable;
-	mso-font-signature:-536870145 1107305727 0 0 415 0;}
-@font-face
-	{font-family:Calibri;
-	panose-1:2 15 5 2 2 2 4 3 2 4;
-	mso-font-charset:0;
-	mso-generic-font-family:swiss;
-	mso-font-pitch:variable;
-	mso-font-signature:-536870145 1073786111 1 0 415 0;}
+	mso-font-signature:-536870145 1073743103 0 0 415 0;}
 @font-face
 	{font-family:Tahoma;
 	panose-1:2 11 6 4 3 5 4 4 2 4;
 	mso-font-charset:0;
-	mso-generic-font-family:swiss;
+	mso-generic-font-family:auto;
 	mso-font-pitch:variable;
-	mso-font-signature:-520081665 -1073717157 41 0 66047 0;}
+	mso-font-signature:3 0 0 0 1 0;}
  /* Style Definitions */
- p.MsoNormal, li.MsoNormal, div.MsoNormal
+p.MsoNormal, li.MsoNormal, div.MsoNormal
 	{mso-style-unhide:no;
 	mso-style-qformat:yes;
 	mso-style-parent:"";
@@ -376,8 +388,8 @@ href="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/colorschememappi
 	margin-bottom:.0001pt;
 	mso-pagination:widow-orphan;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;}
 h1
 	{mso-style-priority:9;
@@ -391,8 +403,8 @@ h1
 	mso-pagination:widow-orphan;
 	mso-outline-level:1;
 	font-size:24.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	font-weight:bold;}
 h2
@@ -407,8 +419,8 @@ h2
 	mso-pagination:widow-orphan;
 	mso-outline-level:2;
 	font-size:18.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	font-weight:bold;}
 h3
@@ -423,8 +435,8 @@ h3
 	mso-pagination:widow-orphan;
 	mso-outline-level:3;
 	font-size:13.5pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	font-weight:bold;}
 h4
@@ -442,12 +454,12 @@ h4
 	page-break-after:avoid;
 	mso-outline-level:4;
 	font-size:13.0pt;
-	font-family:"Cambria","serif";
-	mso-ascii-font-family:Cambria;
+	font-family:Calibri;
+	mso-ascii-font-family:Calibri;
 	mso-ascii-theme-font:major-latin;
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Gothic";
 	mso-fareast-theme-font:major-fareast;
-	mso-hansi-font-family:Cambria;
+	mso-hansi-font-family:Calibri;
 	mso-hansi-theme-font:major-latin;
 	mso-bidi-font-family:"Times New Roman";
 	mso-bidi-theme-font:major-bidi;
@@ -467,8 +479,8 @@ h5
 	mso-pagination:widow-orphan;
 	mso-outline-level:5;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	color:#4F4FFF;
 	font-weight:bold;}
@@ -486,9 +498,10 @@ p.MsoDocumentMap, li.MsoDocumentMap, div.MsoDocumentMap
 	margin-bottom:.0001pt;
 	mso-pagination:widow-orphan;
 	font-size:8.0pt;
-	font-family:"Tahoma","sans-serif";
-	mso-fareast-font-family:"Times New Roman";
-	mso-fareast-theme-font:minor-fareast;}
+	font-family:Tahoma;
+	mso-fareast-font-family:"MS Mincho";
+	mso-fareast-theme-font:minor-fareast;
+	mso-bidi-font-family:"Times New Roman";}
 p
 	{mso-style-noshow:yes;
 	mso-style-priority:99;
@@ -498,8 +511,8 @@ p
 	margin-left:0in;
 	mso-pagination:widow-orphan;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;}
 pre
 	{mso-style-noshow:yes;
@@ -520,9 +533,10 @@ p.MsoAcetate, li.MsoAcetate, div.MsoAcetate
 	margin-bottom:.0001pt;
 	mso-pagination:widow-orphan;
 	font-size:8.0pt;
-	font-family:"Tahoma","sans-serif";
-	mso-fareast-font-family:"Times New Roman";
-	mso-fareast-theme-font:minor-fareast;}
+	font-family:Tahoma;
+	mso-fareast-font-family:"MS Mincho";
+	mso-fareast-theme-font:minor-fareast;
+	mso-bidi-font-family:"Times New Roman";}
 span.MsoPlaceholderText
 	{mso-style-noshow:yes;
 	mso-style-priority:99;
@@ -538,8 +552,8 @@ p.MsoNoSpacing, li.MsoNoSpacing, div.MsoNoSpacing
 	margin-bottom:.0001pt;
 	mso-pagination:widow-orphan;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;}
 p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph
 	{mso-style-noshow:yes;
@@ -554,8 +568,8 @@ p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph
 	mso-add-space:auto;
 	mso-pagination:widow-orphan;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;}
 p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphCxSpFirst
 	{mso-style-noshow:yes;
@@ -571,8 +585,8 @@ p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphC
 	mso-add-space:auto;
 	mso-pagination:widow-orphan;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;}
 p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagraphCxSpMiddle
 	{mso-style-noshow:yes;
@@ -588,8 +602,8 @@ p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagrap
 	mso-add-space:auto;
 	mso-pagination:widow-orphan;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;}
 p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxSpLast
 	{mso-style-noshow:yes;
@@ -605,8 +619,8 @@ p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxS
 	mso-add-space:auto;
 	mso-pagination:widow-orphan;
 	font-size:12.0pt;
-	font-family:"Times New Roman","serif";
-	mso-fareast-font-family:"Times New Roman";
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;}
 span.MsoIntenseReference
 	{mso-style-priority:32;
@@ -627,9 +641,9 @@ span.Heading1Char
 	mso-style-link:"Heading 1";
 	mso-ansi-font-size:24.0pt;
 	mso-bidi-font-size:24.0pt;
-	font-family:"Times New Roman","serif";
+	font-family:"Times New Roman";
 	mso-ascii-font-family:"Times New Roman";
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	mso-hansi-font-family:"Times New Roman";
 	mso-bidi-font-family:"Times New Roman";
@@ -644,9 +658,9 @@ span.Heading2Char
 	mso-style-link:"Heading 2";
 	mso-ansi-font-size:18.0pt;
 	mso-bidi-font-size:18.0pt;
-	font-family:"Times New Roman","serif";
+	font-family:"Times New Roman";
 	mso-ascii-font-family:"Times New Roman";
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	mso-hansi-font-family:"Times New Roman";
 	mso-bidi-font-family:"Times New Roman";
@@ -660,9 +674,9 @@ span.Heading3Char
 	mso-style-link:"Heading 3";
 	mso-ansi-font-size:13.5pt;
 	mso-bidi-font-size:13.5pt;
-	font-family:"Times New Roman","serif";
+	font-family:"Times New Roman";
 	mso-ascii-font-family:"Times New Roman";
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	mso-hansi-font-family:"Times New Roman";
 	mso-bidi-font-family:"Times New Roman";
@@ -676,12 +690,12 @@ span.Heading4Char
 	mso-style-link:"Heading 4";
 	mso-ansi-font-size:13.0pt;
 	mso-bidi-font-size:13.0pt;
-	font-family:"Cambria","serif";
-	mso-ascii-font-family:Cambria;
+	font-family:Calibri;
+	mso-ascii-font-family:Calibri;
 	mso-ascii-theme-font:major-latin;
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Gothic";
 	mso-fareast-theme-font:major-fareast;
-	mso-hansi-font-family:Cambria;
+	mso-hansi-font-family:Calibri;
 	mso-hansi-theme-font:major-latin;
 	mso-bidi-font-family:"Times New Roman";
 	mso-bidi-theme-font:major-bidi;
@@ -698,9 +712,9 @@ span.Heading5Char
 	mso-style-link:"Heading 5";
 	mso-ansi-font-size:12.0pt;
 	mso-bidi-font-size:12.0pt;
-	font-family:"Times New Roman","serif";
+	font-family:"Times New Roman";
 	mso-ascii-font-family:"Times New Roman";
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	mso-hansi-font-family:"Times New Roman";
 	mso-bidi-font-family:"Times New Roman";
@@ -727,9 +741,9 @@ span.DocumentMapChar
 	mso-style-link:"Document Map";
 	mso-ansi-font-size:8.0pt;
 	mso-bidi-font-size:8.0pt;
-	font-family:"Tahoma","sans-serif";
+	font-family:Tahoma;
 	mso-ascii-font-family:Tahoma;
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	mso-hansi-font-family:Tahoma;
 	mso-bidi-font-family:Tahoma;}
@@ -742,9 +756,9 @@ span.BalloonTextChar
 	mso-style-link:"Balloon Text";
 	mso-ansi-font-size:8.0pt;
 	mso-bidi-font-size:8.0pt;
-	font-family:"Tahoma","sans-serif";
+	font-family:Tahoma;
 	mso-ascii-font-family:Tahoma;
-	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-font-family:"MS Mincho";
 	mso-fareast-theme-font:minor-fareast;
 	mso-hansi-font-family:Tahoma;
 	mso-bidi-font-family:Tahoma;}
@@ -760,12 +774,12 @@ span.GramE
 	font-size:10.0pt;
 	mso-ansi-font-size:10.0pt;
 	mso-bidi-font-size:10.0pt;
-	font-family:"Calibri","sans-serif";
-	mso-ascii-font-family:Calibri;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
 	mso-ascii-theme-font:minor-latin;
-	mso-fareast-font-family:Calibri;
+	mso-fareast-font-family:Cambria;
 	mso-fareast-theme-font:minor-latin;
-	mso-hansi-font-family:Calibri;
+	mso-hansi-font-family:Cambria;
 	mso-hansi-theme-font:minor-latin;
 	mso-bidi-font-family:"Times New Roman";
 	mso-bidi-theme-font:minor-bidi;}
@@ -782,7 +796,7 @@ div.WordSection1
 <!--[if gte mso 10]>
 <style>
  /* Style Definitions */
- table.MsoNormalTable
+table.MsoNormalTable
 	{mso-style-name:"Table Normal";
 	mso-tstyle-rowband-size:0;
 	mso-tstyle-colband-size:0;
@@ -794,14 +808,14 @@ div.WordSection1
 	mso-para-margin-bottom:.0001pt;
 	mso-pagination:widow-orphan;
 	font-size:10.0pt;
-	font-family:"Calibri","sans-serif";
-	mso-ascii-font-family:Calibri;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
 	mso-ascii-theme-font:minor-latin;
-	mso-hansi-font-family:Calibri;
+	mso-hansi-font-family:Cambria;
 	mso-hansi-theme-font:minor-latin;}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="1026"/>
+ <o:shapedefaults v:ext="edit" spidmax="1036"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -820,44 +834,42 @@ color:#365F91;mso-themecolor:accent1;mso-themeshade:191'><o:p></o:p></span></b><
 detector at APS 11-ID-C with a wavelength 0.10798 A, where the detector was
 intentionally tilted at 45 degrees, are used. Note that menu entries are listed
 in bold face below as <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'>Help/About GSAS-II</span></b>, which lists first the name of the
-menu (here <b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Help</span></b>)
-and second the name of the entry in the menu (here <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>About GSAS-II</span></b>).</p>
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>Help/About
+GSAS-II</span></b>, which lists first the name of the menu (here <b
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Cambria;mso-bidi-theme-font:minor-latin'>Help</span></b>) and second the name
+of the entry in the menu (here <b style='mso-bidi-font-weight:normal'><span
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>About
+GSAS-II</span></b>).</p>
 
 <p class=MsoNormal>If you have not done so already, <u><span style='color:#0070C0'><a
-href="Starting%20GSAS.htm"><span style='color:windowtext;text-decoration:none;
-text-underline:none'>start GSAS-II</span></a></span></u>.</p>
+href="Starting%2520GSAS.htm"><span style='color:windowtext;text-decoration:
+none;text-underline:none'>start GSAS-II</span></a></span></u>.</p>
 
 <h1>Step 1: read in the data file</h1>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Use the <b
+<p class=MsoNormal><span style="mso-spacerun:yes"> </span>Use the <b
 style='mso-bidi-font-weight:normal'>Data/Read image data</b> menu item to read
 the data file into the current GSAS-II project. </p>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span></p>
+<p class=MsoNormal><span style="mso-spacerun:yes"> </span></p>
 
 <p class=MsoNormal>A file selection dialog will be shown; its appearance will
 depend on your OS. Change the search directory to <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>/Exercises/images</span></b> and then select
-the file </p>
+normal'><span style='font-family:Cambria;mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:
+minor-latin'>/Exercises/images</span></b> and then select the file </p>
 
 <p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'>La_hex_+45deg-00015.tif</span></b> and press <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>Open</span></b>.<span style='mso-no-proof:
-yes'> <o:p></o:p></span></p>
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>La_hex_+45deg-00015.tif</span></b>
+and press <b style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Cambria;mso-bidi-theme-font:minor-latin'>Open</span></b>.<span
+style='mso-no-proof:yes'> <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype
  id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
@@ -879,144 +891,140 @@ yes'> <o:p></o:p></span></p>
  </v:formulas>
  <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
  <o:lock v:ext="edit" aspectratio="t"/>
-</v:shapetype><v:shape id="_x0000_i1032" type="#_x0000_t75" style='width:300pt;
- height:187.5pt;visibility:visible;mso-wrap-style:square'>
+</v:shapetype><v:shape id="_x0000_i1025" type="#_x0000_t75" style='width:300pt;
+ height:188pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image001.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=400 height=250
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image001.png"
-v:shapes="_x0000_i1032"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=302 height=190
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image002.png"
+v:shapes="_x0000_i1025"><![endif]></span></p>
 
 <p class=MsoNormal>At this point the data tree window will have several
 entries; the highlighted one specifies the contents of the data window as <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Image Controls</span><o:p></o:p></b></p>
+Cambria;mso-bidi-theme-font:minor-latin'>Image Controls</span><o:p></o:p></b></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_10" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:472.5pt;
+ id="Picture_x0020_10" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:473pt;
  height:342pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image002.png"
-  o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=456
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image002.png"
-v:shapes="Picture_x0020_10"><![endif]></span></p>
-
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span>The plot window shows
-the image; notice the elliptical shape of the powder diffraction rings
-due to the 45 degree detector tilt. The
-blue <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin;color:#4F81BD;mso-themecolor:accent1'>X</span></b>
-marks the beam location (which defaults to the image center); the
-calibration you will perform here will find the correct
-placement for it. Also note that as the mouse is moved across the plot
-the plot window status bar (at bottom of plot window) shows the
-cursor position, as computed from the default (incorrect) 
-calibration values. These constants will be correctly determined after you finish the calibration.</p>
-
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span><span
-style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_11"
- o:spid="_x0000_i1030" type="#_x0000_t75" style='width:525pt;height:450pt;
- visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image003.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image003.png"
+</v:shape><![endif]--><![if !vml]><img border=0 width=475 height=344
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image004.png"
+v:shapes="Picture_x0020_10"><![endif]></span></p>
+
+<p class=MsoNormal><span style="mso-spacerun:yes"> </span>The plot window shows
+the image; notice the elliptical shape of the powder diffraction rings due to
+the 45 degree detector tilt. The blue <b style='mso-bidi-font-weight:normal'><span
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin;
+color:#4F81BD;mso-themecolor:accent1'>X</span></b> marks the beam location
+(which defaults to the image center); the calibration you will perform here
+will find the correct placement for it. Also note that as the mouse is moved
+across the plot the plot window status bar (at bottom of plot window) shows the
+cursor position, as computed from the default (incorrect) calibration values.
+These constants will be correctly determined after you finish the calibration.</p>
+
+<p class=MsoNormal><span style="mso-spacerun:yes"> </span><span
+style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_11"
+ o:spid="_x0000_i1027" type="#_x0000_t75" style='width:525pt;height:450pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image005.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=527 height=452
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image006.png"
 v:shapes="Picture_x0020_11"><![endif]></span></p>
 
-<h1><span style='mso-spacerun:yes'> </span>Step 2: Edit image parameters</h1>
+<h1><span style="mso-spacerun:yes"> </span>Step 2: Edit image parameters</h1>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span>Note that, alas, very
+<p class=MsoNormal><span style="mso-spacerun:yes"> </span>Note that, alas, very
 few image formats contain all of the important metadata about the image, so it
 needs to be added manually. In this case set the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>wavelength</span></b> to <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>0.10798</span></b>. It is also helpful to
-change the display of the image so that it is easier to see the diffraction
-rings. Lowering the maximum intensity to 10,000 to 20,000 counts will help
-(note that this can be done by moving the <span class=GramE>slider,</span> or
-by typing a value in the box and then clicking on another control or pressing
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+normal'><span style='font-family:Cambria;mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:
+minor-latin'>wavelength</span></b> to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>0.10798</span></b>.
+It is also helpful to change the display of the image so that it is easier to
+see the diffraction rings. Lowering the maximum intensity to 10,000 to 20,000
+counts will help (note that this can be done by moving the slider, or by typing
+a value in the box and then clicking on another control or pressing the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Enter</span></b> or <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+Cambria;mso-bidi-theme-font:minor-latin'>Enter</span></b> or <b
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Tab</span></b> key). You may also wish
+Cambria;mso-bidi-theme-font:minor-latin'>Tab</span></b> key). You may also wish
 to select another color scheme using the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'>Color bar</span></b> selector. </p>
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>Color
+bar</span></b> selector. </p>
 
-<h1><span style='mso-spacerun:yes'> </span>Step 3: Calibrate</h1>
+<h1><span style="mso-spacerun:yes"> </span>Step 3: Calibrate</h1>
 
-<h3><span style='mso-spacerun:yes'> </span>First: </h3>
+<h3><span style="mso-spacerun:yes"> </span>First: </h3>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'>   </span>Set the material
+<p class=MsoNormal><span style="mso-spacerun:yes">   </span>Set the material
 used as a sample in the box labeled <span class=SpellE><b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>Calibrant</span></b></span>; select <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>LaB6 SRM660a</span></b></p>
+normal'><span style='font-family:Cambria;mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:
+minor-latin'>Calibrant</span></b></span>; select <b style='mso-bidi-font-weight:
+normal'><span style='font-family:Cambria;mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:
+minor-latin'>LaB6 SRM660a</span></b></p>
 
-<h3><span style='mso-spacerun:yes'> </span>Second: </h3>
+<h3><span style="mso-spacerun:yes"> </span>Second: </h3>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'>   </span>Use the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+<p class=MsoNormal><span style="mso-spacerun:yes">   </span>Use the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Operations/Calibrate</span></b> menu
+Cambria;mso-bidi-theme-font:minor-latin'>Operations/Calibrate</span></b> menu
 item (note this menu is on the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'>Image Controls</span></b> window or for the Mac, the <span
-class=GramE><b style='mso-bidi-font-weight:normal'><span style='font-family:
-"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Image<span
-style='mso-spacerun:yes'>  </span>Controls</span></b></span> window must be
-active to place this into the system menu bar). At this point the status line
-on the bottom of the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'>Image Controls</span></b> window changes with a prompt to select
-points for calibration.</p>
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>Image
+Controls</span></b> window or for the Mac, when the <span class=GramE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Cambria;mso-bidi-theme-font:minor-latin'>Image<span style="mso-spacerun:yes"> 
+</span>Controls</span></b></span> window is made active this menu is added to the
+system menu bar). At this point the status line on the bottom of the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Cambria;mso-bidi-theme-font:minor-latin'>Image Controls</span></b> window
+changes with a prompt to select points for calibration.</p>
 
 <h3>Third: </h3>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'>  </span>Use the left mouse
+<p class=MsoNormal><span style="mso-spacerun:yes">  </span>Use the left mouse
 button to click on at least five locations on the innermost ring. As each point
 is defined, a red &quot;<b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin;color:red'>+</span></b>&quot; is added to the plot. You need not
-hit the ring exactly as the code will search for the locally highest point. </p>
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin;
+color:red'>+</span></b>&quot; is added to the plot. You need not hit the ring
+exactly as the code will search for the locally highest point. (On the Mac with
+a two or three button mouse, use the left mouse button, or with a standard Mac
+mouse, use the regular mouse button.)</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_8" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_8" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image004.png"
+ <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image007.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image004.png"
+</v:shape><![endif]--><![if !vml]><img border=0 width=527 height=452
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image008.png"
 v:shapes="Picture_x0020_8"><![endif]></span></p>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'>  </span>To remove a point
-added in error click on that point with the right mouse button
-(on the Mac, if you have a single-button mouse, hold the shift and control keys
-down and click).
-</p>
+<p class=MsoNormal><span style="mso-spacerun:yes">  </span>To remove a point
+added in error click on that point with the right mouse button (on the Mac, if
+you have a single-button mouse, hold the control key down and click with the
+mouse). </p>
 
-<h3><span style='mso-spacerun:yes'> </span>Fourth:</h3>
+<h3><span style="mso-spacerun:yes"> </span>Fourth:</h3>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'>  </span>When done, press the
-right mouse button well away from any points that have been added
-(on the Mac, if you have a single-button mouse, hold the shift and control keys
-down and click).
-</p>
+<p class=MsoNormal><span style="mso-spacerun:yes">  </span>When done, press the
+right mouse button well away from any points that have been added (on the Mac,
+if you have a single-button mouse, hold the control key down and click). </p>
 
 <p class=MsoNormal>The calibration is then performed. First the rings are
 located and an ellipse is optimized for each ring. The indexed rings are first
@@ -1025,106 +1033,103 @@ with a blue &quot;<b style='mso-bidi-font-weight:normal'><span
 style='color:#4F81BD;mso-themecolor:accent1'>+</span></b>&quot;. When all rings
 have been fitted, the entire ensemble of rings is refitted to the detector
 parameters and the rings are then shown in blue. The beam position (blue “<span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin;color:#4F81BD;mso-themecolor:accent1'>X</span>”) is now correctly
-positioned.</p>
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin;
+color:#4F81BD;mso-themecolor:accent1'>X</span>”) is now correctly positioned.</p>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span><span
+<p class=MsoNormal><span style="mso-spacerun:yes"> </span><span
 style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_9"
- o:spid="_x0000_i1028" type="#_x0000_t75" style='width:525pt;height:450pt;
+ o:spid="_x0000_i1029" type="#_x0000_t75" style='width:525pt;height:450pt;
  visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image005.png"
+ <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image009.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image005.png"
+</v:shape><![endif]--><![if !vml]><img border=0 width=527 height=452
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image010.png"
 v:shapes="Picture_x0020_9"><![endif]></span><span
-style='mso-spacerun:yes'> </span></p>
+style="mso-spacerun:yes"> </span></p>
 
 <p class=MsoNormal>The derived calibration results are shown in the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Image Controls</span></b> window.</p>
+Cambria;mso-bidi-theme-font:minor-latin'>Image Controls</span></b> window.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_13" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:472.5pt;
+ id="Picture_x0020_13" o:spid="_x0000_i1030" type="#_x0000_t75" style='width:473pt;
  height:342pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image006.png"
+ <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image011.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=456
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image006.png"
+</v:shape><![endif]--><![if !vml]><img border=0 width=475 height=344
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image012.png"
 v:shapes="Picture_x0020_13"><![endif]></span><span
-style='mso-spacerun:yes'> </span></p>
+style="mso-spacerun:yes"> </span></p>
 
 <p class=MsoNormal><span class=GramE>and</span> the console window shows
 details of the fit.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_14" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:396.75pt;
- height:134.25pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image007.png"
+ id="Picture_x0020_14" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:397pt;
+ height:134pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image013.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=529 height=179
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image007.png"
+</v:shape><![endif]--><![if !vml]><img border=0 width=399 height=136
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image014.png"
 v:shapes="Picture_x0020_14"><![endif]></span></p>
 
-<p class=MsoNormal><span style='mso-spacerun:yes'> </span>To see the actual
-points selected by the program, click on the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>show ring picks?</span></b> <span class=GramE>check</span>
-box </p>
+<p class=MsoNormal><span style="mso-spacerun:yes"> </span>To see the actual points
+selected by the program, click on the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>show
+ring picks?</span></b> <span class=GramE>check</span> box </p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_15" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:525pt;
+ id="Picture_x0020_15" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image008.png"
+ <v:imagedata src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image015.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image008.png"
+</v:shape><![endif]--><![if !vml]><img border=0 width=527 height=452
+src="Calibration%20of%20an%20area%20detector%20in%20GSAS_files/image016.png"
 v:shapes="Picture_x0020_15"><![endif]></span><span
-style='mso-spacerun:yes'> </span><span style='color:#1F497D;mso-themecolor:
+style="mso-spacerun:yes"> </span><span style='color:#1F497D;mso-themecolor:
 text2'><o:p></o:p></span></p>
 
 <p class=MsoNormal>When this is done, it sometimes occurs that the points
 selected for the outermost rings are scattered between that and the next ring.
 This can be repaired by changing the pixel search range to 10 and using the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Operations/Recalibrate</span></b> menu
+Cambria;mso-bidi-theme-font:minor-latin'>Operations/Recalibrate</span></b> menu
 item.</p>
 
 <p class=MsoNormal>Assuming that these calibration results will be applied to
 other images in the same GSAS-II project, click on <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>Use as default for all images</span></b>. You
-may also save a copy of the calibration values to a file <span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'>(<span class=SpellE><i style='mso-bidi-font-style:normal'>name</i><b
-style='mso-bidi-font-weight:normal'>.imctrl</b></span></span>) with the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+normal'><span style='font-family:Cambria;mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:
+minor-latin'>Use as default for all images</span></b>. You may also save a copy
+of the calibration values to a file <span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Operations/Save Controls</span></b>
-menu item. To save the project, including the now-derived calibration information,
-use the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+Cambria;mso-bidi-theme-font:minor-latin'>(<span class=SpellE><i
+style='mso-bidi-font-style:normal'>name</i><b style='mso-bidi-font-weight:normal'>.imctrl</b></span></span>)
+with the <b style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>File/Save</span> </b><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+Cambria;mso-bidi-theme-font:minor-latin'>Operations/Save Controls</span></b>
+menu item. To save the project, including the now-derived calibration
+information, use the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>File/Save</span>
+</b><b style='mso-bidi-font-weight:normal'><span style='font-family:Cambria;
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Project</span></b><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'> </span>menu item associated with the data tree window; as this
-project has not been saved before the file save dialog will need a file name.
-Don’t enter the extension; it will be set to “<b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
-mso-bidi-theme-font:minor-latin'>.<span class=SpellE>gpx</span></span></b>”.</p>
+Cambria;mso-bidi-theme-font:minor-latin'>Project</span></b><span
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'> </span>menu
+item associated with the data tree window; as this project has not been saved
+before the file save dialog will need a file name. Don’t enter the extension;
+it will be set to “<b style='mso-bidi-font-weight:normal'><span
+style='font-family:Cambria;mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'>.<span
+class=SpellE>gpx</span></span></b>”.</p>
 
 <h2>Next step: <span class=MsoHyperlink><span style='color:#0070C0'><a
-href="Integration%20of%20area%20detector%20data%20in%20GSAS.htm"><u><span
+href="Integration%2520of%2520area%2520detector%2520data%2520in%2520GSAS.htm"><u><span
 style='color:black'>Integrate the Data</span></u></a></span></span></h2>
 
 </div>

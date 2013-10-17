@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#GSASIItestplot.py
+'''
+*GSASIItestplot: Plotting for testDeriv*
+========================================
+
+Plotting module used for script testDeriv.
+'''
 import wx
 import wx.aui
 import matplotlib as mpl
@@ -5,6 +13,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
 class Plot(wx.Panel):
+    'Creates a plotting window'
     def __init__(self, parent, id = -1, dpi = None, **kwargs):
         wx.Panel.__init__(self, parent, id=id, **kwargs)
         self.figure = mpl.figure.Figure(dpi=dpi, #figsize=(5,7)
@@ -19,6 +28,7 @@ class Plot(wx.Panel):
         self.SetSizer(sizer)
 
 class PlotNotebook(wx.Panel):
+    'creates a Wx application and a plotting notebook'
     def __init__(self, id = -1):
         self.app = wx.PySimpleApp()
         self.frame = wx.Frame(None,-1,'Plotter', size=wx.Size(600,600))
@@ -34,7 +44,6 @@ class PlotNotebook(wx.Panel):
     def StartEventLoop(self):
         self.Show()
         self.app.MainLoop()
-
 
     def add(self,name="plot"):
        page = Plot(self.nb)

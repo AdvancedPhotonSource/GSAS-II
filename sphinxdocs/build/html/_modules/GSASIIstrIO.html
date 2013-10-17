@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIstrIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-05-17 12:13:15 -0500 (Fri, 17 May 2013) $</span>
+<span class="c"># $Date: 2013-10-16 11:52:06 -0500 (Wed, 16 Oct 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 920 $</span>
+<span class="c"># $Revision: 1110 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $</span>
-<span class="c"># $Id: GSASIIstrIO.py 920 2013-05-17 17:13:15Z vondreele $</span>
+<span class="c"># $Id: GSASIIstrIO.py 1110 2013-10-16 16:52:06Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIstrIO: structure I/O routines*</span>
@@ -76,7 +76,7 @@
 <span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="kn">as</span> <span class="nn">nl</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="kn">as</span> <span class="nn">so</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 920 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1110 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2el</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
@@ -346,6 +346,15 @@
             <span class="k">elif</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">hist</span><span class="p">[:</span><span class="mi">4</span><span class="p">]:</span>
                 <span class="n">HKLFdata</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="n">HKLFdata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>        <span class="c">#weight factor</span>
+<span class="c">#patch</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="nb">list</span><span class="p">):</span>
+                    <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+                    <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+                        <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[:</span><span class="mi">11</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">ref</span><span class="p">[</span><span class="mi">13</span><span class="p">],])</span>
+                        <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;FF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span>
+                    <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
+                    <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">RefData</span>
+<span class="c">#end patch</span>
                 <span class="n">HKLFdata</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">HKLFdata</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>       <span class="c">#Instrument parameters</span>
                 <span class="n">HKLFdata</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
@@ -358,7 +367,7 @@
     <span class="sd">&quot;&quot;&quot; Returns a list of histogram names found in GSASII gpx file</span>
 
 <span class="sd">    :param str GPXfile: full .gpx file name</span>
-<span class="sd">    :param str hNames: list of histogram names</span>
+<span class="sd">    :param str hType: list of histogram types</span>
 <span class="sd">    :return: list of histogram names (types = PWDR &amp; HKLF)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -487,7 +496,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">histogram</span> <span class="o">=</span> <span class="n">Histograms</span><span class="p">[</span><span class="n">datum</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
 <span class="c">#            print &#39;found &#39;,datum[0]</span>
-            <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">histogram</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">]</span>
             <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">histogram</span><span class="p">[</span><span class="s">&#39;Residuals&#39;</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">datus</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
 <span class="c">#                print &#39;    read: &#39;,datus[0]</span>
@@ -1794,26 +1803,32 @@
                     <span class="k">if</span> <span class="n">hapData</span><span class="p">[</span><span class="s">&#39;Babinet&#39;</span><span class="p">][</span><span class="s">&#39;BabA&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
                         <span class="n">PrintBabinet</span><span class="p">(</span><span class="n">hapData</span><span class="p">[</span><span class="s">&#39;Babinet&#39;</span><span class="p">])</span>
                 <span class="n">HKLd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">GenHLaue</span><span class="p">(</span><span class="n">dmin</span><span class="p">,</span><span class="n">SGData</span><span class="p">,</span><span class="n">A</span><span class="p">))</span>
-                <span class="n">refList</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="n">HKLd</span><span class="p">:</span>
-                    <span class="n">ext</span><span class="p">,</span><span class="n">mul</span><span class="p">,</span><span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">],</span><span class="n">SGData</span><span class="p">)</span>
-                    <span class="n">mul</span> <span class="o">*=</span> <span class="mi">2</span>      <span class="c"># for powder overlap of Friedel pairs</span>
-                    <span class="k">if</span> <span class="n">ext</span><span class="p">:</span>
-                        <span class="k">continue</span>
-                    <span class="k">if</span> <span class="s">&#39;C&#39;</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
-                        <span class="n">pos</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">asind</span><span class="p">(</span><span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">d</span><span class="p">))</span><span class="o">+</span><span class="n">Zero</span>
-                        <span class="k">if</span> <span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-                            <span class="n">refList</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">mul</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="n">Uniq</span><span class="p">,</span><span class="n">phi</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,{}])</span>
-                            <span class="c">#last item should contain form factor values by atom type</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span> 
-                <span class="k">if</span> <span class="n">resetRefList</span><span class="p">:</span> <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phase</span><span class="p">]</span> <span class="o">=</span> <span class="n">refList</span>
+                <span class="k">if</span> <span class="n">resetRefList</span><span class="p">:</span>
+                    <span class="n">refList</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">Uniq</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">Phi</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">FF</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="n">HKLd</span><span class="p">:</span>
+                        <span class="n">ext</span><span class="p">,</span><span class="n">mul</span><span class="p">,</span><span class="n">uniq</span><span class="p">,</span><span class="n">phi</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">],</span><span class="n">SGData</span><span class="p">)</span>
+                        <span class="n">mul</span> <span class="o">*=</span> <span class="mi">2</span>      <span class="c"># for powder overlap of Friedel pairs</span>
+                        <span class="k">if</span> <span class="n">ext</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="k">if</span> <span class="s">&#39;C&#39;</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                            <span class="n">pos</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">asind</span><span class="p">(</span><span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">d</span><span class="p">))</span><span class="o">+</span><span class="n">Zero</span>
+                            <span class="k">if</span> <span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                                <span class="n">refList</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">mul</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
+                                <span class="n">Uniq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">uniq</span><span class="p">)</span>
+                                <span class="n">Phi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+                                <span class="n">FF</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span> 
+                    <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">refList</span><span class="p">),</span><span class="s">&#39;FF&#39;</span><span class="p">:</span><span class="n">FF</span><span class="p">}</span>
             <span class="k">elif</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">histogram</span><span class="p">:</span>
                 <span class="n">inst</span> <span class="o">=</span> <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;Instrument Parameters&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">hId</span> <span class="o">=</span> <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;hId&#39;</span><span class="p">]</span>
                 <span class="n">hfx</span> <span class="o">=</span> <span class="s">&#39;:</span><span class="si">%d</span><span class="s">:&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">hId</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span> <span class="k">continue</span> <span class="c"># skip over non-refined items (such as InstName)</span>
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span> <span class="ow">and</span> <span class="n">item</span> <span class="o">!=</span> <span class="s">&#39;Type&#39;</span><span class="p">:</span> <span class="k">continue</span> <span class="c"># skip over non-refined items (such as InstName)</span>
                     <span class="n">hapDict</span><span class="p">[</span><span class="n">hfx</span><span class="o">+</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">inst</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">pfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pId</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hId</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span>
                 <span class="n">hapDict</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Scale&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hapData</span><span class="p">[</span><span class="s">&#39;Scale&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>

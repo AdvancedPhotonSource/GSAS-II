@@ -155,7 +155,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     '''Read an image with the file reader keyed by the
     file extension
 
-    :param wx.Frame G2frame: main GSAS-II Frame and data object
+    :param wx.Frame G2frame: main GSAS-II Frame and data object. Note: not used!
 
     :param str imagefile: name of image file
 
@@ -1758,8 +1758,9 @@ class ExportBaseclass(object):
         self.Histograms = {}
         self.powderDict = {}
         self.xtalDict = {}
-        # updated in SetupExport, when used
+        # updated in InitExport:
         self.currentExportType = None # type of export that has been requested
+        # updated in ExportSelect (when used):
         self.phasenam = None # a list of selected phases
         self.histnam = None # a list of selected histograms
         self.filename = None # name of file to be written
@@ -1768,29 +1769,27 @@ class ExportBaseclass(object):
         self.exporttype = []  # defines the type(s) of exports that the class can handle.
         # The following types are defined: 'project', "phase", "powder", "single"
         self.multiple = False # set as True if the class can export multiple phases or histograms
-        # ignored for "project" exports
+        # self.multiple is ignored for "project" exports
 
-    def SetupExport(self,event,AskFile=True):
-        '''Determines the type of menu that called the Exporter. Selects histograms
-        or phases when needed. 
+    def InitExport(self,event):
+        '''Determines the type of menu that called the Exporter.
+        '''
+        if event:
+            self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
+
+    def ExportSelect(self,AskFile=True):
+        '''Selects histograms or phases when needed. Sets a default file name.
 
         :param bool AskFile: if AskFile is True (default) get the name of the file
           in a dialog
         :returns: True in case of an error
         '''
-        if event:
-            self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
-        if AskFile:
-            self.filename = self.askSaveFile()
-        else:
-            self.filename = self.defaultSaveFile()
-        if not self.filename: return True
         
         if self.currentExportType == 'phase':
             if len(self.Phases) == 0:
                 self.G2frame.ErrorDialog(
                     'Empty project',
-                    'Project does not contain any data or phases or they are not interconnected.')
+                    'Project does not contain any phases.')
                 return True
             elif self.multiple: 
                 if len(self.Phases) == 1:
@@ -1812,7 +1811,7 @@ class ExportBaseclass(object):
             if len(self.xtalDict) == 0:
                 self.G2frame.ErrorDialog(
                     'Empty project',
-                    'Project does not contain any single crystal data or data is not connected to a phase.')
+                    'Project does not contain any single crystal data.')
                 return True
             elif self.multiple:
                 if len(self.xtalDict) == 1:
@@ -1834,7 +1833,7 @@ class ExportBaseclass(object):
             if len(self.powderDict) == 0:
                 self.G2frame.ErrorDialog(
                     'Empty project',
-                    'Project does not contain any powder data or data is not connected to a phase.')
+                    'Project does not contain any powder data.')
                 return True
             elif self.multiple:
                 if len(self.powderDict) == 1:
@@ -1852,6 +1851,40 @@ class ExportBaseclass(object):
                     hnum = G2gd.ItemSelector(choices,self.G2frame)
                     if hnum is None: return True
                     self.histnam = [choices[hnum]]
+        elif self.currentExportType == 'image':
+            if len(self.Histograms) == 0:
+                self.G2frame.ErrorDialog(
+                    'Empty project',
+                    'Project does not contain any images.')
+                return True
+            elif len(self.Histograms) == 1:
+                self.histnam = self.Histograms.keys()
+            else:
+                choices = sorted(self.Histograms.keys())
+                hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=self.multiple)
+                if hnum is None: return True
+                if self.multiple:
+                    self.histnam = [choices[i] for i in hnum]
+                else:
+                    self.histnam = [choices[hnum]]
+        if AskFile:
+            self.filename = self.askSaveFile()
+        else:
+            self.filename = self.defaultSaveFile()
+        if not self.filename: return True
+        
+    # def SetupExport(self,event,AskFile=True):
+    #     '''Determines the type of menu that called the Exporter. Selects histograms
+    #     or phases when needed. Better to replace with individual calls to 
+    #     self.InitExport() and self.ExportSelect() so that the former can be called prior
+    #     to self.LoadTree()
+
+    #     :param bool AskFile: if AskFile is True (default) get the name of the file
+    #       in a dialog
+    #     :returns: True in case of an error
+    #     '''
+    #     self.ExportInit(event)
+    #     return self.ExportSelect(AskFile)
                     
     def loadParmDict(self):
         '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
@@ -1939,8 +1972,66 @@ class ExportBaseclass(object):
           begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.
         '''
         self.OverallParms = {}
-        self.Histograms,self.Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
+        self.powderDict = {}
+        self.xtalDict = {}
         if self.G2frame.PatternTree.IsEmpty(): return # nothing to do
+        histType = None        
+        if self.currentExportType == 'phase':
+            # if exporting phases load them here
+            sub = G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.root,'Phases')
+            if not sub:
+                print 'no phases found'
+                return True
+            item, cookie = self.G2frame.PatternTree.GetFirstChild(sub)
+            while item:
+                phaseName = self.G2frame.PatternTree.GetItemText(item)
+                self.Phases[phaseName] =  self.G2frame.PatternTree.GetItemPyData(item)
+                item, cookie = self.G2frame.PatternTree.GetNextChild(sub, cookie)
+            return
+        elif self.currentExportType == 'single':
+            histType = 'HKLF'
+        elif self.currentExportType == 'powder':
+            histType = 'PWDR'
+        elif self.currentExportType == 'image':
+            histType = 'IMG'
+
+        if histType: # Loading just one kind of tree entry
+            item, cookie = self.G2frame.PatternTree.GetFirstChild(self.G2frame.root)
+            while item:
+                name = self.G2frame.PatternTree.GetItemText(item)
+                if name.startswith(histType):
+                    if self.Histograms.get(name): # there is already an item with this name
+                        if name[-1] == '9':
+                            name = name[:-1] + '10'
+                        elif name[-1] in '012345678':
+                            name = name[:-1] + str(int(name[:-1])+1)
+                        else:                            
+                            name += '-1'
+                    self.Histograms[name] = {}
+                    self.Histograms[name]['Data'] = self.G2frame.PatternTree.GetItemPyData(item)[1]
+                    item2, cookie2 = self.G2frame.PatternTree.GetFirstChild(item)
+                    while item2: 
+                        child = self.G2frame.PatternTree.GetItemText(item2)
+                        self.Histograms[name][child] = self.G2frame.PatternTree.GetItemPyData(item2)
+                        item2, cookie2 = self.G2frame.PatternTree.GetNextChild(item, cookie2)
+                item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
+            # index powder and single crystal histograms by number
+            for hist in self.Histograms:
+                if hist.startswith("PWDR"): 
+                    d = self.powderDict
+                elif hist.startswith("HKLF"): 
+                    d = self.xtalDict
+                else:
+                    return                    
+                i = self.Histograms[hist].get('hId')
+                if i is None and not d.keys():
+                    i = 0
+                elif i is None or i in d.keys():
+                    i = max(d.keys())+1
+                d[i] = hist
+            return
+        # else standard load: using all interlinked phases and histograms
+        self.Histograms,self.Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
         item, cookie = self.G2frame.PatternTree.GetFirstChild(self.G2frame.root)
         while item:
             name = self.G2frame.PatternTree.GetItemText(item)
@@ -1949,8 +2040,6 @@ class ExportBaseclass(object):
                 self.OverallParms[name] = self.G2frame.PatternTree.GetItemPyData(item)
             item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
         # index powder and single crystal histograms
-        self.powderDict = {}
-        self.xtalDict = {}
         for hist in self.Histograms:
             i = self.Histograms[hist]['hId']
             if hist.startswith("PWDR"): 
@@ -2044,14 +2133,18 @@ class ExportBaseclass(object):
           to a, b, c, alpha, beta, gamma, volume where `cellList` has the
           cell values and `cellSig` has their uncertainties.
         """
-        phasedict = self.Phases[phasenam] # pointer to current phase info            
-        pfx = str(phasedict['pId'])+'::'
-        A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-        cellSig = G2stIO.getCellEsd(pfx,
-                                    phasedict['General']['SGData'],A,
-                                    self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
-        cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
-        return cellList,cellSig
+        phasedict = self.Phases[phasenam] # pointer to current phase info
+        try:
+            pfx = str(phasedict['pId'])+'::'
+            A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
+            cellSig = G2stIO.getCellEsd(pfx,
+                                        phasedict['General']['SGData'],A,
+                                        self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
+            cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
+            return cellList,cellSig
+        except KeyError:
+            cell = phasedict['General']['Cell'][1:]
+            return cell,7*[0]
     
     def GetAtoms(self,phasenam):
         """Gets the atoms associated with a phase. Can be used with standard
@@ -2067,7 +2160,7 @@ class ExportBaseclass(object):
             x, y, z and fractional occupancy and
             their standard uncertainty (or a negative value)
           * td is contains a list with either one or six pairs of numbers:
-            if one number it is U\ :sub:`iso` and with six it is
+            if one number it is U\ :sub:`iso` and with six numbers it is
             U\ :sub:`11`, U\ :sub:`22`, U\ :sub:`33`, U\ :sub:`12`, U\ :sub:`13` & U\ :sub:`23`
             paired with their standard uncertainty (or a negative value)
         """

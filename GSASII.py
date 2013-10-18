@@ -29,7 +29,6 @@ import numpy as np
 import scipy as sp
 import wx
 import matplotlib as mpl
-import wx.lib.inspection as wxeye
 try:
     import OpenGL as ogl
 except ImportError:
@@ -1153,6 +1152,21 @@ class GSASII(wx.Frame):
             wx.ID_ANY, 'Single crystal data as',
             singlemenu, help='Export single crystal histogram(s)')
 
+        imagemenu = wx.Menu()
+        item = menu.AppendMenu(
+            wx.ID_ANY, 'Images as',
+            imagemenu, help='Export powder image(s)')
+
+        mapmenu = wx.Menu()
+        item = menu.AppendMenu(
+            wx.ID_ANY, 'Maps as',
+            mapmenu, help='Export density map(s)')
+
+        # pdfmenu = wx.Menu()
+        # item = menu.AppendMenu(
+        #     wx.ID_ANY, 'PDFs as',
+        #     pdfmenu, help='Export pair distribution function(s)')
+
         # find all the exporter files
         pathlist = sys.path
         filelist = []
@@ -1201,6 +1215,12 @@ class GSASII(wx.Frame):
                     submenu = powdermenu
                 elif typ == "single":
                     submenu = singlemenu
+                elif typ == "image":
+                    submenu = imagemenu
+                elif typ == "map":
+                    submenu = mapmenu
+                # elif typ == "pdf":
+                #     submenu = pdfmenu
                 else:
                     print("Error, unknown type in "+str(obj))
                     break
@@ -1213,16 +1233,20 @@ class GSASII(wx.Frame):
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
         #code to debug an Exporter. much is hard-coded below, but code is reloaded before
         # each use allowing faster development
-        # def DebugText(event):
+        # def DebugExport(event):
         #     reload(G2IO)
-        #     import dev_export_example
-        #     reload(dev_export_example)
-        #     dev_export_example.ExportSingleText(self).Exporter(event)
+        #     #import dev_export as dev
+        #     import G2export_csv as dev
+        #     reload(dev)
+        #     #dev.ExportTest(self).Exporter(event)
+        #     dev.ExportPowderCSV(self).Exporter(event)
+        #     dev.ExportPowderReflCSV(self).Exporter(event)
         # item = menu.Append(
         #     wx.ID_ANY,kind=wx.ITEM_NORMAL,
-        #     help="debug text",text="test Export")
-        # self.Bind(wx.EVT_MENU, DebugText, id=item.GetId())
-        # self.ExportLookup[item.GetId()] = 'single'
+        #     help="debug exporter",text="test Export")
+        # self.Bind(wx.EVT_MENU, DebugExport, id=item.GetId())
+        # #self.ExportLookup[item.GetId()] = 'image'
+        # self.ExportLookup[item.GetId()] = 'powder'
             
     def _Add_ExportMenuItems(self,parent):
         item = parent.Append(
@@ -2732,7 +2756,9 @@ def main():
     #application = GSASIImain() # don't redirect output, someday we
     # may want to do this if we can 
     application = GSASIImain(0)
-    if wxInspector: wxeye.InspectionTool().Show()
+    if wxInspector:
+        import wx.lib.inspection as wxeye
+        wxeye.InspectionTool().Show()
 
     #application.main.OnRefine(None)
     application.MainLoop()

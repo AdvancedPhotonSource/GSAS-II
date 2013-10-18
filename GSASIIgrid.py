@@ -1312,7 +1312,9 @@ def ItemSelector(ChoiceList, ParentFrame=None,
                 dlg = wx.MultiChoiceDialog(
                     ParentFrame,title, header, ChoiceList,
                     style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
-            pass
+            # I would like to add a select all and toggle all button
+            # to this dialog in some manner, but that is going to
+            # require that I recode the entire dialog -- TODO someday
         else:
             if useCancel:
                 dlg = wx.SingleChoiceDialog(
@@ -1324,10 +1326,13 @@ def ItemSelector(ChoiceList, ParentFrame=None,
         if size: dlg.SetSize(size)
         if dlg.ShowModal() == wx.ID_OK:
             if multiple:
+                dlg.Destroy()
                 return dlg.GetSelections()
             else:
+                dlg.Destroy()
                 return dlg.GetSelection()
         else:
+            dlg.Destroy()
             return None
         dlg.Destroy()
 

@@ -1515,13 +1515,13 @@ class ExportCIF(G2IO.ExportBaseclass):
 #=================================================================================
 
         # the export process starts here
+        self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.SetupExport(event,                         # set export parameters
-                            AskFile=(self.mode=='simple')
-                            ): return 
+        if self.ExportSelect(AskFile=(self.mode=='simple')):    # set export parameters
+            return 
         # Someday: get restraint & constraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
         #for i in  self.OverallParms['Constraints']:
@@ -1841,8 +1841,8 @@ class ExportCIF(G2IO.ExportBaseclass):
 
 class ExportPhaseCIF(ExportCIF):
     '''Used to create a simple CIF of at most one phase. Uses exact same code as
-    :class:`ExportCIF` except that `self.mode` is set to "simple". Shows up in menu as
-    Quick CIF
+    :class:`ExportCIF` except that `self.mode` is set to "simple" in `self.InitExport`.
+    Shows up in menu as Quick CIF.
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
@@ -1861,7 +1861,7 @@ class ExportPhaseCIF(ExportCIF):
 class ExportDataCIF(ExportCIF):
     '''Used to create a simple CIF containing diffraction data only. Uses exact same code as
     :class:`ExportCIF` except that `self.mode` is set to "simple" and `self.currentExportType`
-    is set to "single" or "powder" in `self.SetupExport`. Shows up in menus as Data-only CIF.
+    is set to "single" or "powder" in `self.InitExport`. Shows up in menus as Data-only CIF.
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''

@@ -115,11 +115,12 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             return nSeq
             
         # the export process starts here
+        self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.SetupExport(event,AskFile=True):                         # set export parameters
+        if self.ExportSelect(AskFile=True):    # set export parameters
             return 
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info
@@ -212,11 +213,12 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
         '''Export as a XYZ file
         '''
         # the export process starts here
+        self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.SetupExport(event,AskFile=True):                       # set export parameters
+        if self.ExportSelect(AskFile=True):    # set export parameters
             return 
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info

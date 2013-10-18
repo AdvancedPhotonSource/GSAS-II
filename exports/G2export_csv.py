@@ -7,7 +7,8 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to demonstrate how GSAS-II data export routines are created
+'''Code to create .csv (comma-seaparate variable) files for
+GSAS-II data export
 '''
 import os.path
 import GSASIIpath
@@ -21,23 +22,35 @@ import GSASIImath as G2mth
 #import GSASIIphsGUI as G2pg
 #import GSASIIstrMain as G2stMn
 
-class ExportPhaseText(G2IO.ExportBaseclass):
-    '''Used to create a text file for a phase
+def WriteList(obj,headerItems):
+    '''Write a CSV header
+
+    :param object obj: Exporter object
+    :param list headerItems: items to write as a header
+    '''
+    line = ''
+    for lbl in headerItems:
+        if line: line += ','
+        line += '"'+lbl+'"'
+    obj.Write(line)
+
+class ExportPhaseCSV(G2IO.ExportBaseclass):
+    '''Used to create a csv file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'Text file',
-            extension='.txt',
-            longFormatName = 'Export phase as text file'
+            formatName = 'CSV file',
+            extension='.csv',
+            longFormatName = 'Export phase as comma-separated (csv) file'
             )
         self.exporttype = ['phase']
         self.multiple = True # allow multiple phases to be selected
 
     def Exporter(self,event=None):
-        '''Export a phase as a text file
+        '''Export a phase as a csv file
         '''
         # the export process starts here
         self.InitExport(event)
@@ -53,75 +66,65 @@ class ExportPhaseText(G2IO.ExportBaseclass):
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             i = self.Phases[phasenam]['pId']
-            self.Write('\n'+80*'=')
-            self.Write("Phase "+str(phasenam)+" from "+str(self.G2frame.GSASprojectfile))
-            self.Write("\nSpace group = "+str(phasedict['General']['SGData']['SpGrp'].strip()))
+            self.Write('"'+"Phase "+str(phasenam)+" from "+str(self.G2frame.GSASprojectfile)+'"')
+            self.Write('\n"Space group:","'+str(phasedict['General']['SGData']['SpGrp'].strip())+'"')
             # get cell parameters & print them
             cellList,cellSig = self.GetCell(phasenam)
-            prevsig = 0
-            for lbl,defsig,val,sig in zip(
-                ['a','b','c','alpha','beta ','gamma','volume'],
+            WriteList(self,['a','b','c','alpha','beta','gamma','volume'])
+
+            line = ''
+            for defsig,val in zip(
                 3*[-0.00001] + 3*[-0.001] + [-0.01], # sign values to use when no sigma
-                cellList,cellSig
+                cellList
                 ):
-                if sig:
-                    txt = G2mth.ValEsd(val,sig)
-                    prevsig = -sig # use this as the significance for next value
-                else:
-                    txt = G2mth.ValEsd(val,min(defsig,prevsig),True)
-                self.Write(lbl+' = '+txt)
-            # get atoms and print them in nice columns
+                txt = G2mth.ValEsd(val,defsig)
+                if line: line += ','
+                line += txt
+            self.Write(line)
+                
+            # get atoms and print separated by commas
             AtomsList = self.GetAtoms(phasenam)
-            fmt = "{:8s} {:4s} {:4s} {:12s} {:12s} {:12s} {:10s} {:10s}"
-            self.Write('\nAtoms\n'+80*'-')
-            self.Write(fmt.format("label","elem","mult","x","y","z","frac","Uiso"))
-            self.Write(80*'-')
+            # check for aniso atoms
             aniso = False
             for lbl,typ,mult,xyz,td in AtomsList:
-                vals = [lbl,typ,str(mult)]
-                if xyz[3][0] == 0: continue
+                if len(td) != 1: aniso = True               
+            lbllist = ["label","elem","mult","x","y","z","frac","Uiso"]
+            if aniso: lbllist += ['U11','U22','U33','U12','U13','U23']
+            WriteList(self,lbllist)
+                
+            for lbl,typ,mult,xyz,td in AtomsList:
+                line = '"' + lbl + '","' + typ + '",' + str(mult) + ','
                 for val,sig in xyz:
-                    vals.append(G2mth.ValEsd(val,sig))
+                    line += G2mth.ValEsd(val,-abs(sig))
+                    line += ","
                 if len(td) == 1:
-                    vals.append(G2mth.ValEsd(td[0][0],td[0][1]))
+                    line += G2mth.ValEsd(td[0][0],-abs(td[0][1]))
                 else:
-                    vals.append("aniso")
-                    aniso = True
-                self.Write(fmt.format(*vals))
-            # print anisotropic values, if any
-            if aniso:
-                self.Write('\nAnisotropic parameters')
-                self.Write(80*'-')
-                fmt = "{:8s} {:4s} {:10s} {:10s} {:10s} {:10s} {:10s} {:10s}"
-                self.Write(fmt.format("label","elem",'U11','U22','U33','U12','U13','U23'))
-                self.Write(80*'-')
-                for lbl,typ,mult,xyz,td in AtomsList:
-                    if len(td) == 1: continue
-                    if xyz[3][0] == 0: continue
-                    vals = [lbl,typ]
+                    line += ","
                     for val,sig in td:
-                        vals.append(G2mth.ValEsd(val,sig))
-                    self.Write(fmt.format(*vals))
+                        line += G2mth.ValEsd(val,-abs(sig))
+                        line += ","
+                self.Write(line)
             print('Phase '+str(phasenam)+' written to file '+str(self.filename))                        
         self.CloseFile()
 
-class ExportPowderText(G2IO.ExportBaseclass):
-    '''Used to create a text file for a powder data set
+class ExportPowderCSV(G2IO.ExportBaseclass):
+    '''Used to create a csv file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'Text file',
-            extension='.txt',
-            longFormatName = 'Export powder data as text file'
+            formatName = 'CSV file',
+            extension='.csv',
+            longFormatName = 'Export powder data as comma-separated (csv) file'
             )
         self.exporttype = ['powder']
         self.multiple = False # only allow one histogram to be selected
 
     def Exporter(self,event=None):
-        '''Export a set of powder data as a text file
+        '''Export a set of powder data as a csv file
         '''
         # the export process starts here
         self.InitExport(event)
@@ -129,14 +132,12 @@ class ExportPowderText(G2IO.ExportBaseclass):
         self.loadTree()
         if self.ExportSelect( # set export parameters
             AskFile=False # use the default file name
-            #AskFile=True
             ): return 
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        fmt = 2*"{:12.3f} " + "{:12.5f} " + 2*"{:12.3f} "
-        hfmt = 5*"{:>12s} "
-        self.Write(hfmt.format("x","y_obs","weight","y_calc","y_bkg"))
+        WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
+        fmt = 2*"{:.3f}," + "{:.5f}," + 2*"{:.3f},"
         for x,yobs,yw,ycalc,ybkg,obsmcalc in zip(histblk['Data'][0],
                                                  histblk['Data'][1],
                                                  histblk['Data'][2],
@@ -148,66 +149,66 @@ class ExportPowderText(G2IO.ExportBaseclass):
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.filename))                        
 
-class ExportPowderReflText(G2IO.ExportBaseclass):
-    '''Used to create a text file of reflections from a powder data set
+class ExportPowderReflCSV(G2IO.ExportBaseclass):
+    '''Used to create a csv file of reflections from a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'reflection list as text',
-            extension='.txt',
-            longFormatName = 'Export powder reflection list as a text file'
+            formatName = 'reflection list as CSV',
+            extension='.csv',
+            longFormatName = 'Export powder reflection list as a comma-separated (csv) file'
             )
         self.exporttype = ['powder']
         self.multiple = False # only allow one histogram to be selected
 
     def Exporter(self,event=None):
-        '''Export a set of powder reflections as a text file
+        '''Export a set of powder reflections as a csv file
         '''
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
             AskFile=False # use the default file name
-            #AskFile=True
             ): return 
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        hklfmt = "{:.0f},{:.0f},{:.0f}"
-        hfmt = "{:>8s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s}"
-        fmt = "{:>8s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f}"
-        for phasenam in histblk['Reflection Lists']:
-            self.Write('\nPhase '+str(phasenam))
-            self.Write(80*'=')
-            self.Write(hfmt.format("h,k,l","2-theta","F_obs","F_calc","phase","mult"))
-            self.Write(80*'=')
+        # table of phases
+        self.Write('"Phase name","phase #"')
+        for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
+            self.Write('"'+str(phasenam)+'",'+str(i))
+        self.Write('')
+        # note addition of a phase # flag at end (i)
+        WriteList(self,("h","k","l","2-theta","F_obs","F_calc","phase","mult","phase #"))
+        fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+        for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
             for (
                 h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,eqlist,phaselist,Icorr,FFdict
                 ) in histblk['Reflection Lists'][phasenam]:
-                self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult))
+                self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
-        print(str(hist)+'reflections written to file '+str(self.filename))                        
+        print(str(hist)+'reflections written to file '+str(self.filename))
 
-class ExportSingleText(G2IO.ExportBaseclass):
-    '''Used to create a text file with single crystal reflection data
+class ExportSingleCSV(G2IO.ExportBaseclass):
+    '''Used to create a csv file with single crystal reflection data
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'Text file',
-            extension='.txt',
-            longFormatName = 'Export reflection list as a text file'
+            formatName = 'CSV file',
+            extension='.csv',
+            longFormatName = 'Export reflection list as a comma-separated (csv) file'
             )
         self.exporttype = ['single']
         self.multiple = False # only allow one histogram to be selected
 
     def Exporter(self,event=None):
-        '''Export a set of single crystal data as a text file
+        '''Export a set of single crystal data as a csv file
         '''
         # the export process starts here
         self.InitExport(event)
@@ -215,21 +216,16 @@ class ExportSingleText(G2IO.ExportBaseclass):
         self.loadTree()
         if self.ExportSelect( # set export parameters
             AskFile=False # use the default file name
-            #AskFile=True
             ): return 
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        hklfmt = "{:.0f},{:.0f},{:.0f}"
-        hfmt = "{:>10s} {:>8s} {:>12s} {:>12s} {:>12s} {:>7s} {:>6s}"
-        fmt = "{:>10s} {:8.3f} {:12.2f} {:12.4f} {:12.2f} {:7.2f} {:6.0f}"
-        self.Write(80*'=')
-        self.Write(hfmt.format("h,k,l","d-space","F_obs","sig(Fobs)","F_calc","phase","mult"))
-        self.Write(80*'=')
+        WriteList(self,("h","k","l","d-space","F_obs","sig(Fobs)","F_calc","phase","mult"))
+        fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.2f},{:.4f},{:.2f},{:.2f},{:.0f}"
         for (
             h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,eqlist,phaselist,Icorr,FFdict
             ) in histblk['Data']:
-            self.Write(fmt.format(hklfmt.format(h,k,l),dsp,Fobs,sigFobs,Fcalc,phase,mult))
+            self.Write(fmt.format(h,k,l,dsp,Fobs,sigFobs,Fcalc,phase,mult))
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.filename))                        
 

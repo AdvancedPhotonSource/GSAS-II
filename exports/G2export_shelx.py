@@ -25,7 +25,7 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'SHELX',
+            formatName = 'SHELX .ins',
             extension='.ins',
             longFormatName = 'Export phase as SHELX .ins file'
             )
@@ -37,13 +37,13 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
         '''
         import re
         # the export process starts here
+        self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.SetupExport(event,                         # set export parameters
-                            AskFile=True
-                            ): return 
+        if self.ExportSelect(  # set export parameters
+            AskFile=True): return 
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             i = self.Phases[phasenam]['pId']
@@ -55,10 +55,9 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
             fp = self.OpenFile(fil)
             # title line
             self.Write("TITL from "+str(self.G2frame.GSASprojectfile)+", phase "+str(phasenam))
-            # get & write cell parameters 
-            pfx = str(phasedict['pId'])+'::'
-            A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-            self.Write("CELL 0.5 {:.5f} {:.5f} {:.5f} {:.3f} {:.3f} {:.3f}".format(*G2lat.A2cell(A)))
+            # get & write cell parameters
+            cell,sig = self.GetCell(phasenam)
+            self.Write("CELL 0.5 {:.5f} {:.5f} {:.5f} {:.3f} {:.3f} {:.3f}".format(*cell[:6]))
             # Shelx lattice number
             lattnum = {'P':1,'I':2,'R':2,'F':3,'A':4,'B':5,'C':6}.get(phasedict['General']['SGData']['SGLatt'],0)
             if not phasedict['General']['SGData']['SGInv']: lattnum *= -1

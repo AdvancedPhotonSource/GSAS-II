@@ -604,7 +604,9 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
+    nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+    mSize = len(Mdata)
     FF = np.zeros(len(Tdata))
     if 'N' in calcControls[hfx+'histType']:
         FP = 0.
@@ -615,11 +617,11 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     dFdvDict = {}
-    dFdfr = np.zeros((len(refDict['RefList']),len(Mdata)))
-    dFdx = np.zeros((len(refDict['RefList']),len(Mdata),3))
-    dFdui = np.zeros((len(refDict['RefList']),len(Mdata)))
-    dFdua = np.zeros((len(refDict['RefList']),len(Mdata),6))
-    dFdbab = np.zeros((len(refDict['RefList']),2))
+    dFdfr = np.zeros((nRef,mSize))
+    dFdx = np.zeros((nRef,mSize,3))
+    dFdui = np.zeros((nRef,mSize))
+    dFdua = np.zeros((nRef,mSize,6))
+    dFdbab = np.zeros((nRef,2))
     for iref,refl in enumerate(refDict['RefList']):
         H = np.array(refl[:3])
         SQ = 1./(2.*refl[4])**2             # or (sin(theta)/lambda)**2
@@ -660,7 +662,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])
         dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
         dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
-        dFdbab[iref] = np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+        dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #problem here if occ=0 for some atom
             dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)          
@@ -671,7 +673,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdx[iref] += 2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
             dFdui[iref] += 2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
             dFdua[iref] += 2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
-            dFdbab[iref] += np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+            dFdbab[iref] += 2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):     
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -685,8 +687,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
         dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
-        dFdvDict[pfx+'BabA'] = dFdbab.T[0]
-        dFdvDict[pfx+'BabU'] = dFdbab.T[1]
+    dFdvDict[pfx+'BabA'] = dFdbab.T[0]
+    dFdvDict[pfx+'BabU'] = dFdbab.T[1]
     return dFdvDict
     
 def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
@@ -1565,14 +1567,15 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         if Ka2:
                             depDerivDict[name][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
                 for name in ['BabA','BabU']:
-                    if phfx+name in varylist:
-                        dMdv[varylist.index(phfx+name)][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']*cw[iBeg:iFin]
-                        if Ka2:
-                            dMdv[varylist.index(phfx+name)][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']*cw[iBeg2:iFin2]
-                    elif phfx+name in dependentVars:                    
-                        depDerivDict[phfx+name][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']*cw[iBeg:iFin]
-                        if Ka2:
-                            depDerivDict[phfx+name][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']*cw[iBeg2:iFin2]                  
+                    if refl[9]:
+                        if phfx+name in varylist:
+                            dMdv[varylist.index(phfx+name)][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']/refl[9]
+                            if Ka2:
+                                dMdv[varylist.index(phfx+name)][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']/refl[9]
+                        elif phfx+name in dependentVars:                    
+                            depDerivDict[phfx+name][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']/refl[9]
+                            if Ka2:
+                                depDerivDict[phfx+name][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']/refl[9]                  
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet

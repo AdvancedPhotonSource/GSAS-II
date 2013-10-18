@@ -138,10 +138,10 @@ class testDeriv(wx.Frame):
             delVal.Bind(wx.EVT_TEXT_ENTER,OnDelValue)
             delVal.Bind(wx.EVT_KILL_FOCUS,OnDelValue)
             mainSizer.Add(delVal,0)
-        mainSizer.Layout()
+#        mainSizer.Layout()
         self.testDerivPanel.SetSizer(mainSizer)    
         Size = mainSizer.Fit(self.testDerivPanel)
-        Size[0] += 40
+        Size[0] = 700
         Size[1] = max(Size[1],290) + 35
         self.testDerivPanel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         self.testDerivPanel.SetSize(Size)
@@ -170,7 +170,7 @@ class testDeriv(wx.Frame):
                     self.varylist,self.calcControls,self.pawleyLookup,None)
                 self.values[self.varylist.index(name)] -= delt    
                 Mn = (M1-M0)/(2.*delt)
-                hplot.plot(Mn,'r+',label='numeric deriv')
+                hplot.plot(Mn,'r',label='numeric deriv')
                 hplot.plot(dMdV[self.varylist.index(name)]-Mn,'g',label='diff')
             hplot.legend(loc='best')
             

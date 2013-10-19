@@ -4899,7 +4899,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         if mapData['MapType'] == 'Omit':
-            mapData.update(G2mth.OmitMap(data,reflData))
+            pgbar = wx.ProgressDialog('Omit map','Blocks done',65, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+            mapData.update(G2mth.OmitMap(data,reflData,pgbar))
+            pgbar.Destroy()
         else:
             mapData.update(G2mth.FourierMap(data,reflData))
         mapData['Flip'] = False

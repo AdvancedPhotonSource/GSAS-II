@@ -1341,7 +1341,7 @@ def adjHKLmax(SGData,Hmax):
         Hmax[1] = ((Hmax[1]+2)/4)*4
         Hmax[2] = ((Hmax[2]+1)/4)*4
 
-def OmitMap(data,reflDict):
+def OmitMap(data,reflDict,pgbar=None):
     '''default doc string
     
     :param type name: description
@@ -1381,12 +1381,27 @@ def OmitMap(data,reflDict):
                 Fhkl[h,k,l] = F*phasep
                 h,k,l = -hkl+Hmax
                 Fhkl[h,k,l] = F*phasem
-    rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
-    print 'NB: this is just an Fobs map for now - under development'
-    print 'Omit map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
-    print rho.shape
-    mapData['rho'] = np.real(rho)
+    rho0 = fft.fftn(fft.fftshift(Fhkl))/cell[6]
+    M = np.mgrid[0:4,0:4,0:4]
+    blkIds = np.array(zip(M[0].flatten(),M[1].flatten(),M[2].flatten()))
+    iBeg = blkIds*rho0.shape/4
+    iFin = (blkIds+1)*rho0.shape/4
+    rho_omit = np.zeros_like(rho0)
+    nBlk = 0
+    for iB,iF in zip(iBeg,iFin):
+        rho1 = np.copy(rho0)
+        rho1[iB[0]:iF[0],iB[1]:iF[1],iB[2]:iF[2]] = 0.
+        Fnew = fft.ifftshift(fft.ifftn(rho1))
+        Fnew = np.where(Fnew,Fnew,1.0)           #avoid divide by zero
+        phase = Fnew/np.absolute(Fnew)
+        OFhkl = np.absolute(Fhkl)*phase
+        rho1 = np.real(fft.fftn(fft.fftshift(OFhkl)))*(1.+0j)
+        rho_omit[iB[0]:iF[0],iB[1]:iF[1],iB[2]:iF[2]] = np.copy(rho1[iB[0]:iF[0],iB[1]:iF[1],iB[2]:iF[2]])
+        nBlk += 1
+        pgbar.Update(nBlk)
+    mapData['rho'] = np.real(rho_omit)/cell[6]
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    print 'Omit map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
     return mapData
 
 def FourierMap(data,reflDict):

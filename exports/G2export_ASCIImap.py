@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2013-10-12 22:47:06 -0500 (Sat, 12 Oct 2013) $
-# $Author: toby $
-# $Revision: 1102 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_examples.py $
-# $Id: G2export_examples.py 1102 2013-10-13 03:47:06Z toby $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''Code to demonstrate how export routines are created: Export a Fourier or
-Charge-flip map. Note: I am not sure this is working properly, yet. 
+Charge-flip map. 
 '''
 import os.path
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1102 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 #import GSASIIgrid as G2gd
 #import GSASIIstrIO as G2stIO
@@ -58,14 +58,8 @@ class ExportMapASCII(G2IO.ExportBaseclass):
             cellList,cellSig = self.GetCell(phasenam)
             fmt = 3*" {:9.5f}" + 3*" {:9.3f}"
             self.Write(fmt.format(*cellList[:6]))
-            #print(fmt.format(*cellList[:6]))
             nx,ny,nz = rho.shape
-            #print(3*" {:3d}".format(nx,ny,nz))
-            self.Write(3*" {:3d}".format(nx,ny,nz))
-#            reverse order of map
-#            for i in range(nx-1,-1,-1):
-#                for j in range(ny-1,-1,-1):
-#                    for k in range(nz-1,-1,-1):
+            self.Write(" {:3d} {:3d} {:3d}".format(nx,ny,nz))
             for i in range(nx):
                 for j in range(ny):
                     for k in range(nz):

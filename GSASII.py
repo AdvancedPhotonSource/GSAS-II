@@ -109,23 +109,23 @@ class GSASII(wx.Frame):
     '''
     def _Add_FileMenuItems(self, parent):
         item = parent.Append(
-            help='Open a gsasii project file (*.gpx)', id=wx.ID_ANY,
+            help='Open a GSAS-II project file (*.gpx)', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&Open project...')
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
         item = parent.Append(
-            help='Save project to old file', id=wx.ID_ANY,
+            help='Save project under current name', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&Save project')
         self.Bind(wx.EVT_MENU, self.OnFileSave, id=item.GetId())
         item = parent.Append(
-            help='Save project to new file', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Save As...')
+            help='Save current project to new file', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Save project as...')
         self.Bind(wx.EVT_MENU, self.OnFileSaveas, id=item.GetId())
         item = parent.Append(
-            help='Close project, saving is optional', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='&Close project')
+            help='Create empty new project, saving current is optional', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='&New project')
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
         item = parent.Append(
-            help='Exit from gsasii', id=wx.ID_ANY,
+            help='Exit from GSAS-II', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&Exit')
         self.Bind(wx.EVT_MENU, self.OnFileExit, id=item.GetId())
         
@@ -1234,20 +1234,18 @@ class GSASII(wx.Frame):
         #code to debug an Exporter. much is hard-coded below, but code is reloaded before
         # each use allowing faster development
         # def DebugExport(event):
+        #     print 'start reload'
         #     reload(G2IO)
-        #     #import dev_export as dev
-        #     import G2export_csv as dev
+        #     import G2export_ASCIImap as dev
         #     reload(dev)
-        #     #dev.ExportTest(self).Exporter(event)
-        #     dev.ExportPowderCSV(self).Exporter(event)
-        #     dev.ExportPowderReflCSV(self).Exporter(event)
+        #     dev.ExportMapASCII(self).Exporter(event)
         # item = menu.Append(
         #     wx.ID_ANY,kind=wx.ITEM_NORMAL,
         #     help="debug exporter",text="test Export")
         # self.Bind(wx.EVT_MENU, DebugExport, id=item.GetId())
         # #self.ExportLookup[item.GetId()] = 'image'
-        # self.ExportLookup[item.GetId()] = 'powder'
-            
+        # self.ExportLookup[item.GetId()] = 'map'
+
     def _Add_ExportMenuItems(self,parent):
         item = parent.Append(
             help='Select PWDR item to enable',id=wx.ID_ANY,
@@ -2214,7 +2212,7 @@ class GSASII(wx.Frame):
 
     def OnFileClose(self, event):
         '''Clears the data tree in response to the
-        File/Close Project menu button. User is given option to save
+        File/New Project menu button. User is given option to save
         the project.
         '''
         if self.dataFrame:

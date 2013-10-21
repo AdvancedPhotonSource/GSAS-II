@@ -21,8 +21,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.fxye','.raw','.gsas','.gsa','.RAW','.GSAS','.GSA'),
             strictExtension=False,
-            formatName = 'GSAS',
-            longFormatName = 'GSAS powder data files'
+            formatName = 'GSAS powder data',
+            longFormatName = 'GSAS powder data files (.fxye, .raw, .gsas...)'
             )
         self.clockWd = None
 

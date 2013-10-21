@@ -1758,6 +1758,8 @@ class ExportBaseclass(object):
         self.Histograms = {}
         self.powderDict = {}
         self.xtalDict = {}
+        self.parmDict = {}
+        self.sigDict = {}
         # updated in InitExport:
         self.currentExportType = None # type of export that has been requested
         # updated in ExportSelect (when used):
@@ -1791,66 +1793,55 @@ class ExportBaseclass(object):
                     'Empty project',
                     'Project does not contain any phases.')
                 return True
+            elif len(self.Phases) == 1:
+                self.phasenam = self.Phases.keys()
             elif self.multiple: 
-                if len(self.Phases) == 1:
-                    self.phasenam = self.Phases.keys()
-                else:
-                    choices = sorted(self.Phases.keys())
-                    phasenum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
-                    if phasenum is None: return True
-                    self.phasenam = [choices[i] for i in phasenum]
+                choices = sorted(self.Phases.keys())
+                phasenum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                if phasenum is None: return True
+                self.phasenam = [choices[i] for i in phasenum]
+                if not self.phasenam: return True
             else:
-                if len(self.Phases) == 1:
-                    self.phasenam = self.Phases.keys()
-                else:
-                    choices = sorted(self.Phases.keys())
-                    phasenum = G2gd.ItemSelector(choices,self.G2frame)
-                    if phasenum is None: return True
-                    self.phasenam = [choices[phasenum]]
+                choices = sorted(self.Phases.keys())
+                phasenum = G2gd.ItemSelector(choices,self.G2frame)
+                if phasenum is None: return True
+                self.phasenam = [choices[phasenum]]
         elif self.currentExportType == 'single':
             if len(self.xtalDict) == 0:
                 self.G2frame.ErrorDialog(
                     'Empty project',
                     'Project does not contain any single crystal data.')
                 return True
+            elif len(self.xtalDict) == 1:
+                self.histnam = self.xtalDict.values()
             elif self.multiple:
-                if len(self.xtalDict) == 1:
-                    self.histnam = self.xtalDict.values()
-                else:
-                    choices = sorted(self.xtalDict.values())
-                    hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
-                    if hnum is None: return True
-                    self.histnam = [choices[i] for i in hnum]
+                choices = sorted(self.xtalDict.values())
+                hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                if not hnum: return True
+                self.histnam = [choices[i] for i in hnum]
             else:
-                if len(self.xtalDict) == 1:
-                    self.histnam = self.xtalDict.values()
-                else:
-                    choices = sorted(self.xtalDict.values())
-                    hnum = G2gd.ItemSelector(choices,self.G2frame)
-                    if hnum is None: return True
-                    self.histnam = [choices[hnum]]
+                choices = sorted(self.xtalDict.values())
+                hnum = G2gd.ItemSelector(choices,self.G2frame)
+                if hnum is None: return True
+                self.histnam = [choices[hnum]]
         elif self.currentExportType == 'powder':
             if len(self.powderDict) == 0:
                 self.G2frame.ErrorDialog(
                     'Empty project',
                     'Project does not contain any powder data.')
                 return True
+            elif len(self.powderDict) == 1:
+                self.histnam = self.powderDict.values()
             elif self.multiple:
-                if len(self.powderDict) == 1:
-                    self.histnam = self.powderDict.values()
-                else:
-                    choices = sorted(self.powderDict.values())
-                    hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
-                    if hnum is None: return True
-                    self.histnam = [choices[i] for i in hnum]
+                choices = sorted(self.powderDict.values())
+                hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                if not hnum: return True
+                self.histnam = [choices[i] for i in hnum]
             else:
-                if len(self.powderDict) == 1:
-                    self.histnam = self.powderDict.values()
-                else:
-                    choices = sorted(self.powderDict.values())
-                    hnum = G2gd.ItemSelector(choices,self.G2frame)
-                    if hnum is None: return True
-                    self.histnam = [choices[hnum]]
+                choices = sorted(self.powderDict.values())
+                hnum = G2gd.ItemSelector(choices,self.G2frame)
+                if hnum is None: return True
+                self.histnam = [choices[hnum]]
         elif self.currentExportType == 'image':
             if len(self.Histograms) == 0:
                 self.G2frame.ErrorDialog(
@@ -1862,11 +1853,46 @@ class ExportBaseclass(object):
             else:
                 choices = sorted(self.Histograms.keys())
                 hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=self.multiple)
-                if hnum is None: return True
                 if self.multiple:
+                    if not hnum: return True
                     self.histnam = [choices[i] for i in hnum]
                 else:
+                    if hnum is None: return True
                     self.histnam = [choices[hnum]]
+        if self.currentExportType == 'map':
+            # search for phases with maps
+            mapPhases = []
+            choices = []
+            for phasenam in sorted(self.Phases):
+                phasedict = self.Phases[phasenam] # pointer to current phase info            
+                print phasedict['General']['Map'].keys()
+                if len(phasedict['General']['Map'].get('rho',[])):
+                    mapPhases.append(phasenam)
+                    if phasedict['General']['Map'].get('Flip'):
+                        choices.append('Charge flip map: '+str(phasenam))
+                    elif phasedict['General']['Map'].get('MapType'):
+                        choices.append(
+                            str(phasedict['General']['Map'].get('MapType'))
+                            + ' map: ' + str(phasenam))
+                    else:
+                        choices.append('unknown map: '+str(phasenam))
+            # select a map if needed
+            if len(mapPhases) == 0:
+                self.G2frame.ErrorDialog(
+                    'Empty project',
+                    'Project does not contain any maps.')
+                return True
+            elif len(mapPhases) == 1:
+                self.phasenam = mapPhases
+            else: 
+                phasenum = G2gd.ItemSelector(choices,self.G2frame,multiple=self.multiple)
+                if self.multiple:
+                    if not phasenum: return True
+                    self.phasenam = [mapPhases[i] for i in phasenum]
+                else:
+                    if phasenum is None: return True
+                    self.phasenam = [mapPhases[phasenum]]
+
         if AskFile:
             self.filename = self.askSaveFile()
         else:

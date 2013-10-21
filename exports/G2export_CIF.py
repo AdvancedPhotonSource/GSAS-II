@@ -488,15 +488,15 @@ class ExportCIF(G2IO.ExportBaseclass):
                 
             WriteCIFitem('\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
             WriteCIFitem('loop_ '+
-                         '\n\t_atom_site_label'+
-                         '\n\t_atom_site_type_symbol'+
-                         '\n\t_atom_site_fract_x'+
-                         '\n\t_atom_site_fract_y'+
-                         '\n\t_atom_site_fract_z'+
-                         '\n\t_atom_site_occupancy'+
-                         '\n\t_atom_site_adp_type'+
-                         '\n\t_atom_site_U_iso_or_equiv'+
-                         '\n\t_atom_site_symmetry_multiplicity')
+                         '\n   _atom_site_label'+
+                         '\n   _atom_site_type_symbol'+
+                         '\n   _atom_site_fract_x'+
+                         '\n   _atom_site_fract_y'+
+                         '\n   _atom_site_fract_z'+
+                         '\n   _atom_site_occupancy'+
+                         '\n   _atom_site_adp_type'+
+                         '\n   _atom_site_U_iso_or_equiv'+
+                         '\n   _atom_site_symmetry_multiplicity')
 
             varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
                         cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
@@ -553,10 +553,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem(s)
             if naniso == 0: return
             # now loop over aniso atoms
-            WriteCIFitem('\nloop_' + '\n\t_atom_site_aniso_label' + 
-                         '\n\t_atom_site_aniso_U_11' + '\n\t_atom_site_aniso_U_12' +
-                         '\n\t_atom_site_aniso_U_13' + '\n\t_atom_site_aniso_U_22' +
-                         '\n\t_atom_site_aniso_U_23' + '\n\t_atom_site_aniso_U_33')
+            WriteCIFitem('\nloop_' + '\n   _atom_site_aniso_label' + 
+                         '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_12' +
+                         '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_22' +
+                         '\n   _atom_site_aniso_U_23' + '\n   _atom_site_aniso_U_33')
             for i,at in enumerate(Atoms):
                 fval = self.parmDict.get(fpfx+str(i),at[cfrac])
                 if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
@@ -733,12 +733,12 @@ class ExportCIF(G2IO.ExportBaseclass):
             # loop over interatomic distances for this phase
             WriteCIFitem('\n# MOLECULAR GEOMETRY')
             WriteCIFitem('loop_' + 
-                         '\n\t_geom_bond_atom_site_label_1' +
-                         '\n\t_geom_bond_atom_site_label_2' + 
-                         '\n\t_geom_bond_distance' + 
-                         '\n\t_geom_bond_site_symmetry_1' + 
-                         '\n\t_geom_bond_site_symmetry_2' + 
-                         '\n\t_geom_bond_publ_flag')
+                         '\n   _geom_bond_atom_site_label_1' +
+                         '\n   _geom_bond_atom_site_label_2' + 
+                         '\n   _geom_bond_distance' + 
+                         '\n   _geom_bond_site_symmetry_1' + 
+                         '\n   _geom_bond_site_symmetry_2' + 
+                         '\n   _geom_bond_publ_flag')
 
             for i in sorted(AtomLabels.keys()):
                 Dist = DistArray[i]
@@ -759,14 +759,14 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             # loop over interatomic angles for this phase
             WriteCIFitem('\nloop_' + 
-                         '\n\t_geom_angle_atom_site_label_1' + 
-                         '\n\t_geom_angle_atom_site_label_2' + 
-                         '\n\t_geom_angle_atom_site_label_3' + 
-                         '\n\t_geom_angle' + 
-                         '\n\t_geom_angle_site_symmetry_1' +
-                         '\n\t_geom_angle_site_symmetry_2' + 
-                         '\n\t_geom_angle_site_symmetry_3' + 
-                         '\n\t_geom_angle_publ_flag')
+                         '\n   _geom_angle_atom_site_label_1' + 
+                         '\n   _geom_angle_atom_site_label_2' + 
+                         '\n   _geom_angle_atom_site_label_3' + 
+                         '\n   _geom_angle' + 
+                         '\n   _geom_angle_site_symmetry_1' +
+                         '\n   _geom_angle_site_symmetry_2' + 
+                         '\n   _geom_angle_site_symmetry_3' + 
+                         '\n   _geom_angle_publ_flag')
 
             for i in sorted(AtomLabels.keys()):
                 Dist = DistArray[i]
@@ -796,12 +796,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('\n# phase info for '+str(phasenam) + ' follows')
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             WriteCIFitem('_pd_phase_name', phasenam)
-            pfx = str(phasedict['pId'])+'::'
-            A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-            cellSig = G2stIO.getCellEsd(pfx,
-                                       phasedict['General']['SGData'],A,
-                                       self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
-            cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
+            cellList,cellSig = self.GetCell(phasenam)
             defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
             names = ['length_a','length_b','length_c',
                      'angle_alpha','angle_beta ','angle_gamma',
@@ -898,9 +893,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                 # always assume Ka1 & Ka2 if two wavelengths are present
                 WriteCIFitem('_diffrn_radiation_type','K\\a~1,2~')
                 WriteCIFitem('loop_' + 
-                             '\n\t_diffrn_radiation_wavelength' +
-                             '\n\t_diffrn_radiation_wavelength_wt' + 
-                             '\n\t_diffrn_radiation_wavelength_id')
+                             '\n   _diffrn_radiation_wavelength' +
+                             '\n   _diffrn_radiation_wavelength_wt' + 
+                             '\n   _diffrn_radiation_wavelength_id')
                 WriteCIFitem('  ' + PutInCol(G2mth.ValEsd(lam1,slam1),15)+
                              PutInCol('1.0',15) + 
                              PutInCol('1',5))
@@ -918,9 +913,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                 else:
                     WriteCIFitem('\n# PHASE TABLE')
                     WriteCIFitem('loop_' +
-                                 '\n\t_pd_phase_id' + 
-                                 '\n\t_pd_phase_block_id' + 
-                                 '\n\t_pd_phase_mass_%')
+                                 '\n   _pd_phase_id' + 
+                                 '\n   _pd_phase_block_id' + 
+                                 '\n   _pd_phase_mass_%')
                     wtFrSum = 0.
                     for phasenam in phasebyhistDict.get(histlbl):
                         hapData = self.Phases[phasenam]['Histograms'][histlbl]
@@ -943,10 +938,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                             '  '+G2mth.ValEsd(wtFr,sig)
                             )
                     WriteCIFitem('loop_' +
-                                 '\n\t_gsas_proc_phase_R_F_factor' +
-                                 '\n\t_gsas_proc_phase_R_Fsqd_factor' +
-                                 '\n\t_gsas_proc_phase_id' +
-                                 '\n\t_gsas_proc_phase_block_id')
+                                 '\n   _gsas_proc_phase_R_F_factor' +
+                                 '\n   _gsas_proc_phase_R_Fsqd_factor' +
+                                 '\n   _gsas_proc_phase_id' +
+                                 '\n   _gsas_proc_phase_block_id')
                     for phasenam in phasebyhistDict.get(histlbl):
                         pfx = str(self.Phases[phasenam]['pId'])+':'+str(hId)+':'
                         WriteCIFitem(
@@ -1025,16 +1020,16 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             WriteCIFitem('loop_')
             if len(histblk['Reflection Lists'].keys()) > 1:
-                WriteCIFitem('\t_pd_refln_phase_id')
-            WriteCIFitem('\t' + refprx + 'index_h' + 
-                         '\n\t' + refprx + 'index_k' + 
-                         '\n\t' + refprx + 'index_l' + 
-                         '\n\t' + refprx + 'F_squared_meas' + 
-                         '\n\t' + refprx + 'F_squared_calc' + 
-                         '\n\t' + refprx + 'phase_calc' + 
-                         '\n\t_pd_refln_d_spacing')
+                WriteCIFitem('   _pd_refln_phase_id')
+            WriteCIFitem('   ' + refprx + 'index_h' + 
+                         '\n   ' + refprx + 'index_k' + 
+                         '\n   ' + refprx + 'index_l' + 
+                         '\n   ' + refprx + 'F_squared_meas' + 
+                         '\n   ' + refprx + 'F_squared_calc' + 
+                         '\n   ' + refprx + 'phase_calc' + 
+                         '\n   _pd_refln_d_spacing')
             if Imax > 0:
-                WriteCIFitem('\t_gsas_i100_meas')
+                WriteCIFitem('   _gsas_i100_meas')
 
             refcount = 0
             hklmin = None
@@ -1100,20 +1095,20 @@ class ExportCIF(G2IO.ExportBaseclass):
             else:
                 WriteCIFitem('_pd_meas_number_of_points', str(len(histblk['Data'][0])))
             WriteCIFitem('\nloop_')
-            #            WriteCIFitem('\t_pd_proc_d_spacing') # need easy way to get this
+            #            WriteCIFitem('   _pd_proc_d_spacing') # need easy way to get this
             if not fixedstep:
                 if zero:
-                    WriteCIFitem('\t_pd_proc_2theta_corrected')
+                    WriteCIFitem('   _pd_proc_2theta_corrected')
                 else:
-                    WriteCIFitem('\t_pd_meas_2theta_scan')
+                    WriteCIFitem('   _pd_meas_2theta_scan')
             # at least for now, always report weights.
             #if countsdata:
-            #    WriteCIFitem('\t_pd_meas_counts_total')
+            #    WriteCIFitem('   _pd_meas_counts_total')
             #else:
-            WriteCIFitem('\t_pd_meas_intensity_total')
-            WriteCIFitem('\t_pd_calc_intensity_total')
-            WriteCIFitem('\t_pd_proc_intensity_bkg_calc')
-            WriteCIFitem('\t_pd_proc_ls_weight')
+            WriteCIFitem('   _pd_meas_intensity_total')
+            WriteCIFitem('   _pd_calc_intensity_total')
+            WriteCIFitem('   _pd_proc_intensity_bkg_calc')
+            WriteCIFitem('   _pd_proc_ls_weight')
             maxY = max(histblk['Data'][1].max(),histblk['Data'][3].max())
             if maxY < 0: maxY *= -10 # this should never happen, but...
             ndec = max(0,10-int(np.log10(maxY))-1) # 10 sig figs should be enough
@@ -1153,13 +1148,13 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             WriteCIFitem('\n# STRUCTURE FACTOR TABLE')            
             WriteCIFitem('loop_' + 
-                         '\n\t' + refprx + 'index_h' + 
-                         '\n\t' + refprx + 'index_k' + 
-                         '\n\t' + refprx + 'index_l' +
-                         '\n\t' + refprx + 'F_squared_meas' + 
-                         '\n\t' + refprx + 'F_squared_sigma' + 
-                         '\n\t' + refprx + 'F_squared_calc' + 
-                         '\n\t' + refprx + 'phase_calc'
+                         '\n   ' + refprx + 'index_h' + 
+                         '\n   ' + refprx + 'index_k' + 
+                         '\n   ' + refprx + 'index_l' +
+                         '\n   ' + refprx + 'F_squared_meas' + 
+                         '\n   ' + refprx + 'F_squared_sigma' + 
+                         '\n   ' + refprx + 'F_squared_calc' + 
+                         '\n   ' + refprx + 'phase_calc'
                          )
 
             hklmin = None

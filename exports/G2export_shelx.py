@@ -115,5 +115,6 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
                 for val,sig in td:
                     l += " {:.3f}".format(val)                    
                 self.Write(l)
+            self.Write('END')
             self.CloseFile()
             print('Phase '+str(phasenam)+' written to file '+str(fil))

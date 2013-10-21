@@ -1288,6 +1288,83 @@ class SingleStringDialog(wx.Dialog):
         return self.value
 
 ################################################################################
+class G2MultiChoiceDialog(wx.Dialog):
+    '''A dialog similar to MultiChoiceDialog except that buttons are
+    added to set all choices and to toggle all choices.
+
+    :param wx.Frame ParentFrame: reference to parent frame
+    :param str title: heading above list of choices
+    :param str header: Title to place on window frame 
+    :param list ChoiceList: a list of choices where one will be selected
+
+    :param kw: optional keyword parameters for the wx.Dialog may
+      be included such as Size [which defaults to `(320,310)`] and
+      Style (which defaults to `wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL`);
+      note that `wx.OK` and `wx.CANCEL` controls
+      the presence of the eponymous buttons in the dialog.
+    :returns: the name of the created dialog  
+    '''
+    def __init__(self,parent, title, header, ChoiceList, **kw):
+        # process keyword parameters, notably Style
+        options = {'size':(320,310), # default Frame keywords
+                   'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
+                   }
+        options.update(kw)
+        if options['style'] & wx.OK:
+            useOK = True
+            options['style'] ^= wx.OK
+        else:
+            useOK = False
+        if options['style'] & wx.CANCEL:
+            useCANCEL = True
+            options['style'] ^= wx.CANCEL
+        else:
+            useCANCEL = False        
+        # create the dialog frame
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,header,**options)
+        # fill the dialog
+        Sizer = wx.BoxSizer(wx.VERTICAL)
+        Sizer.Add(wx.StaticText(self,wx.ID_ANY,title),0,wx.ALL,12)
+        self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
+        self.numchoices = len(ChoiceList)
+        Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
+        Sizer.Add((-1,10))
+        # set/toggle buttons
+        bSizer = wx.BoxSizer(wx.VERTICAL)
+        setBut = wx.Button(self,wx.ID_ANY,'Set All')
+        setBut.Bind(wx.EVT_BUTTON,self._SetAll)
+        bSizer.Add(setBut,0,wx.ALIGN_CENTER)
+        bSizer.Add((-1,5))
+        togBut = wx.Button(self,wx.ID_ANY,'Toggle All')
+        togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
+        bSizer.Add(togBut,0,wx.ALIGN_CENTER)
+        Sizer.Add(bSizer,0,wx.LEFT,12)
+        # OK/Cancel buttons
+        btnsizer = wx.StdDialogButtonSizer()
+        if useOK:
+            OKbtn = wx.Button(self, wx.ID_OK)
+            OKbtn.SetDefault()
+            btnsizer.AddButton(OKbtn)
+        if useCANCEL:
+            btn = wx.Button(self, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        Sizer.Add((-1,5))
+        Sizer.Add(btnsizer,0,wx.ALIGN_RIGHT,50)
+        Sizer.Add((-1,20))
+        # OK done, let's get outa here
+        self.SetSizer(Sizer)
+    def GetSelections(self):
+        'Returns a list of the indices for the selected choices'
+        return [i for i in range(self.numchoices) if self.clb.IsChecked(i)]
+    def _SetAll(self,event):
+        'Set all choices on'
+        self.clb.SetChecked(range(self.numchoices))
+    def _ToggleAll(self,event):
+        'flip the state of all choices'
+        for i in range(self.numchoices):
+            self.clb.Check(i,not self.clb.IsChecked(i))
+
 def ItemSelector(ChoiceList, ParentFrame=None,
                  title='Select an item',
                  size=None, header='Item Selector',
@@ -1306,15 +1383,12 @@ def ItemSelector(ChoiceList, ParentFrame=None,
         '''
         if multiple:
             if useCancel:
-                dlg = wx.MultiChoiceDialog(
+                dlg = G2MultiChoiceDialog(
                     ParentFrame,title, header, ChoiceList)
             else:
-                dlg = wx.MultiChoiceDialog(
+                dlg = G2MultiChoiceDialog(
                     ParentFrame,title, header, ChoiceList,
                     style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
-            # I would like to add a select all and toggle all button
-            # to this dialog in some manner, but that is going to
-            # require that I recode the entire dialog -- TODO someday
         else:
             if useCancel:
                 dlg = wx.SingleChoiceDialog(

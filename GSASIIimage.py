@@ -783,7 +783,8 @@ def ImageIntegrate(image,data,masks):
                 dlg.Update(Nup)
                 tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
                 tax = np.where(tax < LRazm[0],tax+360.,tax)
-                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
+                if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
+                    NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
 #                print 'block done'
                 del tax,tay,taz
                 Nup += 1

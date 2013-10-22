@@ -609,8 +609,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     FF = np.zeros(len(Tdata))
     if 'N' in calcControls[hfx+'histType']:
-        FP = 0.
-        FPP = 0.
+        FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])

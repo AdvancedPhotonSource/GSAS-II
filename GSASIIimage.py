@@ -700,16 +700,22 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     #make position masks here
-    spots = masks['Points']
-    polygons = masks['Polygons']
+    frame = masks['Frames']
     tam = ma.make_mask_none((nI,nJ))
+    if frame:
+        tamp = ma.make_mask_none((1024*1024))
+        tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
+            tay.flatten(),len(frame),frame,tamp)[:nI*nJ])-True  #switch to exclude around frame
+        tam = ma.mask_or(tam.flatten(),tamp)
+    polygons = masks['Polygons']
     for polygon in polygons:
         if polygon:
-            tamp = ma.make_mask_none((nI*nJ))
+            tamp = ma.make_mask_none((1024*1024))
             tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
-                tay.flatten(),len(polygon),polygon,tamp))
+                tay.flatten(),len(polygon),polygon,tamp)[:nI*nJ])
             tam = ma.mask_or(tam.flatten(),tamp)
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
+    spots = masks['Points']
     for X,Y,diam in spots:
         tamp = ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2))
         tam = ma.mask_or(tam,tamp)
@@ -743,7 +749,7 @@ def ImageIntegrate(image,data,masks):
     'Needs a doc string'
     import histogram2d as h2d
     print 'Begin image integration'
-    blkSize = 128               #this seems to be optimal
+    blkSize = 128   #this seems to be optimal; will break in polymask if >1024
     LUtth = data['IOtth']
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = data['outAzimuths']

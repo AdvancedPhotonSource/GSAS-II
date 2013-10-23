@@ -1408,6 +1408,7 @@ class GSASII(wx.Frame):
         self.Sngl = 0
         self.ifGetRing = False
         self.setPoly = False
+        self.setFrame = False
         arg = sys.argv
         if len(arg) > 1:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
@@ -1572,7 +1573,7 @@ class GSASII(wx.Frame):
                         Data['setDefault'] = False
                         Data['range'] = [(Imin,Imax),[Imin,Imax]]
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
-                        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),
                             {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'strain':np.zeros((3,3))})
@@ -1995,7 +1996,7 @@ class GSASII(wx.Frame):
                         Data['calibrant'] = ''
                         Data['range'] = [(Imin,Imax),[Imin,Imax]]
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)                                            
-                        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),{})
                         self.PatternTree.SelectItem(Id)

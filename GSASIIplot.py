@@ -2132,8 +2132,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
-                if G2frame.setPoly:
-                    G2frame.G2plotNB.status.SetFields(['','Polygon mask pick - LB next point, RB close polygon'])
+                if G2frame.setPoly or G2frame.setFrame:
+                    G2frame.G2plotNB.status.SetFields(['','Polygon/frame mask pick - LB next point, RB close polygon'])
                 else:
                     G2frame.G2plotNB.status.SetFields(\
                         ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
@@ -2161,6 +2161,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2frame.setPoly = True
                 Masks['Polygons'].append([])
                 G2frame.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
+            elif event.key == 'f':
+                G2frame.setFrame = True
+                Masks['Frames'] = []
+                G2frame.G2plotNB.status.SetFields(['','Frame mask active - LB pick next point, RB close polygon'])
             G2imG.UpdateMasks(G2frame,Masks)
         elif PickName == 'Image Controls':
             if event.key == 'c':
@@ -2207,6 +2211,19 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 else:
                     G2frame.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(xpos,ypos)])
                     polygon.append([xpos,ypos])
+                G2imG.UpdateMasks(G2frame,Masks)
+        elif G2frame.setFrame:
+            frame = Masks['Frames']
+            xpos,ypos = event.mouseevent.xdata,event.mouseevent.ydata
+            if xpos and ypos:                       #point inside image
+                if len(frame) > 2 and event.mouseevent.button == 3:
+                    x0,y0 = frame[0]
+                    frame.append([x0,y0])
+                    G2frame.setFrame = False
+                    G2frame.G2plotNB.status.SetFields(['','Frame closed - RB drag a vertex to change shape'])
+                else:
+                    G2frame.G2plotNB.status.SetFields(['','New frame point: %.1f,%.1f'%(xpos,ypos)])
+                    frame.append([xpos,ypos])
                 G2imG.UpdateMasks(G2frame,Masks)
         else:
             if G2frame.itemPicked is not None: return
@@ -2307,6 +2324,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         rings = Masks['Rings']
                         arcs = Masks['Arcs']
                         polygons = Masks['Polygons']
+                        frame = Masks['Frames']
                         for ring in G2frame.ringList:
                             if Obj == ring[0]:
                                 rN = ring[1]
@@ -2333,6 +2351,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                                 for i,xy in enumerate(polygons[pN]):
                                     if np.allclose(np.array([xy]),oldPos,atol=1.0):
                                         polygons[pN][i] = xpos,ypos
+                        if frame:
+                            oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
+                            for i,xy in enumerate(frame):
+                                if np.allclose(np.array([xy]),oldPos,atol=1.0):
+                                    frame[i] = xpos,ypos
                         G2imG.UpdateMasks(G2frame,Masks)
 #                    else:                  #keep for future debugging
 #                        print str(G2frame.itemPicked),event.xdata,event.ydata,event.button
@@ -2348,7 +2371,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if newImage:
             Page.figure.clf()
             Plot = Page.figure.gca()          #get a fresh plot after clf()
-        
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('2D Powder Image').gca()
         plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
@@ -2418,7 +2440,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
             Img = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
-            if G2frame.setPoly:
+            if G2frame.setPoly or G2frame.setFrame:
                 Img.set_picker(True)
     
         Plot.plot(xcent,ycent,'x')
@@ -2486,6 +2508,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         rings = Masks['Rings']
         arcs = Masks['Arcs']
         polygons = Masks['Polygons']
+        if 'Frames' not in Masks:
+            Masks['Frames'] = []
+        frame = Masks['Frames']
         for x,y,d in spots:
             Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
         G2frame.ringList = []
@@ -2509,6 +2534,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             x,y = np.hsplit(np.array(polygon),2)
             G2frame.polyList.append([Plot.plot(x,y,'r+',picker=10),ipoly])
             Plot.plot(x,y,'r')            
+        G2frame.frameList = []
+        if frame:
+            x,y = np.hsplit(np.array(frame),2)
+            G2frame.frameList.append([Plot.plot(x,y,'g+',picker=10),0])
+            Plot.plot(x,y,'g')            
         if newImage:
             colorBar = Page.figure.colorbar(Img)
         Plot.set_xlim(xlim)

@@ -132,7 +132,7 @@ def UpdateImageControls(G2frame,data,masks):
                                     G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
                             except TypeError:       #missing Masks
                                 Imin,Imax = Data['Range']
-                                Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                                Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                                 G2frame.PatternTree.SetItemPyData(
                                     G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'),Masks)
                             if len(backImage):                                
@@ -904,6 +904,11 @@ def UpdateMasks(G2frame,data):
         UpdateMasks(G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
 
+    def OnDeleteFrame(event):
+        data['Frames'] = []
+        UpdateMasks(G2frame,data)
+        G2plt.PlotExposedImage(G2frame,event=event)
+
     def OnCopyMask(event):
         import copy
         TextList = [[False,'All IMG',0]]
@@ -949,7 +954,7 @@ def UpdateMasks(G2frame,data):
                 filename = dlg.GetPath()
                 File = open(filename,'w')
                 save = {}
-                keys = ['Points','Rings','Arcs','Polygons','Thresholds']
+                keys = ['Points','Rings','Arcs','Polygons','Frames','Thresholds']
                 for key in keys:
                     File.write(key+':'+str(data[key])+'\n')
                 File.close()
@@ -971,7 +976,7 @@ def UpdateMasks(G2frame,data):
                         S = File.readline()
                         continue
                     [key,val] = S[:-1].split(':')
-                    if key in ['Points','Rings','Arcs','Polygons','Thresholds']:
+                    if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
                         save[key] = eval(val)
                         if key == 'Thresholds':
                             save[key][0] = oldThreshold
@@ -993,7 +998,7 @@ def UpdateMasks(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)    
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-        Status.SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon")
+        Status.SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon, f:frame")
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
@@ -1002,6 +1007,9 @@ def UpdateMasks(G2frame,data):
     spots = data['Points']               #x,y,radius in mm
     rings = data['Rings']               #radius, thickness
     polygons = data['Polygons']         #3+ x,y pairs
+    if 'Frames' not in data:
+        data['Frames'] = []
+    frame = data['Frames']             #3+ x,y pairs
     arcs = data['Arcs']                 #radius, start/end azimuth, thickness
     
     littleSizer = wx.FlexGridSizer(2,3,0,5)
@@ -1126,6 +1134,7 @@ def UpdateMasks(G2frame,data):
         mainSizer.Add(littleSizer,0,)
     polyIds = []
     delPolyId = []
+    delFrameId = []
     if polygons:
         littleSizer = wx.FlexGridSizer(len(polygons)+2,2,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Polygon masks:'),0,
@@ -1143,10 +1152,27 @@ def UpdateMasks(G2frame,data):
                 delPolyId.append(polyDelete)
                 littleSizer.Add(polyDelete,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(littleSizer,0,)
+    if frame:
+        littleSizer = wx.FlexGridSizer(3,2,0,5)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Frame mask:'),0,
+            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add((5,0),0)
+        frameList = []
+        for x,y in frame:
+            frameList.append("%.2f, %.2f"%(x,y))
+        frameText = wx.ComboBox(G2frame.dataDisplay,value=frameList[0],choices=frameList,style=wx.CB_READONLY)
+        littleSizer.Add(frameText,0,wx.ALIGN_CENTER_VERTICAL)
+        frameDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
+        frameDelete.Bind(wx.EVT_CHECKBOX,OnDeleteFrame)
+        delFrameId.append(frameDelete)
+        littleSizer.Add(frameDelete,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(littleSizer,0,)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
-    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))    
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    Size[0] = 450
+    G2frame.dataFrame.setSizePosLeft(Size)    
 
 ################################################################################
 ##### Stress/Strain

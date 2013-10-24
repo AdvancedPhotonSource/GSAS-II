@@ -1865,7 +1865,6 @@ class ExportBaseclass(object):
             choices = []
             for phasenam in sorted(self.Phases):
                 phasedict = self.Phases[phasenam] # pointer to current phase info            
-                print phasedict['General']['Map'].keys()
                 if len(phasedict['General']['Map'].get('rho',[])):
                     mapPhases.append(phasenam)
                     if phasedict['General']['Map'].get('Flip'):

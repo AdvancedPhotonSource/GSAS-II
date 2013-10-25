@@ -94,7 +94,9 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(8)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
-] = [wx.NewId() for item in range(3)]
+  wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,
+] = [wx.NewId() for item in range(5)]
+
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_APPENDDZERO,
 ] = [wx.NewId() for item in range(5)]
@@ -2178,12 +2180,21 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.MaskMenu,helpType='Image Masks')
         self.MaskEdit = wx.Menu(title='')
         self.MaskMenu.Append(menu=self.MaskEdit, title='Operations')
+        submenu = wx.Menu()
+        self.MaskEdit.AppendMenu(
+            wx.ID_ANY,'Create new', submenu,
+            help=''
+            )
         self.MaskEdit.Append(help='Copy mask to other images', 
             id=wxID_MASKCOPY, kind=wx.ITEM_NORMAL,text='Copy mask')
         self.MaskEdit.Append(help='Save mask to file', 
             id=wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
         self.MaskEdit.Append(help='Load mask from file', 
             id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
+        submenu.Append(help='Create a Frame mask with mouse input', 
+            id=wxID_NEWMASKFRAME, kind=wx.ITEM_NORMAL,text='Frame mask')
+        submenu.Append(help='Create a polygon mask with mouse input', 
+            id=wxID_NEWMASKPOLY, kind=wx.ITEM_NORMAL,text='Polygon mask')
         self.PostfillDataMenu()
             
         # IMG / Stress/Strain

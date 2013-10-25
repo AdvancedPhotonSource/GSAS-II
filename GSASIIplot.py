@@ -2082,6 +2082,26 @@ def PlotExposedImage(G2frame,newPlot=False,event=None):
     elif G2frame.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
         PlotIntegration(G2frame,newPlot,event)
 
+def OnStartMask(G2frame,eventkey):
+    '''Initiate the start of a Frame or Polygon map
+
+    :param wx.Frame G2frame: The main GSAS-II tree "window"
+    :param str eventkey: a single letter ('f' or 'p') that
+      determines what type of mask is created.    
+    '''
+    Masks = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+    if eventkey == 'f':
+        G2frame.setFrame = True
+        Masks['Frames'] = []
+        G2frame.G2plotNB.status.SetFields(['','Frame mask active - LB pick next point, RB close polygon'])
+    elif eventkey == 'p':
+        G2frame.setPoly = True
+        Masks['Polygons'].append([])
+        G2frame.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
+    G2imG.UpdateMasks(G2frame,Masks)
+    PlotImage(G2frame,newImage=True)
+
 def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''Plot of 2D detector images as contoured plot. Also plot calibration ellipses,
     masks, etc.
@@ -2158,13 +2178,15 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 azm = int(azm)                
                 Masks['Arcs'].append([tth,[azm-5,azm+5],0.1])
             elif event.key == 'p':
-                G2frame.setPoly = True
-                Masks['Polygons'].append([])
-                G2frame.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
+                OnStartMask(G2frame,event.key)
+                #G2frame.setPoly = True
+                #Masks['Polygons'].append([])
+                #G2frame.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
             elif event.key == 'f':
-                G2frame.setFrame = True
-                Masks['Frames'] = []
-                G2frame.G2plotNB.status.SetFields(['','Frame mask active - LB pick next point, RB close polygon'])
+                OnStartMask(G2frame,event.key)
+                #G2frame.setFrame = True
+                #Masks['Frames'] = []
+                #G2frame.G2plotNB.status.SetFields(['','Frame mask active - LB pick next point, RB close polygon'])
             G2imG.UpdateMasks(G2frame,Masks)
         elif PickName == 'Image Controls':
             if event.key == 'c':

@@ -989,16 +989,29 @@ def UpdateMasks(G2frame,data):
                 File.close()
         finally:
             dlg.Destroy()
+    def OnNewFrameMask(event):
+        'Start a new Frame mask'
+        G2plt.OnStartMask(G2frame,'f')
+    def OnNewPolyMask(event):
+        'Start a new polygon mask'
+        G2plt.OnStartMask(G2frame,'p')
         
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MaskMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=G2gd.wxID_MASKCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOAD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewFrameMask, id=G2gd.wxID_NEWMASKFRAME)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewPolyMask, id=G2gd.wxID_NEWMASKPOLY)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-        Status.SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon, f:frame")
+    if G2frame.setFrame:
+        G2frame.dataFrame.GetStatusBar().SetStatusText("Adding frame mask")
+    elif G2frame.setPoly:
+        G2frame.dataFrame.GetStatusBar().SetStatusText("Adding polygon mask")
+    else:
+        G2frame.dataFrame.GetStatusBar().SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon, f:frame")
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)

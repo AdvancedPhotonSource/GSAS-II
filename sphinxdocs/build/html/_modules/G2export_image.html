@@ -1,0 +1,145 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>G2export_image &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for G2export_image</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="c"># $Date: 2013-10-18 16:00:32 -0500 (Fri, 18 Oct 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1115 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_image.py $</span>
+<span class="c"># $Id: G2export_image.py 1115 2013-10-18 21:00:32Z toby $</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="sd">&#39;&#39;&#39;Code to demonstrate how export routines are created.</span>
+<span class="sd">This loads in an image and saves it in PNG format</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">scipy.misc</span>
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1115 $&quot;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
+<span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
+
+<div class="viewcode-block" id="ExportImagePNG"><a class="viewcode-back" href="../exports.html#G2export_image.ExportImagePNG">[docs]</a><span class="k">class</span> <span class="nc">ExportImagePNG</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ExportBaseclass</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Used to create a PNG file for a GSAS-II image</span>
+
+<span class="sd">    :param wx.Frame G2frame: reference to main GSAS-II frame</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">G2frame</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say &lt;parentclass&gt;.__init__</span>
+            <span class="n">G2frame</span><span class="o">=</span><span class="n">G2frame</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;PNG&#39;</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="s">&#39;.png&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Export image in PNG format&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;image&#39;</span><span class="p">]</span>
+        <span class="c">#self.multiple = True</span>
+<div class="viewcode-block" id="ExportImagePNG.Exporter"><a class="viewcode-back" href="../exports.html#G2export_image.ExportImagePNG.Exporter">[docs]</a>    <span class="k">def</span> <span class="nf">Exporter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Export an image</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># the export process starts here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitExport</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># load all of the tree into a set of dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span><span class="bp">False</span><span class="p">):</span> <span class="k">return</span>
+        <span class="c"># process the selected image(s) (at present only one image)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histnam</span><span class="p">):</span> 
+            <span class="n">imgFile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Data&#39;</span><span class="p">,(</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">))</span>
+            <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">GetImageData</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">imgFile</span><span class="p">)</span>
+            <span class="n">scipy</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span><span class="n">Image</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Image &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">imgFile</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>                   </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

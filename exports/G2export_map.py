@@ -7,10 +7,17 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to demonstrate how export routines are created: Export a Fourier or
-Charge-flip map. 
 '''
-import os.path
+*Module G2export_map: Map export*
+-------------------------------------------
+
+Code to write Fourier/Charge-Flip atomic density maps out in formats that
+can be read by external programs. At present a GSAS format
+that is supported by FOX and DrawXTL 
+(:class:`ExportMapASCII`) and the CCP4 format that
+is used by COOT (:class:`ExportMapCCP4`) are implemented.
+'''
+import os
 import GSASIIpath
 import numpy as np
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -71,7 +78,6 @@ class ExportMapASCII(G2IO.ExportBaseclass):
             return
 
 class ExportMapCCP4(G2IO.ExportBaseclass):
-    import os
     '''Used to create a text file for a phase
 
     :param wx.Frame G2frame: reference to main GSAS-II frame

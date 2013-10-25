@@ -7,8 +7,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to create .csv (comma-seaparate variable) files for
-GSAS-II data export
+'''
+*Module G2export_csv: Spreadsheet export*
+-------------------------------------------
+
+Code to create .csv (comma-separated variable) files for
+GSAS-II data export to a spreadsheet program, etc.
+
 '''
 import os.path
 import GSASIIpath

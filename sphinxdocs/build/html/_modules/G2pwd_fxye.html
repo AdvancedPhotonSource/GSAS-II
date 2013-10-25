@@ -1,0 +1,439 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>G2pwd_fxye &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for G2pwd_fxye</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="c"># $Date: 2013-10-21 13:11:57 -0500 (Mon, 21 Oct 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1117 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_fxye.py $</span>
+<span class="c"># $Id: G2pwd_fxye.py 1117 2013-10-21 18:11:57Z toby $</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">*Module G2pwd_fxye: GSAS data files*</span>
+<span class="sd">------------------------------------</span>
+<span class="sd">Routine to read in powder data in a variety of formats</span>
+<span class="sd">that are defined for GSAS.</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">ospath</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1117 $&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GSAS_ReaderClass"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.GSAS_ReaderClass">[docs]</a><span class="k">class</span> <span class="nc">GSAS_ReaderClass</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPowderData</span><span class="p">):</span>
+    <span class="s">&#39;Routines to import powder data from a GSAS files&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to self-reference</span>
+            <span class="n">extensionlist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;.fxye&#39;</span><span class="p">,</span><span class="s">&#39;.raw&#39;</span><span class="p">,</span><span class="s">&#39;.gsas&#39;</span><span class="p">,</span><span class="s">&#39;.gsa&#39;</span><span class="p">,</span><span class="s">&#39;.RAW&#39;</span><span class="p">,</span><span class="s">&#39;.GSAS&#39;</span><span class="p">,</span><span class="s">&#39;.GSA&#39;</span><span class="p">),</span>
+            <span class="n">strictExtension</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;GSAS powder data&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;GSAS powder data files (.fxye, .raw, .gsas...)&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c"># Validate the contents -- look for a bank line</span>
+    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
+        <span class="c">#print &#39;ContentsValidator: &#39;+self.formatName</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">GSAS</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="c"># first line is always a comment</span>
+                <span class="k">continue</span>
+<span class="c">#            if i==1 and line[:4].lower() == &#39;inst&#39; and &#39;:&#39; in line:</span>
+            <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;inst&#39;</span><span class="p">:</span>
+                <span class="c"># 2nd line is optional instrument parameter file</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;#&#39;</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">line</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BANK&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="p">[:</span><span class="mi">7</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Monitor&#39;</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="k">elif</span> <span class="n">line</span> <span class="p">[:</span><span class="mi">8</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;TIME_MAP&#39;</span><span class="p">:</span>          <span class="c">#LANSCE TOF data</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;ContentsValidator: &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">formatName</span>
+                <span class="k">print</span> <span class="s">&#39;Unexpected information in line:&#39;</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span> <span class="c"># debug info</span>
+                <span class="k">print</span> <span class="n">line</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">False</span> <span class="c"># no bank records</span>
+
+    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+        
+        <span class="k">def</span> <span class="nf">GetFXYEdata</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">Pos</span><span class="p">,</span><span class="n">Bank</span><span class="p">):</span>
+            <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">Pos</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">while</span> <span class="n">S</span> <span class="ow">and</span> <span class="n">S</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;BANK&#39;</span><span class="p">:</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">100.</span><span class="p">)</span>               <span class="c">#CW: from centidegrees to degrees</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="o">&lt;=</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+                    <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                    <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">w</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>    
+            
+        <span class="k">def</span> <span class="nf">GetFXYdata</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">Pos</span><span class="p">,</span><span class="n">Bank</span><span class="p">):</span>
+            <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">Pos</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">while</span> <span class="n">S</span> <span class="ow">and</span> <span class="n">S</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;BANK&#39;</span><span class="p">:</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">100.</span><span class="p">)</span>               <span class="c">#CW: from centidegrees to degrees</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                    <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>              
+                    <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+                    <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">w</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+            
+        <span class="k">def</span> <span class="nf">GetESDdata</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">Pos</span><span class="p">,</span><span class="n">Bank</span><span class="p">):</span>
+            <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">Pos</span><span class="p">)</span>
+            <span class="n">cons</span> <span class="o">=</span> <span class="n">Bank</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">/</span><span class="mf">100.0</span>               <span class="c">#CW: from centidegrees to degrees</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span><span class="o">/</span><span class="mf">100.0</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">S</span> <span class="ow">and</span> <span class="n">S</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;BANK&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">80</span><span class="p">,</span><span class="mi">16</span><span class="p">):</span>
+                    <span class="n">xi</span> <span class="o">=</span> <span class="n">start</span><span class="o">+</span><span class="n">step</span><span class="o">*</span><span class="n">j</span>
+                    <span class="n">yi</span> <span class="o">=</span> <span class="n">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">8</span><span class="p">])</span>
+                    <span class="n">ei</span> <span class="o">=</span> <span class="n">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">8</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">16</span><span class="p">])</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xi</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">yi</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yi</span><span class="p">)</span>
+                        <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">ei</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>              
+                        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+                        <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                    <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">Tmap2TOF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeMap</span><span class="p">,</span><span class="n">clockWd</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">w</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+        
+        <span class="k">def</span> <span class="nf">GetSTDdata</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">Pos</span><span class="p">,</span><span class="n">Bank</span><span class="p">):</span>
+            <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">Pos</span><span class="p">)</span>
+            <span class="n">cons</span> <span class="o">=</span> <span class="n">Bank</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">Nch</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">/</span><span class="mf">100.0</span>               <span class="c">#CW: from centidegrees to degrees</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span><span class="o">/</span><span class="mf">100.0</span>                 <span class="c">#NB TOF 0.1*ms!</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">S</span> <span class="ow">and</span> <span class="n">S</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;BANK&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">80</span><span class="p">,</span><span class="mi">8</span><span class="p">):</span>
+                    <span class="n">xi</span> <span class="o">=</span> <span class="n">start</span><span class="o">+</span><span class="n">step</span><span class="o">*</span><span class="n">j</span>
+                    <span class="n">ni</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">sint</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">]),</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">yi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">8</span><span class="p">]),</span><span class="mf">0.0</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">yi</span><span class="p">:</span>
+                        <span class="n">vi</span> <span class="o">=</span> <span class="n">yi</span><span class="o">/</span><span class="n">ni</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">yi</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        <span class="n">vi</span> <span class="o">=</span> <span class="mf">1.0</span>
+                    <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">Nch</span><span class="p">:</span>
+                        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xi</span><span class="p">)</span>
+                        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yi</span><span class="p">)</span>
+                        <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">vi</span><span class="p">)</span>
+                <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">Tmap2TOF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeMap</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">w</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+            
+        <span class="k">def</span> <span class="nf">GetTimeMap</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">Pos</span><span class="p">,</span><span class="n">TimeMap</span><span class="p">):</span>
+            <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">Pos</span><span class="p">)</span>
+            <span class="n">cons</span> <span class="o">=</span> <span class="n">TimeMap</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">Nch</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">Nrec</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">clockWd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span><span class="o">/</span><span class="mf">1000.</span>          <span class="c">#in mus</span>
+            <span class="n">TMap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nch</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Nrec</span><span class="p">):</span>
+                <span class="n">S</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+                    <span class="n">TMap</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                    <span class="n">ind</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">TMap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">TMap</span><span class="p">,(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+            <span class="n">TMax</span> <span class="o">=</span> <span class="n">TMap</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">Nch</span> <span class="o">=</span> <span class="n">TMap</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">TMax</span><span class="o">-</span><span class="n">TMap</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">TMap</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">TMap</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">TMap</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Nch</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">TMax</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">TMap</span> <span class="o">=</span> <span class="n">TMap</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">TMap</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">TMap</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">clockWd</span>
+            
+        <span class="k">def</span> <span class="nf">Tmap2TOF</span><span class="p">(</span><span class="n">TMap</span><span class="p">,</span><span class="n">clockWd</span><span class="p">):</span>
+            <span class="n">TOF</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">chWdt</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">Tch</span><span class="p">,</span><span class="n">T</span><span class="p">,</span><span class="n">Step</span> <span class="o">=</span> <span class="n">TMap</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">tmap</span> <span class="ow">in</span> <span class="n">TMap</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="n">tch</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">step</span> <span class="o">=</span> <span class="n">tmap</span>
+                <span class="n">TOF</span> <span class="o">+=</span> <span class="p">[</span><span class="n">T</span><span class="o">+</span><span class="n">Step</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="n">Tch</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Tch</span><span class="p">,</span><span class="n">tch</span><span class="p">)]</span>
+                <span class="n">Tch</span><span class="p">,</span><span class="n">T</span><span class="p">,</span><span class="n">Step</span> <span class="o">=</span> <span class="n">tmap</span>
+            <span class="n">TOF</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">TOF</span><span class="p">)</span><span class="o">*</span><span class="n">clockWd</span>
+            <span class="k">return</span> <span class="n">TOF</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">Banks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">Pos</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">rdbuffer</span> <span class="o">=</span> <span class="n">kwarg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;buffer&#39;</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">comments</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">selections</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># reload previously saved values</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="ow">and</span> <span class="n">rdbuffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">Banks</span> <span class="o">=</span> <span class="n">rdbuffer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Banks&#39;</span><span class="p">)</span>
+            <span class="n">Pos</span> <span class="o">=</span> <span class="n">rdbuffer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Pos&#39;</span><span class="p">)</span>
+            <span class="n">selections</span> <span class="o">=</span> <span class="n">rdbuffer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;selections&#39;</span><span class="p">)</span>
+            <span class="n">comments</span> <span class="o">=</span> <span class="n">rdbuffer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;comments&#39;</span><span class="p">)</span>
+
+        <span class="c"># read through the file and find the beginning of each bank</span>
+        <span class="c"># Save the offset (Pos), BANK line (Banks), comments for each</span>
+        <span class="c"># bank</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Banks</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Pos</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">Banks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">break</span>
+                        
+                    <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="c"># first line is always a comment</span>
+                        <span class="n">title</span> <span class="o">=</span> <span class="n">S</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">comments</span> <span class="o">=</span> <span class="p">[[</span><span class="n">title</span><span class="p">,]]</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">S</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;inst&#39;</span> <span class="ow">and</span> <span class="s">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">:</span>
+                        <span class="c"># 2nd line is instrument parameter file (optional)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instparm</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">S</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;#&#39;</span><span class="p">:</span> <span class="c"># allow comments anywhere in the file</span>
+                        <span class="c"># comments in fact should only preceed BANK lines</span>
+                        <span class="n">comments</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">S</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">S</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BANK&#39;</span><span class="p">:</span>
+                        <span class="n">comments</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">title</span><span class="p">,])</span>
+                        <span class="n">Banks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+                        <span class="n">Pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filepointer</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+                    <span class="k">if</span> <span class="n">S</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;TIME_MAP&#39;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">TimeMap</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span> <span class="o">=</span> <span class="n">GetTimeMap</span><span class="p">(</span><span class="n">filepointer</span><span class="p">,</span><span class="n">filepointer</span><span class="o">.</span><span class="n">tell</span><span class="p">(),</span><span class="n">S</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
+                <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; scan error:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="c"># for testing</span>
+                <span class="kn">import</span> <span class="nn">traceback</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="c"># Now select the bank to read</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Banks</span><span class="p">:</span> <span class="c"># use of ContentsValidator should prevent this error</span>
+            <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; scan error: no BANK records&#39;</span>
+            <span class="n">selblk</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># no block to choose</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">Banks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># only one Bank, don&#39;t ask</span>
+            <span class="n">selblk</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="ow">and</span> <span class="n">selections</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># we were called to repeat the read</span>
+            <span class="c">#print &#39;debug: repeat #&#39;,self.repeatcount,&#39;selection&#39;,selections[self.repeatcount]</span>
+            <span class="n">selblk</span> <span class="o">=</span> <span class="n">selections</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>                       <span class="c"># choose from options</span>
+            <span class="n">selections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MultipleBlockSelector</span><span class="p">(</span>
+                <span class="n">Banks</span><span class="p">,</span>
+                <span class="n">ParentFrame</span><span class="o">=</span><span class="n">ParentFrame</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select Bank(s) to read from the list below&#39;</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span>
+                <span class="n">header</span><span class="o">=</span><span class="s">&#39;Dataset Selector&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
+            <span class="n">selblk</span> <span class="o">=</span> <span class="n">selections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># select first in list</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># prepare to loop through again</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">rdbuffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">rdbuffer</span><span class="p">[</span><span class="s">&#39;Banks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Banks</span>
+                    <span class="n">rdbuffer</span><span class="p">[</span><span class="s">&#39;Pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Pos</span>
+                    <span class="n">rdbuffer</span><span class="p">[</span><span class="s">&#39;selections&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selections</span>
+                    <span class="n">rdbuffer</span><span class="p">[</span><span class="s">&#39;comments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comments</span>
+
+        <span class="c"># got a selection, now read it</span>
+        <span class="n">Bank</span> <span class="o">=</span> <span class="n">Banks</span><span class="p">[</span><span class="n">selblk</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;FXYE&#39;</span> <span class="ow">in</span> <span class="n">Bank</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">powderdata</span> <span class="o">=</span> <span class="n">GetFXYEdata</span><span class="p">(</span><span class="n">filepointer</span><span class="p">,</span><span class="n">Pos</span><span class="p">[</span><span class="n">selblk</span><span class="p">],</span><span class="n">Banks</span><span class="p">[</span><span class="n">selblk</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s">&#39;FXY&#39;</span> <span class="ow">in</span> <span class="n">Bank</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">powderdata</span> <span class="o">=</span> <span class="n">GetFXYdata</span><span class="p">(</span><span class="n">filepointer</span><span class="p">,</span><span class="n">Pos</span><span class="p">[</span><span class="n">selblk</span><span class="p">],</span><span class="n">Banks</span><span class="p">[</span><span class="n">selblk</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s">&#39;ESD&#39;</span> <span class="ow">in</span> <span class="n">Bank</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">powderdata</span> <span class="o">=</span> <span class="n">GetESDdata</span><span class="p">(</span><span class="n">filepointer</span><span class="p">,</span><span class="n">Pos</span><span class="p">[</span><span class="n">selblk</span><span class="p">],</span><span class="n">Banks</span><span class="p">[</span><span class="n">selblk</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s">&#39;STD&#39;</span> <span class="ow">in</span> <span class="n">Bank</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">powderdata</span> <span class="o">=</span> <span class="n">GetSTDdata</span><span class="p">(</span><span class="n">filepointer</span><span class="p">,</span><span class="n">Pos</span><span class="p">[</span><span class="n">selblk</span><span class="p">],</span><span class="n">Banks</span><span class="p">[</span><span class="n">selblk</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">powderdata</span> <span class="o">=</span> <span class="n">GetSTDdata</span><span class="p">(</span><span class="n">filepointer</span><span class="p">,</span><span class="n">Pos</span><span class="p">[</span><span class="n">selblk</span><span class="p">],</span><span class="n">Banks</span><span class="p">[</span><span class="n">selblk</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
+            <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; read error:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="c"># for testing</span>
+            <span class="kn">import</span> <span class="nn">traceback</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">comments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comments</span> <span class="o">=</span> <span class="n">comments</span><span class="p">[</span><span class="n">selblk</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">powderentry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">powderentry</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Pos</span> <span class="c"># position offset (never used, I hope)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">powderentry</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">selblk</span><span class="o">+</span><span class="mi">1</span> <span class="c"># bank number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idstring</span> <span class="o">=</span> <span class="n">ospath</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39; Bank &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">selblk</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numbanks</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">Banks</span><span class="p">)</span>
+        <span class="c"># scan comments for temperature</span>
+        <span class="n">Temperature</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="n">Radius</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="k">for</span> <span class="n">S</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">comments</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;Temp&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">Temperature</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">elif</span> <span class="s">&#39;Gonio&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">Radius</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Temperature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Gonio. radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Radius</span>
+        <span class="k">return</span> <span class="bp">True</span>        
+</div>
+<div class="viewcode-block" id="sfloat"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.sfloat">[docs]</a><span class="k">def</span> <span class="nf">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">):</span>
+    <span class="s">&#39;convert a string to a float, treating an all-blank string as zero&#39;</span>
+    <span class="k">if</span> <span class="n">S</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+</div>
+<div class="viewcode-block" id="sint"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.sint">[docs]</a><span class="k">def</span> <span class="nf">sint</span><span class="p">(</span><span class="n">S</span><span class="p">):</span>
+    <span class="s">&#39;convert a string to an integer, treating an all-blank string as zero&#39;</span>
+    <span class="k">if</span> <span class="n">S</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -21,7 +21,11 @@ for fil in glob.glob('source/*.rst'):
 #               fil in glob.iglob(os.path.join(loc,'build/html/_modules/','*.html'))]
                       
 # loop over python files referenced in subversion
-proc = sp.Popen(["svn","list",os.path.join(loc,'..')],stdout=sp.PIPE)
+proc = sp.Popen(["svn","list",
+                 os.path.join(loc,'..'),
+                 os.path.join(loc,'..','exports'),
+                 os.path.join(loc,'..','imports'),
+                 ],stdout=sp.PIPE)
 undoc = []
 for fil in proc.stdout.readlines():
     fil = fil.strip()

@@ -6,8 +6,16 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-# a set of short routines to read in phases from various file formats
-# 
+#
+'''
+*Module G2phase: PDB and .EXP*
+------------------------------------
+
+A set of short routines to read in phases using routines that were
+previously implemented in GSAS-II: PDB and GSAS .EXP file formats
+
+'''
+
 import sys
 import traceback
 import GSASIIIO as G2IO
@@ -15,7 +23,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
 class PDB_ReaderClass(G2IO.ImportPhase):
-    'Routines to import Phase information from a PDB file'
+    'Routine to import Phase information from a PDB file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.pdb','.ent','.PDB','.ENT'),
@@ -38,7 +46,7 @@ class PDB_ReaderClass(G2IO.ImportPhase):
             return False
 
 class EXP_ReaderClass(G2IO.ImportPhase):
-    ' Routines to import Phase information from GSAS .EXP files'
+    ' Routine to import Phase information from GSAS .EXP files'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.EXP','.exp'),

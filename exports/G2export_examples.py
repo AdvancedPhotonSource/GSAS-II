@@ -7,7 +7,17 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to demonstrate how GSAS-II data export routines are created
+'''
+*Module G2export_examples: Examples*
+-------------------------------------------
+
+Code to demonstrate how GSAS-II data export routines are created. The
+classes defined here, :class:`ExportPhaseText`, 
+:class:`ExportSingleText`, :class:`ExportPowderReflText`, 
+and :class:`ExportPowderText` each demonstrate a different type
+of export. Also see :class:`G2export_map.ExportMapASCII` for an
+example of a map export.
+
 '''
 import os.path
 import GSASIIpath
@@ -147,7 +157,6 @@ class ExportPowderText(G2IO.ExportBaseclass):
             self.Write(fmt.format(x,yobs,yw,ycalc,ybkg))
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.filename))                        
-
 class ExportPowderReflText(G2IO.ExportBaseclass):
     '''Used to create a text file of reflections from a powder data set
 

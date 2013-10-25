@@ -6,6 +6,14 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*Module G2phase_CIF: Coordinates from CIF*
+------------------------------------------
+
+Parses a CIF using  PyCifRW from James Hester and pulls out the
+structural information. 
+
+'''
 # Routines to import Phase information from CIF files
 import sys
 import random as ran
@@ -18,6 +26,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import CifFile as cif # PyCifRW from James Hester
 
 class CIFPhaseReader(G2IO.ImportPhase):
+    'Implements a phase importer from a possibly multi-block CIF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.CIF','.cif'),

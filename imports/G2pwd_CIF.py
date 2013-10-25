@@ -6,8 +6,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-# routines to read in structure factors from a CIF
-# 
+'''
+*Module G2pwd_CIF: CIF powder data*
+------------------------------------
+
+Routine to read in powder data from a CIF. 
+
+'''
 import sys
 import numpy as np
 import os.path

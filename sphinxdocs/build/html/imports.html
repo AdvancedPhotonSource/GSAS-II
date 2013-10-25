@@ -1,0 +1,255 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSAS-II Import Modules &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="index.html" />
+    <link rel="prev" title="GSAS-II Export Modules" href="exports.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="exports.html" title="GSAS-II Export Modules"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="gsas-ii-import-modules">
+<h1><em>GSAS-II Import Modules</em><a class="headerlink" href="#gsas-ii-import-modules" title="Permalink to this headline">¶</a></h1>
+<p>Imports are implemented by deriving a class from
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPhase" title="GSASIIIO.ImportPhase"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPhase</span></tt></a>, <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportStructFactor</span></tt></a>
+or <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPowderData</span></tt></a> to implement import of
+a phase, a single crystal or a powder dataset, respectively.
+Module names are used to determine which menu an import routine should
+be placed in.</p>
+<span class="target" id="module-G2phase"></span><div class="section" id="module-g2phase-pdb-and-exp">
+<h2><em>Module G2phase: PDB and .EXP</em><a class="headerlink" href="#module-g2phase-pdb-and-exp" title="Permalink to this headline">¶</a></h2>
+<p>A set of short routines to read in phases using routines that were
+previously implemented in GSAS-II: PDB and GSAS .EXP file formats</p>
+<dl class="class">
+<dt id="G2phase.EXP_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2phase.</tt><tt class="descname">EXP_ReaderClass</tt><a class="reference internal" href="_modules/G2phase.html#EXP_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.EXP_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routine to import Phase information from GSAS .EXP files</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="G2phase.PDB_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2phase.</tt><tt class="descname">PDB_ReaderClass</tt><a class="reference internal" href="_modules/G2phase.html#PDB_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.PDB_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routine to import Phase information from a PDB file</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2phase_GPX"></span><div class="section" id="module-g2phase-gpx-import-phase-from-gsas-ii-project">
+<h2><em>Module G2phase_GPX: Import phase from GSAS-II project</em><a class="headerlink" href="#module-g2phase-gpx-import-phase-from-gsas-ii-project" title="Permalink to this headline">¶</a></h2>
+<p>Copies a phase from another GSAS-II project file into the
+current project.</p>
+<dl class="class">
+<dt id="G2phase_GPX.PhaseReaderClass">
+<em class="property">class </em><tt class="descclassname">G2phase_GPX.</tt><tt class="descname">PhaseReaderClass</tt><a class="reference internal" href="_modules/G2phase_GPX.html#PhaseReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase_GPX.PhaseReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens a .GPX file and pulls out a selected phase</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2phase_CIF"></span><div class="section" id="module-g2phase-cif-coordinates-from-cif">
+<h2><em>Module G2phase_CIF: Coordinates from CIF</em><a class="headerlink" href="#module-g2phase-cif-coordinates-from-cif" title="Permalink to this headline">¶</a></h2>
+<p>Parses a CIF using  PyCifRW from James Hester and pulls out the
+structural information.</p>
+<dl class="class">
+<dt id="G2phase_CIF.CIFPhaseReader">
+<em class="property">class </em><tt class="descclassname">G2phase_CIF.</tt><tt class="descname">CIFPhaseReader</tt><a class="reference internal" href="_modules/G2phase_CIF.html#CIFPhaseReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase_CIF.CIFPhaseReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements a phase importer from a possibly multi-block CIF file</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2pwd_GPX"></span><div class="section" id="module-g2pwd-gpx-gsas-ii-projects">
+<h2><em>Module G2pwd_GPX: GSAS-II projects</em><a class="headerlink" href="#module-g2pwd-gpx-gsas-ii-projects" title="Permalink to this headline">¶</a></h2>
+<p>Routine to import powder data from GSAS-II .gpx files</p>
+<dl class="class">
+<dt id="G2pwd_GPX.GSAS2_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2pwd_GPX.</tt><tt class="descname">GSAS2_ReaderClass</tt><a class="reference internal" href="_modules/G2pwd_GPX.html#GSAS2_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_GPX.GSAS2_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import powder data from a GSAS-II file
+This should work to pull data out from a out of date .GPX file
+as long as the details of the histogram data itself don&#8217;t change</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2pwd_fxye"></span><div class="section" id="module-g2pwd-fxye-gsas-data-files">
+<h2><em>Module G2pwd_fxye: GSAS data files</em><a class="headerlink" href="#module-g2pwd-fxye-gsas-data-files" title="Permalink to this headline">¶</a></h2>
+<p>Routine to read in powder data in a variety of formats
+that are defined for GSAS.</p>
+<dl class="class">
+<dt id="G2pwd_fxye.GSAS_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2pwd_fxye.</tt><tt class="descname">GSAS_ReaderClass</tt><a class="reference internal" href="_modules/G2pwd_fxye.html#GSAS_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_fxye.GSAS_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import powder data from a GSAS files</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="G2pwd_fxye.sfloat">
+<tt class="descclassname">G2pwd_fxye.</tt><tt class="descname">sfloat</tt><big>(</big><em>S</em><big>)</big><a class="reference internal" href="_modules/G2pwd_fxye.html#sfloat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_fxye.sfloat" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert a string to a float, treating an all-blank string as zero</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="G2pwd_fxye.sint">
+<tt class="descclassname">G2pwd_fxye.</tt><tt class="descname">sint</tt><big>(</big><em>S</em><big>)</big><a class="reference internal" href="_modules/G2pwd_fxye.html#sint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_fxye.sint" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert a string to an integer, treating an all-blank string as zero</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2pwd_xye"></span><div class="section" id="module-g2pwd-xye-topas-xye-data">
+<h2><em>Module G2pwd_xye: Topas .xye data</em><a class="headerlink" href="#module-g2pwd-xye-topas-xye-data" title="Permalink to this headline">¶</a></h2>
+<p>Routine to read in powder data from a Topas-compatible .xye file</p>
+<dl class="class">
+<dt id="G2pwd_xye.xye_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2pwd_xye.</tt><tt class="descname">xye_ReaderClass</tt><a class="reference internal" href="_modules/G2pwd_xye.html#xye_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_xye.xye_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import powder data from a .xye file</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2pwd_CIF"></span><div class="section" id="module-g2pwd-cif-cif-powder-data">
+<h2><em>Module G2pwd_CIF: CIF powder data</em><a class="headerlink" href="#module-g2pwd-cif-cif-powder-data" title="Permalink to this headline">¶</a></h2>
+<p>Routine to read in powder data from a CIF.</p>
+<dl class="class">
+<dt id="G2pwd_CIF.CIFpwdReader">
+<em class="property">class </em><tt class="descclassname">G2pwd_CIF.</tt><tt class="descname">CIFpwdReader</tt><a class="reference internal" href="_modules/G2pwd_CIF.html#CIFpwdReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_CIF.CIFpwdReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import powder data from a CIF file</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2sfact"></span><div class="section" id="module-g2sfact-simple-hkl-import">
+<h2><em>Module G2sfact: simple HKL import</em><a class="headerlink" href="#module-g2sfact-simple-hkl-import" title="Permalink to this headline">¶</a></h2>
+<p>Read structure factors from a simple hkl file. Two routines are
+provided to read from files containing F or F<sup>2</sup> values.</p>
+<dl class="class">
+<dt id="G2sfact.HKLF2_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2sfact.</tt><tt class="descname">HKLF2_ReaderClass</tt><a class="reference internal" href="_modules/G2sfact.html#HKLF2_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF2_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import F**2, sig(F**2) reflections from a HKLF file</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="G2sfact.HKLF_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2sfact.</tt><tt class="descname">HKLF_ReaderClass</tt><a class="reference internal" href="_modules/G2sfact.html#HKLF_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import F, sig(F) reflections from a HKLF file</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-G2sfact_CIF"></span><div class="section" id="module-g2sfact-cif-cif-import">
+<h2><em>Module G2sfact_CIF: CIF import</em><a class="headerlink" href="#module-g2sfact-cif-cif-import" title="Permalink to this headline">¶</a></h2>
+<p>Read structure factors from a CIF reflection table.</p>
+<dl class="class">
+<dt id="G2sfact_CIF.CIFhklReader">
+<em class="property">class </em><tt class="descclassname">G2sfact_CIF.</tt><tt class="descname">CIFhklReader</tt><a class="reference internal" href="_modules/G2sfact_CIF.html#CIFhklReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact_CIF.CIFhklReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import Phase information from a CIF file</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><em>GSAS-II Import Modules</em></a><ul>
+<li><a class="reference internal" href="#module-g2phase-pdb-and-exp"><em>Module G2phase: PDB and .EXP</em></a></li>
+<li><a class="reference internal" href="#module-g2phase-gpx-import-phase-from-gsas-ii-project"><em>Module G2phase_GPX: Import phase from GSAS-II project</em></a></li>
+<li><a class="reference internal" href="#module-g2phase-cif-coordinates-from-cif"><em>Module G2phase_CIF: Coordinates from CIF</em></a></li>
+<li><a class="reference internal" href="#module-g2pwd-gpx-gsas-ii-projects"><em>Module G2pwd_GPX: GSAS-II projects</em></a></li>
+<li><a class="reference internal" href="#module-g2pwd-fxye-gsas-data-files"><em>Module G2pwd_fxye: GSAS data files</em></a></li>
+<li><a class="reference internal" href="#module-g2pwd-xye-topas-xye-data"><em>Module G2pwd_xye: Topas .xye data</em></a></li>
+<li><a class="reference internal" href="#module-g2pwd-cif-cif-powder-data"><em>Module G2pwd_CIF: CIF powder data</em></a></li>
+<li><a class="reference internal" href="#module-g2sfact-simple-hkl-import"><em>Module G2sfact: simple HKL import</em></a></li>
+<li><a class="reference internal" href="#module-g2sfact-cif-cif-import"><em>Module G2sfact_CIF: CIF import</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="exports.html"
+                        title="previous chapter"><em>GSAS-II Export Modules</em></a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/imports.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="exports.html" title="GSAS-II Export Modules"
+             >previous</a> |</li>
+        <li><a href="index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

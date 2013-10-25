@@ -6,8 +6,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-# a routine to read in powder data from a GSAS-compatible files
-# 
+'''
+*Module G2pwd_fxye: GSAS data files*
+------------------------------------
+Routine to read in powder data in a variety of formats
+that are defined for GSAS.
+
+'''
 import sys
 import os.path as ospath
 import numpy as np

@@ -7,7 +7,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to export coordinates in SHELX format, as best as I can makes sense of it
+'''
+*Module G2export_shelx: Examples*
+-------------------------------------------
+
+Code to export coordinates in the SHELX .ins format
+(as best as I can makes sense of it).
+
 '''
 import os.path
 import GSASIIpath

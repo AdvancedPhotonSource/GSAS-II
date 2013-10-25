@@ -6,6 +6,14 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*Module G2phase_GPX: Import phase from GSAS-II project*
+--------------------------------------------------------
+
+Copies a phase from another GSAS-II project file into the
+current project.
+
+'''
 # Routines to import Phase information from GSAS-II .gpx files
 import cPickle
 import GSASIIIO as G2IO
@@ -14,6 +22,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
 class PhaseReaderClass(G2IO.ImportPhase):
+    'Opens a .GPX file and pulls out a selected phase'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.gpx',),

@@ -7,13 +7,22 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to export a GSAS-II project as a CIF. Variable `self.mode`
-determines the type of CIF that is created:
+'''
+*Module G2export_CIF: CIF Exports*
+------------------------------------------------------
+
+This implements a complex exporter :class:`ExportCIF` that can implement an
+entire project in a complete CIF intended for submission as a
+publication. In addition, there are two subclasses of :class:`ExportCIF`:
+:class:`ExportPhaseCIF` and :class:`ExportDataCIF` that
+export a single phase or data set. Note that ``self.mode`` determines
+what is written:
 
  * `self.mode="simple"` creates a simple CIF with only coordinates
-   for at most a single phase (:class:`ExportSimpleCIF`), while 
+   or data, while 
 
- * `self.mode="full"` creates a complete CIF of project (:class:`ExportCIF`).
+ * `self.mode="full"` creates a complete CIF of project.
+ 
 '''
 
 import datetime as dt

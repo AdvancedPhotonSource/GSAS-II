@@ -255,6 +255,41 @@ specified for <tt class="xref py py-data docutils literal"><span class="pre">cho
 </dd></dl>
 
 <dl class="class">
+<dt id="GSASIIgrid.G2MultiChoiceDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2MultiChoiceDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>header</em>, <em>ChoiceList</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dialog similar to MultiChoiceDialog except that buttons are
+added to set all choices and to toggle all choices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ParentFrame</strong> (<em>wx.Frame</em>) &#8211; reference to parent frame</li>
+<li><strong>title</strong> (<em>str</em>) &#8211; heading above list of choices</li>
+<li><strong>header</strong> (<em>str</em>) &#8211; Title to place on window frame</li>
+<li><strong>ChoiceList</strong> (<em>list</em>) &#8211; a list of choices where one will be selected</li>
+<li><strong>kw</strong> &#8211; optional keyword parameters for the wx.Dialog may
+be included such as Size [which defaults to <cite>(320,310)</cite>] and
+Style (which defaults to <cite>wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL</cite>);
+note that <cite>wx.OK</cite> and <cite>wx.CANCEL</cite> controls
+the presence of the eponymous buttons in the dialog.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the name of the created dialog</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIgrid.G2MultiChoiceDialog.GetSelections">
+<tt class="descname">GetSelections</tt><big>(</big><big>)</big><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog.GetSelections" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the indices for the selected choices</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="GSASIIgrid.GSGrid">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GSGrid</tt><big>(</big><em>parent</em>, <em>name=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Basic wx.Grid implementation</p>
@@ -879,6 +914,23 @@ file object self.fp is closed.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.ExportSelect">
+<tt class="descname">ExportSelect</tt><big>(</big><em>AskFile=True</em><big>)</big><a class="headerlink" href="#GSASIIIO.ExportBaseclass.ExportSelect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects histograms or phases when needed. Sets a default file name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>AskFile</strong> (<em>bool</em>) &#8211; if AskFile is True (default) get the name of the file
+in a dialog</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True in case of an error</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.GetAtoms">
 <tt class="descname">GetAtoms</tt><big>(</big><em>phasenam</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.GetAtoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.GetAtoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the atoms associated with a phase. Can be used with standard
@@ -897,7 +949,7 @@ label, typ, mult, xyz, and td, where<ul class="simple">
 x, y, z and fractional occupancy and
 their standard uncertainty (or a negative value)</li>
 <li>td is contains a list with either one or six pairs of numbers:
-if one number it is U<sub>iso</sub> and with six it is
+if one number it is U<sub>iso</sub> and with six numbers it is
 U<sub>11</sub>, U<sub>22</sub>, U<sub>33</sub>, U<sub>12</sub>, U<sub>13</sub> &amp; U<sub>23</sub>
 paired with their standard uncertainty (or a negative value)</li>
 </ul>
@@ -926,6 +978,12 @@ cell values and <cite>cellSig</cite> has their uncertainties.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.InitExport">
+<tt class="descname">InitExport</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#GSASIIIO.ExportBaseclass.InitExport" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the type of menu that called the Exporter.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.OpenFile">
 <tt class="descname">OpenFile</tt><big>(</big><em>fil=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.OpenFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.OpenFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open the output file</p>
@@ -938,24 +996,6 @@ the name defaults to self.filename.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the file object opened by the routine which is also
 saved as self.fp</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="GSASIIIO.ExportBaseclass.SetupExport">
-<tt class="descname">SetupExport</tt><big>(</big><em>event</em>, <em>AskFile=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.SetupExport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.SetupExport" title="Permalink to this definition">¶</a></dt>
-<dd><p>Determines the type of menu that called the Exporter. Selects histograms
-or phases when needed.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>AskFile</strong> (<em>bool</em>) &#8211; if AskFile is True (default) get the name of the file
-in a dialog</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True in case of an error</td>
 </tr>
 </tbody>
 </table>
@@ -1006,7 +1046,7 @@ refined parameters in another dict (self.sigDict).</p>
 
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.loadTree">
-<tt class="descname">loadTree</tt><big>(</big><em>histType=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.loadTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadTree" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">loadTree</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.loadTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.loadTree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the contents of the data tree into a set of dicts
 (self.OverallParms, self.Phases and self.Histogram as well as self.powderDict
 &amp; self.xtalDict)</p>
@@ -1089,7 +1129,7 @@ file extension</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II Frame and data object</li>
+<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II Frame and data object. Note: not used!</li>
 <li><strong>imagefile</strong> (<em>str</em>) &#8211; name of image file</li>
 <li><strong>imageOnly</strong> (<em>bool</em>) &#8211; If True return only the image,
 otherwise  (default) return more (see below)</li>

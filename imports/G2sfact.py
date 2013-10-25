@@ -6,8 +6,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-# short routines to read in structure factors from simple file formats
-# 
+'''
+*Module G2sfact: simple HKL import*
+-----------------------------------
+Read structure factors from a simple hkl file. Two routines are
+provided to read from files containing F or F\ :sup:`2` values.
+
+'''
 import sys
 import numpy as np
 import GSASIIIO as G2IO

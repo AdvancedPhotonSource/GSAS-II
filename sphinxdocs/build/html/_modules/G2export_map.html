@@ -1,0 +1,252 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>G2export_map &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for G2export_map</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="c"># $Date: 2013-10-24 16:18:38 -0500 (Thu, 24 Oct 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1122 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_map.py $</span>
+<span class="c"># $Id: G2export_map.py 1122 2013-10-24 21:18:38Z vondreele $</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="sd">&#39;&#39;&#39;Code to demonstrate how export routines are created: Export a Fourier or</span>
+<span class="sd">Charge-flip map. </span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1122 $&quot;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
+<span class="c">#import GSASIIgrid as G2gd</span>
+<span class="c">#import GSASIIstrIO as G2stIO</span>
+<span class="c">#import GSASIImath as G2mth</span>
+<span class="c">#import GSASIIlattice as G2lat</span>
+<span class="c">#import GSASIIspc as G2spc</span>
+<span class="c">#import GSASIIphsGUI as G2pg</span>
+<span class="c">#import GSASIIstrMain as G2stMn</span>
+
+<div class="viewcode-block" id="ExportMapASCII"><a class="viewcode-back" href="../exports.html#G2export_map.ExportMapASCII">[docs]</a><span class="k">class</span> <span class="nc">ExportMapASCII</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ExportBaseclass</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Used to create a text file for a phase</span>
+
+<span class="sd">    :param wx.Frame G2frame: reference to main GSAS-II frame</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">G2frame</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say &lt;parentclass&gt;.__init__</span>
+            <span class="n">G2frame</span><span class="o">=</span><span class="n">G2frame</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;FOX/DrawXTL file&#39;</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="s">&#39;.grd&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Export map as text (.grd) file&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;map&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span> <span class="o">=</span> <span class="bp">False</span> 
+
+<div class="viewcode-block" id="ExportMapASCII.Exporter"><a class="viewcode-back" href="../exports.html#G2export_map.ExportMapASCII.Exporter">[docs]</a>    <span class="k">def</span> <span class="nf">Exporter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Export a map as a text file</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># the export process starts here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitExport</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># load all of the tree into a set of dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span> <span class="c"># set export parameters</span>
+            <span class="n">AskFile</span><span class="o">=</span><span class="bp">True</span>          <span class="c"># prompt the user for a file name</span>
+            <span class="p">):</span> <span class="k">return</span> 
+        <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span><span class="p">:</span>
+            <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info            </span>
+            <span class="n">rho</span> <span class="o">=</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;rho&#39;</span><span class="p">,[])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">rho</span><span class="p">):</span>
+                <span class="k">return</span>
+            <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&quot;Map of Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; from &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">))</span>
+            <span class="c"># get cell parameters &amp; print them</span>
+            <span class="n">cellList</span><span class="p">,</span><span class="n">cellSig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCell</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="s">&quot; {:9.5f}&quot;</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="s">&quot; {:9.3f}&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">cellList</span><span class="p">[:</span><span class="mi">6</span><span class="p">]))</span>
+            <span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">nz</span> <span class="o">=</span> <span class="n">rho</span><span class="o">.</span><span class="n">shape</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&quot; {:3d} {:3d} {:3d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">nz</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">]))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;map from Phase &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
+            <span class="k">return</span>
+</div></div>
+<div class="viewcode-block" id="ExportMapCCP4"><a class="viewcode-back" href="../exports.html#G2export_map.ExportMapCCP4">[docs]</a><span class="k">class</span> <span class="nc">ExportMapCCP4</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ExportBaseclass</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="sd">&#39;&#39;&#39;Used to create a text file for a phase</span>
+
+<span class="sd">    :param wx.Frame G2frame: reference to main GSAS-II frame</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">G2frame</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say &lt;parentclass&gt;.__init__</span>
+            <span class="n">G2frame</span><span class="o">=</span><span class="n">G2frame</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;CCP4 map file&#39;</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="s">&#39;.map&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Export CCP4 .map file&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;map&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span> <span class="o">=</span> <span class="bp">False</span> 
+
+    <span class="c"># Tools for file writing. </span>
+<div class="viewcode-block" id="ExportMapCCP4.OpenFile"><a class="viewcode-back" href="../exports.html#G2export_map.ExportMapCCP4.OpenFile">[docs]</a>    <span class="k">def</span> <span class="nf">OpenFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fil</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Open the output file as binary</span>
+
+<span class="sd">        :param str fil: The name of the file to open. If None (default)</span>
+<span class="sd">          the name defaults to self.filename.</span>
+<span class="sd">        :returns: the file object opened by the routine which is also</span>
+<span class="sd">          saved as self.fp</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fil</span><span class="p">:</span>
+            <span class="n">fil</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fil</span><span class="p">,</span><span class="s">&#39;wb&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fp</span>
+        </div>
+    <span class="k">def</span> <span class="nf">Write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">dtype</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">struct</span>
+        <span class="sd">&#39;&#39;&#39;write a block of output</span>
+
+<span class="sd">        :param data: the data to be written. </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span><span class="n">data</span><span class="p">))</span>
+        
+<div class="viewcode-block" id="ExportMapCCP4.Exporter"><a class="viewcode-back" href="../exports.html#G2export_map.ExportMapCCP4.Exporter">[docs]</a>    <span class="k">def</span> <span class="nf">Exporter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Export a map as a text file</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># the export process starts here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitExport</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># load all of the tree into a set of dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span> <span class="c"># set export parameters</span>
+            <span class="n">AskFile</span><span class="o">=</span><span class="bp">False</span>     <span class="c"># I&#39;ll make the file name</span>
+            <span class="p">):</span> <span class="k">return</span> 
+        <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span><span class="p">:</span>
+            <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info </span>
+            <span class="n">mapData</span> <span class="o">=</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Map&#39;</span><span class="p">]</span>
+            <span class="n">rho</span> <span class="o">=</span> <span class="n">mapData</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;rho&#39;</span><span class="p">,[])</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">rho</span><span class="p">):</span>
+                <span class="k">return</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Cell&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span>
+            <span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">nz</span> <span class="o">=</span> <span class="n">rho</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">filename</span><span class="p">,</span><span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="n">phasenam</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="n">mapData</span><span class="p">[</span><span class="s">&#39;MapType&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ext</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>  <span class="c">#nX,nY,nZ</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>           <span class="c">#mode=2 float map</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>    <span class="c">#1st position on x,y,z</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>  <span class="c">#nX,nY,nZ</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cell</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>    <span class="c">#axes order = x,y,z</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span><span class="mi">53</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;M&#39;</span><span class="p">,</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="s">&#39;P&#39;</span><span class="p">,</span><span class="s">&#39; &#39;</span><span class="p">]:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="s">&#39;s&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="mh">0x44410000</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">56</span><span class="p">,</span><span class="mi">257</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rho</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="s">&#39;F&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;map from Phase &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
+            <span class="k">return</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

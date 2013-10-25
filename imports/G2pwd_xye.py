@@ -6,8 +6,14 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-# a routine to read in powder data from a Topas-compatible .xye file
-# 
+'''
+*Module G2pwd_xye: Topas .xye data*
+------------------------------------
+
+Routine to read in powder data from a Topas-compatible .xye file
+
+'''
+
 import sys
 import os.path as ospath
 import numpy as np

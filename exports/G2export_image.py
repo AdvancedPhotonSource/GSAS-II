@@ -7,8 +7,12 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to demonstrate how export routines are created.
-This loads in an image and saves it in PNG format
+'''
+*Module G2export_image: 2D Image data export*
+------------------------------------------------------
+
+Demonstrates how an image is retrieved and written. Uses
+a SciPy routine to write a PNG format file. 
 '''
 import os.path
 import scipy.misc

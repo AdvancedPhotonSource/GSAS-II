@@ -7,7 +7,13 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-'''Code to demonstrate how export routines are created
+'''
+*Module G2export_PDB: Macromolecular export*
+--------------------------------------------
+Code to export a phase into the venerated/obsolete (pick one)
+ASCII PDB format. Also defines exporter :class:`ExportPhaseCartXYZ`
+which writes atom positions in orthogonal coordinates for a phase.
+
 '''
 import numpy as np
 import os.path

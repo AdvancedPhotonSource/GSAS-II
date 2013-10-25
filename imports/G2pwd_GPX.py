@@ -6,7 +6,12 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-# Routines to import powder data from GSAS-II .gpx files
+'''
+*Module G2pwd_GPX: GSAS-II projects*
+------------------------------------
+Routine to import powder data from GSAS-II .gpx files
+
+'''
 import cPickle
 import numpy as np
 import GSASIIIO as G2IO

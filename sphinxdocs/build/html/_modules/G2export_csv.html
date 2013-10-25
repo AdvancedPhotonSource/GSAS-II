@@ -1,0 +1,328 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>G2export_csv &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for G2export_csv</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="c"># $Date: 2013-10-18 16:00:32 -0500 (Fri, 18 Oct 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1115 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $</span>
+<span class="c"># $Id: G2export_csv.py 1115 2013-10-18 21:00:32Z toby $</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="sd">&#39;&#39;&#39;Code to create .csv (comma-seaparate variable) files for</span>
+<span class="sd">GSAS-II data export</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1115 $&quot;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
+<span class="c">#import GSASIIgrid as G2gd</span>
+<span class="c">#import GSASIIstrIO as G2stIO</span>
+<span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
+<span class="c">#import GSASIIlattice as G2lat</span>
+<span class="c">#import GSASIIspc as G2spc</span>
+<span class="c">#import GSASIIphsGUI as G2pg</span>
+<span class="c">#import GSASIIstrMain as G2stMn</span>
+
+<div class="viewcode-block" id="WriteList"><a class="viewcode-back" href="../exports.html#G2export_csv.WriteList">[docs]</a><span class="k">def</span> <span class="nf">WriteList</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span><span class="n">headerItems</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Write a CSV header</span>
+
+<span class="sd">    :param object obj: Exporter object</span>
+<span class="sd">    :param list headerItems: items to write as a header</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">headerItems</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="o">+=</span> <span class="s">&#39;,&#39;</span>
+        <span class="n">line</span> <span class="o">+=</span> <span class="s">&#39;&quot;&#39;</span><span class="o">+</span><span class="n">lbl</span><span class="o">+</span><span class="s">&#39;&quot;&#39;</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ExportPhaseCSV"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportPhaseCSV">[docs]</a><span class="k">class</span> <span class="nc">ExportPhaseCSV</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ExportBaseclass</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Used to create a csv file for a phase</span>
+
+<span class="sd">    :param wx.Frame G2frame: reference to main GSAS-II frame</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">G2frame</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say &lt;parentclass&gt;.__init__</span>
+            <span class="n">G2frame</span><span class="o">=</span><span class="n">G2frame</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;CSV file&#39;</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="s">&#39;.csv&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Export phase as comma-separated (csv) file&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;phase&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span> <span class="o">=</span> <span class="bp">True</span> <span class="c"># allow multiple phases to be selected</span>
+
+<div class="viewcode-block" id="ExportPhaseCSV.Exporter"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportPhaseCSV.Exporter">[docs]</a>    <span class="k">def</span> <span class="nf">Exporter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Export a phase as a csv file</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># the export process starts here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitExport</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># load all of the tree into a set of dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
+        <span class="c"># create a dict with refined values and their uncertainties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadParmDict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span> <span class="c"># set export parameters</span>
+            <span class="n">AskFile</span><span class="o">=</span><span class="bp">True</span>     <span class="c"># prompt the user for a file name</span>
+            <span class="p">):</span> <span class="k">return</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="c"># if more than one format is selected, put them into a single file</span>
+        <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span><span class="p">:</span>
+            <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info            </span>
+            <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;pId&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="o">+</span><span class="s">&quot;Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; from &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&quot;Space group:&quot;,&quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;SGData&#39;</span><span class="p">][</span><span class="s">&#39;SpGrp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span><span class="o">+</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+            <span class="c"># get cell parameters &amp; print them</span>
+            <span class="n">cellList</span><span class="p">,</span><span class="n">cellSig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCell</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span>
+            <span class="n">WriteList</span><span class="p">(</span><span class="bp">self</span><span class="p">,[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="s">&#39;c&#39;</span><span class="p">,</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="s">&#39;beta&#39;</span><span class="p">,</span><span class="s">&#39;gamma&#39;</span><span class="p">,</span><span class="s">&#39;volume&#39;</span><span class="p">])</span>
+
+            <span class="n">line</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="k">for</span> <span class="n">defsig</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="mi">3</span><span class="o">*</span><span class="p">[</span><span class="o">-</span><span class="mf">0.00001</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="p">[</span><span class="o">-</span><span class="mf">0.001</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.01</span><span class="p">],</span> <span class="c"># sign values to use when no sigma</span>
+                <span class="n">cellList</span>
+                <span class="p">):</span>
+                <span class="n">txt</span> <span class="o">=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="n">defsig</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span> <span class="o">+=</span> <span class="s">&#39;,&#39;</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="n">txt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                
+            <span class="c"># get atoms and print separated by commas</span>
+            <span class="n">AtomsList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetAtoms</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span>
+            <span class="c"># check for aniso atoms</span>
+            <span class="n">aniso</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span><span class="n">typ</span><span class="p">,</span><span class="n">mult</span><span class="p">,</span><span class="n">xyz</span><span class="p">,</span><span class="n">td</span> <span class="ow">in</span> <span class="n">AtomsList</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span> <span class="n">aniso</span> <span class="o">=</span> <span class="bp">True</span>               
+            <span class="n">lbllist</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;label&quot;</span><span class="p">,</span><span class="s">&quot;elem&quot;</span><span class="p">,</span><span class="s">&quot;mult&quot;</span><span class="p">,</span><span class="s">&quot;x&quot;</span><span class="p">,</span><span class="s">&quot;y&quot;</span><span class="p">,</span><span class="s">&quot;z&quot;</span><span class="p">,</span><span class="s">&quot;frac&quot;</span><span class="p">,</span><span class="s">&quot;Uiso&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">aniso</span><span class="p">:</span> <span class="n">lbllist</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;U11&#39;</span><span class="p">,</span><span class="s">&#39;U22&#39;</span><span class="p">,</span><span class="s">&#39;U33&#39;</span><span class="p">,</span><span class="s">&#39;U12&#39;</span><span class="p">,</span><span class="s">&#39;U13&#39;</span><span class="p">,</span><span class="s">&#39;U23&#39;</span><span class="p">]</span>
+            <span class="n">WriteList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lbllist</span><span class="p">)</span>
+                
+            <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span><span class="n">typ</span><span class="p">,</span><span class="n">mult</span><span class="p">,</span><span class="n">xyz</span><span class="p">,</span><span class="n">td</span> <span class="ow">in</span> <span class="n">AtomsList</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="s">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">lbl</span> <span class="o">+</span> <span class="s">&#39;&quot;,&quot;&#39;</span> <span class="o">+</span> <span class="n">typ</span> <span class="o">+</span> <span class="s">&#39;&quot;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">mult</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;,&#39;</span>
+                <span class="k">for</span> <span class="n">val</span><span class="p">,</span><span class="n">sig</span> <span class="ow">in</span> <span class="n">xyz</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">+=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">sig</span><span class="p">))</span>
+                    <span class="n">line</span> <span class="o">+=</span> <span class="s">&quot;,&quot;</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">+=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">td</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">td</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">+=</span> <span class="s">&quot;,&quot;</span>
+                    <span class="k">for</span> <span class="n">val</span><span class="p">,</span><span class="n">sig</span> <span class="ow">in</span> <span class="n">td</span><span class="p">:</span>
+                        <span class="n">line</span> <span class="o">+=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">sig</span><span class="p">))</span>
+                        <span class="n">line</span> <span class="o">+=</span> <span class="s">&quot;,&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Phase &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>                        
+        <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="ExportPowderCSV"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportPowderCSV">[docs]</a><span class="k">class</span> <span class="nc">ExportPowderCSV</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ExportBaseclass</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Used to create a csv file for a powder data set</span>
+
+<span class="sd">    :param wx.Frame G2frame: reference to main GSAS-II frame</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">G2frame</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say &lt;parentclass&gt;.__init__</span>
+            <span class="n">G2frame</span><span class="o">=</span><span class="n">G2frame</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;CSV file&#39;</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="s">&#39;.csv&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Export powder data as comma-separated (csv) file&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;powder&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># only allow one histogram to be selected</span>
+
+<div class="viewcode-block" id="ExportPowderCSV.Exporter"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportPowderCSV.Exporter">[docs]</a>    <span class="k">def</span> <span class="nf">Exporter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Export a set of powder data as a csv file</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># the export process starts here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitExport</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># load all of the tree into a set of dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span> <span class="c"># set export parameters</span>
+            <span class="n">AskFile</span><span class="o">=</span><span class="bp">False</span> <span class="c"># use the default file name</span>
+            <span class="p">):</span> <span class="k">return</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">()</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># there should only be one histogram, in any case take the 1st</span>
+        <span class="n">histblk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span>
+        <span class="n">WriteList</span><span class="p">(</span><span class="bp">self</span><span class="p">,(</span><span class="s">&quot;x&quot;</span><span class="p">,</span><span class="s">&quot;y_obs&quot;</span><span class="p">,</span><span class="s">&quot;weight&quot;</span><span class="p">,</span><span class="s">&quot;y_calc&quot;</span><span class="p">,</span><span class="s">&quot;y_bkg&quot;</span><span class="p">))</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="s">&quot;{:.3f},&quot;</span> <span class="o">+</span> <span class="s">&quot;{:.5f},&quot;</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="s">&quot;{:.3f},&quot;</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span><span class="n">yobs</span><span class="p">,</span><span class="n">yw</span><span class="p">,</span><span class="n">ycalc</span><span class="p">,</span><span class="n">ybkg</span><span class="p">,</span><span class="n">obsmcalc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                                 <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                                                 <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
+                                                 <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span>
+                                                 <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">],</span>
+                                                 <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">],</span>
+                                                 <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">yobs</span><span class="p">,</span><span class="n">yw</span><span class="p">,</span><span class="n">ycalc</span><span class="p">,</span><span class="n">ybkg</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>                        
+</div></div>
+<div class="viewcode-block" id="ExportPowderReflCSV"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportPowderReflCSV">[docs]</a><span class="k">class</span> <span class="nc">ExportPowderReflCSV</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ExportBaseclass</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Used to create a csv file of reflections from a powder data set</span>
+
+<span class="sd">    :param wx.Frame G2frame: reference to main GSAS-II frame</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">G2frame</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say &lt;parentclass&gt;.__init__</span>
+            <span class="n">G2frame</span><span class="o">=</span><span class="n">G2frame</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;reflection list as CSV&#39;</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="s">&#39;.csv&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Export powder reflection list as a comma-separated (csv) file&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;powder&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># only allow one histogram to be selected</span>
+
+<div class="viewcode-block" id="ExportPowderReflCSV.Exporter"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportPowderReflCSV.Exporter">[docs]</a>    <span class="k">def</span> <span class="nf">Exporter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Export a set of powder reflections as a csv file</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitExport</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># load all of the tree into a set of dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span> <span class="c"># set export parameters</span>
+            <span class="n">AskFile</span><span class="o">=</span><span class="bp">False</span> <span class="c"># use the default file name</span>
+            <span class="p">):</span> <span class="k">return</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">()</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># there should only be one histogram, in any case take the 1st</span>
+        <span class="n">histblk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span>
+        <span class="c"># table of phases</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;&quot;Phase name&quot;,&quot;phase #&quot;&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">phasenam</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;&quot;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="c"># note addition of a phase # flag at end (i)</span>
+        <span class="n">WriteList</span><span class="p">(</span><span class="bp">self</span><span class="p">,(</span><span class="s">&quot;h&quot;</span><span class="p">,</span><span class="s">&quot;k&quot;</span><span class="p">,</span><span class="s">&quot;l&quot;</span><span class="p">,</span><span class="s">&quot;2-theta&quot;</span><span class="p">,</span><span class="s">&quot;F_obs&quot;</span><span class="p">,</span><span class="s">&quot;F_calc&quot;</span><span class="p">,</span><span class="s">&quot;phase&quot;</span><span class="p">,</span><span class="s">&quot;mult&quot;</span><span class="p">,</span><span class="s">&quot;phase #&quot;</span><span class="p">))</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s">&quot;{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">phasenam</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">])):</span>
+            <span class="k">for</span> <span class="p">(</span>
+                <span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">mult</span><span class="p">,</span><span class="n">dsp</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">sig</span><span class="p">,</span><span class="n">gam</span><span class="p">,</span><span class="n">Fobs</span><span class="p">,</span><span class="n">Fcalc</span><span class="p">,</span><span class="n">phase</span><span class="p">,</span><span class="n">eqlist</span><span class="p">,</span><span class="n">phaselist</span><span class="p">,</span><span class="n">Icorr</span><span class="p">,</span><span class="n">FFdict</span>
+                <span class="p">)</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">Fobs</span><span class="p">,</span><span class="n">Fcalc</span><span class="p">,</span><span class="n">phase</span><span class="p">,</span><span class="n">mult</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;reflections written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+</div></div>
+<div class="viewcode-block" id="ExportSingleCSV"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportSingleCSV">[docs]</a><span class="k">class</span> <span class="nc">ExportSingleCSV</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ExportBaseclass</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Used to create a csv file with single crystal reflection data</span>
+
+<span class="sd">    :param wx.Frame G2frame: reference to main GSAS-II frame</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">G2frame</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say &lt;parentclass&gt;.__init__</span>
+            <span class="n">G2frame</span><span class="o">=</span><span class="n">G2frame</span><span class="p">,</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;CSV file&#39;</span><span class="p">,</span>
+            <span class="n">extension</span><span class="o">=</span><span class="s">&#39;.csv&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Export reflection list as a comma-separated (csv) file&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;single&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># only allow one histogram to be selected</span>
+
+<div class="viewcode-block" id="ExportSingleCSV.Exporter"><a class="viewcode-back" href="../exports.html#G2export_csv.ExportSingleCSV.Exporter">[docs]</a>    <span class="k">def</span> <span class="nf">Exporter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Export a set of single crystal data as a csv file</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># the export process starts here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitExport</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c"># load all of the tree into a set of dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span> <span class="c"># set export parameters</span>
+            <span class="n">AskFile</span><span class="o">=</span><span class="bp">False</span> <span class="c"># use the default file name</span>
+            <span class="p">):</span> <span class="k">return</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">()</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># there should only be one histogram, in any case take the 1st</span>
+        <span class="n">histblk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span>
+        <span class="n">WriteList</span><span class="p">(</span><span class="bp">self</span><span class="p">,(</span><span class="s">&quot;h&quot;</span><span class="p">,</span><span class="s">&quot;k&quot;</span><span class="p">,</span><span class="s">&quot;l&quot;</span><span class="p">,</span><span class="s">&quot;d-space&quot;</span><span class="p">,</span><span class="s">&quot;F_obs&quot;</span><span class="p">,</span><span class="s">&quot;sig(Fobs)&quot;</span><span class="p">,</span><span class="s">&quot;F_calc&quot;</span><span class="p">,</span><span class="s">&quot;phase&quot;</span><span class="p">,</span><span class="s">&quot;mult&quot;</span><span class="p">))</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s">&quot;{:.0f},{:.0f},{:.0f},{:.3f},{:.2f},{:.4f},{:.2f},{:.2f},{:.0f}&quot;</span>
+        <span class="k">for</span> <span class="p">(</span>
+            <span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">mult</span><span class="p">,</span><span class="n">dsp</span><span class="p">,</span><span class="n">Fobs</span><span class="p">,</span><span class="n">sigFobs</span><span class="p">,</span><span class="n">Fcalc</span><span class="p">,</span><span class="n">FobsT</span><span class="p">,</span><span class="n">FcalcT</span><span class="p">,</span><span class="n">phase</span><span class="p">,</span><span class="n">eqlist</span><span class="p">,</span><span class="n">phaselist</span><span class="p">,</span><span class="n">Icorr</span><span class="p">,</span><span class="n">FFdict</span>
+            <span class="p">)</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">dsp</span><span class="p">,</span><span class="n">Fobs</span><span class="p">,</span><span class="n">sigFobs</span><span class="p">,</span><span class="n">Fcalc</span><span class="p">,</span><span class="n">phase</span><span class="p">,</span><span class="n">mult</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>                        
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

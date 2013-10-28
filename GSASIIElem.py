@@ -99,11 +99,16 @@ def getFFvalues(FFtables,SQ,ifList=False):
             FFvals[El] = ScatFac(FFtables[El],SQ)[0]
     return FFvals
     
-def getBLvalues(BLtables):
+def getBLvalues(BLtables,ifList=False):
     'Needs a doc string'
-    BLvals = {}
-    for El in BLtables:
-        BLvals[El] = BLtables[El][1][1]
+    if ifList:
+        BLvals = []
+        for El in BLtables:
+            BLvals.append(BLtables[El][1][1])
+    else:
+        BLvals = {}
+        for El in BLtables:
+            BLvals[El] = BLtables[El][1][1]
     return BLvals
         
 def GetFFC5(ElSym):

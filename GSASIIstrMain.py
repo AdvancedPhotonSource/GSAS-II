@@ -259,7 +259,7 @@ def SeqRefine(GPXfile,dlg):
         varyList = []
         parmDict = {}
         Histo = {histogram:Histograms[histogram],}
-        hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,False)
+        hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
         calcControls.update(controlDict)
         histVary,histDict,controlDict = G2stIO.GetHistogramData(Histo,False)
         calcControls.update(controlDict)

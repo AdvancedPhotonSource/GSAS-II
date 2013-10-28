@@ -296,13 +296,13 @@ def GetHistograms(GPXfile,hNames):
                 HKLFdata.update(datum[1][0])        #weight factor
 #patch
                 if isinstance(datum[1][1],list):
-                    RefData = {'RefList':[],'FF':[]}
+                    RefData = {'RefList':[],'FF':{}}
                     for ref in datum[1][1]:
                         RefData['RefList'].append(ref[:11]+[ref[13],])
-                        RefData['FF'].append(ref[14])
                     RefData['RefList'] = np.array(RefData['RefList'])
                     datum[1][1] = RefData
 #end patch
+                datum[1][1]['FF'] = {}
                 HKLFdata['Data'] = datum[1][1]
                 HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
                 HKLFdata['Reflection Lists'] = None
@@ -1755,7 +1755,6 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     refList = []
                     Uniq = []
                     Phi = []
-                    FF = []
                     for h,k,l,d in HKLd:
                         ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                         mul *= 2      # for powder overlap of Friedel pairs
@@ -1767,10 +1766,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,0.0])
                                 Uniq.append(uniq)
                                 Phi.append(phi)
-                                FF.append({})
                         else:
                             raise ValueError 
-                    Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':FF}
+                    Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{}}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
                 hId = Histogram['hId']

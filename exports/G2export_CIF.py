@@ -699,21 +699,21 @@ class ExportCIF(G2IO.ExportBaseclass):
             fpfx = str(phasedict['pId'])+'::Afrac:'        
             cfrac = cx+3
             DisAglData = {}
-            DisAglCtls = {}
             # create a list of atoms, but skip atoms with zero occupancy
             xyz = []
             fpfx = str(phasedict['pId'])+'::Afrac:'        
             for i,atom in enumerate(Atoms):
                 if self.parmDict.get(fpfx+str(i),atom[cfrac]) == 0.0: continue
                 xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
-            if 'DisAglCtls' in generalData:
-                DisAglCtls = generalData['DisAglCtls']
-            else: # should not happen, since DisAglDialog should be called for all
-                # phases before getting here
-                dlg = G2gd.DisAglDialog(self.G2frame,DisAglCtls,generalData)
+            if 'DisAglCtls' not in generalData:
+                # should not happen, since DisAglDialog should be called
+                # for all phases before getting here
+                dlg = G2gd.DisAglDialog(
+                    self.G2frame,
+                    {},
+                    generalData)
                 if dlg.ShowModal() == wx.ID_OK:
-                    DisAglCtls = dlg.GetData()
-                    generalData['DisAglCtls'] = DisAglCtls
+                    generalData['DisAglCtls'] = dlg.GetData()
                 else:
                     dlg.Destroy()
                     return
@@ -735,7 +735,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                 DisAglData['pId'] = phasedict['pId']
                 DisAglData['covData'] = self.OverallParms['Covariance']
             try:
-                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
+                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(
+                    generalData['DisAglCtls'],
+                    DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 print('**** ERROR - try again but do "Reset" to fill in missing atom types ****')
                     
@@ -1022,9 +1024,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             Imax = 0
             for phasenam in histblk['Reflection Lists']:
                 scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
-                Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])[0]
-                FO2 = np.array([refl[8] for refl in histblk['Reflection Lists'][phasenam]])
-                I100 = scale*FO2*Icorr
+                refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
+                I100 = scale*refList.T[8]*refList.T[11]
+                #Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])[0]
+                #FO2 = np.array([refl[8] for refl in histblk['Reflection Lists'][phasenam]])
+                #I100 = scale*FO2*Icorr
                 Imax = max(Imax,max(I100))
 
             WriteCIFitem('loop_')
@@ -1048,8 +1052,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             for phasenam in histblk['Reflection Lists']:
                 scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
                 phaseid = self.Phases[phasenam]['pId']
-                refcount += len(histblk['Reflection Lists'][phasenam])
-                for ref in histblk['Reflection Lists'][phasenam]:
+                refcount += len(histblk['Reflection Lists'][phasenam]['RefList'])
+                for j,ref in enumerate(histblk['Reflection Lists'][phasenam]['RefList']):
                     if DEBUG:
                         print('DEBUG: skipping reflection list')
                         break
@@ -1072,8 +1076,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     dmin = min(dmin,ref[4])
                     s += PutInCol(G2mth.ValEsd(ref[4],-0.009),8)
                     if Imax > 0:
-                        I100 = 100.*scale*ref[8]*ref[13]/Imax
-                        s += PutInCol(G2mth.ValEsd(I100,-0.09),6)
+                        s += PutInCol(G2mth.ValEsd(100.*I100[j]/Imax,-0.09),6)
                     WriteCIFitem("  "+s)
 
             WriteReflStat(refcount,hklmin,hklmax,dmin,dmax,len(histblk['Reflection Lists']))
@@ -1170,8 +1173,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             hklmax = None
             dmax = None
             dmin = None
-            refcount = len(histblk['Data'])
-            for ref in histblk['Data']:
+            refcount = len(histblk['Data']['RefList'])
+            for ref in histblk['Data']['RefList']:
                 s = "  "
                 if hklmin is None:
                     hklmin = ref[0:3]
@@ -1253,7 +1256,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''
             but = event.GetEventObject()
             phasedict = but.phasedict
-            dlg = G2gd.DisAglDialog(self.G2frame,{},phasedict['General'])
+            dlg = G2gd.DisAglDialog(
+                self.G2frame,
+                phasedict['General']['DisAglCtls'], # edited 
+                phasedict['General'], # defaults
+                )
             if dlg.ShowModal() == wx.ID_OK:
                 phasedict['General']['DisAglCtls'] = dlg.GetData()
             dlg.Destroy()
@@ -1378,21 +1385,21 @@ class ExportCIF(G2IO.ExportBaseclass):
             cn = ct-1
             cfrac = cx+3
             DisAglData = {}
-            DisAglCtls = {}
             # create a list of atoms, but skip atoms with zero occupancy
             xyz = []
             fpfx = str(phasedict['pId'])+'::Afrac:'        
             for i,atom in enumerate(phasedict['Atoms']):
                 if self.parmDict.get(fpfx+str(i),atom[cfrac]) == 0.0: continue
                 xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
-            if 'DisAglCtls' in generalData:
-                DisAglCtls = generalData['DisAglCtls']
-            else: # should not happen, since DisAglDialog should be called for all
-                # phases before getting here
-                dlg = G2gd.DisAglDialog(self.cifdefs,DisAglCtls,generalData)
+            if 'DisAglCtls' not in generalData:
+                # should not be used, since DisAglDialog should be called
+                # for all phases before getting here
+                dlg = G2gd.DisAglDialog(
+                    self.cifdefs,
+                    {},
+                    generalData)
                 if dlg.ShowModal() == wx.ID_OK:
-                    DisAglCtls = dlg.GetData()
-                    generalData['DisAglCtls'] = DisAglCtls
+                    generalData['DisAglCtls'] = dlg.GetData()
                 else:
                     dlg.Destroy()
                     return
@@ -1426,7 +1433,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                 DisAglData['pId'] = phasedict['pId']
                 DisAglData['covData'] = self.OverallParms['Covariance']
             try:
-                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData)
+                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(
+                    generalData['DisAglCtls'],
+                    DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 print('**** ERROR - try again but do "Reset" to fill in missing atom types ****')
             wx.EndBusyCursor()
@@ -1608,13 +1617,16 @@ class ExportCIF(G2IO.ExportBaseclass):
                     "File/Copy option to duplicate the name"
                     )
                 if not EditInstNames(): return
-        # check for a distance-angle range search range for each phase
         if not self.quickmode:
+            # check for a distance-angle range search range for each phase
             for phasenam in sorted(self.Phases.keys()):
                 #i = self.Phases[phasenam]['pId']
                 phasedict = self.Phases[phasenam] # pointer to current phase info            
                 if 'DisAglCtls' not in phasedict['General']:
-                    dlg = G2gd.DisAglDialog(self.G2frame,{},phasedict['General'])
+                    dlg = G2gd.DisAglDialog(
+                        self.G2frame,
+                        {},
+                        phasedict['General'])
                     if dlg.ShowModal() == wx.ID_OK:
                         phasedict['General']['DisAglCtls'] = dlg.GetData()
                     else:

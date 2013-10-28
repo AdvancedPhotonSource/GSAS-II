@@ -176,10 +176,17 @@ General         \            Overall information for the phase (dict)
   \         NoAtoms          Number of atoms per unit cell of each type (dict)
   \         Pawley dmin      maximum Q (as d-space) to use for Pawley 
                              extraction (float)
-  \         BondRadii        Radius for each atom used to compute 
+  \         BondRadii        Default radius for each atom used to compute 
                              interatomic distances (list of floats)
-  \         AngleRadii       Radius for each atom used to compute 
+  \         AngleRadii       Default radius for each atom used to compute 
                              interatomic angles (list of floats)
+  \         DisAglCtls       Dict with distance/angle search controls,
+                             which has keys 'Name', 'AtomTypes',
+                             'BondRadii', 'AngleRadii' which are as above
+                             except are possibly edited. Also contains
+                             'Factors', which is a 2 element list with
+                             a multiplier for bond and angle search range
+                             [typically (0.85,0.85)].
 ranId           \            unique random number Id for phase (int)
 pId             \            Phase Id number for current project (int).
 Atoms           \            Atoms in phase as a list of lists. The outer list

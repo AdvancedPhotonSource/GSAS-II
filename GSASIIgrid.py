@@ -18,6 +18,7 @@ import wx.wizard as wz
 import wx.aui
 import wx.lib.scrolledpanel as wxscroll
 import time
+import copy
 import cPickle
 import sys
 import numpy as np
@@ -1021,11 +1022,34 @@ class SymOpDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 class DisAglDialog(wx.Dialog):
-    '''Distance Angle Controls dialog
+    '''Distance/Angle Controls input dialog. After
+    :meth:`ShowModal` returns, the results are found in
+    dict :attr:`self.data`, which is accessed using :meth:`GetData`.
+
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param dict data: a dict containing the current
+      search ranges or an empty dict, which causes default values
+      to be used.
+      Will be used to set element `DisAglCtls` in 
+      :ref:`Phase Tree Item <Phase_table>`
+    :param dict default:  A dict containing the default
+      search ranges for each element.
     '''
-    def __default__(self,data,default):
+    def __init__(self,parent,data,default):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,
+                           'Distance Angle Controls', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.default = default
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self._default(data,self.default)
+        self.Draw(self.data)
+                
+    def _default(self,data,default):
+        '''Set starting values for the search values, either from
+        the input array or from defaults, if input is null
+        '''
         if data:
-            self.data = data
+            self.data = copy.deepcopy(data) # don't mess with originals
         else:
             self.data = {}
             self.data['Name'] = default['Name']
@@ -1033,16 +1057,11 @@ class DisAglDialog(wx.Dialog):
             self.data['AtomTypes'] = default['AtomTypes']
             self.data['BondRadii'] = default['BondRadii'][:]
             self.data['AngleRadii'] = default['AngleRadii'][:]
-        
-    def __init__(self,parent,data,default):
-        wx.Dialog.__init__(self,parent,-1,'Distance Angle Controls', 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-        self.default = default
-        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
-        self.__default__(data,self.default)
-        self.Draw(self.data)
-                
+
     def Draw(self,data):
+        '''Creates the contents of the dialog. Normally called
+        by :meth:`__init__`.
+        '''
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1103,16 +1122,19 @@ class DisAglDialog(wx.Dialog):
         Obj.SetValue("%.3f"%(self.data[item[0]][item[1]]))          #reset in case of error
         
     def GetData(self):
+        'Returns the values from the dialog'
         return self.data
         
     def OnOk(self,event):
+        'Called when the OK button is pressed'
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)              
         
     def OnReset(self,event):
+        'Called when the Reset button is pressed'
         data = {}
-        self.__default__(data,self.default)
+        self._default(data,self.default)
         self.Draw(self.data)
         
 class PickTwoDialog(wx.Dialog):
